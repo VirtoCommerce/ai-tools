@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 // reaches the direct child only — dnx's dotnet.exe outlived every timeout, orphaned, and held a lock
 // on the package file, so the next attempt failed with a file-in-use error instead of timing out
 // again. Measured on Windows.
-import { killProcessTree } from "./vc-secrets.mjs";
+import { forwardedSignalsFor, killProcessTree } from "./vc-secrets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -127,8 +127,10 @@ function main(server) {
     // without these the probe dies and leaves the launcher, and the server it spawned, running: the
     // orphaned tree this file shares killProcessTree to prevent, arriving by the other door. SIGHUP is
     // the same door: it is what closing the terminal the probe runs in delivers, and the launcher,
-    // detached, would not receive it. cmdLaunch installs the same set for the same reason.
-    for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+    // detached, would not receive it. SIGQUIT is Ctrl-\ in that terminal, and the default action kills
+    // the probe without running its "exit" handlers, with the same result -- except on win32, which the
+    // list leaves it out of. cmdLaunch installs the same set, from the same list, for the same reason.
+    for (const signal of forwardedSignalsFor()) {
         process.on(signal, (received) => {
             clearTimeout(timer);
             killProcessTree(child, received);

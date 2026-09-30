@@ -52,7 +52,7 @@ function launcherEnv(extra = {}) {
 function trustedLauncherEnv(dir, extra = {}) {
     const env = launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, ...extra });
     const cfg = m.loadConfig(m.configPaths(env, dir));
-    const record = { trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    const record = { trustedAt: "2000-01-01T00:00:00.000Z", projectId: cfg.projectId, servers: {}, tasks: {} };
     for (const kind of ["servers", "tasks"]) {
         for (const [name, launchable] of Object.entries(cfg[kind])) {
             if (launchable.home !== "user") {
@@ -4054,7 +4054,7 @@ function runEntry(entry, env, { preload = true, timeoutMs = 10000 } = {}) {
     // stays even routed through it, or a stray VC_SECRETS_* left over in this test process would
     // leak into every child and these tests would start depending on the ambient environment.
     for (const key of Object.keys(childEnv)) {
-        if (key.startsWith("VC_SECRETS_")) {
+        if (/^VC_SECRETS_/i.test(key)) {
             delete childEnv[key];
         }
     }
@@ -4906,7 +4906,7 @@ test("vc-secrets-probe kills the process TREE at every call site", () => {
     const source = stripComments(fs.readFileSync(PROBE_PATH, "utf8"));
     for (const [where, pattern] of [
         ["the 30 s timeout", /TIMEOUT \(30 s\)[\s\S]{0,140}?killProcessTree\(/],
-        ["the interrupt handler", /for \(const signal of \["SIGINT", "SIGTERM", "SIGHUP"\]\)[\s\S]{0,260}?killProcessTree\(/],
+        ["the interrupt handler", /for \(const signal of forwardedSignalsFor\(\)\)[\s\S]{0,260}?killProcessTree\(/],
         ["the answered-handshake path", /serverInfo\.name[\s\S]{0,240}?killProcessTree\(/],
     ]) {
         assert.match(source, pattern, `${where} must terminate the child through the shared tree kill`);
@@ -4921,7 +4921,7 @@ test("a child killProcessTree signals is spawned detached, and its parent handle
     // if it was spawned detached. Sharing the parent's group instead makes the call name a group the
     // child is not in: usually absent, so it throws and the fallback covers it, but a recycled pid
     // makes it somebody ELSE's group, the group kill SUCCEEDS, the child is never signalled, and a
-    // stranger's group takes the SIGKILL five seconds later.
+    // stranger's group takes the follow-up SIGKILL.
     //
     // Named for the rule rather than for either call site, because the rule has two sites and had no
     // test at all -- a site-named test leaves the next site to repeat this. Asserted on source text
@@ -4931,10 +4931,10 @@ test("a child killProcessTree signals is spawned detached, and its parent handle
     // out of the terminal's foreground group, so Ctrl-C stops reaching it. Measured -- a detached
     // child survives a SIGINT sent to its parent's group and a non-detached one does not -- so with
     // no handler the parent dies and orphans the tree that detached was adopted to let it kill.
-    // The launcher names its list, because SIGHUP joined it and the list is also what dispose() removes;
-    // the probe spells its set out.
+    // The launcher names its list, because it is also what dispose() removes; the probe takes the same
+    // list from forwardedSignalsFor, so the two cannot disagree about which signals they install for.
     for (const [file, installs] of [
-        ["vc-secrets-probe.mjs", /for \(const signal of \["SIGINT", "SIGTERM", "SIGHUP"\]\)\s*\{\s*process\.on\(/],
+        ["vc-secrets-probe.mjs", /for \(const signal of forwardedSignalsFor\(\)\)\s*\{\s*process\.on\(/],
         ["vc-secrets.mjs", /for \(const signal of forwardedSignals\)\s*\{\s*process\.on\(/],
     ]) {
         const source = stripComments(fs.readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), "utf8"));

@@ -59,8 +59,10 @@ jobs:
         run: npm test
       # `npm test` globs scripts/unit/** only, so nothing above reaches the vc-secrets suite. Explicit
       # paths, not a glob: a renamed or missing file then fails the step loudly, where a glob that
-      # matches nothing runs zero tests and goes green.
+      # matches nothing runs zero tests and goes green. Runs after a red `npm test` too, so that one
+      # failing suite does not hide the result of the other.
       - name: vc-secrets suite
+        if: ${{ !cancelled() }}
         run: node --test plugins/vc-secrets/vc-secrets.test.mjs plugins/vc-secrets/vc-secrets-oauth.test.mjs
       # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +
       # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all

@@ -180,7 +180,7 @@ function scopedPaths({ user, project, local } = {}) {
 // changes what was trusted with it and keeps meaning "trusted as declared". Passed as `deps.trustState`
 // to the in-process launch path, and to trustProblem directly.
 function trustedStateFor(cfg) {
-    const record = { trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    const record = { trustedAt: "2000-01-01T00:00:00.000Z", projectId: cfg.projectId, servers: {}, tasks: {} };
     for (const kind of ["servers", "tasks"]) {
         for (const [name, launchable] of Object.entries(cfg[kind])) {
             if (launchable.home !== "user") {
@@ -2309,6 +2309,55 @@ test("resolveSpawnCommand: win32 a name that carries an extension is not also ex
     }), (e) => e instanceof m.VcSecretsError && e.message === "git.exe: not found on PATH");
 });
 
+test("resolveSpawnCommand: win32 a name that carries an extension tries the exact file, then com and exe appended -- as libuv does, and not PATHEXT", () => {
+    // `python3.12` is `python3.12.exe`: its ".12" is not an extension in the executable sense, and a
+    // resolver that stops at the literal name reports an installed tool missing.
+    const env = { Path: "C:\\Py", PATHEXT: ".XYZ" };
+    const resolve = (name, ...files) => m.resolveSpawnCommand(name, { platform: "win32", env, existsSync: onlyFiles(...files) }).cmd;
+    assert.equal(resolve("python3.12", "c:/py/python3.12.exe"), "C:\\Py\\python3.12.exe");
+    assert.equal(resolve("python3.12", "c:/py/python3.12.com"), "C:\\Py\\python3.12.com");
+    assert.equal(resolve("python3.12", "c:/py/python3.12.exe", "c:/py/python3.12.com"), "C:\\Py\\python3.12.com",
+        "com is tried before exe, in libuv's order");
+    assert.equal(resolve("python3.12", "c:/py/python3.12", "c:/py/python3.12.exe"), "C:\\Py\\python3.12",
+        "the literal name comes before either appended one");
+    assert.equal(resolve("gh.exe", "c:/py/gh.exe"), "C:\\Py\\gh.exe", "an exact name still resolves literally");
+    assert.throws(() => resolve("python3.12", "c:/py/python3.12.xyz"), /python3\.12: not found on PATH/,
+        "PATHEXT is not consulted for a name that has an extension");
+    // The other half of the rule: a name without one is what PATHEXT is for.
+    assert.equal(resolve("tool", "c:/py/tool.xyz"), "C:\\Py\\tool.XYZ");
+});
+
+test("resolveSpawnCommand: win32 whether a name has an extension is libuv's test -- the first dot, not the last character", () => {
+    const env = { Path: "C:\\Py", PATHEXT: ".XYZ" };
+    const resolve = (name, ...files) => m.resolveSpawnCommand(name, { platform: "win32", env, existsSync: onlyFiles(...files) }).cmd;
+    // `tool.` ends in its dot, so it has none: it is looked up through PATHEXT, with no second dot joined on.
+    assert.equal(resolve("tool.", "c:/py/tool.xyz"), "C:\\Py\\tool.XYZ");
+    assert.throws(() => resolve("tool.", "c:/py/tool."), /tool\.: not found on PATH/, "and is not tried as a literal");
+    // `.hidden` has one, so the literal comes first.
+    assert.equal(resolve(".hidden", "c:/py/.hidden"), "C:\\Py\\.hidden");
+    // `tool.v2.` ends in a dot but its FIRST dot is not the last character, so it has one too -- the only
+    // shape on which the first-dot and last-dot readings disagree.
+    assert.equal(resolve("tool.v2.", "c:/py/tool.v2."), "C:\\Py\\tool.v2.");
+});
+
+test("resolveSpawnCommand: win32 PATH is split the way libuv's search_path does it", () => {
+    // libuv: a slice opening with `"` or `'` runs to the matching quote, so a `;` inside is part of the
+    // directory; the quote at each end is then stripped independently of the other.
+    const resolveIn = (pathValue, name, ...files) => m.resolveSpawnCommand(name, {
+        platform: "win32", env: { Path: pathValue, PATHEXT: ".EXE" }, existsSync: onlyFiles(...files) }).cmd.toLowerCase();
+    const existing = ["c:/a;b/gh.exe", "c:/other/git.exe"];
+    assert.equal(resolveIn('"C:\\a;b";C:\\other', "gh", ...existing), "c:\\a;b\\gh.exe", "double quotes hold a semicolon");
+    assert.equal(resolveIn("'C:\\a;b';C:\\other", "gh", ...existing), "c:\\a;b\\gh.exe", "and so do single quotes");
+    assert.equal(resolveIn('"C:\\a;b";C:\\other', "git", ...existing), "c:\\other\\git.exe", "the entry after a quoted one is still read");
+    // Independent stripping: an unterminated opening quote, a trailing quote alone, and a mismatched pair.
+    assert.equal(resolveIn('"C:\\a;b', "gh", ...existing), "c:\\a;b\\gh.exe", "an unterminated quote runs to the end and loses its opening one");
+    assert.equal(resolveIn('C:\\other"', "git", ...existing), "c:\\other\\git.exe", "a trailing quote is stripped without an opening one");
+    assert.equal(resolveIn("\"C:\\other'", "git", ...existing), "c:\\other\\git.exe", "and a mismatched pair loses both");
+    // A lone quote strips to an empty slice, which is skipped rather than searched.
+    assert.throws(() => m.resolveSpawnCommand("gh", { platform: "win32", env: { Path: '"C:\\x";"', PATHEXT: ".EXE" },
+        existsSync: onlyFiles("c:/a;b/gh.exe") }), /gh: not found on PATH/);
+});
+
 test("resolveSpawnCommand: win32 a shim with no cmd.exe to run it is not found, not run through a bare name", () => {
     assert.throws(() => m.resolveSpawnCommand("npx", {
         platform: "win32", env: WIN_ENV, existsSync: onlyFiles("c:/bin/npx.cmd"),
@@ -3147,6 +3196,64 @@ test("childNodeProbes: each launchable is judged by its own command, on either p
     }
 });
 
+test("childNodeProbes: the probe is given the PATH the launch would see -- this process's, overridden by a declared literal", () => {
+    // A declaration may set PATH, and the launch resolves its command against the child's environment. A
+    // probe that resolved against this process's would judge a node the launch never runs. `secret:` and
+    // `oauth:` values cannot be resolved here, and doctor must not spend a credential to ask a version.
+    const cfg = { servers: {
+        plain: { command: "node", env: {} },
+        own: { command: "node", env: { PATH: "literal:/declared/bin", TOKEN: "oauth:ado", OTHER: "secret:pat" } },
+        twin: { command: "node", env: { PATH: "literal:/declared/bin" } },
+        elsewhere: { command: "node", env: { PATH: "literal:/other/bin" } },
+    }, tasks: {} };
+    const refs = ["plain", "own", "twin", "elsewhere"].map((launchableName) => ({ kind: "servers", launchableName }));
+    const seen = [];
+    m.childNodeProbes(cfg, refs, { platform: "linux", refused: new Map(), env: { PATH: "/inherited/bin", KEEP: "1" },
+        probe: (options) => { seen.push(options); return "v22.0.0"; } });
+
+    assert.deepEqual(seen.map((x) => x.env.PATH), ["/inherited/bin", "/declared/bin", "/other/bin"],
+        "one probe per command and PATH: `twin` shares `own`'s, `elsewhere` does not");
+    assert.equal(seen[1].env.KEEP, "1", "the rest of the environment is this process's");
+    assert.ok(seen.every((x) => x.command === "node"));
+    assert.ok(seen.every((x) => !("TOKEN" in x.env) && !("OTHER" in x.env)), "a reference is not resolved here");
+});
+
+test("childNodeProbes: the probe env is scrubbed as the launch's child env is -- a legacy secret var in the base is absent, in any letter case", () => {
+    const cfg = { servers: { s: { command: "node", env: {} } }, tasks: {} };
+    const seen = [];
+    m.childNodeProbes(cfg, [{ kind: "servers", launchableName: "s" }], { platform: "linux", refused: new Map(),
+        env: { PATH: "/bin", ADO_MCP_AUTH_TOKEN: "stale", Azure_Client_Secret: "stale", GITHUB_PERSONAL_ACCESS_TOKEN: "stale",
+            AZURE_TENANT_ID: "an-identifier", NODE_OPTIONS: "--require=/x.js" },
+        probe: (options) => { seen.push(options.env); return "v22.0.0"; } });
+    assert.deepEqual(seen, [{ PATH: "/bin", AZURE_TENANT_ID: "an-identifier" }],
+        "credentials and code-injection variables go; an identifier the launch also keeps stays");
+});
+
+test("childNodeProbes: on win32 the memo key includes PATHEXT, so two launchables that differ only in it are probed apart", () => {
+    const cfg = { servers: {
+        a: { command: "node", env: { PATHEXT: "literal:.EXE" } },
+        b: { command: "node", env: { PATHEXT: "literal:.CMD" } },
+        c: { command: "node", env: { PATHEXT: "literal:.EXE" } },
+    }, tasks: {} };
+    const refs = ["a", "b", "c"].map((launchableName) => ({ kind: "servers", launchableName }));
+    let probes = 0;
+    m.childNodeProbes(cfg, refs, { platform: "win32", refused: new Map(), env: { Path: "C:\\bin" },
+        probe: () => { probes += 1; return "v22.0.0"; } });
+    assert.equal(probes, 2, "a and c share a key; b does not");
+    probes = 0;
+    m.childNodeProbes(cfg, refs, { platform: "linux", refused: new Map(), env: { PATH: "/bin" },
+        probe: () => { probes += 1; return "v22.0.0"; } });
+    assert.equal(probes, 1, "off win32 PATHEXT means nothing to the lookup");
+});
+
+test("childNodeProbes: on win32 a declared PATH replaces the inherited one whatever its case, in the environment the probe gets", () => {
+    const cfg = { servers: { s: { command: "node", env: { path: "literal:C:\\declared\\bin" } } }, tasks: {} };
+    let seen;
+    m.childNodeProbes(cfg, [{ kind: "servers", launchableName: "s" }], { platform: "win32", refused: new Map(),
+        env: { Path: "C:\\inherited\\bin" }, probe: (options) => { seen = options; return "v22.0.0"; } });
+    assert.deepEqual(seen.env, { path: "C:\\declared\\bin" }, "one spelling, and it is the declaration's");
+});
+
 test("cmdDoctor: the oauth checks are wired to the report, not merely available", () => {
     // Both halves tested and the seam between them not: computing oauthStatus and forgetting to pass
     // it leaves every test above green while doctor reports nothing. Source-inspected because
@@ -3590,6 +3697,38 @@ test("cmdLaunch: the version gate probes the declared node, and says so when it 
     assert.equal(probed, declared, "the declared node is what gets probed, not PATH");
 });
 
+test("cmdLaunch: the version probe searches the PATH the spawn searches, and is not handed a resolved secret",
+    { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" },
+    async () => {
+        // Otherwise a declaration that sets PATH is gated on the node this process's PATH finds, while the
+        // spawn runs another -- and a probe given the child's whole environment holds every credential the
+        // launch resolved, in a process that only has to print a version.
+        const sentinel = "SECRET-SENTINEL-VALUE";
+        const cfg = m.loadConfig(scopedPaths({ user: { oauth: { ado: OAUTH_DECL }, secrets: { pat: { backend: "local" } },
+            servers: { s: { command: "node", args: ["server.js"],
+                env: { ADO_TOKEN: "oauth:ado", PAT: "secret:pat", PATH: "literal:/declared/bin" } } } } }));
+        let probeEnv;
+        let spawnEnv;
+        await withProcessEnv({ VC_SECRETS_LOCAL_BACKEND: "keychain", GITHUB_PERSONAL_ACCESS_TOKEN: "ambient-stale-token" }, () => withStubOnPath("security", `#!/bin/sh\necho ${sentinel}\n`, async () => {
+            const handle = await m.cmdLaunch("servers", "s", cfg, {
+                childNodeVersion: (options) => { probeEnv = options.env; return "v22.0.0"; },
+                readCache: async () => ({ state: "valid", accessToken: "cached" }),
+                createChannel: () => ({ path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1,
+                    close: async () => {}, removeSync: () => {} }),
+                resolveCommand: (command, options) => { spawnEnv = options.env; return { kind: "direct", cmd: command }; },
+                spawnFn: () => fakeChild(),
+            });
+            await handle.dispose();
+        }));
+        assert.equal(spawnEnv.PAT, sentinel, "the control: the launch did resolve the secret into the child's environment");
+        assert.equal(probeEnv.PATH, "/declared/bin", "the declaration's PATH, not this process's");
+        assert.equal(probeEnv.PATH, spawnEnv.PATH, "the very PATH the spawn searches");
+        assert.ok(!Object.values(probeEnv).includes(sentinel), "no resolved secret reaches the probe");
+        assert.ok(!Object.hasOwn(probeEnv, "ADO_TOKEN") && !Object.hasOwn(probeEnv, "PAT"), "nor the names that carry one");
+        assert.ok(!Object.hasOwn(spawnEnv, "GITHUB_PERSONAL_ACCESS_TOKEN") && !Object.hasOwn(probeEnv, "GITHUB_PERSONAL_ACCESS_TOKEN"),
+            "an ambient legacy credential is scrubbed from the probe exactly as from the child");
+    });
+
 test("cmdLaunch: a wrapper command is probed via PATH, and the refusal does not claim otherwise", async () => {
     // The fixture commands `npx`, which resolves a node the declaration cannot name. PATH is then a
     // proxy rather than an answer, so the message must not repeat the claim removed above — it says
@@ -3636,7 +3775,7 @@ test("cmdLaunch: dispose detaches the handlers that would exit the process", asy
     // pin the harness rather than the launch. The signals are registered unconditionally. The "exit"
     // listener here is the POSIX group kill; the oauth path's own "exit" handler is pinned in
     // vc-secrets-oauth.test.mjs, where a launch reaches it.
-    const signals = ["SIGINT", "SIGTERM", "SIGHUP"];
+    const signals = ["SIGINT", "SIGTERM", "SIGHUP", ...(process.platform === "win32" ? [] : ["SIGQUIT"])];
     const before = signals.map((s) => process.listenerCount(s));
     const exitBefore = process.listenerCount("exit");
     const handle = await m.cmdLaunch("servers", "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
@@ -3682,7 +3821,7 @@ async function waitFor(condition, { timeoutMs, stepMs = 25 }) {
     return condition();
 }
 
-// A server whose direct child (sh) starts a grandchild that ignores TERM and HUP -- the shape of an npx
+// A server whose direct child (sh) starts a grandchild that ignores TERM, HUP and QUIT -- the shape of an npx
 // wrapper over a server that traps them -- and then waits on it. The grandchild records its OWN pid
 // (`$$` of a fresh sh, not of the subshell that would inherit the parent's).
 async function assertGroupDiesWith(signal) {
@@ -3690,7 +3829,7 @@ async function assertGroupDiesWith(signal) {
     tmpDirs.push(dir);
     const pidFile = path.join(dir, "grandchild.pid");
     // No double quote anywhere: a declaration refuses one, for Windows' sake.
-    const script = "sh -c 'trap : TERM HUP; echo $$ > $PIDFILE; while :; do sleep 1; done' &\nwait\n";
+    const script = "sh -c 'trap : TERM HUP QUIT; echo $$ > $PIDFILE; while :; do sleep 1; done' &\nwait\n";
     const configDir = tmpConfigDir({ secrets: {}, servers: {
         orphan: { command: "sh", args: ["-c", script], env: { PIDFILE: `literal:${pidFile}` } } } });
     const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "orphan"],
@@ -3741,6 +3880,38 @@ test("cmdLaunch: a group member that ignores SIGHUP does not outlive the launche
 // nothing to exit on and its own "exit" handler never gets to run. The MCP client SIGKILLs a launcher
 // that outlasts its shutdown window, and SIGKILL runs no handler -- so the group has to be gone before
 // that, by the launcher's own escalation. `trap ''` is inherited across exec, so the sleeps ignore TERM too.
+// Ctrl-\\ in a task's terminal: the child is in a session of its own, so only the launcher receives it, and
+// the default action kills the launcher without running the "exit" handler that takes the group down.
+test("cmdLaunch: a group member that ignores SIGQUIT does not outlive the launcher",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
+    () => assertGroupDiesWith("SIGQUIT"));
+
+test("forwardedSignalsFor: every platform gets the interrupt, terminate and hangup signals, and win32 gets no SIGQUIT", () => {
+    for (const platform of ["linux", "darwin", "freebsd"]) {
+        assert.deepEqual([...m.forwardedSignalsFor(platform)].sort(), ["SIGHUP", "SIGINT", "SIGQUIT", "SIGTERM"], platform);
+    }
+    assert.deepEqual([...m.forwardedSignalsFor("win32")].sort(), ["SIGHUP", "SIGINT", "SIGTERM"]);
+});
+
+test("cmdLaunch: on win32 no SIGQUIT listener is registered, and the other three still are, and dispose removes them", async () => {
+    // Driven through the seam rather than on win32, where the listener count would be the platform's own.
+    const cfg = m.loadConfig(projectPaths({ secrets: {},
+        servers: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
+    const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
+    const count = (signal) => process.listenerCount(signal);
+    const before = Object.fromEntries(["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"].map((signal) => [signal, count(signal)]));
+    const handle = await m.cmdLaunch("servers", "github", cfg,
+        { trustState: trustedStateFor(cfg), spawnFn: () => child, signalPlatform: "win32" });
+    for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+        assert.equal(count(signal), before[signal] + 1, `${signal} is registered`);
+    }
+    assert.equal(count("SIGQUIT"), before.SIGQUIT, "SIGQUIT is not");
+    await handle.dispose();
+    for (const [signal, n] of Object.entries(before)) {
+        assert.equal(count(signal), n, `${signal} is back where it was`);
+    }
+});
+
 test("cmdLaunch: a direct child that traps SIGTERM is escalated to SIGKILL, and the launcher and group go",
     { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
     async () => {
@@ -3779,8 +3950,10 @@ test("cmdLaunch: a direct child that traps SIGTERM is escalated to SIGKILL, and 
                 `the fixture must be running before the signal, or the test proves nothing: ${stderr}`);
 
             launcher.kill("SIGTERM");
-            // The grace is 1 s; three leaves room for a loaded machine without approaching the 5 s a
-            // forgotten escalation would take from the unref'd default.
+            // The grace is 500 ms; three seconds leaves room for a loaded machine without approaching the
+            // 5 s a forgotten escalation would take from the unref'd default. It cannot tell 500 ms from
+            // 1 s -- a wall-clock bound that tight would flake on a loaded machine -- so the delay itself
+            // is pinned under mock timers, by "several forwarded signals arm one escalation".
             await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 3000))]);
             assert.ok(launcher.exitCode !== null || launcher.signalCode !== null,
                 `the launcher must leave once its child ignores SIGTERM: ${stderr}`);
@@ -3876,11 +4049,11 @@ test("cmdLaunch: a task keeps the default grace before its escalation, since no 
         t.mock.timers.enable({ apis: ["setTimeout"] });
         const { handle, killed } = await launchWithRecordingChild("tasks");
         try {
-            process.emit("SIGINT", "SIGINT");
+            process.emit("SIGHUP", "SIGHUP");
             t.mock.timers.tick(4999);
-            assert.deepEqual(killed, ["SIGINT"], "a Ctrl-C'd task gets the time to write its summary or roll back");
+            assert.deepEqual(killed, ["SIGHUP"], "a task that is signalled gets the time to write its summary or roll back");
             t.mock.timers.tick(1);
-            assert.deepEqual(killed, ["SIGINT", "SIGKILL"], "and is still escalated, not left running");
+            assert.deepEqual(killed, ["SIGHUP", "SIGKILL"], "and is still escalated, not left running");
         } finally {
             await handle.dispose();
         }
@@ -3895,6 +4068,17 @@ test("LAUNCH_KILL_ESCALATION: both kinds keep the launcher alive until their esc
     }
 });
 
+test("LAUNCH_KILL_ESCALATION: a server's escalation finishes inside the shortest window found in the MCP SDK", () => {
+    // The TypeScript SDK's version-negotiation probe sibling sends SIGTERM and then SIGKILL after 1000 ms
+    // on its main branch (see the comment on LAUNCH_KILL_ESCALATION; released clients were not checked).
+    // The bound is that window, not the figure chosen under it, so the test fails when the escalation
+    // grows past it and not when it is retuned.
+    const SHORTEST_CLIENT_WINDOW_MS = 1000;
+    assert.ok(m.LAUNCH_KILL_ESCALATION.servers.afterMs < SHORTEST_CLIENT_WINDOW_MS,
+        `${m.LAUNCH_KILL_ESCALATION.servers.afterMs} ms would let the client SIGKILL the launcher first`);
+    assert.ok(m.LAUNCH_KILL_ESCALATION.servers.afterMs > 0);
+});
+
 test("cmdLaunch: several forwarded signals arm one escalation, at the launcher's own short delay",
     { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
     async (t) => {
@@ -3904,10 +4088,26 @@ test("cmdLaunch: several forwarded signals arm one escalation, at the launcher's
             process.emit("SIGHUP", "SIGHUP");
             process.emit("SIGHUP", "SIGHUP");
             assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "each signal is forwarded");
-            t.mock.timers.tick(999);
-            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "the escalation is shorter than the client's 2 s window, not before 1 s");
+            t.mock.timers.tick(499);
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "no SIGKILL before its delay, which a 1 s or 5 s escalation would also satisfy");
             t.mock.timers.tick(1);
-            assert.deepEqual(killed, ["SIGHUP", "SIGHUP", "SIGKILL"], "and it is armed once, not once per signal");
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP", "SIGKILL"],
+                "and it fires at the delay -- 1 s or 5 s would not have -- armed once, not once per signal");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: SIGQUIT is forwarded to the child like the other signals, and arms the same escalation",
+    { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const { handle, killed } = await launchWithRecordingChild();
+        try {
+            process.emit("SIGQUIT", "SIGQUIT");
+            assert.deepEqual(killed, ["SIGQUIT"], "forwarded as itself, not as a different signal");
+            t.mock.timers.tick(m.LAUNCH_KILL_ESCALATION.servers.afterMs);
+            assert.deepEqual(killed, ["SIGQUIT", "SIGKILL"]);
         } finally {
             await handle.dispose();
         }
@@ -4032,6 +4232,35 @@ test("resolveEnvEntries: a grant authorizing a different launch shape is refused
     // sends the reader to change the half that was already right.
     await assert.rejects(() => m.resolveEnvEntries("s", cfg, async () => "PLAINTEXT"),
         /authorized for a different shape: args are \["-y","a-different-package"\], authorized \["-y","some-oauth-package"\]/);
+});
+
+test("a DEL or C1 byte in a declared argument reaches neither the shape-difference refusal nor doctor's paste block raw", async () => {
+    // JSON.stringify escapes C0 and leaves DEL and C1 raw; C1 includes the 8-bit CSI. Both surfaces print
+    // the repository's declared text for a person to read -- doctor's is a block they are asked to paste.
+    const cfg = m.loadConfig(scopedPaths({
+        user: { secrets: { "personal-pat": { backend: "local", authorized: { servers: { gh: CROSSING_SHAPE } } } } },
+        project: { projectId: "proj-x",
+            servers: { gh: { command: "npx", args: ["-y", "gh\u009b31m\u007f"], env: { T: "secret:personal-pat" } } } },
+    }));
+    await assert.rejects(() => m.resolveEnvEntries("gh", cfg, async () => "x"), (e) => {
+        assert.doesNotMatch(e.message, /[\u007f-\u009f]/, "no raw DEL or C1 in the refusal");
+        assert.ok(e.message.includes('args are ["-y","gh\\u009b31m\\u007f"], authorized ["-y","gh-mcp"]'), e.message);
+
+        return true;
+    });
+    const report = crossingReport(cfg).join("\n");
+    assert.doesNotMatch(report, /[\u007f-\u009f]/, "no raw DEL or C1 in doctor's block");
+    // Escaped, not flattened: the block still parses to the declared bytes, so pasting it authorizes the
+    // declaration it was printed from.
+    const start = report.search(/\{\s*\n\s*"gh": \{/);
+    assert.ok(start !== -1, report);
+    let pasted = null;
+    for (let end = report.indexOf("}", start); end !== -1 && pasted === null; end = report.indexOf("}", end + 1)) {
+        try {
+            pasted = JSON.parse(report.slice(start, end + 1));
+        } catch { /* not yet balanced */ }
+    }
+    assert.deepEqual(pasted?.gh?.args, ["-y", "gh\u009b31m\u007f"]);
 });
 
 test("doctorReport: an oauth reference sharing a user-scope secret's name reports no SECRET grant", () => {
@@ -4819,32 +5048,50 @@ test("doctorReport: duplicate-tool suppression matches gpg's real message shape 
         "exactly one gpg line — the missing-tool FAIL, not a second per-secret FAIL");
 });
 
-test("cmdMigrate: a project/local collision on one name is one keystore entry, reported once as already present", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-collision-"));
+// `migrate` moves user-scope declarations only, so its fixtures declare in the USER file under a fixture
+// HOME. `verb` is `migrate` unless a test needs another verb's view of the same fixture. It runs from a repository of its own whose declaration file stops configPaths' walk: with none,
+// the walk climbs out of the fixture, and on Windows os.tmpdir() sits inside the developer's real profile,
+// whose own ~/.claude/vc-secrets.json would then be read as a project's. `project` and `local` are that
+// repository's files, and default to a declaration of nothing.
+function runMigrate({ user, project = { secrets: {}, servers: {} }, local, env: extra, verb = "migrate" }) {
+    const env = launcherEnv(extra);
+    fs.mkdirSync(path.join(env.HOME, ".claude"), { recursive: true });
+    fs.writeFileSync(path.join(env.HOME, ".claude", m.CONFIG_NAME), JSON.stringify(user));
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-repo-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify(project));
+    if (local !== undefined) {
+        fs.writeFileSync(path.join(repo, ".claude", m.LOCAL_CONFIG_NAME), JSON.stringify(local));
+    }
+
+    return spawnSync(process.execPath, [LAUNCHER_PATH, verb], { env, cwd: repo, encoding: "utf8" });
+}
+
+test("cmdMigrate: a repository-declared secret is skipped with the reason -- once when project and local both declare it -- and nothing is read or written", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-skip-"));
     tmpDirs.push(dir);
-    // The only secret collision that can still occur: project and local declare the same name — they
-    // share one keystore namespace, so the collision is one entry rather than two. cmdMigrate prints no
-    // per-collision advice about a second scope and its own comment records why; asserting that absence
-    // here would pin one wording of advice nobody writes, and stay green for every other wording.
-    const decl = { projectId: "demo", secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} };
-    fs.writeFileSync(path.join(dir, m.CONFIG_NAME), JSON.stringify(decl));
-    fs.writeFileSync(path.join(dir, m.LOCAL_CONFIG_NAME), JSON.stringify(decl));
-    const binDir = stubBinary("security", "#!/bin/sh\necho already-present\nexit 0\n");
+    const logPath = path.join(dir, "security-calls.log");
+    // Every call is recorded, and a read of the legacy entry would succeed: a migrate that copied the value
+    // would be visible as a call and as a "migrated" line. Project and local declaring one name share one
+    // keystore namespace, so the collision is one entry and must be one line.
+    const binDir = stubBinary("security", '#!/bin/sh\necho "$@" >> "$SECURITY_CALL_LOG"\necho LEGACY-SENTINEL\nexit 0\n');
+    const declaration = { projectId: "demo", secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} };
 
-    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` }),
-        encoding: "utf8",
-    });
+    const r = runMigrate({ user: { secrets: {}, servers: {} }, project: declaration, local: declaration,
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}`, SECURITY_CALL_LOG: logPath } });
 
-    assert.equal(r.status, 0);
-    assert.match(r.stderr, /dup: already present/);
+    assert.equal(r.status, 0, r.stderr);
+    const skipped = r.stderr.split("\n").filter((l) => l.startsWith("dup: declared by this repository"));
+    assert.equal(skipped.length, 1, r.stderr);
+    assert.ok(skipped[0].includes('run "vc-secrets set dup"'), "and it says what to do instead");
+    assert.match(r.stderr, /0 migrated, 0 failed/);
+    assert.ok(!fs.existsSync(logPath), `the keystore must not be touched for a repository's secret: ${fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : ""}`);
 });
 
 test("cmdMigrate: refuses to touch a secret whose current state it cannot read", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-unreadable-"));
     tmpDirs.push(dir);
-    fs.writeFileSync(path.join(dir, m.CONFIG_NAME),
-        JSON.stringify({ projectId: "demo", secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} }));
     const logPath = path.join(dir, "security-calls.log");
     // Behaviour depends on the service name (`-s ...`): the NEW key's read fails with an exit code that
     // does not mean absence (44 does; 1 does not); the LEGACY key's read would succeed, so a
@@ -4852,18 +5099,13 @@ test("cmdMigrate: refuses to touch a secret whose current state it cannot read",
     const binDir = stubBinary("security", `#!/bin/sh
 echo "$@" >> "$SECURITY_CALL_LOG"
 case "$*" in
-  *"vc-secrets:demo:dup"*) exit 1 ;;
+  *"vc-secrets:user:dup"*) exit 1 ;;
   *) echo LEGACY-SENTINEL; exit 0 ;;
 esac
 `);
 
-    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: launcherEnv({
-            VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "keychain",
-            PATH: `${binDir}${path.delimiter}${process.env.PATH}`, SECURITY_CALL_LOG: logPath,
-        }),
-        encoding: "utf8",
-    });
+    const r = runMigrate({ user: { secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} },
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}`, SECURITY_CALL_LOG: logPath } });
 
     // Pre-fix: "is the new key already populated?" swallowed any read failure as "no", so migrate then
     // read the legacy value and WROTE it over the current (unreadable — not absent) one, reporting a
@@ -4877,14 +5119,57 @@ esac
         "must never write — the value already in the keystore has to survive an unreadable read");
 });
 
+test("doctor: a secret found only under the legacy key is advised to migrate at user scope, and not at a repository's", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    // migrate skips a repository's secret, so a doctor that told the reader to run it there would loop them
+    // through a verb that does nothing for that name. The stub answers the namespaced keys as absent (44)
+    // and the legacy `mcpw:` entry as present, for both declarations.
+    const binDir = stubBinary("security", `#!/bin/sh
+case "$*" in
+  *"vc-secrets:"*) exit 44 ;;
+  *"mcpw:"*) echo LEGACY-SENTINEL; exit 0 ;;
+  *) exit 0 ;;
+esac
+`);
+    const r = runMigrate({ verb: "doctor",
+        user: { secrets: { mine: { backend: "local" } }, servers: {}, tasks: {} },
+        project: { projectId: "demo", secrets: { theirs: { backend: "local" } }, servers: {}, tasks: {} },
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` } });
+
+    assert.match(r.stderr, /^WARN secret "mine" is only under the legacy key -- run "vc-secrets migrate"$/m, r.stderr);
+    assert.doesNotMatch(r.stderr, /WARN secret "theirs"/, r.stderr);
+    assert.match(r.stderr, /^FAIL secret "theirs" not resolvable/m, "it is an ordinary unresolvable secret there, with the ordinary advice");
+});
+
+// A PowerShell stub for the wcm backend. runTool closes stdin with nothing written for a read and with the
+// value for a write (see runTool's spec.stdinData branch), so "$(cat)" tells the two apart without needing
+// to decode the real -EncodedCommand payload. A read of a `vc-secrets:...` key reports "not found" (exit 3)
+// so migrate proceeds to the legacy entry, whose value is `legacyHex`; every write is logged.
+//
+// Named without an extension and selected through VC_SECRETS_POWERSHELL, never as `powershell.exe`:
+// on win32 stubBinary writes `<name>.cmd`, which a lookup of the literal `powershell.exe` never
+// reaches -- the real PowerShell then ran against the developer's real Credential Manager. The
+// override is the bare NAME and not the stub's path: an absolute `.cmd` path goes out `direct`, and
+// node refuses to spawn a batch file without a shell.
+function wcmMigrateStub(legacyHex) {
+    return stubBinary("vc-ps-stub", `#!/bin/sh
+value=$(cat)
+if [ -n "$value" ]; then
+  printf '%s=%s\\n' "$VC_SECRETS_NAME" "$value" >> "$WCM_WRITE_LOG"
+  exit 0
+fi
+case "$VC_SECRETS_NAME" in
+  vc-secrets:*) exit 3 ;;
+  *) printf '%s' '${legacyHex}'; exit 0 ;;
+esac
+`);
+}
+
 test("migrating a legacy wcm entry stores the plaintext, not the hex it was read as", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, async () => {
     // readLegacyLocalValue is the second consumer of PS_CRED_READ. Missing it makes cmdMigrate
     // write the hex string as the value — and the read-back compare is keychain-only, so on
     // Windows nothing catches it.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-wcm-"));
     tmpDirs.push(dir);
-    fs.writeFileSync(path.join(dir, m.CONFIG_NAME),
-        JSON.stringify({ projectId: "demo", secrets: { tok: { backend: "local" } }, servers: {}, tasks: {} }));
 
     const plaintext = "sekret-value";
     // The pre-UTF-8 launcher wrote UTF-16LE, so this is what a legacy wcm entry's PS_CRED_READ
@@ -4892,42 +5177,39 @@ test("migrating a legacy wcm entry stores the plaintext, not the hex it was read
     const legacyHex = Buffer.from(plaintext, "utf16le").toString("hex");
     const writeLogPath = path.join(dir, "wcm-write.log");
 
-    // PowerShell stub: runTool closes stdin with nothing written for a read and with the value
-    // for a write (see runTool's spec.stdinData branch), so "$(cat)" tells the two apart without
-    // needing to decode the real -EncodedCommand payload. The new key's read must report "not
-    // found" (exit 3) so migrate proceeds to the legacy one.
-    //
-    // Named without an extension and selected through VC_SECRETS_POWERSHELL, never as `powershell.exe`:
-    // on win32 stubBinary writes `<name>.cmd`, which a lookup of the literal `powershell.exe` never
-    // reaches -- the real PowerShell then ran against the developer's real Credential Manager. The
-    // override is the bare NAME and not the stub's path: an absolute `.cmd` path goes out `direct`, and
-    // node refuses to spawn a batch file without a shell.
-    const binDir = stubBinary("vc-ps-stub", `#!/bin/sh
-value=$(cat)
-if [ -n "$value" ]; then
-  printf '%s=%s\\n' "$VC_SECRETS_NAME" "$value" >> "$WCM_WRITE_LOG"
-  exit 0
-fi
-case "$VC_SECRETS_NAME" in
-  vc-secrets:demo:tok) exit 3 ;;
-  *) printf '%s' '${legacyHex}'; exit 0 ;;
-esac
-`);
-
-    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "migrate"], {
-        env: launcherEnv({
-            VC_SECRETS_CONFIG_DIR: dir, VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-stub",
-            PATH: `${binDir}${path.delimiter}${process.env.PATH}`, WCM_WRITE_LOG: writeLogPath,
-        }),
-        encoding: "utf8",
-    });
+    const r = runMigrate({ user: { secrets: { tok: { backend: "local" } }, servers: {}, tasks: {} },
+        env: { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-stub",
+            PATH: `${wcmMigrateStub(legacyHex)}${path.delimiter}${process.env.PATH}`, WCM_WRITE_LOG: writeLogPath } });
 
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stderr, /tok: migrated/);
     const writes = fs.existsSync(writeLogPath) ? fs.readFileSync(writeLogPath, "utf8").trim().split("\n").filter(Boolean) : [];
     assert.equal(writes.length, 1, `expected exactly one write: ${JSON.stringify(writes)}`);
-    assert.equal(writes[0], `vc-secrets:demo:tok=${plaintext}`,
+    assert.equal(writes[0], `vc-secrets:user:tok=${plaintext}`,
         "the stored value must be the decoded plaintext, not the hex readLegacyLocalValue got back");
+});
+
+test("cmdMigrate: beside a repository's secret, a user-scope one is still migrated -- into the user namespace only", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    // The same legacy entry name is what both declarations would read: it carries no scope, so it is the
+    // person's own. Only the declaration that is the person's own gets it.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-mixed-"));
+    tmpDirs.push(dir);
+    const writeLogPath = path.join(dir, "wcm-write.log");
+    const legacyHex = Buffer.from("personal-value", "utf16le").toString("hex");
+
+    const r = runMigrate({
+        user: { secrets: { mine: { backend: "local" } }, servers: {}, tasks: {} },
+        project: { projectId: "demo", secrets: { theirs: { backend: "local" } }, servers: {}, tasks: {} },
+        env: { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-stub",
+            PATH: `${wcmMigrateStub(legacyHex)}${path.delimiter}${process.env.PATH}`, WCM_WRITE_LOG: writeLogPath } });
+
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stderr, /mine: migrated/);
+    assert.match(r.stderr, /theirs: declared by this repository/);
+    assert.match(r.stderr, /1 migrated, 0 failed/);
+    const writes = fs.readFileSync(writeLogPath, "utf8").trim().split("\n").filter(Boolean);
+    assert.deepEqual(writes, ["vc-secrets:user:mine=personal-value"],
+        "the repository's namespace (vc-secrets:demo:...) received nothing");
 });
 
 test("cmdRun: identifiers (AZURE_TENANT_ID, AZURE_CLIENT_ID) survive into the child — only credentials are stripped", () => {
@@ -5178,6 +5460,36 @@ test("a double quote in command/args/vault/secret is refused — it would break 
         secrets: {}, servers: { s: { command: q, args: [], env: {} } } })), /double quote/);
     assert.throws(() => m.loadConfig(projectPaths({
         secrets: { kv: { backend: "keyvault", vault: q, secret: "s" } }, servers: {} })), /double quote/);
+});
+
+test("a control character in command or in an env key is refused, and the refusal does not echo it", () => {
+    // Nothing legitimate needs a control character in a command or an env key, and the trust review, the
+    // refusal lines and doctor all print them, so a byte that a terminal acts on (ESC starts a sequence,
+    // CR rewrites the line, C1 U+009B is an 8-bit CSI) must not survive loading. `args` is not in the set:
+    // it is printed through JSON.stringify and forTerminal, which already neutralises it.
+    for (const character of ["\u001b", "\r", "\n", "\u007f", "\u009b"]) {
+        const label = JSON.stringify(character);
+        for (const [where, launchable] of [
+            ["command", { command: `x${character}y`, args: [], env: {} }],
+            ["an env key", { command: "x", args: [], env: { [`K${character}`]: "literal:v" } }],
+        ]) {
+            for (const kind of ["servers", "tasks"]) {
+                assert.throws(() => m.loadConfig(projectPaths({ secrets: {}, [kind]: { s: launchable } })), (e) => {
+                    assert.match(e.message, /control character/, `${kind} ${where} ${label}`);
+                    assert.ok(!e.message.includes(character), `${kind} ${where} ${label}: the refusal must not carry the byte it refuses`);
+
+                    return true;
+                }, `${kind} ${where} ${label}`);
+            }
+        }
+    }
+    // Still accepted: an env VALUE may hold a newline (a PEM block), and so may an args element -- a
+    // multi-line `sh -c` script is an ordinary task.
+    assert.doesNotThrow(() => m.loadConfig(projectPaths({ secrets: {}, servers: { s: {
+        command: "x", args: [], env: { K: "literal:line one\nline two" } } } })));
+    const loaded = m.loadConfig(projectPaths({ secrets: {}, tasks: { t: {
+        command: "sh", args: ["-c", "echo one\necho two\n"], env: {} } } }));
+    assert.equal(loaded.tasks.t.args[1], "echo one\necho two\n");
 });
 
 test("install-shim: copies the shim, is idempotent, and prints the settings entry plus literal commands", () => {
@@ -6675,7 +6987,12 @@ test("configPaths: the root is the parent of the .claude directory the walk stop
 
     const bare = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-noroot-"));
     tmpDirs.push(bare);
-    assert.equal(m.configPaths({ HOME: "/nonexistent-home" }, bare).root, null);
+    // The real home, not a fake one: this is the one assertion whose walk finds no project and so climbs
+    // out of the fixture. On Windows os.tmpdir() sits inside the profile, so the climb reaches the
+    // developer's own ~/.claude/vc-secrets.json, and only a HOME that names it makes the walk recognise it
+    // as the user scope rather than take it for a repository's. The rest of these tests stop at a project
+    // they built before any climb reaches the profile.
+    assert.equal(m.configPaths({ HOME: os.homedir() }, bare).root, null);
 });
 
 test("loadConfig: hand-built paths land on the same root configPaths would have computed for those files", () => {
@@ -6994,12 +7311,6 @@ test("untrust: the real verb removes the record of the path it is given, not the
     assert.deepEqual(Object.keys(m.readTrustState(env).repositories), [m.trustRootKey(working)]);
 });
 
-test("the usage line names trust and untrust", () => {
-    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "no-such-verb"], { env: launcherEnv(), encoding: "utf8" });
-    assert.equal(r.status, 1);
-    assert.match(r.stderr, /usage: vc-secrets <.*\|trust\|untrust>/);
-});
-
 // cmdTrust and cmdUntrust take their terminal, their answer, their clock and their output as seams, so
 // the tests never need a pty and never write to the developer's terminal. The platform is pinned to
 // linux so the default does not change what a run on Windows exercises; `openTerminal` hands out a fake
@@ -7038,6 +7349,16 @@ test("cmdTrust: without a terminal it refuses, asks nothing and writes nothing",
     assert.ok(!fs.existsSync(m.trustFilePath(env)));
 });
 
+test("cmdTrust: a caller that cannot answer is shown no review, so no literal value reaches it", async () => {
+    // The review is where a literal's value is printed; an agent's shell or a pipe must not get it.
+    const cfg = trustCfg({ servers: { gh: { ...TRUST_BASE, env: { L: "literal:refused-marker-value" } } } });
+    for (const seamsOverride of [{ isTTY: false }, { isErrTTY: false }, { isTTY: false, isErrTTY: false }]) {
+        const { seams, log } = trustSeams(trustEnv(), seamsOverride);
+        await assert.rejects(() => m.cmdTrust(cfg, seams), /requires an interactive terminal/);
+        assert.deepEqual(log, [], `${JSON.stringify(seamsOverride)}: nothing is printed before the refusal`);
+    }
+});
+
 test("cmdTrust: a terminal on stdin but not on stderr refuses too, because the review is shown on stderr", async () => {
     const env = trustEnv();
     const { seams, asked, opened } = trustSeams(env, { isErrTTY: false });
@@ -7047,13 +7368,16 @@ test("cmdTrust: a terminal on stdin but not on stderr refuses too, because the r
     assert.ok(!fs.existsSync(m.trustFilePath(env)));
 });
 
-test("cmdTrust: on POSIX a controlling terminal that cannot be opened refuses, and stdin is not a fallback", async () => {
+test("cmdTrust: on POSIX a controlling terminal that cannot be opened refuses before the review, and stdin is not a fallback", async () => {
     const env = trustEnv();
-    const { seams, asked } = trustSeams(env, {
+    const { seams, asked, log } = trustSeams(env, {
         openTerminal: () => { throw Object.assign(new Error("ENXIO: no such device or address, open '/dev/tty'"), { code: "ENXIO" }); },
     });
     await assert.rejects(() => m.cmdTrust(trustCfg(), seams), /vc-secrets trust requires an interactive terminal/);
     assert.deepEqual(asked, []);
+    // A pty with no controlling terminal passes the isTTY checks, so this is the refusal that decides
+    // whether a caller who cannot answer still sees the review.
+    assert.equal(log.join(""), "", "nothing of the review reaches a caller the terminal could not be opened for");
     assert.ok(!fs.existsSync(m.trustFilePath(env)));
 });
 
@@ -7184,6 +7508,7 @@ test("cmdTrust: y records the full declared shape of everything gated, and yes i
         assert.ok(asked[0].includes(cfg.projectRoot));
         assert.deepEqual(m.readTrustState(env).repositories[cfg.projectRoot], {
             trustedAt: "2001-02-03T04:05:06.000Z",
+            projectId: "proj-x",
             servers: { gh: m.launchShape(cfg.servers.gh) },
             tasks: { job: m.launchShape(cfg.tasks.job) },
         }, answer);
@@ -7193,11 +7518,24 @@ test("cmdTrust: y records the full declared shape of everything gated, and yes i
 
 test("cmdTrust: a second trust replaces the record, so an entry removed from the declarations is pruned", async () => {
     const env = trustEnv();
-    const before = trustCfg({ servers: { gh: TRUST_BASE, gone: TRUST_BASE } });
+    // One repository directory whose declaration is rewritten between the two loads. trustCfg gives every
+    // call a directory of its own under os.tmpdir(), and hand-built paths key a record by the parent of
+    // the file's directory -- so two configs from it share a root only by both collapsing to os.tmpdir().
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-trust-repo-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    const declarationFile = path.join(repo, ".claude", m.CONFIG_NAME);
+    const loadDeclaring = (servers) => {
+        fs.writeFileSync(declarationFile, JSON.stringify({ projectId: "proj-x", servers }));
+
+        return m.loadConfig({ user: null, project: declarationFile, local: null });
+    };
+    const before = loadDeclaring({ gh: TRUST_BASE, gone: TRUST_BASE });
+    assert.equal(before.projectRoot, m.trustRootKey(repo), "keyed by the repository, not by the directory every fixture shares");
     await m.cmdTrust(before, trustSeams(env).seams);
     assert.deepEqual(Object.keys(m.readTrustState(env).repositories[before.projectRoot].servers).sort(), ["gh", "gone"]);
 
-    const after = trustCfg({ servers: { gh: TRUST_BASE } });
+    const after = loadDeclaring({ gh: TRUST_BASE });
     assert.equal(after.projectRoot, before.projectRoot, "the fixture must be the same repository");
     await m.cmdTrust(after, trustSeams(env).seams);
     assert.deepEqual(Object.keys(m.readTrustState(env).repositories[after.projectRoot].servers), ["gh"]);
@@ -7228,7 +7566,7 @@ test("cmdTrust: an untrust that lands while the person is deciding is kept, not 
         "the concurrent removal and addition both survive next to the new record");
 });
 
-test("cmdTrust: the review shows what will run, names references, and prints no literal value", async () => {
+test("cmdTrust: the review shows what will run, names references, and shows a literal's value", async () => {
     const cfg = trustCfg({ user: { servers: { gh: { command: "user-gh", args: [], env: {} } } },
         servers: { gh: { command: "npx", args: ["-y", "gh-mcp"], env: { T: "secret:pat", L: "literal:review-marker-value" } } } });
     const env = trustEnv();
@@ -7239,8 +7577,134 @@ test("cmdTrust: the review shows what will run, names references, and prints no 
     assert.ok(text.includes('shadows your user-scope "gh"'));
     assert.ok(text.includes("npx") && text.includes(JSON.stringify(["-y", "gh-mcp"])));
     assert.ok(text.includes("T=secret:pat"), "a reference is a name, and the reader needs it");
-    assert.ok(text.includes(`L=literal:(${"review-marker-value".length} chars)`));
-    assert.doesNotMatch(text, /review-marker-value/);
+    assert.ok(text.includes("L=literal:review-marker-value"),
+        "a literal is what the person approves -- a PATH literal decides which binary runs");
+});
+
+test("cmdTrust: a refusal line for a changed literal names the key and never the value", () => {
+    // The review shows a literal; every line that travels into a log does not.
+    const cfg = trustCfg({ servers: { gh: { ...TRUST_BASE, env: { L: "literal:trusted-marker-value" } } } });
+    const state = trustedStateFor(cfg);
+    const changed = withDeclaration(cfg, "servers", "gh", { env: { L: "literal:current-marker-value" } });
+    const problem = m.trustProblem(changed, "servers", "gh", state);
+    assert.deepEqual(problem.differences, ["env L changed"]);
+    const refusal = m.trustRefusal("servers", "gh", problem, changed);
+    assert.ok(refusal.includes("env L changed"), refusal);
+    assert.doesNotMatch(refusal, /marker-value/);
+});
+
+test("cmdTrust: nothing the review prints carries a control character, whatever the declaration holds", async () => {
+    // loadConfig refuses these bytes, so the rendering is driven on a config built past it: the review
+    // must hold on its own, not by leaning on a check made elsewhere.
+    const cfg = withDeclaration(trustCfg(), "servers", "gh", {
+        command: "npx\u001b[2J\r",
+        args: ["-y\u001b]0;title\u0007", "c1\u009b31m"],
+        env: { "K\u001b[31m": "literal:v\r\u001b[2Jx", T: "secret:pat" },
+    });
+    const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
+    await m.cmdTrust(cfg, seams);
+    const text = log.join("");
+    assert.doesNotMatch(text, /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/,
+        "no control byte but the newlines that end the review's own lines");
+    assert.ok(text.includes("command: npx?[2J?"), text);
+    assert.ok(text.includes("K?[31m=literal:v??[2Jx"), text);
+    assert.ok(text.includes("T=secret:pat"), "what carries no control byte is untouched");
+});
+
+test("cmdTrust: the review shows a command, an argument and a literal whole, however long they are", async () => {
+    // Past forTerminal's default of 200 and past any limit the refusal lines carry: what the person
+    // approves must not end where the screen's patience did.
+    const long = { command: `npx${"x".repeat(10_000)}`, arg: `--flag=${"y".repeat(10_000)}`, literal: `${"z".repeat(10_000)}END` };
+    const cfg = withDeclaration(trustCfg(), "servers", "gh", {
+        command: long.command, args: [long.arg], env: { L: `literal:${long.literal}` } });
+    const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
+    await m.cmdTrust(cfg, seams);
+    const text = log.join("");
+    assert.ok(text.includes(`command: ${long.command}\n`));
+    assert.ok(text.includes(`args: ${JSON.stringify([long.arg])}\n`), "the argv is shown to its last element");
+    assert.ok(text.includes(`L=literal:${long.literal}\n`), "and a literal to its last character");
+    assert.doesNotMatch(text, /\.\.\.\n/, "nothing in the review ends in a cut");
+});
+
+test("trustDifferences: an env key and a command in a refusal line are neutralised for the terminal", () => {
+    // JSON.stringify escapes C0 itself and leaves DEL and C1 raw -- and C1 holds the 8-bit CSI -- so the
+    // command is pinned with the bytes stringify does not catch, and the key, which is printed bare, with ESC.
+    const trusted = { command: "npx", args: [], env: {} };
+    const actual = { command: "npx\u009b\u007f", args: [], env: { "K\u001b[31m": "literal:x" } };
+    assert.deepEqual(m.trustDifferences(trusted, actual),
+        ['command is "npx??", trusted "npx"', "env K?[31m added"]);
+    assert.deepEqual(m.trustDifferences({ ...trusted, env: { "K\u001b": "literal:x" } }, trusted), ["env K? removed"]);
+});
+
+test("trustProblem: a change of projectId alone refuses, and says which id replaced which", () => {
+    const cfg = trustCfg();
+    const state = trustedStateFor(cfg);
+    assert.equal(m.trustProblem(cfg, "servers", "gh", state), null, "the same projectId is trusted");
+    const moved = { ...cfg, projectId: "proj-other" };
+    assert.deepEqual(m.trustProblem(moved, "servers", "gh", state), {
+        reason: "changed", differences: ['projectId is "proj-other", trusted "proj-x"'], home: "project", shadowsUser: false });
+    assert.match(m.trustRefusal("servers", "gh", m.trustProblem(moved, "servers", "gh", state), moved),
+        /changed since you trusted it: projectId is "proj-other", trusted "proj-x" -- /);
+    // Alongside a change of shape, both are listed.
+    const both = m.trustProblem(withDeclaration(moved, "servers", "gh", { command: "sh" }), "servers", "gh", state);
+    assert.equal(both.differences.length, 2);
+    assert.ok(both.differences.some((x) => x.startsWith("projectId is")));
+    assert.ok(both.differences.some((x) => x.startsWith("command is")));
+});
+
+test("trustProblem: a record without a projectId differs from every config, and null only matches null", () => {
+    const cfg = trustCfg();
+    const state = trustedStateFor(cfg);
+    delete state.repositories[cfg.projectRoot].projectId;
+    assert.deepEqual(m.trustProblem(cfg, "servers", "gh", state).differences, ['projectId is "proj-x", trusted (not recorded)'],
+        "a record that predates the field is said to be missing it, not to have recorded null");
+
+    // A repository that declares no projectId: recorded as null and matched as null, and never as absent.
+    const bare = { ...cfg, projectId: null };
+    const bareState = trustedStateFor(bare);
+    assert.equal(bareState.repositories[cfg.projectRoot].projectId, null);
+    assert.equal(m.trustProblem(bare, "servers", "gh", bareState), null);
+    delete bareState.repositories[cfg.projectRoot].projectId;
+    assert.deepEqual(m.trustProblem(bare, "servers", "gh", bareState).differences, ["projectId is null, trusted (not recorded)"],
+        "an absent field is not the null a record would have carried");
+    assert.deepEqual(m.trustProblem(bare, "servers", "gh", trustedStateFor(cfg)).differences, ['projectId is null, trusted "proj-x"'],
+        "and a recorded id is not a missing one");
+});
+
+test("cmdTrust: the record carries the projectId (null when the repository has none), and the review prints it once", async () => {
+    const env = trustEnv();
+    const cfg = trustCfg({ servers: { gh: TRUST_BASE, other: TRUST_BASE } });
+    const { seams, log } = trustSeams(env);
+    await m.cmdTrust(cfg, seams);
+    assert.equal(m.readTrustState(env).repositories[cfg.projectRoot].projectId, "proj-x");
+    assert.equal(log.join("").split("\n").filter((x) => x === "projectId: proj-x").length, 1,
+        "once for the repository, not once per launchable");
+
+    const bareEnv = trustEnv();
+    const bare = m.loadConfig(scopedPaths({ project: { servers: { gh: TRUST_BASE } } }));
+    assert.equal(bare.projectId, null, "the fixture must declare no projectId");
+    const second = trustSeams(bareEnv);
+    await m.cmdTrust(bare, second.seams);
+    assert.equal(m.readTrustState(bareEnv).repositories[bare.projectRoot].projectId, null);
+    assert.equal(m.trustProblem(bare, "servers", "gh", m.readTrustState(bareEnv)), null);
+    assert.ok(second.log.join("").includes("projectId: (none)\n"));
+});
+
+test("readTrustState: a record's projectId may be a string, null or absent, and nothing else", () => {
+    const record = (extra) => ({ trustedAt: "2000-01-01T00:00:00.000Z", servers: {}, tasks: {}, ...extra });
+    const read = (extra) => {
+        const env = trustEnv();
+        m.writeTrustState(env, { schemaVersion: 1, repositories: { "/r": record(extra) } });
+
+        return m.readTrustState(env);
+    };
+    for (const extra of [{ projectId: "proj-x" }, { projectId: null }, {}]) {
+        assert.doesNotThrow(() => read(extra), JSON.stringify(extra));
+    }
+    for (const projectId of [7, true, {}, ["proj-x"]]) {
+        assert.throws(() => read({ projectId }), /the trust file .* is unusable \(the record for \/r has a malformed "projectId"\)/,
+            JSON.stringify(projectId));
+    }
 });
 
 // A repository whose project file declares `gh` and whose local file declares `mine` and a task, so the
@@ -7433,7 +7897,7 @@ test("doctorReport: each trust finding is a FAIL line, and none adds nothing", (
 });
 
 test("childNodeProbes: a launchable in the refused set is not probed, because the probe would run its command", () => {
-    const cfg = { servers: { trusted: { command: "npx" }, refused: { command: "npx" } }, tasks: {} };
+    const cfg = { servers: { trusted: { command: "npx", env: {} }, refused: { command: "npx", env: {} } }, tasks: {} };
     const refs = [{ kind: "servers", launchableName: "trusted" }, { kind: "servers", launchableName: "refused" }];
     const probed = [];
     const out = m.childNodeProbes(cfg, refs, {
@@ -7480,7 +7944,7 @@ test("trustNotes: an unreadable trust file is reported once, as itself", () => {
     assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => { throw failure; })), [failure.message]);
 });
 
-test("guard-declarations: blocks the trust file, in every payload shape and under any spelling of the path", () => {
+test("guard-declarations: blocks the trust file, in every payload shape and as an absolute, relative or Windows path", () => {
     for (const [label, payload] of [
         ["absolute", { tool_name: "Write", tool_input: { file_path: "/home/dev/.config/vc-secrets/trust.json" } }],
         ["relative", { tool_name: "Edit", tool_input: { file_path: ".config/vc-secrets/trust.json" } }],
@@ -7506,6 +7970,52 @@ test("guard-declarations: a trust.json that is not under a vc-secrets directory,
     for (const notOurs of ["/repo/trust.json", "/repo/not-vc-secrets/trust.json", "/repo/vc-secrets/trust.json.bak",
         "/repo/vc-secrets/trust.json.123.tmp", "/repo/vc-secrets/other/trust.json"]) {
         assert.equal(runGuardHook(guardInput(notOurs)).status, 0, notOurs);
+    }
+});
+
+test("guard-declarations: a guarded file is blocked under the dot, separator, trailing-dot/space and stream spellings", () => {
+    // Each of these names a guarded file to the OS and matches none of the patterns as written: a `.`
+    // segment, a doubled separator, and -- on Windows -- a trailing dot or space and an alternate data
+    // stream, on the file or on a directory above it. Other aliases (8.3 short names) are not covered.
+    const spellings = [
+        ["/home/dev/.config/vc-secrets/./trust.json", /trust file/],
+        ["/home/dev/.config/vc-secrets//trust.json", /trust file/],
+        ["C:\\Users\\dev\\.config\\vc-secrets\\trust.json.", /trust file/],
+        ["C:\\Users\\dev\\.config\\vc-secrets\\trust.json ", /trust file/],
+        ["C:\\Users\\dev\\.config\\vc-secrets\\trust.json::$DATA", /trust file/],
+        ["C:\\Users\\dev\\.config\\vc-secrets\\trust.json:other", /trust file/],
+        ["/home/dev/.config/vc-secrets./trust.json", /trust file/],
+        ["/home/dev/.config/vc-secrets/x/../trust.json", /trust file/],
+        // A stream cut must not turn a directory named `..:x` into a parent reference.
+        ["/home/dev/.config/vc-secrets/..:x/../trust.json", /trust file/],
+        ["/r/.claude/..:x/../vc-secrets.json", /declaration/],
+        // All dots: stripping them leaves an empty segment, a doubled separator only a second pass removes.
+        ["C:\\Users\\dev\\.config\\vc-secrets\\...\\trust.json", /trust file/],
+        ["/h/u/.claude/./vc-secrets.json", /declaration/],
+        ["/repo/.claude/vc-secrets.local.json.", /declaration/],
+        ["/repo/src/../.claude/vc-secrets.json", /declaration/],
+        ["C:\\repo\\.claude\\vc-secrets.json::$DATA", /declaration/],
+        // A stream on a directory in the path: `dir::$INDEX_ALLOCATION` still resolves through the directory.
+        ["C:\\Users\\dev\\.config\\vc-secrets::$INDEX_ALLOCATION\\trust.json", /trust file/],
+        ["C:\\repo\\.claude::$INDEX_ALLOCATION\\vc-secrets.json", /declaration/],
+        ["plugins/vc-secrets/./vc-secrets.mjs", /own code/],
+        ["plugins/vc-secrets/vc-secrets-oauth.mjs::$DATA", /own code/],
+        ["plugins/vc-secrets/skills/doctor/./SKILL.md", /own code/],
+        ["/home/dev/.claude/plugins/data/vc-secrets-vc-tools/./vc-secrets-shim.mjs", /shim/],
+    ];
+    for (const [spelling, reason] of spellings) {
+        const r = runGuardOn(spelling);
+        assert.equal(r.status, 2, `${spelling} must be blocked: ${r.stderr}`);
+        assert.match(r.stderr, reason, `${spelling} reached the wrong block: ${r.stderr}`);
+    }
+});
+
+test("guard-declarations: reducing a path to its plain form does not widen the block onto ordinary files", () => {
+    for (const ordinary of ["/repo/src/./index.js", "/repo/.claude/./settings.json", "C:\\repo\\src\\a.js", "C:/", "C:\\",
+        "/repo/notes:draft.txt", "/repo/vc-secrets/trust.json.bak", "/repo/vc-secrets/x/../other.json",
+        "/repo/.claude/vc-secrets.json.bak", "/repo/vc-secrets.json"]) {
+        const r = runGuardOn(ordinary);
+        assert.equal(r.status, 0, `${ordinary} must pass: ${r.stderr}`);
     }
 });
 
@@ -7582,12 +8092,16 @@ test("doctor: an untrusted repository's declared node is not run to ask its vers
     });
 
 test("emit-config: still emits every server, and says on stderr which the launcher will refuse until trusted", () => {
-    const root = trustRepo({ fresh: { command: "true", args: [], env: {} } });
+    // Two, because one server cannot tell "every server" from "the first one".
+    const root = trustRepo({ fresh: { command: "true", args: [], env: {} }, second: { command: "true", args: [], env: {} } });
     const env = launcherEnv();
     const r = spawnSync(process.execPath, [LAUNCHER_PATH, "emit-config", "claude-code"], { cwd: root, env, encoding: "utf8" });
     assert.equal(r.status, 0, r.stderr);
-    assert.ok(Object.hasOwn(JSON.parse(r.stdout).mcpServers, "fresh"), "the entry is emitted regardless");
-    assert.match(r.stderr, /fresh: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it/);
+    const emitted = JSON.parse(r.stdout).mcpServers;
+    for (const name of ["fresh", "second"]) {
+        assert.ok(Object.hasOwn(emitted, name), `${name}: the entry is emitted regardless`);
+        assert.match(r.stderr, new RegExp(`${name}: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it`));
+    }
 
     seedTrust(env, root);
     const trusted = spawnSync(process.execPath, [LAUNCHER_PATH, "emit-config", "claude-code"], { cwd: root, env, encoding: "utf8" });

@@ -112,6 +112,8 @@ const SECRET_NAME_RE = /^[a-z0-9-]+$/;
 // Launchable names are looser (they mirror MCP server names, which do carry dots and capitals), but a
 // path separator or a control character in one has no legitimate use and several bad ones.
 const LAUNCHABLE_NAME_RE = /^[A-Za-z0-9._-]+$/;
+// The class forTerminal flattens: C0, DEL and C1. Not global, so `test` carries no lastIndex between calls.
+const CONTROL_CHAR_RE = /[\u0000-\u001f\u007f-\u009f]/;
 // Azure AD tenant ids are GUIDs, and arrive mixed-case.
 const TENANT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -252,16 +254,19 @@ function consumerShape(launchable) {
 
 // The differences, in the words the reader needs to decide; null when the shapes agree.
 function shapeDifferences(authorized, actual) {
+    // Each value is a repository's declared text on its way to a terminal -- whole, not cut: this is what
+    // the reader decides on. See jsonForTerminal for why escaped rather than flattened.
+    const shown = (value) => jsonForTerminal(value);
     const diffs = [];
     if (authorized.command !== actual.command) {
-        diffs.push(`command is ${JSON.stringify(actual.command)}, authorized ${JSON.stringify(authorized.command)}`);
+        diffs.push(`command is ${shown(actual.command)}, authorized ${shown(authorized.command)}`);
     }
     if (JSON.stringify(authorized.args) !== JSON.stringify(actual.args)) {
-        diffs.push(`args are ${JSON.stringify(actual.args)}, authorized ${JSON.stringify(authorized.args)}`);
+        diffs.push(`args are ${shown(actual.args)}, authorized ${shown(authorized.args)}`);
     }
     const wanted = [...authorized.envKeys].sort();
     if (JSON.stringify(wanted) !== JSON.stringify(actual.envKeys)) {
-        diffs.push(`env keys are ${JSON.stringify(actual.envKeys)}, authorized ${JSON.stringify(wanted)}`);
+        diffs.push(`env keys are ${shown(actual.envKeys)}, authorized ${shown(wanted)}`);
     }
 
     return diffs.length === 0 ? null : diffs;
@@ -473,10 +478,22 @@ function validateLaunchables(label, map) {
                 throw new VcSecretsError(`${label} "${name}": a double quote in "command"/"args" is not allowed (it would break argument quoting on Windows)`);
             }
         }
+        // Nothing legitimate needs a control character in a command or an env key, and both are printed --
+        // by the trust review, by the refusal lines and by `doctor` -- where such a byte is a terminal
+        // command rather than text (see forTerminal). Those surfaces neutralise what they print; refusing
+        // here keeps such a declaration from being launchable at all. `args` is not refused: it is printed
+        // through JSON.stringify and forTerminal, and a multi-line `sh -c` script is an ordinary argument.
+        // The message does not echo the value, for the reason it is refused.
+        if (CONTROL_CHAR_RE.test(srv.command)) {
+            throw new VcSecretsError(`${label} "${name}": a control character in "command" is not allowed (nothing legitimate needs one, and the trust review, refusal lines and doctor all print it)`);
+        }
         if (!Object.values(srv.env).every((v) => typeof v === "string")) {
             throw new VcSecretsError(`${label} "${name}": every env value must be a string`);
         }
         for (const [envKey, value] of Object.entries(srv.env)) {
+            if (CONTROL_CHAR_RE.test(envKey)) {
+                throw new VcSecretsError(`${label} "${name}": an env key with a control character is not allowed (nothing legitimate needs one, and the trust review, refusal lines and doctor all print it)`);
+            }
             if (isDangerousEnvKey(envKey)) {
                 throw new VcSecretsError(`${label} "${name}": env key "${envKey}" is not allowed (code-injection vector)`);
             }
@@ -786,8 +803,10 @@ function loadConfig(paths = configPaths()) {
     // developer can see rather than one nobody mentions.
 
     // Where a trust record for this repository is keyed. Hand-built `paths` (a test's, mostly) carry no
-    // `root`, so it falls back to the layout configPaths produces -- declarations sit one directory
-    // below the root -- which keeps both routes landing on the same key for the same files.
+    // `root`, so it falls back to the `.claude/` layout configPaths produces -- declarations sit one
+    // directory below the root -- which keeps both routes landing on the same key for the same files in
+    // that layout. It does not hold for the VC_SECRETS_CONFIG_DIR layout: there configPaths's root is
+    // the directory itself, and the fallback would give its parent. That route always carries `root`.
     const declaredFile = paths.project ?? paths.local;
     const root = paths.root ?? (declaredFile ? path.dirname(path.dirname(declaredFile)) : null);
     const projectRoot = root ? trustRootKey(root) : null;
@@ -917,6 +936,14 @@ function trustRootKey(root, { platform = process.platform, realpath = fs.realpat
     return platform === "win32" ? canonical.toLowerCase() : canonical;
 }
 
+// How much of a declared string a trust refusal line shows (trustDifferences, envDifferences) -- they reach
+// fail() and a client's log. forTerminal's default of 200 would cut an ordinary command line short; where
+// a cut remains it ends in "..." so it reads as one. The interactive review is NOT limited by this: it is
+// what a person approves, and they must not approve an argv or a literal whose tail they never saw, so it
+// escapes without truncating. Neither is shapeDifferences, for the same reason: its lines are what a
+// person reads to decide an authorization.
+const TRUST_TEXT_LIMIT = 4096;
+
 // The declared values, not the resolved ones: trust is about what the repository asks to run, and an
 // env value resolves to a secret nobody may see. Built from SERVER_DECL_KEYS so that a key the schema
 // gains later is recorded and compared without anyone remembering to touch this.
@@ -933,19 +960,23 @@ function plainObject(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-// Env keys and how each differs. The VALUE is never printed: it is a declaration (`secret:name`,
-// `literal:...`), and a literal is exactly the kind of text that turns out to be a pasted credential.
+// Env keys and how each differs. The VALUE is never printed: these lines reach fail() and `doctor`,
+// whose output travels into a client's logs and into pasted issues, and a literal is exactly the kind of
+// text that turns out to be a pasted credential. The interactive review in cmdTrust is the one surface
+// that shows a literal, because it is what the person approves. The key is declared text, so it goes
+// through forTerminal like everything else that reaches a terminal from a declaration.
 function envDifferences(trusted, actual) {
     const before = plainObject(trusted) ? trusted : {};
     const after = plainObject(actual) ? actual : {};
     const diffs = [];
     for (const key of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
+        const shown = forTerminal(key, TRUST_TEXT_LIMIT);
         if (!Object.hasOwn(before, key)) {
-            diffs.push(`env ${key} added`);
+            diffs.push(`env ${shown} added`);
         } else if (!Object.hasOwn(after, key)) {
-            diffs.push(`env ${key} removed`);
+            diffs.push(`env ${shown} removed`);
         } else if (before[key] !== after[key]) {
-            diffs.push(`env ${key} changed`);
+            diffs.push(`env ${shown} changed`);
         }
     }
 
@@ -961,7 +992,8 @@ function trustDifferences(trusted, actual) {
     for (const key of SERVER_DECL_KEYS) {
         if (key === "command") {
             if (trusted.command !== actual.command) {
-                diffs.push(`command is ${JSON.stringify(actual.command)}, trusted ${JSON.stringify(trusted.command)}`);
+                diffs.push(`command is ${forTerminal(JSON.stringify(actual.command), TRUST_TEXT_LIMIT)}, `
+                    + `trusted ${forTerminal(JSON.stringify(trusted.command), TRUST_TEXT_LIMIT)}`);
             }
         } else if (key === "env") {
             diffs.push(...envDifferences(trusted.env, actual.env));
@@ -1007,11 +1039,22 @@ function trustProblem(cfg, kind, name, state) {
         return null;
     }
     const shadowsUser = shadowsUserScope(cfg, kind, name);
-    const recorded = own(own(own(state.repositories, cfg.projectRoot), kind), name);
+    const repository = own(state.repositories, cfg.projectRoot);
+    const recorded = own(own(repository, kind), name);
     if (recorded === undefined) {
         return { reason: "untrusted", home: launchable.home, shadowsUser };
     }
     const differences = trustDifferences(recorded, launchShape(launchable));
+    // The projectId is not part of any launchable's shape, but it decides which project's namespace a
+    // project-scope `secret:<name>` of a trusted entry resolves in (a user-scope one resolves under `user`,
+    // whatever the id): a change of it alone would point a trusted server at another project's secrets.
+    // A record without the field differs from every config, null included.
+    if (repository.projectId !== cfg.projectId) {
+        // An absent field is said to be absent: rendered as null it would read as a recorded "no projectId"
+        // and produce "projectId is null, trusted null" for a record that predates the field.
+        const trustedId = repository.projectId === undefined ? "(not recorded)" : JSON.stringify(repository.projectId);
+        differences.unshift(`projectId is ${JSON.stringify(cfg.projectId ?? null)}, trusted ${trustedId}`);
+    }
 
     return differences.length === 0 ? null : { reason: "changed", differences, home: launchable.home, shadowsUser };
 }
@@ -1055,6 +1098,11 @@ function trustStateProblem(doc) {
     for (const [root, record] of Object.entries(doc.repositories)) {
         if (!plainObject(record) || typeof record.trustedAt !== "string") {
             return `the record for ${root} is malformed`;
+        }
+        // Absent is allowed and reads as a different projectId (trustProblem), so a record from before the
+        // field existed refuses its launches one by one instead of making the whole file unusable.
+        if (record.projectId !== undefined && record.projectId !== null && typeof record.projectId !== "string") {
+            return `the record for ${root} has a malformed "projectId"`;
         }
         for (const kind of LAUNCHABLE_KINDS) {
             if (!plainObject(record[kind]) || !Object.values(record[kind]).every(plainObject)) {
@@ -1790,10 +1838,10 @@ function runTool(spec, { stdinValue, redactValues = [] } = {}) {
         // SIGKILL reaches the direct child and not its descendants. killProcessTree is the mechanism
         // for that and is deliberately NOT reused here: it requires a child spawned DETACHED, and its
         // own comment gives the reason -- a group kill against a child that is not names a pgid the
-        // child is not in, which a recycled pid makes somebody else's, and that group takes a SIGKILL
-        // five seconds later. Spawning every tool this runs detached would change signal and terminal
-        // delivery on the path every secret read takes, the interactive write included, which inherits
-        // stdio precisely so pinentry gets the TTY. And there is nothing to collect: no spec routed
+        // child is not in, which a recycled pid makes somebody else's, and that group takes the follow-up
+        // SIGKILL. Spawning every tool this runs detached would change signal and terminal delivery on
+        // the path every secret read takes, the interactive write included, which inherits stdio
+        // precisely so pinentry gets the TTY. And there is nothing to collect: no spec routed
         // through here leaves a durable grandchild, the one that raises a long-lived UI carries
         // timeoutMs: null and never arms this timer, and pinentry is gpg-agent's child, not gpg's.
         const timer = (!spec.interactive && typeof spec.timeoutMs === "number")
@@ -1882,17 +1930,64 @@ function windowsEnvValue(env, key) {
     return found === undefined ? undefined : env[found];
 }
 
+// Splits a Windows PATH the way libuv's search_path does (src/win/process.c, v1.x): a slice that opens
+// with a double OR a single quote runs to the matching closing quote, so a `;` inside belongs to the
+// directory, and it ends at the next `;` after that. Quotes are stripped from the slice afterwards, and
+// independently at each end: a leading one if the slice starts with either kind, then a trailing one if
+// what is left ends with either kind -- so an unterminated `"C:\a` still loses its opening quote and a
+// mismatched pair loses both. Stripping per piece after a plain split on `;` would cut `"C:\a;b"` in
+// two and report a tool that is there as missing. Empty slices are dropped. libuv skips only a slice that is
+// empty BEFORE the quotes come off; one that is empty after (`""`) it searches as the cwd. Here it is dropped
+// too, because a relative entry, and the cwd with it, is never searched -- findOnWindowsPath's filter.
+function splitWindowsPath(value) {
+    const isQuote = (c) => c === '"' || c === "'";
+    const entries = [];
+    let start = 0;
+    for (;;) {
+        let end = start;
+        if (isQuote(value[start])) {
+            const close = value.indexOf(value[start], start + 1);
+            end = close === -1 ? value.length : close;
+        }
+        const semicolon = value.indexOf(";", end);
+        end = semicolon === -1 ? value.length : semicolon;
+        let entry = value.slice(start, end);
+        if (isQuote(entry[0])) {
+            entry = entry.slice(1);
+        }
+        if (isQuote(entry.at(-1))) {
+            entry = entry.slice(0, -1);
+        }
+        if (entry !== "") {
+            entries.push(entry);
+        }
+        if (end >= value.length) {
+            return entries;
+        }
+        start = end + 1;
+    }
+}
+
 function findOnWindowsPath(name, env, existsSync) {
     const P = path.win32;
-    // Quotes are legal around a Windows PATH entry, and libuv strips them; without the same strip a
-    // quoted entry would be skipped as "not absolute" and a working tool reported missing.
-    const dirs = (windowsEnvValue(env, "PATH") || "").split(";").map((x) => x.replace(/^"(.*)"$/, "$1"))
-        .filter((x) => x !== "" && P.isAbsolute(x));
-    // A name that already carries an extension is that file; only an extension-less one is expanded.
-    const suffixes = P.extname(name) !== "" ? [""] : (windowsEnvValue(env, "PATHEXT") || ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean);
+    const dirs = splitWindowsPath(windowsEnvValue(env, "PATH") || "").filter((x) => P.isAbsolute(x));
+    // libuv's name_has_ext: the file name (after the last `\`, `/` or `:`) holds a `.` that is not its last
+    // character -- the FIRST dot, so `.bashrc` has one and `foo.` does not, which path.extname says the
+    // other way round on both.
+    const base = name.slice(Math.max(name.lastIndexOf("\\"), name.lastIndexOf("/"), name.lastIndexOf(":")) + 1);
+    const dot = base.indexOf(".");
+    const nameHasExt = dot !== -1 && dot + 1 < base.length;
+    // libuv's rule for a name that has an extension: that exact file first, then `com` and `exe` appended
+    // -- `python3.12` is `python3.12.exe`, and the extension it already has is not a reason to stop
+    // looking. It never reads PATHEXT. A name without one is what PATHEXT is for here, since it is how a
+    // `.cmd` shim is found at all.
+    const suffixes = nameHasExt
+        ? ["", ".com", ".exe"]
+        : (windowsEnvValue(env, "PATHEXT") || ".COM;.EXE;.BAT;.CMD").split(";").filter(Boolean);
     for (const dir of dirs) {
         for (const suffix of suffixes) {
-            const candidate = P.join(dir, name + suffix);
+            // libuv adds the dot between name and extension only if the name does not already end in one.
+            const candidate = P.join(dir, name.endsWith(".") && suffix.startsWith(".") ? name + suffix.slice(1) : name + suffix);
             if (existsSync(candidate)) {
                 return candidate;
             }
@@ -2535,6 +2630,46 @@ function childNodeRefusal({ launchableName, command, declared, version }) {
         + `could not be delivered through it`;
 }
 
+// The environment a launched child starts from, before the launchable's own values are merged in: the
+// inherited one without the code-injection variables (sanitizeEnv) and without the legacy plaintext
+// credentials. Every spelling of those goes, not only the canonical one, for the reason isDangerousEnvKey
+// folds case: on Windows a name differing only by case is the same variable, and the result is a plain
+// object that no longer folds anything, so deleting AZURE_CLIENT_SECRET leaves `Azure_Client_Secret`
+// standing. Unconditional, because keeping one spelling while the declaration adds another would hand the
+// child both and let the platform pick -- the merge runs after this, so whatever the launchable declares
+// wins there. A stale session token must not leak into the child. Shared with the version probe, so the
+// two cannot drift on what is scrubbed.
+function inheritedChildEnv(env) {
+    const out = sanitizeEnv(env);
+    for (const key of Object.keys(out)) {
+        if (LEGACY_SECRET_ENV_VARS.includes(key.toUpperCase())) {
+            delete out[key];
+        }
+    }
+
+    return out;
+}
+
+// The environment a node version probe resolves its command in and runs under: the inherited one, scrubbed
+// as the launch's child is (inheritedChildEnv), merged with the launchable's DECLARED `literal:` values and
+// nothing else. A `secret:` or `oauth:` value is left out because it would put a credential into a process
+// that only has to print a version, and doctor could not resolve one without spending it. What that means
+// for resolution: PATH and PATHEXT decide which binary is found, and either one declared as a `literal:`
+// is seen here while one declared as `secret:` is not and stays the inherited one -- so the probe
+// searches what the spawn searches only where both are literal or undeclared. One builder for the launch and for
+// doctor, so the two cannot drift on what the probe is given.
+function probeEnvFor(launchable, base = process.env, platform = process.platform) {
+    const declaredLiterals = {};
+    for (const [envVar, value] of Object.entries(launchable.env)) {
+        const literal = parseLiteral(value);
+        if (literal !== null) {
+            declaredLiterals[envVar] = literal;
+        }
+    }
+
+    return mergeDeclaredEnv(inheritedChildEnv(base), declaredLiterals, platform);
+}
+
 // What doctor asks about every oauth launchable's node, as data rather than as a side effect. Pure
 // but for `probe`, which is the seam: cmdDoctor around it performs real keystore io and cannot be
 // driven from a test, so leaving this inline meant the only available check was grepping the source
@@ -2546,12 +2681,16 @@ function childNodeRefusal({ launchableName, command, declared, version }) {
 // fact and must be one finding, or doctor prints the same sentence twice and the reader goes looking
 // for a second problem. (cmdLaunch refuses such a declaration, but only at launch, so doctor is where
 // it is seen at all.) `probedVersions` is the cheaper one: it saves a duplicate `--version` spawn
-// where several launchables resolve to the same binary. Its key is what will be probed, so every
-// wrapper collapses onto the one PATH entry; two spellings of one node are still probed twice, which
-// costs a process and no correctness.
+// where several launchables resolve to the same binary. Its key is what will be probed AND the PATH it
+// is looked up on -- on win32 PATHEXT too, which decides the file as much as PATH does: a declaration
+// may set its own, and two launchables commanding the same name under different ones are two binaries.
+// Every wrapper on the same PATH still collapses onto the one PATH entry; two spellings of one node are
+// still probed twice, which costs a process and no correctness.
 //
 // The probe mirrors cmdLaunch exactly, so doctor's verdict and the launch's are answers about the
-// same binary rather than about two different ones.
+// same binary rather than about two different ones. That includes the environment it resolves in, built
+// by probeEnvFor for both: a PATH or PATHEXT declared as a `literal:` is seen, one declared as `secret:`
+// is not and stays the inherited one, so the two agree except where only a credential store can supply it.
 //
 // `refused` is trustAssessment's problems, keyed the way `seen` is. A launchable in it is skipped: the
 // probe SPAWNS the declared command, and for a repository's launchable nobody has trusted that is the
@@ -2559,7 +2698,7 @@ function childNodeRefusal({ launchableName, command, declared, version }) {
 // caller cannot forget it -- which only holds while `refused` has no default: an empty one would let the
 // omission pass silently, so leaving it out throws instead, and a caller with nothing refused says so
 // with `new Map()`.
-function childNodeProbes(cfg, references, { probe = childNodeVersionIo, platform = process.platform, refused } = {}) {
+function childNodeProbes(cfg, references, { probe = childNodeVersionIo, platform = process.platform, env = process.env, refused } = {}) {
     if (!(refused instanceof Map)) {
         throw new Error("childNodeProbes needs `refused`, a Map of the launchables the trust gate refuses -- "
             + "probing one would run a command nobody has approved");
@@ -2573,13 +2712,20 @@ function childNodeProbes(cfg, references, { probe = childNodeVersionIo, platform
             continue;
         }
         seenLaunchables.add(seen);
-        const command = cfg[kind][launchableName].command;
+        const { command } = cfg[kind][launchableName];
         const probed = isNodeCommand(command, { platform }) ? command : "node";
-        if (!probedVersions.has(probed)) {
-            probedVersions.set(probed, probe({ command: probed }));
+        const probeEnv = probeEnvFor(cfg[kind][launchableName], env, platform);
+        // NUL cannot occur in any part, so no combination can spell another's key. PATHEXT is part of the
+        // key on win32 only, where it decides which extensions the lookup tries.
+        const pathValue = (platform === "win32" ? windowsEnvValue(probeEnv, "PATH") : probeEnv.PATH) ?? "";
+        const memoKey = platform === "win32"
+            ? `${probed}\0${pathValue}\0${windowsEnvValue(probeEnv, "PATHEXT") ?? ""}`
+            : `${probed}\0${pathValue}`;
+        if (!probedVersions.has(memoKey)) {
+            probedVersions.set(memoKey, probe({ command: probed, env: probeEnv }));
         }
         out.push({ launchableName, command, declared: probed === command,
-            version: probedVersions.get(probed) });
+            version: probedVersions.get(memoKey) });
     }
 
     return out;
@@ -2611,6 +2757,10 @@ function isNodeCommand(command, { platform = process.platform } = {}) {
 // that cannot name a node (a declaration commanding `npx`, a wrapper, or anything not node at all)
 // pass the literal "node" and get the PATH one, which is a proxy rather than an answer -- so the
 // message built from it must say which of the two it holds. See isNodeCommand and childNodeRefusal.
+//
+// `env` is what `command` is resolved against and what the probe runs under: built by probeEnvFor, so that
+// a PATH the declaration sets as a literal is the one searched, as it is for the spawn, and no resolved
+// secret is in it. It defaults to this process's for a caller with no launchable to speak of.
 //
 // `run` is a seam only so the FAILURE path can be driven: the success path needs no help, but a
 // probe that cannot run is the case this function now has to describe, and arranging a real spawn
@@ -2693,6 +2843,15 @@ function forTerminal(value, limit = 200) {
     const flattened = String(value).replace(/[\u0000-\u001f\u007f-\u009f]/g, "?");
 
     return flattened.length > limit ? `${flattened.slice(0, limit)}...` : flattened;
+}
+
+// JSON for a terminal, where it may also be pasted back. JSON.stringify escapes C0 itself but leaves DEL
+// and C1 raw, and C1 holds the 8-bit CSI. Those are written as \u escapes rather than flattened to "?"
+// the way forTerminal does: the text stays inert on the screen AND still parses to the declared bytes, so
+// a shape the reader pastes into an authorization matches the declaration it was printed from.
+function jsonForTerminal(value, space) {
+    return JSON.stringify(value, null, space)
+        .replace(/[\u007f-\u009f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 }
 
 function escapeHtml(value) {
@@ -3503,6 +3662,15 @@ async function cmdMigrate(cfg) {
         if (decl.backend !== "local") {
             continue;
         }
+        // The legacy entry carried no scope, so what it holds is the person's own value. Copying it under
+        // a repository's namespace would hand it to every server that repository declares and has had
+        // trusted, which is the grant the README says trusting a server does not make. Only a user-scope
+        // declaration is a place the person's own value belongs; a repository's secret is set for that
+        // repository, deliberately.
+        if (decl.scope !== USER_SCOPE) {
+            lines.push(`${name}: declared by this repository -- a legacy entry is personal, so it is not moved into a repository's namespace; run "vc-secrets set ${name}" if the repository should have its own`);
+            continue;
+        }
         const key = keyFor(name, decl, cfg);
         let present;
         try {
@@ -3555,9 +3723,10 @@ async function cmdMigrate(cfg) {
         }
     }
     // Deliberately no per-collision advice. project↔local collisions share one namespace, so there is no
-    // second key to mention; a user↔project collision DOES leave the user-scope key unwritten, but the
-    // legacyOnly probe in `doctor` reports exactly that, by name, and the legacy entry stays in place —
-    // so the guidance belongs where it can be re-checked rather than in a one-shot line printed here.
+    // second key to mention. A user↔project collision leaves the user-scope key unwritten: the
+    // repository's entry is the one that wins, it is skipped above with a line of its own, and doctor's
+    // legacyOnly probe is user-scope only, so it does not name it either. Nothing is lost -- the legacy
+    // entry stays in place, and migrate run from a directory where no repository declares the name moves it.
     lines.push(`vc-secrets: migrate -- ${migrated} migrated, ${failed} failed`);
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
     fs.writeSync(2, lines.join("\n") + "\n");
@@ -4183,7 +4352,9 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
                 // The block, not advice about the block: what stands between the reader and a working
                 // launch is one paste, and asking them to translate a diff into JSON adds a way to get it
                 // wrong. A shape they can read is also a shape they can refuse.
-                const shape = JSON.stringify({ [name]: problem.actual }, null, 2).split("\n").map((l) => `       ${l}`).join("\n");
+                // Escaped, whole and pasteable: see jsonForTerminal.
+                const shape = jsonForTerminal({ [name]: problem.actual }, 2).split("\n")
+                    .map((l) => `       ${l}`).join("\n");
                 // The kind is named here, not just the name: a launchable naming both "secret:ado"
                 // and "oauth:ado" gets two FAIL lines whose headlines would otherwise be
                 // byte-identical apart from the where on the continuation line.
@@ -4427,7 +4598,9 @@ async function cmdDoctor(cfg, flags = []) {
             // configuration that may be perfectly correct. An error carrying no message is rare and
             // is still a failure, so it gets a reason of its own rather than the absent-secret one.
             resolvable[name] = e?.message || "the resolver threw without naming a reason";
-            if (decl.backend === "local" && localBackend !== null) {
+            // User scope only: migrate skips a repository's secret (a legacy entry is the person's own),
+            // so advising it there would send the reader to a verb that does nothing for this name.
+            if (decl.backend === "local" && localBackend !== null && decl.scope === USER_SCOPE) {
                 try {
                     if ((await readLegacyLocalValue(localBackend, name, process.env)) !== null) {
                         legacyOnly.push(name);
@@ -4510,15 +4683,17 @@ const DEFAULT_KILL_ESCALATION = { afterMs: 5000, ref: false };
 // SIGTERM, waiting 2 s, then SIGKILL (packages/client/src/client/stdio.ts in
 // modelcontextprotocol/typescript-sdk). SIGKILL cannot be handled, so a launcher still waiting on a
 // direct child that traps SIGTERM dies without running any handler, and the group -- which holds the
-// secrets in its environment -- outlives it. Half the 2 s SIGTERM-to-SIGKILL gap leaves the rest as
-// margin for a loaded machine. That window is an MCP client's, so it binds servers only: a task is
-// started by a person from a terminal, nothing SIGKILLs the launcher behind it, and a second is too
-// little for a run that writes its summary or rolls back on Ctrl-C -- a task keeps the grace the
-// default always gave it. Ref'd in both cases so that firing does not depend on some other handle
-// keeping the loop alive -- today the child's own handle does, but this timer is the whole guarantee
-// and should not lean on that.
+// secrets in its environment -- outlives it. The same file on the SDK's main branch also has an internal
+// _dispose() for a version-negotiation probe sibling, which sends SIGTERM and then SIGKILL after only
+// 1000 ms. The escalation must finish inside that shorter window, so it is half of it. Whether released
+// clients ship that path was not verified, and the figure is chosen for the case where they do. That
+// window is an MCP client's, so it binds servers only: a task is started by a person from a terminal,
+// nothing SIGKILLs the launcher behind it, and so short a window is too little for a run that writes
+// its summary or rolls back on Ctrl-C -- a task keeps the grace the default always gave it. Ref'd in
+// both cases so that firing does not depend on some other handle keeping the loop alive -- today the
+// child's own handle does, but this timer is the whole guarantee and should not lean on that.
 const LAUNCH_KILL_ESCALATION = {
-    servers: { afterMs: 1000, ref: true },
+    servers: { afterMs: 500, ref: true },
     tasks: { afterMs: 5000, ref: true },
 };
 
@@ -4600,6 +4775,15 @@ function killProcessTree(child, signal, { platform = process.platform, spawnSync
     return timer;
 }
 
+// The signals a launcher (and the probe, which spawns one) takes over from the child it detached. SIGQUIT
+// is left out on win32: libuv's Windows signal support is limited, and whether `process.on("SIGQUIT")`
+// is accepted there was not verified -- if it threw, it would abort every Windows launch before the child
+// started, to guard a Unix keystroke (Ctrl-\). A parameter so a test
+// can say what win32 gets without being on it.
+function forwardedSignalsFor(platform = process.platform) {
+    return platform === "win32" ? ["SIGINT", "SIGTERM", "SIGHUP"] : ["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"];
+}
+
 // A repeating interval rather than one timer aimed at the margin: a timer that long fires late after
 // a host suspend, and a late wake costs a window of 401s nothing will retry, because the launcher is
 // not in the data path and cannot see one.
@@ -4641,19 +4825,7 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
             + `oauth entries (${entries.oauth.map((x) => x.envVar).join(", ")}) -- a launch can renew only one`);
     }
     const server = cfg[kind][name];
-    let childEnv = sanitizeEnv(process.env);
-    // Every spelling goes, not only the canonical one, for the reason isDangerousEnvKey folds case:
-    // on Windows a name differing only by case is the same variable, and childEnv is a plain object
-    // that no longer folds anything, so deleting AZURE_CLIENT_SECRET leaves `Azure_Client_Secret`
-    // standing. Unconditional, because keeping one spelling while the declaration adds another would
-    // hand the child both and let the platform pick -- mergeDeclaredEnv runs after this loop, so
-    // whatever the launchable declares wins there.
-    for (const key of Object.keys(childEnv)) {
-        if (LEGACY_SECRET_ENV_VARS.includes(key.toUpperCase())) {
-            delete childEnv[key];   // a stale session token must not leak into the child
-        }
-    }
-    childEnv = mergeDeclaredEnv(childEnv, entries.env);
+    let childEnv = mergeDeclaredEnv(inheritedChildEnv(process.env), entries.env);
 
     // Only a launchable with an oauth reference goes through what follows. Every other one takes
     // the plain spawn path -- routing them all through this would widen the NODE_OPTIONS carve-out
@@ -4677,7 +4849,11 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         // what the wrapper will resolve. The message distinguishes the two, because a refusal naming
         // a node the reader never declared is one they cannot act on.
         const probed = isNodeCommand(server.command) ? server.command : "node";
-        const version = (deps.childNodeVersion ?? childNodeVersionIo)({ command: probed });
+        // A declaration that sets PATH as a literal would otherwise be judged by the node this process's PATH
+        // finds, and the launch run another. Not childEnv itself -- that holds the resolved secrets, and a
+        // version probe has no use for them; a PATH or PATHEXT declared as `secret:` is therefore what the
+        // probe cannot see (see probeEnvFor).
+        const version = (deps.childNodeVersion ?? childNodeVersionIo)({ command: probed, env: probeEnvFor(server) });
         if (!childNodeSupportsImport(version)) {
             throw new VcSecretsError(childNodeRefusal({ launchableName: name, command: server.command,
                 declared: probed === server.command, version }));
@@ -4799,8 +4975,11 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         escalationTimer ??= timer;
     };
     // SIGHUP as well: it is what a closing terminal delivers, and the child is detached into a group of
-    // its own, so without a handler the launcher dies of it (129) and the whole group lives on.
-    const forwardedSignals = ["SIGINT", "SIGTERM", "SIGHUP"];
+    // its own, so without a handler the launcher dies of it (129) and the whole group lives on. SIGQUIT
+    // is the same door from a keyboard: Ctrl-\ in a task's terminal reaches only the launcher, because the
+    // child sits in its own session, and the default action kills the launcher without running its
+    // "exit" handlers -- the group is left standing. (Not on win32: see forwardedSignalsFor.)
+    const forwardedSignals = forwardedSignalsFor(deps.signalPlatform);
     for (const signal of forwardedSignals) {
         process.on(signal, onSignal);
     }
@@ -4909,12 +5088,13 @@ function askLine(question, terminal = { input: process.stdin, output: process.st
     });
 }
 
-// A literal is the one env value that may be a pasted credential, so its length is all the review shows;
-// a reference is a NAME, which is what the reader needs to see.
+// One env declaration as the trust review shows it: a reference is a NAME and a literal is its value.
+// The value is shown here, and only here, because the review is what the person approves and a literal
+// such as PATH decides which binary runs. The refusal lines, `doctor` and `emit-config` notes stay
+// value-free (see envDifferences): they travel into a client's log, and a literal is the env value most
+// likely to be a pasted credential.
 function describeEnvDeclaration(value) {
-    const literal = parseLiteral(value);
-
-    return literal === null ? value : `${LITERAL_PREFIX}(${literal.length} chars)`;
+    return forTerminal(value, Infinity);
 }
 
 const logToStderr = (text) => fs.writeSync(2, text);
@@ -4955,19 +5135,11 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
 
         return;
     }
-    const review = [];
-    for (const { kind, name, launchable } of gated) {
-        const file = cfg.files?.[launchable.home] ?? launchable.home;
-        const shadow = shadowsUserScope(cfg, kind, name) ? ` -- shadows your user-scope "${name}"` : "";
-        const envDeclarations = Object.entries(launchable.env).map(([key, value]) => `${key}=${describeEnvDeclaration(value)}`);
-        review.push(`${kind === "tasks" ? "task" : "server"} "${name}" (${launchable.home}, ${file})${shadow}`,
-            `    command: ${launchable.command}`,
-            `    args: ${JSON.stringify(launchable.args)}`,
-            `    env: ${envDeclarations.length === 0 ? "(none)" : envDeclarations.join(", ")}`);
-    }
-    log(`${review.join("\n")}\n`);
     const refusal = new VcSecretsError("vc-secrets trust requires an interactive terminal -- it confirms what this "
         + "repository may run, and a pipe or a script cannot answer it for you");
+    // Every refusal comes before the review is printed, not after: the review is where a literal's value
+    // appears, and a caller that cannot answer -- an agent's shell, a pipe, a pty with no controlling
+    // terminal -- must not be handed the text it would have approved.
     if (!isTTY || !isErrTTY) {
         throw refusal;
     }
@@ -4985,8 +5157,24 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
             throw refusal;
         }
     }
+    const review = [];
+    for (const { kind, name, launchable } of gated) {
+        const file = cfg.files?.[launchable.home] ?? launchable.home;
+        const shadow = shadowsUserScope(cfg, kind, name) ? ` -- shadows your user-scope "${name}"` : "";
+        const envDeclarations = Object.entries(launchable.env)
+            .map(([key, value]) => `${forTerminal(key, Infinity)}=${describeEnvDeclaration(value)}`);
+        review.push(`${kind === "tasks" ? "task" : "server"} "${name}" (${launchable.home}, ${file})${shadow}`,
+            `    command: ${forTerminal(launchable.command, Infinity)}`,
+            // JSON.stringify escapes C0 but leaves DEL and C1 raw, and C1 includes the 8-bit CSI.
+            `    args: ${forTerminal(JSON.stringify(launchable.args), Infinity)}`,
+            `    env: ${envDeclarations.length === 0 ? "(none)" : envDeclarations.join(", ")}`);
+    }
+    // The effective projectId, once: it is what a project-scope `secret:<name>` in the review resolves
+    // under (a user-scope one resolves under `user`), and it is part of what the record pins.
+    review.push(`projectId: ${cfg.projectId ?? "(none)"}`);
     let answer;
     try {
+        log(`${review.join("\n")}\n`);
         answer = String(await ask(`Trust these for ${root}? [y/N] `, terminal)).trim().toLowerCase();
     } finally {
         terminal.close();
@@ -4996,7 +5184,7 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
 
         return;
     }
-    const record = { trustedAt: now().toISOString() };
+    const record = { trustedAt: now().toISOString(), projectId: cfg.projectId ?? null };
     for (const kind of LAUNCHABLE_KINDS) {
         record[kind] = Object.fromEntries(gated.filter((x) => x.kind === kind).map((x) => [x.name, launchShape(x.launchable)]));
     }
@@ -5237,7 +5425,7 @@ export {
     openBrowser, buildBrowserCommand, handleCallback, cmdLogin, cmdLogout, withDeadline, LOGIN_WAIT_MS,
     runTool, resolveSpawnCommand, buildSpawnInvocation, hardenSpawnEnv, commandOnPath, mergeDeclaredEnv,
     LAUNCH_KILL_ESCALATION,
-    makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree,
+    makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree, forwardedSignalsFor,
     RENEWAL_TICK_MS,
     validateLaunchables, LEGACY_ENV_VARS, LEGACY_SECRET_ENV_VARS,
     mapResolveError, applyKeystrokes, promptHidden, cmdSet, cmdUnlock, unlockTargets, cmdDoctor, cmdMigrate, newKeyPresent, readLegacyLocalValue,

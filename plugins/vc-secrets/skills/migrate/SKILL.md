@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: "One-time: move secrets stored under the older flat `mcpw:` key prefix to their namespaced keys. Needed only on a machine that used the launcher this plugin replaces — otherwise every secret reports `no legacy entry`. Idempotent."
+description: "One-time: move user-scope secrets stored under the older flat `mcpw:` key prefix to their namespaced keys. A repository's secret is skipped. Needed only on a machine that used the launcher this plugin replaces — otherwise every user-scope secret not already set reports `no legacy entry`. Idempotent."
 disable-model-invocation: true
 ---
 
@@ -9,8 +9,11 @@ disable-model-invocation: true
 Keys are now namespaced by the declaration's home (`vc-secrets:<projectId>:<name>`,
 `vc-secrets:user:<name>`) instead of the older flat `mcpw:<name>` credential (Credential Manager,
 Keychain) or `~/.config/mcpw/secrets/<name>.gpg` (gpg, `$XDG_CONFIG_HOME` honoured). This copies what
-is already stored under that legacy key. If this machine never ran the older launcher, there is
-nothing to migrate — every secret reports `no legacy entry` and the command can be ignored.
+is already stored under that legacy key, for the secrets your own user file declares: a legacy entry has
+no scope, so it is your own value, and a secret a repository declares is skipped
+(`declared by this repository`) rather than handed to that repository's namespace. If this machine never
+ran the older launcher, there is nothing to migrate — every user-scope secret not already set reports
+`no legacy entry` and the command can be ignored.
 
 ## Why this exists rather than "just set them again"
 
@@ -51,6 +54,7 @@ answer is about the shell, not about the stored secrets.
 | `migrated` | the legacy entry was read and written under the new key |
 | `already present` | the new key already resolves — nothing to do |
 | `no legacy entry` | nothing to carry over; `set <name>` is the next step |
+| `declared by this repository` | a project- or local-scope declaration, so it was skipped and nothing was read or written. The legacy entry has no scope: it is your own value, and copying it into a repository's namespace would hand it to that repository's trusted servers. Run `set <name>` if the repository should have its own |
 | `cannot tell whether it is already migrated, refusing to touch it` | the store answered neither "here it is" nor "absent" — a cold gpg agent, a timeout, a wrong recipient. Nothing was written, deliberately: the alternative is overwriting a current value with a stale one. Fix the store (`unlock`, or check the backend) and re-run |
 | `migration failed` | the write itself failed; the old entry is untouched |
 
@@ -63,4 +67,6 @@ it, and deleting it would add a second way to fail. Remove it by hand later if y
 
 The per-secret lines verbatim plus the final count, then run the `doctor` verb and confirm the
 migrated names now report `OK`. If any secret says `no legacy entry`, list it explicitly — that is a
-value nobody has, and the operator needs to know before a server fails at launch.
+value nobody has, and the operator needs to know before a server fails at launch. Likewise list every
+secret that says `declared by this repository`: it was not moved, and each needs `set <name>` if the
+repository is to have its own.

@@ -26,6 +26,7 @@
 // tool_name is what says which shape this is.
 
 import fs, { readFileSync } from "node:fs";
+import path from "node:path";
 
 import { targetsFrom } from "./targets.mjs";
 
@@ -116,6 +117,39 @@ const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|pro
 // narrower misses some of them, and the ones it misses are the installs nobody thinks to check.
 const PACKAGE_FILE_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?(clients\.(mjs|json)|hooks\/(targets\.mjs|hooks(-cursor)?\.json)|\.(claude|codex|cursor)-plugin\/plugin\.json|skills\/[^/]+\/(SKILL\.md|agents\/openai\.yaml))$/i;
 
+// The patterns here match the SPELLING of a path, and the file system resolves several spellings to one
+// file: `vc-secrets/./trust.json` and `vc-secrets//trust.json` on every platform, and on Windows also a
+// trailing dot or space on a segment (`trust.json.`, which the Win32 layer drops) and an NTFS alternate
+// data stream (`trust.json::$DATA` is the file's own content). A write tool given any of them reaches the
+// guarded file while matching nothing here, at exit 0, so the path is reduced to its plain form once and
+// every matcher reads that. A trailing dot or space on a segment is dropped on every platform, not only
+// win32: the guard runs where the payload was produced, not where the file lives, and dropping them can
+// only widen what is refused. A stream suffix is cut from EVERY segment, not only the last, because a
+// directory can carry one too and a path through it still resolves to what is inside (`dir::$INDEX_ALLOCATION`
+// then the file); only a drive letter's own colon is left. Other aliases of a file -- 8.3 short names
+// among them -- are not resolved here.
+function normalisedPath(raw) {
+    let filePath = raw.replace(/\\/g, "/").split("/")
+        .map((segment) => {
+            const colon = segment.indexOf(":");
+            if (colon <= 0 || /^[A-Za-z]:$/.test(segment)) {
+                return segment;
+            }
+            // `..:x` is a directory named that, not a parent reference: cut to `..` it would climb out of
+            // a real directory in the normalize below and move the path off the file it names.
+            const stem = segment.slice(0, colon);
+
+            return stem === "." || stem === ".." ? segment : stem;
+        }).join("/");
+    filePath = path.posix.normalize(filePath).split("/")
+        .map((segment) => (segment === "." || segment === ".." ? segment : segment.replace(/[. ]+$/, "")))
+        .join("/");
+
+    // Again: dropping a segment's trailing dots can leave it empty -- `a/.../b` -- which the first pass
+    // had no reason to collapse.
+    return path.posix.normalize(filePath);
+}
+
 let input;
 try {
     input = JSON.parse(readFileSync(0, "utf8"));
@@ -162,7 +196,7 @@ if (!targets.readable) {
 }
 
 for (const raw of targets.paths) {
-    const filePath = raw.replace(/\\/g, "/");
+    const filePath = normalisedPath(raw);
     // Covers all three homes: <repo>/.claude/vc-secrets.json, its .local. sibling, and
     // ~/.claude/vc-secrets.json
     if (DECLARATION_RE.test(filePath)) {

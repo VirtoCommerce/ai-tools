@@ -41,7 +41,7 @@ team's servers, a person for their own.
 |---|---|
 | `install` | Put the shim at a stable path and print the settings entry plus the commands that use it |
 | `doctor` | Resolve everything a live server needs and report what is broken |
-| `migrate` | One-time: move secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys |
+| `migrate` | One-time: move user-scope secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys. A repository's secret is skipped |
 
 `install` deliberately installs a **shim**, not a copy of the launcher: plugin files live in a cache
 directory whose path carries the version, so a copy would keep running an old launcher after an
@@ -65,9 +65,9 @@ but a command you type by hand does not:
 | `task <name>` | Same, for a declared non-MCP command — a load-test harness, a migration step. |
 | `doctor` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. |
 | `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. No-op on Windows and macOS. |
-| `migrate` | Copy legacy-prefix entries to namespaced keys. Idempotent. |
+| `migrate` | Copy legacy-prefix entries to namespaced keys, for user-scope declarations only: a legacy entry is your own value, so it is never copied into a repository's namespace, and the repository's secrets are skipped with a line saying so. Idempotent. |
 | `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr, including a note for each repository server you have not trusted yet. See [Clients](#clients). |
-| `trust` | Show what this repository's declarations would run — command, args, env names — and, on a `y` typed at a terminal, record it. Refuses without an interactive terminal. See [Trusting a repository's declarations](#trusting-a-repositorys-declarations). |
+| `trust` | Show what this repository's declarations would run — command, args, env names and `literal:` values, and the `projectId` — and, on a `y` typed at a terminal, record it. Refuses without an interactive terminal, before showing anything. See [Trusting a repository's declarations](#trusting-a-repositorys-declarations). |
 | `untrust [path]` | Remove the trust record for `path` (default: the repository you are in). Needs no terminal and no declaration. |
 
 ## Declarations
@@ -120,7 +120,8 @@ migration step, a script calling an API. Declare those as `tasks` and run them w
 }
 ```
 
-Identical validation, identical injection, identical process-group teardown. The important part is
+Identical validation, identical injection, and the same process-group teardown path — a server and a task
+escalate to SIGKILL on different clocks. The important part is
 what is **absent**: there is no verb that takes a command from the caller. `vc-secrets exec -- <cmd>`
 would be the convenient version of this, and it would also be a secret printer — `exec -- printenv` —
 which is exactly what a tool with no read command must not acquire. A task's argv lives in the
@@ -148,7 +149,10 @@ environment does not help there; that case wants a git credential helper, not th
 - `literal:` is stripped once: `literal:literal:x` sets the value `literal:x`.
 - The rule covers `env`, which is where a credential belongs if it must be given to a process at all.
   `args` stay free text — a token there would be visible in the machine's process list anyway, so it is
-  reviewable text rather than a surface this tool can defend.
+  reviewable text rather than a surface this tool can defend. A control character (a newline, a tab,
+  an escape) in `command` or in an `env` key is refused when the declaration loads: nothing
+  legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine --
+  and the review prints `args` escaped.
 - `projectId` is **declared, never derived.** A git worktree has a different path from its main
   checkout, so a path-derived identity would hide the secrets you already set. It may appear in the
   project or the local file; if in both, they must agree. `user` is reserved.
@@ -254,30 +258,39 @@ you have trusted exactly what that entry declares. Run `vc-secrets trust` in the
 server "gh" (project, /work/repo/.claude/vc-secrets.json) -- shadows your user-scope "gh"
     command: npx
     args: ["-y","gh-mcp"]
-    env: T=secret:pat, LABEL=literal:(7 chars)
+    env: T=secret:pat, LABEL=literal:nightly
+projectId: my-repo
 Trust these for /work/repo? [y/N]
 ```
 
 - What is recorded is the **declared** shape — `command`, `args` and `env` as written (`secret:pat`, not a
-  value) — in `~/.config/vc-secrets/trust.json` (`$XDG_CONFIG_HOME` honoured), keyed by the repository root.
-  The review prints a `literal:` value's length and never the value, since that is where a pasted credential
-  ends up.
-- **Any change** — a different `command`, different `args`, an env key added, removed or re-pointed — refuses
+  value) — and the repository's `projectId`, in `~/.config/vc-secrets/trust.json` (`$XDG_CONFIG_HOME`
+  honoured), keyed by the repository root. The review prints the command, every argument and every
+  `literal:` value whole, never cut, because it is what you are approving and a literal such as `PATH`
+  decides which binary runs. The refusal lines, `doctor` and `emit-config` name only the env keys and never
+  a value, since they travel into a client's logs.
+- **Any change** — a different `command`, different `args`, an env key added, removed or re-pointed, a
+  different `projectId` (it decides whose namespace a project-scope `secret:<name>` resolves in; a user-scope
+  one resolves under `user`) — refuses
   the launch until you run `trust` again. Trusting replaces the repository's record, so an entry that has
   gone from the declarations is gone from the record too, and a later re-declaration of the same name
   starts untrusted.
 - It needs an **interactive terminal**, as a confirmation of intent rather than a boundary. Both stdin and
   stderr must be terminals, and on Linux and macOS your answer is read from the controlling terminal
   (`/dev/tty`), not from stdin. That refuses a pipe, a redirected stream, a script and an agent's plain shell
-  tool. It does **not** stop a process that deliberately allocates a pseudo-terminal — `script`, `expect`, a
+  tool, and it does so before printing the review, so a caller that cannot answer is not shown the
+  `literal:` values either. It does **not** stop a process that deliberately allocates a pseudo-terminal — `script`, `expect`, a
   pty library on any OS, ConPTY or winpty on Windows — and on Windows only the stdin/stderr check applies,
   because there is no `/dev/tty` to read from. The guard hook sees only the client's write tools, so this is
   what stands between the record and a `trust` that answered a pipe; see
   [Scope of the protection](#scope-of-the-protection). `untrust` removes trust and needs neither a terminal
   nor a declaration.
-- The check happens before anything is resolved: an untrusted repository does not trigger a keystore prompt
-  or a token refresh. The trust file is read only when a repository's launchable is launched, so your own
-  user-scope servers never depend on it. A trust file that cannot be read refuses repository launches
+- On a launch (`run`, `task`) the check happens before anything is resolved: an untrusted repository does
+  not trigger a keystore prompt or a token refresh that way. `doctor` is not a launch: it reads every declared
+  secret it would check (a Key Vault secret that no enabled server consumes needs `--all`), because
+  `secrets` declarations are not gated (they execute nothing). Only a launch of a repository's launchable
+  depends on the trust file, so your own user-scope servers never do; `doctor` and `emit-config` read it to
+  report on the repository's. A trust file that cannot be read refuses repository launches
   rather than reading as empty or as trusted, and `doctor` names it.
 - `secrets`, `oauth` and `vaults` declarations are not gated — they execute nothing — and a secret crossing
   still needs its own `authorized` block. Trusting a server does not grant it your secret.
@@ -487,11 +500,11 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 |---|---|
 | `decryption failed: Operation cancelled` | gpg agent is cold — `unlock` in a terminal |
 | `FAIL` on every local secret at once | the shell cannot reach the credential store (a sandboxed or restricted one cannot); rerun where it can |
-| `secret "x" is only under the legacy key` | Run `migrate` — the value cannot be re-typed, the store never gives it back |
+| `secret "x" is only under the legacy key` | Run `migrate` — the value cannot be re-typed, the store never gives it back. `doctor` says this for user-scope secrets only: `migrate` skips a repository's (a legacy entry is yours, not the repository's), which shows as an ordinary `secret "x" not resolvable` — `set` it |
 | `projectId disagrees` | The project and local files name different ids; they key the same secrets |
 | `server "x" is declared by <file> ... and is not trusted` | A repository declares it and you have not trusted it. Read the declaration, then run `vc-secrets trust` in the repository named at the end of the line, from a terminal |
 | `server "x" changed since you trusted it: ...` | The declaration differs from what you trusted; the line lists what. If you accept it, run `vc-secrets trust` again in that repository. If you did not make the change, that is the finding |
-| `the trust file ... is unusable` | The trust file is corrupt or from a newer launcher. Repository launches are refused until it reads: fix or delete it and run `trust` again in each repository |
+| `the trust file ... could not be read (...)` / `the trust file ... is unusable` | The trust file is unreadable or malformed (invalid JSON reads as *could not be read*), or from a newer launcher. Repository launches are refused until it reads: fix or delete it and run `trust` again in each repository |
 | `vc-secrets trust requires an interactive terminal` | Run it yourself in a terminal. A pipe, a script and an agent's plain shell tool are refused; a process that allocates its own pseudo-terminal is not, so this is a confirmation of intent — see [Scope of the protection](#scope-of-the-protection) |
 | `schemaVersion N needs a newer vc-secrets` | The declaration is ahead of the installed plugin — update the plugin |
 | `Missing environment variables: VC_SECRETS` | The variable was never set on this machine — run the `install` skill |
