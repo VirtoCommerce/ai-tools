@@ -2,7 +2,7 @@
 /**
  * skills/vc-self-check/deliver.mjs — the contribution step of the vc-fix self-diagnostics
  * subsystem (VCST-5478 → VCST-5509 → the PR #172 rework). It turns a validated FINDING STRUCT
- * into ONE GitHub Issue PER FINDING on `VirtoCommerce/vc-mcp-testing-module` (the plugin's OWN
+ * into ONE GitHub Issue PER FINDING on `VirtoCommerce/ai-tools` (the plugin's OWN
  * repo), routed by the GitHub token's ACTUAL rights and gated on explicit consent.
  *
  * Kept BYTE-IDENTICAL across the `plugins/vc-fix/` (canonical) and `.claude/` trees — the
@@ -57,7 +57,7 @@ import {
 } from "./upstream-reduce.mjs";
 import { loadExpected, findExpected } from "../../hooks/expected.mjs";
 
-const PLUGIN_REPO = "VirtoCommerce/vc-mcp-testing-module";
+const PLUGIN_REPO = "VirtoCommerce/ai-tools";
 const ISSUE_TITLE_PREFIX = "[vc-fix self-check]";
 /** The searchable, stable, PER-FINDING marker. Identity is `(skill, subject)` and nothing else. */
 export const FINDING_MARKER = "vc-fix-finding:";

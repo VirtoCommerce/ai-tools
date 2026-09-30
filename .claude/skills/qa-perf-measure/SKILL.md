@@ -189,13 +189,13 @@ category correctly is the whole point of this phase.
 | Confirm a symptom is user-visible | `qa-frontend-expert` | `playwright-chrome` |
 
 > **`vc-perf` is a separate plugin and is not enabled by default.** `perf-analyst`, the k6 L2 harness
-> (`--load`) and the L3 `dotnet-trace` path all live in `plugins/vc-perf/` — a distinct `vc-tools`
+> (`--load`) and the L3 `dotnet-trace` path all live in `plugins/vc-perf/` — a distinct `ai-tools`
 > marketplace plugin, absent from `enabledPlugins` in the tracked `.claude/settings.json` and not one of the
 > 19 project agents in `.claude/rules/agents.md`. **Everything this skill's core measurement needs
 > (Phases 0–4, App Insights counts, N+1 detection, the controls) works without it.** If it is not installed:
 > `--load` and L3 attribution are **unavailable — say so rather than substituting one-shot repeats, which
 > measure cache warming**; and ranking is done inline by `qa-backend-expert` from the same artifacts. To
-> enable it: `/plugin install vc-perf@vc-tools`, then restart Claude Code (plugin agents bind at session
+> enable it: `/plugin install vc-perf@ai-tools`, then restart Claude Code (plugin agents bind at session
 > start).
 
 ## Cross-references
