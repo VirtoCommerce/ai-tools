@@ -215,7 +215,6 @@ enforces the shape.
 1. **`qa-lead` is the only actor.** A specialist agent, a runner, a verifier, a doer and any sub-agent
    **never** transition a ticket — including "while they are already in there" posting a comment. A
    sub-agent that believes a transition is due **reports it up**; the orchestrator makes the move.
-   (Same containment as `feedback_subagent_external_writes`.)
 2. **Comment before transition, always.** `REOPEN` without the failure list, and `BLOCKED` without the
    blocker comment, are both a status change nobody can act on.
 3. **Never re-grade a verdict to reach a nicer transition.** The verdict is 5-verdict's, derived from 5-triage + its own AC/DoD reconciliation;

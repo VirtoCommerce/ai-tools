@@ -671,8 +671,8 @@ Playwright MCP wants a **newer Firefox build than the one present**. **Do not fi
 `npx playwright install firefox`** — that resolves whichever `playwright` package npm picks, which is
 a different revision again, and the lane keeps failing. Install through the MCP's OWN bundled
 `playwright-core` CLI (`node cli.js install firefox` inside the `@playwright/mcp` npx cache
-directory); no Claude Code restart is needed afterwards. Full procedure, the revision check against
-`browsers.json`, and the pitfalls: memory `feedback_playwright_mcp_browser_version`. This is a **second** prerequisite on top of the MCP-restart one that
+directory); no Claude Code restart is needed afterwards. Check the installed revision against
+`browsers.json`. This is a **second** prerequisite on top of the MCP-restart one that
 `.claude/rules/agents.md` §Parallel Execution records for that lane — the lane is currently dead for
 a different reason than the historical click stall, and everything in this document is therefore
 **Chromium-family only** (Edge + Chrome, which agreed on every cross-checked observation, including
@@ -732,7 +732,7 @@ Nothing below is a gap in the product; it is a gap in this map.
 | **Notifications with unread content for the personal persona** | Only the 0-unread empty state existed; the unread-count rendering, "Show unread only", and the two unnamed panel buttons were not exercised. The `"9"` observations come from the company-member account. |
 | **Every account destination page** | This map records the drawer's hrefs, not the pages behind them. Only `/account/dashboard` was opened (it showed "There are no orders yet"). Empty/loading/error states for Orders, Lists, Quotes, Saved for later, Back-in-stock, Missions, Points history, Coupons, Saved credit cards, Addresses are all unrecorded. |
 | **Whether any row is config-gated** | One store's CMS menu was observed. **Absence of a row here is not evidence the capability does not exist** — the loyalty rows, for instance, are present only because this store has the flags on. |
-| **A multi-org member's drawer header** | The company-member account has exactly one org and no switcher. A multi-org fixture exists (`reference_multiorg_fixture_lane_split`), so the switcher's mobile shape is untested. |
+| **A multi-org member's drawer header** | The company-member account has exactly one org and no switcher. A multi-org fixture exists, so the switcher's mobile shape is untested. |
 | **Sales-rep / impersonation drawer entries** | Absent for a plain buyer, which is expected; their mobile shape needs a rep-permissioned account. Memory records `mobile-back-to-operator-button` / `mobile-account-menu-logout-row` as impersonation-only test ids — neither appeared here. |
 
 ---
