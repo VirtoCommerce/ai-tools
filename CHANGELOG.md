@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0` — 2026-09-30
+
+**BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
+`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Plugin versions and tags are unchanged. The
+`claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`, `project-init/verify-access.mjs`)
+accept both ids, so an install made before the rename keeps resolving.
+**Migration:** `/plugin marketplace add VirtoCommerce/ai-tools`, then `/plugin install vc-fix@ai-tools`
+(and `vc-perf@ai-tools` if you use it), then uninstall the old `…@vc-tools` entries and restart Claude Code.
+
+**Changed:** GitHub repo `VirtoCommerce/vc-mcp-testing-module` → `VirtoCommerce/ai-tools`. Every live reference
+now uses the new name: the marketplace-add command in the READMEs, onboarding and workshop material,
+`package.json` (`name`, `repository`, `bugs`, `homepage`), both plugins' `homepage`/`repository`, the
+`customer-template.yml` checkout, and the `/vc-self-check deliver` target (`PLUGIN_REPO`, changed in the
+`plugins/vc-fix/` copy and the `.claude/` copy together). `ci/lib/affected-suites.ts` now labels a local
+git diff with the repo name `ai-tools`. Older entries in this file keep the name the repo had then.
+**Migration:** in an existing clone run `git remote set-url origin https://github.com/VirtoCommerce/ai-tools.git`.
+If you added the marketplace under the old name, run
+`/plugin marketplace add VirtoCommerce/ai-tools`. GitHub still redirects the old URL.
+
+---
+
 ## The headless CI auto-fix twin is removed; auto-fix PR bodies follow Virto's PR-description guide — `vc-fix` `0.9.2` — 2026-09-28
 
 **Removed: the headless auto-fix lane.** `ci/run-fix-cycle.ts`, `ci/agents/fix-{triage,backend,frontend}-agent.md`,

@@ -197,7 +197,7 @@ A turn emits ONE info line + at most ONE question. Never a second question, neve
 ## The deliver step (consent-gated) — contribute upstream
 
 [`deliver.mjs`](./deliver.mjs) turns the finding struct (passed via **`--input <file>`**, never a
-pipe — see the auto-mode note in Step 2) into GitHub Issues on `VirtoCommerce/vc-mcp-testing-module`.
+pipe — see the auto-mode note in Step 2) into GitHub Issues on `VirtoCommerce/ai-tools`.
 On the interactive path the orchestrator does NOT run `--confirm` itself — after the one yes it spawns
 the [`self-check-deliverer`](../../agents/self-check-deliverer.md) subagent, which writes the struct to
 a scratch file and runs `deliver.mjs --input <file> --confirm` off the main thread (so dedup output +

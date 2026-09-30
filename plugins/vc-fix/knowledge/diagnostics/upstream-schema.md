@@ -1,7 +1,7 @@
 # Upstream Signal Schema — vc-fix self-diagnostics
 
 The **default-deny schema** for anything the self-diagnostics subsystem contributes to the PUBLIC
-`VirtoCommerce/vc-mcp-testing-module` repo (`/vc-self-check deliver`). This file is the single source
+`VirtoCommerce/ai-tools` repo (`/vc-self-check deliver`). This file is the single source
 of truth for the vocabulary; keep it in **lock-step** with
 [`../../skills/vc-self-check/upstream-reduce.mjs`](../../skills/vc-self-check/upstream-reduce.mjs)
 (the `SKILLS` / `VERDICTS` / … / `ERROR_CODES` consts + the v3 provenance validators) and with the
