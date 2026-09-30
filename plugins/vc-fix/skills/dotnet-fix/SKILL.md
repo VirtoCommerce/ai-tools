@@ -9,7 +9,7 @@ Turn the red reproduction test (`/dotnet-unit-test`) green with the **smallest c
 pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`.
 
 ## Preconditions
-- Source checked out in `.fix-workspace/<repo>/` on branch `claude/qa-autofix/VCST-XXXX`.
+- Source checked out in `.fix-workspace/<repo>/` on branch `claude/qa-autofix/<ticket-key>`.
 - A NEW failing test exists (Gate 2) or trivial-skip is justified.
 
 ## Steps
