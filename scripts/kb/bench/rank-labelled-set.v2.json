@@ -1,6 +1,6 @@
 {
   "about": "The labelled set VCST-6122 is measured against (built in stage M0): ~120 rows, split BY ENTRY so every row about one entry (or one group of entries that share a row) sits in one split, and a question written for an entry never reaches that entry's held-out test. A TARGET names every entry that answers it (`expect`); it passes when one of them is picked/ranked. A CONTROL is a question the base holds nothing on -- verified by reading the bodies of the candidate entries, never by a ranker verdict -- and `near` names the entries it is a near neighbour of. `partial: true` marks a target whose entry holds the fact only in part. `source`: existing (the VCST-6087 set, unchanged), wave1 (the 40 asks of VCST-6087-wave1, labelled by the operator; `cite` gives the log line and the agent's verdict), paraphrase (written by a different model from the entry's claim alone, never its subject or question; `support` is the sentence that answers it), control (new near-neighbour controls). `split`: dev | calibration | test. The groups of the five wave-1 misses (P1, P3, P6, L1, L6) are forced into dev, because the vocabulary is seeded from them; the \"five misses answered\" criterion is reported separately. Controls are split by a seeded hash. `contested` rows are excluded from every metric until the contradiction they depend on is settled live.",
-  "snapshot": "vc-knowledge@8c8f844 (the last entry-changing commit before the wave at 2026-09-30T08:31Z; 289 entries). vc-knowledge@818d478 lacks five entries these labels name.",
+  "snapshot": "expect: vc-knowledge branch vcst-6122-schema2 (the schema-2 migration, VCST-6122 M2, 334 active entries). expectPre: vc-knowledge@8c8f844, the snapshot the reference baseline was measured on (289 entries).",
   "approved": "operator, 2026-09-30",
   "splitSeed": "m0-seed-1",
   "baseline": {
@@ -51,43 +51,57 @@
       "id": "T-gift-long",
       "q": "RewardItemGiftNumItem automatic gift promotion — is the gift line item added to the cart/order automatically or must the shopper accept it via availableGifts / addGiftItems mutation?",
       "expect": [
-        "KB-0B27E984"
+        "KB-C4346EB2"
       ],
       "source": "existing",
       "cite": "log 2026-09-21 08:09 miss, nearMiss KB-0B27E984 (STEP-6-ranking.md)",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-0B27E984"
+      ]
     },
     {
       "id": "T-gift-short",
       "q": "does an automatic gift promotion add a zero-price line to the cart and the order on the storefront",
       "expect": [
-        "KB-0B27E984"
+        "KB-C4346EB2"
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:19 session 9f98d03f, answer (PLAN §22.10)",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-0B27E984"
+      ]
     },
     {
       "id": "T-cart-short",
       "q": "What does the storefront /cart page look like for a B2B organization buyer — decisions, controls, layout?",
       "expect": [
-        "KB-44B7B71E",
-        "KB-50EBEEE9"
+        "KB-50EBEEE9",
+        "KB-C7E16C35"
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:20 session a905b381, miss, nearMiss KB-44B7B71E (PLAN §22.10); KB-50EBEEE9 added by the operator 2026-09-28 -- its body lays out the whole /cart checkout page, while KB-44B7B71E covers only its payment step",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-44B7B71E",
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "T-cart-long",
       "q": "What does the B2B storefront cart page at /cart show and control for a signed-in organization buyer — line quantity input, selectedForCheckout checkboxes, coupons section, Place order / checkout button enablement?",
       "expect": [
-        "KB-44B7B71E",
-        "KB-50EBEEE9"
+        "KB-50EBEEE9",
+        "KB-C7E16C35"
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:18 session a905b381, miss, nearMiss KB-50EBEEE9; §22.14 scores KB-44B7B71E on it (the D-cart-detail row)",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-44B7B71E",
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "T-ship-tax",
@@ -97,7 +111,10 @@
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8793DFE7"
+      ]
     },
     {
       "id": "T-captured",
@@ -107,7 +124,10 @@
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-1AC55A1D"
+      ]
     },
     {
       "id": "T-config-price",
@@ -117,7 +137,10 @@
       ],
       "source": "existing",
       "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-4B47D094"
+      ]
     },
     {
       "id": "T-mobile-size",
@@ -127,7 +150,10 @@
       ],
       "source": "existing",
       "cite": "log 2026-09-28 08:36 session p14424, miss; label confirmed by the operator 2026-09-28",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6B0E2FF7"
+      ]
     },
     {
       "id": "T-coupon-input",
@@ -137,7 +163,10 @@
       ],
       "source": "existing",
       "cite": "log 2026-09-23 08:46 session d54e5a64 (asked with an MSYS-mangled prefix, restored to /cart); label confirmed by the operator 2026-09-28",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-938D7C06"
+      ]
     },
     {
       "id": "T-active-plain",
@@ -148,7 +177,11 @@
       ],
       "source": "existing",
       "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-27B4CD10",
+        "KB-4B889114"
+      ]
     },
     {
       "id": "T-active-route",
@@ -159,7 +192,11 @@
       ],
       "source": "existing",
       "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-27B4CD10",
+        "KB-4B889114"
+      ]
     },
     {
       "id": "W-S1",
@@ -171,31 +208,41 @@
       "cite": "log 2026-09-30T08:31:24.522Z session 44d4e1d7, run VCST-6087-wave1 row S1; agent verdict show KB-7837F100",
       "partial": true,
       "note": "body: Query.products returns an unpriced product (price.actual 0, isBuyable false) -- observed only through the barcode filter",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-7837F100"
+      ]
     },
     {
       "id": "W-S2",
       "q": "Does searchProducts GraphQL query match on partial SKU text?",
       "expect": [
-        "KB-A0B3940F"
+        "KB-916CDCA1"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:31:24.863Z session 44d4e1d7, run VCST-6087-wave1 row S2; agent verdict show KB-A0B3940F",
       "partial": true,
       "note": "body: a strict prefix in a quoted filter term returns 0, but * and ? are honoured; full-text partial SKU is not recorded (KB-1EA7184C is a GTIN prefix, not a SKU)",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-A0B3940F"
+      ]
     },
     {
       "id": "W-S4",
       "q": "Is the Place order button on /checkout disabled until a payment method is selected?",
       "expect": [
         "KB-50EBEEE9",
-        "KB-44B7B71E"
+        "KB-C7E16C35"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:31:25.444Z session 44d4e1d7, run VCST-6087-wave1 row S4; agent verdict show KB-50EBEEE9",
       "note": "both bodies: Place order stays disabled until a payment method is chosen. Log quirk: the show line's `after` points at S5's ask",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-50EBEEE9",
+        "KB-44B7B71E"
+      ]
     },
     {
       "id": "W-S10",
@@ -207,7 +254,11 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:31:46.830Z session 44d4e1d7, run VCST-6087-wave1 row S10; agent verdict show KB-4B889114",
       "note": "Block user / Unblock user is the deactivate control; KB-97170665 records the same action and its badge",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-4B889114",
+        "KB-97170665"
+      ]
     },
     {
       "id": "W-S11",
@@ -218,7 +269,10 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:02.204Z session 44d4e1d7, run VCST-6087-wave1 row S11; agent verdict show KB-8646A9CB",
       "note": "5 failures -> 15-minute temporary lockout",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-8646A9CB"
+      ]
     },
     {
       "id": "W-S12",
@@ -230,7 +284,10 @@
       "cite": "log 2026-09-30T08:32:02.691Z session 44d4e1d7, run VCST-6087-wave1 row S12; agent verdict show KB-29037452",
       "partial": true,
       "note": "one overall Balance at the top -- but of /account/points-history, not the asked route",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-29037452"
+      ]
     },
     {
       "id": "W-L1",
@@ -242,7 +299,10 @@
       "cite": "log 2026-09-30T08:32:20.493Z session 44d4e1d7, run VCST-6087-wave1 row L1; agent verdict none",
       "partial": true,
       "note": "known miss. Body: same-product adds sum quantities; configured lines stay separate on merge. Plain-item merge is implied, not stated",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-734A0813"
+      ]
     },
     {
       "id": "W-L3",
@@ -254,7 +314,10 @@
       "cite": "log 2026-09-30T08:32:21.080Z session 44d4e1d7, run VCST-6087-wave1 row L3; agent verdict show KB-A4EB3766",
       "partial": true,
       "note": "cart emptied in place and reused; mini-cart counter not recorded",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-A4EB3766"
+      ]
     },
     {
       "id": "W-L4",
@@ -265,7 +328,10 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:21.400Z session 44d4e1d7, run VCST-6087-wave1 row L4; agent verdict show KB-6D5E2CD1",
       "note": "assignment priority, higher wins, plus scope/dates/conditions",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6D5E2CD1"
+      ]
     },
     {
       "id": "W-L5",
@@ -278,7 +344,11 @@
       "cite": "log 2026-09-30T08:32:37.880Z session 44d4e1d7, run VCST-6087-wave1 row L5; agent verdict none",
       "partial": true,
       "note": "DISAGREE. KB-8264632C: the Discount line expands to one row per reward; KB-5ADBFB34: under BestReward only one cart-subtotal reward survives (a coupon-backed one can replace a larger automatic one)",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8264632C",
+        "KB-5ADBFB34"
+      ]
     },
     {
       "id": "W-L6",
@@ -291,7 +361,11 @@
       "cite": "log 2026-09-30T08:32:38.218Z session 44d4e1d7, run VCST-6087-wave1 row L6; agent verdict none",
       "partial": true,
       "note": "known miss. KB-02238DE5: an employee loses the All orders / My orders toggle and sees only own orders; KB-D080C209: any org member has buyer rights on an org order",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-02238DE5",
+        "KB-D080C209"
+      ]
     },
     {
       "id": "W-L7",
@@ -303,7 +377,10 @@
       "cite": "log 2026-09-30T08:32:38.495Z session 44d4e1d7, run VCST-6087-wave1 row L7; agent verdict show KB-DB7B6317",
       "partial": true,
       "note": "Completed is settable, Processing is computed on capture; no payment gate stated",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-DB7B6317"
+      ]
     },
     {
       "id": "W-P1",
@@ -314,7 +391,10 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:56.256Z session 44d4e1d7, run VCST-6087-wave1 row P1; agent verdict none",
       "note": "known miss. Evidence note: a second coupon replaces the first, last applied wins, no stacking",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8264632C"
+      ]
     },
     {
       "id": "W-P3",
@@ -322,24 +402,32 @@
       "expect": [
         "KB-02238DE5",
         "KB-BAEBCDA7",
-        "KB-4D082C89"
+        "KB-972CF223"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:56.859Z session 44d4e1d7, run VCST-6087-wave1 row P3; agent verdict none",
       "partial": true,
       "note": "known miss. KB-02238DE5: the Invite members button is role-gated; KB-BAEBCDA7/KB-4D082C89: an invite sends an email and provisions an account",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-02238DE5",
+        "KB-BAEBCDA7",
+        "KB-4D082C89"
+      ]
     },
     {
       "id": "W-P4",
       "q": "Does the shop remember a discount code in my basket after I log out and log back in?",
       "expect": [
-        "KB-6C3FA2B7"
+        "KB-EF478346"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:57.219Z session 44d4e1d7, run VCST-6087-wave1 row P4; agent verdict show KB-6C3FA2B7",
       "note": "coupon survives sign-out/sign-in on every path",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-6C3FA2B7"
+      ]
     },
     {
       "id": "W-P6",
@@ -351,7 +439,10 @@
       "cite": "log 2026-09-30T08:32:57.839Z session 44d4e1d7, run VCST-6087-wave1 row P6; agent verdict none",
       "partial": true,
       "note": "known miss. Manual payment with a PO number; placed order stays New with Pay now, so placing and paying are separate",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "W-C2",
@@ -362,63 +453,81 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:33:16.937Z session 44d4e1d7, run VCST-6087-wave1 row C2; agent verdict show KB-50EBEEE9",
       "note": "Manual reveals the PO number field and re-disables Place order",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "W-C4",
       "q": "/cart: does Save for later move the line item to a separate saved list?",
       "expect": [
-        "KB-66089074"
+        "KB-A272971F"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:33:17.301Z session 44d4e1d7, run VCST-6087-wave1 row C4; agent verdict show KB-66089074",
       "partial": true,
       "note": "separate saved-for-later list via getSavedForLater / moveFromSavedForLater, stated in passing",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-66089074"
+      ]
     },
     {
       "id": "P-0B27E984-1",
       "q": "I bought just one item, so why does my finished order list two products, one of them free?",
       "expect": [
-        "KB-0B27E984"
+        "KB-C4346EB2"
       ],
       "source": "paraphrase",
       "cite": "KB-0B27E984, written from its claim only (sonnet, customer voice)",
       "support": "Placing an order with exactly one product added to the cart produced an order containing TWO line items.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-0B27E984"
+      ]
     },
     {
       "id": "P-0B27E984-2",
       "q": "Why does a promo reward item that is pre-ticked in the basket never show in the item table or subtotal, yet arrives as an extra zero-priced order row?",
       "expect": [
-        "KB-0B27E984"
+        "KB-C4346EB2"
       ],
       "source": "paraphrase",
       "cite": "KB-0B27E984, written from its claim only (sonnet, practitioner voice)",
       "support": "a shopper who never interacts with the gift panel still receives an extra order line.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-0B27E984"
+      ]
     },
     {
       "id": "P-44B7B71E-1",
       "q": "When I pay for my cart, why are the card and other payment choices not sorted by the priority the store set?",
       "expect": [
-        "KB-44B7B71E"
+        "KB-C7E16C35"
       ],
       "source": "paraphrase",
       "cite": "KB-44B7B71E, written from its claim only (sonnet, customer voice)",
       "support": "It is alphabetical by method code (AuthorizeNet < CyberSource < Datatrans < DefaultManual < Loyalty < Skyflow).",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-44B7B71E"
+      ]
     },
     {
       "id": "P-44B7B71E-2",
       "q": "Does the back-office ranking number for a store's payment options control the order shown to buyers at checkout, or is something else deciding it?",
       "expect": [
-        "KB-44B7B71E"
+        "KB-C7E16C35"
       ],
       "source": "paraphrase",
       "cite": "KB-44B7B71E, written from its claim only (sonnet, practitioner voice)",
       "support": "with priorities 1,0,0,1,0,0 the rendered order is neither ascending nor descending by priority.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-44B7B71E"
+      ]
     },
     {
       "id": "P-50EBEEE9-1",
@@ -429,7 +538,10 @@
       "source": "paraphrase",
       "cite": "KB-50EBEEE9, written from its claim only (sonnet, customer voice)",
       "support": "the /cart page carries the whole checkout ... There is no /checkout route to navigate to",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "P-50EBEEE9-2",
@@ -440,7 +552,10 @@
       "source": "paraphrase",
       "cite": "KB-50EBEEE9, written from its claim only (sonnet, practitioner voice)",
       "support": "that page carries the order number plus Show order / Home page only — no line items and no totals",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-50EBEEE9"
+      ]
     },
     {
       "id": "P-8793DFE7-1",
@@ -451,7 +566,10 @@
       "source": "paraphrase",
       "cite": "KB-8793DFE7, written from its claim only (sonnet, customer voice); amounts removed by hand",
       "support": "shippingTaxTotal on the same header was 0.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8793DFE7"
+      ]
     },
     {
       "id": "P-8793DFE7-2",
@@ -462,7 +580,10 @@
       "source": "paraphrase",
       "cite": "KB-8793DFE7, written from its claim only (sonnet, practitioner voice)",
       "support": "derive it from shippingTotalWithTax - shippingTotal, or from the shipment's own taxTotal, instead.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8793DFE7"
+      ]
     },
     {
       "id": "P-1AC55A1D-1",
@@ -473,7 +594,10 @@
       "source": "paraphrase",
       "cite": "KB-1AC55A1D, written from its claim only (sonnet, customer voice)",
       "support": "capturedDate is populated by the post-process step regardless of the outcome.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-1AC55A1D"
+      ]
     },
     {
       "id": "P-1AC55A1D-2",
@@ -484,7 +608,10 @@
       "source": "paraphrase",
       "cite": "KB-1AC55A1D, written from its claim only (sonnet, practitioner voice)",
       "support": "read paymentStatus/status (Authorized vs Paid/Captured), captures[], or the gateway transaction's own status — never capturedDate",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-1AC55A1D"
+      ]
     },
     {
       "id": "P-4B47D094-1",
@@ -495,7 +622,10 @@
       "source": "paraphrase",
       "cite": "KB-4B47D094, written from its claim only (sonnet, customer voice)",
       "support": "selecting that option moved the PDP \"Price\" from $350.00 to $526.00, i.e. base + extendedPrice, not base + unit price.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-4B47D094"
+      ]
     },
     {
       "id": "P-4B47D094-2",
@@ -506,7 +636,10 @@
       "source": "paraphrase",
       "cite": "KB-4B47D094, written from its claim only (sonnet, practitioner voice)",
       "support": "the per-option quantity spinbutton on the PDP is rendered DISABLED, so the option quantity is fixture-fixed and not shopper-editable",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-4B47D094"
+      ]
     },
     {
       "id": "P-6B0E2FF7-1",
@@ -517,7 +650,10 @@
       "source": "paraphrase",
       "cite": "KB-6B0E2FF7, written from its claim only (sonnet, customer voice)",
       "support": "almost all interactive controls ... measure between 24 and 44 CSS px ... Only the hamburger menu button reached 44px or more.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6B0E2FF7"
+      ]
     },
     {
       "id": "P-6B0E2FF7-2",
@@ -528,7 +664,10 @@
       "source": "paraphrase",
       "cite": "KB-6B0E2FF7, written from its claim only (sonnet, practitioner voice)",
       "support": "No actionable control below 24px was found; the few under 24px were visually hidden skip links or disabled decorative rating stars.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6B0E2FF7"
+      ]
     },
     {
       "id": "P-938D7C06-1",
@@ -539,7 +678,10 @@
       "source": "paraphrase",
       "cite": "KB-938D7C06, written from its claim only (sonnet, customer voice)",
       "support": "any other code is still usable through the Custom code field.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-938D7C06"
+      ]
     },
     {
       "id": "P-938D7C06-2",
@@ -550,7 +692,10 @@
       "source": "paraphrase",
       "cite": "KB-938D7C06, written from its claim only (sonnet, practitioner voice)",
       "support": "For an anonymous shopper no preset cards render and the coupons query is not sent; only the Custom code field shows, and typed codes still apply.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-938D7C06"
+      ]
     },
     {
       "id": "P-27B4CD10-1",
@@ -561,7 +706,10 @@
       "source": "paraphrase",
       "cite": "KB-27B4CD10, written from its claim only (sonnet, customer voice)",
       "support": "the column answers \"is this member blocked in THIS organization?\", never \"can this colleague sign in?\".",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-27B4CD10"
+      ]
     },
     {
       "id": "P-27B4CD10-2",
@@ -574,7 +722,11 @@
       "cite": "KB-27B4CD10, written from its claim only (sonnet, practitioner voice)",
       "support": "the per-organization membership lock ... paints the row with a red \"Blocked\" badge ... Locking the security account itself ... leaves the row green and Active.",
       "split": "test",
-      "relabelled": "2026-09-30 after the baseline run: KB-97170665: a membership lock or an effective Locked status gives the red Blocked badge"
+      "relabelled": "2026-09-30 after the baseline run: KB-97170665: a membership lock or an effective Locked status gives the red Blocked badge",
+      "expectPre": [
+        "KB-27B4CD10",
+        "KB-97170665"
+      ]
     },
     {
       "id": "P-4B889114-1",
@@ -585,7 +737,10 @@
       "source": "paraphrase",
       "cite": "KB-4B889114, written from its claim only (sonnet, customer voice)",
       "support": "an account that is Locked in Admin without having been blocked through that dialog still renders as 'Active', with the green tick",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-4B889114"
+      ]
     },
     {
       "id": "P-4B889114-2",
@@ -598,7 +753,11 @@
       "cite": "KB-4B889114, written from its claim only (sonnet, practitioner voice)",
       "support": "Verify a member's real sign-in status on the account's own blade (Security > Users > account > Locked state), not from the storefront roster.",
       "split": "test",
-      "relabelled": "2026-09-30 after the baseline run: KB-0B6067F8: the account locked state, not the contact status, says whether a member can sign in"
+      "relabelled": "2026-09-30 after the baseline run: KB-0B6067F8: the account locked state, not the contact status, says whether a member can sign in",
+      "expectPre": [
+        "KB-4B889114",
+        "KB-0B6067F8"
+      ]
     },
     {
       "id": "P-7837F100-1",
@@ -609,7 +768,10 @@
       "source": "paraphrase",
       "cite": "KB-7837F100, written from its claim only (sonnet, customer voice)",
       "support": "'unpriced is not found by scan' is produced by the price term the storefront adds, not by the barcode middleware",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-7837F100"
+      ]
     },
     {
       "id": "P-7837F100-2",
@@ -620,31 +782,41 @@
       "source": "paraphrase",
       "cite": "KB-7837F100, written from its claim only (sonnet, practitioner voice)",
       "support": "a direct xAPI caller that omits the price term will find unpriced products by barcode.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-7837F100"
+      ]
     },
     {
       "id": "P-A0B3940F-1",
       "q": "If I type only the first part of a product code in quotation marks, will search find the item?",
       "expect": [
-        "KB-A0B3940F"
+        "KB-916CDCA1"
       ],
       "source": "paraphrase",
       "cite": "KB-A0B3940F, written from its claim only (sonnet, customer voice)",
       "support": "a strict prefix of an existing product code returns 0.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-A0B3940F"
+      ]
     },
     {
       "id": "P-A0B3940F-2",
       "q": "How do I search for a product variant, or a part number that only a variant holds, using the catalog API filter syntax?",
       "expect": [
-        "KB-A0B3940F",
+        "KB-F31BD5B8",
         "KB-3BFF73A3"
       ],
       "source": "paraphrase",
       "cite": "KB-A0B3940F, written from its claim only (sonnet, practitioner voice)",
       "support": "a variation is found with is:variation code:\"...\", and a manufacturerPartNumber held only by a variation is found with is:product,variation",
       "split": "calibration",
-      "relabelled": "2026-09-30 after the baseline run: KB-3BFF73A3: manufacturerPartNumber (not mpn) with is:product,variation returns the variation"
+      "relabelled": "2026-09-30 after the baseline run: KB-3BFF73A3: manufacturerPartNumber (not mpn) with is:product,variation returns the variation",
+      "expectPre": [
+        "KB-A0B3940F",
+        "KB-3BFF73A3"
+      ]
     },
     {
       "id": "P-97170665-1",
@@ -655,7 +827,10 @@
       "source": "paraphrase",
       "cite": "KB-97170665, written from its claim only (sonnet, customer voice)",
       "support": "the ONLY API field carrying the block is isLockedInOrganization; anything asserting on status or statusInOrganization reads \"Approved\" for a blocked member.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-97170665"
+      ]
     },
     {
       "id": "P-97170665-2",
@@ -666,7 +841,10 @@
       "source": "paraphrase",
       "cite": "KB-97170665, written from its claim only (sonnet, practitioner voice)",
       "support": "\"Blocked\" is reached by two independent routes — the membership lock ... and an effective status of \"Locked\"",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-97170665"
+      ]
     },
     {
       "id": "P-8646A9CB-1",
@@ -677,7 +855,10 @@
       "source": "paraphrase",
       "cite": "KB-8646A9CB, written from its claim only (sonnet, customer voice)",
       "support": "5 failed attempts, 15-minute lockout, detailed errors on), the next failed sign-in returns user_is_temporary_locked_out with lockoutEnd about 15 minutes ahead.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-8646A9CB"
+      ]
     },
     {
       "id": "P-8646A9CB-2",
@@ -688,7 +869,10 @@
       "source": "paraphrase",
       "cite": "KB-8646A9CB, written from its claim only (sonnet, practitioner voice)",
       "support": "An administrator's organization block is a different path: it yields user_is_locked_in_organization.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-8646A9CB"
+      ]
     },
     {
       "id": "P-29037452-1",
@@ -699,7 +883,10 @@
       "source": "paraphrase",
       "cite": "KB-29037452, written from its claim only (sonnet, customer voice)",
       "support": "Redeemed rows show the points amount unsigned, in the same plain text and colour as Earned rows: no minus sign and no colour distinction.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-29037452"
+      ]
     },
     {
       "id": "P-29037452-2",
@@ -710,7 +897,10 @@
       "source": "paraphrase",
       "cite": "KB-29037452, written from its claim only (sonnet, practitioner voice)",
       "support": "There is no per-row running balance either, only a single overall Balance figure at the top of the page. This is BY DESIGN",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-29037452"
+      ]
     },
     {
       "id": "P-734A0813-1",
@@ -721,7 +911,10 @@
       "source": "paraphrase",
       "cite": "KB-734A0813, written from its claim only (sonnet, customer voice)",
       "support": "Adding the same product twice to a cart consolidates into one line with the summed quantity",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-734A0813"
+      ]
     },
     {
       "id": "P-734A0813-2",
@@ -732,7 +925,10 @@
       "source": "paraphrase",
       "cite": "KB-734A0813, written from its claim only (sonnet, practitioner voice)",
       "support": "A configured line item is never consolidated: re-adding an identical configuration, and merging carts, always create a separate line, BY DESIGN",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-734A0813"
+      ]
     },
     {
       "id": "P-A4EB3766-1",
@@ -743,7 +939,10 @@
       "source": "paraphrase",
       "cite": "KB-A4EB3766, written from its claim only (sonnet, customer voice)",
       "support": "it is EMPTIED IN PLACE and handed back to the same shopper. GET /api/carts/{id} on the pre-order cart id still returns 200 after placement",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-A4EB3766"
+      ]
     },
     {
       "id": "P-A4EB3766-2",
@@ -754,7 +953,10 @@
       "source": "paraphrase",
       "cite": "KB-A4EB3766, written from its claim only (sonnet, practitioner voice)",
       "support": "read the order's own line items and discount rows, which are snapshots, and treat the cart id on any pre-checkout evidence as a pointer that has since been reused.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-A4EB3766"
+      ]
     },
     {
       "id": "P-6D5E2CD1-1",
@@ -765,7 +967,10 @@
       "source": "paraphrase",
       "cite": "KB-6D5E2CD1, written from its claim only (sonnet, customer voice)",
       "support": "A pricelist with no assignment at all is invisible to the storefront however many prices it holds.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6D5E2CD1"
+      ]
     },
     {
       "id": "P-6D5E2CD1-2",
@@ -776,7 +981,10 @@
       "source": "paraphrase",
       "cite": "KB-6D5E2CD1, written from its claim only (sonnet, practitioner voice)",
       "support": "priority, higher wins -- an assignment at priority 20000 beat a matching unconditional one at priority 1 for the same product.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-6D5E2CD1"
+      ]
     },
     {
       "id": "P-8264632C-1",
@@ -789,7 +997,11 @@
       "cite": "KB-8264632C, written from its claim only (sonnet, customer voice)",
       "support": "a coupon that is on the cart and did NOT apply renders as an ENABLED box holding the code with an Apply button",
       "split": "dev",
-      "relabelled": "2026-09-30 after the baseline run: KB-C1024558: DiscountType.coupon is the one field that says a reward was unlocked by the code"
+      "relabelled": "2026-09-30 after the baseline run: KB-C1024558: DiscountType.coupon is the one field that says a reward was unlocked by the code",
+      "expectPre": [
+        "KB-8264632C",
+        "KB-C1024558"
+      ]
     },
     {
       "id": "P-8264632C-2",
@@ -800,7 +1012,10 @@
       "source": "paraphrase",
       "cite": "KB-8264632C, written from its claim only (sonnet, practitioner voice)",
       "support": "The only page-reachable way to get rid of a dead code is Clear cart, which drops the coupons along with every line item",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-8264632C"
+      ]
     },
     {
       "id": "P-5ADBFB34-1",
@@ -811,7 +1026,10 @@
       "source": "paraphrase",
       "cite": "KB-5ADBFB34, written from its claim only (sonnet, customer voice)",
       "support": "BestRewardPromotionPolicy, which keeps at most ONE CartSubtotalReward for the whole cart",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-5ADBFB34"
+      ]
     },
     {
       "id": "P-5ADBFB34-2",
@@ -822,7 +1040,10 @@
       "source": "paraphrase",
       "cite": "KB-5ADBFB34, written from its claim only (sonnet, practitioner voice)",
       "support": "To make both apply, the policy must be CombineStackable.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-5ADBFB34"
+      ]
     },
     {
       "id": "P-02238DE5-1",
@@ -833,7 +1054,10 @@
       "source": "paraphrase",
       "cite": "KB-02238DE5, written from its claim only (sonnet, customer voice)",
       "support": "An Organization employee still gets the Corporate navigation group and still loads /company/members... what the role removes is the 'Invite members' button",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-02238DE5"
+      ]
     },
     {
       "id": "P-02238DE5-2",
@@ -844,7 +1068,10 @@
       "source": "paraphrase",
       "cite": "KB-02238DE5, written from its claim only (sonnet, practitioner voice)",
       "support": "'the nav is hidden' is never a safe assumption to build a permission test on - assert on the absence of the specific control instead.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-02238DE5"
+      ]
     },
     {
       "id": "P-D080C209-1",
@@ -855,7 +1082,10 @@
       "source": "paraphrase",
       "cite": "KB-D080C209, written from its claim only (sonnet, customer voice)",
       "support": "a rep can open any order of a customer they serve on the buyer-facing /account/orders/{id} and act on it, payment included",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-D080C209"
+      ]
     },
     {
       "id": "P-D080C209-2",
@@ -866,7 +1096,10 @@
       "source": "paraphrase",
       "cite": "KB-D080C209, written from its claim only (sonnet, practitioner voice)",
       "support": "This is BY DESIGN: the order access rule allows an administrator, the order's customer, or a contact belonging to the order's organization",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-D080C209"
+      ]
     },
     {
       "id": "P-DB7B6317-1",
@@ -877,7 +1110,10 @@
       "source": "paraphrase",
       "cite": "KB-DB7B6317, written from its claim only (sonnet, customer voice)",
       "support": "The storefront relabels statuses for shoppers, so a storefront label need not equal the admin value and the mapping is not always one-to-one.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-DB7B6317"
+      ]
     },
     {
       "id": "P-DB7B6317-2",
@@ -888,7 +1124,10 @@
       "source": "paraphrase",
       "cite": "KB-DB7B6317, written from its claim only (sonnet, practitioner voice)",
       "support": "Processing appears in the orders grid but is not settable - it is computed when payment is captured.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-DB7B6317"
+      ]
     },
     {
       "id": "P-BAEBCDA7-1",
@@ -899,89 +1138,116 @@
       "source": "paraphrase",
       "cite": "KB-BAEBCDA7, written from its claim only (sonnet, customer voice)",
       "support": "There is no cancel control and no resend control for an outstanding organization invitation, on either surface.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-BAEBCDA7"
+      ]
     },
     {
       "id": "P-BAEBCDA7-2",
       "q": "If I remove a pending invitee from the company member list, can I then invite that same email again?",
       "expect": [
         "KB-BAEBCDA7",
-        "KB-FA724D31",
+        "KB-9912A219",
         "KB-DA14E8B7"
       ],
       "source": "paraphrase",
       "cite": "KB-BAEBCDA7, written from its claim only (sonnet, practitioner voice)",
       "support": "Delete does not free the address either: it removes the organization membership only, so the account survives and the address stays taken forever",
       "split": "dev",
-      "relabelled": "2026-09-30 after the baseline run: KB-FA724D31: Delete leaves the account holding the address, so re-inviting it is not a clean slate; KB-DA14E8B7: re-inviting that address is refused as a duplicate"
+      "relabelled": "2026-09-30 after the baseline run: KB-FA724D31: Delete leaves the account holding the address, so re-inviting it is not a clean slate; KB-DA14E8B7: re-inviting that address is refused as a duplicate",
+      "expectPre": [
+        "KB-BAEBCDA7",
+        "KB-FA724D31",
+        "KB-DA14E8B7"
+      ]
     },
     {
       "id": "P-4D082C89-1",
       "q": "Right after my company invites a colleague, how does that person appear in the member list before they finish signing up?",
       "expect": [
-        "KB-4D082C89",
+        "KB-BBBC4225",
         "KB-D8FDFA6F"
       ],
       "source": "paraphrase",
       "cite": "KB-4D082C89, written from its claim only (sonnet, customer voice)",
       "support": "On the storefront roster the row shows the literal name 'Invite sent' with an empty real name, the chosen role, the email lowercased, and status 'Invited'",
       "split": "dev",
-      "relabelled": "2026-09-30 after the baseline run: KB-D8FDFA6F: the invited row shows \"Invite sent\" in place of the name, with a green Active tick"
+      "relabelled": "2026-09-30 after the baseline run: KB-D8FDFA6F: the invited row shows \"Invite sent\" in place of the name, with a green Active tick",
+      "expectPre": [
+        "KB-4D082C89",
+        "KB-D8FDFA6F"
+      ]
     },
     {
       "id": "P-4D082C89-2",
       "q": "In the back office, why does a person who was just invited look identical to someone an admin blocked?",
       "expect": [
-        "KB-4D082C89"
+        "KB-972CF223"
       ],
       "source": "paraphrase",
       "cite": "KB-4D082C89, written from its claim only (sonnet, practitioner voice)",
       "support": "a pending invitee and a blocked member are both simply 'Locked' in Admin, and the field that could tell them apart is blank for the invitee.",
-      "split": "dev"
+      "split": "dev",
+      "expectPre": [
+        "KB-4D082C89"
+      ]
     },
     {
       "id": "P-6C3FA2B7-1",
       "q": "If I log out and log back in, will the discount code I had in my basket still be there?",
       "expect": [
-        "KB-6C3FA2B7"
+        "KB-EF478346"
       ],
       "source": "paraphrase",
       "cite": "KB-6C3FA2B7, written from its claim only (sonnet, customer voice)",
       "support": "Sign-out issues NO cart mutation... so the registered user's server-side cart, coupon row included, is untouched.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-6C3FA2B7"
+      ]
     },
     {
       "id": "P-6C3FA2B7-2",
       "q": "When a guest basket with a voucher is combined into a user's basket at login, is the discount recalculated on the combined total?",
       "expect": [
-        "KB-6C3FA2B7"
+        "KB-EF478346"
       ],
       "source": "paraphrase",
       "cite": "KB-6C3FA2B7, written from its claim only (sonnet, practitioner voice)",
       "support": "the coupon survives from BOTH sides and its discount RE-PRICES against the post-merge subtotal rather than staying frozen.",
-      "split": "test"
+      "split": "test",
+      "expectPre": [
+        "KB-6C3FA2B7"
+      ]
     },
     {
       "id": "P-66089074-1",
       "q": "Why don't the items I set aside for later show the options I picked, only name and price?",
       "expect": [
-        "KB-66089074"
+        "KB-A272971F"
       ],
       "source": "paraphrase",
       "cite": "KB-66089074, written from its claim only (sonnet, customer voice)",
       "support": "A saved-for-later card shows only the product name, price and Move to cart - no configuration detail",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-66089074"
+      ]
     },
     {
       "id": "P-66089074-2",
       "q": "When a guest signs in and their basket is combined with their account basket, why is no merge request visible in the browser traffic?",
       "expect": [
-        "KB-66089074"
+        "KB-B4490B0B"
       ],
       "source": "paraphrase",
       "cite": "KB-66089074, written from its claim only (sonnet, practitioner voice)",
       "support": "The guest-to-signed-in cart merge happens server-side during sign-in, so no explicit mergeCart call need appear in the network log.",
-      "split": "calibration"
+      "split": "calibration",
+      "expectPre": [
+        "KB-66089074"
+      ]
     }
   ],
   "controls": [
@@ -1051,7 +1317,11 @@
         "KB-DAD0D552"
       ],
       "note": "addItem vs stock is not recorded: KB-6FAB2EBA is the 1M line-quantity limit, KB-DAD0D552 is the UCP surface",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-6FAB2EBA",
+        "KB-DAD0D552"
+      ]
     },
     {
       "id": "W-S5",
@@ -1063,7 +1333,11 @@
         "KB-A4EB3766"
       ],
       "note": "no entry mentions reorder",
-      "split": "test"
+      "split": "test",
+      "nearPre": [
+        "KB-4CCC2DD6",
+        "KB-A4EB3766"
+      ]
     },
     {
       "id": "W-S6",
@@ -1075,7 +1349,11 @@
         "KB-7F535D52"
       ],
       "note": "only held-for-review is recorded, not a declined card",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-78638393",
+        "KB-7F535D52"
+      ]
     },
     {
       "id": "W-S7",
@@ -1086,7 +1364,10 @@
         "KB-C55BBF2E"
       ],
       "note": "KB-C55BBF2E models sale price in cart totals; no strikethrough rendering is recorded",
-      "split": "test"
+      "split": "test",
+      "nearPre": [
+        "KB-C55BBF2E"
+      ]
     },
     {
       "id": "W-S9",
@@ -1098,7 +1379,11 @@
         "KB-71011C1F"
       ],
       "note": "no PDP out-of-stock badge recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-191B1B4C",
+        "KB-71011C1F"
+      ]
     },
     {
       "id": "W-S13",
@@ -1109,7 +1394,10 @@
         "KB-31802239"
       ],
       "note": "catalog deletion not recorded; neighbours are about deleted products in the index",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-31802239"
+      ]
     },
     {
       "id": "W-S14",
@@ -1120,7 +1408,10 @@
         "KB-1F2EBF83"
       ],
       "note": "only Return.ReturnNewNumberTemplate is mentioned",
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-1F2EBF83"
+      ]
     },
     {
       "id": "W-S15",
@@ -1132,7 +1423,11 @@
         "KB-71011C1F"
       ],
       "note": "only the hidden price.USD:(0 TO) term is recorded, no price facet",
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-7837F100",
+        "KB-71011C1F"
+      ]
     },
     {
       "id": "W-L2",
@@ -1143,7 +1438,10 @@
         "KB-6AA0D7FB"
       ],
       "note": "no recalculation-on-address-change observation",
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-6AA0D7FB"
+      ]
     },
     {
       "id": "W-L8",
@@ -1151,11 +1449,16 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:38.767Z session 44d4e1d7, run VCST-6087-wave1 row L8; agent verdict none",
       "near": [
-        "KB-409CE7C7",
+        "KB-8C530141",
+        "KB-EE6A5543",
         "KB-25388E6C"
       ],
       "note": "stock on a non-main assigned FFC counts (UCP), but summing across several centres on the storefront is not recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-409CE7C7",
+        "KB-25388E6C"
+      ]
     },
     {
       "id": "W-P2",
@@ -1166,7 +1469,10 @@
         "KB-8264632C"
       ],
       "note": "only 'on an empty cart the coupon box is not rendered'; the empty-cart page is not described",
-      "split": "test"
+      "split": "test",
+      "nearPre": [
+        "KB-8264632C"
+      ]
     },
     {
       "id": "W-P5",
@@ -1177,7 +1483,10 @@
         "KB-EDDBBE75"
       ],
       "note": "balances change through earn/redeem handling on orders; the moment of accrual is not recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-EDDBBE75"
+      ]
     },
     {
       "id": "W-C1",
@@ -1189,7 +1498,11 @@
         "KB-F78ED1CC"
       ],
       "note": "no max order quantity recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-98A231B6",
+        "KB-F78ED1CC"
+      ]
     },
     {
       "id": "W-C3",
@@ -1200,7 +1513,10 @@
         "KB-737F80EE"
       ],
       "note": "profile email editing not recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-737F80EE"
+      ]
     },
     {
       "id": "W-C5",
@@ -1208,11 +1524,16 @@
       "source": "wave1",
       "cite": "log 2026-09-30T08:33:17.568Z session 44d4e1d7, run VCST-6087-wave1 row C5; agent verdict none",
       "near": [
-        "KB-00DB63A4",
+        "KB-1447353E",
+        "KB-19826CC0",
         "KB-37B8E605"
       ],
       "note": "Add/Edit/Delete exist, one default per member; deleting the default is not recorded",
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-00DB63A4",
+        "KB-37B8E605"
+      ]
     },
     {
       "id": "W-X1",
@@ -1255,7 +1576,10 @@
         "KB-17555498"
       ],
       "note": "Hangfire jobs and a manual requeue are recorded, no retry count",
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-17555498"
+      ]
     },
     {
       "id": "W-X6",
@@ -1266,7 +1590,10 @@
         "KB-6AA0D7FB"
       ],
       "note": "only FixedRate shipping is recorded",
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-6AA0D7FB"
+      ]
     },
     {
       "id": "N-gift-untick",
@@ -1274,9 +1601,13 @@
       "source": "control",
       "cite": "near neighbour of KB-0B27E984 (records the pre-checked gift reaching the order, never an unticked one); no entry mentions unticking or declining a gift -- bodies read on vc-knowledge@8c8f844",
       "near": [
-        "KB-0B27E984"
+        "KB-C4346EB2",
+        "KB-ADF1DE84"
       ],
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-0B27E984"
+      ]
     },
     {
       "id": "N-coupon-length",
@@ -1287,7 +1618,11 @@
         "KB-938D7C06",
         "KB-8264632C"
       ],
-      "split": "test"
+      "split": "test",
+      "nearPre": [
+        "KB-938D7C06",
+        "KB-8264632C"
+      ]
     },
     {
       "id": "N-capture-flow",
@@ -1298,7 +1633,11 @@
         "KB-1AC55A1D",
         "KB-EC76F588"
       ],
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-1AC55A1D",
+        "KB-EC76F588"
+      ]
     },
     {
       "id": "N-tier-price",
@@ -1306,10 +1645,15 @@
       "source": "control",
       "cite": "near neighbour of KB-24AA6296 (mentions minQuantity on price rows) and KB-6D5E2CD1 (which list applies); no tier-price display is recorded -- bodies read on vc-knowledge@8c8f844",
       "near": [
-        "KB-24AA6296",
+        "KB-16363E17",
+        "KB-3FCB032F",
         "KB-6D5E2CD1"
       ],
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-24AA6296",
+        "KB-6D5E2CD1"
+      ]
     },
     {
       "id": "N-signin-captcha",
@@ -1319,7 +1663,10 @@
       "near": [
         "KB-8646A9CB"
       ],
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-8646A9CB"
+      ]
     },
     {
       "id": "N-split-ship",
@@ -1330,7 +1677,11 @@
         "KB-50EBEEE9",
         "KB-CC9A98D3"
       ],
-      "split": "test"
+      "split": "test",
+      "nearPre": [
+        "KB-50EBEEE9",
+        "KB-CC9A98D3"
+      ]
     },
     {
       "id": "N-roster-export",
@@ -1341,7 +1692,11 @@
         "KB-02238DE5",
         "KB-27B4CD10"
       ],
-      "split": "dev"
+      "split": "dev",
+      "nearPre": [
+        "KB-02238DE5",
+        "KB-27B4CD10"
+      ]
     },
     {
       "id": "N-points-filter",
@@ -1351,7 +1706,10 @@
       "near": [
         "KB-29037452"
       ],
-      "split": "calibration"
+      "split": "calibration",
+      "nearPre": [
+        "KB-29037452"
+      ]
     },
     {
       "id": "N-saved-later-signout",
@@ -1359,10 +1717,16 @@
       "source": "control",
       "cite": "near neighbour of KB-66089074 (saved-for-later card contents) and KB-6C3FA2B7 (a coupon survives sign-out); persistence of the saved list is not recorded -- bodies read on vc-knowledge@8c8f844",
       "near": [
+        "KB-A272971F",
+        "KB-B4490B0B",
+        "KB-EF478346",
+        "KB-2EDC661F"
+      ],
+      "split": "calibration",
+      "nearPre": [
         "KB-66089074",
         "KB-6C3FA2B7"
-      ],
-      "split": "calibration"
+      ]
     }
   ],
   "contested": [
@@ -1370,38 +1734,49 @@
       "id": "W-S8",
       "q": "Does addCoupon mutation accept coupon codes case-insensitively?",
       "expect": [
-        "KB-001183CF"
+        "KB-A3004A3B"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:31:46.179Z session 44d4e1d7, run VCST-6087-wave1 row S8; agent verdict show KB-001183CF",
       "note": "KB-001183CF: application case-insensitive; KB-35F20D97: validateCoupon matching case-sensitive",
       "split": "test",
-      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live.",
+      "expectPre": [
+        "KB-001183CF"
+      ]
     },
     {
       "id": "P-001183CF-1",
       "q": "If I type my voucher code in lowercase instead of capitals, will it still work?",
       "expect": [
-        "KB-001183CF"
+        "KB-A3004A3B"
       ],
       "source": "paraphrase",
       "cite": "KB-001183CF, written from its claim only (sonnet, customer voice)",
       "support": "a code typed in another case applies the same coupon.",
       "split": "test",
-      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live.",
+      "expectPre": [
+        "KB-001183CF"
+      ]
     },
     {
       "id": "P-001183CF-2",
       "q": "What happens when two different promo codes differ only in letter case, and does the coupon card in the account show the original casing?",
       "expect": [
-        "KB-001183CF"
+        "KB-A3004A3B",
+        "KB-F0C5CA5E"
       ],
       "source": "paraphrase",
       "cite": "KB-001183CF, written from its claim only (sonnet, practitioner voice)",
       "support": "two distinct coupons whose codes differ only by case collide, and the promotion policy picks between them.",
       "split": "test",
-      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live.",
+      "expectPre": [
+        "KB-001183CF"
+      ]
     }
   ],
-  "unrecovered": "§22.14 labels SIX targets; two of them (the 8-word row served at coverage 0.63 and the 12-word row served at 0.82) are given only as a length and a coverage, with neither the question nor the entry named, and the throwaway scripts that held them were deleted. They are NOT reconstructed here. The three 9f98d03f rows above were added instead, each labelled by the operator rather than inferred."
+  "unrecovered": "§22.14 labels SIX targets; two of them (the 8-word row served at coverage 0.63 and the 12-word row served at 0.82) are given only as a length and a coverage, with neither the question nor the entry named, and the throwaway scripts that held them were deleted. They are NOT reconstructed here. The three 9f98d03f rows above were added instead, each labelled by the operator rather than inferred.",
+  "relabelledForMigration": "2026-09-30, operator-approved: 25 rows whose expected entry was split by the migration now expect the child that answers them; `expectPre` keeps the pre-migration label. Controls keep `nearPre` likewise."
 }
