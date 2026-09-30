@@ -107,7 +107,7 @@ When `fullstack-backend` is fixing an Admin SPA **layout/CSS** bug it cannot pro
 a **visual render harness** (`skills/angular-admin/visual-render-harness.md`) — a throwaway
 `render.html` that loads the real blade `.tpl.html` against the real `platform.css`. Your job is the browser
 proof **before the PR opens**:
-- Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1`) and open
+- Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/<ticket-key> -p 8099 -c-1`) and open
   `render.html` in `playwright-edge` (or Chrome DevTools MCP).
 - Screenshot **HEAD/broken (red)** vs **fixed (green)** at the relevant blade width(s)/state(s); confirm the
   defect (overlap/misalignment/clipping/spacing) is gone and the layout matches the canonical sibling blade.

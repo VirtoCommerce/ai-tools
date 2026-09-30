@@ -233,7 +233,7 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png reports/bugs/screenshots/<slu
   guess a path. A guessed path was one of the two `Read` failures on the OPUS run.
 
 Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/`, chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
-`BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
+`BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
 
 ### Bug Report Folder Structure
 
@@ -306,7 +306,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 ## Step 5 — Create the Tracker Ticket (optional)
 
-> **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
+> **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
