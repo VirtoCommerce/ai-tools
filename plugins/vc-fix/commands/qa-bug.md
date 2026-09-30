@@ -30,6 +30,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 /qa-bug Cart total shows $0 after adding item     # Bug from description
 /qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
+/qa-bug "<defect>" found-by:agent-testing VCST-1234 # Filed by an agent flow (also agent-regression <RUN_ID>)
 ```
 
 ---
@@ -67,6 +68,13 @@ Create a structured bug report from a description, screenshot, or observed issue
 **If screenshot provided:**
 - Read the screenshot to identify the page and issue
 - Use qa-testing-expert to navigate to the same page and verify
+
+**Who found it — decide now, write it on the report's line 4.** An agent flow that saw the failure in its own
+run passes `found-by:agent-testing <TICKET>` (`/qa-test`, `/qa-test-fast`, exploratory) or
+`found-by:agent-regression <RUN_ID>` (a regression run or its triage); write it as
+`**Found by:** agent — testing <TICKET>` / `**Found by:** agent — regression <RUN_ID>`. Anything else — a person's
+description, a ticket key or screenshot a user handed over, no argument — is `**Found by:** human`. Step 5's
+origin labels are read from this line (`knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
 
 ---
 
@@ -254,6 +262,7 @@ Every bug report MUST include a status line immediately after the title (line 3)
 
 ```markdown
 ## Status: OPEN | CONFIRMED | REPRODUCED | READY_TO_SUBMIT | FIXED | CLOSED
+**Found by:** agent — testing <TICKET> | agent — regression <RUN_ID> | human
 ```
 
 Valid statuses:
@@ -382,7 +391,7 @@ Fields either way:
 - Summary: from bug title
 - Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
-- **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when an agent saw the failure in its own run — read the report's `Found by` line; `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
+- **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when the report's `**Found by:**` line says `agent — testing …` or `agent — regression …` (Step 1); `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
 - **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine selects tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
   - **Apply when the report would survive `/qa-fix` Gate 0** (`.claude/rules/quality-gates.md` §1): concrete reproduction steps (navigation path, explicit action sequence, or an API call with its inputs) + clear expected-vs-actual; an environment and at least one version; a localized root cause — the **Fix Routing** block names ONE repo at **Routing confidence: HIGH | MEDIUM**; small diff, no refactoring, no breaking change (no public REST/GraphQL/DTO contract change, no DB schema/migration, no manifest or domain-event change).
   - **Withhold for every Gate-0 bail:** no real STR, ambiguous, by-design, config- or permission-gated, environment/data drift, API-only repro, security disclosure, needs refactoring, breaking change, multi-repo (**Routing confidence: LOW**). **When in doubt, withhold** — a missing label costs one manual `/qa-fix <KEY>`; a wrong one burns a cycle on a BAIL and leaves an out-of-scope comment on the ticket.

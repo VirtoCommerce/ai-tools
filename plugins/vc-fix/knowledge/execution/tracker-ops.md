@@ -187,7 +187,8 @@ them. Always resolve the *destination status* by role, then map it to the live w
 
 ## 2a. Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates says who found it and, for an agent finding, during what.
+Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+and, for an agent finding, during what.
 In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a valid set.
 
 | Who found it | Labels |
@@ -196,7 +197,8 @@ In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a
 | Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
 | A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
 
-The labels go in `additional_fields.labels`; keep any labels already there.
+The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else
+in `additional_fields.labels`; keep any labels already there.
 
 **Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
 screenshot, API response or trace from its own run. If a person described the bug — even when they

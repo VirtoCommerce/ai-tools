@@ -15,17 +15,33 @@
 //   reported-by-human     — a person found it (the user, a Teams/partner report); Claude only filed it
 // A bug a person described — even one Claude then reproduced — is `reported-by-human`, and so is
 // any bug whose origin is unclear.
+//
+// WHAT COUNTS AS A BUG. Issue type `Bug`, and a `Sub-task` that is one: /qa-test files an in-scope
+// bug as a Sub-task of the ticket (tracker-ops.md §5b), but /ba-analyze files story sub-tasks too, so
+// a Sub-task is checked only when it carries a bug's marks — the `## Fix Routing` block every
+// /qa-bug report ends with, or an origin / auto-fix label.
+//
+// SCOPE. The labels are VC-internal. A checkout whose project-profile.json says
+// `projectType: "client"` files into a client's tracker, and nothing is required there.
 
 export const AGENT_LABEL = "found-by-agent";
 export const HUMAN_LABEL = "reported-by-human";
 export const WHEN_LABELS = ["found-in-testing", "found-in-regression"];
+const BUG_MARK_LABELS = [AGENT_LABEL, HUMAN_LABEL, ...WHEN_LABELS, "vc-fix", "qa-autofix"];
 
-/** Pull the issue type and labels out of the tool input of any Atlassian MCP create call. */
+const asLabels = (raw) =>
+  raw == null ? [] : (Array.isArray(raw) ? raw : String(raw).split(/[,\s]+/)).map((l) => String(l).trim()).filter(Boolean);
+
+/**
+ * Pull the issue type, labels and description out of the tool input of any Atlassian MCP create
+ * call. Labels are the UNION of every place a connector accepts them: the claude.ai connector has a
+ * top-level `labels` parameter, the others take `additional_fields.labels` or `fields.labels`.
+ */
 export function readCreateInput(toolName, toolInput) {
   let input = toolInput ?? {};
   // Atlassian_MCP routes discovered operations through executeWrite({ name, inputs }).
   if (/__executeWrite$/.test(toolName ?? "")) {
-    if (!/createJiraIssue/i.test(String(input.name ?? ""))) return null;
+    if (String(input.name ?? "") !== "createJiraIssue") return null;
     input = input.inputs ?? {};
   } else if (!/__createJiraIssue$/.test(toolName ?? "")) {
     return null;
@@ -33,24 +49,35 @@ export function readCreateInput(toolName, toolInput) {
   const type = String(
     input.issueTypeName ?? input.issueType ?? input.fields?.issuetype?.name ?? input.additional_fields?.issuetype?.name ?? "",
   );
-  const raw = input.additional_fields?.labels ?? input.fields?.labels ?? input.labels ?? [];
-  const labels = (Array.isArray(raw) ? raw : String(raw).split(/[,\s]+/)).map((l) => String(l).trim()).filter(Boolean);
-  return { type, labels };
+  const labels = [...new Set([input.additional_fields?.labels, input.fields?.labels, input.labels].flatMap(asLabels))];
+  const description = String(input.description ?? input.fields?.description ?? "");
+  return { type, labels, description };
+}
+
+/** A Bug, or a Sub-task carrying a bug's marks (see WHAT COUNTS AS A BUG above). */
+export function isBug({ type, labels, description }) {
+  const t = type.toLowerCase().replace(/[\s-]/g, "");
+  if (t === "bug") return true;
+  if (t !== "subtask") return false;
+  return /^#{1,3}\s*Fix Routing\b/m.test(description) || labels.some((l) => BUG_MARK_LABELS.includes(l));
 }
 
 const HELP =
   `  found-by-agent + found-in-testing      Claude found it while testing a ticket\n` +
   `  found-by-agent + found-in-regression   Claude found it in a regression run\n` +
   `  reported-by-human                      a person found it; Claude only filed it (also when unsure)\n` +
-  `Add them to additional_fields.labels (keep any labels already there) and create the issue again.`;
+  `Add them to the call's labels (the \`labels\` parameter where the tool has one, else additional_fields.labels),\n` +
+  `keep any labels already there, and create the issue again.`;
 
 /**
+ * @param {{projectType?: string}} [profile] the deployment profile; `client` ⇒ nothing is required
  * @returns {string|null} a refusal message when a Bug is being created without a valid label
- *   set, otherwise null (not a create call, not a Bug, or labelled correctly).
+ *   set, otherwise null (not a create call, not a Bug, a client tracker, or labelled correctly).
  */
-export function bugLabelRefusal(toolName, toolInput) {
+export function bugLabelRefusal(toolName, toolInput, profile = {}) {
+  if (profile?.projectType === "client") return null;
   const read = readCreateInput(toolName, toolInput);
-  if (!read || read.type.toLowerCase() !== "bug") return null;
+  if (!read || !isBug(read)) return null;
   const agent = read.labels.includes(AGENT_LABEL);
   const human = read.labels.includes(HUMAN_LABEL);
   const when = WHEN_LABELS.filter((l) => read.labels.includes(l));

@@ -214,7 +214,8 @@ the in-scope case's fallback path.
 
 ### Labels on bugs Claude files
 
-Every Jira **Bug** Claude creates says who found it and, for an agent finding, during what.
+Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+and, for an agent finding, during what.
 The PreToolUse hook `.claude/hooks/enforce-bug-labels.mjs` (logic: `scripts/lib/jira-bug-labels.mjs`)
 refuses the create call without a valid set and names what is missing.
 
@@ -224,7 +225,8 @@ refuses the create call without a valid set and names what is missing.
 | Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
 | A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
 
-The labels go in `additional_fields.labels`; keep any labels already there.
+The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else
+in `additional_fields.labels`; keep any labels already there.
 
 **Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
 screenshot, API response or trace from its own run. If a person described the bug — even when they
@@ -233,7 +235,8 @@ If the origin is unclear, it is `reported-by-human` too. Undercounting agent fin
 crediting agents with a person's finding corrupts the metric (`docs/bug-detection-requirements.md` §10).
 
 A label that turns out wrong is corrected in Jira by hand. These labels are VC-internal; the hook runs
-only in this repo and never on a client's tracker.
+only in this repo, and it requires nothing when `project-profile.json` says `projectType: "client"` — a client's
+tracker never gets them.
 
 ### Comment & body style — clear, brief, understandable
 

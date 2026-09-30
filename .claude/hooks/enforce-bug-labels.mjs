@@ -13,10 +13,13 @@
 
 import { readFileSync } from "node:fs";
 import { bugLabelRefusal } from "../../scripts/lib/jira-bug-labels.mjs";
+import { loadProjectProfile } from "../../scripts/lib/project-profile.mjs";
 
 try {
   const event = JSON.parse(readFileSync(0, "utf8"));
-  const refusal = bugLabelRefusal(event.tool_name ?? "", event.tool_input);
+  // A client deployment files into the client's tracker, where these VC-internal labels never go.
+  const profile = loadProjectProfile(process.env.CLAUDE_PROJECT_DIR || process.cwd());
+  const refusal = bugLabelRefusal(event.tool_name ?? "", event.tool_input, profile);
   if (!refusal) process.exit(0);
   process.stdout.write(JSON.stringify({ decision: "block", reason: refusal }));
   process.exit(0);
