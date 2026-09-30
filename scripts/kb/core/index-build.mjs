@@ -12,7 +12,7 @@
 // (PLAN §12 rule 5): a declared count is a second copy of something that already has a home, and
 // the second copy is the one that goes stale.
 
-import { normalizeScope } from './index-load.mjs';
+import { idList, normalizeScope, textList } from './index-load.mjs';
 
 /**
  * The two counts, from the evidence itself.
@@ -40,15 +40,25 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  */
 export function buildRow(data, path) {
   const { trust, disputed } = countEvidence(data.evidence);
+  // The card and the retirement pointer are written only when the entry has them. A key on every
+  // row would change every row the first time a client from this change pushed, and a client from
+  // before it would take the key off again on its next push -- the same row flapping between two
+  // shapes until the whole team had pulled (VCST-6122 Decision 8).
+  const questions = textList(data.questions);
+  const concepts = idList(data.concepts);
+  const supersededBy = idList(data.supersededBy);
   return {
     id: String(data.id),
     path,
     subject: String(data.subject ?? ''),
     question: String(data.question ?? ''),
+    ...(questions.length ? { questions } : {}),
+    ...(concepts.length ? { concepts } : {}),
     anchors: [...new Set((data.anchors ?? []).map(anchorText).filter(Boolean))],
     scope: normalizeScope(data.appliesTo),
     plane: String(data.plane ?? 'experiential'),
     status: String(data.status ?? 'active'),
+    ...(supersededBy.length ? { supersededBy } : {}),
     trust,
     disputed,
   };

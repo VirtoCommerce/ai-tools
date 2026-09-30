@@ -12,6 +12,7 @@
 
 import { MSYS_REMEDY } from './anchors.mjs';
 import { HEADLINE } from './exits.mjs';
+import { idList } from './index-load.mjs';
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
 export function hitLines(hit) {
@@ -100,6 +101,9 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
     `scope:    ${r.row.scope.join(', ')}`,
   ];
+  // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
+  const next = idList(r.entry.supersededBy);
+  if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
   for (const e of r.entry.evidence ?? []) {
     lines.push(`  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'} at ${e.at ?? '?'}`
       + `${e.note ? ` — ${e.note}` : ''}`);
