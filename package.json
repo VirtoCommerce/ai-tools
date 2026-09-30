@@ -1,5 +1,5 @@
 {
-  "name": "ai-tools",
+  "name": "vc-mcp-testing-module",
   "version": "0.8.1",
   "description": "",
   "main": "config.js",
@@ -199,10 +199,6 @@
     "bl:extract": "npx tsx scripts/knowledge/extract-bl.ts",
     "bl:extract:list": "npx tsx scripts/knowledge/extract-bl.ts --list",
     "bl:remap": "npx tsx scripts/knowledge/remap-bl-citations.ts",
-    "bl:convert": "npx tsx scripts/knowledge/bl-yaml.ts",
-    "bl:convert:check": "npx tsx scripts/knowledge/bl-yaml.ts --check",
-    "bl:render": "npx tsx scripts/knowledge/bl-yaml.ts --render-oracle",
-    "inv:run": "npx tsx scripts/invariants/run.ts",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:extract": "npx tsx scripts/knowledge/extract-ecl.ts",
     "ecl:extract:list": "npx tsx scripts/knowledge/extract-ecl.ts --list",
@@ -307,28 +303,31 @@
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
     "kb:install": "node scripts/kb/install-mcp.mjs",
     "models:check": "npx tsx scripts/maintenance/check-test-models.ts",
-    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts"
+    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts",
+    "seed:push-audience": "node scripts/seed-data/push-messages/seed-push-audience.mjs",
+    "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
+    "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
+    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VirtoCommerce/ai-tools.git"
+    "url": "git+https://github.com/VirtoCommerce/vc-mcp-testing-module.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/VirtoCommerce/ai-tools/issues"
+    "url": "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues"
   },
-  "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
+  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
   "dependencies": {
     "@azure/identity": "^4.13.1",
     "@playwright/mcp": "^0.0.77",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.0",
-    "pptxgenjs": "^4.0.1",
-    "yaml": "^2.9.1"
+    "pptxgenjs": "^4.0.1"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
@@ -340,8 +339,5 @@
     "playwright": "^1.61.1",
     "tsx": "^4.0.0",
     "typescript": "^7.0.2"
-  },
-  "allowScripts": {
-    "esbuild@0.27.4": true
   }
 }
