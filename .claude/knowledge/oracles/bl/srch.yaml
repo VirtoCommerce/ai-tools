@@ -1,0 +1,135 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 9: Search (BL-SRCH)"
+  prefixes:
+    - BL-SRCH
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+    - ui-ux-expert
+    - qa-testing-expert
+rules:
+  - id: BL-SRCH-001
+    title: Facet counts match filtered results
+    rule: 'Facet counts displayed alongside filter options (brand, category, price range) must exactly match the number of products returned when that filter is applied. After applying filter "Brand: X (15)", exactly 15 products must appear in the filtered listing. Facet counts must update after each filter is applied (cascading facets).'
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-x-catalog `ChildCategoriesQueryHandler` — server-side `TermFacetResult` term counts (`term_facets.terms.count`).
+      - kind: doc
+        ref: vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/examples/facets.md — terms.count is the number of products the term applies to
+      - kind: resolution
+        ref: VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
+    check:
+      kind: executable
+      ref: scripts/invariants/page-walk.ts (npm run inv:run -- page-walk) with --filter <the facet term> --expected <its count>
+      steps: Note facet count for Brand X = 15 → click filter → verify exactly 15 products listed. Apply a second filter (e.g., price range) → facet counts for all other facets update to reflect the combined filter.
+    violation_signal: Facet shows 15 but filter returns 12 products; facet counts don't update after second filter; total count mismatches; empty facets still shown (count > 0 but no results).
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-001
+  - id: BL-SRCH-002
+    title: Zero-result query shows an intact empty state
+    rule: 'When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.'
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-frontend `vc-empty-view.vue` (`VcEmptyViewVariantType "search"`); RESET SEARCH clears keyword/filters. Live zero-result state confirmed intact.
+      - kind: resolution
+        ref: VCST-4121 (Done) — the Reset search button was missing when filters returned no products; fixed
+      - kind: live
+        ref: kb KB-71011C1F (well attested) — zero hits show an empty state with Reset search (barcode route)
+    check:
+      kind: manual
+      ref: Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
+    violation_signal: Blank product grid; broken layout on zero results; no `VcEmptyView`/message on zero results; error/500 on uncommon search terms.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-002
+  - id: BL-SRCH-003
+    title: Search index consistency after catalog change
+    rule: "After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: vc-docs platform/developer-guide/docs/Fundamentals/Indexed-Search/indexing/indexing-in-platform-manager.md — event-based indexing updates immediately on entity changes
+      - kind: resolution
+        ref: VP-7805 (Done) — deleted products stayed counted in the index; fixed (no ghost results)
+    check:
+      kind: executable
+      ref: scripts/invariants/layer-parity.ts (npm run inv:run -- layer-parity)
+      steps: Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
+    violation_signal: New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-003
+  - id: BL-SRCH-004
+    title: Search respects store and catalog scope
+    rule: Search results are scoped to the current store's virtual catalog. Products from other stores or unlinked physical catalogs must never appear in search results. The search API requires `storeId` context — omitting it is an API contract violation.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
+      - kind: resolution
+        ref: VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
+    check:
+      kind: manual
+      ref: Search on Store A → only products from Store A's virtual catalog appear. Product in Store B's catalog → not in Store A's search. xAPI query without `storeId` → error, not unscoped results.
+    violation_signal: Products from wrong store in search results; unscoped search returns cross-store data; xAPI returns results without storeId context.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-004
+  - id: BL-SRCH-005
+    title: Special characters in search queries
+    rule: 'Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.'
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: resolution
+        ref: "VP-2180 (Done) — search did not filter cross-site-scripting characters; fixed. Also VCST-3851 (Done): filtering failed on a facet value with * or ?"
+      - kind: doc
+        ref: vc-docs platform/developer-guide/docs/Fundamentals/Indexed-Search/search-query-syntax-reference.md — unsafe characters are allowed inside a double-quoted block
+    check:
+      kind: manual
+      ref: Search for `<script>alert(1)</script>` → no XSS, shows "No results." Search for `'; DROP TABLE--` → no error, shows "No results." Search for product with `&` in name → found correctly.
+    violation_signal: 500 error on special characters; XSS executes; search syntax injection; product with special chars in name not findable.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-005
+  - id: BL-SRCH-006
+    title: A listing walked page by page returns each item exactly once
+    priority: P1-data
+    trust: DECLARED
+    rule: "Walking a product listing (search, category or filtered) to its end returns every item exactly once: no page repeats or skips items, every page but the last is full, and totalCount equals the number of items the pages return."
+    source:
+      - kind: resolution
+        ref: VP-7805 (Done) — totalCount came from the index while deleted products were removed from the items; it reported 40 with 20 items and paging broke
+      - kind: resolution
+        ref: VCST-3595 / VP-8806 (Done) — paging over an unstable order duplicated or skipped rows; fixed with a stable default sort
+      - kind: resolution
+        ref: VCST-1825 (Done) — the next page did not load for a category with exactly 20 products
+    check:
+      kind: executable
+      ref: scripts/invariants/page-walk.ts (npm run inv:run -- page-walk)
+      steps: Page through a listing longer than one page to its end; count the items and compare with the total shown; no product appears twice.
+    violation_signal: A product appears on two pages; the last page is empty or missing; the total shown differs from the items the pages return; a middle page is short.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-006
+  - id: BL-SRCH-007
+    title: A sort reorders a listing by the price it shows, without changing which items it holds
+    priority: P1-data
+    trust: DECLARED
+    rule: "Applying a sort to a listing changes only the order: the sorted listing, walked to its end, holds exactly the items of the unsorted one, and a price sort orders by the price the listing displays (the active price list)."
+    source:
+      - kind: resolution
+        ref: VP-8332 (Done) — a product with prices in two price lists was sorted by the other list's price, not the displayed one
+      - kind: resolution
+        ref: VP-7840 (Done) — price sort used every assigned price list even when the request named one
+      - kind: resolution
+        ref: VCST-3595 / VP-8806 (Done) — an unstable order under paging duplicated or skipped rows
+    check:
+      kind: executable
+      ref: scripts/invariants/sort-set.ts (npm run inv:run -- sort-set) with --sort "price:asc"
+      steps: Walk a keyword or filtered listing unsorted and again sorted by price; the same products appear, in ascending displayed price.
+    violation_signal: A product disappears or appears twice after changing the sort; prices in a price-sorted listing are out of order; the order follows a price that is not the one shown.
+    status: ACTIVE
+    history: docs/decisions/bl/srch.md#bl-srch-007

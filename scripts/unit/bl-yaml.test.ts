@@ -10,12 +10,15 @@ import { readFileSync } from "fs";
 import { parseOracle } from "../knowledge/lint-bl.ts";
 import { BL_PATH, sliceOracle } from "../knowledge/extract-bl.ts";
 import {
+  checkOracle,
   classifySource,
   compareOracles,
   convertOracle,
   fromYaml,
   readAgentRoster,
+  readMigrated,
   renderDomain,
+  renderOracle,
   roundTrip,
   schemaValidator,
   toYaml,
@@ -29,8 +32,8 @@ const domains = convertOracle(text, roster);
 const parsed = parseOracle(text);
 const validate = schemaValidator();
 
-test("the real oracle survives md → YAML → md with no round-trip problem", () => {
-  assert.deepEqual(roundTrip(domains, parsed, validate), []);
+test("the real oracle passes the --check gate: migrated sections match their YAML, the rest round-trip", () => {
+  assert.deepEqual(checkOracle(text, roster, readMigrated(), validate), []);
 });
 
 test("the rendered markdown still has every field bl:lint requires", () => {
@@ -172,4 +175,49 @@ test("the schema refuses DECLARED without a human source and SUSPECT without a r
   assert.equal(validate(one({ status: "SUSPECT" })), false);
   assert.ok(validate(one({ status: "SUSPECT", suspect_reason: "PR #1 changed code_ref" })));
   assert.equal(validate(one({ check: { kind: "executable" } })), false);
+});
+
+const TWO_DOMAINS = [
+  "# Oracle",
+  "",
+  "## Domain 1: One (BL-ONE)",
+  "",
+  "### BL-ONE-001: First `[P1-data]`",
+  "- **Rule:** One holds.",
+  "- **Verify:** Look.",
+  "- **Violation signal:** It does not.",
+  "- **Agents:** qa-backend-expert",
+  "",
+  "---",
+  "",
+  "## Domain 2: Two (BL-TWO)",
+  "",
+  "### BL-TWO-001: Second `[P2-ux]`",
+  "- **Rule:** Two holds.",
+  "- **Verify:** Look.",
+  "- **Violation signal:** It does not.",
+  "- **Agents:** qa-frontend-expert",
+  "",
+].join("\n");
+
+test("renderOracle regenerates only the migrated section and keeps separators and line endings", () => {
+  const [one] = convertOracle(TWO_DOMAINS, roster);
+  const owned: BlDomainFile = { ...one.file, rules: [{ ...one.file.rules[0], trust: "INFERRED" }] };
+  const out = renderOracle(TWO_DOMAINS, [owned]).text;
+  assert.match(out, /- \*\*Trust:\*\* INFERRED/);
+  assert.ok(out.includes("\n---\n\n## Domain 2: Two (BL-TWO)\n\n### BL-TWO-001: Second `[P2-ux]`\n- **Rule:** Two holds."), "domain 2 or the separator changed");
+  assert.equal(renderOracle(out, [owned]).text, out, "rendering is idempotent");
+  const crlf = TWO_DOMAINS.split("\n").join("\r\n");
+  assert.equal(renderOracle(crlf, [owned]).text, out.split("\n").join("\r\n"));
+  assert.deepEqual(renderOracle(TWO_DOMAINS, [{ ...owned, domain: { ...owned.domain, heading: "Domain 9: Gone (BL-GONE)" } }]).missing, ["Domain 9: Gone (BL-GONE)"]);
+});
+
+test("checkOracle fails a hand edit to a migrated section and an invalid YAML record", () => {
+  const [one] = convertOracle(TWO_DOMAINS, roster);
+  const owned = new Map([["one", { ...one.file, rules: [{ ...one.file.rules[0], trust: "INFERRED" as const }] }]]);
+  const current = renderOracle(TWO_DOMAINS, owned.values()).text;
+  assert.deepEqual(checkOracle(current, roster, owned, validate), []);
+  assert.match(checkOracle(current.replace("One holds.", "One holds, edited by hand."), roster, owned, validate).join("\n"), /section of one is not the render of its YAML/);
+  const bad = new Map([["one", { ...owned.get("one")!, rules: [{ ...owned.get("one")!.rules[0], trust: "DECLARED" as const, source: [] }] }]]);
+  assert.match(checkOracle(renderOracle(TWO_DOMAINS, bad.values()).text, roster, bad, validate).join("\n"), /bl\/one\.yaml: schema/);
 });

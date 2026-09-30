@@ -89,6 +89,11 @@
               "description": "executable: the path of the check. manual: the steps.",
               "type": "string",
               "minLength": 1
+            },
+            "steps": {
+              "description": "executable only: the manual steps kept for a person or a browser agent verifying by hand.",
+              "type": "string",
+              "minLength": 1
             }
           },
           "if": { "properties": { "kind": { "enum": ["executable", "manual"] } } },
