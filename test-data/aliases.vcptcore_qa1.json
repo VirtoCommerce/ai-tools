@@ -143,5 +143,33 @@
     "seeded_at": "2026-09-17T14:23:31.101Z",
     "decays_at_utc": "2026-09-18T00:00:00.000Z",
     "owner_rep_email": "salesrep@sales.rep"
+  },
+  "PUSH_AUDIENCE_PARENT_ORG": {
+    "id": "ec0048c7-dfef-49e9-89fd-7acf6d359e10",
+    "platform_id": "ec0048c7-dfef-49e9-89fd-7acf6d359e10"
+  },
+  "PUSH_AUDIENCE_CHILD_ORG": {
+    "id": "e3ceeb8d-bddd-42df-9e3c-8e9e4915587a",
+    "platform_id": "e3ceeb8d-bddd-42df-9e3c-8e9e4915587a"
+  },
+  "PUSH_AUDIENCE_PARENT_CONTACT": {
+    "id": "e4d763c6-6ace-46ab-87e6-49eff547b9f0",
+    "platform_id": "e4d763c6-6ace-46ab-87e6-49eff547b9f0"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_1": {
+    "id": "43d9bc3b-7626-4cb7-a38f-c79807225590",
+    "platform_id": "43d9bc3b-7626-4cb7-a38f-c79807225590"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_2": {
+    "id": "739756db-e899-4e1d-817b-b541a65676a7",
+    "platform_id": "739756db-e899-4e1d-817b-b541a65676a7"
+  },
+  "PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN": {
+    "id": "2efdd349-bd4b-4735-bdff-c21acb0b5ff9",
+    "platform_id": "2efdd349-bd4b-4735-bdff-c21acb0b5ff9"
+  },
+  "PUSH_AUDIENCE_EMPLOYEE": {
+    "id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf",
+    "platform_id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf"
   }
 }
