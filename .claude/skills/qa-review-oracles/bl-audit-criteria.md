@@ -5,6 +5,27 @@ the flow; this file holds the judgment rules the triangulation runs against. Dir
 of `ecl-audit-criteria.md` — same three axes, same bar, same waiver; that file adapts them
 to the ECL library's pattern-row shape.
 
+## M0 freeze — what may change a BL entry (2026-09-30)
+
+The first stage of the BL 2.0 migration. It overrides every rule below where they disagree.
+
+- **Code + live agreeing is not a confirmation.** A regression is, by definition, in the code AND
+  on the stand, so those two axes always "agree" with it. On their own they never justify an edit.
+- **DRIFT and MISSING need a human source**, cited in `- **Source:**`: a documentation page
+  (VirtoOZ), the ticket's acceptance criteria, or a Jira bug resolution (Fixed / By design /
+  Won't fix). That source is what "D" means in §3 for `bl`; the §1a `docs: N/A` allowance does not
+  apply to `bl` while M0 holds.
+- **No human source, and live contradicts the entry** → it is a **finding**, not an edit. Report
+  it in the run's output so it follows the bug path (`/qa-bug`); the Jira decision on that bug is
+  the human source a later audit uses.
+- **No human source, and live shows behaviour no entry covers** → record the observation in the
+  observed-behaviour base (`kb_capture`, per CLAUDE.md §Essential Rules → *Product context*), never
+  as a new entry.
+- **No proposals file.** Nothing is written to `reports/ba/bl-proposals-*`. What was not applied is
+  listed in the audit report, and nowhere else.
+- **CONFIRMED / DUPLICATE** are unchanged: they touch provenance or merge two entries that already
+  exist, and neither rewrites what a rule says.
+
 ## 1. The evidence bar (what "confirmed" requires)
 
 A BL is **confirmed** (CONFIRMED / DRIFT / MISSING) only when it has an evidence
@@ -32,8 +53,8 @@ candidates were held for exactly this reason after the fixtures behind them had 
 known-good control first, so a contradiction is evidence rather than suspicion.
 
 If any axis produces **no** evidence → **UNGROUNDED**. If the axes **disagree**
-(docs say X, live shows Y) → **CONTRADICTORY**. Neither is confirmed; both route to
-`reports/ba/bl-proposals-<date>.md` for a human.
+(docs say X, live shows Y) → **CONTRADICTORY**. Neither is confirmed; neither is
+applied (§M0 freeze).
 
 ## 1a. `docs: N/A` allowance — invariants no documentation can cover
 
@@ -89,8 +110,8 @@ all present axes describe the same behavior and match the BL `Rule` text.
 | ✓ | ✓ | ✓ | no (evidence agrees, Rule stale) | **DRIFT** |
 | ✓ | ✓ | ✓ | (no BL exists for this behavior) | **MISSING** |
 | N/A (§1a) | ✓ | ✓ | yes | **CONFIRMED** |
-| N/A (§1a) | ✓ | ✓ | no (evidence agrees, Rule stale) | **DRIFT** |
-| N/A (§1a) | ✓ | ✓ | (no BL exists for this behavior) | **MISSING** |
+| N/A (§1a) | ✓ | ✓ | no (evidence agrees, Rule stale) | **DRIFT** — not applied under M0 |
+| N/A (§1a) | ✓ | ✓ | (no BL exists for this behavior) | **MISSING** — not applied under M0 (`kb_capture`) |
 | Docs missing but a doc *could* exist (not §1a), third absent | — | — | — | **UNGROUNDED** |
 | any two present, third absent | — | — | — | **UNGROUNDED** |
 | present but conflicting | — | — | — | **CONTRADICTORY** |
@@ -104,7 +125,8 @@ all present axes describe the same behavior and match the BL `Rule` text.
    revertible from `git diff`.
 3. **Stamp provenance on every applied entry:**
    - `- **Amended:** <date> (auto-applied, triangulated — BL-AUDIT-<date>)`
-   - refresh `- **Source:**` with the `file:line` anchor (+ a docs reference).
+   - refresh `- **Source:**` with the human source (docs page / AC / Jira resolution — §M0 freeze)
+     and the `file:line` anchor.
 4. **MISSING → next free ID.** Read the oracle for the current max `BL-<DOMAIN>-NNN`,
    use `+1`, zero-padded to 3 digits; place it under the matching `## Domain` heading.
 5. **Env-agnostic**. No env names, URLs, store
@@ -113,19 +135,17 @@ all present axes describe the same behavior and match the BL `Rule` text.
 6. **Preserve existing structure.** Keep the canonical field order
    (`Rule` → `Verify` → `Violation signal` → `Agents` → optional `Source` /
    `Suite coverage` / `Amended`). Match the surrounding prose density.
-7. **Retiring is never auto-applied.** A STALE/RETIRE verdict is always a human
-   proposal (destructive; could remove a still-load-bearing invariant).
+7. **Retiring is never auto-applied.** A STALE/RETIRE verdict is reported in the audit
+   report (destructive; could remove a still-load-bearing invariant).
 
-## 5. What stays human-gated (routes to the proposals file)
+## 5. What is never auto-applied (reported in the audit report)
 
 - CONTRADICTORY — the axes disagree; a human must decide which is authoritative.
 - UNGROUNDED — an axis produced no evidence (including a P0-security invariant whose
   live axis cannot be safely probed).
 - STALE/RETIRE — removing an invariant.
 
-The proposals file format is the existing `PROPOSED-BL-<DOMAIN>-<NNN>` draft shape
-(see `.claude/commands/ba-analyze.md`), so `/ba-analyze` and `/qa-review-bl`
-unconfirmed items land in the same place for one human pass.
+None of these is written to a proposals file (§M0 freeze).
 
 ## 6. Value — which confirmed invariants are worth promoting, and in what order
 
@@ -160,7 +180,7 @@ across domains by construction and is the class the oracle's own preamble calls 
 | `unknown` | **never** | Declaring the cost is the price of entry. A candidate is unclassified by construction — assign the tag during triangulation, then re-score: `npm run oracles:rank -- --explain=<ID> --severity=<tag>` |
 
 The resulting label — `high` (both axes strong) / `qualified` / `low` / `undeclared` / `excluded` —
-is the **Value** column the proposals file and the audit report carry. It is **derived at decision
+is the **Value** column the audit report carries. It is **derived at decision
 time and never stored in the oracle**: product value moves with every suite edit, so a transcribed
 number would be wrong by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE).
 

@@ -119,95 +119,17 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 ### Step 4 — Synthesize & Deliver Report
 Combine all subagent outputs into the final structured report (see Output Format below).
 
-### Step 4.5 — Stage Business Invariant Proposals
+### Step 4.5 — Route business-rule candidates (BL M0 freeze)
 
-After synthesis and before writing the final report:
+After synthesis and before writing the final report. **No `bl-proposals-*` file is written**, and
+`/ba-analyze` never edits `knowledge/oracles/business-logic.md` — the rules are
+`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze.
 
-1. Collect `bl_proposals.new[]` and `bl_proposals.stale[]` from `ba-system-analyzer`'s output.
-2. **Deduplicate against `business-logic.md`:** drop any `new` proposal whose Rule is substantively identical to an existing invariant (word overlap + same verify target).
-3. **Validate sources:** every remaining proposal MUST have a non-empty `source` field. Drop any unsourced entry and log the drop in the terminal summary.
-4. **Score each surviving proposal on both value axes** and fill the mandatory Value Summary table — derived, never estimated: `npm run oracles:rank -- --explain=<ID> --severity=<the tag you are proposing>` prints business value, product value and the promotion decision verbatim. A proposal that comes back `low` or `undeclared` still gets written down (it is evidence someone considered it), but it is filed under that label, not mixed in with the ones that clear both axes.
-5. If any proposals remain after steps 2–4, write `reports/ba/bl-proposals-{date}.md` using the template below, **ordered by value, highest first**. If both arrays are empty, skip the file.
-6. **`/ba-analyze` itself never writes to `knowledge/oracles/business-logic.md`.** Its BL candidates come from opportunistic, often single-axis observation during analysis — that is by definition **not confirmed**, so it only ever stages drafts to `bl-proposals-{date}.md`. Do not bulk-promote, do not promote "all approved," do not infer approval from silence from a `/ba-analyze` run. **Auto-apply to the oracle happens only through `/qa-review-bl`** — the dedicated triangulation flow that confirms each candidate against **docs + live + source** (all three) before a body-only edit, and routes anything unconfirmed back to this same `bl-proposals-{date}.md`. So: `/ba-analyze` → drafts; `/qa-review-bl` → confirmed auto-apply + drafts for the rest. To act on this run's drafts, hand them to `/qa-review-bl` (or promote a specific approved entry by hand).
-
-**`bl-proposals-{date}.md` template** (identical to the format `/qa-test-lifecycle` Phase 4c and `/qa-review-bl` use for unconfirmed items, so a human sees a consistent shape regardless of source):
-
-```markdown
-# Business Logic Proposals — BA-{date}
-
-> **These are drafts. They are NOT applied to `knowledge/oracles/business-logic.md`.**
-> Promotion requires **explicit user approval per proposal**. Review, edit as needed,
-> approve individual entries, assign final `BL-*` IDs, then direct Claude to promote
-> only the approved entries. Claude will never modify `business-logic.md` on its own.
->
-> Source: `/ba-analyze` run `{date}` — see `reports/ba/ba-report-{date}.md`.
-
----
-
-## Value Summary
-
-| Proposal | Business | Product | **Value** | Would promote? |
-|---|---|---|---|---|
-| PROPOSED-BL-<DOMAIN>-<NNN> | high (P0-revenue) | medium (4 citing cases) | **high** | yes — clears both axes |
-| PROPOSED-BL-<DOMAIN>-<NNN> | low (P2-ux) | high (31 citing cases) | **low** | no — demand cannot buy a low-cost rule in |
-| PROPOSED-BL-<DOMAIN>-<NNN> | unknown (no tag) | medium (5 citing cases) | **undeclared** | no — declare what a violation costs first |
-
-**This table is mandatory and comes first**, because a reader who cannot see which proposals
-matter reads them all at equal weight — which is how an oracle grows evenly instead of by value.
-Derive it, never estimate it:
-
-```
-npm run oracles:rank -- --explain=<ID> --severity=<tag>     # per proposal: both axes + the gate verbatim
-npm run oracles:rank -- --axis=bl --candidates              # every cited-but-absent id, ranked
-```
-
-`Business` is what a violation costs (the severity tag you are proposing; for ECL, the severity
-of the `BL-*` invariant the pattern endangers). `Product` is how much of the tested product leans
-on it (citing cases, cross-domain reach, `[OBSERVED]` share). **Value** is the conjunction, and it
-is the promotion rule: `high` business promotes at any demand; `medium` needs `medium`+ product;
-`low` and `undeclared` do not promote at all. Order the sections below by it, highest first.
-
-The value column is **derived, never stored in the oracle** — product value moves with every suite
-edit, so a number transcribed into `business-logic.md` would be wrong by the next commit and wrong
-silently (`.claude/rules/test-data.md` §GOLDEN RULE). The proposals file is a snapshot of one
-decision at one date, which is exactly the artifact a computed column belongs in.
-
----
-
-## New Invariants Proposed
-
-### PROPOSED-BL-<DOMAIN>-<NNN>: <short title> `[P0-revenue | P1-data | P2-ux]`
-
-- **Value:** business <high|medium|low|unknown> (<tag>) · product <high|medium|low|none> (<N citing cases>) → **<high|qualified|low|undeclared>**
-- **Rule:** ...
-- **Verify:**
-  - ...
-  - ...
-- **Violation signal:** ...
-- **Agents:** qa-frontend-expert, qa-backend-expert, ...
-- **Source:** Context7 quote / GitHub file:line / VC docs §X / UI screenshot path
-- **Triggered by:** ba-analyze scope or pain_point id
-
----
-
-## Stale BL-* Flagged
-
-### BL-<DOMAIN>-<NNN>: <existing title>
-- **Current Rule:** [as written today]
-- **Observed behavior:** [what the live system / code / docs actually show]
-- **Source:** ...
-- **Suggested action:** revise | retire | narrow scope
-
----
-
-## Application Notes
-
-1. **Promote by value, highest first — and only what clears both axes.** A `low` or `undeclared` proposal is not a queue item for later; it is a proposal that does not belong in the oracle as written. Either raise it (declare the severity, or show the product leans on it) or leave it here.
-2. Assign final IDs by reading `knowledge/oracles/business-logic.md` for the next available `BL-<DOMAIN>-NNN` sequence.
-3. Replace `PROPOSED-` prefix with final ID.
-4. Paste the edited entry into the correct domain section of `business-logic.md`.
-5. After the entry lands, re-run any related `/qa-review-tests suite <ID> --verify` so test cases gain their `Business_Rule` mapping.
-```
+1. Collect `bl_proposals.new[]` and `bl_proposals.stale[]` from `ba-system-analyzer`'s output, and drop any `new` candidate substantively identical to an existing invariant.
+2. **Grounded in a human source** — a documentation page, the ticket's AC, or a Jira bug resolution, cited → list it in report §8 with that source and its value (`npm run oracles:rank -- --explain=<ID> --severity=<tag>`). It is input for `/qa-review-bl`, which applies it.
+3. **Grounded only in code or live observation** → it is an observation, not a rule: `kb_ask` first, then `kb_confirm` / `kb_dispute` / `kb_capture` (the base is public — nothing client-specific). Report it in §8 as "sent to the kb".
+4. **Stale candidate (live contradicts an entry)** → a **finding** in the report for the bug path, never a rule edit.
+5. Drop any candidate with no source at all, and log the drop in the terminal summary.
 
 ---
 
@@ -274,18 +196,14 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 ## 7. Open Questions
 [Things that need clarification from the team]
 
-## 8. Proposed Business Invariants
-[Summary table — omit this section entirely if `reports/ba/bl-proposals-{date}.md` was not produced]
+## 8. Business-rule candidates
+[Omit this section when Step 4.5 found none]
 
-| Proposed ID | Domain | Severity | Title | Source |
-|-------------|--------|----------|-------|--------|
-| PROPOSED-BL-CHK-014 | CHK | P1-data | Facet labels must be human-readable | VC docs §X / file:line |
+| Candidate | Domain | Severity | Title | Human source | Route |
+|-----------|--------|----------|-------|--------------|-------|
+| PROPOSED-BL-CHK-014 | CHK | P1-data | Facet labels must be human-readable | VC docs §X / AC / Jira key | `/qa-review-bl` · kb · finding |
 
-**Stale BL-* flagged:** N (see proposals file for details)
-
-Full drafts: [`reports/ba/bl-proposals-{date}.md`](./bl-proposals-{date}.md)
-
-> These are drafts. `knowledge/oracles/business-logic.md` has not been modified. Review the proposals file, assign final IDs, and promote manually.
+> `knowledge/oracles/business-logic.md` has not been modified.
 ```
 
 ---
@@ -299,7 +217,7 @@ Full drafts: [`reports/ba/bl-proposals-{date}.md`](./bl-proposals-{date}.md)
 - Write each document for its declared **audience** (`customer | admin | developer | sales`) in the matching Virto style — `knowledge/ba/virto-doc-style.md` is the single source of truth for skeletons and voice. Do not collapse audiences (a Sales one-pager is benefit-led, not a how-to; a Customer guide has no GUIDs/code)
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
 - Always query Context7 in Step 0 before launching sub-agents
-- **BA business logic proposals are advisory only** — Step 4.5 drafts `reports/ba/bl-proposals-{date}.md`. **Never** write to `knowledge/oracles/business-logic.md` without explicit per-proposal user approval. The user must read each draft, approve (or edit) it individually, and direct promotion; Claude MUST NOT promote on its own, in bulk, or based on inferred approval. Every proposed entry must cite a source (Context7 quote, GitHub file:line, VC docs section, or UI screenshot). Drop unsourced entries rather than guess.
+- **BA never edits the BL oracle and writes no proposals file** — Step 4.5 routes each candidate (human source → `/qa-review-bl`; observation → `kb`; contradiction → finding). Every candidate cites a source; drop unsourced ones rather than guess.
 
 ## Stories review mode (`stories --review <TICKET>`)
 

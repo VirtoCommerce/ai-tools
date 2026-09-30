@@ -109,10 +109,9 @@ export const BLC_002_BASELINE: Record<string, number> = {
   // BL-GA4-001..004 were PROMOTED into the oracle (Domain 26) and their 33 citations are now real;
   // the rest were converted to declared forward-references with `npm run bl:remap --propose`,
   // which lint-bl.ts exempts from BLC-002 by design. Per BLC-002: fix + de-baseline, never widen.
-  // Remaining entries are the BL-SEC-* family, whose citing rows in suite 044 are still unauthored —
-  // relabelling those would hide the debt rather than pay it.
-  "BL-SEC-001": 3, "BL-SEC-002": 1, "BL-SEC-003": 8, "BL-SEC-004": 5,
-  "BL-SEC-005": 2,
+  // BL-SEC-001..005 REMOVED 2026-09-30 (BL 2.0 M0, docs/bug-detection-requirements.md §7.6): no
+  // BL-SEC family exists in the oracle, so the 19 citations were dropped with `bl:remap --drop`
+  // rather than proposed. A security invariant enters the oracle only from a human source.
   // BL-CFG-003/004/007/008 REMOVED 2026-09-19 — the tool bug that stranded them is fixed.
   // They were briefly restored here because `npm run bl:remap --propose` reported "0 case(s) in
   // 0 file(s)" for all four while THIS lint reported 4/1/4/5 citing cases in 072e. The cause was
