@@ -11,7 +11,7 @@ model fills at runtime** — it is NOT a shell variable and is NOT stored in
   **not** into the Bash/PowerShell tool shell — so a command's `echo "$CLAUDE_PLUGIN_ROOT"`
   is empty and cannot be relied on.
 - The marketplace installs the plugin into a **version-stamped** cache dir
-  (`…/vc-tools/vc-fix/<version>/`); a NEW sibling appears on every upgrade and old versions
+  (`…/ai-tools/vc-fix/<version>/`); a NEW sibling appears on every upgrade and old versions
   are not pruned. Baking that absolute path into the profile leaves it pointing at a stale
   (or deleted) version after any upgrade.
 
@@ -21,17 +21,18 @@ So the model resolves the **active (enabled)** install path fresh, each time it 
 
 `claude plugin list --json` is a documented Claude Code CLI command that returns every
 installed plugin with its `installPath`, `version`, `scope`, and `enabled` flag. Pick the
-enabled `vc-fix@vc-tools` entry:
+enabled `vc-fix@ai-tools` entry (an install made before the 2026-09-30 marketplace rename still
+has the id `vc-fix@vc-tools`, so the resolver accepts both):
 
 ```bash
-PLUGIN_ROOT="$(claude plugin list --json | node -e "const a=JSON.parse(require('fs').readFileSync(0,'utf8'));const p=a.find(x=>x.id==='vc-fix@vc-tools'&&x.enabled)||a.find(x=>x.id==='vc-fix@vc-tools');process.stdout.write(p?p.installPath:'')")"
+PLUGIN_ROOT="$(claude plugin list --json | node -e "const a=JSON.parse(require('fs').readFileSync(0,'utf8'));const ids=['vc-fix@ai-tools','vc-fix@vc-tools'];const p=a.find(x=>ids.includes(x.id)&&x.enabled)||a.find(x=>ids.includes(x.id));process.stdout.write(p?p.installPath:'')")"
 node "$PLUGIN_ROOT/skills/qa-fix-routing/ado.mjs" <cmd> …
 ```
 
 PowerShell:
 
 ```powershell
-$PLUGIN_ROOT = (claude plugin list --json | ConvertFrom-Json | Where-Object { $_.id -eq 'vc-fix@vc-tools' -and $_.enabled } | Select-Object -First 1).installPath
+$PLUGIN_ROOT = (claude plugin list --json | ConvertFrom-Json | Where-Object { $_.id -in @('vc-fix@ai-tools','vc-fix@vc-tools') -and $_.enabled } | Select-Object -First 1).installPath
 node "$PLUGIN_ROOT/skills/qa-fix-routing/ado.mjs" <cmd> …
 ```
 

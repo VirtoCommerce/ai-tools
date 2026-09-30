@@ -29,7 +29,7 @@ import { resolveSuiteSource } from "../../scripts/test-cases/suite-source-map.js
 import { selectSuites, type ChangedPath, type SelectableSuite } from "../../scripts/lib/suite-selection.js";
 
 const CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 } as const;
-const SELF_REPO = "vc-mcp-testing-module";
+const SELF_REPO = "ai-tools";
 
 export interface PlacedChange {
   readonly repo: string;

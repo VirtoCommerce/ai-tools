@@ -31,7 +31,7 @@ path `qa-bug` returns.** Never move or rewrite its report. **Its tracker-ticket 
 bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 **`vc-fix` not installed** (`/vc-fix:qa-bug` unavailable) ⇒ STOP at this step. Tell the user to run
-`/plugin install vc-fix@vc-tools` and keep the drafts in chat. Never fall back to a hand-written report.
+`/plugin install vc-fix@ai-tools` and keep the drafts in chat. Never fall back to a hand-written report.
 
 ## Verdict
 
