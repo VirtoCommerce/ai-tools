@@ -1,0 +1,1407 @@
+{
+  "about": "The labelled set VCST-6122 is measured against (built in stage M0): ~120 rows, split BY ENTRY so every row about one entry (or one group of entries that share a row) sits in one split, and a question written for an entry never reaches that entry's held-out test. A TARGET names every entry that answers it (`expect`); it passes when one of them is picked/ranked. A CONTROL is a question the base holds nothing on -- verified by reading the bodies of the candidate entries, never by a ranker verdict -- and `near` names the entries it is a near neighbour of. `partial: true` marks a target whose entry holds the fact only in part. `source`: existing (the VCST-6087 set, unchanged), wave1 (the 40 asks of VCST-6087-wave1, labelled by the operator; `cite` gives the log line and the agent's verdict), paraphrase (written by a different model from the entry's claim alone, never its subject or question; `support` is the sentence that answers it), control (new near-neighbour controls). `split`: dev | calibration | test. The groups of the five wave-1 misses (P1, P3, P6, L1, L6) are forced into dev, because the vocabulary is seeded from them; the \"five misses answered\" criterion is reported separately. Controls are split by a seeded hash. `contested` rows are excluded from every metric until the contradiction they depend on is settled live.",
+  "snapshot": "vc-knowledge@8c8f844 (the last entry-changing commit before the wave at 2026-09-30T08:31Z; 289 entries). vc-knowledge@818d478 lacks five entries these labels name.",
+  "approved": "operator, 2026-09-30",
+  "splitSeed": "m0-seed-1",
+  "baseline": {
+    "recorded": "REFERENCE, not the production bar. Measured 2026-09-30 on vc-knowledge@8c8f844 with the benches of PR #337 (commit eff4c333, not merged into main; the --set/--split reader was added locally for this run): two-stage-1 = `bench-two-stage.mjs --view hybrid --k 10 --runs 3` (judge claude-haiku-4-5-20251001, majority of 3), floor-1b = `bench-rank.mjs` top 3. Re-scored the same day after relabelling 6 rows (see `relabelled` on each): the judge verdicts are the saved runs, unchanged -- the judge never sees a label -- and Stage 1 recall is recomputed on the same snapshot. main ranks with floor-1, which this block does not measure.",
+    "dev": {
+      "stage1RecallAt5": "28/37",
+      "stage1RecallAt10": "31/37",
+      "stage1RecallAt20": "32/37",
+      "judgeCorrect": "23/37",
+      "judgeWrong": 1,
+      "judgeNone": 13,
+      "judgeSplit": 0,
+      "controlsNone": "17/19",
+      "meanListTokens": 1422,
+      "floor1bTop3": "7/37",
+      "floor1bControlsBroken": "8/19"
+    },
+    "calibration": {
+      "stage1RecallAt5": "15/22",
+      "stage1RecallAt10": "17/22",
+      "stage1RecallAt20": "20/22",
+      "judgeCorrect": "15/22",
+      "judgeWrong": 0,
+      "judgeNone": 7,
+      "judgeSplit": 0,
+      "controlsNone": "10/10",
+      "meanListTokens": 1270,
+      "floor1bTop3": "2/22",
+      "floor1bControlsBroken": "5/10"
+    },
+    "test": {
+      "stage1RecallAt5": "19/24",
+      "stage1RecallAt10": "19/24",
+      "stage1RecallAt20": "21/24",
+      "judgeCorrect": "18/24",
+      "judgeWrong": 0,
+      "judgeNone": 5,
+      "judgeSplit": 1,
+      "controlsNone": "9/9",
+      "meanListTokens": 1401,
+      "floor1bTop3": "6/24",
+      "floor1bControlsBroken": "4/9"
+    },
+    "note": "The one remaining wrong pick is W-L5 -> KB-C1024558: that entry says how to tell a coupon discount from an automatic one, not whether the summary shows them on separate lines. Controls picked: C-smoke-path (KB-50EBEEE9, 2 of 3 runs) and W-L8 (KB-25388E6C / KB-409CE7C7, the borderline control)."
+  },
+  "targets": [
+    {
+      "id": "T-gift-long",
+      "q": "RewardItemGiftNumItem automatic gift promotion — is the gift line item added to the cart/order automatically or must the shopper accept it via availableGifts / addGiftItems mutation?",
+      "expect": [
+        "KB-0B27E984"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-21 08:09 miss, nearMiss KB-0B27E984 (STEP-6-ranking.md)",
+      "split": "calibration"
+    },
+    {
+      "id": "T-gift-short",
+      "q": "does an automatic gift promotion add a zero-price line to the cart and the order on the storefront",
+      "expect": [
+        "KB-0B27E984"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:19 session 9f98d03f, answer (PLAN §22.10)",
+      "split": "calibration"
+    },
+    {
+      "id": "T-cart-short",
+      "q": "What does the storefront /cart page look like for a B2B organization buyer — decisions, controls, layout?",
+      "expect": [
+        "KB-44B7B71E",
+        "KB-50EBEEE9"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:20 session a905b381, miss, nearMiss KB-44B7B71E (PLAN §22.10); KB-50EBEEE9 added by the operator 2026-09-28 -- its body lays out the whole /cart checkout page, while KB-44B7B71E covers only its payment step",
+      "split": "dev"
+    },
+    {
+      "id": "T-cart-long",
+      "q": "What does the B2B storefront cart page at /cart show and control for a signed-in organization buyer — line quantity input, selectedForCheckout checkboxes, coupons section, Place order / checkout button enablement?",
+      "expect": [
+        "KB-44B7B71E",
+        "KB-50EBEEE9"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:18 session a905b381, miss, nearMiss KB-50EBEEE9; §22.14 scores KB-44B7B71E on it (the D-cart-detail row)",
+      "split": "dev"
+    },
+    {
+      "id": "T-ship-tax",
+      "q": "why is the order header shippingTaxTotal zero when the shipment's own taxTotal is non-zero",
+      "expect": [
+        "KB-8793DFE7"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
+      "split": "dev"
+    },
+    {
+      "id": "T-captured",
+      "q": "order inPayments capturedDate is set while paymentStatus is Authorized",
+      "expect": [
+        "KB-1AC55A1D"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
+      "split": "dev"
+    },
+    {
+      "id": "T-config-price",
+      "q": "how is a configurable product line priced in the storefront cart on /cart - option extendedPrice or unit salePrice",
+      "expect": [
+        "KB-4B47D094"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-22 07:19 session 9f98d03f, answer; label confirmed by the operator 2026-09-28",
+      "split": "test"
+    },
+    {
+      "id": "T-mobile-size",
+      "q": "What size are interactive controls (buttons, checkboxes, quantity stepper) at 375px mobile viewport on catalog/PDP/cart pages — do any fall in the 24-44px range?",
+      "expect": [
+        "KB-6B0E2FF7"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-28 08:36 session p14424, miss; label confirmed by the operator 2026-09-28",
+      "split": "calibration"
+    },
+    {
+      "id": "T-coupon-input",
+      "q": "/cart promo code field — where is the coupon input",
+      "expect": [
+        "KB-938D7C06"
+      ],
+      "source": "existing",
+      "cite": "log 2026-09-23 08:46 session d54e5a64 (asked with an MSYS-mangled prefix, restored to /cart); label confirmed by the operator 2026-09-28",
+      "split": "dev"
+    },
+    {
+      "id": "T-active-plain",
+      "q": "what does the storefront members Active column reflect?",
+      "expect": [
+        "KB-27B4CD10",
+        "KB-4B889114"
+      ],
+      "source": "existing",
+      "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
+      "split": "test"
+    },
+    {
+      "id": "T-active-route",
+      "q": "What does the Active column on the storefront /company/members page reflect — the user account status or the organization membership/contact status?",
+      "expect": [
+        "KB-27B4CD10",
+        "KB-4B889114"
+      ],
+      "source": "existing",
+      "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
+      "split": "test"
+    },
+    {
+      "id": "W-S1",
+      "q": "What does GraphQL products query return for a product without prices?",
+      "expect": [
+        "KB-7837F100"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:24.522Z session 44d4e1d7, run VCST-6087-wave1 row S1; agent verdict show KB-7837F100",
+      "partial": true,
+      "note": "body: Query.products returns an unpriced product (price.actual 0, isBuyable false) -- observed only through the barcode filter",
+      "split": "test"
+    },
+    {
+      "id": "W-S2",
+      "q": "Does searchProducts GraphQL query match on partial SKU text?",
+      "expect": [
+        "KB-A0B3940F"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:24.863Z session 44d4e1d7, run VCST-6087-wave1 row S2; agent verdict show KB-A0B3940F",
+      "partial": true,
+      "note": "body: a strict prefix in a quoted filter term returns 0, but * and ? are honoured; full-text partial SKU is not recorded (KB-1EA7184C is a GTIN prefix, not a SKU)",
+      "split": "calibration"
+    },
+    {
+      "id": "W-S4",
+      "q": "Is the Place order button on /checkout disabled until a payment method is selected?",
+      "expect": [
+        "KB-50EBEEE9",
+        "KB-44B7B71E"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:25.444Z session 44d4e1d7, run VCST-6087-wave1 row S4; agent verdict show KB-50EBEEE9",
+      "note": "both bodies: Place order stays disabled until a payment method is chosen. Log quirk: the show line's `after` points at S5's ask",
+      "split": "dev"
+    },
+    {
+      "id": "W-S10",
+      "q": "Can an organization maintainer deactivate members on /company/members?",
+      "expect": [
+        "KB-4B889114",
+        "KB-97170665"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:46.830Z session 44d4e1d7, run VCST-6087-wave1 row S10; agent verdict show KB-4B889114",
+      "note": "Block user / Unblock user is the deactivate control; KB-97170665 records the same action and its badge",
+      "split": "test"
+    },
+    {
+      "id": "W-S11",
+      "q": "What happens after five failed sign-in attempts on /sign-in?",
+      "expect": [
+        "KB-8646A9CB"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:02.204Z session 44d4e1d7, run VCST-6087-wave1 row S11; agent verdict show KB-8646A9CB",
+      "note": "5 failures -> 15-minute temporary lockout",
+      "split": "test"
+    },
+    {
+      "id": "W-S12",
+      "q": "How is the loyalty points balance shown on /account/loyalty?",
+      "expect": [
+        "KB-29037452"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:02.691Z session 44d4e1d7, run VCST-6087-wave1 row S12; agent verdict show KB-29037452",
+      "partial": true,
+      "note": "one overall Balance at the top -- but of /account/points-history, not the asked route",
+      "split": "calibration"
+    },
+    {
+      "id": "W-L1",
+      "q": "When a guest cart is merged into the signed-in user's cart after sign-in, are quantities of duplicate line items summed or replaced?",
+      "expect": [
+        "KB-734A0813"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:20.493Z session 44d4e1d7, run VCST-6087-wave1 row L1; agent verdict none",
+      "partial": true,
+      "note": "known miss. Body: same-product adds sum quantities; configured lines stay separate on merge. Plain-item merge is implied, not stated",
+      "split": "dev"
+    },
+    {
+      "id": "W-L3",
+      "q": "After an order is created through Mutation.createOrderFromCart, is the cart deleted, and does the storefront header mini-cart counter reset to zero?",
+      "expect": [
+        "KB-A4EB3766"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:21.080Z session 44d4e1d7, run VCST-6087-wave1 row L3; agent verdict show KB-A4EB3766",
+      "partial": true,
+      "note": "cart emptied in place and reused; mini-cart counter not recorded",
+      "split": "calibration"
+    },
+    {
+      "id": "W-L4",
+      "q": "If two price lists are assigned to the same store, which one wins in the GraphQL product price.actual for an anonymous shopper, and what decides it?",
+      "expect": [
+        "KB-6D5E2CD1"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:21.400Z session 44d4e1d7, run VCST-6087-wave1 row L4; agent verdict show KB-6D5E2CD1",
+      "note": "assignment priority, higher wins, plus scope/dates/conditions",
+      "split": "calibration"
+    },
+    {
+      "id": "W-L5",
+      "q": "When a cart-level percentage promotion and a coupon both apply, does the /cart order summary show them as separate discount lines or one combined discount?",
+      "expect": [
+        "KB-8264632C",
+        "KB-5ADBFB34"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:37.880Z session 44d4e1d7, run VCST-6087-wave1 row L5; agent verdict none",
+      "partial": true,
+      "note": "DISAGREE. KB-8264632C: the Discount line expands to one row per reward; KB-5ADBFB34: under BestReward only one cart-subtotal reward survives (a coupon-backed one can replace a larger automatic one)",
+      "split": "dev"
+    },
+    {
+      "id": "W-L6",
+      "q": "When a company member with the purchasing agent role places an order, is that order visible to other members of the organization on /account/orders?",
+      "expect": [
+        "KB-02238DE5",
+        "KB-D080C209"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:38.218Z session 44d4e1d7, run VCST-6087-wave1 row L6; agent verdict none",
+      "partial": true,
+      "note": "known miss. KB-02238DE5: an employee loses the All orders / My orders toggle and sees only own orders; KB-D080C209: any org member has buyer rights on an org order",
+      "split": "dev"
+    },
+    {
+      "id": "W-L7",
+      "q": "In the Admin SPA customer order details blade, can an operator set the order status from New to Completed without the payment being captured first?",
+      "expect": [
+        "KB-DB7B6317"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:38.495Z session 44d4e1d7, run VCST-6087-wave1 row L7; agent verdict show KB-DB7B6317",
+      "partial": true,
+      "note": "Completed is settable, Processing is computed on capture; no payment gate stated",
+      "split": "test"
+    },
+    {
+      "id": "W-P1",
+      "q": "Can a shopper use two promo codes on the same basket at once?",
+      "expect": [
+        "KB-8264632C"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:56.256Z session 44d4e1d7, run VCST-6087-wave1 row P1; agent verdict none",
+      "note": "known miss. Evidence note: a second coupon replaces the first, last applied wins, no stacking",
+      "split": "dev"
+    },
+    {
+      "id": "W-P3",
+      "q": "Can a company account admin invite a new colleague by email from the shop?",
+      "expect": [
+        "KB-02238DE5",
+        "KB-BAEBCDA7",
+        "KB-4D082C89"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:56.859Z session 44d4e1d7, run VCST-6087-wave1 row P3; agent verdict none",
+      "partial": true,
+      "note": "known miss. KB-02238DE5: the Invite members button is role-gated; KB-BAEBCDA7/KB-4D082C89: an invite sends an email and provisions an account",
+      "split": "dev"
+    },
+    {
+      "id": "W-P4",
+      "q": "Does the shop remember a discount code in my basket after I log out and log back in?",
+      "expect": [
+        "KB-6C3FA2B7"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:57.219Z session 44d4e1d7, run VCST-6087-wave1 row P4; agent verdict show KB-6C3FA2B7",
+      "note": "coupon survives sign-out/sign-in on every path",
+      "split": "test"
+    },
+    {
+      "id": "W-P6",
+      "q": "Can a business buyer pay later on account instead of paying by card when buying?",
+      "expect": [
+        "KB-50EBEEE9"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:57.839Z session 44d4e1d7, run VCST-6087-wave1 row P6; agent verdict none",
+      "partial": true,
+      "note": "known miss. Manual payment with a PO number; placed order stays New with Pay now, so placing and paying are separate",
+      "split": "dev"
+    },
+    {
+      "id": "W-C2",
+      "q": "/cart checkout: is the purchase order number field required when Manual payment is chosen?",
+      "expect": [
+        "KB-50EBEEE9"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:16.937Z session 44d4e1d7, run VCST-6087-wave1 row C2; agent verdict show KB-50EBEEE9",
+      "note": "Manual reveals the PO number field and re-disables Place order",
+      "split": "dev"
+    },
+    {
+      "id": "W-C4",
+      "q": "/cart: does Save for later move the line item to a separate saved list?",
+      "expect": [
+        "KB-66089074"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:17.301Z session 44d4e1d7, run VCST-6087-wave1 row C4; agent verdict show KB-66089074",
+      "partial": true,
+      "note": "separate saved-for-later list via getSavedForLater / moveFromSavedForLater, stated in passing",
+      "split": "calibration"
+    },
+    {
+      "id": "P-0B27E984-1",
+      "q": "I bought just one item, so why does my finished order list two products, one of them free?",
+      "expect": [
+        "KB-0B27E984"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-0B27E984, written from its claim only (sonnet, customer voice)",
+      "support": "Placing an order with exactly one product added to the cart produced an order containing TWO line items.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-0B27E984-2",
+      "q": "Why does a promo reward item that is pre-ticked in the basket never show in the item table or subtotal, yet arrives as an extra zero-priced order row?",
+      "expect": [
+        "KB-0B27E984"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-0B27E984, written from its claim only (sonnet, practitioner voice)",
+      "support": "a shopper who never interacts with the gift panel still receives an extra order line.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-44B7B71E-1",
+      "q": "When I pay for my cart, why are the card and other payment choices not sorted by the priority the store set?",
+      "expect": [
+        "KB-44B7B71E"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-44B7B71E, written from its claim only (sonnet, customer voice)",
+      "support": "It is alphabetical by method code (AuthorizeNet < CyberSource < Datatrans < DefaultManual < Loyalty < Skyflow).",
+      "split": "dev"
+    },
+    {
+      "id": "P-44B7B71E-2",
+      "q": "Does the back-office ranking number for a store's payment options control the order shown to buyers at checkout, or is something else deciding it?",
+      "expect": [
+        "KB-44B7B71E"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-44B7B71E, written from its claim only (sonnet, practitioner voice)",
+      "support": "with priorities 1,0,0,1,0,0 the rendered order is neither ascending nor descending by priority.",
+      "split": "dev"
+    },
+    {
+      "id": "P-50EBEEE9-1",
+      "q": "Where do I choose my delivery, billing and payment details before buying, and is there a separate checkout page?",
+      "expect": [
+        "KB-50EBEEE9"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-50EBEEE9, written from its claim only (sonnet, customer voice)",
+      "support": "the /cart page carries the whole checkout ... There is no /checkout route to navigate to",
+      "split": "dev"
+    },
+    {
+      "id": "P-50EBEEE9-2",
+      "q": "After submitting an order, can I verify ordered products and the grand total on the confirmation screen, or must a tester open the order details?",
+      "expect": [
+        "KB-50EBEEE9"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-50EBEEE9, written from its claim only (sonnet, practitioner voice)",
+      "support": "that page carries the order number plus Show order / Home page only — no line items and no totals",
+      "split": "dev"
+    },
+    {
+      "id": "P-8793DFE7-1",
+      "q": "My order shows a delivery fee with tax included, yet the separate shipping-tax figure reads zero; is that right?",
+      "expect": [
+        "KB-8793DFE7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8793DFE7, written from its claim only (sonnet, customer voice); amounts removed by hand",
+      "support": "shippingTaxTotal on the same header was 0.",
+      "split": "dev"
+    },
+    {
+      "id": "P-8793DFE7-2",
+      "q": "Which figure should I use in a report to find how much tax was charged on delivery, given the order header's dedicated field is unreliable?",
+      "expect": [
+        "KB-8793DFE7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8793DFE7, written from its claim only (sonnet, practitioner voice)",
+      "support": "derive it from shippingTotalWithTax - shippingTotal, or from the shipment's own taxTotal, instead.",
+      "split": "dev"
+    },
+    {
+      "id": "P-1AC55A1D-1",
+      "q": "My card payment says approved but not completed; does a date showing when the money was collected mean I was actually charged?",
+      "expect": [
+        "KB-1AC55A1D"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-1AC55A1D, written from its claim only (sonnet, customer voice)",
+      "support": "capturedDate is populated by the post-process step regardless of the outcome.",
+      "split": "dev"
+    },
+    {
+      "id": "P-1AC55A1D-2",
+      "q": "How can a tester tell whether funds were really settled on an authorized payment when the settlement timestamp is filled in?",
+      "expect": [
+        "KB-1AC55A1D"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-1AC55A1D, written from its claim only (sonnet, practitioner voice)",
+      "support": "read paymentStatus/status (Authorized vs Paid/Captured), captures[], or the gateway transaction's own status — never capturedDate",
+      "split": "dev"
+    },
+    {
+      "id": "P-4B47D094-1",
+      "q": "I picked an add-on that comes in a set of two, and the total went up by more than one add-on's price; why?",
+      "expect": [
+        "KB-4B47D094"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4B47D094, written from its claim only (sonnet, customer voice)",
+      "support": "selecting that option moved the PDP \"Price\" from $350.00 to $526.00, i.e. base + extendedPrice, not base + unit price.",
+      "split": "test"
+    },
+    {
+      "id": "P-4B47D094-2",
+      "q": "On a customizable item, does the final line price add the component's per-unit price or its quantity-multiplied total, and can the buyer change the component count?",
+      "expect": [
+        "KB-4B47D094"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4B47D094, written from its claim only (sonnet, practitioner voice)",
+      "support": "the per-option quantity spinbutton on the PDP is rendered DISABLED, so the option quantity is fixture-fixed and not shopper-editable",
+      "split": "test"
+    },
+    {
+      "id": "P-6B0E2FF7-1",
+      "q": "On my phone, are the buttons on the product listing big enough to tap easily?",
+      "expect": [
+        "KB-6B0E2FF7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6B0E2FF7, written from its claim only (sonnet, customer voice)",
+      "support": "almost all interactive controls ... measure between 24 and 44 CSS px ... Only the hamburger menu button reached 44px or more.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-6B0E2FF7-2",
+      "q": "On a narrow mobile viewport, do any clickable controls on the catalog page fall under the minimum touch-target size?",
+      "expect": [
+        "KB-6B0E2FF7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6B0E2FF7, written from its claim only (sonnet, practitioner voice)",
+      "support": "No actionable control below 24px was found; the few under 24px were visually hidden skip links or disabled decorative rating stars.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-938D7C06-1",
+      "q": "Why do I see only a handful of ready-made discount cards in my basket, and can I still use a code that is not listed?",
+      "expect": [
+        "KB-938D7C06"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-938D7C06, written from its claim only (sonnet, customer voice)",
+      "support": "any other code is still usable through the Custom code field.",
+      "split": "dev"
+    },
+    {
+      "id": "P-938D7C06-2",
+      "q": "For a visitor who is not logged in, does the basket sidebar list suggested vouchers, and can they still redeem a typed one?",
+      "expect": [
+        "KB-938D7C06"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-938D7C06, written from its claim only (sonnet, practitioner voice)",
+      "support": "For an anonymous shopper no preset cards render and the coupons query is not sent; only the Custom code field shows, and typed codes still apply.",
+      "split": "dev"
+    },
+    {
+      "id": "P-27B4CD10-1",
+      "q": "In my company's team list, a colleague shows as active with a green tick, but does that mean they can log in?",
+      "expect": [
+        "KB-27B4CD10"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-27B4CD10, written from its claim only (sonnet, customer voice)",
+      "support": "the column answers \"is this member blocked in THIS organization?\", never \"can this colleague sign in?\".",
+      "split": "test"
+    },
+    {
+      "id": "P-27B4CD10-2",
+      "q": "Which kind of lock on a user makes the company roster show a red blocked badge, and which kinds leave it green?",
+      "expect": [
+        "KB-27B4CD10",
+        "KB-97170665"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-27B4CD10, written from its claim only (sonnet, practitioner voice)",
+      "support": "the per-organization membership lock ... paints the row with a red \"Blocked\" badge ... Locking the security account itself ... leaves the row green and Active.",
+      "split": "test",
+      "relabelled": "2026-09-30 after the baseline run: KB-97170665: a membership lock or an effective Locked status gives the red Blocked badge"
+    },
+    {
+      "id": "P-4B889114-1",
+      "q": "If a coworker is locked out by the administrator, will my company member list still say they are active?",
+      "expect": [
+        "KB-4B889114"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4B889114, written from its claim only (sonnet, customer voice)",
+      "support": "an account that is Locked in Admin without having been blocked through that dialog still renders as 'Active', with the green tick",
+      "split": "test"
+    },
+    {
+      "id": "P-4B889114-2",
+      "q": "Where should a company admin look to confirm whether a member can truly sign in, since the roster's status indicator may mislead?",
+      "expect": [
+        "KB-4B889114",
+        "KB-0B6067F8"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4B889114, written from its claim only (sonnet, practitioner voice)",
+      "support": "Verify a member's real sign-in status on the account's own blade (Security > Users > account > Locked state), not from the storefront roster.",
+      "split": "test",
+      "relabelled": "2026-09-30 after the baseline run: KB-0B6067F8: the account locked state, not the contact status, says whether a member can sign in"
+    },
+    {
+      "id": "P-7837F100-1",
+      "q": "Why does scanning a barcode on the website show nothing for an item that has no price set yet?",
+      "expect": [
+        "KB-7837F100"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-7837F100, written from its claim only (sonnet, customer voice)",
+      "support": "'unpriced is not found by scan' is produced by the price term the storefront adds, not by the barcode middleware",
+      "split": "test"
+    },
+    {
+      "id": "P-7837F100-2",
+      "q": "Will a direct GraphQL catalog lookup by scan code return a product that lacks any pricing, unlike the storefront search?",
+      "expect": [
+        "KB-7837F100"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-7837F100, written from its claim only (sonnet, practitioner voice)",
+      "support": "a direct xAPI caller that omits the price term will find unpriced products by barcode.",
+      "split": "test"
+    },
+    {
+      "id": "P-A0B3940F-1",
+      "q": "If I type only the first part of a product code in quotation marks, will search find the item?",
+      "expect": [
+        "KB-A0B3940F"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-A0B3940F, written from its claim only (sonnet, customer voice)",
+      "support": "a strict prefix of an existing product code returns 0.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-A0B3940F-2",
+      "q": "How do I search for a product variant, or a part number that only a variant holds, using the catalog API filter syntax?",
+      "expect": [
+        "KB-A0B3940F",
+        "KB-3BFF73A3"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-A0B3940F, written from its claim only (sonnet, practitioner voice)",
+      "support": "a variation is found with is:variation code:\"...\", and a manufacturerPartNumber held only by a variation is found with is:product,variation",
+      "split": "calibration",
+      "relabelled": "2026-09-30 after the baseline run: KB-3BFF73A3: manufacturerPartNumber (not mpn) with is:product,variation returns the variation"
+    },
+    {
+      "id": "P-97170665-1",
+      "q": "When an admin blocks someone in the company member list, which detail tells me they are blocked, since their approval status still looks fine?",
+      "expect": [
+        "KB-97170665"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-97170665, written from its claim only (sonnet, customer voice)",
+      "support": "the ONLY API field carrying the block is isLockedInOrganization; anything asserting on status or statusInOrganization reads \"Approved\" for a blocked member.",
+      "split": "test"
+    },
+    {
+      "id": "P-97170665-2",
+      "q": "Besides a membership-level lock, what other condition makes the company roster display the red blocked icon for a member?",
+      "expect": [
+        "KB-97170665"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-97170665, written from its claim only (sonnet, practitioner voice)",
+      "support": "\"Blocked\" is reached by two independent routes — the membership lock ... and an effective status of \"Locked\"",
+      "split": "test"
+    },
+    {
+      "id": "P-8646A9CB-1",
+      "q": "I typed my password wrong several times and now I can't get in; how long do I have to wait before I can try again?",
+      "expect": [
+        "KB-8646A9CB"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8646A9CB, written from its claim only (sonnet, customer voice)",
+      "support": "5 failed attempts, 15-minute lockout, detailed errors on), the next failed sign-in returns user_is_temporary_locked_out with lockoutEnd about 15 minutes ahead.",
+      "split": "test"
+    },
+    {
+      "id": "P-8646A9CB-2",
+      "q": "When an admin manually blocks a company member, does the login error differ from the one caused by too many bad password attempts?",
+      "expect": [
+        "KB-8646A9CB"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8646A9CB, written from its claim only (sonnet, practitioner voice)",
+      "support": "An administrator's organization block is a different path: it yields user_is_locked_in_organization.",
+      "split": "test"
+    },
+    {
+      "id": "P-29037452-1",
+      "q": "Why don't the rewards I spent show up with a minus sign or different colour in my loyalty history?",
+      "expect": [
+        "KB-29037452"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-29037452, written from its claim only (sonnet, customer voice)",
+      "support": "Redeemed rows show the points amount unsigned, in the same plain text and colour as Earned rows: no minus sign and no colour distinction.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-29037452-2",
+      "q": "Is it a bug that the loyalty transaction list has no running balance per line, just one total at the top?",
+      "expect": [
+        "KB-29037452"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-29037452, written from its claim only (sonnet, practitioner voice)",
+      "support": "There is no per-row running balance either, only a single overall Balance figure at the top of the page. This is BY DESIGN",
+      "split": "calibration"
+    },
+    {
+      "id": "P-734A0813-1",
+      "q": "If I put the same item in my basket twice, will it show as two rows or one row with a bigger quantity?",
+      "expect": [
+        "KB-734A0813"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-734A0813, written from its claim only (sonnet, customer voice)",
+      "support": "Adding the same product twice to a cart consolidates into one line with the summed quantity",
+      "split": "dev"
+    },
+    {
+      "id": "P-734A0813-2",
+      "q": "When I re-add an identical customised bundle or merge two baskets, do the customised lines get combined or stay separate?",
+      "expect": [
+        "KB-734A0813"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-734A0813, written from its claim only (sonnet, practitioner voice)",
+      "support": "A configured line item is never consolidated: re-adding an identical configuration, and merging carts, always create a separate line, BY DESIGN",
+      "split": "dev"
+    },
+    {
+      "id": "P-A4EB3766-1",
+      "q": "After I complete my purchase, does my old basket still exist or is it gone for good?",
+      "expect": [
+        "KB-A4EB3766"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-A4EB3766, written from its claim only (sonnet, customer voice)",
+      "support": "it is EMPTIED IN PLACE and handed back to the same shopper. GET /api/carts/{id} on the pre-order cart id still returns 200 after placement",
+      "split": "calibration"
+    },
+    {
+      "id": "P-A4EB3766-2",
+      "q": "To investigate what a buyer had in their basket at the moment they checked out, where should I look since the basket itself is cleared?",
+      "expect": [
+        "KB-A4EB3766"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-A4EB3766, written from its claim only (sonnet, practitioner voice)",
+      "support": "read the order's own line items and discount rows, which are snapshots, and treat the cart id on any pre-checkout evidence as a pointer that has since been reused.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-6D5E2CD1-1",
+      "q": "Why am I still seeing the regular price when my company was supposed to get a special price list?",
+      "expect": [
+        "KB-6D5E2CD1"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6D5E2CD1, written from its claim only (sonnet, customer voice)",
+      "support": "A pricelist with no assignment at all is invisible to the storefront however many prices it holds.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-6D5E2CD1-2",
+      "q": "Two price lists both match a product for the same shopper; which one wins, and where is that ranking set?",
+      "expect": [
+        "KB-6D5E2CD1"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6D5E2CD1, written from its claim only (sonnet, practitioner voice)",
+      "support": "priority, higher wins -- an assignment at priority 20000 beat a matching unconditional one at priority 1 for the same product.",
+      "split": "calibration"
+    },
+    {
+      "id": "P-8264632C-1",
+      "q": "I entered a discount code in my basket and the discount shows zero with no error; how can I tell whether it actually worked?",
+      "expect": [
+        "KB-8264632C",
+        "KB-C1024558"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8264632C, written from its claim only (sonnet, customer voice)",
+      "support": "a coupon that is on the cart and did NOT apply renders as an ENABLED box holding the code with an Apply button",
+      "split": "dev",
+      "relabelled": "2026-09-30 after the baseline run: KB-C1024558: DiscountType.coupon is the one field that says a reward was unlocked by the code"
+    },
+    {
+      "id": "P-8264632C-2",
+      "q": "How can a tester remove a stale voucher from the cart page when it did not apply and there is no remove button?",
+      "expect": [
+        "KB-8264632C"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-8264632C, written from its claim only (sonnet, practitioner voice)",
+      "support": "The only page-reachable way to get rid of a dead code is Clear cart, which drops the coupons along with every line item",
+      "split": "dev"
+    },
+    {
+      "id": "P-5ADBFB34-1",
+      "q": "I qualified for two different percentage and flat-amount deals on my basket but only one discount was taken off; why?",
+      "expect": [
+        "KB-5ADBFB34"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-5ADBFB34, written from its claim only (sonnet, customer voice)",
+      "support": "BestRewardPromotionPolicy, which keeps at most ONE CartSubtotalReward for the whole cart",
+      "split": "dev"
+    },
+    {
+      "id": "P-5ADBFB34-2",
+      "q": "How do I make two subtotal promotions both apply to one basket instead of just the biggest one winning?",
+      "expect": [
+        "KB-5ADBFB34"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-5ADBFB34, written from its claim only (sonnet, practitioner voice)",
+      "support": "To make both apply, the policy must be CombineStackable.",
+      "split": "dev"
+    },
+    {
+      "id": "P-02238DE5-1",
+      "q": "I'm a regular employee at my company account; why can I still see the list of colleagues but can't invite anyone?",
+      "expect": [
+        "KB-02238DE5"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-02238DE5, written from its claim only (sonnet, customer voice)",
+      "support": "An Organization employee still gets the Corporate navigation group and still loads /company/members... what the role removes is the 'Invite members' button",
+      "split": "dev"
+    },
+    {
+      "id": "P-02238DE5-2",
+      "q": "When writing a permission test for a company role, should I assert that restricted menu sections are hidden?",
+      "expect": [
+        "KB-02238DE5"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-02238DE5, written from its claim only (sonnet, practitioner voice)",
+      "support": "'the nav is hidden' is never a safe assumption to build a permission test on - assert on the absence of the specific control instead.",
+      "split": "dev"
+    },
+    {
+      "id": "P-D080C209-1",
+      "q": "Can the sales person assigned to my company open my orders and pay for them on my behalf?",
+      "expect": [
+        "KB-D080C209"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-D080C209, written from its claim only (sonnet, customer voice)",
+      "support": "a rep can open any order of a customer they serve on the buyer-facing /account/orders/{id} and act on it, payment included",
+      "split": "dev"
+    },
+    {
+      "id": "P-D080C209-2",
+      "q": "Is it a defect that a sales rep assigned to a client gets full buyer actions on that client's orders but is refused on other clients' orders?",
+      "expect": [
+        "KB-D080C209"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-D080C209, written from its claim only (sonnet, practitioner voice)",
+      "support": "This is BY DESIGN: the order access rule allows an administrator, the order's customer, or a contact belonging to the order's organization",
+      "split": "dev"
+    },
+    {
+      "id": "P-DB7B6317-1",
+      "q": "The status label on my order looks different from what the shop staff see; are they the same thing?",
+      "expect": [
+        "KB-DB7B6317"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-DB7B6317, written from its claim only (sonnet, customer voice)",
+      "support": "The storefront relabels statuses for shoppers, so a storefront label need not equal the admin value and the mapping is not always one-to-one.",
+      "split": "test"
+    },
+    {
+      "id": "P-DB7B6317-2",
+      "q": "Which order state can I not pick manually in the back office dropdown because it is set automatically?",
+      "expect": [
+        "KB-DB7B6317"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-DB7B6317, written from its claim only (sonnet, practitioner voice)",
+      "support": "Processing appears in the orders grid but is not settable - it is computed when payment is captured.",
+      "split": "test"
+    },
+    {
+      "id": "P-BAEBCDA7-1",
+      "q": "I sent a company invite to the wrong email address; how can I cancel it or send it again?",
+      "expect": [
+        "KB-BAEBCDA7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-BAEBCDA7, written from its claim only (sonnet, customer voice)",
+      "support": "There is no cancel control and no resend control for an outstanding organization invitation, on either surface.",
+      "split": "dev"
+    },
+    {
+      "id": "P-BAEBCDA7-2",
+      "q": "If I remove a pending invitee from the company member list, can I then invite that same email again?",
+      "expect": [
+        "KB-BAEBCDA7",
+        "KB-FA724D31",
+        "KB-DA14E8B7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-BAEBCDA7, written from its claim only (sonnet, practitioner voice)",
+      "support": "Delete does not free the address either: it removes the organization membership only, so the account survives and the address stays taken forever",
+      "split": "dev",
+      "relabelled": "2026-09-30 after the baseline run: KB-FA724D31: Delete leaves the account holding the address, so re-inviting it is not a clean slate; KB-DA14E8B7: re-inviting that address is refused as a duplicate"
+    },
+    {
+      "id": "P-4D082C89-1",
+      "q": "Right after my company invites a colleague, how does that person appear in the member list before they finish signing up?",
+      "expect": [
+        "KB-4D082C89",
+        "KB-D8FDFA6F"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4D082C89, written from its claim only (sonnet, customer voice)",
+      "support": "On the storefront roster the row shows the literal name 'Invite sent' with an empty real name, the chosen role, the email lowercased, and status 'Invited'",
+      "split": "dev",
+      "relabelled": "2026-09-30 after the baseline run: KB-D8FDFA6F: the invited row shows \"Invite sent\" in place of the name, with a green Active tick"
+    },
+    {
+      "id": "P-4D082C89-2",
+      "q": "In the back office, why does a person who was just invited look identical to someone an admin blocked?",
+      "expect": [
+        "KB-4D082C89"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-4D082C89, written from its claim only (sonnet, practitioner voice)",
+      "support": "a pending invitee and a blocked member are both simply 'Locked' in Admin, and the field that could tell them apart is blank for the invitee.",
+      "split": "dev"
+    },
+    {
+      "id": "P-6C3FA2B7-1",
+      "q": "If I log out and log back in, will the discount code I had in my basket still be there?",
+      "expect": [
+        "KB-6C3FA2B7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6C3FA2B7, written from its claim only (sonnet, customer voice)",
+      "support": "Sign-out issues NO cart mutation... so the registered user's server-side cart, coupon row included, is untouched.",
+      "split": "test"
+    },
+    {
+      "id": "P-6C3FA2B7-2",
+      "q": "When a guest basket with a voucher is combined into a user's basket at login, is the discount recalculated on the combined total?",
+      "expect": [
+        "KB-6C3FA2B7"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-6C3FA2B7, written from its claim only (sonnet, practitioner voice)",
+      "support": "the coupon survives from BOTH sides and its discount RE-PRICES against the post-merge subtotal rather than staying frozen.",
+      "split": "test"
+    },
+    {
+      "id": "P-66089074-1",
+      "q": "Why don't the items I set aside for later show the options I picked, only name and price?",
+      "expect": [
+        "KB-66089074"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-66089074, written from its claim only (sonnet, customer voice)",
+      "support": "A saved-for-later card shows only the product name, price and Move to cart - no configuration detail",
+      "split": "calibration"
+    },
+    {
+      "id": "P-66089074-2",
+      "q": "When a guest signs in and their basket is combined with their account basket, why is no merge request visible in the browser traffic?",
+      "expect": [
+        "KB-66089074"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-66089074, written from its claim only (sonnet, practitioner voice)",
+      "support": "The guest-to-signed-in cart merge happens server-side during sign-in, so no explicit mergeCart call need appear in the network log.",
+      "split": "calibration"
+    }
+  ],
+  "controls": [
+    {
+      "id": "C-orders-page",
+      "q": "GraphQL orders query totalCount and items on xOrder storefront surface",
+      "source": "existing",
+      "cite": "run B, session ada88a13 (PLAN §22.8 #1)",
+      "split": "dev"
+    },
+    {
+      "id": "C-skyflow-init",
+      "q": "initializeCartPayment mutation publicParameters Skyflow",
+      "source": "existing",
+      "cite": "run B, session ada88a13 (PLAN §22.8 #2)",
+      "split": "calibration"
+    },
+    {
+      "id": "C-cart-payments",
+      "q": "allowCartPayment availablePaymentMethods cart GraphQL",
+      "source": "existing",
+      "cite": "run B, session ada88a13 (PLAN §22.8 #3)",
+      "split": "test"
+    },
+    {
+      "id": "C-order-by-number",
+      "q": "order(number:) query CustomerOrderType withPrices",
+      "source": "existing",
+      "cite": "run B, session ada88a13 (PLAN §22.8 #4)",
+      "split": "test"
+    },
+    {
+      "id": "C-smoke-path",
+      "q": "What is known about the storefront smoke path on virtostart — homepage, catalog browse, cart, checkout (/cart, /checkout), and the GraphQL operations behind them?",
+      "source": "existing",
+      "cite": "log 2026-09-22 13:45 session c34caad0, miss; confirmed no-answer by the operator 2026-09-28",
+      "split": "dev"
+    },
+    {
+      "id": "C-bopis-pickup",
+      "q": "BOPIS pickup on /cart — what does selecting Pickup change on the placed order (fulfillment center, delivery address, shipping cost)?",
+      "source": "existing",
+      "cite": "log 2026-09-23 06:43 session c34caad0, miss; pickup is mentioned in passing by six entries, none answers it; confirmed by the operator 2026-09-28",
+      "split": "dev"
+    },
+    {
+      "id": "C-price-sort-short",
+      "q": "Does product price sorting use the indexed price field rather than the displayed price?",
+      "source": "existing",
+      "cite": "PLAN §14.4 known BAD (floor-1's labelled set, kb-floor.test.mjs)",
+      "split": "calibration"
+    },
+    {
+      "id": "C-price-sort-long",
+      "q": "When sorting a product list by price ascending, does the storefront order by the indexed price or by the price actually displayed to the shopper?",
+      "source": "existing",
+      "cite": "PLAN §14.4 known BAD (floor-1's labelled set, kb-floor.test.mjs)",
+      "split": "test"
+    },
+    {
+      "id": "W-S3",
+      "q": "What happens when addItem GraphQL mutation exceeds available stock quantity?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:25.154Z session 44d4e1d7, run VCST-6087-wave1 row S3; agent verdict none",
+      "near": [
+        "KB-6FAB2EBA",
+        "KB-DAD0D552"
+      ],
+      "note": "addItem vs stock is not recorded: KB-6FAB2EBA is the 1M line-quantity limit, KB-DAD0D552 is the UCP surface",
+      "split": "dev"
+    },
+    {
+      "id": "W-S5",
+      "q": "Which order statuses allow reorder from the /account/orders page?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:25.813Z session 44d4e1d7, run VCST-6087-wave1 row S5; agent verdict none",
+      "near": [
+        "KB-4CCC2DD6",
+        "KB-A4EB3766"
+      ],
+      "note": "no entry mentions reorder",
+      "split": "test"
+    },
+    {
+      "id": "W-S6",
+      "q": "What does authorizePayment mutation return when the card is declined?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:45.471Z session 44d4e1d7, run VCST-6087-wave1 row S6; agent verdict none",
+      "near": [
+        "KB-78638393",
+        "KB-7F535D52"
+      ],
+      "note": "only held-for-review is recorded, not a declined card",
+      "split": "dev"
+    },
+    {
+      "id": "W-S7",
+      "q": "Does the storefront show list price strikethrough when a sale price exists?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:45.793Z session 44d4e1d7, run VCST-6087-wave1 row S7; agent verdict none",
+      "near": [
+        "KB-C55BBF2E"
+      ],
+      "note": "KB-C55BBF2E models sale price in cart totals; no strikethrough rendering is recorded",
+      "split": "test"
+    },
+    {
+      "id": "W-S9",
+      "q": "Does the product page show an out-of-stock badge when inventory is zero?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:46.483Z session 44d4e1d7, run VCST-6087-wave1 row S9; agent verdict none",
+      "near": [
+        "KB-191B1B4C",
+        "KB-71011C1F"
+      ],
+      "note": "no PDP out-of-stock badge recorded",
+      "split": "dev"
+    },
+    {
+      "id": "W-S13",
+      "q": "Does deleting a catalog in the Admin SPA delete its products?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:03.035Z session 44d4e1d7, run VCST-6087-wave1 row S13; agent verdict none",
+      "near": [
+        "KB-31802239"
+      ],
+      "note": "catalog deletion not recorded; neighbours are about deleted products in the index",
+      "split": "dev"
+    },
+    {
+      "id": "W-S14",
+      "q": "What does the Order.OrderNumberTemplate setting control in new orders?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:03.326Z session 44d4e1d7, run VCST-6087-wave1 row S14; agent verdict none",
+      "near": [
+        "KB-1F2EBF83"
+      ],
+      "note": "only Return.ReturnNewNumberTemplate is mentioned",
+      "split": "calibration"
+    },
+    {
+      "id": "W-S15",
+      "q": "Does storefront /search support filtering products by a price range facet?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:03.633Z session 44d4e1d7, run VCST-6087-wave1 row S15; agent verdict none",
+      "near": [
+        "KB-7837F100",
+        "KB-71011C1F"
+      ],
+      "note": "only the hidden price.USD:(0 TO) term is recorded, no price facet",
+      "split": "calibration"
+    },
+    {
+      "id": "W-L2",
+      "q": "On the /cart checkout section, does changing the shipping address recalculate taxes and shipping cost immediately or only after the delivery method is re-selected?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:20.783Z session 44d4e1d7, run VCST-6087-wave1 row L2; agent verdict none",
+      "near": [
+        "KB-6AA0D7FB"
+      ],
+      "note": "no recalculation-on-address-change observation",
+      "split": "calibration"
+    },
+    {
+      "id": "W-L8",
+      "q": "When a product has stock in several fulfillment centers assigned to the store, does the storefront show the combined available quantity or only the main center's stock?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:38.767Z session 44d4e1d7, run VCST-6087-wave1 row L8; agent verdict none",
+      "near": [
+        "KB-409CE7C7",
+        "KB-25388E6C"
+      ],
+      "note": "stock on a non-main assigned FFC counts (UCP), but summing across several centres on the storefront is not recorded",
+      "split": "dev"
+    },
+    {
+      "id": "W-P2",
+      "q": "When I take the last thing out of my basket, what does the basket page show?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:56.539Z session 44d4e1d7, run VCST-6087-wave1 row P2; agent verdict none",
+      "near": [
+        "KB-8264632C"
+      ],
+      "note": "only 'on an empty cart the coupon box is not rendered'; the empty-cart page is not described",
+      "split": "test"
+    },
+    {
+      "id": "W-P5",
+      "q": "Are reward points credited to the buyer when the purchase is placed or only later when it ships?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:32:57.549Z session 44d4e1d7, run VCST-6087-wave1 row P5; agent verdict none",
+      "near": [
+        "KB-EDDBBE75"
+      ],
+      "note": "balances change through earn/redeem handling on orders; the moment of accrual is not recorded",
+      "split": "dev"
+    },
+    {
+      "id": "W-C1",
+      "q": "/cart: does the line quantity stepper enforce the product's maximum order quantity?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:16.664Z session 44d4e1d7, run VCST-6087-wave1 row C1; agent verdict none",
+      "near": [
+        "KB-98A231B6",
+        "KB-F78ED1CC"
+      ],
+      "note": "no max order quantity recorded",
+      "split": "dev"
+    },
+    {
+      "id": "W-C3",
+      "q": "/account/profile: can a user change their email address from the profile page?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:17.243Z session 44d4e1d7, run VCST-6087-wave1 row C3; agent verdict none",
+      "near": [
+        "KB-737F80EE"
+      ],
+      "note": "profile email editing not recorded",
+      "split": "dev"
+    },
+    {
+      "id": "W-C5",
+      "q": "/account/addresses: can a user delete the address marked as default?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:17.568Z session 44d4e1d7, run VCST-6087-wave1 row C5; agent verdict none",
+      "near": [
+        "KB-00DB63A4",
+        "KB-37B8E605"
+      ],
+      "note": "Add/Edit/Delete exist, one default per member; deleting the default is not recorded",
+      "split": "calibration"
+    },
+    {
+      "id": "W-X1",
+      "q": "Does the Platform.Security.MaxPasswordAge setting force password rotation for storefront users?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:35.046Z session 44d4e1d7, run VCST-6087-wave1 row X1; agent verdict none",
+      "note": "no password-age entry",
+      "split": "dev"
+    },
+    {
+      "id": "W-X2",
+      "q": "What happens to a cart line item when its product's catalog is detached from the store mid-session?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:35.317Z session 44d4e1d7, run VCST-6087-wave1 row X2; agent verdict none",
+      "note": "no catalog-detach entry",
+      "split": "dev"
+    },
+    {
+      "id": "W-X3",
+      "q": "Does the storefront render a right-to-left layout on /cart for an Arabic culture?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:35.623Z session 44d4e1d7, run VCST-6087-wave1 row X3; agent verdict none",
+      "note": "no RTL entry",
+      "split": "test"
+    },
+    {
+      "id": "W-X4",
+      "q": "Does the Admin SPA export of dynamic properties preserve dictionary item sort order?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:35.947Z session 44d4e1d7, run VCST-6087-wave1 row X4; agent verdict none",
+      "note": "no dynamic-property export entry",
+      "split": "dev"
+    },
+    {
+      "id": "W-X5",
+      "q": "How many times does the notification sending job retry an email when the SMTP server is down?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:36.245Z session 44d4e1d7, run VCST-6087-wave1 row X5; agent verdict none",
+      "near": [
+        "KB-17555498"
+      ],
+      "note": "Hangfire jobs and a manual requeue are recorded, no retry count",
+      "split": "calibration"
+    },
+    {
+      "id": "W-X6",
+      "q": "Can a product with zero weight be shipped with a weight-based shipping method rate?",
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:33:36.302Z session 44d4e1d7, run VCST-6087-wave1 row X6; agent verdict none",
+      "near": [
+        "KB-6AA0D7FB"
+      ],
+      "note": "only FixedRate shipping is recorded",
+      "split": "dev"
+    },
+    {
+      "id": "N-gift-untick",
+      "q": "If a shopper unticks the free gift that the cart page offers pre-selected, is the gift left out of the placed order?",
+      "source": "control",
+      "cite": "near neighbour of KB-0B27E984 (records the pre-checked gift reaching the order, never an unticked one); no entry mentions unticking or declining a gift -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-0B27E984"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "N-coupon-length",
+      "q": "Is there a maximum number of characters the custom promo code box in the cart's discount sidebar accepts?",
+      "source": "control",
+      "cite": "near neighbour of KB-938D7C06 / KB-8264632C (same field, other facts); no entry records a coupon code length limit -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-938D7C06",
+        "KB-8264632C"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "N-capture-flow",
+      "q": "When an operator captures an authorized card payment from the Admin order blade, does the payment get a capture record and move to Paid?",
+      "source": "control",
+      "cite": "near neighbour of KB-1AC55A1D (observes payments that were never captured; captures[] empty); no capture action is recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-1AC55A1D",
+        "KB-EC76F588"
+      ],
+      "split": "calibration"
+    },
+    {
+      "id": "N-tier-price",
+      "q": "Does the storefront product page show quantity-break prices when a price list holds rows with a minimum quantity above one?",
+      "source": "control",
+      "cite": "near neighbour of KB-24AA6296 (mentions minQuantity on price rows) and KB-6D5E2CD1 (which list applies); no tier-price display is recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-24AA6296",
+        "KB-6D5E2CD1"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "N-signin-captcha",
+      "q": "Does the storefront sign-in page start asking for a CAPTCHA after several wrong passwords?",
+      "source": "control",
+      "cite": "near neighbour of KB-8646A9CB (what repeated failures return: a lockout code); no entry mentions a CAPTCHA -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-8646A9CB"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "N-split-ship",
+      "q": "Can a buyer send different line items of one order to two different shipping addresses from the cart page?",
+      "source": "control",
+      "cite": "near neighbour of KB-50EBEEE9 (one shipping address per checkout) and KB-CC9A98D3 (address copies per operation); multi-address shipping is not recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-50EBEEE9",
+        "KB-CC9A98D3"
+      ],
+      "split": "test"
+    },
+    {
+      "id": "N-roster-export",
+      "q": "Can an organization maintainer export the company members list to a CSV file from the storefront?",
+      "source": "control",
+      "cite": "near neighbour of KB-02238DE5 / KB-27B4CD10 (same page, its controls and its Active column); no export control is recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-02238DE5",
+        "KB-27B4CD10"
+      ],
+      "split": "dev"
+    },
+    {
+      "id": "N-points-filter",
+      "q": "Can a shopper filter the loyalty points history to show only earned or only redeemed rows?",
+      "source": "control",
+      "cite": "near neighbour of KB-29037452 (same page: signs, colours, balance); no filter on it is recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-29037452"
+      ],
+      "split": "calibration"
+    },
+    {
+      "id": "N-saved-later-signout",
+      "q": "Do items a shopper saved for later on the cart page still appear after they sign out and sign back in?",
+      "source": "control",
+      "cite": "near neighbour of KB-66089074 (saved-for-later card contents) and KB-6C3FA2B7 (a coupon survives sign-out); persistence of the saved list is not recorded -- bodies read on vc-knowledge@8c8f844",
+      "near": [
+        "KB-66089074",
+        "KB-6C3FA2B7"
+      ],
+      "split": "calibration"
+    }
+  ],
+  "contested": [
+    {
+      "id": "W-S8",
+      "q": "Does addCoupon mutation accept coupon codes case-insensitively?",
+      "expect": [
+        "KB-001183CF"
+      ],
+      "source": "wave1",
+      "cite": "log 2026-09-30T08:31:46.179Z session 44d4e1d7, run VCST-6087-wave1 row S8; agent verdict show KB-001183CF",
+      "note": "KB-001183CF: application case-insensitive; KB-35F20D97: validateCoupon matching case-sensitive",
+      "split": "test",
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+    },
+    {
+      "id": "P-001183CF-1",
+      "q": "If I type my voucher code in lowercase instead of capitals, will it still work?",
+      "expect": [
+        "KB-001183CF"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-001183CF, written from its claim only (sonnet, customer voice)",
+      "support": "a code typed in another case applies the same coupon.",
+      "split": "test",
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+    },
+    {
+      "id": "P-001183CF-2",
+      "q": "What happens when two different promo codes differ only in letter case, and does the coupon card in the account show the original casing?",
+      "expect": [
+        "KB-001183CF"
+      ],
+      "source": "paraphrase",
+      "cite": "KB-001183CF, written from its claim only (sonnet, practitioner voice)",
+      "support": "two distinct coupons whose codes differ only by case collide, and the promotion policy picks between them.",
+      "split": "test",
+      "why": "KB-001183CF (one deployment, 2026-09-25) says coupon validation and application are case-insensitive; KB-35F20D97 (another deployment, 2026-09-14) says Query.validateCoupon matching is case-sensitive, and the /cart page calls validateCoupon before addCoupon. Excluded until re-observed live."
+    }
+  ],
+  "unrecovered": "§22.14 labels SIX targets; two of them (the 8-word row served at coverage 0.63 and the 12-word row served at 0.82) are given only as a length and a coverage, with neither the question nor the entry named, and the throwaway scripts that held them were deleted. They are NOT reconstructed here. The three 9f98d03f rows above were added instead, each labelled by the operator rather than inferred."
+}

@@ -13,7 +13,8 @@ This file is the evidence behind the shape and the record of what was deliberate
 
 `kb ask` must answer three different things: *this entry answers you*, *these two differ and you must
 choose*, *the base holds nothing*. Today the base answers none of them. It returns ten candidates and
-three bodies, and the calling agent decides (`two-stage-1`, VCST-6087 phase 2). That is correct and
+three bodies, and the calling agent decides (`two-stage-1`, VCST-6087 phase 2, PR #337 -- measured, but
+not merged: `main` still ranks with `floor-1`). That is correct and
 safe, and it is expensive: about 1.4k tokens per ask whatever the outcome, including the 27 of 40 asks
 in the 2026-09-30 wave that ended in "none". Can the base decide by itself, cheaply, without losing the
 property the judge bought — no confident wrong answer?
@@ -179,8 +180,14 @@ Old fields stay in the index (`subject`, `question`, `anchors`, `scope`), so a s
 The labelled set grows from 19 to about 120 rows, **split by entry** so a question written for an
 entry's card never appears in its test: the 19 existing rows; the 40 wave-1 asks labelled by a human;
 paraphrases written by a different model than the one that writes cards; about 25% of rows with no
-answer in the base, including near neighbours. `scripts/kb/bench-rank.mjs` gains the verdict metrics:
-selective precision and coverage, `none` precision on controls, `ambiguous` share, mean tokens per ask.
+answer in the base, including near neighbours. M4 brings its own bench over that set with the verdict
+metrics: selective precision and coverage, `none` precision on controls, `ambiguous` share, mean tokens
+per ask. It needs no judge, because the base decides.
+
+**M0, done 2026-09-30:** `scripts/kb/bench/rank-labelled-set.v2.json` -- 83 targets, 38 controls, 3
+contested rows kept out of every metric, pinned to `vc-knowledge@8c8f844`. It carries the `two-stage-1`
+baseline per split, measured with PR #337's benches (`eff4c333`) as a REFERENCE; the bar M4 replaces in
+production is `floor-1`, which is what `main` runs.
 
 ## What this knowingly does not get
 
@@ -199,7 +206,7 @@ selective precision and coverage, `none` precision on controls, `ambiguous` shar
 | M1 | client: schema 2 read/write, derived anchor kinds, closed surface (no behaviour change) | released and pulled (Decision 8) |
 | M2 | migration of all entries: split, cards, concepts, surface; reviewed PR to `vc-knowledge` | PR merged; every old id resolves |
 | M3 | `vocabulary.json` seed | reviewed |
-| M4 | query pipeline + `kb calibrate` + three verdicts | `answer` precision ≥ 0.95, controls `none` ≥ 0.90, targets answered ≥ 0.80, paraphrase recall@10 ≥ 0.90, mean ≤ 400 tokens/ask. **Fail ⇒ keep `two-stage-1` in production.** |
+| M4 | query pipeline + `kb calibrate` + three verdicts | `answer` precision ≥ 0.95, controls `none` ≥ 0.90, targets answered ≥ 0.80, paraphrase recall@10 ≥ 0.90, mean ≤ 400 tokens/ask. **Fail ⇒ keep what `main` runs (`floor-1`).** |
 | M5 | capture v2: card mandatory, push-side filter | — |
 | M6 | `kb-report`: verdict panels, vocabulary and label queues | — |
 | M7 | dense channel | only if M4 misses paraphrase recall |
