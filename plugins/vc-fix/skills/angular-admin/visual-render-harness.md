@@ -39,10 +39,10 @@ harness, nothing here is ever committed — only the screenshots/verdict go in t
 
 ---
 
-## Files (all under `.fix-workspace/_scratch/VCST-XXXX/`, gitignored, never committed)
+## Files (all under `.fix-workspace/_scratch/<ticket-key>/`, gitignored, never committed)
 
 ```
-_scratch/VCST-XXXX/
+_scratch/<ticket-key>/
   render.html        # bootstraps AngularJS + platform.css + the real blade template + stubbed $scope
   serve.txt          # the one-liner used to serve it (for the PR-body note)
   before.png after.png   # screenshots qa-backend-expert captures (referenced in PR body, not committed)
@@ -119,7 +119,7 @@ _scratch/VCST-XXXX/
 `file://` often blocks `ng-include`/fetch, so serve the scratch dir over HTTP:
 
 ```bash
-npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1
+npx --yes http-server .fix-workspace/_scratch/<ticket-key> -p 8099 -c-1
 # → open http://127.0.0.1:8099/render.html in playwright-edge / Chrome DevTools MCP
 ```
 
@@ -150,7 +150,7 @@ harness Option 1 / reference path below instead (see §Limitation).
    (e.g. the data source with `restrictDataSelectivity=true`).
 2. **Measure red** — read-only `getBoundingClientRect` on the failing elements; record `overlapPx > 0`.
    (This is the §4 measurement gate, run against the *real* app — the strongest possible red.)
-3. **Apply the fix as a DOM edit** via the `@allow-eval` opt-in (`/* @allow-eval: <VCST-XXXX UI-FIX> */`
+3. **Apply the fix as a DOM edit** via the `@allow-eval` opt-in (`/* @allow-eval: <ticket-key> UI-FIX */`
    — the only sanctioned use of `browser_evaluate` for mutation; it is NOT for test runs). Mirror the exact
    markup change from the diff (move/remove/add the real nodes — never a hand-retyped approximation).
 4. **Force a relayout** so geometry settles: `angular.element(document.body).injector().get('$rootScope').$applyAsync()`

@@ -103,9 +103,9 @@ names from this skill (they drift; the page-builder shell's own `.claude` docs a
    sub-app's **real** `vite.config.ts` via `mergeConfig`, setting `test.environment: "jsdom"` — see
    `vc-shell-scratch-harness-patterns.md` for the exact snippet.
 4. Write the repro as a normal `@vue/test-utils` mount test in a scratch location
-   (`.fix-workspace/_scratch/VCST-XXXX/repro.spec.ts` — outside the sub-app tree), importing the REAL
+   (`.fix-workspace/_scratch/<ticket-key>/repro.spec.ts` — outside the sub-app tree), importing the REAL
    component from the checkout.
-5. Run: `npx vitest run --config <path-to-scratch-config> .fix-workspace/_scratch/VCST-XXXX/repro.spec.ts`.
+5. Run: `npx vitest run --config <path-to-scratch-config> .fix-workspace/_scratch/<ticket-key>/repro.spec.ts`.
    Confirm **RED** on current code → fix product code → confirm **GREEN**.
 6. **Before the PR:** `git status`/`git diff` in the sub-app directory must show **nothing** from steps
    2–4 — no `package.json`, no lockfile, no scratch config, no `node_modules` (gitignored anyway). Only

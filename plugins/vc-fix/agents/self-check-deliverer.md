@@ -1,6 +1,6 @@
 ---
 name: self-check-deliverer
-description: "Non-interactive deliverer for the vc-fix self-diagnostics subsystem. Given the validated finding STRUCT and the operator's single yes, it OWNS the whole delivery — dedup lookup, route selection, body composition, the leak scan, sending, and telemetry retention — by running deliver.mjs. It asks NOTHING (subagents cannot ask; the one consent was already taken), narrates nothing before acting, and returns exactly ONE result line plus any issue URLs. Keeps dedup output, issue bodies and comment bodies OUT of the main conversation. Read-only w.r.t. the installed plugin; the only thing it ever sends is a GitHub Issue/comment on VirtoCommerce/vc-mcp-testing-module."
+description: "Non-interactive deliverer for the vc-fix self-diagnostics subsystem. Given the validated finding STRUCT and the operator's single yes, it OWNS the whole delivery — dedup lookup, route selection, body composition, the leak scan, sending, and telemetry retention — by running deliver.mjs. It asks NOTHING (subagents cannot ask; the one consent was already taken), narrates nothing before acting, and returns exactly ONE result line plus any issue URLs. Keeps dedup output, issue bodies and comment bodies OUT of the main conversation. Read-only w.r.t. the installed plugin; the only thing it ever sends is a GitHub Issue/comment on VirtoCommerce/ai-tools."
 model: sonnet
 color: green
 applicability: universal
@@ -89,7 +89,7 @@ Everything below is `deliver.mjs`'s job; you invoke it and report. You do not re
 
 ## What you never do
 
-- Never file to any repo other than `VirtoCommerce/vc-mcp-testing-module` (deliver enforces this;
+- Never file to any repo other than `VirtoCommerce/ai-tools` (deliver enforces this;
   do not override with `--repo`/`--as`).
 - Never send without the operator's yes (or `feedback.mode: auto`) — the orchestrator passes that in;
   if it is absent, stop and say so.

@@ -83,7 +83,7 @@ route/page  →  component (.vue)  →  composable (use*)  →  store / provide-
 
 - **Component / UI logic:** `mount` / `shallowMount` from `@vue/test-utils` (or
   `@testing-library/vue`), asserting rendered output / emitted events / `data-test-id` state. Confirm
-  **red** filtered: `npx vitest run -t VCST-XXXX` (or by file path). See `/vue-unit-test`
+  **red** filtered: `npx vitest run -t <ticket-key>` (or by file path). See `/vue-unit-test`
   `vitest-patterns.md`.
 - **Composable / util (pure logic):** call the function directly; wrap reactive composables in
   `effectScope()` (as `useDateField.test.ts` does). Prefer this over a full mount when the bug is in
@@ -125,10 +125,10 @@ cause in a NuGet dependency".
 ## 7. Branch / PR / verification conventions
 
 - **Workspace:** `.fix-workspace/vc-frontend/` (gitignored). **One** repo per run.
-- **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
+- **Branch:** `claude/qa-autofix/<ticket-key>` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
   token-owner with Claude as `Co-Authored-By:`** (CLA — see `knowledge/agents/developers/shared-instructions.md`).
-- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(VCST-XXXX): <imperative>`, body from the one PR body template
+- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(<ticket-key>): <imperative>`, body from the one PR body template
   (consumer sections, collapsed red→green evidence, "do not auto-merge" footer — `knowledge/agents/developers/pr-body-template.md`). Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — Gate 6 re-confirms it directly: once the PR's artifact
   deploys, `qa-frontend-expert` re-verifies the original STR live on the deployed storefront (no

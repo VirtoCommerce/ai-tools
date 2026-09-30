@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/VirtoCommerce/vc-mcp-testing-module/.claude/templates/mind-map.schema.json",
+  "$id": "https://github.com/VirtoCommerce/ai-tools/.claude/templates/mind-map.schema.json",
   "title": "Test Mind Map — the behaviour graph of one domain",
   "$comment": "SINGLE SOURCE OF TRUTH for the shape of `.claude/knowledge/domain/<file>.mind-map.json`. `npm run models:check` (scripts/maintenance/check-test-models.mjs) loads THIS file through ajv — it holds no second copy of these rules. Cross-file rules (edge endpoints, data references, case stamps, oracle ids, stable ids) are the checker's, because a schema cannot see other files. The map answers 'how can this domain behave?' and is NOT an oracle: an expected outcome cites BL-*/ECL-*/kb/doc through `oracle_refs`/`evidence`, never the map itself. Method: .claude/skills/qa-test-mind-map/SKILL.md. Linked tests are DERIVED from `Behavior:` stamps in suite References — deliberately not a field here, so the case↔behaviour link has exactly one writer.",
   "type": "object",
