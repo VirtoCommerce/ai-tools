@@ -77,7 +77,11 @@ export const entryPath = (id) => `entries/${id}.md`;
  */
 export function buildIndex(rows, { generated = new Date().toISOString() } = {}) {
   const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
-  return { schema: 1, generated, count: sorted.length, entries: sorted };
+  // Schema 2 is DERIVED from the rows -- any row carrying a card or a retirement pointer -- never
+  // chosen by the caller: a pushing client must not turn a migrated index back into schema 1, nor
+  // stamp 2 on a base that holds no schema-2 field (VCST-6122 Decision 8).
+  const schema = sorted.some((r) => r.questions || r.concepts || r.supersededBy) ? 2 : 1;
+  return { schema, generated, count: sorted.length, entries: sorted };
 }
 
 /** The manifest. The plane -> index map is the extension point; `entries/` never moves (PLAN §2b). */
