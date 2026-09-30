@@ -12,7 +12,8 @@ is given next to it; when updating this document, recompute rather than retype.
 ## 1. Problem
 
 Agents mostly find visible defects (layout, a11y, validation). Complex bugs — cross-cutting,
-"silent", at layer boundaries, races, stale data — escape. Business rules (BL), test models
+"silent", at layer boundaries, races, stale data — escape. And many bugs live in **gaps**:
+scenarios no case exercises at all, where even a perfect assertion cannot fail because it never runs. Business rules (BL), test models
 and mind maps barely change this.
 
 **Reference escape:** `reports/bugs/open/critical-high/BUG-xapi-catalog-paging-drops-unhydrated-products.md` —
@@ -36,6 +37,7 @@ no case uses the real page size, and no case walks the pages and reconciles them
 | D10 | Too many instructions | ~2.7M chars of prompts + 2.1M in `knowledge/`; `business-logic.md` 434K chars (~110k tokens); a `/qa-test` start ≈143K chars, 179 MUST/NEVER directives | `wc -c`, `context:check` |
 | D11 | Effort goes into the meta-system | of 58 commits, ~26 are about the system itself (kb, prompt-review, diagnostics), ~18 about testing the product | `git log --format=%s` |
 | D12 | No "do we catch bugs" metric | mutation score / replay of fixed bugs is not measured | — |
+| D13 | Bugs live in uncovered scenarios, and escapes do not close the gap | of 448 Jira bugs closed 2025-10-01…2026-09-29, **74 (17%)** are referenced by key in any suite. This measures traceability, not coverage: a case may cover a scenario without citing the key. No command lists the scenarios that have no case. | JQL `type = Bug AND statusCategory = Done AND resolved >= -365d` (excluding `Cancelled`) × grep of the keys in `regression/suites/**/*.csv` |
 
 **What already works (keep it):** the VCST-4933 test model explicitly recorded "AC8: no concurrency
 check" — and that led to a real race bug, `VCST-4933-01-silent-lost-update`.
@@ -178,6 +180,29 @@ Snapshot 2026-09-30 (`npm run bl:lint`): references to non-existent `BL-SEC-001�
 - time from a code change to the `SUSPECT` mark is no more than one `full-cycle` run;
 - false traceability (`BLC-002`) = 0.
 
+### REQ-12 · Scenario gaps: find what no case exercises · P0 · NEW
+**Why:** D13, D8. REQ-02 and REQ-03 make existing cases stronger, but a bug in a scenario nobody wrote
+escapes whatever the assertions are. The reference escape is partly this: no case walks the pages.
+**What:**
+1. **The scenario space is computed, not written.** Per domain: surfaces (the domain map inventory) × the
+   dimensions that break things × archetypes (REQ-05). Dimensions: role / org scope, currency / culture,
+   store, entity state / lifecycle, data shape (empty / one / many / page boundary), and channel
+   (UI / xAPI / REST / Admin). Pairwise keeps it finite. A **gap** is a cell with no case.
+2. **Escape-derived gaps.** Every closed Jira bug, including the `support` label, is matched against the
+   suites. A bug with no matching case becomes a gap row carrying the bug key; REQ-06 then requires the check.
+3. **Production signals rank first.** Scenarios that real users hit (`support` bugs, `/qa-monitoring`
+   signatures) outrank synthetic cells.
+4. **Exploratory aims at gaps.** `/qa-exploratory` charters are built from the top-ranked gaps; each
+   session ends with a new case or a bug.
+5. **No human queue (§7.0).** The gap list is consumed by agents (`/qa-test-lifecycle` generation,
+   exploratory charters) on the next run; it is never a file waiting for review.
+**Acceptance criteria:**
+- a command prints the gap list per domain (cell or escape, reason, rank) and the gap share;
+- escape traceability (the D13 figure) is recomputed by the command and goes up from the 17% baseline;
+  each newly closed bug gets a case or a stated reason why none is possible;
+- in the pilot domain, the paging / `totalCount` cell shows as a gap before the pilot and as covered after;
+- the REQ-01 metric does not get worse when gap cases are added.
+
 ## 6. Work plan — what to remove, what to add
 
 Plan rule: **nothing is removed without a measurement.** Every removal or merge is checked against
@@ -189,12 +214,14 @@ after Phase 0.
 | What | Requirement | Phase |
 |---|---|---|
 | Detection metric: replay of fixed bugs + response mutants | REQ-01 | 0 |
+| Gap list: computed scenario space + escape-derived gaps (baseline: escape traceability 17%) | REQ-12 | 0 |
 | Case purpose (`HAPPY`/`VISUAL`/`FUNC`) + assertion classifier — report only at first | REQ-02 | 0 |
 | BLOCKED/SKIPPED share per suite | REQ-07 | 0 |
 | Library of cross-cutting invariants in code | REQ-03 | 1 |
 | Failure layer in the mind map (archetypes + checks per node) | REQ-05 | 1 |
 | Gate: ratchet on `FUNC` cases with only `PRES` (happy path and visual unaffected) | REQ-02 | 2 |
 | Gate: escape loop | REQ-06 | 2 |
+| Exploratory charters and case generation driven by the gap list | REQ-12 | 2 |
 | New BL scheme — migration M0–M5 (§7.6) | REQ-04, REQ-11 | 0–3 |
 
 ### 6.2 Remove or freeze
@@ -216,7 +243,7 @@ Candidates, not decisions: each item is confirmed by a measurement and a decisio
 
 | Phase | Timing (estimate) | Content | Exit (decision before the next phase) |
 |---|---|---|---|
-| **0. Measure and freeze** | week 1 | REQ-01 baseline for catalog-search; REQ-02 classifier report; blocked share; moratorium and freeze from §6.2 | baseline figures recorded in §2 |
+| **0. Measure and freeze** | week 1 | REQ-01 baseline for catalog-search; REQ-12 gap list and escape traceability; REQ-02 classifier report; blocked share; moratorium and freeze from §6.2 | baseline figures recorded in §2 |
 | **1. Pilot** | weeks 1–2 | §6.4 | do the new checks catch more mutants than `050a` → yes: scale up, no: rethink the approach |
 | **2. Gates and scale** | weeks 3–4 | REQ-02 ratchet for `FUNC`, REQ-06, REQ-04; invariants on 2–3 domains (cart/checkout, orders, B2B scope) | mutation score grows on the new domains |
 | **3. Simplify** | weeks 5–6 | REQ-08, REQ-09, merges from §6.2 | REQ-01 metric did not get worse; instructions 3–4× smaller |
@@ -224,7 +251,7 @@ Candidates, not decisions: each item is confirmed by a measurement and a decisio
 ### 6.4 Pilot (Phase 1)
 
 **Domain:** catalog-search. **Duration:** 1–2 days.
-**Scope:** REQ-01 (5 response mutants) + REQ-03 (`PAGE-WALK`, `SORT-SET`, `LAYER-PARITY`, `SILENT-200`, `MONEY-VARIANT`) + REQ-05 (failure layer in `search.mind-map.json`, nodes for the search/catalog bugs already found).
+**Scope:** REQ-01 (5 response mutants) + REQ-12 (catalog-search gap list before and after) + REQ-03 (`PAGE-WALK`, `SORT-SET`, `LAYER-PARITY`, `SILENT-200`, `MONEY-VARIANT`) + REQ-05 (failure layer in `search.mind-map.json`, nodes for the search/catalog bugs already found).
 **Success:** the new checks catch the "truncated page" mutant and reproduce the catalog bug; mutation score compared with suite `050a`.
 
 ## 7. New BL scheme (BL 2.0) and migration plan
@@ -393,3 +420,4 @@ IDs are a citation contract, the converter must not change them; the `vc-fix` co
 | 2026-09-30 | §7.0: owner's decision — no queues for people. Rules change automatically, but only from a human source (AC, docs, a Jira bug resolution); observations never change rules; a mismatch is a failing test → the bug path; proposal files are deleted. |
 | 2026-09-30 | Document translated from Russian to English at the owner's request; content unchanged. |
 | 2026-09-30 | **M0 done (#351).** A `bl` `DRIFT`/`MISSING` edit now needs a human source; with none, a contradiction is a finding and uncovered behaviour goes to the `kb`. No proposal files are written, and the output path is removed from the report policies. The six existing `bl-proposals-*` files are deleted now instead of in M4, and the one-off review pass is skipped by the owner's decision. The false `BL-SEC-001…005` citations are dropped, so `BLC-002` = 0. |
+| 2026-09-30 | Owner's addition: bugs also live in gaps — scenarios no case exercises. D13 added (escape traceability 17%: 74 of 448 closed bugs are referenced by a suite) and REQ-12 (computed scenario space, escape-derived gaps, production signals first, exploratory aimed at gaps, no human queue). |
