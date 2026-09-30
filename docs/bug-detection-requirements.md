@@ -435,9 +435,8 @@ below is a snapshot as of 2026-09-30, with the query or command that recomputes 
 |---|---|---|
 | Bugs closed | **341** | `type = Bug AND statusCategory = Done AND status != Cancelled AND resolved >= "2026-04-01"` |
 | … reported by customers (label `Support`) | **155 (45%)** | + `AND labels = Support` |
-| … reported by the QA owner (manual + agents) | **100 (29%)** | the same query without `Support`, grouped by reporter |
+| … filed by the QA owner | **100 (29%)** | the same query without `Support`, grouped by reporter. Filed by the QA owner does not mean found by hand: manual and agent findings are mixed and cannot be split yet, and the `qa-found` label is not used as a signal |
 | … reported by anyone else | **86 (25%)** | the remainder |
-| … labelled `qa-found` | **16 (5%)** | + `AND labels = qa-found` — the label is applied inconsistently (5 of the QA owner's last 60 bugs carry it), so it **undercounts** QA findings and is not usable as the metric until it is applied to every QA-found bug |
 | Bugs filed by the QA owner since 2026-04-01 | **134**: complex 36 (27%), simple functional 47 (35%), accessibility 34, visual 14, i18n 3 | `reporter = <QA owner> AND type = Bug AND created >= "2026-04-01"`, classified from summaries |
 | … of them cancelled | **21**, of which **10 complex** | complex findings are rejected more often — the signal-quality metric must watch this |
 
@@ -522,6 +521,6 @@ Score = killed / exercised. Written as JSON + Markdown under `reports/coverage/C
 | Now (this document) | §10.1 baseline, §10.2 trial 1 | — |
 | Before the pilot | trial 2 on `050a` ("before") | recorded, no target |
 | After the pilot (1–2 weeks) | trial 2 on `050a` and the new checks ("after"); trial 1 re-rated on a fresh sample | hypothesis: ≥ 8 of 10 mutants killed; set as a target only after the "before" figure exists |
-| Monthly | §10.1 recomputed | `Support` share falls; QA-reported share and escape traceability (D13) rise; cancelled-complex share does not rise |
+| Monthly | §10.1 recomputed | `Support` share falls; share filed by QA and escape traceability (D13) rise; cancelled-complex share does not rise |
 
 Targets are not promised before the baseline exists; a hypothesis is recorded instead.
