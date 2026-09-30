@@ -75,12 +75,12 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 - Customers **pin a version range**, not a specific version. Recommended: `^1.0` (any 1.x, no major bumps).
 - Customers can opt into prereleases with `1.x-beta` ranges.
-- **Each plugin carries its own version** in its own [`plugins/<name>/.claude-plugin/plugin.json`](../plugins/) — that file is the single source of truth for that plugin, and the Claude Code plugin manager tracks the installed version against the pinned range. `vc-fix` and `vc-perf` version independently.
+- **Each plugin carries its own version** in its own [`plugins/<name>/.claude-plugin/plugin.json`](../plugins/) — that file is the single source of truth for that plugin, and the Claude Code plugin manager tracks the installed version against the pinned range. The plugins version independently of each other.
 - **The marketplace's top-level `version` in [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) is the CATALOG's own version, not a plugin's** — it is bumped when the listing itself changes (a plugin added/removed, a description or source path edited). It is *not* required to equal any plugin's version, and did not need to be once the catalog listed more than one plugin. `package.json` `version` is the repo/toolset line (tagged `vX.Y.Z`); nothing reads it programmatically, and it is **not** a mirror of any plugin version.
 
 ## Pre-v1.0 Status
 
-**Currently:** developed on `main` and distributed via the `vc-tools` marketplace (catalog `0.9.4`), which lists **two** plugins — `vc-fix` (`0.9.0`, `/plugin install vc-fix@vc-tools`) and `vc-perf` (`0.2.7`, depends on `vc-fix >= 0.7.0`). `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
+**Currently:** developed on `main` and distributed via the `vc-tools` marketplace; which plugins it lists, and at which versions, is [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) and each plugin's own `plugin.json`. `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
 
 Until then: any consumer of this repo should expect frequent changes and pin to a specific commit, not a branch tip.
 

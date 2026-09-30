@@ -41,7 +41,7 @@ team's servers, a person for their own.
 |---|---|
 | `install` | Put the shim at a stable path and print the settings entry plus the commands that use it |
 | `doctor` | Resolve everything a live server needs and report what is broken |
-| `migrate` | One-time: move user-scope secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys. A repository's secret is skipped |
+| `migrate` | One-time: move user-scope secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys. A repository's local-store secret is skipped |
 
 `install` deliberately installs a **shim**, not a copy of the launcher: plugin files live in a cache
 directory whose path carries the version, so a copy would keep running an old launcher after an
@@ -65,10 +65,10 @@ but a command you type by hand does not:
 | `task <name>` | Same, for a declared non-MCP command — a load-test harness, a migration step. |
 | `doctor` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. |
 | `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. No-op on Windows and macOS. |
-| `migrate` | Copy legacy-prefix entries to namespaced keys, for user-scope declarations only: a legacy entry is your own value, so it is never copied into a repository's namespace, and the repository's secrets are skipped with a line saying so. Idempotent. |
+| `migrate` | Copy legacy-prefix entries to namespaced keys, for user-scope declarations only: a legacy entry is your own value, so it is never copied into a repository's namespace, and a repository's local-store secrets are skipped with a line saying so (a Key Vault secret never reaches `migrate`). Idempotent. |
 | `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr, including a note for each repository server you have not trusted yet. See [Clients](#clients). |
 | `trust` | Show what this repository's declarations would run — command, args, env names and `literal:` values, and the `projectId` — and, on a `y` typed at a terminal, record it. Refuses without an interactive terminal, before showing anything. See [Trusting a repository's declarations](#trusting-a-repositorys-declarations). |
-| `untrust [path]` | Remove the trust record for `path` (default: the repository you are in). Needs no terminal and no declaration. |
+| `untrust [path]` | Remove the trust record for `path` (default: the repository you are in). Needs no terminal and no declaration, and still finds the record after the checkout has been deleted, when `path` reaches it through a symlink above the deleted part or is itself a symlink to it (left dangling by the deletion). A link removed since cannot be followed, and one repointed since is followed to its current target rather than the one the record was made through. |
 
 ## Declarations
 
@@ -128,6 +128,15 @@ which is exactly what a tool with no read command must not acquire. A task's arg
 declaration, so it is reviewed in a pull request like a server's — and, when a repository declares it,
 refused until you have trusted it — and the caller chooses only *which declared* task to run.
 
+A task's whole process group ends with the launcher. A helper the task backgrounds (`kubectl port-forward … &`,
+`nohup … &`) is killed when the launcher receives a signal it can catch (`SIGINT`, `SIGTERM`, `SIGHUP`, and
+`SIGQUIT` off Windows) and, on Linux and macOS, when the task exits, because that is what keeps the secrets in
+its environment from outliving the launcher. (On Windows the tree is taken down when the launcher is
+signalled.) A `SIGKILL` of the launcher runs nothing and leaves the group standing. Something meant to
+outlive the task has to be started **outside** it: a helper started from inside -- a `tmux` server or a
+`screen -dm` launched by the task included -- inherits the task's environment, secrets among them, and
+survives with them.
+
 What this does not reach: a credential that must appear inside a URL or an argument the tool then
 writes somewhere (a git remote with an embedded token, for instance). Injecting it into the
 environment does not help there; that case wants a git credential helper, not this.
@@ -152,7 +161,7 @@ environment does not help there; that case wants a git credential helper, not th
   reviewable text rather than a surface this tool can defend. A control character (a newline, a tab,
   an escape) in `command` or in an `env` key is refused when the declaration loads: nothing
   legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine --
-  and the review prints `args` escaped.
+  and the review prints `args` as JSON, so a control byte in one is an escape and not a terminal command.
 - `projectId` is **declared, never derived.** A git worktree has a different path from its main
   checkout, so a path-derived identity would hide the secrets you already set. It may appear in the
   project or the local file; if in both, they must agree. `user` is reserved.
@@ -256,19 +265,24 @@ you have trusted exactly what that entry declares. Run `vc-secrets trust` in the
 
 ```
 server "gh" (project, /work/repo/.claude/vc-secrets.json) -- shadows your user-scope "gh"
-    command: npx
+    command: "npx"
     args: ["-y","gh-mcp"]
-    env: T=secret:pat, LABEL=literal:nightly
+    env: {"T":"secret:pat","LABEL":"literal:nightly"}
 projectId: my-repo
 Trust these for /work/repo? [y/N]
 ```
 
 - What is recorded is the **declared** shape — `command`, `args` and `env` as written (`secret:pat`, not a
   value) — and the repository's `projectId`, in `~/.config/vc-secrets/trust.json` (`$XDG_CONFIG_HOME`
-  honoured), keyed by the repository root. The review prints the command, every argument and every
-  `literal:` value whole, never cut, because it is what you are approving and a literal such as `PATH`
-  decides which binary runs. The refusal lines, `doctor` and `emit-config` name only the env keys and never
-  a value, since they travel into a client's logs.
+  honoured), keyed by the repository root. The review prints `command`, `args` and `env` as JSON, whole and
+  never cut, because it is what you are approving and a literal such as `PATH` decides which binary runs.
+  JSON keeps it unambiguous -- a value holding `, X=literal:y` stays one string instead of reading as a second
+  entry -- and lossless: a control byte, and the common invisible and bidirectional characters, are written
+  as `\u` escapes that parse back to what the declaration holds, where flattening them to `?` would hide
+  what the record keeps. The paths it prints (the repository
+  root and the declaration file) are directory names somebody chose, so a control character in one is
+  replaced by `?`. The refusal lines, `doctor` and `emit-config` name only the env keys and never a value,
+  since they travel into a client's logs.
 - **Any change** — a different `command`, different `args`, an env key added, removed or re-pointed, a
   different `projectId` (it decides whose namespace a project-scope `secret:<name>` resolves in; a user-scope
   one resolves under `user`) — refuses
@@ -526,7 +540,7 @@ approved to run, so it changes only through `trust` and `untrust`; the shim sits
 and no plugin update overwrites it; and the package's modules are what handle the token once a declaration
 has named it.
 
-The criterion for that third group is not "does this file touch a token". It has three prongs and a
+The criterion for the package's own code is not "does this file touch a token". It has three prongs and a
 file needs one of them: **loaded into a process that holds a token**, **relaxing what an agent may do
 without a human** — switching this guard off is the extreme of that, a skill's invocation policy the
 ordinary case — or **deciding the content of a file that does either**.
@@ -657,8 +671,12 @@ interactive terminal, which refuses a pipe, a script and an agent's plain shell 
 deliberately allocates a pseudo-terminal (`script`, `expect`, a pty library, ConPTY or winpty): it is a
 confirmation of intent, not a boundary. The gaps that remain are worth stating plainly. Trust covers the **argv and env declarations**, not the files they name: a
 declared `node ./server.js` stays trusted while `server.js` changes underneath it, and the same holds for
-a script, or for the project `.npmrc` that `npx` reads. Nor does it cover `PATH`, which decides what
-`npx` or `node` resolves to. Trust is also only as good as the reading you gave the review, and the guard
+a script, or for the project `.npmrc` that `npx` reads. Nor does it cover the **inherited** `PATH`, which
+decides what `npx` or `node` resolves to: a `PATH` the declaration sets as a `literal:` is part of the
+trusted shape, and on Linux and macOS a relative one (`./bin`) resolves to files in the repository, which is
+the same gap as the files a declaration names (on Windows the launcher's resolver never searches a relative
+`PATH` entry for the command it starts, but a `.cmd` shim runs under `cmd.exe`, which looks up what the shim
+calls in its own way). Trust is also only as good as the reading you gave the review, and the guard
 that protects the record is a speed bump, not a boundary.
 
 The gate also stands on the **launcher's own environment**, which it does not defend. What a repository

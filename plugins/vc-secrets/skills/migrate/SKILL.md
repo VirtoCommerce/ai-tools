@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: "One-time: move user-scope secrets stored under the older flat `mcpw:` key prefix to their namespaced keys. A repository's secret is skipped. Needed only on a machine that used the launcher this plugin replaces — otherwise every user-scope secret not already set reports `no legacy entry`. Idempotent."
+description: "One-time: move user-scope secrets stored under the older flat `mcpw:` key prefix to their namespaced keys. A repository's local-store secret is skipped. Needed only on a machine that used the launcher this plugin replaces — otherwise every user-scope local-store secret not already set reports `no legacy entry`. Idempotent."
 disable-model-invocation: true
 ---
 
@@ -10,10 +10,10 @@ Keys are now namespaced by the declaration's home (`vc-secrets:<projectId>:<name
 `vc-secrets:user:<name>`) instead of the older flat `mcpw:<name>` credential (Credential Manager,
 Keychain) or `~/.config/mcpw/secrets/<name>.gpg` (gpg, `$XDG_CONFIG_HOME` honoured). This copies what
 is already stored under that legacy key, for the secrets your own user file declares: a legacy entry has
-no scope, so it is your own value, and a secret a repository declares is skipped
+no scope, so it is your own value, and a local-store secret a repository declares is skipped
 (`declared by this repository`) rather than handed to that repository's namespace. If this machine never
-ran the older launcher, there is nothing to migrate — every user-scope secret not already set reports
-`no legacy entry` and the command can be ignored.
+ran the older launcher, there is nothing to migrate — every user-scope local-store secret not already set
+reports `no legacy entry` and the command can be ignored.
 
 ## Why this exists rather than "just set them again"
 

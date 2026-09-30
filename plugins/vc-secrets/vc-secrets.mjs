@@ -482,7 +482,7 @@ function validateLaunchables(label, map) {
         // by the trust review, by the refusal lines and by `doctor` -- where such a byte is a terminal
         // command rather than text (see forTerminal). Those surfaces neutralise what they print; refusing
         // here keeps such a declaration from being launchable at all. `args` is not refused: it is printed
-        // through JSON.stringify and forTerminal, and a multi-line `sh -c` script is an ordinary argument.
+        // as escaped JSON (jsonForTerminal), and a multi-line `sh -c` script is an ordinary argument.
         // The message does not echo the value, for the reason it is refused.
         if (CONTROL_CHAR_RE.test(srv.command)) {
             throw new VcSecretsError(`${label} "${name}": a control character in "command" is not allowed (nothing legitimate needs one, and the trust review, refusal lines and doctor all print it)`);
@@ -918,19 +918,73 @@ function trustFilePath(env = process.env) {
     return path.join(path.dirname(secretsDir(env)), TRUST_FILE_NAME);
 }
 
+// The most links followed while resolving a path that no longer exists: of the order of the kernels' own
+// limits on a symlink chain (ELOOP -- 40 on Linux, fewer on macOS), since a loop of dangling ones must end.
+const MAX_LINK_HOPS = 40;
+
 // The key a repository is recorded under. realpath, so a symlinked checkout and its target are one
 // repository; lower-cased on win32, whose file system is case-insensitive and would otherwise record the
-// same directory twice under two spellings of it. `platform` and `realpath` are seams because neither
-// half can be exercised on another platform's machine otherwise.
+// same directory twice under two spellings of it. `platform`, `realpath`, `lstat` and `readlink` are seams
+// because none of it can be exercised on another platform's machine otherwise.
 //
-// The fallback for a path that does not exist (or cannot be resolved) is the plain resolve, as in
-// canonicalPath: `untrust <path>` must still find a record for a checkout that has since been deleted.
-function trustRootKey(root, { platform = process.platform, realpath = fs.realpathSync.native } = {}) {
+// `untrust <path>` must still find a record for a checkout that has since been deleted, and a record made
+// through a link is keyed by the target. realpath fails once the path is gone, and resolving the plain
+// string would key `/link/repo` where the record says `/real/repo`. So when realpath fails:
+//   - the NEAREST EXISTING ANCESTOR is resolved and the missing tail joined onto it, which covers a link
+//     above the part that was deleted (`/link -> /real`, `/real/repo` gone);
+//   - and a component that is itself a DANGLING link is followed before climbing past it: it is read with
+//     readlink, its target resolved against the link's own directory as the kernel sees it (realpath'd,
+//     so a `..` in the target crosses a linked parent the way the kernel would), and the whole
+//     computation restarted on `target + remaining tail`. That covers a link that IS the checkout (`~/work/repo -> /data/repo`, the
+//     target deleted, so the link dangles) and one with a tail beyond it.
+// At most MAX_LINK_HOPS links are followed. Where nothing resolves -- no ancestor, a loop, or a chain longer
+// than that -- the plain resolve is the answer, as in canonicalPath.
+function trustRootKey(root, { platform = process.platform, realpath = fs.realpathSync.native,
+    lstat = fs.lstatSync, readlink = fs.readlinkSync } = {}) {
+    const P = platform === "win32" ? path.win32 : path.posix;
+    const resolveMissing = (start) => {
+        let current = start;
+        for (let hops = 0; hops <= MAX_LINK_HOPS; hops += 1) {
+            const tail = [];
+            let followed = null;
+            for (let ancestor = current; followed === null;) {
+                try {
+                    return P.join(realpath(ancestor), ...tail);
+                } catch { /* gone: a dangling link, or a plain absence */ }
+                let target = null;
+                try {
+                    if (lstat(ancestor).isSymbolicLink()) {
+                        target = readlink(ancestor);
+                    }
+                } catch { /* not a link, or unreadable: climb */ }
+                if (target !== null) {
+                    // Against the link's PHYSICAL directory, as the kernel resolves it: `..` in a relative
+                    // target applies after any link in the parent path, so a lexical resolve would climb out
+                    // of the wrong directory. The parent exists -- lstat just read the link inside it.
+                    let base = P.dirname(ancestor);
+                    try {
+                        base = realpath(base);
+                    } catch { /* unreadable parent: the lexical path is the best left */ }
+                    followed = P.join(P.resolve(base, target), ...tail);
+                    break;
+                }
+                const parent = P.dirname(ancestor);
+                if (parent === ancestor) {
+                    return undefined;
+                }
+                tail.unshift(P.basename(ancestor));
+                ancestor = parent;
+            }
+            current = followed;
+        }
+
+        return undefined;
+    };
     let canonical;
     try {
         canonical = realpath(root);
     } catch {
-        canonical = (platform === "win32" ? path.win32 : path.posix).resolve(root);
+        canonical = resolveMissing(P.resolve(root)) ?? P.resolve(root);
     }
 
     return platform === "win32" ? canonical.toLowerCase() : canonical;
@@ -1059,10 +1113,14 @@ function trustProblem(cfg, kind, name, state) {
     return differences.length === 0 ? null : { reason: "changed", differences, home: launchable.home, shadowsUser };
 }
 
+// A path is context, not approved content, so it stays readable -- but it is a directory name somebody
+// chose, and one carrying ESC or CR would rewrite the line it sits on. Escaped without truncating.
+const pathForTerminal = (value) => forTerminal(value, Infinity);
+
 // Carries the root because the verb acts on the CURRENT directory's repository, and this text is read
 // out of a client's log where the current directory is not the reader's.
 function trustRemedy(problem, cfg) {
-    return `review it, then run "vc-secrets trust"${problem.reason === "changed" ? " again" : ""} in ${cfg.projectRoot}`;
+    return `review it, then run "vc-secrets trust"${problem.reason === "changed" ? " again" : ""} in ${pathForTerminal(cfg.projectRoot)}`;
 }
 
 // A single line: it travels through fail() and doctor, and the probe classifies a launcher refusal by
@@ -1072,7 +1130,7 @@ function trustRefusal(kind, name, problem, cfg) {
     if (problem.reason === "changed") {
         return `${label} changed since you trusted it: ${problem.differences.join("; ")} -- ${trustRemedy(problem, cfg)}`;
     }
-    const file = cfg.files?.[problem.home] ?? problem.home;
+    const file = pathForTerminal(cfg.files?.[problem.home] ?? problem.home);
     const shadow = problem.shadowsUser ? ` (it shadows your user-scope "${name}")` : "";
 
     return `${label} is declared by ${file}${shadow} and is not trusted -- ${trustRemedy(problem, cfg)}`;
@@ -1919,8 +1977,10 @@ const LEGACY_SECRET_ENV_VARS = ["ADO_MCP_AUTH_TOKEN", "GITHUB_PERSONAL_ACCESS_TO
 // against PATH entries that are themselves absolute (a relative entry such as `.` is a cwd lookup by
 // another name), and a name that is not found is an error rather than a fallback to libuv's search.
 // POSIX execvp does not search the cwd for a bare name either, unless PATH itself holds an empty element
-// or `.`; PATH is outside what this protects (README, Scope of the protection), so the bare name is left
-// to it there.
+// or `.`; the INHERITED PATH is outside what this protects (README, Scope of the protection), so the bare
+// name is left to it there. A PATH the declaration sets is part of the trusted shape, and a relative one in
+// it resolves to files in the repository -- the gap the same section describes for the files a declaration
+// names.
 // Looked up without regard to case: the environment is case-insensitive on Windows, but the child's env
 // is a plain object, and a declaration may spell it `path` -- mergeDeclaredEnv has already made that the
 // only spelling, so a fixed-case read would find nothing and report a working tool missing.
@@ -1997,14 +2057,21 @@ function findOnWindowsPath(name, env, existsSync) {
     return null;
 }
 
+// A command with a path is not searched for -- it is the file -- but the kind of file still decides how it
+// is run: Node refuses to spawn a `.cmd`/`.bat` without a shell (EINVAL), so a pathful one goes through the
+// same cmd.exe invocation a bare-name shim does, with cmd.exe itself looked up the same way. A pathful
+// `.exe` or an extension-less name stays direct.
 function resolveSpawnCommand(command, { platform = process.platform, env = process.env, existsSync = fs.existsSync } = {}) {
-    if (platform !== "win32" || /[\\/]/.test(command)) {
+    if (platform !== "win32") {
         return { kind: "direct", cmd: command };
     }
-    const found = findOnWindowsPath(command, env, existsSync);
-    if (found === null) {
-        // The text runTool already produced for ENOENT and doctor parses with /^(\S+): not found on PATH/.
-        throw new VcSecretsError(`${command}: not found on PATH`);
+    let found = command;
+    if (!/[\\/]/.test(command)) {
+        found = findOnWindowsPath(command, env, existsSync);
+        if (found === null) {
+            // The text runTool already produced for ENOENT and doctor parses with /^(\S+): not found on PATH/.
+            throw new VcSecretsError(`${command}: not found on PATH`);
+        }
     }
     const lower = path.win32.extname(found).toLowerCase();
     if (lower !== ".cmd" && lower !== ".bat") {
@@ -2687,10 +2754,11 @@ function probeEnvFor(launchable, base = process.env, platform = process.platform
 // Every wrapper on the same PATH still collapses onto the one PATH entry; two spellings of one node are
 // still probed twice, which costs a process and no correctness.
 //
-// The probe mirrors cmdLaunch exactly, so doctor's verdict and the launch's are answers about the
-// same binary rather than about two different ones. That includes the environment it resolves in, built
-// by probeEnvFor for both: a PATH or PATHEXT declared as a `literal:` is seen, one declared as `secret:`
-// is not and stays the inherited one, so the two agree except where only a credential store can supply it.
+// The probe mirrors cmdLaunch, so doctor's verdict and the launch's are answers about the same binary
+// rather than about two different ones -- as far as the declaration names one: a wrapper command is
+// probed as `node`, and the message says so. The environment it resolves in is built by probeEnvFor for
+// both: a PATH or PATHEXT declared as a `literal:` is seen, one declared as `secret:` is not and stays the
+// inherited one, so the two agree except where only a credential store can supply it.
 //
 // `refused` is trustAssessment's problems, keyed the way `seen` is. A launchable in it is skipped: the
 // probe SPAWNS the declared command, and for a repository's launchable nobody has trusted that is the
@@ -2846,12 +2914,21 @@ function forTerminal(value, limit = 200) {
 }
 
 // JSON for a terminal, where it may also be pasted back. JSON.stringify escapes C0 itself but leaves DEL
-// and C1 raw, and C1 holds the 8-bit CSI. Those are written as \u escapes rather than flattened to "?"
-// the way forTerminal does: the text stays inert on the screen AND still parses to the declared bytes, so
-// a shape the reader pastes into an authorization matches the declaration it was printed from.
+// and C1 raw, and C1 holds the 8-bit CSI; it also leaves raw the characters that print as nothing or
+// reorder what is around them -- the soft hyphen, the Arabic letter mark, the Mongolian vowel separator,
+// the zero-width and directional marks (U+200B-U+200F), the line and paragraph separators and the bidi
+// embeddings and overrides (U+2028-U+202E), the invisible operators and bidi isolates (U+2060-U+206F) and
+// the byte-order mark. A right-to-left override in an argument makes a review read as something it is not.
+// The list is the common offenders, not every character that renders as nothing: tag characters,
+// variation selectors and a few fillers still pass. All of them are written as \u escapes rather
+// than flattened to "?" the way forTerminal does: the text stays inert on the screen AND still parses to
+// the declared bytes, so a shape the reader pastes into an authorization matches the declaration it was
+// printed from.
+const JSON_ESCAPED_RE = /[\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/g;
+
 function jsonForTerminal(value, space) {
     return JSON.stringify(value, null, space)
-        .replace(/[\u007f-\u009f]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+        .replace(JSON_ESCAPED_RE, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
 }
 
 function escapeHtml(value) {
@@ -4100,12 +4177,13 @@ async function oauthTenantChecks(cfg, references, { resolveOrgTenant: resolve = 
 
 function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [] }) {
     const lines = [];
-    const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${file}`).join(", ");
+    const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${pathForTerminal(file)}`).join(", ");
     if (loadedFiles) {
         lines.push(`INFO config files loaded: ${loadedFiles}`);
     }
     for (const warning of cfg.warnings ?? []) {
-        lines.push(`WARN ${warning}`);
+        // A warning embeds the declaration file's path, a directory name somebody chose.
+        lines.push(`WARN ${forTerminal(warning, Infinity)}`);
     }
     for (const collision of cfg.collisions ?? []) {
         lines.push(`WARN ${collision.kind} "${collision.name}" declared in both ${collision.from} and ${collision.to} -- ${collision.to} wins`);
@@ -5088,15 +5166,6 @@ function askLine(question, terminal = { input: process.stdin, output: process.st
     });
 }
 
-// One env declaration as the trust review shows it: a reference is a NAME and a literal is its value.
-// The value is shown here, and only here, because the review is what the person approves and a literal
-// such as PATH decides which binary runs. The refusal lines, `doctor` and `emit-config` notes stay
-// value-free (see envDifferences): they travel into a client's log, and a literal is the env value most
-// likely to be a pasted credential.
-function describeEnvDeclaration(value) {
-    return forTerminal(value, Infinity);
-}
-
 const logToStderr = (text) => fs.writeSync(2, text);
 
 // Records what this repository's declarations ask to run, after the person has read it.
@@ -5126,12 +5195,12 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
             if (Object.hasOwn(state.repositories, root)) {
                 delete state.repositories[root];
                 writeTrustState(env, state);
-                log(`vc-secrets: nothing in ${root} needs trust -- removed its trust record\n`);
+                log(`vc-secrets: nothing in ${pathForTerminal(root)} needs trust -- removed its trust record\n`);
 
                 return;
             }
         }
-        log(`vc-secrets: nothing in ${root ?? "this repository"} needs trust\n`);
+        log(`vc-secrets: nothing in ${root === null ? "this repository" : pathForTerminal(root)} needs trust\n`);
 
         return;
     }
@@ -5159,15 +5228,18 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
     }
     const review = [];
     for (const { kind, name, launchable } of gated) {
-        const file = cfg.files?.[launchable.home] ?? launchable.home;
+        const file = pathForTerminal(cfg.files?.[launchable.home] ?? launchable.home);
         const shadow = shadowsUserScope(cfg, kind, name) ? ` -- shadows your user-scope "${name}"` : "";
-        const envDeclarations = Object.entries(launchable.env)
-            .map(([key, value]) => `${forTerminal(key, Infinity)}=${describeEnvDeclaration(value)}`);
+        // What the person approves is printed as JSON, each part on its own line: unambiguous where a joined
+        // list is not (a literal holding `, X=literal:y` reads as two declarations there and as one string
+        // here) and lossless where flattening to "?" is not (the record keeps the byte the screen hides).
+        // Whole, never cut. The values are shown -- a literal such as PATH decides which binary runs -- and
+        // only here: the refusal lines, `doctor` and `emit-config` notes stay value-free (see
+        // envDifferences), because they travel into a client's log.
         review.push(`${kind === "tasks" ? "task" : "server"} "${name}" (${launchable.home}, ${file})${shadow}`,
-            `    command: ${forTerminal(launchable.command, Infinity)}`,
-            // JSON.stringify escapes C0 but leaves DEL and C1 raw, and C1 includes the 8-bit CSI.
-            `    args: ${forTerminal(JSON.stringify(launchable.args), Infinity)}`,
-            `    env: ${envDeclarations.length === 0 ? "(none)" : envDeclarations.join(", ")}`);
+            `    command: ${jsonForTerminal(launchable.command)}`,
+            `    args: ${jsonForTerminal(launchable.args)}`,
+            `    env: ${Object.keys(launchable.env).length === 0 ? "(none)" : jsonForTerminal(launchable.env)}`);
     }
     // The effective projectId, once: it is what a project-scope `secret:<name>` in the review resolves
     // under (a user-scope one resolves under `user`), and it is part of what the record pins.
@@ -5175,7 +5247,7 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
     let answer;
     try {
         log(`${review.join("\n")}\n`);
-        answer = String(await ask(`Trust these for ${root}? [y/N] `, terminal)).trim().toLowerCase();
+        answer = String(await ask(`Trust these for ${pathForTerminal(root)}? [y/N] `, terminal)).trim().toLowerCase();
     } finally {
         terminal.close();
     }
@@ -5193,7 +5265,7 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
     const state = readTrustState(env);
     state.repositories[root] = record;
     writeTrustState(env, state);
-    log(`vc-secrets: trusted ${Object.keys(record.servers).length} server(s) and ${Object.keys(record.tasks).length} task(s) for ${root}\n`
+    log(`vc-secrets: trusted ${Object.keys(record.servers).length} server(s) and ${Object.keys(record.tasks).length} task(s) for ${pathForTerminal(root)}\n`
         + `vc-secrets: a secret crossing still needs its own authorization in ${CONFIG_HINT_PATH} -- "vc-secrets doctor" reports each one\n`);
 }
 
@@ -5202,25 +5274,35 @@ async function cmdUntrust(pathArg, { env = process.env, cwd = process.cwd(), log
     const root = trustRootKey(pathArg ?? configPaths(env, cwd).root ?? cwd);
     const state = readTrustState(env);
     if (!Object.hasOwn(state.repositories, root)) {
-        log(`vc-secrets: ${root} has no trust record -- nothing to remove\n`);
+        log(`vc-secrets: ${pathForTerminal(root)} has no trust record -- nothing to remove\n`);
 
         return;
     }
     delete state.repositories[root];
     writeTrustState(env, state);
-    log(`vc-secrets: removed the trust record for ${root}\n`);
+    log(`vc-secrets: removed the trust record for ${pathForTerminal(root)}\n`);
 }
 
 // --- CLI entry ---
-function fail(e) {
+function failureLine(e) {
     // One PHYSICAL line, which "no stack" alone did not achieve: a backend tool's own stderr is
     // embedded in the message with its newlines intact, and the probe decides whose failure this was
     // by reading the LAST stderr line. Three lines from a locked gpg agent left that last line
     // looking like the server's, and "server exited before responding" is the one outcome the doctor
     // skill reads as a broken binary -- so the launcher's own refusal was reported as the server's.
-    const message = String(e?.message ?? e).replace(/\s*\n\s*/g, " ");
+    // U+2028/2029 count as line ends too: forTerminal does not flatten them, and the probe's line match
+    // does not cross them, so either would split this into a line the probe reads as someone else's.
+    const folded = String(e?.message ?? e).replace(/\s*[\n\u2028\u2029]\s*/g, " ");
+
+    // Then what is left of the control range is flattened, whole: a message embeds declaration paths and a
+    // tool's own output, and an ESC in either is a terminal command. After the fold, so a line ending still
+    // becomes one space and not a question mark -- and no other byte can make a second line.
+    return `vc-secrets: ${forTerminal(folded, Infinity)}\n`;
+}
+
+function fail(e) {
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
-    fs.writeSync(2, `vc-secrets: ${message}\n`);
+    fs.writeSync(2, failureLine(e));
     process.exit(e instanceof VcSecretsError ? e.exitCode : 1);
 }
 
@@ -5314,7 +5396,8 @@ async function main(argv) {
         throw new VcSecretsError(USAGE);
     }
     // Before loadConfig, because it removes a record and needs no declaration to exist -- the checkout may
-    // be gone, or the file deleted, and the record is exactly what is left behind.
+    // be gone, or the file deleted, and the record is exactly what is left behind. trustRootKey is what
+    // finds it: a path that is gone keys the way it did while it existed, whether a link sits above the deleted part or is the checkout itself.
     if (command === "untrust") {
         await cmdUntrust(arg);
         return;
@@ -5425,7 +5508,7 @@ export {
     openBrowser, buildBrowserCommand, handleCallback, cmdLogin, cmdLogout, withDeadline, LOGIN_WAIT_MS,
     runTool, resolveSpawnCommand, buildSpawnInvocation, hardenSpawnEnv, commandOnPath, mergeDeclaredEnv,
     LAUNCH_KILL_ESCALATION,
-    makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree, forwardedSignalsFor,
+    makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree, forwardedSignalsFor, failureLine,
     RENEWAL_TICK_MS,
     validateLaunchables, LEGACY_ENV_VARS, LEGACY_SECRET_ENV_VARS,
     mapResolveError, applyKeystrokes, promptHidden, cmdSet, cmdUnlock, unlockTargets, cmdDoctor, cmdMigrate, newKeyPresent, readLegacyLocalValue,

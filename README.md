@@ -188,7 +188,7 @@ manifest (the old `.claude-plugin/plugin.json` was deleted). `vc-fix`'s own copi
 ```
 vc-mcp-testing-module/
 ├── CLAUDE.md             # Claude Code project instructions
-├── .claude-plugin/       # marketplace.json ONLY (lists only vc-fix; the vc-qa plugin.json was deleted)
+├── .claude-plugin/       # marketplace.json ONLY (lists the plugins under plugins/; the vc-qa plugin.json was deleted)
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
 │                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)

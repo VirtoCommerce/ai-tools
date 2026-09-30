@@ -74,11 +74,16 @@ function probe(fn) {
 const probeDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-probe-"));
 tmpDirs.push(probeDir);
 
-// Windows creates a symlink only in Developer Mode or elevated; otherwise fs.symlinkSync raises EPERM.
+// A directory link. Windows creates a true symlink only in Developer Mode or elevated (otherwise
+// fs.symlinkSync raises EPERM), but a junction needs no privilege, so it is what the tests use there. A
+// junction takes an absolute target -- every one passed below is -- and behaves as a link for what these
+// tests read: realpath resolves it, and libuv reports any reparse point as a link to readdir, so
+// Dirent.isSymbolicLink() is true for one. The probe stays, so a machine that truly cannot link skips.
+const LINK_TYPE = process.platform === "win32" ? "junction" : "dir";
 const CAN_SYMLINK = probe(() => {
     const dest = path.join(probeDir, "sym-dest");
     fs.mkdirSync(dest, { recursive: true });
-    fs.symlinkSync(dest, path.join(probeDir, "sym-link"), "dir");
+    fs.symlinkSync(dest, path.join(probeDir, "sym-link"), LINK_TYPE);
 
     return true;
 });
@@ -2214,13 +2219,32 @@ test("resolveSpawnCommand: win32 .exe is direct", () => {
     assert.ok(r.cmd.toLowerCase().endsWith(".exe"));
 });
 
-test("resolveSpawnCommand: non-win32 and pathful commands are passed through as named", () => {
+test("resolveSpawnCommand: non-win32 commands are passed through as named, and on win32 so are pathful ones that are not batch files", () => {
     // A populated env and an existsSync that says yes are load-bearing: were the pass-through guard
     // deleted, the scan below would find a PATH candidate and answer with ITS path instead of the name.
     assert.deepEqual(m.resolveSpawnCommand("npx", { platform: "linux", env: WIN_ENV, existsSync: () => true }),
         { kind: "direct", cmd: "npx" });
-    assert.deepEqual(m.resolveSpawnCommand("C:\\x\\y.cmd", { platform: "win32", env: WIN_ENV, existsSync: () => true }),
-        { kind: "direct", cmd: "C:\\x\\y.cmd" });
+    assert.deepEqual(m.resolveSpawnCommand("/x/y.cmd", { platform: "linux", env: WIN_ENV, existsSync: () => true }),
+        { kind: "direct", cmd: "/x/y.cmd" }, "a .cmd path off win32 is just a file");
+    for (const pathful of ["C:\\x\\y.exe", "C:\\x\\y", ".\\tools\\y.EXE", "C:/x/y.com"]) {
+        assert.deepEqual(m.resolveSpawnCommand(pathful, { platform: "win32", env: WIN_ENV, existsSync: () => true }),
+            { kind: "direct", cmd: pathful }, pathful);
+    }
+});
+
+test("resolveSpawnCommand: win32 a pathful .cmd or .bat, in any case, is run through cmd.exe like a bare-name shim", () => {
+    // Node refuses to spawn a batch file without a shell (EINVAL), and a path does not change what it is.
+    const existsSync = onlyFiles("c:/windows/system32/cmd.exe");
+    for (const pathful of ["C:\\x\\y.cmd", "C:\\x\\y.CMD", "C:\\x\\y.Bat", "C:/x/y.bat", ".\\tools\\y.cmd"]) {
+        const r = m.resolveSpawnCommand(pathful, { platform: "win32", env: WIN_ENV, existsSync });
+        assert.deepEqual(r, { kind: "cmd-shim", cmd: pathful, shell: "C:\\Windows\\System32\\cmd.exe" }, pathful);
+        const invocation = m.buildSpawnInvocation(r, ["-y"]);
+        assert.equal(invocation.cmd, r.shell);
+        assert.equal(invocation.args[0], `/d /s /c ""${pathful}" "-y""`, "the same verbatim line the bare-name shim gets");
+    }
+    // cmd.exe is looked up as it is for a bare name, so its absence is the same refusal.
+    assert.throws(() => m.resolveSpawnCommand("C:\\x\\y.cmd", { platform: "win32", env: WIN_ENV, existsSync: () => false }),
+        (e) => e instanceof m.VcSecretsError && e.message === "cmd.exe: not found on PATH");
 });
 
 test("resolveSpawnCommand: win32 a name that carries an extension resolves to the absolute PATH hit", () => {
@@ -3876,11 +3900,7 @@ test("cmdLaunch: a group member that ignores SIGHUP does not outlive the launche
     { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
     () => assertGroupDiesWith("SIGHUP"));
 
-// The other half of the orphan problem: it is the DIRECT child that traps TERM, so the launcher has
-// nothing to exit on and its own "exit" handler never gets to run. The MCP client SIGKILLs a launcher
-// that outlasts its shutdown window, and SIGKILL runs no handler -- so the group has to be gone before
-// that, by the launcher's own escalation. `trap ''` is inherited across exec, so the sleeps ignore TERM too.
-// Ctrl-\\ in a task's terminal: the child is in a session of its own, so only the launcher receives it, and
+// Ctrl-\ in a task's terminal: the child is in a session of its own, so only the launcher receives it, and
 // the default action kills the launcher without running the "exit" handler that takes the group down.
 test("cmdLaunch: a group member that ignores SIGQUIT does not outlive the launcher",
     { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
@@ -3912,6 +3932,10 @@ test("cmdLaunch: on win32 no SIGQUIT listener is registered, and the other three
     }
 });
 
+// The other half of the orphan problem: it is the DIRECT child that traps TERM, so the launcher has
+// nothing to exit on and its own "exit" handler never gets to run. The MCP client SIGKILLs a launcher
+// that outlasts its shutdown window, and SIGKILL runs no handler -- so the group has to be gone before
+// that, by the launcher's own escalation. `trap ''` is inherited across exec, so the sleeps ignore TERM too.
 test("cmdLaunch: a direct child that traps SIGTERM is escalated to SIGKILL, and the launcher and group go",
     { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups and an sh to build the fixture with", timeout: 60_000 },
     async () => {
@@ -3950,10 +3974,11 @@ test("cmdLaunch: a direct child that traps SIGTERM is escalated to SIGKILL, and 
                 `the fixture must be running before the signal, or the test proves nothing: ${stderr}`);
 
             launcher.kill("SIGTERM");
-            // The grace is 500 ms; three seconds leaves room for a loaded machine without approaching the
-            // 5 s a forgotten escalation would take from the unref'd default. It cannot tell 500 ms from
-            // 1 s -- a wall-clock bound that tight would flake on a loaded machine -- so the delay itself
-            // is pinned under mock timers, by "several forwarded signals arm one escalation".
+            // Three seconds leaves room for a loaded machine without approaching the 5 s a forgotten
+            // escalation would take from the unref'd default. It cannot tell the server delay from twice
+            // that -- a wall-clock bound that tight would flake on a loaded machine -- so the delay is held
+            // under mock timers, by "several forwarded signals arm one escalation", and its magnitude by
+            // "a server's escalation finishes inside the shortest window found in the MCP SDK".
             await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 3000))]);
             assert.ok(launcher.exitCode !== null || launcher.signalCode !== null,
                 `the launcher must leave once its child ignores SIGTERM: ${stderr}`);
@@ -4083,16 +4108,18 @@ test("cmdLaunch: several forwarded signals arm one escalation, at the launcher's
     { skip: process.platform === "win32" && "win32 has taskkill /T /F and no follow-up to arm" },
     async (t) => {
         t.mock.timers.enable({ apis: ["setTimeout"] });
+        // The configured delay, not a number written here: what this pins is that a server's launch waits
+        // exactly that long and arms the follow-up once. That the delay is short enough is the bound test's.
+        const delay = m.LAUNCH_KILL_ESCALATION.servers.afterMs;
         const { handle, killed } = await launchWithRecordingChild();
         try {
             process.emit("SIGHUP", "SIGHUP");
             process.emit("SIGHUP", "SIGHUP");
             assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "each signal is forwarded");
-            t.mock.timers.tick(499);
-            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "no SIGKILL before its delay, which a 1 s or 5 s escalation would also satisfy");
+            t.mock.timers.tick(delay - 1);
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "no SIGKILL before its delay");
             t.mock.timers.tick(1);
-            assert.deepEqual(killed, ["SIGHUP", "SIGHUP", "SIGKILL"],
-                "and it fires at the delay -- 1 s or 5 s would not have -- armed once, not once per signal");
+            assert.deepEqual(killed, ["SIGHUP", "SIGHUP", "SIGKILL"], "and it fires at the delay, armed once and not once per signal");
         } finally {
             await handle.dispose();
         }
@@ -4959,7 +4986,7 @@ test("loadConfig: an aliased .claude (symlink) is loaded once, not read as two o
     // symlinked $HOME produces in the wild.
     const aliasDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-alias-link-"));
     tmpDirs.push(aliasDir);
-    fs.symlinkSync(path.join(homeDir, ".claude"), path.join(aliasDir, ".claude"), "dir");
+    fs.symlinkSync(path.join(homeDir, ".claude"), path.join(aliasDir, ".claude"), LINK_TYPE);
 
     const paths = {
         user: path.join(homeDir, ".claude", m.CONFIG_NAME),
@@ -5148,8 +5175,7 @@ esac
 // Named without an extension and selected through VC_SECRETS_POWERSHELL, never as `powershell.exe`:
 // on win32 stubBinary writes `<name>.cmd`, which a lookup of the literal `powershell.exe` never
 // reaches -- the real PowerShell then ran against the developer's real Credential Manager. The
-// override is the bare NAME and not the stub's path: an absolute `.cmd` path goes out `direct`, and
-// node refuses to spawn a batch file without a shell.
+// override is the bare NAME, which the lookup resolves through PATH to the stub's `.cmd` shim.
 function wcmMigrateStub(legacyHex) {
     return stubBinary("vc-ps-stub", `#!/bin/sh
 value=$(cat)
@@ -5466,7 +5492,7 @@ test("a control character in command or in an env key is refused, and the refusa
     // Nothing legitimate needs a control character in a command or an env key, and the trust review, the
     // refusal lines and doctor all print them, so a byte that a terminal acts on (ESC starts a sequence,
     // CR rewrites the line, C1 U+009B is an 8-bit CSI) must not survive loading. `args` is not in the set:
-    // it is printed through JSON.stringify and forTerminal, which already neutralises it.
+    // it is printed as escaped JSON (jsonForTerminal), which already neutralises it.
     for (const character of ["\u001b", "\r", "\n", "\u007f", "\u009b"]) {
         const label = JSON.stringify(character);
         for (const [where, launchable] of [
@@ -6534,7 +6560,9 @@ test("shim: a bare commit hash does not outrank a real release", () => {
 test("shim: a symlinked version directory is a candidate, because a linked install is a real one", { skip: !CAN_SYMLINK && "needs an environment that permits creating a symlink" }, () => {
     // readdirSync does not follow links, so Dirent.isDirectory() is false for a symlink-to-directory —
     // measured. Skipping those silently picks an older real directory, or reports a plugin that IS
-    // installed as missing. Loading a plugin from a local directory is a documented route.
+    // installed as missing. Loading a plugin from a local directory is a documented route. On win32 the link is
+    // a junction, and libuv reports every reparse point as a link to readdir (src/win/fs.c, scandir), which
+    // is what Dirent.isSymbolicLink() reads -- so the shim treats it as it does a symlink.
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vcs-link-home-"));
     tmpDirs.push(home);
     const real = fs.mkdtempSync(path.join(os.tmpdir(), "vcs-link-real-"));
@@ -6543,7 +6571,7 @@ test("shim: a symlinked version directory is a candidate, because a linked insta
         'export async function runCli() { process.stderr.write("STUB-RAN:linked\\n"); }\n');
     const pluginDir = path.join(home, ".codex", "plugins", "cache", "vc-tools", "vc-secrets");
     fs.mkdirSync(pluginDir, { recursive: true });
-    fs.symlinkSync(real, path.join(pluginDir, "2.0.0"), "dir");
+    fs.symlinkSync(real, path.join(pluginDir, "2.0.0"), LINK_TYPE);
 
     const r = spawnSync(process.execPath, [SHIM_PATH, "doctor"],
         { env: shimEnv(home), cwd: home, encoding: "utf8" });
@@ -7017,7 +7045,7 @@ test("loadConfig: a checkout reached through a symlink has the same projectRoot 
         fs.mkdirSync(path.join(repo, ".claude"));
         fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify({ servers: {} }));
         const link = path.join(probeDir, `checkout-alias-${path.basename(repo)}`);
-        fs.symlinkSync(repo, link, "dir");
+        fs.symlinkSync(repo, link, LINK_TYPE);
         const load = (dir) => m.loadConfig({ user: null, project: path.join(dir, ".claude", m.CONFIG_NAME), local: null });
         assert.equal(load(link).projectRoot, load(repo).projectRoot, "one repository, one trust record");
         assert.equal(load(link).projectRoot, m.trustRootKey(repo));
@@ -7032,7 +7060,40 @@ test("trustRootKey: lower-cased on win32 only, and the injected realpath decides
 
     const absent = () => { throw Object.assign(new Error("ENOENT"), { code: "ENOENT" }); };
     assert.equal(m.trustRootKey("C:\\Gone\\Repo", { platform: "win32", realpath: absent }), win("c:\\gone\\repo"),
-        "a path that no longer exists still keys the same way, so untrust can find its record");
+        "when no ancestor resolves either, the plain resolve is the key");
+});
+
+test("trustRootKey: a deleted checkout keys as it did while it existed, through the nearest ancestor that still resolves", () => {
+    // A record is made through /link/repo and keyed by the target, /real/repo. Once the leaf is gone realpath
+    // throws for it, and resolving the plain string would key /link/repo -- a record `untrust` cannot find.
+    const existing = new Set(["/link", "/link/repo", "/link/repo/sub"]);
+    const realpath = (p) => {
+        if (!existing.has(p)) {
+            throw Object.assign(new Error(`ENOENT: ${p}`), { code: "ENOENT" });
+        }
+
+        return p.replace(/^\/link/, "/real");
+    };
+    const key = (p, platform = "linux") => m.trustRootKey(p, { platform, realpath });
+    const live = key("/link/repo");
+    assert.equal(live, "/real/repo");
+    existing.delete("/link/repo/sub");
+    existing.delete("/link/repo");
+    assert.equal(key("/link/repo"), live, "the deleted leaf keys where the live one did");
+    assert.equal(key("/link/repo/sub/deeper"), "/real/repo/sub/deeper", "more than one missing level joins the whole tail");
+    assert.equal(key("/link/other/place"), "/real/other/place", "a sibling that never existed is keyed under the same resolved parent");
+    assert.equal(key("/nowhere/repo"), "/nowhere/repo", "and where no ancestor resolves the plain resolve stands");
+
+    // The lower-casing of win32 applies to the joined result, and the win32 path rules to the walk.
+    const winExisting = new Set(["C:\\Link"]);
+    const winRealpath = (p) => {
+        if (!winExisting.has(p)) {
+            throw Object.assign(new Error("ENOENT"), { code: "ENOENT" });
+        }
+
+        return "D:\\Real";
+    };
+    assert.equal(m.trustRootKey("C:\\Link\\Gone\\Repo", { platform: "win32", realpath: winRealpath }), "d:\\real\\gone\\repo");
 });
 
 test("trustRootKey: the key is what the injected realpath resolves, not what this machine's file system says", () => {
@@ -7044,7 +7105,7 @@ test("trustRootKey: a symlinked checkout and its target are one repository", { s
     const target = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-real-"));
     tmpDirs.push(target);
     const link = path.join(probeDir, `alias-${path.basename(target)}`);
-    fs.symlinkSync(target, link, "dir");
+    fs.symlinkSync(target, link, LINK_TYPE);
     assert.equal(m.trustRootKey(link), m.trustRootKey(target));
 });
 
@@ -7154,16 +7215,43 @@ test("readTrustState: a file that is not a trust state throws, naming the file, 
     assert.deepEqual(m.readTrustState(env).repositories["/r"], valid, "the control: a valid file reads");
 });
 
-test("readTrustState: a JSON syntax error reports the position and none of the file's content", () => {
+test("readTrustState: a JSON syntax error reports the position where V8 gives one, and none of the file's content", () => {
     const env = trustEnv();
     const file = m.trustFilePath(env);
     fs.mkdirSync(path.dirname(file), { recursive: true });
-    fs.writeFileSync(file, '{"schemaVersion": LEAK-MARKER-VALUE}');
-    assert.throws(() => m.readTrustState(env), (e) => {
-        assert.doesNotMatch(e.message, /LEAK-MARKER-VALUE/);
+    const reasonFor = (text) => {
+        fs.writeFileSync(file, text);
+        let message;
+        assert.throws(() => m.readTrustState(env), (e) => {
+            message = e.message;
 
-        return true;
-    });
+            return true;
+        });
+
+        return message;
+    };
+
+    // The shape that carries a window of the file: V8 quotes the text around a bad token. It reports no
+    // position there, so the reason says so instead of passing the window on.
+    const leaking = reasonFor('{"schemaVersion": LEAK-MARKER-VALUE}');
+    assert.doesNotMatch(leaking, /LEAK-MARKER-VALUE/);
+    assert.match(leaking, /could not be read \(not valid JSON, (?:at position \d+ \(line 1 column \d+\)|position not reported)\)/);
+
+    // A shape that reports a position: it is kept, as the triple of digits, and nothing else of the message.
+    // Taken from what THIS runtime's own message says, so an older V8 that words it differently is judged
+    // by the fallback rather than failing on a shape it never produced.
+    const text = '{"schemaVersion": 1,}';
+    const native = (() => {
+        try {
+            JSON.parse(text);
+        } catch (e) {
+            return e.message;
+        }
+
+        return "";
+    })();
+    const expected = native.includes("at position 20 (line 1 column 21)") ? "at position 20 (line 1 column 21)" : "position not reported";
+    assert.ok(reasonFor(text).includes(`(not valid JSON, ${expected})`), reasonFor(text));
 });
 
 test("writeTrustState: round-trips, leaves no temporary file, and keeps the file private", () => {
@@ -7575,10 +7663,11 @@ test("cmdTrust: the review shows what will run, names references, and shows a li
     const text = log.join("");
     assert.ok(text.includes(cfg.files.project), "the declaring file");
     assert.ok(text.includes('shadows your user-scope "gh"'));
-    assert.ok(text.includes("npx") && text.includes(JSON.stringify(["-y", "gh-mcp"])));
-    assert.ok(text.includes("T=secret:pat"), "a reference is a name, and the reader needs it");
-    assert.ok(text.includes("L=literal:review-marker-value"),
-        "a literal is what the person approves -- a PATH literal decides which binary runs");
+    assert.ok(text.includes('    command: "npx"\n'));
+    assert.ok(text.includes(`    args: ${JSON.stringify(["-y", "gh-mcp"])}\n`));
+    // A reference is a name, and the reader needs it; a literal is what the person approves -- a PATH
+    // literal decides which binary runs.
+    assert.ok(text.includes(`    env: ${JSON.stringify({ T: "secret:pat", L: "literal:review-marker-value" })}\n`), text);
 });
 
 test("cmdTrust: a refusal line for a changed literal names the key and never the value", () => {
@@ -7593,22 +7682,89 @@ test("cmdTrust: a refusal line for a changed literal names the key and never the
     assert.doesNotMatch(refusal, /marker-value/);
 });
 
-test("cmdTrust: nothing the review prints carries a control character, whatever the declaration holds", async () => {
-    // loadConfig refuses these bytes, so the rendering is driven on a config built past it: the review
-    // must hold on its own, not by leaning on a check made elsewhere.
-    const cfg = withDeclaration(trustCfg(), "servers", "gh", {
+// One line of the review, by its label: `    command: `, `    args: `, `    env: `.
+function reviewLine(text, label) {
+    const line = text.split("\n").find((x) => x.startsWith(label));
+    assert.ok(line, `no review line starts with ${JSON.stringify(label)}:\n${text}`);
+
+    return line.slice(label.length);
+}
+
+test("cmdTrust: the review prints command, args and env as JSON, so control bytes are escapes that parse back to the declaration", async () => {
+    // loadConfig refuses some of these bytes, so the rendering is driven on a config built past it: the
+    // review must hold on its own, not by leaning on a check made elsewhere. Escaped rather than flattened
+    // to "?", the text is inert on the screen and still says what the record holds.
+    const declared = {
         command: "npx\u001b[2J\r",
-        args: ["-y\u001b]0;title\u0007", "c1\u009b31m"],
-        env: { "K\u001b[31m": "literal:v\r\u001b[2Jx", T: "secret:pat" },
-    });
+        args: ["-y\u001b]0;title\u0007", "c1\u009b31m", "del\u007f"],
+        // C1 in a value too: env goes through the same renderer as args, and only DEL/C1 tell it apart
+        // from a plain JSON.stringify, which escapes C0 on its own.
+        env: { "K\u001b[31m": "literal:v\r\u001b[2Jx", NL: "literal:line one\nline two", C1: "literal:c\u009b2J", T: "secret:pat" },
+    };
     const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
-    await m.cmdTrust(cfg, seams);
+    await m.cmdTrust(withDeclaration(trustCfg(), "servers", "gh", declared), seams);
     const text = log.join("");
-    assert.doesNotMatch(text, /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/,
-        "no control byte but the newlines that end the review's own lines");
-    assert.ok(text.includes("command: npx?[2J?"), text);
-    assert.ok(text.includes("K?[31m=literal:v??[2Jx"), text);
-    assert.ok(text.includes("T=secret:pat"), "what carries no control byte is untouched");
+    assert.doesNotMatch(text, /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/, "no control byte but the newlines that end the review's own lines");
+    assert.ok(text.includes('    command: "npx\\u001b[2J\\r"\n'), "written as escapes, not flattened to a question mark");
+    assert.ok(text.includes("c1\\u009b31m") && text.includes("del\\u007f") && text.includes("c\\u009b2J"),
+        "DEL and C1, which JSON.stringify leaves raw, are escaped too -- in args and in env values");
+    assert.ok(text.includes("line one\\nline two"), "a newline in a literal is the two characters, not a second review line");
+    assert.equal(JSON.parse(reviewLine(text, "    command: ")), declared.command);
+    assert.deepEqual(JSON.parse(reviewLine(text, "    args: ")), declared.args, "what is printed parses back to what was declared");
+    assert.deepEqual(JSON.parse(reviewLine(text, "    env: ")), declared.env);
+});
+
+test("cmdTrust: a literal that imitates another declaration stays inside its own JSON string", async () => {
+    // Joined with ", ", `A=literal:1, X=literal:y` read as two declarations. As JSON it is one string.
+    const declared = { A: "literal:1, X=literal:y", B: 'literal:", "X":"literal:y' };
+    const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
+    await m.cmdTrust(withDeclaration(trustCfg(), "servers", "gh", { env: declared }), seams);
+    const env = JSON.parse(reviewLine(log.join(""), "    env: "));
+    assert.deepEqual(Object.keys(env), ["A", "B"], "two declarations, not three or four");
+    assert.deepEqual(env, declared);
+});
+
+test("cmdTrust: invisible and bidirectional format characters in an argument or a literal are written as escapes that parse back", async () => {
+    // A right-to-left override or a zero-width space prints as nothing, or reorders what follows, so a review
+    // showing them raw reads as something the record is not. Escaped rather than dropped, the text is inert
+    // AND still parses to the declared value.
+    const invisible = ["\u202e", "\u200b", "\ufeff", "\u2066", "\u00ad", "\u2028", "\u061c", "\u180e", "\u2060"];
+    const declared = {
+        args: ["--name=gpj.exe\u202etxt", `zero\u200bwidth`, `bom\ufeff`, "isolate\u2066x\u2069"],
+        env: { LITERAL: "literal:a\u202eb\u200bc", ALL: `literal:${invisible.join("|")}` },
+    };
+    const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
+    await m.cmdTrust(withDeclaration(trustCfg(), "servers", "gh", declared), seams);
+    const text = log.join("");
+    for (const character of invisible) {
+        assert.ok(!text.includes(character), `U+${character.codePointAt(0).toString(16)} must not reach the screen raw`);
+    }
+    assert.ok(text.includes("gpj.exe\\u202etxt") && text.includes("zero\\u200bwidth"), "written as the escape, in an argument");
+    assert.ok(text.includes("a\\u202eb\\u200bc"), "and in a literal");
+    assert.deepEqual(JSON.parse(reviewLine(text, "    args: ")), declared.args, "what is printed parses back to the declared arguments");
+    assert.deepEqual(JSON.parse(reviewLine(text, "    env: ")), declared.env, "and to the declared literals");
+});
+
+test("cmdTrust: a repository root and a declaration path carrying ESC or CR reach neither the review, the prompt nor the log raw", async () => {
+    // A directory name is chosen by whoever made the checkout, and ESC[2K with CR would overwrite the
+    // `command:` line printed above the prompt. The paths are context, so they stay readable, escaped.
+    const spoofRoot = "/tmp/repo\u001b[2K\rcommand: \"true\"";
+    const spoofFile = `${spoofRoot}/.claude/vc-secrets.json`;
+    const base = trustCfg();
+    const cfg = { ...base, projectRoot: spoofRoot, files: { ...base.files, project: spoofFile } };
+    const env = trustEnv();
+    const { seams, log, asked } = trustSeams(env, { answer: "y" });
+    await m.cmdTrust(cfg, seams);
+    const shown = `${log.join("")}${asked.join("")}`;
+    assert.doesNotMatch(shown, /[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/, "not one raw control byte on any surface");
+    assert.ok(asked[0].startsWith("Trust these for /tmp/repo?[2K?command: \"true\"?"), asked[0]);
+    assert.ok(log.join("").includes(`(project, ${spoofFile.replace(/[\u0000-\u001f]/g, "?")})`), log.join(""));
+    assert.ok(Object.hasOwn(m.readTrustState(env).repositories, spoofRoot), "the record is keyed by the real root, not the printed one");
+
+    const refusal = m.trustRefusal("servers", "gh", m.trustProblem(cfg, "servers", "gh", NO_TRUST), cfg);
+    assert.doesNotMatch(refusal, /[\u0000-\u001f\u007f-\u009f]/, "nor the refusal that names the root and the file");
+    const changed = m.trustProblem(withDeclaration(cfg, "servers", "gh", { command: "sh" }), "servers", "gh", trustedStateFor(cfg));
+    assert.doesNotMatch(m.trustRefusal("servers", "gh", changed, cfg), /[\u0000-\u001f\u007f-\u009f]/);
 });
 
 test("cmdTrust: the review shows a command, an argument and a literal whole, however long they are", async () => {
@@ -7620,9 +7776,9 @@ test("cmdTrust: the review shows a command, an argument and a literal whole, how
     const { seams, log } = trustSeams(trustEnv(), { answer: "n" });
     await m.cmdTrust(cfg, seams);
     const text = log.join("");
-    assert.ok(text.includes(`command: ${long.command}\n`));
-    assert.ok(text.includes(`args: ${JSON.stringify([long.arg])}\n`), "the argv is shown to its last element");
-    assert.ok(text.includes(`L=literal:${long.literal}\n`), "and a literal to its last character");
+    assert.equal(JSON.parse(reviewLine(text, "    command: ")), long.command);
+    assert.deepEqual(JSON.parse(reviewLine(text, "    args: ")), [long.arg], "the argv is shown to its last element");
+    assert.deepEqual(JSON.parse(reviewLine(text, "    env: ")), { L: `literal:${long.literal}` }, "and a literal to its last character");
     assert.doesNotMatch(text, /\.\.\.\n/, "nothing in the review ends in a cut");
 });
 
@@ -7813,13 +7969,205 @@ test("cmdUntrust: with no path it takes the repository configPaths finds from th
     assert.deepEqual(m.readTrustState(env).repositories, {});
 });
 
-test("cmdUntrust: for a path that no longer exists it still finds the record", async () => {
+test("cmdUntrust: a checkout deleted after it was trusted through a link still has its record found by that link's path",
+    { skip: !CAN_SYMLINK && "this machine cannot create a symlink" },
+    async () => {
+        // The transition, not the aftermath: the record is made while the repository exists and reached
+        // through the link, so it is keyed by the target; only then is the repository deleted and untrusted
+        // by the same link path.
+        const env = trustEnv();
+        const real = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-untrust-gone-real-"));
+        tmpDirs.push(real);
+        const repo = path.join(real, "repo");
+        fs.mkdirSync(path.join(repo, ".claude"), { recursive: true });
+        fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME),
+            JSON.stringify({ projectId: "proj-x", servers: { gh: TRUST_BASE } }));
+        const link = path.join(probeDir, `untrust-gone-${path.basename(real)}`);
+        fs.symlinkSync(real, link, LINK_TYPE);
+        const viaLink = path.join(link, "repo");
+
+        const cfg = m.loadConfig({ user: null, project: path.join(viaLink, ".claude", m.CONFIG_NAME), local: null });
+        await m.cmdTrust(cfg, trustSeams(env).seams);
+        assert.deepEqual(Object.keys(m.readTrustState(env).repositories), [m.trustRootKey(repo)], "keyed by the target");
+
+        fs.rmSync(repo, { recursive: true, force: true });
+        assert.ok(!fs.existsSync(viaLink), "the fixture must have deleted the checkout");
+        const log = [];
+        await m.cmdUntrust(viaLink, { env, log: (text) => log.push(text) });
+        assert.deepEqual(m.readTrustState(env).repositories, {}, `the record was not found: ${log.join("")}`);
+        assert.match(log.join(""), /removed the trust record/);
+    });
+
+// A file system as a model, for trustRootKey's seams: `real` maps a path that exists to what realpath gives
+// for it, `links` maps a symlink (dangling or not) to what readlink gives. Absent from both, a path does not
+// exist -- realpath and lstat throw for it, as they do for a deleted one.
+function fakeFileSystem({ real = {}, links = {} } = {}) {
+    const missing = (p) => Object.assign(new Error(`ENOENT: ${p}`), { code: "ENOENT" });
+    const calls = { realpath: 0 };
+
+    return {
+        real, links, calls,
+        seams: {
+            platform: "linux",
+            realpath: (p) => {
+                calls.realpath += 1;
+                if (!Object.hasOwn(real, p)) {
+                    throw missing(p);
+                }
+
+                return real[p];
+            },
+            lstat: (p) => {
+                if (Object.hasOwn(links, p)) {
+                    return { isSymbolicLink: () => true };
+                }
+                if (Object.hasOwn(real, p)) {
+                    return { isSymbolicLink: () => false };
+                }
+                throw missing(p);
+            },
+            readlink: (p) => {
+                if (!Object.hasOwn(links, p)) {
+                    throw missing(p);
+                }
+
+                return links[p];
+            },
+        },
+    };
+}
+
+test("trustRootKey: a checkout that IS a link, whose target is then deleted, keys as it did while the target existed", () => {
+    // `~/work/repo -> /data/repo`: trusting through the link keys the target. Delete the target and the link
+    // dangles; realpath fails for it, and climbing to its parent `~/work` would key the link's own path --
+    // the wrong place to stop, since the link itself says where the key was.
+    const fs2 = fakeFileSystem({
+        real: { "/home": "/home", "/home/work": "/home/work", "/data": "/data", "/data/repo": "/data/repo", "/home/work/repo": "/data/repo" },
+        links: { "/home/work/repo": "/data/repo" },
+    });
+    const key = (p) => m.trustRootKey(p, fs2.seams);
+    const live = key("/home/work/repo");
+    assert.equal(live, "/data/repo");
+    delete fs2.real["/data/repo"];
+    delete fs2.real["/home/work/repo"];
+    assert.equal(key("/home/work/repo"), live, "the dangling leaf link is followed, not climbed past");
+    assert.equal(key("/home/work/repo/sub/deeper"), "/data/repo/sub/deeper", "and so is one with a tail beyond it");
+
+    fs2.links["/home/work/repo"] = "../../data/repo";
+    assert.equal(key("/home/work/repo"), live, "a relative target is resolved against the link's own directory");
+});
+
+test("trustRootKey: a dangling link is followed through a chain, and to a target that sits below a deleted directory", () => {
+    const chain = fakeFileSystem({
+        real: { "/a": "/a", "/b": "/b", "/c": "/c" },
+        links: { "/a/x": "/b/y", "/b/y": "/c/z" },
+    });
+    assert.equal(m.trustRootKey("/a/x", chain.seams), "/c/z", "each dangling link is followed to the next");
+
+    const below = fakeFileSystem({
+        real: { "/home": "/home", "/home/work": "/home/work", "/data": "/data" },
+        links: { "/home/work/repo": "/data/gone/repo" },
+    });
+    assert.equal(m.trustRootKey("/home/work/repo", below.seams), "/data/gone/repo",
+        "the target's own missing directories are joined onto its nearest existing ancestor");
+});
+
+test("trustRootKey: a loop of dangling links ends, at the plain resolve, after a bounded number of hops", () => {
+    const loop = fakeFileSystem({
+        real: { "/l": "/l" },
+        links: { "/l/a": "/l/b", "/l/b": "/l/a" },
+    });
+    assert.equal(m.trustRootKey("/l/a", loop.seams), "/l/a", "no key can be found, so the plain resolve stands");
+    assert.ok(loop.calls.realpath < 1000, `it terminated after ${loop.calls.realpath} lookups, not by running out of patience`);
+
+    const self = fakeFileSystem({ real: { "/l": "/l" }, links: { "/l/self": "/l/self" } });
+    assert.equal(m.trustRootKey("/l/self", self.seams), "/l/self");
+});
+
+test("cmdUntrust: a checkout that is itself a link, trusted through it and then deleted at its target, is still untrusted through that link",
+    { skip: !CAN_SYMLINK && "this machine cannot create a symlink" },
+    async () => {
+        // `~/work/repo -> /data/repo`, with /data/repo deleted: the link dangles, and a climb to its parent
+        // would key the link's own path where the record is under the target's.
+        const env = trustEnv();
+        const data = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-untrust-leaf-data-"));
+        tmpDirs.push(data);
+        const repo = path.join(data, "repo");
+        fs.mkdirSync(path.join(repo, ".claude"), { recursive: true });
+        fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME),
+            JSON.stringify({ projectId: "proj-x", servers: { gh: TRUST_BASE } }));
+        const leafLink = path.join(probeDir, `untrust-leaf-${path.basename(data)}`);
+        fs.symlinkSync(repo, leafLink, LINK_TYPE);
+
+        const cfg = m.loadConfig({ user: null, project: path.join(leafLink, ".claude", m.CONFIG_NAME), local: null });
+        await m.cmdTrust(cfg, trustSeams(env).seams);
+        assert.deepEqual(Object.keys(m.readTrustState(env).repositories), [m.trustRootKey(repo)], "keyed by the target");
+
+        fs.rmSync(repo, { recursive: true, force: true });
+        assert.ok(fs.lstatSync(leafLink).isSymbolicLink() && !fs.existsSync(leafLink), "the fixture must leave the link dangling");
+        const log = [];
+        await m.cmdUntrust(leafLink, { env, log: (text) => log.push(text) });
+        assert.deepEqual(m.readTrustState(env).repositories, {}, `the record was not found: ${log.join("")}`);
+    });
+
+test("trustRootKey: a relative link target whose `..` crosses a linked parent keys as the kernel resolves it, after deletion too",
+    { skip: (!CAN_SYMLINK && "this machine cannot create a symlink")
+        || (process.platform === "win32" && "a junction cannot hold a relative target") },
+    () => {
+        // x/link -> y/z/real, and y/z/real/repo -> ../../data/repo. The kernel applies the `..` in the
+        // physical y/z/real, so the checkout is y/data/repo; resolved against the lexical x/link it would be
+        // a different directory, and untrust of the deleted checkout would miss its record.
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-relative-link-"));
+        tmpDirs.push(root);
+        const real = path.join(root, "y", "z", "real");
+        const target = path.join(root, "y", "data", "repo");
+        fs.mkdirSync(real, { recursive: true });
+        fs.mkdirSync(target, { recursive: true });
+        fs.mkdirSync(path.join(root, "x"));
+        fs.symlinkSync(real, path.join(root, "x", "link"), LINK_TYPE);
+        fs.symlinkSync(path.join("..", "..", "data", "repo"), path.join(real, "repo"), "dir");
+        const viaLinks = path.join(root, "x", "link", "repo");
+
+        const live = m.trustRootKey(viaLinks);
+        assert.equal(live, fs.realpathSync.native(target), "the fixture must resolve the way the kernel does");
+        fs.rmSync(target, { recursive: true });
+        assert.ok(fs.lstatSync(path.join(real, "repo")).isSymbolicLink() && !fs.existsSync(viaLinks),
+            "the fixture must leave the inner link dangling");
+        assert.equal(m.trustRootKey(viaLinks), live, "the deleted checkout keys as it did while it existed");
+    });
+
+test("a declaration path carrying ESC reaches neither doctor's WARN lines nor the failure line raw", () => {
+    // Loading warnings and errors embed the declaration file's path, a directory name somebody chose; an
+    // ESC in it is a terminal command wherever it is printed.
+    const spoofed = "/tmp/repo\u001b[2K\rcommand: true/.claude/vc-secrets.json";
+    const cfg = { ...m.loadConfig(scopedPaths({ user: { servers: {} } })), warnings: [`${spoofed}: unknown key "x" ignored`] };
+    const report = crossingReport(cfg);
+    const warn = report.find((l) => l.startsWith("WARN"));
+    assert.ok(warn, report.join("\n"));
+    assert.doesNotMatch(warn, /[\u0000-\u001f\u007f-\u009f]/, "no control byte in the WARN line");
+    assert.ok(warn.includes("/tmp/repo?[2K?command: true/.claude/vc-secrets.json: unknown key"), warn);
+
+    // The failure line stays ONE physical line -- the probe classifies a refusal by the last stderr line --
+    // with a real line ending folded to a space, and every other control byte flattened.
+    const line = m.failureLine(new m.VcSecretsError(`${spoofed}: not valid JSON\nsecond line\r\n   third`));
+    assert.equal(line, "vc-secrets: /tmp/repo?[2K?command: true/.claude/vc-secrets.json: not valid JSON second line third\n");
+    assert.equal(line.split("\n").length, 2, "one line and its terminator");
+    assert.equal(m.failureLine("plain string"), "vc-secrets: plain string\n", "a thrown non-error is still one line");
+    // U+2028 and U+2029 are line ends to the probe's line match, and forTerminal does not flatten them.
+    const lineSep = String.fromCodePoint(0x2028);
+    const paraSep = String.fromCodePoint(0x2029);
+    assert.equal(m.failureLine(new Error(`/repo${lineSep}x: not valid JSON${paraSep}tail`)),
+        "vc-secrets: /repo x: not valid JSON tail\n", "folded like a newline, so the probe still reads one launcher line");
+});
+
+test("cmdUntrust: a path that never existed says there is no record, and removes nothing", async () => {
     const env = trustEnv();
-    const gone = path.join(os.tmpdir(), "vc-secrets-never-existed", "repo");
-    const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
-    m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(gone)]: record } });
-    await m.cmdUntrust(gone, { env, log: () => {} });
-    assert.deepEqual(m.readTrustState(env).repositories, {});
+    const other = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { "/somewhere/else": other } });
+    const log = [];
+    await m.cmdUntrust(path.join(os.tmpdir(), "vc-secrets-never-existed", "repo"), { env, log: (text) => log.push(text) });
+    assert.match(log.join(""), /has no trust record -- nothing to remove/);
+    assert.deepEqual(Object.keys(m.readTrustState(env).repositories), ["/somewhere/else"]);
 });
 
 test("cmdUntrust: a symlink to a trusted checkout removes that checkout's record",
@@ -7829,7 +8177,7 @@ test("cmdUntrust: a symlink to a trusted checkout removes that checkout's record
         const real = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-untrust-real-"));
         tmpDirs.push(real);
         const link = path.join(probeDir, `untrust-alias-${path.basename(real)}`);
-        fs.symlinkSync(real, link, "dir");
+        fs.symlinkSync(real, link, LINK_TYPE);
         const record = { trustedAt: "1999-01-01T00:00:00.000Z", servers: {}, tasks: {} };
         m.writeTrustState(env, { schemaVersion: 1, repositories: { [m.trustRootKey(real)]: record } });
         await m.cmdUntrust(link, { env, log: () => {} });

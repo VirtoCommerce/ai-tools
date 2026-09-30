@@ -552,6 +552,18 @@ test("cacheStatus: identity mismatch on each field of the declaration in turn", 
     }
 });
 
+test("cacheStatus: a tenant id that differs only in letter case is the same tenant, and a different GUID is not", () => {
+    // Tenant GUIDs are case-insensitive: the declaration schema accepts either case and registrations are
+    // matched folded, so a cache written under one spelling must survive the declaration being retyped in
+    // the other -- and the fold must not turn a genuinely different tenant into the same one.
+    const declared = { ...DECL, tenantId: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" };
+    const statusFor = (tenantId) => cache.cacheStatus(cacheAt(0, { ...DECL_IDENTITY, tenantId }), declared, 60_000, UPTIME_AT_ISSUE + 60);
+    assert.equal(statusFor("AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE").state, "valid", "upper case of the same GUID");
+    assert.equal(statusFor("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee").state, "valid", "the same spelling, as the control");
+    assert.equal(statusFor("aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeef").state, "identity-mismatch", "a different GUID still is");
+    assert.equal(statusFor(undefined).state, "identity-mismatch", "and a cache with no tenant is not any tenant's");
+});
+
 test("cacheStatus: scope set compared as a set, not a string", () => {
     const reordered = { ...DECL_IDENTITY, scopes: [...DECL_IDENTITY.scopes].reverse() };
     assert.equal(statusAfter(cacheAt(0, reordered), 60_000).state, "valid");

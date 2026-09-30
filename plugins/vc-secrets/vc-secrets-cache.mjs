@@ -47,8 +47,12 @@ function cacheStatus(cache, decl, now, uptime) {
         return { state: "absent" };
     }
     const refresh = cache.refresh;
-    if (refresh.tenantId !== decl.tenantId || refresh.clientId !== decl.clientId
-        || !sameScopes(refresh.scopes ?? [], decl.scopes)) {
+    // The tenant id compares without regard to case: it is a GUID, TENANT_ID_RE accepts either case, and
+    // loadConfig folds it for the registrations lookup. A strict comparison read a cache written under one
+    // spelling as another tenant's the day the declaration was retyped in the other, and asked for a new
+    // sign-in for the same tenant. The client id keeps the strict comparison the declaration is keyed by.
+    if (typeof refresh.tenantId !== "string" || refresh.tenantId.toLowerCase() !== decl.tenantId.toLowerCase()
+        || refresh.clientId !== decl.clientId || !sameScopes(refresh.scopes ?? [], decl.scopes)) {
         return { state: "identity-mismatch" };
     }
     const access = cache.access;
