@@ -7,14 +7,14 @@ applicability_rationale: "Historical VC bug patterns indexed by domain. Customer
 
 Curated reference of failure modes seen in this Virto Commerce deployment. Use as a **"Familiar Problems"** oracle (HICCUPPS-F) and to seed Bad Neighborhood Tours (`adversarial-heuristics.md`). When exploring a domain, scan this file for the relevant section first — known soft spots reveal themselves faster than fresh exploration.
 
-This file is the **index of VC-specific historical patterns**. Generic e-commerce patterns live in [`e-commerce-edge-cases-library.md`](e-commerce-edge-cases-library.md). Testable invariants live in [`business-logic.md`](business-logic.md). Project-specific lessons in chronological form live in `~/.claude/projects/.../memory/MEMORY.md`.
+This file is the **index of VC-specific historical patterns**. Generic e-commerce patterns live in [`e-commerce-edge-cases-library.md`](e-commerce-edge-cases-library.md). Testable invariants live in [`business-logic.md`](business-logic.md).
 
 ### How to use
 
 1. Identify the target domain (Cart, Catalog, Promotions, etc.)
 2. Scan the relevant section below
 3. For each entry, read the "Detection probe" — that's the test idea you want to run during your session
-4. Cross-reference the BL/ECL/MEMORY link for full context
+4. Cross-reference the BL/ECL/Jira link for full context
 
 ### How to maintain
 
@@ -110,7 +110,6 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 ### VC-B2B-001 — "Addresses" sidebar link visible only for personal accounts
 - **Pattern:** The "Addresses" link in the account sidebar is hidden for B2B/Org users (by design). Filing it as a missing-feature bug for an Org user is incorrect.
 - **Detection probe:** Verify user type (personal vs Org) before reporting a missing Addresses link
-- **Cross-ref:** MEMORY § Storefront Business Logic
 
 ### VC-B2B-002 — Permissions live on Roles, not on Users
 - **Pattern:** To grant a permission, edit the Role (Admin SPA → Security → Roles), then assign the role to the user. Permissions cannot be granted directly on a user record.
@@ -330,4 +329,3 @@ This file is the **index of VC-specific historical patterns**. Generic e-commerc
 - [e-commerce-edge-cases-library.md](e-commerce-edge-cases-library.md) — Generic e-commerce patterns (ECL-* IDs); use alongside this catalog
 - `skills/qa-sbtm/adversarial-heuristics.md` (full `vc-qa` plugin only, not shipped here) — uses this catalog as the "Familiar Problems" oracle (HICCUPPS-F) and seeds Bad Neighborhood Tours
 - `skills/qa-sbtm/charter-library.md` (full `vc-qa` plugin only, not shipped here) — many charters reference specific entries from this catalog
-- `~/.claude/projects/.../memory/MEMORY.md` — Source-of-truth chronological project lessons (kept up-to-date by the assistant during sessions)
