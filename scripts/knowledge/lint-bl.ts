@@ -49,7 +49,7 @@ import { COLUMNS, parseSuite, type Row } from "../test-cases/append-test-cases-t
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
 
-const VALID_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"]);
+export const VALID_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"]);
 const P0P1_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux"]);
 const REQUIRED_FIELDS = ["Rule", "Verify", "Violation signal", "Agents"] as const;
 
@@ -62,7 +62,7 @@ const REQUIRED_FIELDS = ["Rule", "Verify", "Violation signal", "Agents"] as cons
 export const ENTRY_RE = /^###\s+(BL-[A-Z0-9]+-\d+[A-Z]?)\s*:\s*(.*)$/;
 export const DOMAIN_RE = /^##\s+Domain\s+\S+\s*:.*$/;
 const BL_TOKEN_RE = /\bBL-[A-Z0-9]+-\d+[A-Z]?\b/g;
-const BRACKET_TAG_RE = /`\[([^\]]+)\]`/g;
+export const BRACKET_TAG_RE = /`\[([^\]]+)\]`/g;
 
 export interface Invariant {
   id: string;
@@ -130,6 +130,11 @@ const find = (rule: string, severity: Severity, id: string, message: string): Fi
 
 function truncate(s: string, n = 80): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+/** `Rule` or a qualified form of it (`Rule (write path — …)`): BLL-003 and `bl:convert` share this. */
+export function isField(label: string, base: string): boolean {
+  return label === base || label.startsWith(base + " ") || label.startsWith(base + "(");
 }
 
 /** Parse a `- **Field:** value` bullet; returns [field, value] or null. */
@@ -302,7 +307,7 @@ export function lint(
     // "Verify (read path)"), so match by prefix, not exact key.
     const fieldKeys = Object.keys(inv.fields);
     for (const req of REQUIRED_FIELDS) {
-      const hit = fieldKeys.some((k) => k === req || k.startsWith(req + " ") || k.startsWith(req + "("));
+      const hit = fieldKeys.some((k) => isField(k, req));
       if (!hit) f.push(find("BLL-003", "High", inv.id, `missing required field: **${req}**`));
     }
 

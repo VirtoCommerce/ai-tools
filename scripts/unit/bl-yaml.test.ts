@@ -26,16 +26,17 @@ import {
 const text = readFileSync(BL_PATH, "utf-8");
 const roster = readAgentRoster();
 const domains = convertOracle(text, roster);
+const parsed = parseOracle(text);
 const validate = schemaValidator();
 
 test("the real oracle survives md → YAML → md with no round-trip problem", () => {
-  assert.deepEqual(roundTrip(text, roster, validate), []);
+  assert.deepEqual(roundTrip(domains, parsed, validate), []);
 });
 
 test("the rendered markdown still has every field bl:lint requires", () => {
   const rendered = domains.map((d) => renderDomain(d.file)).join("\n");
   const invs = parseOracle(rendered);
-  assert.equal(invs.length, parseOracle(text).length);
+  assert.equal(invs.length, parsed.length);
   for (const inv of invs) {
     for (const req of ["Rule", "Verify", "Violation signal", "Agents"]) {
       assert.ok(inv.fields[req] !== undefined, `${inv.id} lost **${req}**`);

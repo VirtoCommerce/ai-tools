@@ -31,24 +31,29 @@
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "fs";
-import { basename, join } from "path";
+import { posix } from "path";
+import { isDeepStrictEqual } from "util";
 import { fileURLToPath } from "url";
 import Ajv from "ajv";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import { DOMAIN_RE, ENTRY_RE, parseOracle, type Invariant } from "./lint-bl.ts";
-import { BL_PATH } from "./extract-bl.ts";
+import { BRACKET_TAG_RE, DOMAIN_RE, ENTRY_RE, VALID_TAGS, isField, parseOracle, type Invariant } from "./lint-bl.ts";
+import { BL_PATH, listDomains } from "./extract-bl.ts";
+import { flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
 
-export const SCHEMA_PATH = join("templates", "bl.schema.json");
-export const YAML_DIR = join(".claude", "knowledge", "oracles", "bl");
-export const HISTORY_DIR = join("docs", "decisions", "bl");
-const AGENT_DIRS = [join(".claude", "agents"), join("plugins", "vc-fix", "agents")];
+// Posix separators: these also become the `history` anchor and the YAML `$schema` link, and fs accepts `/` on Windows.
+const SCHEMA_PATH = "templates/bl.schema.json";
+const YAML_DIR = ".claude/knowledge/oracles/bl";
+const HISTORY_DIR = "docs/decisions/bl";
 
-const PRIORITIES = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"]);
-const TAG_RE = /`\[([^\]]+)\]`/g;
+// A field block starts only at column 0. An indented `  - **X:**` sub-bullet stays verbatim inside the block
+// above it; `parseOracle` splits it off as its own field, but it does so identically on both sides of the
+// round trip, so the comparison still holds and nothing is re-indented.
 const FIELD_RE = /^- \*\*(.+?):\*\*\s?(.*)$/;
+/** The fields that become the record's own text, and that the round trip compares. */
+const CORE_FIELDS = ["Rule", "Verify", "Violation signal"] as const;
 const NO_DOC_RE = /^(n\/?a|none|not documented|no (public )?doc)/i;
 
-export type SourceKind = "doc" | "ac" | "resolution" | "code" | "live" | "other";
+type SourceKind = "doc" | "ac" | "resolution" | "code" | "live" | "other";
 export interface BlSource { kind: SourceKind; ref: string }
 export interface BlRule {
   id: string;
@@ -71,20 +76,21 @@ export interface BlDomainFile {
   rules: BlRule[];
 }
 /** One converted domain: the record file, plus what BL 2.0 moves out of the record, per rule id. */
-export interface ConvertedDomain {
+interface ConvertedDomain {
   slug: string;
   file: BlDomainFile;
   history: { id: string; text: string }[];
 }
 
-/** `Rule` and its qualified forms (`Rule (write path — …)`), the same predicate `bl:lint` BLL-003 uses. */
-export function isField(label: string, base: string): boolean {
-  return label === base || label.startsWith(base + " ") || label.startsWith(base + "(");
-}
-
-/** A qualified field keeps its qualifier in front of its text, so two `Rule (…)` bullets fold into one `rule`. */
-function joinParts(parts: { label: string; text: string }[], base: string): string {
-  return parts.map((p) => (p.label === base ? p.text : `${p.label.slice(base.length).trim()} ${p.text}`)).join("\n");
+/**
+ * The text of `base` and its qualified forms (`Rule (write path — …)`), each qualifier kept in front of its
+ * text, so two `Rule (…)` bullets fold into one `rule`. The converter and the round-trip comparator share it.
+ */
+function fold(parts: readonly { label: string; text: string }[], base: string): string {
+  return parts
+    .filter((p) => isField(p.label, base))
+    .map((p) => (p.label === base ? p.text : `${p.label.slice(base.length).trim()} ${p.text}`))
+    .join("\n");
 }
 
 export function classifySource(text: string): SourceKind {
@@ -94,15 +100,18 @@ export function classifySource(text: string): SourceKind {
   return "other";
 }
 
-/** The agents named in `text`, matched against the roster on disk rather than a list kept here. */
-export function readAgentRoster(root = "."): string[] {
-  const names: string[] = [];
-  for (const dir of AGENT_DIRS) {
-    const full = join(root, dir);
-    if (!existsSync(full)) continue;
-    for (const f of readdirSync(full)) if (f.endsWith(".md") && f !== "README.md") names.push(basename(f, ".md"));
-  }
-  return [...new Set(names)].sort((a, b) => b.length - a.length); // longest first: no prefix shadowing
+/**
+ * The agent roster on disk: `.claude/agents` and every `plugins/*\/agents`, by FILE name. Not
+ * `knownAgentNames` (scripts/kb/core/caller.mjs): that reads the frontmatter `name`, and the oracle cites
+ * agents by file name (`test-runner-agent`, whose frontmatter says "Test Runner Agent"). Longest first so
+ * no name shadows another.
+ */
+export function readAgentRoster(): string[] {
+  const dirs = [".claude/agents", ...(existsSync("plugins") ? readdirSync("plugins").map((p) => `plugins/${p}/agents`) : [])];
+  const names = dirs
+    .filter((d) => existsSync(d))
+    .flatMap((d) => readdirSync(d).filter((f) => f.endsWith(".md") && f !== "README.md").map((f) => f.slice(0, -3)));
+  return [...new Set(names)].sort((a, b) => b.length - a.length);
 }
 
 function agentsIn(text: string, roster: readonly string[]): string[] {
@@ -121,7 +130,7 @@ function trimBlock(lines: string[]): string[] {
 }
 
 function historyAnchor(slug: string, id: string): string {
-  return `${HISTORY_DIR.split("\\").join("/")}/${slug}.md#${id.toLowerCase()}`;
+  return `${HISTORY_DIR}/${slug}.md#${id.toLowerCase()}`;
 }
 
 /** Convert one entry: its `### BL-…` heading line plus the body lines under it. */
@@ -131,10 +140,10 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
   const tail = m[2];
   const history: string[] = [];
 
-  const tags = [...tail.matchAll(TAG_RE)];
-  const prio = tags.find((t) => PRIORITIES.has(t[1].trim()));
+  const tags = [...tail.matchAll(BRACKET_TAG_RE)];
+  const prio = tags.find((t) => VALID_TAGS.has(t[1].trim()));
   const priority = prio ? prio[1].trim() : "";
-  const title = (prio ? tail.slice(0, prio.index) : tail).replace(TAG_RE, "").trim();
+  const title = (prio ? tail.slice(0, prio.index) : tail).replace(BRACKET_TAG_RE, "").trim();
   if (prio) {
     const after = tail.slice(prio.index! + prio[0].length).trim();
     const otherTags = tags.filter((t) => t !== prio).map((t) => t[0]);
@@ -151,21 +160,16 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     else if (blocks.length) blocks[blocks.length - 1].lines.push(line);
     else preface.push(line);
   }
-  const pre = trimBlock(preface).filter((l) => l.trim());
-  if (pre.length) history.push(...pre);
+  history.push(...preface.filter((l) => l.trim() && l.trim() !== "---"));
 
-  const rules: { label: string; text: string }[] = [];
-  const verifies: { label: string; text: string }[] = [];
-  const violations: { label: string; text: string }[] = [];
+  const core: { label: string; text: string }[] = [];
   const source: BlSource[] = [];
   const agents: string[] = [];
   for (const b of blocks) {
     const lines = trimBlock(b.lines);
     const text = lines.join("\n").trimEnd();
     const raw = [`- **${b.label}:** ${lines[0] ?? ""}`.trimEnd(), ...lines.slice(1)].join("\n");
-    if (isField(b.label, "Rule")) rules.push({ label: b.label, text });
-    else if (isField(b.label, "Verify")) verifies.push({ label: b.label, text });
-    else if (isField(b.label, "Violation signal")) violations.push({ label: b.label, text });
+    if (CORE_FIELDS.some((f) => isField(b.label, f))) core.push({ label: b.label, text });
     else if (b.label === "Source" && text) source.push({ kind: classifySource(text), ref: text });
     else if (b.label === "Docs" && text && !NO_DOC_RE.test(text.replace(/[*_`]/g, "").trim())) source.push({ kind: "doc", ref: text });
     else {
@@ -174,15 +178,16 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     }
   }
 
+  const verify = fold(core, "Verify");
   const rule: BlRule = {
     id,
     title,
-    rule: joinParts(rules, "Rule"),
+    rule: fold(core, "Rule"),
     priority,
     trust: "UNREVIEWED",
     source,
-    check: verifies.length ? { kind: "manual", ref: joinParts(verifies, "Verify") } : { kind: "none" },
-    violation_signal: joinParts(violations, "Violation signal"),
+    check: verify ? { kind: "manual", ref: verify } : { kind: "none" },
+    violation_signal: fold(core, "Violation signal"),
     status: "ACTIVE",
   };
   if (history.length) rule.history = historyAnchor(slug, id);
@@ -192,13 +197,14 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
 /** Split the oracle into its domains and convert each. Preamble and trailing sections are not rules. */
 export function convertOracle(text: string, roster: readonly string[]): ConvertedDomain[] {
   const lines = text.split("\n").map((l) => (l.endsWith("\r") ? l.slice(0, -1) : l));
+  const tokens = new Map(listDomains(text).map((d) => [d.domain, d.token]));
   const out: ConvertedDomain[] = [];
   let i = 0;
   while (i < lines.length) {
     if (!DOMAIN_RE.test(lines[i])) { i++; continue; }
     const heading = lines[i].replace(/^##\s+/, "").trim();
     const prefixes = [...heading.matchAll(/BL-[A-Z0-9]+/g)].map((x) => x[0]);
-    const slug = (prefixes[0] ?? heading).replace(/^BL-/, "").toLowerCase();
+    const slug = tokens.get(heading) || heading.toLowerCase().replace(/[^a-z0-9]+/g, "-"); // same token as `bl:extract --domain`
     let j = i + 1;
     while (j < lines.length && !/^#{1,2}\s/.test(lines[j])) j++;
     const section = lines.slice(i + 1, j);
@@ -258,7 +264,7 @@ export function renderDomain(file: BlDomainFile): string {
   return parts.join("\n\n") + "\n";
 }
 
-export function renderHistory(d: ConvertedDomain): string {
+function renderHistory(d: ConvertedDomain): string {
   const head = [
     `# BL history — ${d.file.domain.heading}`,
     "",
@@ -276,23 +282,20 @@ export function fromYaml(text: string): BlDomainFile {
   return parseYaml(text) as BlDomainFile;
 }
 
-export function schemaValidator(root = ".") {
+export function schemaValidator() {
   const ajv = new Ajv({ allErrors: true, strict: false });
-  return ajv.compile(JSON.parse(readFileSync(join(root, SCHEMA_PATH), "utf-8")));
+  return ajv.compile(JSON.parse(readFileSync(SCHEMA_PATH, "utf-8")));
 }
 
-/** The Rule / Verify / Violation-signal text as the gate's parser sees it, qualified bullets folded. */
+/** A field's text as the gate's parser sees it, qualified bullets folded the same way the converter folds them. */
 function gateText(inv: Invariant, base: string): string {
-  const parts = Object.entries(inv.fields)
-    .filter(([k]) => isField(k, base))
-    .map(([label, text]) => ({ label, text }));
-  return joinParts(parts, base);
+  return fold(Object.entries(inv.fields).map(([label, text]) => ({ label, text })), base);
 }
 
 /** Every difference between two oracle texts in what `bl:lint` parses: ids, order, titles, severities, texts. */
-export function compareOracles(beforeText: string, afterText: string): string[] {
+export function compareOracles(beforeText: string | Invariant[], afterText: string): string[] {
   const problems: string[] = [];
-  const before = parseOracle(beforeText);
+  const before = typeof beforeText === "string" ? parseOracle(beforeText) : beforeText;
   const after = parseOracle(afterText);
   const ids = (xs: Invariant[]) => xs.map((x) => x.id).join(",");
   if (ids(before) !== ids(after)) problems.push(`ids or their order differ: ${before.length} before, ${after.length} after`);
@@ -301,31 +304,35 @@ export function compareOracles(beforeText: string, afterText: string): string[] 
     const a = byId.get(b.id);
     if (!a) continue;
     for (const k of ["title", "severity", "domain"] as const) if (a[k] !== b[k]) problems.push(`${b.id}: ${k} "${b[k]}" → "${a[k]}"`);
-    for (const f of ["Rule", "Verify", "Violation signal"]) if (gateText(a, f) !== gateText(b, f)) problems.push(`${b.id}: ${f} text differs`);
+    for (const f of CORE_FIELDS) if (gateText(a, f) !== gateText(b, f)) problems.push(`${b.id}: ${f} text differs`);
   }
   return problems;
 }
 
-/** md → YAML → md over the whole oracle, plus schema validity and YAML identity per domain. Empty = clean. */
-export function roundTrip(text: string, roster: readonly string[], validate = schemaValidator()): string[] {
+/**
+ * md → YAML → md over the whole oracle, plus schema validity and YAML identity per domain. Empty = clean.
+ * Takes the already converted domains (and, optionally, the parsed source) so a caller that has them pays once.
+ */
+export function roundTrip(
+  domains: readonly ConvertedDomain[],
+  source: string | Invariant[],
+  validate = schemaValidator(),
+): string[] {
   const problems: string[] = [];
   const rendered: string[] = [];
-  for (const d of convertOracle(text, roster)) {
+  for (const d of domains) {
     if (!validate(d.file)) problems.push(`${d.slug}: schema: ${JSON.stringify(validate.errors?.slice(0, 3))}`);
     const back = fromYaml(toYaml(d.file));
-    if (JSON.stringify(back) !== JSON.stringify(d.file)) problems.push(`${d.slug}: YAML does not parse back to the same records`);
+    if (!isDeepStrictEqual(back, d.file)) problems.push(`${d.slug}: YAML does not parse back to the same records`);
     if (d.file.rules.length && !d.file.domain.agents.length) problems.push(`${d.slug}: no agent from the roster is named`);
     rendered.push(renderDomain(back));
   }
-  return [...problems, ...compareOracles(text, rendered.join("\n"))];
+  return [...problems, ...compareOracles(source, rendered.join("\n"))];
 }
 
 function main(argv: string[]) {
-  const arg = (name: string) => {
-    const i = argv.indexOf(name);
-    return i >= 0 ? argv[i + 1] : undefined;
-  };
-  const renderPath = arg("--render");
+  rejectUnknownFlags(argv, ["--check", "--write", "--domain", "--render"], ["--domain", "--render"]);
+  const renderPath = flagValue(argv, "--render");
   if (renderPath) {
     process.stdout.write(renderDomain(fromYaml(readFileSync(renderPath, "utf-8"))));
     return 0;
@@ -335,7 +342,7 @@ function main(argv: string[]) {
   const domains = convertOracle(text, roster);
 
   if (argv.includes("--write")) {
-    const want = arg("--domain");
+    const want = flagValue(argv, "--domain");
     const d = domains.find((x) => x.slug === want);
     if (!d) {
       console.error(`bl:convert: --write needs --domain <${domains.map((x) => x.slug).join("|")}>`);
@@ -343,15 +350,16 @@ function main(argv: string[]) {
     }
     mkdirSync(YAML_DIR, { recursive: true });
     mkdirSync(HISTORY_DIR, { recursive: true });
-    const yamlPath = join(YAML_DIR, `${d.slug}.yaml`);
-    writeFileSync(yamlPath, `# yaml-language-server: $schema=../../../../${SCHEMA_PATH.split("\\").join("/")}\n${toYaml(d.file)}`);
-    writeFileSync(join(HISTORY_DIR, `${d.slug}.md`), renderHistory(d));
-    console.log(`wrote ${yamlPath} (${d.file.rules.length} rules) and ${join(HISTORY_DIR, d.slug + ".md")}`);
+    const yamlPath = `${YAML_DIR}/${d.slug}.yaml`;
+    const historyPath = `${HISTORY_DIR}/${d.slug}.md`;
+    writeFileSync(yamlPath, `# yaml-language-server: $schema=${posix.relative(YAML_DIR, SCHEMA_PATH)}\n${toYaml(d.file)}`);
+    writeFileSync(historyPath, renderHistory(d));
+    console.log(`wrote ${yamlPath} (${d.file.rules.length} rules) and ${historyPath}`);
     console.log("business-logic.md is still the source of truth for this domain until its section is regenerated (M2).");
     return 0;
   }
 
-  const problems = roundTrip(text, roster);
+  const problems = roundTrip(domains, text);
   const rules = domains.reduce((n, d) => n + d.file.rules.length, 0);
   const withHistory = domains.reduce((n, d) => n + d.history.length, 0);
   console.log(`bl:convert --check: ${domains.length} domains, ${rules} rules, ${withHistory} with a history block`);
