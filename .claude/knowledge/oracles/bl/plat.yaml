@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 23: Platform Administration (BL-PLAT)"
+  prefixes:
+    - BL-PLAT
+  agents:
+    - qa-backend-expert
+    - qa-testing-expert
+  intro: "> Added 2026-08-24 (BL-AUDIT-2026-08-24). 92 test cases across suites `020`/`021` were citing `BL-PLAT-*` ids that did not exist (BLC-002 false traceability). The ids were confirmed free, so each entry is added at the exact cited id. **`BL-PLAT-003` is deliberately absent** — no case cites it, and the gap is real rather than an oversight."
+rules:
+  - id: BL-PLAT-001
+    title: Role and permission changes take effect immediately; deleting an assigned role is safe
+    rule: Creating, updating (including adding or removing individual permissions), or deleting a role invalidates the platform's shared security-permission cache immediately — every subsequent request evaluates the current role/permission state, and a user does not need to sign out and back in to gain or lose access after an administrator changes a role. Deleting a role that is currently assigned to one or more users must succeed (not fail with a server error) and must leave those users' accounts and remaining role assignments intact; the deleted role is simply removed from their effective role set.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: PlatformDeveloperGuide "Authorization in Virto Commerce" — a role is "a collection of permissions… You can redefine a role by changing its permissions".
+      - kind: code
+        ref: vc-platform `src/VirtoCommerce.Platform.Security/CustomRoleManager.cs` — `CreateAsync`, `UpdateInternalAsync` and `DeleteAsync` each call `SecurityCacheRegion.ExpireRegion()` on success, invalidating cached role/permission lookups platform-wide on every role mutation.
+      - kind: resolution
+        ref: VP-8379 (Done) — a role assigned to users could not be deleted (nor its users); fixed
+    check:
+      kind: manual
+      ref: "As an administrator, add or remove a permission on a role (or delete a role) → confirm the effect is visible on the very next request without requiring re-authentication. Separately: create a role, assign it to a user, then delete the role → deletion succeeds (no 5xx or constraint error), the user's detail view opens normally afterward, and the deleted role no longer appears in that user's role list while other assigned roles are unaffected."
+    violation_signal: A removed permission or a deleted role's effect is visible only after the affected user signs out and back in (stale cache); deleting a role currently assigned to a user returns a server error, or the user's role list is corrupted or blanked afterward.
+    status: ACTIVE
+    history: docs/decisions/bl/plat.md#bl-plat-001
+  - id: BL-PLAT-002
+    title: Account lock or deletion is authoritative over every credential and session tied to it
+    rule: A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: PlatformDeveloperGuide API Key Authentication — "each API key must be associated with a user account, as all requests with an API key will be authorized on behalf of the user"; Passwords Management — lockout duration is configurable.
+      - kind: code
+        ref: vc-platform `src/VirtoCommerce.Platform.Web/Security/Authentication/ApiKeyAuthenticationHandler.cs` `HandleAuthenticateAsync()` — after resolving an active key it still calls `FindByIdAsync`, `CanSignInAsync(user)` and `IsLockedOutAsync(user)`, failing authentication on any of those checks; `src/VirtoCommerce.Platform.Security/Handlers/RevokeTokenUserChangedEventHandler.cs` `Handle()` — on a `UserChangedEvent`, revokes all sessions via `TerminateAllUserSessions` whenever `LockoutEnd` becomes non-empty or the entry is Deleted.
+      - kind: resolution
+        ref: VCST-3435 (Done) — locking a user did not terminate active sessions; lock must dispose all session identifiers
+      - kind: resolution
+        ref: VCST-5933 (Done) — a locked-out member could still read organization orders; fixed
+      - kind: doc
+        ref: platform/developer-guide/docs/Fundamentals/Security/authentication/api-key-authentication.md (docs) — each API key is tied to a user and requests are authorized on behalf of that user
+    check:
+      kind: manual
+      ref: "Generate an active API key for a test user → confirm it authenticates. Lock the user's account → the same active key now fails authentication. Delete the account → the key fails authentication. Separately: sign in as a test user in one session, then as an administrator lock (or delete) that account from a second session → the first session's tokens are revoked and further requests are rejected."
+    violation_signal: An active API key still authenticates after its owning account is locked or deleted; a signed-in user's session or token remains valid after an administrator locks or deletes their account.
+    status: ACTIVE
+    history: docs/decisions/bl/plat.md#bl-plat-002
+  - id: BL-PLAT-004
+    title: A dynamic property's value type governs which capabilities it may declare
+    rule: "A dynamic property is defined against exactly one object type and becomes available, by that definition alone, on every entity instance of that type that implements the dynamic-properties contract — no separate per-instance registration step is required. Each property's declared value type (short text, long text, HTML, decimal, integer, boolean, date-time, measure, …) determines which structural capabilities it may legally combine: only value types whose registered capability allows it may be flagged as an array, a dictionary, or multilingual — boolean and date-time support none of the three, while short text supports all three."
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: PlatformDeveloperGuide "Manage Dynamic Properties" overview + value-type selection table + the `useDynamicProperties` composable (dictionary properties, multi-language support, multi-value properties, type safety).
+      - kind: code
+        ref: vc-platform `src/VirtoCommerce.Platform.Core/DynamicProperties/DynamicProperty.cs` (`ObjectType`, `ValueType`, `IsArray`, `IsDictionary`, `IsMultilingual`) + `DynamicPropertyValueTypeCapabilities.cs` — the static capability registry (boolean and date-time declare no array/dictionary/localization support; short text declares all three).
+      - kind: doc
+        ref: platform/developer-guide/docs/Fundamentals/Dynamic-Properties/using-DynamicPropertyAccessor.md (docs) — DynamicPropertyValueTypeCapability declares SupportArray/SupportDictionary/SupportLocalization per value type
+    check:
+      kind: manual
+      ref: Define a new dynamic property against a given entity type with a chosen value type → open any existing entity of that type → the property is present and editable without further setup. Attempt to combine an unsupported capability with a value type not registered to support it (e.g. mark a boolean property as a dictionary or multilingual) → the option is unavailable or rejected. Enter a value matching the declared value type → persists and round-trips; enter a value of the wrong shape → rejected.
+    violation_signal: A property defined for one object type fails to appear on an entity of that type without extra steps; an unsupported value-type/capability combination is accepted by the UI or the API; a value that does not match the declared value type is silently accepted.
+    status: ACTIVE
+    history: docs/decisions/bl/plat.md#bl-plat-004

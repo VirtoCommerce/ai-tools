@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 18: Payment Processors (BL-PAY)"
+  prefixes:
+    - BL-PAY
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+rules:
+  - id: BL-PAY-001
+    title: Client-side card validation gates order submission
+    rule: '**Authenticated sessions only** (see the guest carve-out at the end of this rule). A storefront bank-card payment form validates card fields client-side — card number (Luhn), all required fields present, expiry month 01–12 with a fully-entered 2-digit year that is not in the past, CVV 3–4 numeric digits — and keeps the "Place order" / pay action disabled until every field is valid. No payment-authorization request is sent and no order is created while any field is invalid or incomplete. **Guest (unauthenticated) checkout is out of scope and this invariant does NOT bind it.** By design a guest is never shown the cart-inline card form (`billing-details-section.vue` `paymentCardVisible` is `isAuthenticated &&`-gated), the card-validity gate is correspondingly skipped (`place-order.vue` `isDisabled`, same prefix), and "Place order" books an unpaid order (`status: "Payment required"`, `isApproved: false`) with no cart-side processor authorization — payment is settled afterwards. That is the intended guest path, not a violation.'
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: VCST-5162 PR vc-frontend#2309 (`bank-card-form.vue` `validationSchema`, incl. `isExpirationDateValid` "not-expired" test + yup `.length(2)` year rule); suite 040b PAY-AN-012/013/018/019/020; mirrors CyberSource/Skyflow validation. Authenticated-only scoping per product-owner ruling 2026-09-19 — same correction precedent as BL-PAY-004 (2026-06-25).
+      - kind: resolution
+        ref: VCST-5202 (Done) — fixed card form CVV validation letting an invalid CVV enable Place order and create an unpaid order.
+    check:
+      kind: manual
+      ref: Enter a Luhn-invalid number, empty/partial fields, an expired or out-of-range expiry, or a short/non-numeric CVV → "Place order" stays disabled; no POST to the processor (e.g. `api2.authorize.net`) and no `createOrderFromCart`; an inline field-level error is shown; errors clear and the button enables only on fully valid data. **Run this authenticated only** — a guest cart has no card form to invalidate, so the check is not merely inapplicable there, it is guaranteed to read as a failure (see Rule).
+    violation_signal: '*(authenticated session only)* Invalid card accepted with no error; pay/place-order enabled with bad or incomplete data; a payment request or a ghost "Payment required" order created from invalid card input. **NOT a violation:** a guest selecting an `allowCartPayment` gateway, seeing no card form, having "Place order" enabled, and reaching `/checkout/completed` with an unpaid `Payment required` order and zero processor calls — that is the designed guest path (see Rule).'
+    status: ACTIVE
+    history: docs/decisions/bl/pay.md#bl-pay-001
+  - id: BL-PAY-003
+    title: Successful card payment creates a paid order with a recorded transaction
+    rule: On a successful tokenized card payment the order is created, the cart is cleared, the user reaches the confirmation page with an order number, and the order persists the payment-method label and the processor transaction id (visible in `/account/orders` and admin). Raw PAN never appears in storefront network payloads (SDK tokenization).
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: other
+        ref: suite 040b PAY-AN-014 (+ deprecated 004/005 admin transaction-record shape); VCST-5162; backend transaction-record change (Status=short enum, ResponseCode=TransactionResponseCode). See BL-ORD-006 (payment state machine).
+    check:
+      kind: manual
+      ref: Complete a valid card payment → confirmation page with order number; cart badge empty; order in `/account/orders` and admin shows the processor method + a transaction id; no raw card number in any request body; `createOrderFromCart` `errors[]` empty.
+    violation_signal: Stuck on `/cart` or payment page after submit; no confirmation/order number; cart not cleared; missing transaction id; raw PAN present in network POST bodies.
+    status: ACTIVE
+    history: docs/decisions/bl/pay.md#bl-pay-003
+  - id: BL-PAY-004
+    title: AllowCartPayment renders the card form inline on /cart in single-step checkout only; multistep checkout redirects to the payment page
+    rule: "When a payment method has `allowCartPayment=true`, its card form renders inline on `/cart` (no redirect to `/checkout/payment`) **in single-step checkout only**, and initialization uses the cart-context mutation `initializeCartPayment` (not `initializePayment`). The shared cart payment processor is registered only after a successful init and only while the component is mounted, and `finalizePayment` runs it only when the selected method's `allowCartPayment === true`. Switching to a non-cart-payment method must not charge the card. **In multistep checkout (`checkout_multistep_enabled=true`) the inline-on-`/cart` form does NOT apply: selecting an `allowCartPayment` method must route the flow to the dedicated payment page (`/checkout/payment`) for card entry, and \"Place order\" on Review must stay reachable — it must never be blocked by a cart-inline processor state that does not exist on the multistep path.** **Both modes describe AUTHENTICATED sessions.** For a guest neither payment surface is presented: the cart-inline form does not render and no `/checkout/payment` redirect is scheduled either — the guest places an unpaid `Payment required` order and settles payment afterwards. The absence of both surfaces for a guest is by design, not a leak or a missing redirect. The GA4 `purchase` event fires exactly once (from `useCheckout`, not the payment component)."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: VCST-5162 PR vc-frontend#2309 + VCST-5009 (Skyflow); `payment.vue`, `payment-processing-authorize-net.vue` (`isActive` guard, register-after-init), `useCheckout.ts` (`allowCartPayment` finalize guard); suite 040a/040b PAY-AN-010/011/015/016/017. Multistep redirect-to-payment-page intent (single-step inline only) corrected 2026-06-25 per QA-lead direction — supersedes the earlier "inline state survives the Billing-step unmount into Review" wording; see the multistep cart-inline Place-Order block bug in `reports/bugs/open/`.
+      - kind: doc
+        ref: platform/developer-guide/docs/Fundamentals/Payments/new-payment-method-registration.md (published) — AllowCartPayment=true makes the frontend render the payment form inline instead of redirecting.
+      - kind: ac
+        ref: "VCST-5162 (Done) — story: customer enters card details on the checkout page (AllowCartPayment for the gateway)."
+      - kind: resolution
+        ref: VCST-5369 (Done) — fixed Place Order blocked on Review in multistep checkout with an AllowCartPayment method.
+    check:
+      kind: manual
+      ref: '*Single-step:* select an `allowCartPayment` method on `/cart` → inline form, URL stays `/cart`, network shows `initializeCartPayment`; switch to a manual method then place order → no charge to the card. *Multistep:* selecting an `allowCartPayment` method routes to `/checkout/payment` (NO inline form on `/cart`), card entered there, Review → Place order succeeds → paid order, not "Payment Required". Exactly one GA4 `purchase` in both modes.'
+    violation_signal: '*Single-step:* redirect to `/checkout/payment` for an `allowCartPayment` method; card charged after switching methods (stale processor). *Multistep:* the inline card form still renders on `/cart` and "Place order" on Review is blocked/disabled with no redirect to `/checkout/payment` (the cart-inline path leaked into multistep). Either mode: double or zero GA4 `purchase`; `initializePayment` called instead of `initializeCartPayment`. **Neither mode clause fires for a guest session** — no inline form and no redirect is the designed guest path (see Rule).'
+    status: ACTIVE
+    history: docs/decisions/bl/pay.md#bl-pay-004

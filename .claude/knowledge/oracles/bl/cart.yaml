@@ -1,0 +1,263 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 2: Cart (BL-CART)"
+  prefixes:
+    - BL-CART
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+    - qa-testing-expert
+rules:
+  - id: BL-CART-001
+    title: Max quantity enforcement
+    rule: "Per-product max quantity is enforced by available stock (or configured min/max). There is no automatic silent cap to available stock on either surface — but the two entry surfaces differ in where the enforcement lands, because the platform backend never refuses to persist an out-of-range quantity; it always accepts the requested value and attaches an advisory per-line validation error. **On the Product Detail Page quantity control** (a product not yet in the cart, or its own stepper), the storefront enforces the limit client-side before any mutation commits: entering a quantity outside the allowed range disables the Increase control, replaces it with an inline range affordance (e.g. \"Order from X to Y item(s)\"), and no line is added — the cart item count is unchanged. **On an existing cart-line quantity input** (the cart page), the storefront submits whatever quantity is entered via the quantity-change mutation, and the backend persists it as entered — the line's quantity, line total, and cart subtotal/tax/total all reflect the out-of-range value — while attaching a per-line validation message (e.g. \"You can order maximum N item(s)\") that the storefront renders inline and that keeps \"Place order\" disabled until the quantity is corrected. This out-of-range state survives a full page reload (it is server-persisted, not merely an optimistic client artifact)."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-x-cart `CartLineItemValidator.ValidateMinMaxQuantity` → `CartErrorDescriber.ProductMinMaxQuantityError`/`ProductMaxQuantityError`/`ProductQtyChangedError` (FluentValidation `AddFailure` — attaches a per-line validation error but does not block the mutation). `AddCartItemCommandHandler.Handle` and `ChangeCartItemQuantityCommandHandler.Handle` (`src/VirtoCommerce.XCart.Data/Commands/`) both call `cartAggregate.AddItemAsync`/`ChangeItemQuantityAsync` with the requested quantity and save **unconditionally**, with no branch on the validator's outcome — the backend never refuses to persist an out-of-range quantity on either mutation. vc-frontend `locales/en.json` `validation_error.PRODUCT_MAX_QTY`/`PRODUCT_MIN_MAX_QTY`/`PRODUCT_QTY_CHANGED` (rendered inline via the error translator).
+      - kind: resolution
+        ref: VCST-5234 (Done) — an over-stock quantity was persisted on the line but the per-line validation error disappeared; fixed so the line keeps PRODUCT_QTY_INSUFFICIENT
+      - kind: resolution
+        ref: VCST-3926 (Done) — storefront let a user increase cart quantity for out-of-stock or unavailable products; fixed
+    check:
+      kind: manual
+      ref: "PDP: for a product not yet in cart, enter a quantity above available stock → assert the inline range message, Increase disabled, and cart item count unchanged (no line committed). Cart page: for an existing line, enter a quantity above available stock into the line's quantity input and submit → assert the persisted quantity equals the entered value (not capped), line total = qty × unit price, cart subtotal reflects it, an inline validation message renders, and \"Place order\" stays disabled; reload the page → assert the same out-of-range quantity, total, and message persist."
+    violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-001
+  - id: BL-CART-002
+    title: Out-of-stock mid-session
+    rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/upgrading-to-stable-15.md — createOrderFromCart validates against re-resolved products for accuracy at ordering time
+      - kind: doc
+        ref: platform/user-guide/docs/cart/overview.md — the cart module reserves stock for cart products until checkout completes
+      - kind: resolution
+        ref: VP-2862 (Done) — a product with zero stock and zero preorder quantity could still be added and bought; fixed
+    check:
+      kind: manual
+      ref: Add item (stock=2) → in another session/admin, reduce stock to 0 → attempt checkout → error message, order NOT created. Cart should flag the item.
+    violation_signal: Order placed successfully for an out-of-stock item; no error shown at checkout; oversold inventory.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-002
+  - id: BL-CART-003
+    title: Coupon + sale interaction
+    rule: A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: ac
+        ref: "VCST-4896 (Done) — Coupons sidebar AC: main rule is one coupon at a time; a new code replaces the previous one"
+      - kind: doc
+        ref: platform/user-guide/docs/marketing/combining-active-promotions.md — Best Reward (default) applies one best promotion; Stackable combines them and skips rewards that would go negative
+    check:
+      kind: manual
+      ref: Item at $100 list, $80 sale → apply 10% coupon → discount = $8 (10% of $80), not $10. Apply second coupon → rejected with "Only one coupon allowed" message.
+    violation_signal: Coupon discount calculated on list price; coupon accepted when min-order threshold not met; multiple coupons applied when multi-coupon is disabled.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-003
+  - id: BL-CART-004
+    title: Currency switching recalculates primary-currency lines
+    rule: When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Loyalty/overview.md — a mixed-currency cart returns separate cartTotals buckets per currency (e.g. USD and PTS)
+      - kind: resolution
+        ref: VCST-2961 (Done) — cart became empty after a merge followed by a cart currency change; fixed
+      - kind: resolution
+        ref: VCST-2778 (Done) — cart emptied after changing currency in the user profile; fixed
+    check:
+      kind: manual
+      ref: "Single-currency cart: add items → switch currency → all prices, subtotal, shipping, tax use the new currency; products without a new-currency price are flagged/removed. Mixed cart: with a PTS loyalty line present, switch the base currency USD→EUR → USD lines convert to EUR, the PTS line stays PTS, item count unchanged."
+    violation_signal: A previous-currency line still uses the old price; subtotal/shipping not recalculated; **OR** (Mixed Cart) a non-primary-currency loyalty line is wrongly converted, dropped, or duplicated on currency switch.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-004
+  - id: BL-CART-005
+    title: Cart isolation per organization
+    rule: In B2B mode, each organization has its own cart. When a user switches organizations, the previous org's cart is preserved server-side but not visible. The active cart reflects only the current organization's items, prices, and shipping context. Cart items from Org A must never appear in Org B's cart.
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: "As Org A, add items → switch to Org B → cart is empty (or Org B's separate cart). Switch back to Org A → original items restored. Check xAPI: `cart` query with different org context returns different carts."
+    violation_signal: Items from Org A visible in Org B's cart; switching back loses Org A's cart; xAPI returns same cart regardless of org context.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-005
+  - id: BL-CART-006
+    title: Pack size enforcement
+    rule: When a product has a minimum order quantity (MOQ) or pack size (e.g., sold in packs of 6), the cart must enforce that quantity is a multiple of the pack size. The quantity stepper should increment by pack size, and manual entry of non-multiple quantities must be rejected or rounded up.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-x-cart `CartLineItemValidator.IsPackSizeLimit` → `PackSizeLimitSpecification` → `CartErrorDescriber.ProductPackSizeError` (reject path, not silent round-up).
+      - kind: doc
+        ref: "platform/user-guide/docs/glossary.md — MOQ entry: pack size requirements round quantities to fixed steps"
+      - kind: doc
+        ref: platform/user-guide/docs/catalog/managing-products.md — pack size ensures orders are placed in predefined quantities
+    check:
+      kind: manual
+      ref: "Product with pack size 6 → add to cart → qty = 6. Try to change qty to 7 → rejected or auto-rounded to 12. Stepper increments: 6 → 12 → 18."
+    violation_signal: Quantity 7 accepted for a pack-size-6 product; stepper increments by 1 instead of pack size; order placed with non-multiple quantity.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-006
+  - id: BL-CART-007
+    title: Same product adds quantity, not duplicate line
+    rule: "Adding the same SKU to the cart a second time increments the existing line item's quantity — it does not create a duplicate line. This applies regardless of whether the add came from PDP, quick-add, or xAPI. Exception: different product configurations (variants) create separate lines."
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart `CartAggregate.InnerAddLineItemAsync` / `FindExistingLineItemBeforeAdd` — merges by incrementing the existing non-configured line's quantity; configured/variant items bypass the merge lookup entirely (`IsConfigured ? null : ...`), always creating a new line."
+      - kind: live
+        ref: KB-734A0813 (single observation) — same-product adds merge into one line with summed quantity; configured items always stay separate lines
+      - kind: resolution
+        ref: VCST-4205 (Done) — different configurations of one configurable product merged into a single Saved-for-Later item; fixed to keep them separate
+    check:
+      kind: manual
+      ref: Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
+    violation_signal: Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-007
+  - id: BL-CART-008
+    title: Cart persistence across sign-out / sign-in
+    rule: "A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-x-cart `MergeCartCommandHandler.Handle` (`src/VirtoCommerce.XCart.Data/Commands/`) calls `cartAggr.MergeWithCartAsync(secondCart)` then unconditionally `CartRepository.SaveAsync(cartAggr)`; `CartAggregateRepository.SaveAsync` always calls `await cartAggregate.RecalculateAsync()` before persisting — so every merge forces a full recalculation pass (including promotion/coupon re-evaluation) rather than carrying over a frozen discount amount.
+      - kind: doc
+        ref: storefront/developer-guide/docs/authentication/anonymous-authentication.md — on sign-in or registration the anonymous cart is merged into the user's cart, keeping guest items
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/merge-cart.md — mergeCart merges an anonymous cart into the user cart after authentication
+      - kind: resolution
+        ref: VCST-5801 (Done) — guest→account merge folded a free gift line into a paid line; fixed (merge must preserve line semantics)
+    check:
+      kind: manual
+      ref: 'Add items → sign out → sign in → cart restored. Separately: browse as guest, add items → sign in (existing account with different cart items) → carts merge without duplicates. Coupon case: apply a coupon to one side of the merge → sign in to trigger the merge → assert the coupon is still applied ("Remove coupon" shown, not silently cleared) and the discount amount reflects the merged (larger) subtotal, not the pre-merge amount.'
+    violation_signal: Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined; a previously-applied coupon disappears after merge; OR a surviving coupon's discount stays frozen at its pre-merge value instead of re-evaluating against the merged subtotal.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-008
+  - id: BL-CART-009
+    title: Storefront cart enforces a single active coupon slot
+    rule: "The storefront cart \"Discount & coupons\" section applies at most ONE coupon at a time across BOTH facets — the preset promotion cards (up to 4, authenticated + marketing-experience module only) and the single \"Custom code\" input. The applied-coupon slot is shared: exactly one card/input is ever in the \"applied\" state (button \"Remove coupon\"), never two simultaneously. Two transition paths exist: (a) clicking \"Apply\" on a DIFFERENT preset card auto-replaces the current coupon — `applyCoupon(new)` first awaits `removeCoupon(current)`, then `validateCoupon(new)`, then `addCoupon(new)`, in that order; (b) the custom-code input becomes read-only **only when its own bound value equals the currently-applied coupon's code** — i.e. when the applied coupon was entered through that input itself, or the applied coupon is not among the up-to-4 visible preset cards (the input then mirrors the code and locks). When the applied coupon IS one of the visible preset cards, the custom input is reset to empty and stays fully editable: a user can type and submit a different code through it without first clicking \"Remove coupon\" on the preset card, and the single-slot guarantee still holds because that submission goes through the same `applyCoupon` replacement logic. NOTE: this single-slot guarantee is enforced by the storefront UI only — the platform cart (`CartAggregate.AddCouponAsync`) appends coupons (case-insensitive dedupe) and does not auto-replace, so a non-UI/API caller can hold multiple coupons."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-frontend `useCoupon.ts` (`applyCoupon` → on `dev` HEAD: `removeCartCoupon`→`validateCartCoupon`→`addCartCoupon` — see the open skew note in Amended), `coupons-section.vue` (`watchEffect` mirrors the applied coupon into `customCode` only when it is absent from the visible `promotionCoupons(first:4)` list, else resets `customCode` to `\"\"`), `coupon-card.vue` (`:readonly=\"!custom || view === 'applied' || loading\"` — preset cards unconditionally read-only; the custom card read-only only when its own bound code equals the applied one); vc-module-x-cart `CartAggregate.AddCouponAsync` (appends, case-insensitive dedupe — no auto-replace)."
+      - kind: ac
+        ref: "VCST-4896 (Done) — Coupons sidebar AC: one coupon at a time; applying another code deactivates the first (radio-button behaviour)"
+      - kind: resolution
+        ref: VCST-5518 (Done) — an invalid replacement coupon silently dropped the valid applied one (remove-then-validate); fixed to validate before removing
+    check:
+      kind: manual
+      ref: "Apply coupon A → exactly one card/input shows \"applied\"/\"Remove coupon\"; `cart.coupons[]` contains one successfully-applied entry (code A). Apply a different preset B → network shows `removeCoupon`(A) 200 → `validateCoupon`(B) → `addCoupon`(B) 200, in order; final applied slot = B only; discount reflects only B's reward (assert against the `AddCoupon` response `discountTotal`, not a computed %, per BL-CHK-006). Via the custom input: if A was applied through a VISIBLE preset card, the custom input resets to empty and remains editable (typing accepted, Apply button enables) — by design, not a violation; if A was applied through the custom input itself, or A is not among the visible presets, the custom input mirrors A and is read-only, offering only \"Remove coupon\". Anonymous carts render only the custom-code input (no preset cards; `promotionCoupons` not queried)."
+    violation_signal: "two cards/inputs simultaneously in the applied state via the storefront UI; a preset \"Apply\" that adds B without first removing A (cart briefly/permanently holds 2 coupons through the UI); the PRESET card's own input (unconditionally read-only by binding) becoming editable — a binding regression; the custom input showing a stale/mismatched code, or failing to reset to empty+editable once the applied coupon is one of the visible presets; a replacement coupon's discount stacking on top of the prior one. (Separately tracked, not this invariant: an INVALID replacement code silently dropping the prior valid coupon because remove precedes validate — see VCST-5518 / `BUG-invalid-coupon-removes-valid-coupon`; a fix is in flight on `VirtoCommerce/vc-frontend#2422`, not yet merged to `dev` — see the open build-skew item in `reports/ba/bl-proposals-2026-08-05.md`.)"
+    status: SUSPECT
+    history: docs/decisions/bl/cart.md#bl-cart-009
+    suspect_reason: "VCST-5518 (Done) required the storefront to validate a replacement coupon BEFORE removing the applied one. That contradicts clause (a)'s stated order: removeCoupon → validateCoupon → addCoupon."
+  - id: BL-CART-010
+    title: Configuration-item selection reprices the parent configurable lineItem
+    rule: When `selectedForCheckout` is flipped on a `ConfigurationItem` belonging to a configurable lineItem, the parent lineItem's `listPrice` MUST be recalculated immediately as the sum of all placements whose `selectedForCheckout = true`. The updated `listPrice` propagates into cart subtotal, taxes, and shipping via `SaveAsync → RecalculateAsync`. Deselecting a config item reduces `listPrice`; reselecting restores it. **Asymmetry:** lineItem-level selection (`changeCartItemSelected` family) does NOT change `lineItem.listPrice` — only configuration-item selection does.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart `ConfiguredLineItemContainer.cs` `UpdatePrice(LineItem)` — `Items.Where(x => x.Item is { SelectedForCheckout: true })` before summing into `lineItem.ListPrice` / `PlacedPrice` / `ExtendedPrice`."
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/changeCartConfigurationItemSelected.md — toggles selectedForCheckout on one configuration item of a configured line
+      - kind: resolution
+        ref: VCST-4961 (Done) — selectedForCheckout on configuration items had no write path; resolved
+    check:
+      kind: manual
+      ref: Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
+    violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-010
+  - id: BL-CART-011
+    title: Unmatched section key in batch selection is a silent no-op
+    rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: 'vc-module-x-cart PR #114 §Validation errors; `CartAggregateTests` "unmatched section no-op" unit test.'
+    check:
+      kind: manual
+      ref: "Obtain a configurable lineItem with 2 known section keys (A and B). Call `selectCartConfigurationItems` with `configurationSections: [keyA, {sectionId: 'does-not-exist', type: 'Product'}]`. Assert HTTP 200 and `errors[]` is empty. Assert `configurationItems[keyA].selectedForCheckout = true` (matched item flipped). Assert no error entry or warning appears for the unmatched key."
+    violation_signal: HTTP 4xx or `errors[]` non-empty due to unmatched section key; entire batch aborted and no items flipped.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-011
+  - id: BL-CART-012
+    title: Configuration-item selection mutations are scoped to one `lineItemId`; "all" never crosses lineItem boundaries
+    rule: All five configuration-item selection mutations (`changeCartConfigurationItemSelected`, `selectCartConfigurationItems`, `unSelectCartConfigurationItems`, `selectAllCartConfigurationItems`, `unSelectAllCartConfigurationItems`) accept exactly one `lineItemId`. The "all" variants operate only on configuration items belonging to that specified lineItem. No mutation may flip `selectedForCheckout` on configuration items belonging to other lineItems in the same cart.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart PR #114 §Scoping."
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/selectAllCartConfigurationItems.md — selects all configuration items within a single configured line item (lineItemId required)
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/selectCartConfigurationItems.md — command takes one lineItemId plus configurationSections
+    check:
+      kind: manual
+      ref: Build a cart with two configurable lineItems (L1 and L2), each with at least one config item. Call `unSelectAllCartConfigurationItems` with `lineItemId = L1.id`. Assert all config items on L1 have `selectedForCheckout = false`. Assert all config items on L2 retain their original state and `L2.listPrice` is unchanged.
+    violation_signal: Config items on L2 are toggled when only L1's `lineItemId` was specified; `listPrice` of L2 changes after a mutation scoped to L1.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-012
+  - id: BL-CART-013
+    title: No-change short-circuit on configuration-item selection mutations
+    rule: When a configuration-item selection mutation is called but the resulting `selectedForCheckout` state for every affected configuration item is identical to the pre-mutation state, `UpdateConfiguredLineItemPrice` MUST NOT be executed. The cart aggregate detects the no-change condition before invoking the reprice path and short-circuits. Applies to idempotent re-sends, to `selectAll` when all already selected, and to `unSelectAll` when all already unselected.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: 'vc-module-x-cart PR #114 §Key business behavior; `CartAggregateTests` "no-change short-circuit" and "idempotency" unit tests.'
+    check:
+      kind: manual
+      ref: Obtain a cart with a configurable lineItem where all config items have `selectedForCheckout = true`. Call `selectAllCartConfigurationItems` for that lineItem. Assert cart totals are unchanged. Confirm `UpdateConfiguredLineItemPrice` was not triggered (via platform logs or unit test coverage). Repeat with `changeCartConfigurationItemSelected` sending the same value already set.
+    violation_signal: Repricing executes on a no-change call; unnecessary `RecalculateAsync` invocation observable in platform logs; performance regression in batch UIs that resend full selection state on every interaction.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-013
+  - id: BL-CART-014
+    title: Configuration-section identification — `(sectionId, type)` for Text/File; `option.productId` required for Variation
+    rule: "When identifying a `ConfigurationItem` for selection mutations: for `Text` and `File` sections, `(sectionId, type)` alone is sufficient for unique lookup. For `Variation` sections, `option.productId` is mandatory because multiple variations of the same configurable section can coexist on a lineItem. Omitting `option` for a `Variation`-type section results in a no-op (item not found, per BL-CART-011). For `Product` sections, `option.productId` resolves the option but is not required for uniqueness when only one product placement per section is allowed."
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart PR #114 — `ConfigurationSectionKeyInput.cs` and `ConfigurableProductOptionKeyInput.cs`."
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/changeCartConfigurationItemSelected.md — a section is identified by sectionId, type and an optional option
+    check:
+      kind: manual
+      ref: "For a Variation section: call `changeCartConfigurationItemSelected` with `{sectionId, type: 'Variation'}` and no `option` field → assert silent no-op (flag does not flip). Repeat with `{sectionId, type: 'Variation', option: {productId: <valid-id>}}` → assert flag flips. For a Text section: call with `{sectionId, type: 'Text'}` and no `option` → assert flag flips (lookup succeeds). For a File section: same as Text."
+    violation_signal: Text/File section fails without `option` field (overly strict); Variation section succeeds with missing `option` (ambiguous lookup); wrong config item toggled.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-014
+  - id: BL-CART-015
+    title: Configuration items survive a Saved-for-Later round trip
+    rule: Moving a configurable lineItem to Saved for Later (`moveToSavedForLater`) and back into the cart (`moveFromSavedForLater`) MUST preserve its `configurationItems` (customText, selected option/productId, files, section) unchanged. The lineItem is re-created with a new `lineItemId` on each leg, but its configuration payload is not lost, truncated, or reset to defaults.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-frontend `client-app/core/api/graphql/cart/fragments/fullLineItem.graphql` (`configurationItems` block on `LineItemType`); `.../mutations/moveToSavedForLater/moveToSavedForLaterMutation.graphql` and `.../moveFromSavedForLater/moveFromSavedForLaterMutation.graphql` (both return `cart { ...fullCart }`).
+      - kind: resolution
+        ref: VCST-4205 (Done) — a configurable item moved back from Saved for Later lost its selected configuration; fixed
+    check:
+      kind: manual
+      ref: Add a configurable product with a Text-section custom value to cart; confirm via the cart's line-item configuration view. Move it to Saved for Later. Move it back to cart. Confirm the configuration view shows the identical custom value on the new lineItem.
+    violation_signal: The custom text/option/file is blank, reset to a default, or the section is missing entirely after the item returns to cart.
+    status: ACTIVE
+    history: docs/decisions/bl/cart.md#bl-cart-015
