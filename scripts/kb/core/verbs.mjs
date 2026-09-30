@@ -100,7 +100,7 @@ export function trustOf(evidence = []) {
  * the index's own count, says it is provisional, and raises no drift: the two numbers were never
  * compared, so they cannot be said to disagree.
  */
-function describeHit(hit, parsed, { unavailable = null } = {}) {
+export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
     ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
