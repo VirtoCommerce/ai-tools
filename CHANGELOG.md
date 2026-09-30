@@ -8,6 +8,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Origin labels on bugs Claude files; a tracker-neutral ticket placeholder — `vc-fix` `0.9.4` — 2026-09-30
+
+Ships the `plugins/vc-fix/` changes from #355 and #357, which merged after `0.9.3` without a version bump. Text
+only; no code changed. `vc-perf` is unchanged and stays at `0.3.1`.
+
+**Added: origin labels on Jira bugs Claude files (#355).** `/qa-bug` now records who found the bug on the
+report's line 4 (`**Found by:** agent — testing <TICKET>` / `agent — regression <RUN_ID>` / `human`), set from a
+new `found-by:agent-testing` / `found-by:agent-regression` argument, and Step 5 turns that line into labels:
+`found-by-agent` + `found-in-testing` or `found-in-regression`, else `reported-by-human`. An unclear origin is
+`reported-by-human`. The rule is `knowledge/execution/tracker-ops.md` §2a. The labels apply on VC's own Jira
+only, never on a client project's tracker. The PreToolUse hook that enforces them
+(`.claude/hooks/enforce-bug-labels.mjs`) lives in this repo's `.claude/` and does not ship with the plugin.
+
+**Changed: the ticket placeholder is `<ticket-key>`, not `VCST-XXXX` (#357).** A client Jira uses its own
+prefix and Azure Boards keys are bare numbers, so branch names (`claude/qa-autofix/<ticket-key>`), output paths,
+command examples, argument hints and templates across 31 plugin files now use `<ticket-key>`. Where
+`qa-evidence/output-paths.md` illustrates the key format it shows Jira `ABC-123` next to Azure `12345`.
+`knowledge/diagnostics/skill-expectations.md` changed in the plugin and `.claude/` copies together.
+
+---
+
 ## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0`, `vc-fix` `0.9.3`, `vc-perf` `0.3.1` — 2026-09-30
 
 **BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
