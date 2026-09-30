@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { parseEntry, stringifyFrontmatter } from '../kb/core/frontmatter.mjs';
 import { appendEvidence } from '../kb/core/push.mjs';
 import { buildRow } from '../kb/core/index-build.mjs';
-import { normalizeRow, retrievable, surfacesOf } from '../kb/core/index-load.mjs';
+import { SURFACES, normalizeRow, retrievable, surfacesOf } from '../kb/core/index-load.mjs';
 import { anchorKind } from '../kb/core/coordinates.mjs';
 import { showLines } from '../kb/core/render.mjs';
 
@@ -114,6 +114,8 @@ test('surface spellings collapse to the closed set; an ambiguous one maps to not
   assert.deepEqual(surfacesOf(['surface=rest-api', 'surface=storefront-ui']), ['storefront-ui', 'rest']);
   assert.deepEqual(surfacesOf(['surface=ucp-mcp', 'surface=vendor-portal-ui', 'surface=background-jobs']),
     ['rest', 'ucp', 'vendor-ui']);
+  assert.deepEqual(surfacesOf(SURFACES.map((s) => `surface=${s}`)), SURFACES,
+    'a migrated entry carries canonical values, and each must survive as itself');
   assert.deepEqual(surfacesOf(['surface=api']), [],
     '`api` names UCP on some entries and REST on others -- the migration reads the entry');
   assert.deepEqual(normalizeRow({ id: 'KB-1', path: 'p', subject: 's', scope: ['surface=xapi'] }).surfaces, ['xapi']);

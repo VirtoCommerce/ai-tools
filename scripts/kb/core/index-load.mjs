@@ -68,7 +68,8 @@ export function normalizeScope(scope) {
  */
 export const SURFACES = ['storefront-ui', 'xapi', 'rest', 'admin-ui', 'ucp', 'vendor-ui'];
 export const SURFACE_SPELLINGS = {
-  'storefront-ui': 'storefront-ui',
+  // Every canonical value spells itself -- derived, so a value added to SURFACES cannot be missed.
+  ...Object.fromEntries(SURFACES.map((s) => [s, s])),
   xapi: 'xapi', 'storefront-xapi': 'xapi', 'graphql-xapi': 'xapi', graphql: 'xapi',
   rest: 'rest', 'rest-api': 'rest', 'platform-api': 'rest', 'platform-rest': 'rest', 'backend-api': 'rest', 'admin-api': 'rest',
   'background-jobs': 'rest',
