@@ -99,8 +99,9 @@ else would notice. Two measurements decide this:
 
 Also kept whole, without measurement: the **security and containment** tests (redaction, secret
 gates, the self-diagnostics delivery boundary, MCP/credential hygiene, the tracker and label hooks).
-Their failure is a leak, not a wrong number. A file the tools cannot measure (it reaches its code
-through a subprocess, or its baseline is red) is not cut by this rule either. A human decides.
+Their failure is a leak, not a wrong number. A test the tools cannot measure (it reaches its code
+through a subprocess, asserts a negative property such as "does not mutate", or its baseline is
+red) is not cut by this rule either. A human decides.
 Rationale and counts: [`docs/decisions/unit-test-roi.md`](../../../docs/decisions/unit-test-roi.md)
 §2026-10-01.
 
