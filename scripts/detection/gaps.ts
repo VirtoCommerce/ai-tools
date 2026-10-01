@@ -10,7 +10,7 @@
  *             case stamps with `Behavior:` — read through `loadCases`, the same reader `models:check` uses.
  *
  * A bug is assigned to the BL domain whose heading words its summary shares most (headings are read from
- * business-logic.md via `listDomains`, never listed here); a bug that shares none is `unassigned`. The
+ * the oracle (rendered from bl/*.yaml) via `listDomains`, never listed here); a bug that shares none is `unassigned`. The
  * assignment is a ranking aid, printed as such, not a classification anyone signs off.
  *
  * THE FIGURES ARE NOT COMMITTED. ai-tools is public, and bug counts are internal statistics: this command
@@ -34,7 +34,8 @@ import { join } from "path";
 import { fileURLToPath } from "url";
 import { parseSuite } from "../test-cases/append-test-cases-to-suite.ts";
 import { loadCases } from "../maintenance/check-test-models.ts";
-import { BL_PATH, listDomains } from "../knowledge/extract-bl.ts";
+import { listDomains } from "../knowledge/extract-bl.ts";
+import { oracleText } from "../knowledge/bl-yaml.ts";
 import { flagValue, intFlag, rejectUnknownFlags } from "../lib/cli-args.ts";
 
 const SUITES_DIR = "regression/suites";
@@ -192,7 +193,7 @@ async function main(argv: string[]): Promise<number> {
     return 3;
   }
 
-  const domains = domainTerms(readFileSync(BL_PATH, "utf-8"));
+  const domains = domainTerms(oracleText());
   const cited = citedKeys(suiteTexts());
   const escapes = escapeGaps(bugs, cited, domains).filter((g) => !onlyDomain || g.domain === onlyDomain);
   const table = domainTable(bugs, cited, domains).filter((r) => !onlyDomain || r.domain === onlyDomain);

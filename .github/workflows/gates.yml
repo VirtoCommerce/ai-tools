@@ -76,9 +76,9 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
-      # BL 2.0: a migrated domain's section of business-logic.md is generated from bl/<slug>.yaml; this fails a
-      # hand edit to it (or a schema-invalid record) and round-trips the domains still written in markdown.
-      - name: bl:convert:check — migrated BL domains match their YAML
+      # BL 2.0: business-logic.md is generated whole from bl/*.yaml (no script reads it); this fails a hand edit
+      # to it, a schema-invalid record, an unlisted domain file, a duplicate id or an agent not on the roster.
+      - name: bl:convert:check — business-logic.md is the render of bl/*.yaml
         run: npm run bl:convert:check
       # Test Mind Map + Test Data Model (docs/decisions/test-mind-map-and-data-model.md): schema, graph,
       # reference and Behavior:/DataProfile: stamp integrity. On a PR the stable-id check (TM-030 — a
