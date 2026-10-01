@@ -63,7 +63,7 @@ A reason it writes starts with a tag, and the tag decides what may clear it:
 
 | Tag | Set when | Cleared by |
 |---|---|---|
-| `[code]` | a change touches the rule's `scope.code_ref` (`<repo>:<path>[#symbol]`; a path ending in `/` is a directory) | a pass: every citing case in a run passed, or `check.run` passed |
+| `[code]` | a change touches the rule's `scope.code_ref` (`<repo>:<path>[#symbol]`; a path ending in `/` is a directory). A change known only by its module (`module <name>`) touches every rule whose `code_ref` is in that repo | a pass: every citing case in a run passed, or `check.run` passed |
 | `[closed]` | a recently closed bug names the rule's id | a pass, as above |
 | `[age]` | `verified.date` is older than the threshold, for the `age_trust` levels | a pass, as above |
 | `[case]` / `[check]` | a citing case failed / the executable check found a violation | nothing automatic: file the bug, then write `[bug] <KEY>` |

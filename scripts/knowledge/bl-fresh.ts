@@ -6,7 +6,8 @@
  * rule's `code_ref` is re-checked in the same run that saw it.
  *
  * What marks a rule SUSPECT (only an ACTIVE one; the text is never touched):
- *   [code]    a change touches its `scope.code_ref` (`--change "<CHANGE_SOURCE>"` or `--changed repo:path,…`)
+ *   [code]    a change touches its `scope.code_ref` (`--change "<CHANGE_SOURCE>"` or `--changed repo[:path],…`); a
+ *             change known only by its repo (`module <name>`, a bare `--changed <repo>`) touches every rule there
  *   [closed]  a bug closed recently names its id (`--closed`: Jira, `freshness.closed_bugs_jql`; or `--bugs`)
  *   [age]     its `verified.date` is older than `freshness.verified_max_age_days`, for the `age_trust` levels
  *   [case]    a case citing it failed (`--results <regression run dir>`) — the bug path; `/qa-bug` files it
@@ -90,16 +91,19 @@ export function parseCodeRef(ref: string | undefined): { repo: string; path: str
   return m ? { repo: m[1].toLowerCase(), path: normPath(m[2]) } : null;
 }
 
-/** [code]: an ACTIVE rule whose code_ref the change touches. A ref ending in `/` is a directory. */
-export function markCode(rules: readonly BlRule[], change: { repo: string; paths: readonly string[]; label: string }): Edit[] {
+/**
+ * [code]: an ACTIVE rule whose code_ref the change touches. A ref ending in `/` is a directory. `paths: "all"` is a
+ * change known only by its repo (`module <name>`, a release of that module): every rule implemented there is touched.
+ */
+export function markCode(rules: readonly BlRule[], change: { repo: string; paths: readonly string[] | "all"; label: string }): Edit[] {
   const repo = change.repo.toLowerCase();
-  const paths = change.paths.map(normPath);
+  const paths = change.paths === "all" ? null : change.paths.map(normPath);
   const out: Edit[] = [];
   for (const r of rules) {
     const ref = parseCodeRef(r.scope?.code_ref);
     if (r.status !== "ACTIVE" || !ref || ref.repo !== repo) continue;
-    const hit = paths.find((p) => p === ref.path || (ref.path.endsWith("/") && p.startsWith(ref.path)));
-    if (hit) out.push(suspect(r.id, `[code] ${change.label} changed ${repo}:${hit}`));
+    const hit = paths ? paths.find((p) => p === ref.path || (ref.path.endsWith("/") && p.startsWith(ref.path))) : ref.path;
+    if (hit) out.push(suspect(r.id, `[code] ${change.label} changed ${repo}${paths ? `:${hit}` : ""}`));
   }
   return out;
 }
@@ -313,16 +317,20 @@ async function main(argv: string[]): Promise<number> {
     if (resultsDir && !existsSync(resultsDir)) throw new Error(`no results dir ${resultsDir}`);
 
     // 1. Events that mark.
-    const changes: { repo: string; paths: string[]; label: string }[] = [];
+    const changes: { repo: string; paths: string[] | "all"; label: string }[] = [];
     const changeSource = flagValue(argv, "--change");
     if (changeSource) {
       const placed = placeChange(changeSource);
-      if (placed) changes.push({ repo: placed.repo, paths: [...placed.paths], label: changeSource });
-      else notes.push(`"${changeSource}" could not be placed to a repo and paths; no [code] marks (pass --changed repo:path,…)`);
+      // `module <name>` places a repo, not files (its one "path" is the module name): the whole repo changed.
+      const wholeRepo = /^module\s/i.test(changeSource.trim());
+      if (placed) changes.push({ repo: placed.repo, paths: wholeRepo ? "all" : [...placed.paths], label: changeSource });
+      else notes.push(`"${changeSource}" could not be placed to a repo and paths; no [code] marks (pass --changed repo[:path],…)`);
     }
-    for (const item of (flagValue(argv, "--changed") ?? "").split(",").filter(Boolean)) {
-      const ref = parseCodeRef(item.trim());
+    for (const item of (flagValue(argv, "--changed") ?? "").split(",").map((x) => x.trim()).filter(Boolean)) {
+      const ref = parseCodeRef(item);
       if (ref) changes.push({ repo: ref.repo, paths: [ref.path], label: "--changed" });
+      else if (/^[A-Za-z0-9._-]+$/.test(item)) changes.push({ repo: item, paths: "all", label: "--changed" });
+      else notes.push(`--changed "${item}" is neither repo nor repo:path; ignored`);
     }
     for (const c of changes) step((rules) => markCode(rules, c));
     if (changes.length) {
