@@ -357,3 +357,62 @@ Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=
 [DOM] the mission card for @td(MSN_E2E_ORDERVALUE_008.name) still shows its 'Completed' chip after the order is cancelled {HYPOTHESIS}","[ADMIN] the order's Status reads Cancelled in the Admin Orders grid, confirming the cancellation itself took effect (the point of comparison is the mission side, not whether the cancel succeeded)
 [API] loyaltyBalance(userId).currentBalance corroborates BAL_1 and BAL_2; loyaltyPointsHistory(userId) shows no new row for ORDER_NUMBER after the cancellation timestamp
 [CONSOLE] no unhandled JS errors on the Admin cancel action or the storefront re-checks","BAL_1 - BAL_0 does not equal reward_expected_total (either a co-completing mission from Preconditions did not fire as measured, or an unaccounted one did -- report the discrepancy, it invalidates the attribution for this run), Order Status does not persist as Cancelled in Admin (cancellation itself failed -- retry before concluding anything about the loyalty side), BAL_2 differs from BAL_1 in either direction without a corresponding points-history row explaining why, mission card silently disappears from the grid post-cancellation (neither confirmed-reversed nor confirmed-intact -- report as a distinct finding)","Order is already Cancelled by design of this case, no further cleanup needed; sign out","VCST-5320; source: LoyaltyMissionHandler (EntryState.Added only) + operation-log model (Earned/Redeemed only, no reversal type) in vc-module-loyalty src/; documents observed behavior against an absence in source, not a declared spec -- reversal is undeclared intent, asserting current behavior is correct per the REVERSAL judge rule (an absent reversal path is reported, not certified as either right or wrong); per-case fixture measured live 2026-08-28 with exact co-grant attribution; Archetype:LIFECYCLE Technique:ST | Behavior:loy.mission.reversal | DataProfile:profile.loy.reversal",Draft
+MSN-E2E-009,"[JOURNEY] Missions & challenges — tell completed, in-progress and urgent missions apart, add a SKU target to the cart, reach points history",Loyalty > Missions > Redesign journey,Critical,BL-A11Y-003,ECL-2.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
+[PRE:RESET_CART]
+Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
+DEADLINE FIXTURE, TIME-TERMINAL (FIFTH RULE - the case creates it right before it reads it): the first step seeds it (reuse-or-mint), because a mission seeded at N days left reads N-1 tomorrow. The seeder places one real order on @td(LOY_PERSONAL_NOORG.email) and its reward accrual completes older OrderCount missions: an accepted irreversible side effect (removing an order is itself an accrual event).
+The account is @td(LOY_PERSONAL_NOORG.email); progress is per user, so it must be this account. State on this account: @td(MSN_DL_DONE_SOON.name) is Completed with 15 days left; @td(MSN_ORDERVALUE_POINTS.name) is InProgress and partially complete; @td(MSN_DL_DUE_15.name) is InProgress with 15 days left; @td(MSN_PERSKU_OOS.name) is a PerSkuAll mission with the in-stock target @td(MSN_PERSKU_PRODUCT_A.sku) next to the out-of-stock @td(MSN_ZEROSTOCK_PRODUCT.sku). The cart is empty. Adding to the cart does not place an order, so no mission progress may move. The balance is read, not changed.","account=@td(LOY_PERSONAL_NOORG.email), completed=@td(MSN_DL_DONE_SOON.name), partial=@td(MSN_ORDERVALUE_POINTS.name), sku_mission=@td(MSN_PERSKU_OOS.name), oos_product=@td(MSN_ZEROSTOCK_PRODUCT.sku), urgent=@td(MSN_DL_DUE_15.name)","[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
+[PRE:RESET_CART]
+[ACT] run node scripts/seed-data/loyalty/seed-missions-deadline.mjs (reuses the current set while the platform clock is before @td(MSN_DL_RUN.valid_until), otherwise mints a fresh one)
+[WAIT] the seeder reports the run handle @td(MSN_DL_RUN.run_id), the validity window @td(MSN_DL_RUN.valid_until)
+[ACT] if the platform clock is later than @td(MSN_DL_RUN.valid_until), or a mission named in Test_Data is not listed for the account, report BLOCKED:PRECONDITION_UNMET, never PASS, never FAIL
+--- SCREEN: missions (the one question the page answers) ---
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] read the balance banner number as BANNER_BALANCE
+[ACT] page through the grid to the card for @td(MSN_DL_DONE_SOON.name)
+[ACT] record whether the green overlay with the 'circle-check' glyph is present, the footer label, the dot colour token, the bar colour token
+[ACT] page through the grid to the card for @td(MSN_ORDERVALUE_POINTS.name)
+[ACT] record the same four observations, the percent
+[ACT] page through the grid to the card for @td(MSN_DL_DUE_15.name)
+[ACT] record the same four observations
+[ACT] page through the grid to the card for @td(MSN_PERSKU_OOS.name)
+[ACT] record its percent, progress note as PCT_BEFORE, NOTE_BEFORE
+--- SCREEN: SKU modal ---
+[ACT] click 'Open mission' on the card for @td(MSN_PERSKU_OOS.name)
+[WAIT] the modal has rendered its rows, its summary block
+[ACT] record the stepper state, the stock badge text of the @td(MSN_PERSKU_PRODUCT_A.sku) row
+[ACT] record the stepper state, the stock badge text of the @td(MSN_ZEROSTOCK_PRODUCT.sku) row
+[ACT] raise the stepper of the @td(MSN_PERSKU_PRODUCT_A.sku) row to 2
+[WAIT] the summary block has recomputed
+[ACT] try to raise the stepper of the @td(MSN_ZEROSTOCK_PRODUCT.sku) row above 0
+[WAIT] the summary block is stable
+[ACT] record the Cart subtotal as MODAL_SUBTOTAL
+[ACT] click 'Add to cart'
+[WAIT] the result notification is visible
+--- SCREEN: cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page has rendered its line items
+[ACT] record every cart line (sku, quantity), the cart subtotal as CART_SUBTOTAL
+--- SCREEN: missions (after the add) ---
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] page through the grid to the card for @td(MSN_PERSKU_OOS.name)
+[ACT] record its percent, progress note as PCT_AFTER, NOTE_AFTER
+--- SCREEN: points history ---
+[ACT] click 'Points history' in the balance banner
+[WAIT] the points-history page has rendered with its page-level Balance
+[ACT] record the page Balance number as HISTORY_BALANCE","[DOM] the @td(MSN_DL_DONE_SOON.name) card shows the completed overlay with the check icon, a footer reading 'Mission completed' and a success dot; the @td(MSN_ORDERVALUE_POINTS.name) card shows no overlay and no 'Mission completed' {SPEC} (VCST-5957 annotation A4: completed is a check on green)
+[DOM] the @td(MSN_DL_DUE_15.name) card shows a danger dot with '15 days left' and no overlay {SPEC} (VCST-5957 PR #2524 ladder: 15 days or fewer is danger)
+[REL] the three cards differ pairwise on the pair (overlay present, dot token): completed = overlay and success, in progress = no overlay with the info bar, urgent = no overlay and danger - a customer can tell all three apart at a glance {SPEC} (VCST-5957 story purpose)
+[DOM] in the SKU modal the @td(MSN_ZEROSTOCK_PRODUCT.sku) stepper is disabled and its badge does not read in stock, while the @td(MSN_PERSKU_PRODUCT_A.sku) stepper is enabled {SPEC} (VCST-5957 PR #2524 availability; ECL-2.1)
+[MATH] the number of cart lines = 1, and that line is @td(MSN_PERSKU_PRODUCT_A.sku) at quantity = 2, with no line for @td(MSN_ZEROSTOCK_PRODUCT.sku) {SPEC} (VCST-5957 PR #2524: Add to cart writes the modal quantities)
+[REL] CART_SUBTOTAL equals MODAL_SUBTOTAL, since no discount applies to this fixture {OBSERVED} (SBTM-VCST-5957 F24: both $60.00)
+[REL] PCT_AFTER equals PCT_BEFORE and NOTE_AFTER equals NOTE_BEFORE: a cart-add moves no mission progress {SPEC} (MSN-E2E-002 cart-only half; SBTM-VCST-5957 F24)
+[REL] BANNER_BALANCE equals HISTORY_BALANCE once thousands separators are removed, and 'Points history' led to /account/points-history {SPEC} (domain map loyalty-missions s2b; SBTM-VCST-5957 L6i)","[API] loyaltyMissionProgress status, daysRemaining and percentage agree with what each card shows
+[API] the cart read by the cart page holds exactly the modal quantities
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","two different states rendering the same overlay and dot, the cart quantity differing from the modal quantity, a line for the out-of-stock product in the cart, the card percent moving after a cart-add, the cart badge dropping to 0 between the modal and the cart page (mid-journey), the banner balance differing from points-history","Empty the cart from /cart (remove every line this case added).
+Unconditional, at the end of every deadline case: node scripts/seed-data/loyalty/seed-missions-deadline.mjs --teardown --run @td(MSN_DL_RUN.run_id). The next deadline case re-seeds. The seeding order is never removed (accepted irreversible side effect, see Preconditions).",VCST-5957 · Archetype:SILENT · Technique:FLOW · Behavior:loy.mission.progress.accrue.cart-add-no-accrual · Purpose:FUNC,Draft

@@ -1,0 +1,690 @@
+{
+  "ticket": "VCST-5957",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "110981"
+  },
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "FULL",
+    "confirmed_at_1b": "FULL",
+    "escalated_reason": "§5b refusal — domain map §1 records Missions purpose UNDECLARED (D4); all six narrow-story tokens otherwise held",
+    "narrow_story_tokens": {
+      "priority": "P2 (Medium)",
+      "layer": "storefront (single)",
+      "domains": "loy (one)",
+      "chain_shape": "refines (L6 display)",
+      "surface": "obvious — /account/missions deployed",
+      "reach": "within client-app/modules/loyalty (PR #2524, 22 files)"
+    }
+  },
+  "layer": "storefront",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "loy",
+    "path": ".claude/knowledge/domain/loyalty-missions.md",
+    "rev": 4,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "all_layer_chain": false,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "mind_map": ".claude/knowledge/domain/loyalty-missions.mind-map.json",
+    "unmapped_surfaces": [
+      "mission card completed overlay + circle-check",
+      "type/points chips + mission-type→icon map with silent fallback",
+      "VcLineItems SKU modal (Product/Properties/Price per item/Quantity/Total) + #titles/#after-title slots",
+      "subtotal-estimate VcAlert",
+      "QuantityControl availability defaults (?? false)",
+      "mind map has no storefront-display nodes"
+    ],
+    "recommended": false,
+    "amended_in_run": true,
+    "amend_outcome": "AMENDED",
+    "amendments": [
+      "§2b +2 rows (missions redesign, SKU modal redesign)",
+      "new D17 ended-unswept mission API vs live CTA",
+      "D16 extended: USER account recreated 2026-09-19, MSN_PROGRESS_COMPLETED stranded on old id"
+    ],
+    "mind_map_findings": [
+      {
+        "kind": "missing-behaviour",
+        "detail": "no node covers the storefront display slice (card status/urgency/identity, SKU modal rows) — model #24–#44 fit no node except cart-add-no-accrual",
+        "run_id": "REG-2026-10-01-1243"
+      },
+      {
+        "kind": "stamped-case-holds",
+        "case": "MSN-E2E-009",
+        "node": "loy.mission.progress.accrue.cart-add-no-accrual",
+        "verdict": "PASS",
+        "run_id": "REG-2026-10-01-1243"
+      }
+    ],
+    "mind_map_build": "not-triggered — mind map exists"
+  },
+  "shape_class": {
+    "value": "not ui-kit",
+    "sources": [
+      "PR #2524 file list — all under client-app/modules/loyalty; consumes VcChip/VcButton/VcLineItems, changes none"
+    ]
+  },
+  "derived_oracle": null,
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-01",
+  "timing": {
+    "started_at": "2026-10-01T11:10:00Z",
+    "started_at_note": "approx.; 1a opening hop recorded by Jira at 2026-10-01T11:15:11Z",
+    "test_window": {
+      "start": "2026-10-01T12:16:00Z",
+      "end": "2026-10-01T13:46:00Z"
+    },
+    "reachability_minutes": 1.5,
+    "time_to_first_test_minutes": 66,
+    "first_evidence_minutes": 72,
+    "steps": {
+      "1c_minutes": 6,
+      "1d_minutes": 2,
+      "3x_minutes": 39,
+      "3a_minutes": 38,
+      "4a_minutes": 16,
+      "4v_minutes": 6.5,
+      "artifact_a_minutes": 17.5,
+      "c1_minutes": 63
+    },
+    "regression_predicted_vs_actual_minutes": {
+      "predicted": 75,
+      "actual": 63,
+      "note": "regression:plan ignores --ids (predicts whole suites); actual ran 29 cases serially"
+    },
+    "agent_dispatches": 19,
+    "ended_at": "2026-10-01T14:12:18.373Z"
+  },
+  "environment": "vcst (B2B-store; FRONT_URL / BACK_URL from config.js; Customer balance mode; preset Red)",
+  "build": {
+    "platform": "3.1075.0",
+    "theme": "2.59.0-pr-2524-3069-30691594",
+    "relevant_modules": {
+      "VirtoCommerce.Loyalty": "3.1009.0-pr-18-4411",
+      "VirtoCommerce.XCart": "3.1037.0-pr-141-fb27",
+      "VirtoCommerce.Xapi": "3.1024.0",
+      "VirtoCommerce.Marketing": "3.1007.0"
+    },
+    "declared": {
+      "theme": "vc-theme-b2b-vue-2.59.0-pr-2524-3069-30691594 (vc-deploy-dev vcst-qa, PR #6660 merged 2026-10-01T10:56Z)",
+      "loyalty": "VirtoCommerce.Loyalty_3.1009.0-pr-18-4411"
+    },
+    "deployed": {
+      "theme": "2.59.0-pr-2524-3069-30691594 (bundle missions-B3a3x_ki.js carries subtotal_hint + circle-check; footer confirmed)",
+      "loyalty": "3.1009.0-pr-18-4411 (GET /api/platform/modules)"
+    },
+    "releasedThrough": {
+      "component": "Frontend 2.56.0 / Loyalty 3.1003.0 per release-ledger §1",
+      "breaking": [],
+      "note": "Missions not in the ledger — unreleased; ground truth = ticket + source + live"
+    }
+  },
+  "release": {
+    "refusal": "no-version",
+    "refusal_reason": "tested on the unmerged PR #2524 prerelease build; no released version yet",
+    "audience": "customer",
+    "breaking": false,
+    "breaking_source": null,
+    "gate_recommendation": "not-assessed, no GO — change-scoped regression not-assessed (no release sweep); smoke not run; VCST-5841 (High) Done in Jira but not re-verified on this build (its open/critical-high draft is stale); 5-report verifier DOWNGRADED from a clean not-assessed",
+    "feature_release_gate": "not-assessed"
+  },
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer"
+    ],
+    "files": [
+      "reports/ba/Loyalty&Mixed cart/vcst-5346-loyalty-missions-customer-guide.md"
+    ],
+    "amended": true,
+    "comment_posted": true,
+    "comment_id": "110981",
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "by": "qa-lead (inline /qa-test)",
+      "confirmed": false,
+      "transition_id": "4"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "by": "qa-lead (inline /qa-test)",
+      "confirmed": true,
+      "transition_id": "8",
+      "verdict": "PASS WITH NOTES",
+      "confirmation": "operator chose PASS WITH NOTES (option text: ticket goes to TESTED), 2026-10-01"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "agent": "qa-frontend-expert",
+      "lane": "playwright-chrome",
+      "track": "1r",
+      "result": "REACHABLE (1.5 min)"
+    },
+    {
+      "agent": "ba-system-analyzer",
+      "lane": "playwright-firefox",
+      "track": "1c"
+    },
+    {
+      "agent": "ba-story-writer",
+      "lane": "none",
+      "track": "1d"
+    },
+    {
+      "agent": "test-data-engineer",
+      "lane": "none",
+      "track": "3a",
+      "result": "seed run 202610011149 (MSN_DL_*), 1 reader order"
+    },
+    {
+      "agent": "qa-testing-expert",
+      "lane": "playwright-firefox",
+      "track": "3x",
+      "result": "/qa-exploratory ticket, 39/60 min"
+    },
+    {
+      "agent": "qa-frontend-expert",
+      "lane": "playwright-chrome",
+      "track": "4a",
+      "result": "checklist 20 PASS / 8 FAIL"
+    },
+    {
+      "agent": "ui-ux-expert",
+      "lane": "playwright-edge",
+      "track": "4v",
+      "result": "a11y 4 findings, BL-UI-006 2, DESIGN-PROPERTY DRIFT"
+    },
+    {
+      "agent": "test-management-specialist",
+      "lane": "none",
+      "track": "A (2a + authoring + fix round + triage fixes)"
+    },
+    {
+      "agent": "qa-lead-orchestrator",
+      "lane": "none",
+      "track": "3-cases verifier",
+      "result": "REJECT → fix round → APPROVE"
+    },
+    {
+      "agent": "regression-orchestrator",
+      "lane": "playwright-chrome (1 slot, serial)",
+      "track": "4c",
+      "run_id": "REG-2026-10-01-1243"
+    },
+    {
+      "agent": "general-purpose (regression-triage-agent brief)",
+      "lane": "none",
+      "track": "5-triage",
+      "result": "3 batches"
+    },
+    {
+      "agent": "qa-lead-orchestrator",
+      "lane": "none",
+      "track": "5-report verifier"
+    }
+  ],
+  "epic": {
+    "key": "VCST-5099",
+    "summary": "Loyalty - Mixed Cart",
+    "status": "Draft",
+    "done_siblings": [
+      "VCST-5365",
+      "VCST-5104",
+      "VCST-5024",
+      "VCST-5103",
+      "VCST-5135",
+      "VCST-5101",
+      "VCST-5100",
+      "VCST-5023"
+    ],
+    "dependencies": [
+      "VCDZ-897 Design edits for Missions & challenges — In Progress (blocks)",
+      "VCST-6141 backend SKU mission totals — Refinement (related)"
+    ]
+  },
+  "ac_analysis": {
+    "story_acs": 0,
+    "derived_conditions": 25,
+    "note_no_written_acs": "No ACs or DoD on the ticket; conditions derived from attachments 83896/83929, the Changes artifact and PR #2524 (1d T01–T25 + gap-ACs 1–17).",
+    "gap_acs_added": 17,
+    "impl_coverage": {
+      "satisfied": 14,
+      "drift": 6,
+      "contradicts": 1,
+      "not_found": 3
+    },
+    "conditions_total": 40,
+    "conditions_with_evidence": 36,
+    "scope_cuts_accepted": [
+      "sort dropdown (Default/Newest/Ending soon/Progress)",
+      "\"Account setup\" mission kind (no backend type)",
+      "\"Rewards catalog\" CTA on the Redeem banner (previously VCST-5823, Cancelled)"
+    ],
+    "scope_cut_decision": "operator, 2026-10-01 (AskUserQuestion at 5-verdict)",
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 90,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null,
+      "ac_coverage_note": "36/40 rows carry live evidence (rows 19/20/37/38 have none); row 40 vs DESIGN = DESIGN-PROPERTY measured, token/icon diff skipped"
+    },
+    "checklist_breakdown": "40 rows: 23 PASS · 8 FAIL · 3 DRIFT (design, advisory) · 1 ADVISORY · 1 NOT BUILT (row 17, accepted cut) · 4 NOT-RUN (19, 20 not built; 37 unreachable; 38 named only)"
+  },
+  "total_cases": 40,
+  "passed": 23,
+  "failed": 8,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 16,
+  "promotion": {
+    "status": "skipped",
+    "reason": "delegated C1 (--no-promote); new cases stay Draft for /qa-test-lifecycle"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-01-1243",
+      "suites": [
+        "083c",
+        "083d"
+      ],
+      "ids": 29,
+      "pass": 10,
+      "fail": 9,
+      "blocked": 9,
+      "inconclusive": 1,
+      "pass_rate": 52.63,
+      "pass_rate_of_planned": 34.48,
+      "feature_gate": "NO-GO (52.63% < 80%) — C1 is the ticket's exact set, not a release sweep",
+      "report": "reports/regression/REG-2026-10-01-1243/regression-2026-10-01.md"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "regression_triage": {
+    "run_id": "REG-2026-10-01-1243",
+    "non_passing": 19,
+    "real_bugs": {
+      "introduced": [
+        "MSNF-090"
+      ],
+      "pre_existing": [
+        "MSNF-093",
+        "MSNF-099",
+        "MSNF-100",
+        "MSNF-102"
+      ]
+    },
+    "test_defects": {
+      "assertion": [
+        "MSNF-027",
+        "MSNF-035",
+        "MSNF-096",
+        "MSNF-078"
+      ],
+      "stale": [
+        "MSNF-060"
+      ],
+      "data": [
+        "MSNF-019",
+        "MSNF-087",
+        "MSNF-034",
+        "MSNF-101",
+        "MSNF-097",
+        "MSN-E2E-003",
+        "MSN-E2E-006",
+        "MSN-E2E-008"
+      ],
+      "steps": [
+        "MSNF-095"
+      ]
+    },
+    "fixes_applied": [
+      "MSNF-027",
+      "MSNF-035",
+      "MSNF-096",
+      "MSNF-060",
+      "MSNF-078",
+      "MSNF-019",
+      "MSNF-087",
+      "MSNF-095"
+    ],
+    "follow_ups": [
+      "test-data-engineer: owned tracked-stock PerSku target slot (MSNF-034/101)",
+      "test-data-engineer: MSN_LONG_CONTENT mission (MSNF-097)",
+      "re-seed MSN_E2E_* + carts:sweep; fix seed-missions-e2e measureCart() to delete its probe cart (MSN-E2E-003/006/008)",
+      "re-point aliases broken by the 2026-09-19 account recreation (USER, VIP)"
+    ],
+    "dismissed": 0,
+    "report": "reports/regression/REG-2026-10-01-1243/triage-report.md",
+    "prior_bugs_rechecked": [
+      "VCST-5910 fixed on this build: Date badge severity ladder (reports/bugs/fixed/BUG-loyalty-mission-date-severity-ladder-collapses.md)",
+      "VCST-5834 fixed on this build: Points history touch target (now 119×38) (reports/bugs/fixed/BUG-missions-points-history-link-below-aa-touch-target.md)",
+      "VCST-5833 parts 1–2 still present; part 3 superseded"
+    ],
+    "fixes_note": "applied in place in 083c (Draft kept); MSNF-019/087 sign-in switched to LOY_PERSONAL_NOORG (MSN_ORDERVALUE is Completed for that account); lint 0 Blocker/Critical/High, td:validate 0 failed, models:check OK, suites:lint OK"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6142",
+      "severity": "Medium",
+      "relationship": "standalone + Relates VCST-5957 (BL-A11Y on a feature ticket)",
+      "provenance": "in-scope (introduced by PR #2524)",
+      "blocks": false,
+      "summary": "Completed-mission check icon fails 3:1 contrast (2.04:1 light, 2.56:1 dark)",
+      "report": "reports/bugs/open/medium/BUG-missions-completed-check-contrast-below-3-1.md"
+    },
+    {
+      "key": "VCST-6143",
+      "severity": "Medium",
+      "relationship": "standalone + Relates VCST-5957 (BL-A11Y on a feature ticket)",
+      "provenance": "pre-existing",
+      "blocks": false,
+      "summary": "Mission progress bars expose no progressbar role or value",
+      "report": "reports/bugs/open/medium/BUG-missions-progress-bar-no-progressbar-role.md"
+    },
+    {
+      "key": "VCST-5823",
+      "severity": null,
+      "relationship": "link only — pre-existing, Cancelled, not re-filed",
+      "provenance": "pre-existing",
+      "summary": "Redeem banner Catalog CTA ships as a dead locale key"
+    },
+    {
+      "key": "VCST-5830",
+      "severity": null,
+      "relationship": "link only — pre-existing, Cancelled, not re-filed",
+      "provenance": "pre-existing",
+      "summary": "SKU modal Cart subtotal renders as a bare 0"
+    },
+    {
+      "key": "VCST-5826",
+      "severity": null,
+      "relationship": "link only — pre-existing, Cancelled, not re-filed",
+      "provenance": "pre-existing",
+      "summary": "Open mission buttons share one generic accessible name"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "SKU modal degraded target states — deleted product GUID title + 404 link, unbuyable green stock chip, over-stock counted in summary",
+      "report": "reports/bugs/open/low/BUG-missions-sku-modal-degraded-target-states.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Ended mission reads 0 days left with a live CTA until the expiry sweep",
+      "report": "reports/bugs/open/low/BUG-missions-ended-mission-zero-days-live-cta.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "Redesign polish — unnamed decorative check icon, points-chip colour card vs modal, 208 px banner crops artwork text",
+      "report": "reports/bugs/open/low/BUG-missions-redesign-visual-polish.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "pre-existing",
+      "summary": "Locale defects — ja 日残リ, en non-pluralised counts, de/fi percent, N/A untranslated",
+      "report": "reports/bugs/open/low/BUG-missions-locale-defects.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "VcPagination / VcQuantityStepper target spacing below 8 px at 375",
+      "report": "reports/bugs/open/low/BUG-shared-pagination-stepper-target-spacing-375.md"
+    },
+    {
+      "severity": "Low",
+      "provenance": "out-of-scope",
+      "summary": "Account sidebar breaks words mid-word at 768 px",
+      "report": "reports/bugs/open/low/BUG-account-sidebar-word-break-768.md"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "lane": "playwright-firefox",
+    "minutes": 39,
+    "box_minutes": 60,
+    "charter_sources": {
+      "matrix_gaps": [
+        "unknown type × L6h: covered — unreachable (Admin offers 3 goals)",
+        "dark × modal: covered — readable; #38 premise falsified"
+      ],
+      "reverse_edges": [
+        "cart add/remove → progress unchanged: covered",
+        "completed never reverts: covered (no undo offered)"
+      ],
+      "hypothesis_rows": [
+        "#25 day 0: grounded",
+        "#31 subtotal: grounded (bare 0)",
+        "#34: NOT_REACHED — no unknown type publishable"
+      ],
+      "ac_drift": [
+        "T03, T05, T08, T09, T16, T22, T24: covered",
+        "T10/T11/T13: confirmed absent"
+      ],
+      "rebase_rows": [
+        "source 5: covered per case (STALE/STILL-TRUE/UNSURE)"
+      ]
+    },
+    "hypotheses_grounded": 2,
+    "hypotheses_remaining": 1,
+    "model_amendments": 7,
+    "scenarios_new": [
+      {
+        "id": "EXP-01",
+        "fate": "PROMOTE",
+        "case_id": "MSNF-101"
+      },
+      {
+        "id": "EXP-02",
+        "fate": "PROMOTE",
+        "case_id": "MSNF-099"
+      },
+      {
+        "id": "EXP-03",
+        "fate": "PROMOTE",
+        "case_id": "MSNF-100"
+      },
+      {
+        "id": "EXP-04",
+        "fate": "PROMOTE",
+        "case_id": "MSNF-102"
+      },
+      {
+        "id": "EXP-05",
+        "fate": "PROMOTE",
+        "case_id": "4v advisory"
+      },
+      {
+        "id": "EXP-06",
+        "fate": "DECLINE"
+      },
+      {
+        "id": "EXP-07",
+        "fate": "DECLINE"
+      }
+    ],
+    "oracle_proposals": 0,
+    "bugs_surfaced": [
+      "handed to 5-triage — never filed here"
+    ],
+    "report": "reports/exploratory/SBTM-VCST-5957-2026-10-01.md"
+  },
+  "visual": {
+    "ran": true,
+    "lane": "playwright-edge (auth via --secrets; Chrome DevTools has none)",
+    "preset": "Red",
+    "axes": {
+      "a11y": "FAIL (axe 0 violations; BL-A11Y-001 PASS; 002/003/004 FAIL)",
+      "design_system": "PASS + 2 advisories",
+      "vs_design": "DRIFT — DESIGN-PROPERTY 5/6 CONFIRMED, banner 208 vs 210; token/icon/geometry diff SKIPPED: no local copy of project 518d0b90 at .design-source/518d0b90-03fa-4d3f-9183-f7e6a4033346/; 10 unresolved spec rows"
+    },
+    "invariant_failures": [
+      "BL-UI-006 VcPagination 0 px gap at 375 (shared, out of scope)",
+      "BL-UI-006 VcQuantityStepper 1 px gap at 375 (shared, out of scope)"
+    ],
+    "a11y_findings": [
+      {
+        "id": "A1",
+        "sc": "4.1.2",
+        "summary": "all CTAs named Open mission",
+        "key": "VCST-5826 (linked)"
+      },
+      {
+        "id": "A2",
+        "sc": "4.1.2/1.3.1",
+        "summary": "no progressbar role",
+        "key": "VCST-6143"
+      },
+      {
+        "id": "A3",
+        "sc": "1.4.11",
+        "summary": "dark check 2.56–2.79:1",
+        "key": "VCST-6142"
+      },
+      {
+        "id": "A4",
+        "sc": "1.4.11",
+        "summary": "light check 2.04:1 over light art",
+        "key": "VCST-6142"
+      }
+    ],
+    "advisory": [
+      "banner 208 vs 210",
+      "overlay success-400@75 vs success-600@55",
+      "card body order",
+      "bespoke banner shadow",
+      "date dots not -500 tokens",
+      "artwork crop"
+    ],
+    "manual": [
+      "screen-reader output",
+      "WCAG 2.2 2.4.11/2.5.7/3.2.6/3.3.7/3.3.8",
+      "200% zoom / 320 px reflow",
+      "reduced motion",
+      "Coffee preset not run"
+    ],
+    "report": "reports/tickets/Sprint26-19/VCST-5957/design-report.md"
+  },
+  "contract": {
+    "surface": false,
+    "surface_source": [
+      "PR #2524 diff: no .graphql / operation change; one type-only import"
+    ],
+    "state": "n/a"
+  },
+  "coverage_triage": {
+    "surface": true,
+    "scan": {
+      "invocation": "npm run tc:scope -- --domain loy --observable <18 terms> --changed-files <PR #2524 files> --json",
+      "suites_scoped": 12,
+      "rows_scanned": 316,
+      "hits": 82,
+      "unscannable": 0,
+      "unmatched_observables": [
+        "Virto Rewards balance",
+        "No deadline",
+        "Open mission",
+        "Price per item",
+        "Redeem your points",
+        "Rewards catalog",
+        "deadline"
+      ],
+      "never_audited": 73
+    },
+    "dispositions": {
+      "confirmed": 67,
+      "repair": [
+        "MSNF-034",
+        "MSNF-035",
+        "MSNF-087"
+      ],
+      "rebase": [
+        "MSNF-019",
+        "MSNF-024",
+        "MSNF-027",
+        "MSNF-078",
+        "MSNF-060",
+        "MSN-E2E-001",
+        "MSN-E2E-002",
+        "MSN-E2E-003",
+        "MSN-E2E-006",
+        "MSN-E2E-008"
+      ],
+      "superseded": []
+    },
+    "record": "dispositions held in the run (scratch); summarised in reports/regression/REG-2026-10-01-1243/triage-report.md"
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "live-discover 1b: 0 Published missions in ≤15 d / 16–30 d bands",
+      "Part 0: deadline ladder boundaries 15/16, 30/31 need divergence",
+      "PR: missing-availability target state"
+    ],
+    "dispatched": true,
+    "seed_runs": [
+      "202610011149 (3a)",
+      "202610011255",
+      "202610011258",
+      "202610011307",
+      "202610011309 (failed own validation)",
+      "202610011340 (083d)"
+    ],
+    "orders_placed": [
+      "AGENT-TEST-MSN-VCST5957-202610011149-ORD",
+      "8618141e-a94f-4a0d-a574-342cc13e3d20",
+      "d1e664a4-8d9c-4c9a-95ea-86f2e28629b2",
+      "9c36d555-9957-44a8-aa08-37cb95047ea9",
+      "3e402265-4a3a-4a06-83a7-6ee36cf1a816",
+      "AGENT-TEST-MSN-VCST5957-202610011340-ORD",
+      "CO261001-00002",
+      "CO261001-00003",
+      "CO261001-00004"
+    ],
+    "residue": "CO261001-00002/3/4 left uncancelled (operator decision); reader orders kept by design; mission runs archived per case",
+    "new_seeder": "scripts/seed-data/loyalty/seed-missions-deadline.mjs (+ specs + drift guard)",
+    "fixture_drift_found": [
+      "USER and LOYALTY_VIP_USER accounts recreated 2026-09-19T08:32Z — MSN_PROGRESS_* states stranded on old ids",
+      "MSN_ENDING_SOON expired",
+      "MSN_E2E_* (2026-09-10) consumed"
+    ]
+  },
+  "business_rules_verified": [
+    "BL-LOY-018 (C1 MSN-E2E-001 PASS)",
+    "BL-UI-004 (no overflow 375/768)",
+    "BL-A11Y-001 (modal keyboard/focus)",
+    "{SPEC} cart-add moves no mission progress (4a, C1 MSN-E2E-009)",
+    "VIOLATED: BL-A11Y-003 (VCST-6142), BL-A11Y-002/004 (VCST-6143; A1 names → VCST-5826 cancelled)",
+    "NOT CLAIMED: BL-LOY-015 (model carries it VIOLATED; bl:fresh re-verify note is not reconciled)"
+  ],
+  "appinsights": {
+    "status": "skipped",
+    "reason": "APPINSIGHTS_APP_ID unset in process.env"
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5957/screenshots/",
+  "report": {
+    "checklist": "reports/tickets/Sprint26-19/VCST-5957/testing-checklist.md",
+    "test_model": "reports/ba/test-models/VCST-5957-2026-10-01.md",
+    "design_report": "reports/tickets/Sprint26-19/VCST-5957/design-report.md",
+    "exploratory": "reports/exploratory/SBTM-VCST-5957-2026-10-01.md",
+    "regression": "reports/regression/REG-2026-10-01-1243/regression-2026-10-01.md",
+    "triage": "reports/regression/REG-2026-10-01-1243/triage-report.md"
+  }
+}

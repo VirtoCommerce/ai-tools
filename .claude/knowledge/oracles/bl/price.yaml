@@ -92,7 +92,8 @@ rules:
       kind: manual
       ref: Switch currency → prices change to values from that currency's price list (not mathematically converted). Products without prices in the new currency disappear or show "Unavailable".
     violation_signal: Prices appear to be exchange-rate conversions of the default currency; products without currency-specific prices still show a price.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] MSNF-093 failed in REG-2026-10-01-1243"
   - id: BL-PRICE-006
     title: Price list deletion behavior
     rule: Deleting a price list in Admin removes all price entries it contained. Products that relied solely on that price list become unpurchasable on the storefront. No prices should fall back to $0 — they should show as "Unavailable" or hide the "Add to Cart" button. Already-placed orders retain their historical prices.

@@ -8,6 +8,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Every bug a test run finds is triaged, then investigated, then filed — `vc-fix` `0.9.6` — 2026-10-01
+
+Before this, a `/qa-test` checklist FAIL and every `/qa-test-fast` finding went straight from a runner's
+note to `/vc-fix:qa-bug`. `/qa-triage-results` ran only on a regression `RUN_ID`, and `/qa-investigate` was
+cited but never called, because the vc-fix copy carried `disable-model-invocation: true`. Both flows now
+run the same chain: **`qa-triage-results` → `vc-fix:qa-investigate` → `/vc-fix:qa-bug`**. `vc-perf` is
+unchanged.
+
+**Changed (`vc-fix`): `qa-investigate` is model-invocable.** The flag is removed, and the description now
+says when to use the skill, because the model reads it to decide. A new handoff mode is added: run ahead of
+`/vc-fix:qa-bug`, the skill stops at its evidence gate. It returns the evidence package
+(`evidence-index.md` + `root-cause.md`), the `REPRODUCED` / `NOT_REPRODUCED` result and the owning
+layer/repo, and writes no report, so one bug gets one report. Because the skill can now trigger by
+itself, it may also start in client sessions when a bug is being investigated.
+
+**Added: `/qa-triage-results ticket <KEY>`.** `npm run triage:collect -- --ticket <KEY>`
+(`scripts/lib/regression-triage.ts`) reads the ticket's newest `testing-checklist.md`. Its FAIL / BLOCKED /
+NOT-RUN rows become `source: "checklist"` issues for the same classifier a regression run uses. If an item
+appears twice, the last row wins, so a later re-test round supersedes the first. Advisory rows (`DRIFT`,
+`UNSPEC`, `WAIVED`) are counted and not triaged. A row with no readable verdict is listed in
+`unresulted[]` and stops the triage. Ticket mode writes only `triage-report.md` and the investigation
+packages. It returns everything else to the calling flow, which stays the only writer of its checklist and
+the only caller of `qa-bug`. Phase 4 live verification now has the QA expert invoke
+`vc-fix:qa-investigate`, in both modes.
+
+**Changed: `/qa-test` and `/qa-test-fast`.** 5-triage and Stage 3 run
+`qa-triage-results ticket <KEY> --verify`, so every real-bug candidate is investigated. `qa-bug` then
+reuses each package and does not reproduce the bug again. Every exploratory and visual finding must be a
+checklist row with a verdict before triage. `/qa-test-fast` also gains the visual lane: `ui-ux-expert`
+invokes the `qa-design` skill when `visual_surface: true`, and `--no-visual` drops it
+(`skills/qa-test/visual-axis.md` is the single source for both flows).
+
 ## Tracker comment rounds: a retest of a new build is a new comment — `vc-fix` `0.9.5` — 2026-10-01
 
 Fixes #360. On VCST-5883 a round-2 retest of new builds was amended into round 1's comment, and an edit

@@ -24,7 +24,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
-| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--dry-run]` | Command |
+| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
@@ -111,7 +111,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 ### Specialized Testing (Skills — domain expertise)
 - `/qa-storybook` — Visual regression, responsive breakpoints, state variations
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
-- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project via `DesignSync`; reports `SKIPPED`, never PASS, where `/design-consent` is unavailable)
+- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
 - `/code-review-full` — 9 parallel review agents over a diff **of this repo** — not a QA flow against the VC platform
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above

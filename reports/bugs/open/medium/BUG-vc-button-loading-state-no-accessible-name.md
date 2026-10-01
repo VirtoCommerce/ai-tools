@@ -1,6 +1,6 @@
 # VcButton in loading state has no accessible name (scanner modal Browse button) `[Medium]`
 
-## Status: FILED — VCST-6096 (relates to VCST-2945)
+## Status: CONFIRMED — VCST-6096 · fix PR VirtoCommerce/vc-frontend#2528 (In review, 2026-10-01)
 
 **Severity:** Medium (P2) · **Type:** Accessibility, WCAG 4.1.2 Name, Role, Value · axe-core `button-name` (**critical**) · **Archetype:** `RENDER` (accessible name)
 **Found by:** /qa-test VCST-2945 (2026-09-28) · **standalone, pre-existing** UI-kit defect (see Provenance)

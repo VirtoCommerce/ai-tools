@@ -897,7 +897,20 @@ export async function seedInlineOrgUsers(rows, orgMap) {
       const created = await api('POST', '/api/members', contactBody(row, resolvedOrgs.map((o) => o.platform_id)));
       contact = created;
       console.log(`    ✓ create contact ${created?.id || ''} (${email})`);
-    } else if (VERBOSE) console.log(`    ↻ reuse  contact ${contact.id} (${email})`);
+    } else {
+      if (VERBOSE) console.log(`    ↻ reuse  contact ${contact.id} (${email})`);
+      // A reused contact keeps whatever organizations it was created with, so after its org is
+      // re-created (new GUID) the membership below lands but contact.organizations stays stale — and
+      // xAPI resolves the storefront session's organization from contact.organizations, not from the
+      // membership: me.contact.organizationId comes back null. Same relink as ensureMembershipContact.
+      const current = new Set(contact.organizations || []);
+      const missing = resolvedOrgs.map((o) => o.platform_id).filter((id) => !current.has(id));
+      if (missing.length && !DRY_RUN) {
+        contact.organizations = [...current, ...missing];
+        await api('PUT', '/api/members', contact, { expectStatus: [200, 204] });
+        console.log(`    ↻ link   contact ${contact.id} → +${missing.length} org(s) (${email})`);
+      }
+    }
     if (!contact?.id) continue;
 
     const userId = await ensureSecurityAccount(email, resolvePassword(row.password), contact.id, row.status || 'Approved',
