@@ -201,12 +201,12 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 
 QA agents use a **four-layer prompt architecture**:
 
-1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/oracles/business-logic.md`
+1. **Business Logic** (invariants) — what the correct business outcome is → `npm run bl:extract -- --domain <d>`
 2. **Domain Knowledge** (judgment) — what good implementation looks like
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
+Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes the BL oracle (`oracles/bl/`), `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
 
 ---
 

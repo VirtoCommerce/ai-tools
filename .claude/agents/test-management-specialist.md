@@ -36,7 +36,7 @@ Techniques and data tactics are the **toolbox you reach into after** answering #
 
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
-> **Reference:** `knowledge/oracles/business-logic.md`. Slice it, never read it whole:
+> **Reference:** the BL oracle. Slice it, never read it whole:
 > `npm run bl:extract -- --domain <d>` (`bl:extract:list` prints the domains and their sizes).
 
 - Every **BL-*** invariant → at least one test case. **BL-CROSS-*** → cross-layer verification cases
@@ -73,7 +73,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Resource | Reference |
 |---|---|
-| Business invariants | `knowledge/oracles/business-logic.md` — slice with `npm run bl:extract -- --domain <d>` |
+| Business invariants | `npm run bl:extract -- --domain <d>` |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `skills/qa-test-design/examples/` — one worked file per technique (real QA products CFG-001–CFG-010) |
 | Storefront Checklists | `skills/qa-checklist/domain-checklists.md` |
@@ -211,7 +211,7 @@ vs. REVERSAL     — for every forward effect on money / points / stock / entitl
 vs. ORACLE       — does any case assert the CURRENT behaviour where the spec says otherwise? Inverting
                    an assertion to match a known defect certifies the bug and inverts on fix — keep the
                    spec expectation and hold the case, or cut it to the bug report.
-vs. INVARIANTS   — BL-* coverage from business-logic.md? **Zero BL-* for the domain is itself the
+vs. INVARIANTS   — BL-* coverage (bl:extract)? **Zero BL-* for the domain is itself the
                    finding** — a suite with no correctness oracle records behaviour instead of judging
                    it, and cannot tell a defect from a design decision. Raise it, and route the
                    candidate invariants to /qa-review-oracles rather than writing around the hole
