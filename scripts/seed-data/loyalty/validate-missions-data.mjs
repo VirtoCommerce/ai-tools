@@ -60,6 +60,8 @@ const notes = [];
  * reverse-orphan scan below for why this guard deliberately does not claim it.
  */
 const NAME_PREFIX_E2E = 'MSN_E2E';
+/** Same treatment for the run-scoped VCST-5957 deadline set (missions-deadline-specs.mjs, `MSN_DL_*`). */
+const NAME_PREFIX_DL = 'MSN_DL';
 
 const fail = (m) => problems.push(m);
 const warn = (m) => warnings.push(m);
@@ -128,7 +130,7 @@ for (const name of Object.keys(aliases)) {
   // it here would make this guard fail on fixtures it does not own and cannot tear down; importing
   // that module to assert they exist would couple two deliberately independent sets. The reverse
   // orphan check for those aliases is that guard's job.
-  if (name.startsWith(`${NAME_PREFIX_E2E}_`)) continue;
+  if (name.startsWith(`${NAME_PREFIX_E2E}_`) || name.startsWith(`${NAME_PREFIX_DL}_`)) continue;
   if (!owned.includes(name)) fail(`[2] alias ${name} looks like a mission fixture but no spec owns it — nothing seeds or tears it down`);
 }
 

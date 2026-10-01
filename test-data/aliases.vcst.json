@@ -2464,5 +2464,103 @@
   "PUSH_DATA_BULK": {
     "batch_marker": "AGENT-TEST-bulk-20260929T1446",
     "batch_message_ids": "eeff03dc-3e43-489f-adc8-45f9eef9d6be;2a70f33f-8083-4874-a527-80a68ba00f04;2cbca8a9-6a5c-4acd-a1d5-6abbc52f83b0"
+  },
+  "MSN_DL_RUN": {
+    "run_id": "202610011309",
+    "seeded_at": "2026-10-01T13:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "clock_skew_ms": "-1358",
+    "reader_user_id": "2cdf9bb1-bfef-424c-a68f-b371e37f1bc1",
+    "order_id": "3e402265-4a3a-4a06-83a7-6ee36cf1a816",
+    "order_number": "AGENT-TEST-MSN-VCST5957-202610011309-ORD",
+    "balance_before": "42024",
+    "balance_after": "42244",
+    "order_co_completed": "",
+    "expired_observation": ""
+  },
+  "MSN_DL_NOAVAIL_PRODUCT": {
+    "productId": "79dad02e-3ed3-4bbc-aaf6-cec07d7506dc",
+    "catalogId": "6032bd3c-77dc-4035-a94f-6f60ee5abb4e",
+    "deleted_at": "2026-10-01T13:10:04.022Z"
+  },
+  "MSN_DL_DUE_01": {
+    "id": "fbadd1b5-a3c0-46df-890c-cd827823edbb",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-01",
+    "run_id": "202610011309",
+    "end_date": "2026-10-02T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "1",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_15": {
+    "id": "d29d02f4-2352-40e7-850b-698b9ffe0458",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-15",
+    "run_id": "202610011309",
+    "end_date": "2026-10-16T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "15",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_16": {
+    "id": "1949f462-0ceb-4533-92b8-f365695a28fa",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-16",
+    "run_id": "202610011309",
+    "end_date": "2026-10-17T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "16",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_30": {
+    "id": "200907da-e6cf-47d2-bd13-0b90327b0493",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-30",
+    "run_id": "202610011309",
+    "end_date": "2026-10-31T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "30",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DUE_31": {
+    "id": "598b1e23-ccbc-4a90-9743-62ecdfaa2722",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-31",
+    "run_id": "202610011309",
+    "end_date": "2026-11-01T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "31",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
+  },
+  "MSN_DL_DONE_SOON": {
+    "id": "c5b47b63-cdd3-4fe8-9e03-0e0ed64d2d86",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DONE-15",
+    "run_id": "202610011309",
+    "end_date": "2026-10-16T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "15",
+    "status_at_seed": "Completed",
+    "percentage_at_seed": "100"
+  },
+  "MSN_DL_EXPIRED": {
+    "id": "96fd9754-a388-425a-9b0c-110011a6e815",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-DUE-00",
+    "run_id": "202610011309",
+    "end_date": "2026-10-01T13:29:53.000Z",
+    "valid_until": "",
+    "days_remaining_at_seed": "1",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "2"
+  },
+  "MSN_DL_SKU_NOAVAIL": {
+    "id": "d273bb60-986f-4a7a-bf6e-9bcc1ca6f3d9",
+    "name": "AGENT-TEST-MSN-VCST5957-202610011309-SKU-NOAVAIL",
+    "run_id": "202610011309",
+    "end_date": "2026-11-30T01:09:53.000Z",
+    "valid_until": "2026-10-02T01:09:53.000Z",
+    "days_remaining_at_seed": "60",
+    "status_at_seed": "InProgress",
+    "percentage_at_seed": "0"
   }
 }
