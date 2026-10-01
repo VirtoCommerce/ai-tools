@@ -82,7 +82,7 @@ Full briefs, merge rules and the context bundle:
    **`--dry-run` stops here.** It prints the artifact list and the Stage-2 dispatch plan and writes
    nothing to the tracker.
 
-## Stage 2 — Execution (one message, ≤3 browser lanes)
+## Stage 2 — Execution (one message of ≤3 browser lanes; the visual lane follows when a slot frees)
 
 Briefs, the lane split, the data rules and teardown:
 [`../skills/qa-test-fast/execution.md`](../skills/qa-test-fast/execution.md).
@@ -98,18 +98,25 @@ Briefs, the lane split, the data rules and teardown:
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes
    `design-report.md` + `summary.json.visual`.
-4. **Join.** Every item has a Result. The created-entity ledger is complete. Teardown ran and was
-   re-read. The visual lane returned with `qa-design skill: loaded`, or is recorded as not run.
+4. **Join.** Pass every bullet of [`execution.md`](../skills/qa-test-fast/execution.md) §Join gate —
+   results, ledger, settings, the visual lane's `qa-design skill: loaded`, and every exploratory/visual
+   finding as a table row.
 
 ## Stage 3 — Verdict
 
 Triage, the verdict rules, the report shapes and the tracker comment:
 [`../skills/qa-test-fast/verdict.md`](../skills/qa-test-fast/verdict.md).
 
-1. **Triage.** Merge the checklist, exploratory and visual findings and classify each one. Visual findings
-   block or advise per [`visual-axis.md`](../skills/qa-test/visual-axis.md) §3.
-2. **Bugs.** Call `/vc-fix:qa-bug` **once per product bug**, sequentially, passing the evidence. Its
-   tracker-ticket step runs only after the user says yes.
+1. **Triage.** Invoke the Skill tool with `skill: "qa-triage-results"`, args `ticket <TICKET> --verify`. It
+   classifies every non-passing checklist row, and Phase 4 sends **every** real-bug candidate through
+   `vc-fix:qa-investigate`, which returns an evidence package for each one. It returns the confirmed bugs, the
+   checklist fixes (you apply them; you are the checklist's only writer) and the dismissed rows. A non-empty
+   `unresulted[]` sends you back to the Stage 2 join. Visual findings block or advise per
+   [`visual-axis.md`](../skills/qa-test/visual-axis.md) §3.
+2. **Bugs.** Call `/vc-fix:qa-bug` **once per confirmed bug**, sequentially, passing its investigation package
+   so that it reuses the package and does not reproduce the bug again. A `needs-review` candidate is listed in
+   `verdict.md` and not filed. Its tracker-ticket step runs only after the user says yes. Then tear down
+   by ledger id ([`execution.md`](../skills/qa-test-fast/execution.md) §Data) and re-read.
 3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)
    §5-verdict.2.
 4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
@@ -119,8 +126,8 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
    ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
-   comment, and write the returned id into `summary.json.tracker.comment_id` — a re-run amends that id
-   (Step 0.3). No status transition.
+   comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
+   (Step 0.3); a new build posts a new comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
    `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
    (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in

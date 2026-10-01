@@ -1,7 +1,8 @@
 # Stage 2 — execution, in detail
 
 One message, at most three browser lanes ([`../../rules/agents.md`](../../rules/agents.md) §Parallel
-Execution). Each lane is its own agent with its own browser session and its own pool user.
+Execution); the visual lane joins it or follows as soon as one lane returns
+([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §4). Each lane is its own agent with its own browser session and its own pool user.
 
 | Lane | Agent | Browser | Pool user | Runs |
 |---|---|---|---|---|
@@ -61,7 +62,7 @@ credential names), the lane-count rule and the verdict vocabulary are
 [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
 - **Writes** `reports/tickets/{SPRINT}/<TICKET>/design-report.md`; you write `summary.json.visual`.
 - **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
-  account (visual-axis §2).
+  account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.
 
 ## Data — made during the run
@@ -79,8 +80,10 @@ The Data cell of each checklist item decides it, using the layers in
 | `fixture <alias> mutate + npm run <seeder> [--only <part>]` | mutates a persistent fixture, observes, restores it by re-running **only** the named seeder part, and re-reads the alias |
 | `FIXTURE-GAP` | runs nothing and returns BLOCKED with the gap as the attempt |
 
-**Teardown at the join, inline — by ledger id only.** Delete every ledger id, oldest dependency last,
-then re-read each restored setting and fixture. **Never run a `seed:*:teardown` as a sweep.**
+**Teardown after Stage 3's Bugs step, inline — by ledger id only.** The ledger stays open through
+Stage 3: triage's investigation reproduces on these entities, a test-defect re-run reuses them, and
+`qa-bug` is handed their ids. Flipped settings are still restored and re-read at the join. Delete every
+ledger id, oldest dependency last, then re-read each restored setting and fixture. **Never run a `seed:*:teardown` as a sweep.**
 Persistent seeded fixtures carry the same `AGENT-TEST-` prefix, and those scripts delete them too,
 which breaks every suite that uses their aliases. An entity that could not be deleted by id is named
 under the output `verdict.md`'s Data heading and in `summary.json.test_data`, never left silent.
@@ -88,11 +91,16 @@ under the output `verdict.md`'s Data heading and in `summary.json.test_data`, ne
 ## Join gate
 
 - Every checklist item has a Result.
-- Every ledger id has a teardown outcome.
+- The ledger is complete: every created id, with its observation.
 - Every restored setting has been re-read.
 - The exploratory lane returned, or its box ran out; on overrun, proceed on what returned.
 - The visual lane returned with `qa-design skill: loaded` (else re-dispatched once), or is recorded as
   not run with its reason.
+- Every exploratory and visual finding is a row in ONE table at the end of `testing-checklist.md`,
+  which `triage:collect --ticket` reads:
+  `## X. Exploratory + visual findings` with `| # | Condition | Source | Result |`, ids `X1…`
+  (exploratory) and `V1…` (visual), Result led by `FAIL` / `BLOCKED` / `NOT-RUN` / `PASS` / `DRIFT`. A
+  finding a lane item already covers goes into that item's row. Prose is NOT collected.
 
 The orchestrator writes the Results into `testing-checklist.md`. Runners return them and never edit
 the file, so the checklist has a single writer.

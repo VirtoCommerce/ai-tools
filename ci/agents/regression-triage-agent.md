@@ -45,6 +45,13 @@ Each `IssueInput`:
 - `csvRow` — the failing test case's authored row: `Steps`, `Assertions`,
   `Test_Data`, `Preconditions`, `References`, `Automation_Status`. This is what
   tells a *test* defect from a *product* defect.
+- `source` — `regression` (above) or `checklist`: a `/qa-test` / `/qa-test-fast`
+  checklist item, collected with `triage:collect --ticket`. For `checklist`,
+  `csvRow` is the checklist row (`Condition`, `Expected`, `Oracle`, `Data`,
+  `Result` — whatever that table's headers are), `trace` is null, and the
+  test-defect classes mean a defect **in the checklist item** (a wrong Expected,
+  an `{HYPOTHESIS}` oracle, a bad Data cell), not in a suite CSV. The Result
+  cell's note is the runner's evidence; read the screenshots it names.
 - `flaky` (bool) / `priorRuns` — cross-run signal from the fingerprint store.
 - The suite's deterministic lint output (`npm run suites:review`) if provided.
 

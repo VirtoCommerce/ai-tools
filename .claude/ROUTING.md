@@ -24,7 +24,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
-| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--dry-run]` | Command |
+| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |

@@ -63,12 +63,21 @@ gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 | `BL-*` listed in the prompt but not mentioned in results | Flag as untested — request verification |
 | HIGH-confidence `REAL_BUG` in the window not reflected in agent results | Surface it — the UI test missed a backend error; carry into the finding list |
 
-### 3. Classify findings that have no RUN_ID
+### 3. Findings that have no RUN_ID — the same command, in `ticket` mode
 
-Item 0 already classified the regression run's own FAILs. The rest — failed ACs (confirmed at 5-verdict.1, folded
-back here), checklist-track agent-reported bugs, App-Insights signals — use the same taxonomy
-`/qa-triage-results` uses: real product bug vs test-defect (`TEST_STEPS_DEFECT` / `ASSERTION_DEFECT` /
-`TEST_DATA_DEFECT` / `STALE_TEST`) vs `BY_DESIGN` / `ENV` / `KNOWN_ISSUE`.
+Item 0 already classified the regression run's own FAILs. The rest — the checklist track (4a), the visual lane
+(4v), the discovery lane (3x) — go through **`/qa-triage-results ticket <ticket-key> --verify`**, not an inline
+pass. **First, every one of those findings must be a row with a verdict in `testing-checklist.md`** (visual-axis §6
+already requires this for 4v). Ticket mode reads only that file, and a finding that is not in it is never
+triaged. `--verify` sends **every** `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
+HIGH-confidence ones, so each bug that reaches 5-file arrives with an evidence package. What ticket mode returns
+and what this phase does with it: [`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §Ticket mode.
+
+Still classified inline, using that command's taxonomy: failed ACs (confirmed at 5-verdict.1, folded back here)
+and App-Insights signals. The classes are real product bug vs test-defect (`TEST_STEPS_DEFECT` /
+`ASSERTION_DEFECT` / `TEST_DATA_DEFECT` / `STALE_TEST`) vs `BY_DESIGN` / `ENV` / `KNOWN_ISSUE`. An inline real
+bug is investigated the same way before it is filed: one `vc-fix:qa-investigate` dispatch, as that command's
+Phase 4 runs it.
 
 Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defect routes to
 `/qa-review-tests <suite> --fix`, not a ticket.

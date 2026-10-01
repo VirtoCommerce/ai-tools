@@ -20,9 +20,10 @@ Step 0  route · env · prior artifacts · slug · kb ask
 Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
         Wave 2  /qa-test-model ‖ /qa-test-mind-map (update|build, no stamps)
         Wave 3  /qa-checklist --from-model  ──  stage gate   [--dry-run stops here]
-Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── teardown
+Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored
                 + visual(devtools, ui-ux-expert → Skill qa-design) when visual_surface; ≤3 at once
-Stage 3         triage → /vc-fix:qa-bug per bug → verdict → files → HTML page → ask → comment → kb
+Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per
+                confirmed bug, with its package ── teardown → verdict → files → HTML page → ask → comment → kb
 ```
 
 **Why three waves, not six parallel agents:** the dependencies are real. The mind map is derived
@@ -43,7 +44,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 |---|---|---|
 | 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
 | 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
-| 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
+| 3 | `summary.json`, `verdict.md`, `triage-report.md` + the investigation packages (via `qa-triage-results`), bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
 
@@ -52,6 +53,8 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 | "The mind map doesn't exist and nothing requires it — skip it." | Rule 4: build it (domain map present) or record the observable reason. The checklist's node tracing is where it pays off. |
 | "That node is already DRIFT in the map, so there's nothing to check." | A DRIFT is a question. Re-observe it: `HOLDS` or `RESOLVED` with evidence is the finding the next map update needs ([`context-wave.md`](context-wave.md) §Wave 3). |
 | "Pre-seed with the domain seeder first, then test." | Rule 3: data is made per item. A seeder runs only when an item's Data cell names it. A pre-seed wave is FULL's `3a`, not this flow. |
+| "The runner already saw it fail — call `qa-bug` straight away." | A runner's FAIL is a candidate, not a bug: it can be a wrong checklist item, stale data or an env blip. Triage classifies it, and `vc-fix:qa-investigate` reproduces it and finds the owning layer. Only then does `qa-bug` file it, from that package. |
+| "Triage is quick — I'll classify inline." | `qa-triage-results ticket` runs the same classifier as a regression run. Inline classification is the second copy of that taxonomy that drifts. |
 | "I'll write the bug reports into `reports/bugs/open/` myself." | Rule 1: `/vc-fix:qa-bug` does the 4-layer validation, the owning-repo resolution and the `/qa-fix` handoff block. A hand-written report has none of them. |
 | "The opening status hop is automatic." | Rule 2: this flow makes no transition, and that includes the opening one. |
 | "Contract refresh isn't needed for a verdict." | Without it, every `{DOC}` oracle on a GraphQL field is `{HYPOTHESIS}`. `schema:refresh` takes about 9 s. |
@@ -67,6 +70,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 ## Red flags — stop and re-read the six rules
 
 - You are about to `Write` a file under `reports/bugs/`.
+- You are about to call `/vc-fix:qa-bug` for a finding that has no `vc-fix:qa-investigate` package.
 - You are about to call a tracker transition.
 - The Stage-2 message contains a `seed:*` call that no checklist item's Data cell names.
 - `verdict.md` lists a Stage-1 artifact as neither produced nor SKIPPED-with-reason.
