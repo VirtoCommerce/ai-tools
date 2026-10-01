@@ -87,6 +87,28 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   return lines;
 }
 
+/**
+ * The three verdicts (VCST-6122 Decision 1). An `answer` is ONE entry, rendered exactly as a hit always
+ * was; `ambiguous` is a few headlines and the concept that tells each apart, never bodies -- the reader
+ * opens the one it means; `none` names the nearest concepts the base does hold, so "nothing recorded"
+ * is distinguishable from "recorded under another name".
+ *
+ * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating}>, concepts?:string[]}} v
+ */
+export function verdictLines(v, { prefix = 'kb ask' } = {}) {
+  if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
+  if (v.verdict === 'ambiguous') {
+    return [
+      `${prefix}: the base holds entries close to this and cannot tell which one you mean — open the one that fits (kb_show), or say none does (kb_none):`,
+      ...v.headlines.map((h) => `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`),
+    ];
+  }
+  return [
+    `${prefix}: ${HEADLINE.miss}`,
+    ...(v.concepts?.length ? [`  nearest concepts the base does hold: ${v.concepts.join(', ')}`] : []),
+  ];
+}
+
 export function showLines(r, { prefix = 'kb show' } = {}) {
   if (r.state !== 'answer') {
     const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
