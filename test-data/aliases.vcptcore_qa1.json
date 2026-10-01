@@ -283,30 +283,30 @@
     "seededAt": "2026-10-01T20:52:41.119Z"
   },
   "RETURNS_AUTH_PARTIAL_LINE": {
-    "orderId": "ae0cd39c-2c96-4fcc-805d-9c1f4175cf01",
+    "orderId": "880f56c9-232e-481e-8b00-10ac5cc6eb0a",
     "orderNumber": "AGENT-TEST-ORD-RET-DEC-PARTIAL",
     "orderLanguageCode": "en-US",
-    "lineAItemId": "80c03413-8140-42e2-ba0b-9b88525908a9",
+    "lineAItemId": "8c1c49ec-51e8-4ecf-b7a1-68d4c1050146",
     "lineASku": "20J012",
     "lineAOrderedQuantity": 500,
     "lineAMeasureUnit": "box",
-    "lineBItemId": "87a187d3-a6bb-4e74-9d7b-982ea7a614de",
+    "lineBItemId": "7bba879e-f158-488d-9447-26423237c8e0",
     "lineBSku": "19T356",
     "lineBOrderedQuantity": 12,
     "lineBMeasureUnit": null,
-    "returnId": "27be446c-0f04-483f-8b12-6eb99b15c769",
-    "returnNumber": "RET261001-00218",
+    "returnId": "d51baf23-f544-485f-b9b4-83f83f3aace2",
+    "returnNumber": "RET261001-00236",
     "returnStatus": "Requested",
     "returnVia": "xapi-buyer",
     "returnCustomerReference": "AGENT-TEST-RET-DEC-PARTIAL-R1",
     "returnLanguageCode": "en-US",
     "returnLineARequestedQuantity": 240,
-    "returnLineAReturnLineItemId": "6d0c9e2b-3541-42aa-98d8-e82cf5d4c208",
+    "returnLineAReturnLineItemId": "c758a9c0-1185-4a50-bdec-a19919adb594",
     "returnLineBRequestedQuantity": 12,
-    "returnLineBReturnLineItemId": "575751f8-632c-4ed4-8d53-02c9b58e32b3",
+    "returnLineBReturnLineItemId": "f4f14ee2-eb3e-4304-8aea-c07be2fba3b8",
     "lineAReturnableAfterSeed": 260,
     "lineBReturnableAfterSeed": 0,
-    "seededAt": "2026-10-01T20:52:41.119Z"
+    "seededAt": "2026-10-01T21:44:00.453Z"
   },
   "RETURNS_AUTH_MIXED": {
     "orderId": "43afa4f7-c416-4515-9745-888c89a661f8",
@@ -408,20 +408,20 @@
     "seededAt": "2026-10-01T20:52:41.119Z"
   },
   "RETURNS_AUTH_JOURNEY": {
-    "orderId": "5685da18-cf80-4ed1-9296-4c088fa40029",
+    "orderId": "bd9636f0-cc65-4c8b-b92c-9fff16a60c9d",
     "orderNumber": "AGENT-TEST-ORD-RET-DEC-JOURNEY",
     "orderLanguageCode": "en-US",
-    "lineAItemId": "470175ee-1558-4f34-9fdc-46065845ab10",
+    "lineAItemId": "31cbf947-0a80-484b-94b2-77c6d14d05e4",
     "lineASku": "20J012",
     "lineAOrderedQuantity": 7,
     "lineAMeasureUnit": null,
-    "lineBItemId": "5f8878ec-7460-4b5c-ab9a-257f63bb88b6",
+    "lineBItemId": "8c097983-b6f4-4d68-86ef-2e6c26669fc4",
     "lineBSku": "19T356",
     "lineBOrderedQuantity": 5,
     "lineBMeasureUnit": null,
     "lineAReturnableAfterSeed": 7,
     "lineBReturnableAfterSeed": 5,
-    "seededAt": "2026-10-01T20:52:41.119Z"
+    "seededAt": "2026-10-01T21:44:08.363Z"
   },
   "RETURNS_COLLEAGUE": {
     "userName": "test-sarah.chen-20260310@test-agent.com",
@@ -439,22 +439,22 @@
     "userName": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com"
   },
   "RETURNS_AUTH_DUP_LINE": {
-    "orderId": "ef7a54aa-580a-43c8-8630-99b414db5263",
+    "orderId": "5f8fa25c-924b-4b63-9f07-e0a2556bc07b",
     "orderNumber": "AGENT-TEST-ORD-RET-DEC-DUP",
     "orderLanguageCode": "en-US",
-    "lineAItemId": "9dfeafd9-eba1-4cd8-a39e-c3f2f061c1f8",
+    "lineAItemId": "df9c438e-9026-48ab-b98f-ad55ad06071f",
     "lineASku": "20J012",
     "lineAOrderedQuantity": 5,
     "lineAMeasureUnit": null,
-    "returnId": "fee402e9-c617-45f8-be7d-5289d08bbdf5",
-    "returnNumber": "RET261001-00225",
+    "returnId": "802f78d9-0c2f-43b3-a8d4-cec79c5ab84e",
+    "returnNumber": "RET261001-00235",
     "returnStatus": "Requested",
     "returnVia": "xapi-buyer",
     "returnCustomerReference": "AGENT-TEST-RET-DEC-DUP-R1",
     "returnLanguageCode": "en-US",
     "returnLineARequestedQuantity": 5,
-    "returnLineAReturnLineItemId": "441441be-9f41-4595-ae1d-c9c3f3fbbf78",
+    "returnLineAReturnLineItemId": "d42b15fe-170b-4c99-8743-187221ea77a8",
     "lineAReturnableAfterSeed": 0,
-    "seededAt": "2026-10-01T20:52:41.119Z"
+    "seededAt": "2026-10-01T21:43:23.121Z"
   }
 }

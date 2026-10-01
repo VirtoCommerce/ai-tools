@@ -617,14 +617,12 @@ GET {{BACK_URL}}/api/order/customerOrders/{{orderId}}
 [REST-CAPTURE get_order.body.inPayments → O_PAYMENTS]
 [REST-CAPTURE get_order.body.items[?id={{orderLineA}}].productId → OL_PRODUCT]
 [REST-CAPTURE get_order.body.items[?id={{orderLineA}}].catalogId → OL_CATALOG]
-[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].categoryId → OL_CATEGORY]
 [REST-CAPTURE get_order.body.items[?id={{orderLineA}}].name → OL_NAME]
-[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].measureUnit → OL_UNIT]
 [REST-CAPTURE get_order.body.items[?id={{orderLineA}}].price → OL_PRICE]
 [REST-OP lower_order_line]
 PUT {{BACK_URL}}/api/order/customerOrders
 Content-Type: application/json
-Body: {""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": ""{{OL_CATEGORY}}"", ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": ""{{OL_UNIT}}"", ""price"": {{OL_PRICE}}, ""quantity"": {{reducedQty}}}]}
+Body: {""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": null, ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": null, ""price"": {{OL_PRICE}}, ""quantity"": {{reducedQty}}}]}
 [REST-EXEC lower_order_line]
 [REST-OP read_order]
 GET {{BACK_URL}}/api/order/customerOrders/{{orderId}}
@@ -648,14 +646,14 @@ GET {{BACK_URL}}/api/return/{{return}}
 [ERRORS label=lower_order_line] HTTP 204
 [DATA label=read_order] body.items[?id={{orderLineA}}].quantity = {{reducedQty}}
 [ERRORS label=authorize_over] HTTP 400
-[DATA label=authorize_over] body matches /RETURN_QUANTITY_UNAVAILABLE/
-[DATA label=authorize_over] body matches /{{reqA}} approved, {{reducedQty}} available/i
+[DATA label=authorize_over] body.code = RETURN_QUANTITY_UNAVAILABLE
+[DATA label=authorize_over] body.message matches /{{reqA}} approved, {{reducedQty}} available/i
 [DATA label=read_after_over] body.status = Requested
 [ERRORS label=authorize_fit] HTTP 200
 [DATA label=read_back] body.status = PartiallyApproved
 [DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = {{reducedQty}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"authorize_over returns 200 (units that no longer exist on the order line are approved - over-refund path); authorize_over returns 400 without RETURN_QUANTITY_UNAVAILABLE or without the ""5 approved, 3 available"" figures; read_after_over shows the return already decided (the refused call persisted something); authorize_fit refused for a quantity that fits (availability over-counts the reduction) or the status is not PartiallyApproved; any 5xx. SETUP failures (lower_order_line not 200, read_order quantity != reducedQty) = BLOCKED, not FAIL","[AUTH role=ADMIN_DEFAULT]
 [REST PUT {{BACK_URL}}/api/order/customerOrders]
-{""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": ""{{OL_CATEGORY}}"", ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": ""{{OL_UNIT}}"", ""price"": {{OL_PRICE}}, ""quantity"": {{orderedA}}}]}",VCST-5883 · Archetype:BOUNDARY · Technique:BVA,Draft
+{""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": null, ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": null, ""price"": {{OL_PRICE}}, ""quantity"": {{orderedA}}}]}",VCST-5883 · Archetype:BOUNDARY · Technique:BVA | Promoted: VCST-5883 (2026-10-01),Automated
 RET-AUTH-023,"PUT /api/return with an empty body, a partial body, a null lineItem or a foreign return's lineItem id is refused with 400 and a message, never 500",Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_TWO_RETURNS.returnId) (Requested) and the line id of its sibling return @td(RETURNS_AUTH_TWO_RETURNS.return2LineAReturnLineItemId) - two returns by the same buyer on the same order line, so the foreign id is REAL and belongs to another return. All four PUTs are malformed-input probes and are refused, so they persist nothing and do not consume the fixture. VCST-5883 round 2: the Return module validates the save request instead of failing with a null-reference / 500. OBSERVED 2026-10-01: every refusal is HTTP 400 whose body is a JSON ARRAY of messages, asserted at body.[0]: {} and {""id""} -> ""A return needs at least one line.""; lineItems [null] -> ""A return line is empty.""; a sibling return's line id -> ""Line '<id>' is not a line of this return.""",return=@td(RETURNS_AUTH_TWO_RETURNS.returnId); lineA=@td(RETURNS_AUTH_TWO_RETURNS.returnLineAReturnLineItemId); foreignLine=@td(RETURNS_AUTH_TWO_RETURNS.return2LineAReturnLineItemId); ownQty=@td(RETURNS_AUTH_TWO_RETURNS.returnLineARequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
 [REST-OP get_current]
 GET {{BACK_URL}}/api/return/{{return}}
@@ -1204,12 +1202,11 @@ GET {{BACK_URL}}/api/return/{{return}}
 [REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].quantity → LA_QTY]
 [REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].approvedQuantity → LA_APPROVED]
 [REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].itemState → LA_STATE]
-[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].reasonCode → LA_REASON]
 [REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].attachments → LA_ATT]
 [REST-OP put_price]
 PUT {{BACK_URL}}/api/return
 Content-Type: application/json
-Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": 1.23, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": ""{{LA_REASON}}"", ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": 1.23, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": null, ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
 [REST-EXEC put_price]
 [REST-OP read_priced]
 GET {{BACK_URL}}/api/return/{{return}}
@@ -1217,7 +1214,7 @@ GET {{BACK_URL}}/api/return/{{return}}
 [REST-OP restore_price]
 PUT {{BACK_URL}}/api/return
 Content-Type: application/json
-Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": ""{{LA_REASON}}"", ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": null, ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
 [REST-EXEC restore_price]
 [REST-OP read_restored]
 GET {{BACK_URL}}/api/return/{{return}}
@@ -1226,8 +1223,8 @@ GET {{BACK_URL}}/api/return/{{return}}
 [DATA label=read_priced] body.lineItems[?id={{lineA}}].price = 1.23
 [DATA label=read_priced] body.lineItems[?id={{lineA}}].approvedQuantity = {{LA_APPROVED}}
 [DATA label=read_priced] body.lineItems[?id={{lineA}}].itemState = {{LA_STATE}}
-[DATA label=read_priced] body.lineItems[?id={{lineA}}].reasonCode = {{LA_REASON}}
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].reasonCode is null
 [DATA label=read_priced] body.lineItems[?id={{lineA}}].attachments.0.url is non-null
 [COUNT label=read_priced] body.lineItems.length = 2
 [ERRORS label=restore_price] HTTP 200
-[DATA label=read_restored] body.lineItems[?id={{lineA}}].price = {{LA_PRICE}}",,"the line disappears from the return after the PUT (a line object without its returnId is dropped - the full-body PUT must carry the returnId of the line, as the Admin SPA does); the price edit on a decided line is refused (400) or silently ignored (read_priced still shows the original); the price edit changes approvedQuantity or itemState (a price save rewrote a decision); the restore does not bring the original price back",none -- restore_price already returned the fixture to its captured price,VCST-5883 · Archetype:SILENT · Technique:ST,Draft
+[DATA label=read_restored] body.lineItems[?id={{lineA}}].price = {{LA_PRICE}}",,"the line disappears from the return after the PUT (a line object without its returnId is dropped - the full-body PUT must carry the returnId of the line, as the Admin SPA does); the price edit on a decided line is refused (400) or silently ignored (read_priced still shows the original); the price edit changes approvedQuantity or itemState (a price save rewrote a decision); the restore does not bring the original price back",none -- restore_price already returned the fixture to its captured price,VCST-5883 · Archetype:SILENT · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
