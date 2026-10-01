@@ -27,7 +27,7 @@ no case uses the real page size, and no case walks the pages and reconciles them
 |---|---|---|---|
 | D1 | We find the "visible", not the complex | top bug archetype is `RENDER`; 0 bugs for `STALE`/`LIFECYCLE`/`CONFIG` | `grep -rhoE '\*\*Archetype:?\*\*:? *\`?[A-Z-]+' reports/bugs` |
 | D2 | The fault model does not reach the cases | archetype on 314 of 4,886 cases (~6%); `RACE` 6, `STALE` 16 | grep `Archetype` across `regression/suites/` |
-| D3 | Presence-only assertions | ~650 presence-only cases (rough regex that ignores the case's purpose — some are legitimate happy-path / visual cases); 518 of them cite BL | estimate script, see REQ-02 (an exact one is needed) |
+| D3 | Presence-only assertions | exact (2026-10-01, `npm run assert:strength`): of the cases whose derived purpose is `FUNC`, about a quarter assert only presence; `HAPPY` cases do so at a similar rate and `VISUAL` rarely — the per-purpose figures are printed by the command, not transcribed here | REQ-02 |
 | D4 | Citing a rule ≠ checking it | 2,971 cases cite BL | grep `BL-[A-Z]+-\d+` across the suites |
 | D5 | A third of executions give no verdict | 6,267 executions / 35 runs: pass 57%, fail 10%, **blocked 22%, skipped 9%** | `reports/regression/history.json` |
 | D6 | Deep bugs are found by investigation | module TypeLoad, missions resolver, catalog paging — `Found by: manual` / monitoring | `grep -rl 'Found by:\*\* manual' reports/bugs` |
@@ -82,7 +82,7 @@ Priority: **P0** — do first, **P1** — next, **P2** — after the pilot. Stat
 - the pilot domain has a baseline figure before any change;
 - the metric is recomputed by a command, not written into prose.
 
-### REQ-02 · Assertion strength matches the case's purpose · P0 · NEW
+### REQ-02 · Assertion strength matches the case's purpose · P0 · IN-PROGRESS → `npm run assert:strength` (report only)
 **Why:** D3, the reference escape.
 **What does NOT change:** happy-path and visual/UI cases **stay and keep being written** — especially for the frontend.
 "Is visible / is displayed" is a legitimate oracle for the question "does the user see this".
@@ -100,6 +100,13 @@ The problem is not them but a **mismatch between purpose and assertion**: a func
 - the gate (Phase 2) fires only on new `FUNC` cases with no non-`PRES` assertion; existing ones go into a baseline that may only shrink;
 - no `HAPPY`/`VISUAL` case is blocked by the strength rule;
 - an exact D3 figure (broken down by purpose) replaces the rough estimate in §2.
+
+**Status (2026-10-01):** items 1–2 done as report only. The purpose is a `Purpose:` stamp in `References`
+(`cases-that-catch-bugs.md` §3a); a case without one gets a derived purpose (a data/logic `BL-*` citation or a
+`Catches:` bug → `FUNC`, a visual suite → `VISUAL`, else `HAPPY`), always reported as derived. The classifier is
+`scripts/detection/assertion-strength.ts` (`--case <ID>` shows the class and rule per line); `suites:lint` prints the
+figure as an info line. **Not yet:** stamping the corpus (no case declares a purpose yet), the ratchet on new `FUNC`
+cases with its shrink-only baseline (item 3 / Phase 2).
 
 ### REQ-03 · Library of cross-cutting invariants in code · P0 · IN-PROGRESS → `scripts/invariants/` (PAGE-WALK, SORT-SET, LAYER-PARITY)
 **Why:** D1, D2, D8 — complex bugs live between features.
@@ -433,3 +440,4 @@ IDs are a citation contract, the converter must not change them; the `vc-fix` co
 | 2026-10-01 | M5 mechanism: `npm run bl:fresh` marks and clears `SUSPECT` from code changes, closed bugs, age, case results and executable re-runs, and applies Fixed decisions; wired into `full-cycle` before Phase 1 and after the regression. Filling `scope.code_ref` per domain is the remaining step before a code change reaches a rule. |
 | 2026-10-01 | M5: `scope.code_ref` filled for every rule with a single enforcement point (located in the product repos' default branches; path and symbol verified against the clones). A `module <name>` change now reaches the rules implemented in that module. |
 | 2026-10-01 | M5: the repo has no Anthropic key, so no CI workflow runs. `bl:fresh` is therefore called from `/qa-regression` Step 6.6 after every local run (delegated `/qa-test` runs included); a key-less scheduled workflow for age / Jira / module releases is a possible next step. |
+| 2026-10-01 | REQ-02 started: `Purpose:` stamp (HAPPY / VISUAL / FUNC), an exact assertion classifier (PRES / REL / INV / DER / SHAPE) and `npm run assert:strength`, report only; `suites:lint` prints the FUNC-only-presence figure. The D3 estimate is replaced by the command's figure. |

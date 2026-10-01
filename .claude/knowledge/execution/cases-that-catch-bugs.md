@@ -67,6 +67,23 @@ And in its Assertions, at least one check that **discriminates**: a value, a cou
 equality across layers — not the mere presence of an element. Equal values on both sides of a distinction
 under test are a data defect (`.claude/rules/test-data.md` §SECOND RULE).
 
+### 3a. Declare the purpose: `Purpose:HAPPY` · `Purpose:VISUAL` · `Purpose:FUNC` (REQ-02)
+
+Every new case carries one `Purpose:` stamp in `References`:
+
+| Purpose | The case answers | Presence-only assertions are |
+|---|---|---|
+| `HAPPY` | does the path complete | fine |
+| `VISUAL` | does it look right: layout, tokens, screenshot, accessibility | fine — "is visible" is the oracle for "does the user see it" |
+| `FUNC` | is the data or the logic right | **not enough** — at least one assertion must be a relation, an invariant, a derived value or a shape |
+
+`npm run assert:strength` classifies every assertion line (`PRES` / `REL` / `INV` / `DER` / `SHAPE`; `--case <ID>`
+shows the class and the rule for each line) and lists the `FUNC` cases with only `PRES`. A case with no stamp gets
+a derived purpose there — `FUNC` when it cites a data/logic `BL-*` rule (`P0-*`, `P1-data`) or a `Catches:` bug,
+`VISUAL` for visual suites — which is a stand-in for the stamp, not a replacement. The figure is report-only today
+(it prints as an info line in `suites:lint`); the ratchet on new `FUNC` cases is the next step of REQ-02. If a
+reconciliation is free on a `HAPPY` step (cards on page 1 == page size while `totalCount` is larger), add it.
+
 ## 4. Learn from bugs: every escape becomes a case or a stated reason
 
 `npm run gaps` lists the closed bugs no suite cites, customer-reported (`support`) first, and the mind-map
