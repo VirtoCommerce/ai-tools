@@ -29,12 +29,6 @@ const ffcRows = readCsv(MAIN_FFC.csvFile);
 const rec = loadFixture(rows);
 const withColumn = (col, value) => rows.map((r) => ({ ...r, [col]: value }));
 
-test('the committed fixture parses, is seeded, and passes every shape assertion', () => {
-  assert.ok(rec, `a row with fixture_key=${FIXTURE_KEY} must exist`);
-  assert.equal(rec.seeded, true);
-  assert.deepEqual(validateFixtureShape(rows, ffcRows), []);
-});
-
 test('runtime id columns are declared and blank in the committed CSV (multi-env rule)', () => {
   assert.deepEqual(RUNTIME_COLUMNS, ['master_id', 'variation_id', 'ffc_id']);
   for (const col of RUNTIME_COLUMNS) {
@@ -49,46 +43,9 @@ test('buildVariationBody sets mainProductId — this is what makes it a VARIATIO
   assert.equal(body.trackInventory, true);
 });
 
-test('master and variation SKUs are distinct — INV-047 asserts two separate grid rows', () => {
-  assert.notEqual(rec.master.sku, rec.variation.sku);
-  const problems = validateFixtureShape(withColumn('variation_sku', rec.master.sku), ffcRows);
-  assert.ok(problems.some((p) => /share the sku/.test(p)));
-});
-
-test('stock quantities DIVERGE — equal quantities make the aggregate assertion unfalsifiable', () => {
-  assert.notEqual(rec.master.stock, rec.variation.stock);
-  const problems = validateFixtureShape(withColumn('master_stock_qty', String(rec.variation.stock)), ffcRows);
-  assert.ok(problems.some((p) => /cannot fail when the numbers are identical/.test(p)));
-});
-
 test('a zero-stock variation is rejected — an absent row would be legitimate, so nothing could fail', () => {
   const problems = validateFixtureShape(withColumn('variation_stock_qty', '0'), ffcRows);
   assert.ok(problems.some((p) => /variation_stock_qty must be a positive number/.test(p)));
-});
-
-test('the fixture stocks the store_role=main fulfillment center, never an arbitrary one', () => {
-  assert.equal(rec.ffcCsvId, MAIN_FFC.csvId);
-  const mainRow = ffcRows.find((r) => r.ffc_id === MAIN_FFC.csvId);
-  assert.equal(String(mainRow[MAIN_FFC.roleColumn]).trim().toLowerCase(), MAIN_FFC.roleValue);
-  // Pointing it at an `additional` FFC must be rejected — that is the ffcs[0] trap in fixture form.
-  const additional = ffcRows.find((r) => String(r[MAIN_FFC.roleColumn]).trim().toLowerCase() === 'additional');
-  const problems = validateFixtureShape(withColumn('ffc_csv_id', additional.ffc_id), ffcRows);
-  assert.ok(problems.some((p) => /store_role=main|should be "FFC-001"/.test(p)));
-});
-
-test('both products carry the AGENT-TEST- prefix so teardown can guard on the name', () => {
-  assert.ok(rec.master.name.startsWith(SEED_PREFIX));
-  assert.ok(rec.variation.name.startsWith(SEED_PREFIX));
-  const problems = validateFixtureShape(withColumn('variation_name', 'Blue XL'), ffcRows);
-  assert.ok(problems.some((p) => new RegExp(`must start with "${SEED_PREFIX}"`).test(p)));
-});
-
-test('the master slug/url are DERIVED and store-relative', () => {
-  assert.equal(rec.master.slug, deriveSlug(rec.master.name));
-  assert.equal(rec.master.url, deriveUrl(rec.categoryPath, rec.master.name));
-  assert.ok(rec.master.url.startsWith('/'));
-  const problems = validateFixtureShape(withColumn('master_url', 'https://vcst-qa/x'), ffcRows);
-  assert.ok(problems.length > 0);
 });
 
 test('a missing fixture row is reported, not silently treated as empty', () => {

@@ -27,7 +27,7 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 | **qa-testing-expert** | opus | green | Interactive testing, Figma comparison, debugging |
 | **ui-ux-expert** | sonnet | pink | Storybook, WCAG 2.1 AA, design system |
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
-| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators + unit tests (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
+| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators — unit tests only temporary (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
 | **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 

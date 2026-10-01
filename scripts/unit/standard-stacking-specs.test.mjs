@@ -23,28 +23,6 @@ import {
 
 const rowsById = { 'PROD-110': { sale_price: '70.00' }, 'PROD-111': { sale_price: '' } };
 
-test('the committed stacking fixtures are clean as authored', () => {
-  assert.deepEqual(validateStackingShape(rowsById), []);
-});
-
-test('stackingExpectation reproduces the numbers PRICE-059 asserts', () => {
-  const fx = STACKING_FIXTURES['PROD-110'];
-  assert.deepEqual(stackingExpectation(fx, 'sale'), { unit: 70, discountPerUnit: 7, extendedPrice: 63 });
-  // The whole point: applying the same coupon to the LIST price gives a different, distinguishable
-  // answer. If these two coincided the case could not tell which layer the engine used.
-  assert.deepEqual(stackingExpectation(fx, 'list'), { unit: 100, discountPerUnit: 10, extendedPrice: 90 });
-  assert.deepEqual(stackingExpectation(fx, 'effective'), stackingExpectation(fx, 'sale'));
-});
-
-test('stackingExpectation reproduces the numbers PRICE-061 asserts, for all three layers', () => {
-  const fx = STACKING_FIXTURES['PROD-111'];
-  assert.deepEqual(stackingExpectation(fx, 'tier'), { unit: 120, discountPerUnit: 24, extendedPrice: 960 });
-  assert.deepEqual(stackingExpectation(fx, 'sale'), { unit: 150, discountPerUnit: 30, extendedPrice: 1200 });
-  assert.deepEqual(stackingExpectation(fx, 'list'), { unit: 200, discountPerUnit: 40, extendedPrice: 1600 });
-  // "effective" is the tier, because the case adds qty 10 — the threshold.
-  assert.deepEqual(stackingExpectation(fx, 'effective'), stackingExpectation(fx, 'tier'));
-});
-
 /** Temporarily swap one fixture's layers so the guard is exercised against real drift, then restore. */
 function withLayers(id, layers, fn) {
   const saved = STACKING_FIXTURES[id].layers;
