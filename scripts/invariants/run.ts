@@ -47,13 +47,19 @@ const Q_PRODUCT = `
 
 interface Item { id: string; code: string; name: string; price?: { actual?: { amount?: number } } }
 
+/**
+ * A `200` whose body carries `errors[]` next to `data` is the silent-200 bug class: the caller gets an
+ * answer that looks fine. It is a VIOLATION of every check, never "could not run" and never a pass.
+ */
+class Silent200 extends Error {}
+
 async function gql<T>(ctx: DiscoverContext, query: string, variables: Record<string, unknown>): Promise<T> {
   const r = await executeOperation(query, { storeId: ctx.storeId, userId: ctx.userId, currencyCode: ctx.currencyCode, cultureName: ctx.cultureName, ...variables }, {
     backUrl: ctx.backUrl,
     token: ctx.token,
     timeoutMs: ctx.timeoutMs,
   });
-  // A 200 that carries errors[] is not an answer (the silent-200 class) — it must not be judged as data.
+  if (r.ok && r.errors.length && r.data) throw new Silent200(`HTTP ${r.status} carried errors[] next to data: ${r.errors.map((e) => e.message).join("; ")}`);
   if (!r.ok || r.errors.length) throw new Error(`GraphQL ${r.status}: ${r.errors.map((e) => e.message).join("; ") || r.rawBody.slice(0, 200)}`);
   return r.data as T;
 }
@@ -122,6 +128,10 @@ async function main(argv: string[]): Promise<number> {
     console.log(JSON.stringify({ check, ...v }, null, 2));
     return v.pass ? 0 : 2;
   } catch (e) {
+    if (e instanceof Silent200) {
+      console.log(JSON.stringify({ check, pass: false, violations: [e.message] }, null, 2));
+      return 2;
+    }
     console.error(`inv:run ${check}: could not run — ${(e as Error).message}`);
     return 3;
   }

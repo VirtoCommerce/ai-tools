@@ -22,7 +22,6 @@ rules:
       ref: Set stock to 0 in Admin → storefront shows "Sold out" label → "Add to Cart" disabled/hidden → attempt via xAPI `addToCart` → error response.
     violation_signal: '"Add to Cart" still active when stock=0; product purchasable via API despite zero stock; no visual indicator of out-of-stock.'
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-001
   - id: BL-CAT-002
     title: Virtual catalog inherits physical catalog changes
     rule: A virtual catalog is a view over physical catalog data — not a copy. Any change to a product in the physical catalog (price, description, stock, images) is immediately reflected in all virtual catalogs that include it. There is no manual sync or publish step for catalog data propagation. Deletion of a product from the physical catalog removes it from all linked virtual catalogs.
@@ -38,7 +37,6 @@ rules:
       ref: Edit product name in physical catalog → open virtual catalog → name updated immediately. Delete product from physical catalog → virtual catalog no longer shows it. Add product to physical catalog in a linked category → appears in virtual catalog.
     violation_signal: Virtual catalog shows stale data after physical catalog edit; deleted product still appears in virtual catalog; changes require manual sync.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-002
   - id: BL-CAT-003
     title: Search index lag window
     rule: After an admin change (product create/update/delete, price change, stock update), there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, storefront search/listing may show stale results. However, PDP (direct product page) and cart always use live data. After reindex, search results must match the current state.
@@ -54,7 +52,6 @@ rules:
       ref: Change product name in Admin → immediately search on storefront → may show old name (acceptable within 60s). Wait 60s → search shows new name. Direct product URL shows new name immediately (not from search index).
     violation_signal: Stale data persists beyond 120s (2 reindex cycles); PDP shows stale data (should be live); reindex doesn't resolve the discrepancy.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-003
   - id: BL-CAT-004
     title: Category visibility toggle
     rule: Setting a category to "invisible" (visible=false) in Admin hides it from storefront navigation menus and category pages. However, products within a hidden category remain accessible via direct URL, search, and other categories they belong to. Subcategories of a hidden category also become hidden from navigation.
@@ -68,7 +65,6 @@ rules:
       ref: Hide category in Admin → storefront menu no longer shows it → products still accessible via search or direct URL → subcategories also hidden from nav. Unhide → category and subcategories return to nav.
     violation_signal: Hidden category still in navigation menu; products in hidden category inaccessible via direct URL; subcategories still visible when parent is hidden.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-004
   - id: BL-CAT-005
     title: Product requires virtual catalog assignment for storefront
     rule: A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -84,7 +80,6 @@ rules:
       ref: Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
     violation_signal: Product visible on storefront without virtual catalog assignment; product appears in wrong store's catalog; physical-only product accessible via search.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-005
   - id: BL-CAT-006
     title: Configurable product requires all sections filled
     rule: A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.
@@ -100,7 +95,6 @@ rules:
       ref: Open configurable product → "Add to Cart" disabled → fill first required section → still disabled (more sections required) → fill all required sections → "Add to Cart" enabled. Leave an optional section empty → still enabled.
     violation_signal: '"Add to Cart" enabled with incomplete required sections; configurable product added without configuration; configuration selections not reflected in cart line item.'
     status: SUSPECT
-    history: docs/decisions/bl/cat.md#bl-cat-006
     suspect_reason: VCST-4829 (Cancelled) endorses the server-side block but not the rule's "Add to Cart disabled" UI clause; the docs name a "Customize" button. Re-run the check on the current build; the rule text is updated from the resolution, not by hand.
   - id: BL-CAT-007
     title: Multi-FFC inventory aggregation
@@ -115,7 +109,6 @@ rules:
       ref: 'Set FFC-A = 10, FFC-B = 5 → storefront shows "In stock" with effective availability of 15. Place order for 12 → FFC-A decremented first (allocation logic). Check remaining: FFC-A + FFC-B totals correct.'
     violation_signal: Storefront shows stock from only one FFC; total doesn't match sum; decrement applied to wrong FFC; stock goes negative in one FFC while another has units.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-007
   - id: BL-CAT-008
     title: Unit-of-measure CRUD integrity
     rule: Creating, renaming, or deleting a unit-of-measure group or unit in the Catalog module persists atomically and leaves no orphaned data. Deleting a group removes its units; a deleted group/unit no longer appears in the list or in product UoM dropdowns; group integrity is preserved after a unit delete.
@@ -129,7 +122,6 @@ rules:
       ref: "Create UoM group → appears in list (`POST /api/catalog/measures/search`); rename → list reflects new name; delete group → group and its units absent (`DELETE /api/catalog/measures?ids=…`; verify via `GET /api/catalog/measures/{id}`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measures/{id}`). Note: units are **nested inside** the Measure (group) entity and saved via the group (`POST`/`PUT /api/catalog/measures`, partial `PATCH /api/catalog/measures/{id}`) — there is no separate unit endpoint."
     violation_signal: Group/unit not created; edit not persisted; delete leaves orphaned units or stale API data; group integrity broken after a unit deletion.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-008
   - id: BL-CAT-009
     title: Category CRUD & cascade-delete integrity
     rule: Creating, editing, or deleting a category persists atomically. Required fields (Name, Code) are enforced on create. Deleting a category **cascades** to its subcategories and its descriptions, and unassigns (does not orphan) products per cascade rules. A cancelled delete makes no change.
@@ -143,7 +135,6 @@ rules:
       ref: Create category → appears in tree + `GET /api/catalog/categories`. Edit name → persists. Delete-confirm removes it + subcategories (`GET …/{subId}` → 404) + descriptions; Delete-cancel leaves it intact.
     violation_signal: Required-field validation bypassed; category not in tree after save; subcategories/descriptions orphaned after delete; category deleted despite Cancel.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-009
   - id: BL-CAT-010
     title: Catalog link-permission enforcement (RBAC)
     rule: Linking a whole **category** into another category/catalog requires the `catalog:categories:link` permission; linking a **product/variation** requires `catalog:products:link`. Enforcement is **server-side** on `POST /api/catalog/listentrylinks` (403 without the permission) **and** reflected in the Admin mapping picker (category rows non-selectable without `categories:link`; product/item rows follow `products:link`). With full permissions both remain selectable (backward-compatible default).
@@ -159,7 +150,6 @@ rules:
       ref: Full-perm user → mapping picker shows category + item checkboxes. Role minus `categories:link` → category rows non-selectable, product rows still selectable; `POST /api/catalog/listentrylinks` with a category entry → 403, with a product entry → 2xx. Both permissions registered with human-readable descriptions (`GET /api/platform/security/permissions`).
     violation_signal: Categories selectable / category link created despite missing `categories:link` (server enforcement absent); product link blocked when `products:link` retained (over-restriction); permission renders a raw i18n key instead of a description.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-010
   - id: BL-CAT-011
     title: Cross-catalog move cascades CatalogId to owned entities, not linked
     rule: Moving a category **across** physical catalogs cascades the destination `CatalogId` to every **owned** descendant category and **owned** product in the moved subtree. An **intra-catalog** move leaves `CatalogId` unchanged (no spurious cascade). A **linked (non-owned)** product referenced by the moved subtree is never rewritten, relocated, duplicated, or deleted.
@@ -173,7 +163,6 @@ rules:
       ref: Cross-catalog move → parent + child + owned products report the destination `CatalogId` (`GET …/categories|products/{id}`; `POST /api/catalog/listentries/move`). Intra-catalog move → `CatalogId` unchanged. Linked foreign-catalog product → `CatalogId` stays its owner catalog.
     violation_signal: Descendant/product retains source `CatalogId` after move → mis-indexed/orphaned; intra-catalog move changes `CatalogId` (over-eager cascade); linked non-owned product rewritten to the destination catalog.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-011
   - id: BL-CAT-012
     title: Category dictionary-value & metadata management
     rule: Adding or removing a category **tax-type dictionary value**, **SEO** record (store-scoped), **image**, or **localized description** persists to the category and is **scoped to the value acted on** — deleting one dictionary value must not remove other shared values. SEO/description changes render on the storefront, respecting locale.
@@ -185,4 +174,3 @@ rules:
       ref: Add a tax-type value → in dropdown + `GET …/{id}`. Delete a self-created value → only that value gone, shared values intact. Add SEO/image/description → persists + renders on the storefront for the correct locale.
     violation_signal: Save fails silently; a shared/pre-existing dictionary value deleted instead of the target; SEO/description not rendered on storefront; localized description shown under the wrong locale.
     status: ACTIVE
-    history: docs/decisions/bl/cat.md#bl-cat-012

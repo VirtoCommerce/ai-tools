@@ -48,12 +48,12 @@ test("the rendered markdown still has every field bl:lint requires", () => {
   }
 });
 
-test("no line of an entry is lost: each lands in a record field or in its history block", () => {
+test("no line of an entry is dropped silently: each lands in a record field or in its leftover", () => {
   const rules = new Map<string, BlRule>();
   const hist = new Map<string, string>();
   for (const d of domains) {
     for (const r of d.file.rules) rules.set(r.id, r);
-    for (const h of d.history) hist.set(h.id, h.text);
+    for (const h of d.leftover) hist.set(h.id, h.text);
   }
   for (const s of sliceOracle(text)) {
     const r = rules.get(s.id)!;
@@ -112,10 +112,10 @@ test("a qualified Rule pair, a heading note, a no-doc Docs line and dropped fiel
   assert.deepEqual(r.check, { kind: "manual", ref: "Save, then load." });
   assert.deepEqual(r.source, [{ kind: "code", ref: "vc-module-thing `ThingService.cs`" }]);
   assert.equal(r.trust, "UNREVIEWED");
-  assert.equal(r.history, "docs/decisions/bl/thing.md#bl-thing-001");
-  const h = d.history[0].text;
+  assert.equal("history" in r, false);
+  const h = d.leftover[0].text;
   for (const kept of ["superseded by BL-THING-002", "qa-backend-expert (API)", "N/A — not documented", "**Promoted:** 2026-07-01"]) {
-    assert.ok(h.includes(kept), `history lost: ${kept}`);
+    assert.ok(h.includes(kept), `leftover lost: ${kept}`);
   }
   assert.deepEqual(compareOracles(FIXTURE, renderDomain(fromYaml(toYaml(d.file)))), []);
 });
@@ -141,7 +141,7 @@ const EDGES = `## Domain 1: Things (BL-THING)
 test("no severity tag, a note after the tag, a qualified Source and a ### Note are kept and round-trip", () => {
   const [d] = convertOracle(EDGES, roster);
   const [untagged, noted] = d.file.rules;
-  const hist = (id: string) => d.history.find((h) => h.id === id)?.text ?? "";
+  const hist = (id: string) => d.leftover.find((h) => h.id === id)?.text ?? "";
   assert.equal(untagged.title, "Foo");
   assert.equal(untagged.priority, "");
   assert.match(hist(untagged.id), /Heading note:\*\* `\[DEPRECATED\]`/);

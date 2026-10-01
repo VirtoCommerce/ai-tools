@@ -112,12 +112,7 @@
         },
         "status": { "enum": ["ACTIVE", "SUSPECT", "RETIRED"] },
         "suspect_reason": { "type": ["string", "null"] },
-        "owner": { "type": "string", "minLength": 1 },
-        "history": {
-          "description": "Where the write-ups, dates and rationale live, e.g. docs/decisions/bl/cart.md#bl-cart-004.",
-          "type": "string",
-          "minLength": 1
-        }
+        "owner": { "type": "string", "minLength": 1 }
       },
       "allOf": [
         {

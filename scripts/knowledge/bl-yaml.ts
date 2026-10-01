@@ -10,12 +10,13 @@
  *   - `Docs` → a `doc` source, `Source` → a `code` / `ac` / `live` / `other` source by its wording;
  *   - `Agents` → the domain's `agents` list (§7.2: agents are derived from the domain, not stored per rule);
  *   - every other line of the entry (`Promoted`, `Amended`, `Live`, `Status`, `Severity rationale`,
- *     `Suite coverage`, the per-rule `Agents` detail, free prose) → the domain's history file, verbatim.
+ *     `Suite coverage`, the per-rule `Agents` detail, free prose) → the entry's leftover, printed by `--write`
+ *     for a person to place by hand. No file holds it: the per-domain history files were removed 2026-10-01.
  * Every record gets `trust: UNREVIEWED` and `status: ACTIVE`. Setting trust, `code_ref` and `verified`
  * is the per-domain triage of M2/M3, which reads sources this script cannot judge.
  *
- * NOTHING IS LOST. Each non-blank line of an entry lands either in a record field or in its history
- * block. `scripts/unit/bl-yaml.test.ts` asserts that over the real oracle.
+ * NOTHING IS DROPPED SILENTLY. Each non-blank line of an entry lands either in a record field or in its
+ * leftover. `scripts/unit/bl-yaml.test.ts` asserts that over the real oracle.
  *
  * THE ROUND TRIP IS JUDGED BY THE GATE'S PARSER. `--check` converts every domain, serialises it to YAML,
  * parses it back, renders markdown, and runs `parseOracle` (the `bl:lint` parser) over both texts: the
@@ -29,9 +30,9 @@
  * Usage:
  *   npm run bl:convert -- --check                    # migrated sections = their render; the rest round-trip
  *   npm run bl:render                                # regenerate every migrated domain's section in place
- *   npm run bl:convert -- --domain srch --write      # write bl/<domain>.yaml + its history file; refuses a
- *                                                    # domain that fails the round trip, and existing files
- *                                                    # unless --force is given
+ *   npm run bl:convert -- --domain srch --write      # write bl/<domain>.yaml and print its leftover; refuses
+ *                                                    # a domain that fails the round trip, and an existing
+ *                                                    # file unless --force is given
  *   npm run bl:convert -- --render <file.yaml>       # the domain's markdown section, to stdout
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -45,10 +46,9 @@ import { BRACKET_TAG_RE, DOMAIN_RE, ENTRY_RE, VALID_TAGS, isField, parseOracle, 
 import { BL_PATH, listDomains } from "./extract-bl.ts";
 import { flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
 
-// Posix separators: these also become the `history` anchor and the YAML `$schema` link, and fs accepts `/` on Windows.
+// Posix separators: these also become the YAML `$schema` link, and fs accepts `/` on Windows.
 const SCHEMA_PATH = "templates/bl.schema.json";
 const YAML_DIR = ".claude/knowledge/oracles/bl";
-const HISTORY_DIR = "docs/decisions/bl";
 
 // A field block starts only at column 0. An indented `  - **X:**` sub-bullet stays verbatim inside the block
 // above it; `parseOracle` splits it off as its own field, but it does so identically on both sides of the
@@ -74,17 +74,16 @@ export interface BlRule {
   status: "ACTIVE" | "SUSPECT" | "RETIRED";
   suspect_reason?: string | null;
   owner?: string;
-  history?: string;
 }
 export interface BlDomainFile {
   domain: { heading: string; prefixes: string[]; agents: string[]; intro?: string };
   rules: BlRule[];
 }
-/** One converted domain: the record file, plus what BL 2.0 moves out of the record, per rule id. */
+/** One converted domain: the record file, plus the lines the record does not carry, per rule id. */
 interface ConvertedDomain {
   slug: string;
   file: BlDomainFile;
-  history: { id: string; text: string }[];
+  leftover: { id: string; text: string }[];
 }
 
 /**
@@ -135,10 +134,6 @@ function trimBlock(lines: string[]): string[] {
   return out;
 }
 
-function historyAnchor(slug: string, id: string): string {
-  return `${HISTORY_DIR}/${slug}.md#${id.toLowerCase()}`;
-}
-
 /**
  * A `### BL-…:` heading's text after the colon, split three ways: the title (before the severity tag), the
  * severity, and the heading note — every tag in front of the severity plus everything after it, verbatim.
@@ -159,12 +154,12 @@ export function splitHeading(tail: string): { title: string; priority: string; n
 }
 
 /** Convert one entry: its `### BL-…` heading line plus the body lines under it. */
-function convertEntry(heading: string, body: string[], slug: string, roster: readonly string[]) {
+function convertEntry(heading: string, body: string[], roster: readonly string[]) {
   const m = heading.match(ENTRY_RE)!;
   const id = m[1];
   const { title, priority, note } = splitHeading(m[2]);
-  const history: string[] = [];
-  if (note) history.push(`- **Heading note:** ${note}`);
+  const leftover: string[] = [];
+  if (note) leftover.push(`- **Heading note:** ${note}`);
 
   // Split the body into top-level field blocks; lines before the first field are prose.
   const blocks: { label: string; lines: string[] }[] = [];
@@ -175,7 +170,7 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     else if (blocks.length) blocks[blocks.length - 1].lines.push(line);
     else preface.push(line);
   }
-  history.push(...preface.filter((l) => l.trim() && l.trim() !== "---"));
+  leftover.push(...preface.filter((l) => l.trim() && l.trim() !== "---"));
 
   const core: { label: string; text: string }[] = [];
   const source: BlSource[] = [];
@@ -191,7 +186,7 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     else if (isField(b.label, "Docs") && text && !NO_DOC_RE.test(text.replace(/[*_`]/g, "").trim())) source.push({ kind: "doc", ref: fold(own, "Docs") });
     else {
       if (b.label === "Agents") agents.push(...agentsIn(text, roster));
-      history.push(raw);
+      leftover.push(raw);
     }
   }
 
@@ -207,8 +202,7 @@ function convertEntry(heading: string, body: string[], slug: string, roster: rea
     violation_signal: fold(core, "Violation signal"),
     status: "ACTIVE",
   };
-  if (history.length) rule.history = historyAnchor(slug, id);
-  return { rule, agents, history: history.join("\n") };
+  return { rule, agents, leftover: leftover.join("\n") };
 }
 
 /** Split the oracle into its domains and convert each. Preamble and trailing sections are not rules. */
@@ -245,17 +239,17 @@ export function convertOracle(text: string, roster: readonly string[]): Converte
 
     const agents: string[] = [];
     const rules: BlRule[] = [];
-    const history: { id: string; text: string }[] = [];
+    const leftover: { id: string; text: string }[] = [];
     for (const e of entries) {
-      const c = convertEntry(e.heading, e.body, slug, roster);
+      const c = convertEntry(e.heading, e.body, roster);
       rules.push(c.rule);
       for (const a of c.agents) if (!agents.includes(a)) agents.push(a);
-      if (c.history) history.push({ id: c.rule.id, text: c.history });
+      if (c.leftover) leftover.push({ id: c.rule.id, text: c.leftover });
     }
     const introText = trimBlock(intro).join("\n").trim();
     const domain: BlDomainFile["domain"] = { heading, prefixes, agents };
     if (introText) domain.intro = introText;
-    out.push({ slug, file: { domain, rules }, history });
+    out.push({ slug, file: { domain, rules }, leftover });
     i = j;
   }
   return out;
@@ -283,20 +277,9 @@ export function renderDomain(file: BlDomainFile): string {
     for (const s of r.source.filter((x) => x.kind !== "doc")) lines.push(`- **Source:** ${s.ref}`);
     lines.push(`- **Trust:** ${r.trust}`);
     if (r.status !== "ACTIVE") lines.push(`- **Lifecycle:** ${r.status}${r.suspect_reason ? ` — ${r.suspect_reason}` : ""}`);
-    if (r.history) lines.push(`- **History:** \`${r.history}\``);
     parts.push(lines.join("\n"));
   }
   return parts.join("\n\n") + "\n";
-}
-
-function renderHistory(d: ConvertedDomain): string {
-  const head = [
-    `# BL history — ${d.file.domain.heading}`,
-    "",
-    "Generated by `npm run bl:convert` from `.claude/knowledge/oracles/business-logic.md`. It holds, verbatim, the",
-    "lines of each rule that the BL 2.0 record does not carry (`docs/bug-detection-requirements.md` §7.2).",
-  ].join("\n");
-  return [head, ...d.history.map((h) => `## ${h.id}\n\n${h.text}`)].join("\n\n") + "\n";
 }
 
 export function toYaml(file: BlDomainFile): string {
@@ -391,7 +374,7 @@ export function compareOracles(beforeText: string | Invariant[], afterText: stri
   for (const b of before) {
     const a = byId.get(b.id);
     if (!a) continue;
-    // The heading note moves to history by design, so the title the gate must read afterwards is its reading
+    // The heading note moves to the leftover by design, so the title the gate must read afterwards is its reading
     // of the heading WITHOUT that note, not of the whole original heading.
     const title = gateTitle(splitHeading(b.heading).title);
     if (a.title !== title) problems.push(`${b.id}: title "${title}" → "${a.title}"`);
@@ -454,12 +437,10 @@ function main(argv: string[]) {
       return 2;
     }
     const yamlPath = `${YAML_DIR}/${d.slug}.yaml`;
-    const historyPath = `${HISTORY_DIR}/${d.slug}.md`;
     // A migrated domain's YAML carries its M2/M3 triage (trust, code_ref, verified), and a fresh conversion
     // resets all of it to UNREVIEWED. Overwriting is an explicit act, never a re-run's side effect.
-    const existing = [yamlPath, historyPath].filter((p) => existsSync(p));
-    if (existing.length && !argv.includes("--force")) {
-      console.error(`bl:convert: ${existing.join(" and ")} already exist; re-converting resets every record to trust: UNREVIEWED. Pass --force to overwrite.`);
+    if (existsSync(yamlPath) && !argv.includes("--force")) {
+      console.error(`bl:convert: ${yamlPath} already exists; re-converting resets every record to trust: UNREVIEWED. Pass --force to overwrite.`);
       return 2;
     }
     // The --check gate scoped to this domain: nothing schema-invalid or lossy is written.
@@ -470,10 +451,10 @@ function main(argv: string[]) {
       return 1;
     }
     mkdirSync(YAML_DIR, { recursive: true });
-    mkdirSync(HISTORY_DIR, { recursive: true });
     writeFileSync(yamlPath, `# yaml-language-server: $schema=${posix.relative(YAML_DIR, SCHEMA_PATH)}\n${toYaml(d.file)}`);
-    writeFileSync(historyPath, renderHistory(d));
-    console.log(`wrote ${yamlPath} (${d.file.rules.length} rules) and ${historyPath}`);
+    console.log(`wrote ${yamlPath} (${d.file.rules.length} rules)`);
+    // No file holds what a record does not carry; print it so a person can place what still matters.
+    for (const l of d.leftover) console.log(`\nnot in the record — ${l.id}:\n${l.text}`);
     console.log(`bl/${d.slug}.yaml now owns this domain: triage it (trust, source, code_ref, check), then npm run bl:render.`);
     return 0;
   }

@@ -183,7 +183,7 @@ contribution that genuinely needs a durable new case is itself a reason to route
 > classify as PRE-EXISTING or OUT-OF-SCOPE, neither of which fails the ticket. **Two narrowings did not fix
 > that; the third was deletion.** The argument is kept here because it is the reasoning a future proposal
 > to re-add a cross-suite sweep to this pipeline has to answer. This began as item 10 of
-> `docs/agentic-system-audit-2026-09-07.md` §6 (`--release-sweep` there).
+> the 2026-09-07 agentic-system audit §6 (`--release-sweep` there; the audit file was removed 2026-10-01).
 
 | Runs by default | Opt-in | Not on FAST at all |
 |---|---|---|
