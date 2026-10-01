@@ -14,6 +14,9 @@
 //   targets answered    targets answered with a labelled entry
 //   paraphrase R@10     paraphrase targets with a labelled entry among the first 10 candidates --
 //                       the candidate list, before any decision, which is what M7 is gated on
+//   targets resolved    targets answered with a labelled entry OR ended in `ambiguous` with one among
+//                       the headlines -- the gate the operator set on 2026-10-01 in place of
+//                       "targets answered", which top-1 retrieval caps well below 0.80
 //   ambiguous share     rows that ended in `ambiguous`, and how many of those carried a right entry
 //   tokens/ask          chars / 4 of the text the agent would be handed, the same rule for every
 //                       decider, so the comparison is fair even though the absolute value is rough
@@ -170,6 +173,7 @@ export function metrics(outs) {
     answerPrecision: ratio(answers.filter((o) => o.correct).length, answers.length),
     controlsNone: ratio(controls.filter((o) => o.verdict === 'none').length, controls.length),
     targetsAnswered: ratio(targets.filter((o) => o.correct).length, targets.length),
+    targetsResolved: ratio(targets.filter((o) => o.correct || o.ambiguousRight).length, targets.length),
     paraphraseRecall10: ratio(paraphrases.filter((o) => o.recalled).length, paraphrases.length),
     targetsRecall10: ratio(targets.filter((o) => o.recalled).length, targets.length),
     ambiguousShare: ratio(ambiguous.length, outs.length),
@@ -215,6 +219,7 @@ function printSplit(name, m) {
   console.log(`\n${name}  (${m.rows} rows)`);
   console.log(`  answer precision   ${pct(m.answerPrecision)}${m.wrongAnswers.length ? `   wrong: ${m.wrongAnswers.join(' ')}` : ''}`);
   console.log(`  controls none      ${pct(m.controlsNone)}`);
+  console.log(`  targets resolved   ${pct(m.targetsResolved)}`);
   console.log(`  targets answered   ${pct(m.targetsAnswered)}   (a right entry anywhere in the returned list: ${pct(m.top3)})`);
   console.log(`  paraphrase R@10    ${pct(m.paraphraseRecall10)}   (all targets: ${pct(m.targetsRecall10)})`);
   console.log(`  ambiguous share    ${pct(m.ambiguousShare)}   (carrying a right entry: ${pct(m.ambiguousRight)})`);

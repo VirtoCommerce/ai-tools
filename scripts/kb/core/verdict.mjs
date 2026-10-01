@@ -32,6 +32,18 @@ export const FEATURES = [
   'idfCoverage', 'sentenceStrength', 'sentenceMargin',
 ];
 
+/**
+ * The features the MODEL reads; every feature above is still computed and logged with the verdict.
+ * Chosen by leave-one-out cross-validation on dev (56 rows, 25 positives), never on calibration:
+ *   all eleven             log-loss 0.425  AUC 0.890   (l2 5, its best)
+ *   the eight of Decision 6  -- design's own list --   AUC 0.737-0.879
+ *   these four             log-loss 0.387  AUC 0.907   (l2 1)
+ * Concept coverage, coordinate and surface match carry no information on dev that the four do not;
+ * dev holds few coordinate questions, so that verdict is weak for coordinates and is re-checked when
+ * the set grows. `unmappedShare` is not a model input: it acts through its own rule (never `none`).
+ */
+export const MODEL_FEATURES = ['idfCoverage', 'sentenceStrength', 'sentenceMargin', 'margin'];
+
 const BM25_CEILING = 2.2; // k1 + 1: the most one matching word can contribute to a sentence score
 
 /** How many headlines an `ambiguous` verdict carries. */
@@ -170,7 +182,7 @@ export function answerThreshold(scored, { precision = 0.95 } = {}) {
  * @param {Array<{p:number, kind:'target'|'control', unmappedShare:number, rightInTop:boolean}>} scored
  *   rows below the answer threshold
  */
-export function lowerThresholds(scored, { controlsNone = 0.9, unmappedGrid = [0.5, 0.6, 0.7, 0.8, 0.9] } = {}) {
+export function lowerThresholds(scored, { controlsNone = 0.9, unmappedGrid = [0.5, 0.6, 0.7, 0.8, 0.9, 1] } = {}) {
   const controls = scored.filter((s) => s.kind === 'control');
   const ps = [0, ...new Set(scored.map((s) => s.p))].sort((a, b) => a - b);
   let best = null;
