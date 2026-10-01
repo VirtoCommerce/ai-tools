@@ -25,8 +25,14 @@ deliver one conclusion — and left them to reconcile which version is current.
 3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
-4. **A second comment requires the operator to ask for one**, for a reason they state. Not because
-   the run learned something new — a run always learns something new.
+4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
+   state. Learning something new about the same build is an amend — a run always learns something new.
+5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
+   shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
+   earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
+   Without an artifact, a comment older than 12 h (`TRACKER_ROUND_HOURS`) is presumed to be another
+   round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
+   `--same-round "<reason>"`.
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
@@ -39,10 +45,19 @@ comment, a results comment correcting it, a delta measurement, a malformed wiki-
 consolidated report superseding the first three. The fifth contained the other four. Teammates had
 already acted on the superseded ones.
 
+**Measured 2026-09-30, VCST-5883 — the opposite failure, which is why rule 5 exists:** a round-2 retest
+of NEW builds was amended into round 1's comment 110693, and the developer and PO never learned it
+happened. Three mechanisms let it through: the helper's run id was always `local` (it read a session
+variable Claude Code does not export), so a checkout was one run forever; `--amend` had no guard at all;
+and the MCP hooks matched one server name, so a claude.ai Atlassian connector bypassed them. Fixed in
+issue #360 — the round is now keyed on the build under test.
+
 ### 0a. How to amend (Jira)
 
-The Atlassian MCP exposes only `addCommentToJiraIssue` — **there is no edit or delete tool**, which is
-precisely why corrections turned into new comments. Use REST directly:
+The local `atlassian` MCP exposes only `addCommentToJiraIssue` — **no edit or delete tool**, which is
+precisely why corrections turned into new comments. The claude.ai Atlassian connectors CAN edit
+(`commentId` on `addCommentToJiraIssue` / `addOrEditJiraIssueComment`); the plugin's hooks guard
+that edit path and treat a ledger comment older than 12 h as a previous round (rule 5). Otherwise use REST directly:
 
 ```bash
 # edit an existing comment (auth: JIRA_EMAIL + JIRA_API_TOKEN from .env.local)
