@@ -61,7 +61,7 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
    line and the verbatim verdict (`virto-doc-style.md` §10.4). There is likewise **no `no-version`
    refusal** in this mode: a how-to does not quote a build number (`virto-doc-style.md` §10).
 3. Confirm GitHub MCP and browser MCP servers are available (needed for sub-agents).
-3. **Read `knowledge/oracles/business-logic.md`** and extract the list of existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
+3. **`npm run bl:extract -- --domain <d>`**: its `Included:` line lists existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
 
 ### Step 1 — Greet & Confirm Scope
 Tell the user what you're about to analyze and what outputs they'll receive. Ask if there's a specific area of concern (e.g., checkout flow, catalog management, B2B portal).

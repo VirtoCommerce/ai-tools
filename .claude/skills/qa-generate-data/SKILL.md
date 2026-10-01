@@ -50,7 +50,7 @@ Establish what must be covered before touching any data. Lead with feature/journ
 intent, then apply the `/qa-test-design` techniques to derive
 cases: equivalence partitions, **boundary values** (the balance one cent short, the cart one cent over
 a threshold), **decision tables** (promo applies? loyalty earns? stacks?), state transitions, and
-**pairwise** to bound the combination count. Consult `business-logic.md` (BL-* invariants the data must
+**pairwise** to bound the combination count. Consult `npm run bl:extract -- --domain <d>` (BL-* invariants the data must
 let you observe) and `vc-bug-catalog.md` (historical combinations that broke). Output: a scenario list.
 
 ### 2. Learn the feature live (variant-space discovery)
@@ -256,7 +256,7 @@ The combination matrix returned inline (step 7) is what those callers consume to
 - Policy + enforcement: [`.claude/rules/test-data.md`](../../rules/test-data.md)
 - Directory map + seed-gap tables: [`test-data/README.md`](../../../test-data/README.md)
 - Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
-- BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
+- BL invariants the data must let you observe: `npm run bl:extract -- --domain <d>` · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
 - Generators: [`scripts/lib/random-data.ts`](../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../scripts/lib/live-discover.ts)
 - Validators: [`scripts/test-data/validate-td-refs.ts`](../../../scripts/test-data/validate-td-refs.ts) · [`scripts/test-data/audit-aliases.ts`](../../../scripts/test-data/audit-aliases.ts)
 - Provisioning companion: [`/qa-seed-data`](../qa-seed-data/SKILL.md)

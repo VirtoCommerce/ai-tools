@@ -9,9 +9,9 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 > ⚠️ **UNCOVERED as of 2026-07-25.** Suite `048b-layout-stability.csv` — the sole carrier of every covering test ID in both matrices — was **removed**. All 197 applicable cells are now marked `GAP`. This file is retained as the **scope definition** (what SHOULD be covered) and as the audit-protocol reference for [`/qa-design`](../../skills/qa-design/SKILL.md), but it no longer gates a regression run. `npm run scope:validate` still hard-fails on a cell pointing at a **nonexistent** test ID, and reports the GAP count as a warning; `--strict` makes GAPs fatal again once a replacement suite lands.
 
-> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts).
+> **Pre-reads:** `BL-UI-*` (`npm run bl:extract -- --domain ui`), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts).
 >
-> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions).
+> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as BL oracle promotions).
 
 ## Why a matrix, not a list
 
@@ -1348,7 +1348,7 @@ The validator does NOT enforce render-location parity (that's a runtime concern,
 ## When to update this file
 
 - **Add a new component to the inventory** — only with explicit user approval. Update inventory, render-location map, applicability rules, audit protocol, AND coverage matrix in the same edit. Add tests to fill the new row's covered cells.
-- **Add a new BL-UI invariant** — coordinated with [business-logic.md](business-logic.md#domain-15-ui-display--layout-stability-bl-ui) promotion. The matrix grows a column; fill applicable cells.
+- **Add a new BL-UI invariant** — coordinated with a `BL-UI-*` promotion (edit `knowledge/oracles/bl/ui.yaml`, then `npm run bl:render`). The matrix grows a column; fill applicable cells.
 - **A covering test ID is renamed or moved** — update the matrix immediately. Validator will fail until you do.
 - **A covering suite is deleted** — flip its cells to `GAP` (never to `n/a`, which asserts the invariant doesn't apply) and update both Summary blocks. `scope:validate` then warns instead of failing; use `--strict` in CI once coverage is restored.
 - **A component's applicability changes** (e.g., VcSidebar starts containing interactive primary CTAs and BL-UI-006 becomes applicable) — flip the cell from `n/a` to a real test ID and add the test.

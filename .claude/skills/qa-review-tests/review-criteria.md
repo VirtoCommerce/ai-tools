@@ -429,7 +429,7 @@ Validates business logic traceability and edge case coverage.
 - **Impact:** No traceability to why this test exists — harder to assess regression impact.
 
 ### BL-002: Invalid BL-* reference `[Medium]`
-- **Detection:** `Business_Rule` contains a BL-* ID that doesn't exist in `business-logic.md`.
+- **Detection:** `Business_Rule` contains a BL-* ID that doesn't exist (`npm run bl:extract -- --id <ID>` exits 2).
 - **Impact:** False traceability — the test claims to cover a rule that doesn't exist.
 
 ### BL-003: Missing ECL-* for high-risk domain `[Medium]`
@@ -437,7 +437,7 @@ Validates business logic traceability and edge case coverage.
 - **Impact:** Edge cases are most valuable in high-risk areas.
 
 ### BL-004: Uncovered BL-* invariant `[Medium]`
-- **Detection:** A BL-* invariant exists for this domain in `business-logic.md` but no test case in the suite references it.
+- **Detection:** A BL-* invariant exists for this domain (`bl:extract -- --domain <d>`) but no test case in the suite references it.
 - **Output:** List as coverage gap in the report.
 
 ### BL-005: Uncovered ECL-* pattern `[Medium]`
