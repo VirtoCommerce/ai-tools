@@ -1,0 +1,1336 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+RET-GQL-000,"PRE-FLIGHT -- Returns Module Installed, Return Setting On, return-attachments Upload Scope Configured (Suite BLOCKED, Not FAIL, When Any Is Missing)",GraphQL > Returns > Pre-flight,Critical,,,"Runner-native. No browser. Nothing is created except one unattached probe file. ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",store={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP modules]
+GET {{BACK_URL}}/api/platform/modules
+[REST-EXEC modules]
+[AUTH role=USER]
+[GQL-OP policy]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { isEnabled windowDays allowedOrderStatuses } }
+[GQL-EXEC policy]
+[REST-OP upload_probe]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_probe]
+[REST-CAPTURE upload_probe.body.[0].url → PROBE_URL]","[ERRORS label=modules] HTTP 200
+[DATA label=modules] body.[?title=Returns].isInstalled = true
+[ERRORS label=policy] errors[] empty
+[DATA label=policy] data.returnPolicy.isEnabled = true
+[ERRORS label=upload_probe] HTTP 200
+[DATA label=upload_probe] body.[0].url is non-null
+[EVIDENCE] BLOCKED guard: every assertion in this case is an ENVIRONMENT prerequisite. A failure here means the stand is not prepared (module absent, store Return module setting off, FileUpload:Scopes without return-attachments) and the whole suite must be reported BLOCKED with the failing prerequisite named - it is not a product FAIL and no later case in this suite is meaningful.",[REST] evidence is the graphql-runner JSON per label; the probe file is left unattached (no return references it),"modules does not list VirtoCommerce.Return as installed; returnPolicy.isEnabled=false (Settings > Return > Return > ""Return module"" is off for the store); the upload probe is refused (platform FileUpload:Scopes lacks return-attachments) - each means SUITE BLOCKED, environment to be fixed, not a defect",none -- the probe upload is unreferenced,VCST-5628 · VCST-5883 · Archetype:CONFIG · Technique:EG,Draft
+RET-GQL-001,"returnableItems -- Happy Path: Delivered Today, Ordered == Delivered, Fully Returnable",GraphQL > Returns > Query,Critical,,,"Runner-native. No browser. Buyer USER_EMAIL owns fixture RETURNS_ORDER_A_HAPPY (ordered 5 / delivered 5 of the shared returns line, delivered today). No other case mutates this order -- read-only.",order=@td(RETURNS_ORDER_A_HAPPY.id); line=@td(RETURNS_ORDER_A_HAPPY.lineXItemId),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") {
+    orderLineItemId
+    productId
+    sku
+    name
+    imageUrl
+    measureUnit
+    orderedQuantity
+    deliveredQuantity
+    returnableQuantity
+    isReturnable
+    ineligibilityReason
+    deliveryDate
+    returnableUntil
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[COUNT label=get_returnable] data.returnableItems.length = 1
+[DATA label=get_returnable] data.returnableItems.0.orderLineItemId = @td(RETURNS_ORDER_A_HAPPY.lineXItemId)
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = true
+[DATA label=get_returnable] data.returnableItems.0.orderedQuantity = 5
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 5
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity = 5
+[NULL label=get_returnable] data.returnableItems.0.ineligibilityReason",[EVIDENCE] Delivered-today fixture; returnable == delivered == ordered when nothing has ever been returned against this line,errors[] non-empty; isReturnable false on a never-touched delivered-today order; returnableQuantity != 5,"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-002,"returnableItems -- Returnable Quantity Is Capped By DELIVERED, Not ORDERED",GraphQL > Returns > Query,Critical,,ECL-2.1,"Runner-native. No browser. Fixture RETURNS_ORDER_A2_PARTIAL_DELIVERY: ordered 10 of the shared returns line, only 4 delivered. Isolates the ordered-vs-delivered distinction the ticket calls out as the heart of the quantity model.",order=@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id); line=@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[DATA label=get_returnable] data.returnableItems.0.orderedQuantity = 10
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 4
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity = 4
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity = data.returnableItems.0.deliveredQuantity
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity != data.returnableItems.0.orderedQuantity
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = true","[EVIDENCE] Confirms the cap tracks deliveredQuantity, not orderedQuantity -- a bug that used orderedQuantity would report returnableQuantity=10 here",errors[] non-empty; returnableQuantity = 10 (bug: capped by ordered instead of delivered),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-003,"returnableItems -- Split Delivery: Window Runs From The LATEST Delivery, Quantities SUM",GraphQL > Returns > Query,Critical,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY: two deliveries of the same line, 5 units 40 days ago (outside the 30-day window on its own) and 3 units today, ordered 8 total. The window must be evaluated from the LATEST delivery, and the two delivered quantities summed.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason returnableUntil
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[DATA label=get_returnable] data.returnableItems.0.orderedQuantity = 8
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 8
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity = 8
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = true
+[NULL label=get_returnable] data.returnableItems.0.ineligibilityReason","[EVIDENCE] If the window were wrongly evaluated from the EARLIEST (-40d) delivery this line would read OUTSIDE_RETURN_WINDOW instead; if quantities were not summed deliveredQuantity would read 3 or 5, not 8",errors[] non-empty; isReturnable false / OUTSIDE_RETURN_WINDOW (window keyed off the earlier delivery); deliveredQuantity != 8 (quantities not summed across shipments),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-004,returnableItems -- OUTSIDE_RETURN_WINDOW When Delivery Is Older Than WindowDays,GraphQL > Returns > Query,High,,,Runner-native. No browser. Fixture RETURNS_ORDER_B_OUTSIDE_WINDOW: same as the happy-path fixture but delivered 40 days ago -- past the store's 30-day Return.WindowDays.,order=@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = false
+[DATA label=get_returnable] data.returnableItems.0.ineligibilityReason = OUTSIDE_RETURN_WINDOW
+[DATA label=get_returnable] data.returnableItems.0.returnableQuantity = 0
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 5","[EVIDENCE] deliveredQuantity stays 5 (delivery happened) -- only isReturnable/returnableQuantity/ineligibilityReason change vs the happy path, isolating the window check",errors[] non-empty; isReturnable true past the window; ineligibilityReason null or a different code,"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-005,returnableItems -- NOT_DELIVERED When The Line Has No Delivery Date,GraphQL > Returns > Query,High,,,Runner-native. No browser. Fixture RETURNS_ORDER_C_NOT_DELIVERED: same as the happy-path fixture but the shipment carries no delivery date -- goods still in transit.,order=@td(RETURNS_ORDER_C_NOT_DELIVERED.id),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_C_NOT_DELIVERED.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason deliveryDate
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = false
+[DATA label=get_returnable] data.returnableItems.0.ineligibilityReason = NOT_DELIVERED
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 0
+[NULL label=get_returnable] data.returnableItems.0.deliveryDate","[EVIDENCE] deliveredQuantity is 0, distinguishing this from OUTSIDE_RETURN_WINDOW where delivery happened but the window lapsed",errors[] non-empty; isReturnable true with no delivery date; ineligibilityReason OUTSIDE_RETURN_WINDOW instead of NOT_DELIVERED (order-date-not-delivery-date confusion),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-006,returnableItems -- ORDER_STATUS_NOT_ALLOWED When Order Status Is Not In allowedOrderStatuses,GraphQL > Returns > Query,High,,,"Runner-native. No browser. Fixture RETURNS_ORDER_D_STATUS_NOT_ALLOWED: delivered today, full quantity -- the order status is deliberately the ONLY ineligible condition, isolating this reason from the others.",order=@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[DATA label=get_returnable] data.returnableItems.0.isReturnable = false
+[DATA label=get_returnable] data.returnableItems.0.ineligibilityReason = ORDER_STATUS_NOT_ALLOWED
+[DATA label=get_returnable] data.returnableItems.0.deliveredQuantity = 5","[EVIDENCE] deliveredQuantity=5 and the delivery is today (inside the window) -- only the order status differs from the happy path, so a wrong reason here cannot be blamed on delivery/window",errors[] non-empty; isReturnable true on a disallowed order status; ineligibilityReason names window/delivery instead of the status,"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-007,"returnableItems -- Cancelled Line Excluded (LINE_CANCELLED), Live Sibling Line Still Returnable",GraphQL > Returns > Query,Critical,,,"Runner-native. No browser. Fixture RETURNS_ORDER_F_CANCELLED_LINE: one order carrying a live line (delivered today, full quantity) PLUS a cancelled line. Both lines must appear in the response, distinguished only by cancellation.",order=@td(RETURNS_ORDER_F_CANCELLED_LINE.id); live_line=@td(RETURNS_ORDER_F_CANCELLED_LINE.lineXItemId); cancelled_line=@td(RETURNS_ORDER_F_CANCELLED_LINE.cancelledLineItemId),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_F_CANCELLED_LINE.id)"") {
+    orderLineItemId orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[COUNT label=get_returnable] data.returnableItems.length = 2
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.lineXItemId)].isReturnable = true
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.lineXItemId)].returnableQuantity = 5
+[NULL label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.lineXItemId)].ineligibilityReason
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.cancelledLineItemId)].isReturnable = false
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.cancelledLineItemId)].ineligibilityReason = LINE_CANCELLED
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_F_CANCELLED_LINE.cancelledLineItemId)].returnableQuantity = 0","[EVIDENCE] Two rows in one order, only one property (cancellation) differs -- an implementation that flags cancellation per-ORDER rather than per-LINE would wrongly zero out the live line too",errors[] non-empty; only 1 row returned (cancelled line silently dropped instead of reported ineligible); live line's isReturnable also false (per-order instead of per-line cancellation check),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-008,"returnableItems -- Two Lines Eligible At Once, Different Products And Quantities",GraphQL > Returns > Query,Critical,,,"Runner-native. No browser. Fixture RETURNS_ORDER_G_TWO_ELIGIBLE_LINES: two DIFFERENT products delivered today in one shipment, line A ordered/delivered 5, line B ordered/delivered 3. The only fixture reporting 2-of-2 eligible (F's second line is cancelled). Unlocks bulk-apply and per-line-attachment storefront cases downstream.",order=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.id); line_a=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId); line_b=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineBItemId),"[AUTH role=USER]
+[GQL-OP get_returnable]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.id)"") {
+    orderLineItemId sku orderedQuantity deliveredQuantity returnableQuantity isReturnable ineligibilityReason
+  }
+}
+[GQL-EXEC get_returnable]","[ERRORS label=get_returnable] errors[] empty
+[COUNT label=get_returnable] data.returnableItems.length = 2
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId)].isReturnable = true
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId)].returnableQuantity = 5
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineBItemId)].isReturnable = true
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineBItemId)].returnableQuantity = 3
+[DATA label=get_returnable] data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId)].sku != data.returnableItems[?orderLineItemId=@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineBItemId)].sku",[EVIDENCE] Quantities (5 vs 3) and products deliberately differ -- a per-return (not per-line) quantity rule would report the SAME returnableQuantity on both rows,errors[] non-empty; only 1 row (second eligible line dropped); returnableQuantity identical on both rows (per-return quantity computed once and copied per line),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-009,returnPolicy -- Shape And Values Match The Store's Configured Return Settings,GraphQL > Returns > Query,High,,,"Runner-native. No browser. Store-level settings this pass: Return.ReturnEnabled=true, Return.WindowDays=30, Return.AllowedOrderStatuses=Completed. returnPolicy is the storefront-readable projection of these.",store={{STORE_ID}},"[AUTH role=USER]
+[GQL-OP get_policy]
+query {
+  returnPolicy(storeId: ""{{STORE_ID}}"") {
+    isEnabled
+    windowDays
+    allowedOrderStatuses
+  }
+}
+[GQL-EXEC get_policy]","[ERRORS label=get_policy] errors[] empty
+[DATA label=get_policy] data.returnPolicy.isEnabled = true
+[DATA label=get_policy] data.returnPolicy.windowDays > 0
+[COUNT label=get_policy] data.returnPolicy.allowedOrderStatuses.length >= 1
+[DATA label=get_policy] data.returnPolicy.allowedOrderStatuses[?=Completed] is non-null","[EVIDENCE] ReturnPolicyType carries EXACTLY 3 fields (isEnabled, windowDays, allowedOrderStatuses) -- a hypothesized larger shape (allowOrderlessReturns, maxOrderlessLineQuantity, policyText) does not exist on this schema and querying it fails schema validation before send",errors[] non-empty; isEnabled false while returns are otherwise reachable elsewhere in this suite (config drift mid-run),"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-010,"returnReasons -- Per-Store Reason Catalog, requiresComment Reflects The Live Setting",GraphQL > Returns > Query,High,,,Runner-native. No browser. Return.ReasonsRequiringComment on this store's live setting is the single code FaultyOnArrival -- confirmed via GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values immediately before authoring. Only that code should report requiresComment=true; the module ships 5 codes total.,store={{STORE_ID}},"[AUTH role=USER]
+[GQL-OP get_reasons]
+query {
+  returnReasons(storeId: ""{{STORE_ID}}"") {
+    code
+    localizedName
+    requiresComment
+  }
+}
+[GQL-EXEC get_reasons]","[ERRORS label=get_reasons] errors[] empty
+[COUNT label=get_reasons] data.returnReasons.length = 5
+[DATA label=get_reasons] data.returnReasons[?code=FaultyOnArrival].requiresComment = true
+[DATA label=get_reasons] data.returnReasons[?code=NoLongerNeeded].requiresComment = false
+[DATA label=get_reasons] data.returnReasons[?code=OrderedByMistake].requiresComment = false
+[DATA label=get_reasons] data.returnReasons.0.code is non-null","[EVIDENCE] localizedName is currently byte-identical to code (PascalCase, e.g. ""FaultyOnArrival"") on this build -- not asserted here as a defect since no localization resource gap was diagnosed, only recorded",errors[] non-empty; requiresComment true on a code other than FaultyOnArrival while the store setting still names only FaultyOnArrival; fewer than 5 codes returned,"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-011,returnStatuses -- Localized Status Dictionary Is Non-Empty And Keyed By Status Code,GraphQL > Returns > Query,Medium,,,"Runner-native. No browser. returnStatuses returns a KeyValueType list (LocalizedSettingResponseType.items), a DIFFERENT vocabulary source from the new flow's own ReturnStatus constants -- this case only pins the query's own shape, not cross-vocabulary agreement (that is a documented, open disagreement, not this suite's job to assert either way).",,"[AUTH role=USER]
+[GQL-OP get_statuses]
+query {
+  returnStatuses {
+    items {
+      key
+      value
+    }
+  }
+}
+[GQL-EXEC get_statuses]","[ERRORS label=get_statuses] errors[] empty
+[COUNT label=get_statuses] data.returnStatuses.items.length >= 5
+[DATA label=get_statuses] data.returnStatuses.items[?key=Draft].key is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=Requested].key is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=Cancelled].key is non-null","[EVIDENCE] Every new-flow status a buyer can actually reach (Draft, Requested, Cancelled -- see RET-GQL-014/027) has a matching label here; AwaitingDelivery/Received (source constants, never reachable this phase) are not asserted present or absent",errors[] non-empty; items empty; a reachable status (Draft/Requested/Cancelled) missing its label,"none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-012,"return(id) -- Nonexistent Id Resolves To NULL, Not An Error",GraphQL > Returns > Query,High,,ECL-14.1,"Runner-native. No browser. A well-formed but never-issued GUID. The xAPI convention for a single-entity lookup by id is a null payload with an empty errors[], not a thrown NOT_FOUND -- this is the query-side twin of the mutation-side RETURN_NOT_FOUND in RET-GQL-025.",bogus_id=00000000-0000-0000-0000-000000000000,"[AUTH role=USER]
+[GQL-OP get_bogus]
+query {
+  return(id: ""{{bogus_id}}"") {
+    id
+    status
+  }
+}
+[GQL-EXEC get_bogus]","[ERRORS label=get_bogus] errors[] empty
+[NULL label=get_bogus] data.return",[EVIDENCE] A thrown error here would be a contract change other clients (storefront) don't expect for a plain lookup-by-id,"errors[] non-empty (thrown instead of a null payload); data.return non-null (a colliding real return, extremely unlikely with an all-zero GUID but would invalidate the case)","none -- read-only query, no state created",VCST-5628,Draft
+RET-GQL-013,"return(id) -- Another Buyer's Return Also Resolves To NULL (Ownership, Not A Thrown Error)",GraphQL > Returns > Query,Critical,,ECL-14.1,"Runner-native. No browser. USER_EMAIL creates a throwaway Draft on fixture RETURNS_ORDER_E_SPLIT_DELIVERY (qty 1, released via cancel in the same case). USER2_EMAIL then looks it up by id: authorization is customer-id-scoped (ReturnAuthorizationHandler.IsOwnedBy), so a return that exists is indistinguishable, to a non-owner, from one that never did.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create_draft]
+mutation {
+  createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) {
+    id
+    status
+  }
+}
+[GQL-EXEC create_draft]
+[GQL-CAPTURE create_draft.data.createReturn.id → OWNED_RETURN_ID]
+[AUTH role=USER2]
+[GQL-OP get_as_other]
+query {
+  return(id: ""{{OWNED_RETURN_ID}}"") {
+    id
+    status
+  }
+}
+[GQL-EXEC get_as_other]
+[AUTH role=USER]
+[GQL-OP cleanup_cancel]
+mutation {
+  cancelReturn(command: { returnId: ""{{OWNED_RETURN_ID}}"" }) {
+    id
+    status
+  }
+}
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create_draft] errors[] empty
+[DATA label=create_draft] data.createReturn.status = Draft
+[ERRORS label=get_as_other] errors[] empty
+[NULL label=get_as_other] data.return
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled","[EVIDENCE] {{OWNED_RETURN_ID}} is real and owned by USER_EMAIL at the moment USER2 queries it -- a null here is ownership-scoping, not a stale/never-existed id (RET-GQL-012 covers that case separately)","get_as_other errors[] non-empty (thrown NOT_FOUND instead of null); data.return non-null as USER2 (cross-customer leak); cleanup_cancel fails, leaving an orphaned Draft",cancelReturn on {{OWNED_RETURN_ID}} as USER (already inline above as cleanup_cancel) -- restated here as the safety net if the inline step did not run,VCST-5628,Draft
+RET-GQL-014,"Quantity Lifecycle -- Draft Holds Nothing, Submit Reduces By Exactly The Submitted Qty, Cancel Releases Fully",GraphQL > Returns > Mutation,Critical,,ECL-2.1,"Runner-native. No browser. THE journey case for the feature's quantity model -- exercises every link of the chain (create -> hold-check -> submit -> hold -> cancel -> release) against ONE fixture (RETURNS_ORDER_A2_PARTIAL_DELIVERY, 4 returnable) in a single continuous flow, so the before/after comparison is against the SAME baseline throughout. Attachment provided up front (Return.AttachmentsRequired is true on this store) so the submit step exercises quantity logic, not the attachment gate (RET-GQL-018 covers that gate on its own).",order=@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id); line=@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.lineXItemId); qty=2,"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems.0.returnableQuantity → BEFORE_QTY]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create_draft]
+mutation {
+  createReturn(command: { orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.lineXItemId)"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) {
+    id
+    status
+  }
+}
+[GQL-EXEC create_draft]
+[GQL-CAPTURE create_draft.data.createReturn.id → RETURN_ID]
+[GQL-OP after_draft]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_draft]
+[GQL-CAPTURE after_draft.data.returnableItems.0.returnableQuantity → AFTER_DRAFT_QTY]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[GQL-OP after_submit]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_submit]
+[GQL-CAPTURE after_submit.data.returnableItems.0.returnableQuantity → AFTER_SUBMIT_QTY]
+[GQL-OP cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cancel]
+[GQL-OP after_cancel]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_cancel]
+[GQL-CAPTURE after_cancel.data.returnableItems.0.returnableQuantity → AFTER_CANCEL_QTY]","[ERRORS label=before] errors[] empty
+[DATA label=before] data.returnableItems.0.returnableQuantity = 4
+[ERRORS label=create_draft] errors[] empty
+[DATA label=create_draft] data.createReturn.status = Draft
+[ERRORS label=after_draft] errors[] empty
+[VAR] {{AFTER_DRAFT_QTY}} = {{BEFORE_QTY}}
+[DATA label=after_draft] data.returnableItems.0.returnableQuantity = 4
+[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[ERRORS label=after_submit] errors[] empty
+[DATA label=after_submit] data.returnableItems.0.returnableQuantity = 2
+[ERRORS label=cancel] errors[] empty
+[DATA label=cancel] data.cancelReturn.status = Cancelled
+[ERRORS label=after_cancel] errors[] empty
+[VAR] {{AFTER_CANCEL_QTY}} = {{BEFORE_QTY}}
+[DATA label=after_cancel] data.returnableItems.0.returnableQuantity = 4","[EVIDENCE] Four snapshots of the SAME query (before / after_draft / after_submit / after_cancel) around the SAME return -- a bug at any one link (draft wrongly holding, submit holding the wrong amount, cancel not releasing) shows up as exactly one snapshot disagreeing with its neighbours",after_draft.returnableQuantity < 4 (Draft wrongly holds); after_submit.returnableQuantity != 2 (submit holds the wrong amount); after_cancel.returnableQuantity != 4 (cancel does not fully release); any errors[] non-empty,"cancelReturn on {{RETURN_ID}} if the case aborted before its own inline cancel step ran (state: Draft or Requested, never Cancelled)",VCST-5628,Draft
+RET-GQL-015,"createReturn -- Happy Path Draft Shape (id, number, status, orderId, items[])",GraphQL > Returns > Mutation,Critical,,,Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY has 8 returnable units -- ample headroom for a 1-unit throwaway Draft that this case cancels before finishing.,order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create]
+mutation {
+  createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) {
+    id
+    number
+    status
+    orderId
+    itemsQuantity
+    items { id orderLineItemId quantity orderedQuantity itemState }
+  }
+}
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[DATA label=create] data.createReturn.id is non-empty GUID
+[DATA label=create] data.createReturn.number is non-null
+[DATA label=create] data.createReturn.status = Draft
+[DATA label=create] data.createReturn.orderId = @td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)
+[DATA label=create] data.createReturn.itemsQuantity = 1
+[COUNT label=create] data.createReturn.items.length = 1
+[DATA label=create] data.createReturn.items.0.orderLineItemId = @td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)
+[DATA label=create] data.createReturn.items.0.quantity = 1
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled","[EVIDENCE] number is a generated RMA-style value per Return.ReturnNewNumberTemplate (RET{yyMMdd}-{NNNNN}) -- asserted non-null, not to an invented literal format",errors[] non-empty; status != Draft on a fresh create; items array empty or missing the requested line,cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel) -- restated as the safety net,VCST-5628,Draft
+RET-GQL-016,"updateReturn -- Edits Quantity, Reason And Comment While Still Draft; Read-Back Confirms Persistence",GraphQL > Returns > Mutation,High,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY, 8 returnable units. Creates a Draft at qty=1 with no comment, edits it to qty=2 with a comment and a reason code, then reads it back via return(id) -- a separate query op, not the mutation's own response -- to confirm the edit actually persisted rather than only echoing in the mutation payload.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP update]
+mutation {
+  updateReturn(command: { returnId: ""{{RETURN_ID}}"", customerComment: ""AGENT-TEST edit"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 2, reasonCode: ""NoLongerNeeded"" }] }) {
+    id
+    status
+    customerComment
+    items { orderLineItemId quantity reasonCode }
+  }
+}
+[GQL-EXEC update]
+[GQL-OP read_back]
+query { return(id: ""{{RETURN_ID}}"") { id status customerComment items { orderLineItemId quantity reasonCode } } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[ERRORS label=update] errors[] empty
+[DATA label=update] data.updateReturn.status = Draft
+[DATA label=update] data.updateReturn.items.0.quantity = 2
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.return.customerComment = AGENT-TEST edit
+[DATA label=read_back] data.return.items.0.quantity = 2
+[DATA label=read_back] data.return.items.0.reasonCode = NoLongerNeeded
+[ERRORS label=cleanup_cancel] errors[] empty",[EVIDENCE] read_back is a SEPARATE query from update's own response -- catches an edit that echoes correctly in the mutation payload but never actually persists,errors[] non-empty; read_back still shows quantity=1 or reasonCode null (edit echoed but not persisted),cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-017,submitReturn -- Refused INVALID_REQUEST When A Line Carries No Reason,GraphQL > Returns > Mutation,High,,ECL-14.1,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY. createReturn does not require a reasonCode; submitReturn does -- ""Submit runs the same checks and additionally requires a reason on every line"" per the module's own doc. This case creates a reasonless Draft and submits it directly.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[GQL-OP after]
+query { return(id: ""{{RETURN_ID}}"") { id status } }
+[GQL-EXEC after]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] non-empty
+[DATA label=submit] errors[0].extensions.code = INVALID_REQUEST
+[NULL label=submit] data.submitReturn
+[ERRORS label=after] errors[] empty
+[DATA label=after] data.return.status = Draft
+[ERRORS label=cleanup_cancel] errors[] empty","[EVIDENCE] The Draft survives the refused submit -- 'after' proves status is still Draft, not silently advanced or corrupted",errors[] empty on submit (silently accepted a reasonless line); status advances to Requested despite the refusal,cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-018,submitReturn -- Refused ATTACHMENTS_REQUIRED When Store Setting Demands One And None Was Given,GraphQL > Returns > Mutation,Critical,,ECL-14.1,"Runner-native. No browser. Return.AttachmentsRequired is true on this store (confirmed live via GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values immediately before authoring). A reasoned but attachment-less line must be refused at submit, and the extensions payload must name the offending line.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"" }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] non-empty
+[DATA label=submit] errors[0].extensions.code = ATTACHMENTS_REQUIRED
+[DATA label=submit] errors[0].extensions.orderLineItemId = @td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)
+[NULL label=submit] data.submitReturn
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled","[EVIDENCE] Reason WAS provided (RET-GQL-017 isolates the reason gate on its own) -- only the attachment is missing, so a wrong-gate defect (e.g. reporting INVALID_REQUEST here) is distinguishable",errors[] empty on submit (gate skipped); extensions.code names a different gate (reason instead of attachment); orderLineItemId missing or wrong from extensions,cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-019,submitReturn -- Happy Path With Reason And Attachment Transitions Draft To Requested,GraphQL > Returns > Mutation,Critical,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY. Uploads a real attachment through the platform File Experience API (POST {{BACK_URL}}/api/files/return-attachments, scope confirmed live) before submitting, satisfying both gates RET-GQL-017/018 isolate individually.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation {
+  submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) {
+    id
+    status
+    statusDisplayValue
+    items { itemState attachments { name url mimeType size } }
+  }
+}
+[GQL-EXEC submit]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=upload_att] HTTP 200
+[DATA label=upload_att] body.[0].succeeded = true
+[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[DATA label=submit] data.submitReturn.statusDisplayValue is non-null
+[COUNT label=submit] data.submitReturn.items.0.attachments.length = 1
+[DATA label=submit] data.submitReturn.items.0.attachments.0.url is non-null
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled","[EVIDENCE] Confirms the FULL happy submit path -- upload, create with both gates satisfied, submit succeeds -- as a single regression guard distinct from the two refusal cases either side of it",upload_att succeeded=false (wrong scope/extension); errors[] non-empty on submit despite both gates satisfied; status stays Draft; attachments array empty on the submitted return,cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-020,createReturn -- INVALID_QUANTITY Refused For Zero And Negative Quantity,GraphQL > Returns > Mutation,High,,,"Runner-native. No browser. Boundary Value Analysis on the quantity input -- 0 and -1 either side of the minimum valid value (1). Neither call creates a persisted return (both refused at validation), so no cleanup is needed.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP zero_qty]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 0 }] }) { id status } }
+[GQL-EXEC zero_qty]
+[GQL-OP negative_qty]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: -1 }] }) { id status } }
+[GQL-EXEC negative_qty]","[ERRORS label=zero_qty] errors[] non-empty
+[DATA label=zero_qty] errors[0].extensions.code = INVALID_QUANTITY
+[NULL label=zero_qty] data.createReturn
+[ERRORS label=negative_qty] errors[] non-empty
+[DATA label=negative_qty] errors[0].extensions.code = INVALID_QUANTITY
+[NULL label=negative_qty] data.createReturn","[EVIDENCE] Boundary pair (0, -1) -- both must be refused with the SAME code, since GraphQL Int has no lower bound of its own and the module enforces ""at least one"" itself",errors[] empty on either call (a Draft silently created at qty<=0); extensions.code differs between the two boundary values,"none -- both calls refused, no return persisted",VCST-5628,Draft
+RET-GQL-021,createReturn -- NO_ITEMS Refused For An Empty Line Array,GraphQL > Returns > Mutation,Medium,,,Runner-native. No browser. A return with zero lines is meaningless -- boundary case on the items array itself rather than on any one line's quantity.,order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id),"[AUTH role=USER]
+[GQL-OP empty_items]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [] }) { id status } }
+[GQL-EXEC empty_items]","[ERRORS label=empty_items] errors[] non-empty
+[DATA label=empty_items] errors[0].extensions.code = NO_ITEMS
+[NULL label=empty_items] data.createReturn","[EVIDENCE] Distinct code from INVALID_QUANTITY (RET-GQL-020) -- the array itself is empty, no line to name a bad quantity on",errors[] empty (a headless return silently created); extensions.code = INVALID_QUANTITY instead of NO_ITEMS (gate conflated with the per-line check),"none -- call refused, no return persisted",VCST-5628,Draft
+RET-GQL-022,"submitReturn -- RETURN_QUANTITY_UNAVAILABLE On A Partial Over-Consumption Race, Draft Survives",GraphQL > Returns > Mutation,Critical,,ECL-2.1,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY, 8 returnable units. R1 submits 6, holding 6 and leaving 2 available. R2 is then built to ask for 3 -- MORE than the 2 actually left -- reproducing the two-buyer-race shape with one buyer's two sequential drafts. The fix under test: extensions carries orderLineItemId/requestedQuantity/availableQuantity and R2 is NOT deleted or corrupted by the refusal.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_r1]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_r1]
+[REST-CAPTURE upload_r1.body.[0].url → ATT_URL_R1]
+[GQL-OP create_r1]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 6, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_URL_R1}}""] }] }) { id status } }
+[GQL-EXEC create_r1]
+[GQL-CAPTURE create_r1.data.createReturn.id → R1_ID]
+[GQL-OP submit_r1]
+mutation { submitReturn(command: { returnId: ""{{R1_ID}}"" }) { id status } }
+[GQL-EXEC submit_r1]
+[GQL-OP check_remaining]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"") { returnableQuantity } }
+[GQL-EXEC check_remaining]
+[REST-OP upload_r2]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_r2]
+[REST-CAPTURE upload_r2.body.[0].url → ATT_URL_R2]
+[GQL-OP create_r2]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 3, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_URL_R2}}""] }] }) { id status } }
+[GQL-EXEC create_r2]
+[GQL-CAPTURE create_r2.data.createReturn.id → R2_ID]
+[GQL-OP submit_r2]
+mutation { submitReturn(command: { returnId: ""{{R2_ID}}"" }) { id status } }
+[GQL-EXEC submit_r2]
+[GQL-OP r2_after]
+query { return(id: ""{{R2_ID}}"") { id status } }
+[GQL-EXEC r2_after]
+[GQL-OP cleanup_cancel_r1]
+mutation { cancelReturn(command: { returnId: ""{{R1_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel_r1]
+[GQL-OP cleanup_cancel_r2]
+mutation { cancelReturn(command: { returnId: ""{{R2_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel_r2]","[ERRORS label=submit_r1] errors[] empty
+[DATA label=submit_r1] data.submitReturn.status = Requested
+[ERRORS label=check_remaining] errors[] empty
+[DATA label=check_remaining] data.returnableItems.0.returnableQuantity = 2
+[ERRORS label=create_r2] errors[] empty
+[ERRORS label=submit_r2] errors[] non-empty
+[DATA label=submit_r2] errors[0].extensions.code = RETURN_QUANTITY_UNAVAILABLE
+[DATA label=submit_r2] errors[0].extensions.orderLineItemId = @td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)
+[DATA label=submit_r2] errors[0].extensions.requestedQuantity = 3
+[DATA label=submit_r2] errors[0].extensions.availableQuantity = 2
+[NULL label=submit_r2] data.submitReturn
+[ERRORS label=r2_after] errors[] empty
+[DATA label=r2_after] data.return.status = Draft
+[ERRORS label=cleanup_cancel_r1] errors[] empty
+[ERRORS label=cleanup_cancel_r2] errors[] empty",[EVIDENCE] r2_after proves the refused draft SURVIVES as Draft rather than being deleted or left in an undefined state -- this exact combination (extensions fields + draft survival) was a fixed defect per the ticket,"errors[] empty on submit_r2 (over-consumption silently allowed, double-counting quantity); extensions missing requestedQuantity/availableQuantity/orderLineItemId; r2_after shows R2 deleted (404/null) or corrupted instead of intact Draft",cancelReturn on {{R1_ID}} and {{R2_ID}} as USER (already inline above as cleanup_cancel_r1/r2),VCST-5628,Draft
+RET-GQL-023,"submitReturn -- Full-Consumption Race Reports LINE_NOT_RETURNABLE, Not RETURN_QUANTITY_UNAVAILABLE",GraphQL > Returns > Mutation,Critical,,ECL-2.1,"Runner-native. No browser. Same race shape as RET-GQL-022, but R1 consumes ALL 8 units instead of 6 -- the two error codes exist precisely because ""some left"" and ""none left"" are reported differently; this case isolates the zero-remaining branch.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_r1]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_r1]
+[REST-CAPTURE upload_r1.body.[0].url → ATT_URL_R1]
+[GQL-OP create_r1]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 8, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_URL_R1}}""] }] }) { id status } }
+[GQL-EXEC create_r1]
+[GQL-CAPTURE create_r1.data.createReturn.id → R1_ID]
+[GQL-OP submit_r1]
+mutation { submitReturn(command: { returnId: ""{{R1_ID}}"" }) { id status } }
+[GQL-EXEC submit_r1]
+[GQL-OP check_remaining]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"") { returnableQuantity isReturnable ineligibilityReason } }
+[GQL-EXEC check_remaining]
+[REST-OP upload_r2]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_r2]
+[REST-CAPTURE upload_r2.body.[0].url → ATT_URL_R2]
+[GQL-OP create_r2]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_URL_R2}}""] }] }) { id status } }
+[GQL-EXEC create_r2]
+[GQL-CAPTURE create_r2.data.createReturn.id → R2_ID]
+[GQL-OP submit_r2]
+mutation { submitReturn(command: { returnId: ""{{R2_ID}}"" }) { id status } }
+[GQL-EXEC submit_r2]
+[GQL-OP cleanup_cancel_r1]
+mutation { cancelReturn(command: { returnId: ""{{R1_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel_r1]
+[GQL-OP cleanup_cancel_r2]
+mutation { cancelReturn(command: { returnId: ""{{R2_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel_r2]","[ERRORS label=submit_r1] errors[] empty
+[DATA label=submit_r1] data.submitReturn.status = Requested
+[ERRORS label=check_remaining] errors[] empty
+[DATA label=check_remaining] data.returnableItems.0.returnableQuantity = 0
+[DATA label=check_remaining] data.returnableItems.0.isReturnable = false
+[DATA label=check_remaining] data.returnableItems.0.ineligibilityReason = NOTHING_LEFT_TO_RETURN
+[ERRORS label=create_r2] errors[] empty
+[ERRORS label=submit_r2] errors[] non-empty
+[DATA label=submit_r2] errors[0].extensions.code = LINE_NOT_RETURNABLE
+[DATA label=submit_r2] errors[0].extensions.orderLineItemId = @td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)
+[DATA label=submit_r2] errors[0].extensions.ineligibilityReason = NOTHING_LEFT_TO_RETURN
+[DATA label=submit_r2] errors[0].extensions.availableQuantity = 0
+[NULL label=submit_r2] data.submitReturn
+[ERRORS label=cleanup_cancel_r1] errors[] empty
+[ERRORS label=cleanup_cancel_r2] errors[] empty","[EVIDENCE] Same shape as RET-GQL-022 except R1 takes ALL 8 -- the code DIFFERS (LINE_NOT_RETURNABLE, not RETURN_QUANTITY_UNAVAILABLE) precisely because nothing at all is left, which this case's check_remaining step confirms independently before R2 ever submits",submit_r2 reports RETURN_QUANTITY_UNAVAILABLE instead of LINE_NOT_RETURNABLE (the two race codes conflated); errors[] empty on submit_r2 (a second full return silently accepted on an exhausted line),cancelReturn on {{R1_ID}} and {{R2_ID}} as USER (already inline above as cleanup_cancel_r1/r2),VCST-5628,Draft
+RET-GQL-024,updateReturn -- Refused WRONG_STATUS Once The Return Has Left Draft,GraphQL > Returns > Mutation,High,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY. Update is a Draft-only operation -- once a return is Requested, updateReturn must refuse rather than silently mutate a return an agent may already be reviewing.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[GQL-OP update_after_submit]
+mutation { updateReturn(command: { returnId: ""{{RETURN_ID}}"", customerComment: ""should be refused"" }) { id status } }
+[GQL-EXEC update_after_submit]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[ERRORS label=update_after_submit] errors[] non-empty
+[DATA label=update_after_submit] errors[0].extensions.code = WRONG_STATUS
+[NULL label=update_after_submit] data.updateReturn
+[ERRORS label=cleanup_cancel] errors[] empty",[EVIDENCE] The return is genuinely Requested (submit's own response confirms it) before the refused update is attempted -- not a Draft mistaken for Requested,"errors[] empty on update_after_submit (a Requested return silently edited); extensions.code names a different reason (e.g. RETURN_NOT_FOUND, which would indicate an ownership bug rather than a status bug)",cancelReturn on {{RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-025,updateReturn / submitReturn / cancelReturn -- All Three Refuse RETURN_NOT_FOUND On Another Buyer's Draft,GraphQL > Returns > Mutation,Critical,,ECL-14.1,"Runner-native. No browser. USER_EMAIL creates a Draft on fixture RETURNS_ORDER_E_SPLIT_DELIVERY. USER2_EMAIL -- a different customer, no relationship to this order -- then attempts all three mutating operations against it. Authorization is customer-id ownership only (ReturnAuthorizationHandler); a non-owner gets the SAME not-found shape a bogus id would (RET-GQL-013's query-side twin), never a permission-specific error that would leak the return's existence.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → OWNED_RETURN_ID]
+[AUTH role=USER2]
+[GQL-OP other_update]
+mutation { updateReturn(command: { returnId: ""{{OWNED_RETURN_ID}}"", customerComment: ""hijack attempt"" }) { id status } }
+[GQL-EXEC other_update]
+[GQL-OP other_submit]
+mutation { submitReturn(command: { returnId: ""{{OWNED_RETURN_ID}}"" }) { id status } }
+[GQL-EXEC other_submit]
+[GQL-OP other_cancel]
+mutation { cancelReturn(command: { returnId: ""{{OWNED_RETURN_ID}}"" }) { id status } }
+[GQL-EXEC other_cancel]
+[AUTH role=USER]
+[GQL-OP owner_check]
+query { return(id: ""{{OWNED_RETURN_ID}}"") { id status } }
+[GQL-EXEC owner_check]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{OWNED_RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[ERRORS label=other_update] errors[] non-empty
+[DATA label=other_update] errors[0].extensions.code = RETURN_NOT_FOUND
+[ERRORS label=other_submit] errors[] non-empty
+[DATA label=other_submit] errors[0].extensions.code = RETURN_NOT_FOUND
+[ERRORS label=other_cancel] errors[] non-empty
+[DATA label=other_cancel] errors[0].extensions.code = RETURN_NOT_FOUND
+[ERRORS label=owner_check] errors[] empty
+[DATA label=owner_check] data.return.status = Draft
+[ERRORS label=cleanup_cancel] errors[] empty","[EVIDENCE] owner_check (as USER, the real owner) proves the return is untouched -- still Draft -- after three refused attempts by USER2, so the refusals were genuine no-ops, not partial mutations that merely failed to return a payload",any of the three other_* calls returns errors[] empty (cross-customer mutation succeeded); owner_check shows a status other than Draft (partial mutation despite the refusal); any extensions.code other than RETURN_NOT_FOUND (e.g. a generic Unauthorized) that would leak the return's existence to a non-owner,cancelReturn on {{OWNED_RETURN_ID}} as USER (already inline above as cleanup_cancel),VCST-5628,Draft
+RET-GQL-026,"availableActions -- Draft (edit/submit/cancel), Requested (cancel only), Cancelled (none) Walked In One Lifecycle",GraphQL > Returns > Mutation,Critical,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY. Reads ReturnType.availableActions at all three reachable states of the same return in one continuous walk -- Draft immediately after create, Requested immediately after submit, Cancelled immediately after cancel -- so the matrix is read against the SAME entity at each transition, not three different returns that might legitimately differ for unrelated reasons.",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP actions_draft]
+query { return(id: ""{{RETURN_ID}}"") { status availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC actions_draft]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[GQL-OP actions_requested]
+query { return(id: ""{{RETURN_ID}}"") { status availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC actions_requested]
+[GQL-OP cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cancel]
+[GQL-OP actions_cancelled]
+query { return(id: ""{{RETURN_ID}}"") { status availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC actions_cancelled]","[ERRORS label=actions_draft] errors[] empty
+[DATA label=actions_draft] data.return.status = Draft
+[COUNT label=actions_draft] data.return.availableActions[*?isAvailable=true].length = 3
+[DATA label=actions_draft] data.return.availableActions[?name=edit].isAvailable = true
+[DATA label=actions_draft] data.return.availableActions[?name=submit].isAvailable = true
+[DATA label=actions_draft] data.return.availableActions[?name=cancel].isAvailable = true
+[ERRORS label=actions_requested] errors[] empty
+[DATA label=actions_requested] data.return.status = Requested
+[COUNT label=actions_requested] data.return.availableActions[*?isAvailable=true].length = 1
+[DATA label=actions_requested] data.return.availableActions[?name=cancel].isAvailable = true
+[DATA label=actions_requested] data.return.availableActions[?name=edit].unavailableReason = WRONG_STATUS
+[DATA label=actions_requested] data.return.availableActions[?name=submit].unavailableReason = WRONG_STATUS
+[ERRORS label=actions_cancelled] errors[] empty
+[DATA label=actions_cancelled] data.return.status = Cancelled
+[COUNT label=actions_cancelled] data.return.availableActions[*?isAvailable=true].length = 0
+[DATA label=actions_cancelled] data.return.availableActions[?name=edit].unavailableReason = WRONG_STATUS
+[DATA label=actions_cancelled] data.return.availableActions[?name=submit].unavailableReason = WRONG_STATUS
+[DATA label=actions_cancelled] data.return.availableActions[?name=cancel].unavailableReason = WRONG_STATUS","[EVIDENCE] Exact action names (edit/submit/cancel, lowercase) confirmed live on this build 2026-09 -- the count-of-available-actions assertions (3, then 1, then 0) are the SHAPE that survives even if a future build renames an action",actions_requested reports more than 1 available action (edit or submit wrongly still open on a Requested return); actions_cancelled reports any available action at all; unavailableReason blank/null instead of naming WRONG_STATUS,"none -- the walk ends at Cancelled, already a terminal, released state",VCST-5628,Draft
+RET-GQL-027,createReturn -- ATTACHMENT_NOT_AVAILABLE When A File Already Belongs To A Different Return,GraphQL > Returns > Mutation,High,,,"Runner-native. No browser. Fixture RETURNS_ORDER_E_SPLIT_DELIVERY. Uploads ONE file and attaches it to return A. A second, independent return B then tries to reference the SAME uploaded file URL -- confirmed live that this is rejected, not silently allowed (an attachment is consumed by the first return that references it).",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create_a]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create_a]
+[GQL-CAPTURE create_a.data.createReturn.id → RETURN_A_ID]
+[GQL-OP create_b_reuse]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create_b_reuse]
+[GQL-OP cleanup_cancel_a]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_A_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel_a]","[ERRORS label=create_a] errors[] empty
+[DATA label=create_a] data.createReturn.status = Draft
+[ERRORS label=create_b_reuse] errors[] non-empty
+[DATA label=create_b_reuse] errors[0].extensions.code = ATTACHMENT_NOT_AVAILABLE
+[NULL label=create_b_reuse] data.createReturn
+[ERRORS label=cleanup_cancel_a] errors[] empty","[EVIDENCE] Return A (the legitimate owner of the file) was created successfully BEFORE the reuse attempt -- proves the file genuinely belongs to A, not that upload itself is broken",errors[] empty on create_b_reuse (the same file silently attached to two returns); extensions.code differs (e.g. a generic validation error that doesn't name the attachment specifically),"cancelReturn on {{RETURN_A_ID}} as USER (already inline above as cleanup_cancel_a) -- create_b_reuse never persisted, nothing to cancel for B",VCST-5628,Draft
+RET-GQL-028,"Return.ReturnEnabled=false -- returnableItems Reports RETURNS_DISABLED, createReturn Is Refused",GraphQL > Returns > Mutation,High,,,"Runner-native. No browser. Toggles the STORE-level Return.ReturnEnabled setting off via the v2 tenant-values REST surface (confirmed live: POST/GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values, flat {settingName: value} body -- the same v2 tenant-values surface is already used elsewhere in this repo for a different store-level setting). MEASURED LIVE 2026-09-25: the settings STORE itself is read-after-write consistent (GET on that same endpoint reflects the write instantly), but returnPolicy.isEnabled did NOT flip to false within 180s of the write, through EITHER the v2 store-scoped endpoint OR the legacy v1 global POST /api/platform/settings -- the returns module's own settings read appears to sit behind a longer-lived cache than this suite's WAIT budget can cover. This case still asserts the ticket's stated contract (RETURNS_DISABLED must be reachable) with the grammar's maximum WAIT window, but a timeout here should be triaged as a cache/propagation gap -- possibly needing the same explicit 'Reset cache' action the Admin SPA exposes for settings elsewhere in this repo -- not read as a functional regression on first failure. Restores the setting to true in Cleanup unconditionally, even if the poll times out, so a failed assertion never leaves the store's returns disabled for later suites.",order=@td(RETURNS_ORDER_A_HAPPY.id); line=@td(RETURNS_ORDER_A_HAPPY.lineXItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP disable]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.ReturnEnabled"": false}
+[REST-EXEC disable]
+[AUTH role=USER]
+[GQL-OP poll_policy]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { isEnabled } }
+[GQL-EXEC poll_policy]
+[WAIT until=poll_policy timeout=300 interval=20] data.returnPolicy.isEnabled = false
+[GQL-OP get_returnable_disabled]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC get_returnable_disabled]
+[GQL-OP create_while_disabled]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_A_HAPPY.lineXItemId)"", quantity: 1 }] }) { id status } }
+[GQL-EXEC create_while_disabled]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP re_enable]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.ReturnEnabled"": true}
+[REST-EXEC re_enable]
+[GQL-OP verify_restored]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { isEnabled } }
+[GQL-EXEC verify_restored]","[ERRORS label=poll_policy] errors[] empty
+[DATA label=poll_policy] data.returnPolicy.isEnabled = false
+[ERRORS label=get_returnable_disabled] errors[] empty
+[DATA label=get_returnable_disabled] data.returnableItems.0.isReturnable = false
+[DATA label=get_returnable_disabled] data.returnableItems.0.ineligibilityReason = RETURNS_DISABLED
+[ERRORS label=create_while_disabled] errors[] non-empty
+[NULL label=create_while_disabled] data.createReturn
+[ERRORS label=verify_restored] errors[] empty
+[DATA label=verify_restored] data.returnPolicy.isEnabled = true","[EVIDENCE] Immediate re-check without a wait was measured live to still read isEnabled=true up to 30s after the settings write returned 204 -- the WAIT step is not decorative, it is required for this specific setting to settle before the assertion is meaningful","poll_policy times out (300s, the grammar's maximum) without isEnabled ever flipping to false -- measured live 2026-09-25 that even this budget was insufficient; report as BLOCKED (settings-cache propagation exceeds any practical suite timeout), not FAIL, and escalate the cache-invalidation gap rather than re-running; verify_restored still reads false (cleanup failed to restore -- escalate immediately, this leaves the STORE'S RETURNS FEATURE DISABLED for every other suite)","POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values with Body: {""Return.ReturnEnabled"": true} as ADMIN_DEFAULT (already inline above as re_enable -- restated here as the mandatory safety net; this restoration must run even if every assertion above failed)",VCST-5628,Draft
+RET-GQL-029,"returnableItems / returnReasons -- Anonymous Caller Refused Unauthorized, Not A Silent Empty Result",GraphQL > Returns > Query,High,,ECL-14.1,"Runner-native. No browser. No [AUTH] step -- the request carries no Authorization header at all. A silent null/empty result would be indistinguishable from ""nothing to return""; the actual contract is a clear refusal.",order=@td(RETURNS_ORDER_A_HAPPY.id),"[GQL-OP anon_returnable]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") { orderLineItemId } }
+[GQL-EXEC anon_returnable]
+[GQL-OP anon_reasons]
+query { returnReasons(storeId: ""{{STORE_ID}}"") { code } }
+[GQL-EXEC anon_reasons]","[ERRORS label=anon_returnable] errors[] non-empty
+[DATA label=anon_returnable] errors[0].extensions.code = Unauthorized
+[NULL label=anon_returnable] data.returnableItems
+[ERRORS label=anon_reasons] errors[] non-empty
+[DATA label=anon_reasons] errors[0].extensions.code = Unauthorized
+[NULL label=anon_reasons] data.returnReasons",[EVIDENCE] Confirms BOTH a per-order query (returnableItems) and a per-store query (returnReasons) share the same anonymous-refused contract -- not just one of the two query shapes,"errors[] empty with an empty array/null payload on either call (looks like ""nothing eligible""/""no reasons configured"" instead of a refusal -- a client cannot tell the two apart without the error)","none -- both calls refused, no state touched",VCST-5628,Draft
+RET-GQL-030,returns -- List Query Supports storeId + statuses Filter + Pagination Shape,GraphQL > Returns > Query,Medium,,,"Runner-native. No browser. USER_EMAIL has accumulated real Cancelled returns from this suite's own mutation cases (each of which cancels what it creates) -- used here only to prove the list, filter and pagination SHAPE, never asserted to an exact count (that count grows every run this suite executes).",store={{STORE_ID}},"[AUTH role=USER]
+[GQL-OP list_cancelled]
+query {
+  returns(storeId: ""{{STORE_ID}}"", first: 5, statuses: [""Cancelled""]) {
+    totalCount
+    pageInfo { hasNextPage hasPreviousPage startCursor endCursor }
+    items { id status }
+  }
+}
+[GQL-EXEC list_cancelled]","[ERRORS label=list_cancelled] errors[] empty
+[DATA label=list_cancelled] data.returns.totalCount >= 1
+[COUNT label=list_cancelled] data.returns.items.length <= 5
+[DATA label=list_cancelled] data.returns.items[?status!=Cancelled] is null
+[DATA label=list_cancelled] data.returns.pageInfo.hasPreviousPage = false","[EVIDENCE] items[?status!=Cancelled] filters for any item whose status is NOT Cancelled -- resolving to null proves the statuses filter is genuinely applied server-side, not decorative",errors[] non-empty; totalCount = 0 despite this suite having cancelled at least one return earlier; a non-Cancelled item present in a statuses:[Cancelled]-filtered result,"none -- read-only query, no state created",VCST-5628,Draft
+"RET-GQL-031","Return.WindowDays -- Widening The Store Window Flips isReturnable And Moves returnableUntil","GraphQL > Returns > Configuration","Critical","","ECL-2.1","Runner-native. No browser. Every prior window-related case (RET-GQL-004) exercised the DEFAULT 30-day Return.WindowDays, which cannot tell a working setting from a hardcoded 30 -- a defect that ignored the setting entirely would still pass RET-GQL-004. This case changes the number and watches the boundary move. Fixture RETURNS_ORDER_B_OUTSIDE_WINDOW (delivered 40 days ago) sits just past the DEFAULT window; widening the store to 60 must flip it returnable and push returnableUntil forward (delivery + 60 instead of delivery + 30); restoring to 30 must flip it back. Written through POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values (the same tenant-values surface RET-GQL-028 already uses) rather than a hand-built PUT /api/stores. PUT /api/stores REPLACES the whole store entity server-side, not just the named fields -- scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage where a partial PUT body nulled defaultCurrency/defaultLanguage/url/secureUrl on a shared env, twice, because the endpoint has no merge semantics of its own. Safely reconstructing the ~100-entry settings array (several entries are SecureString API keys that must never appear in a committed suite) needs a real GET-then-spread-then-PUT step -- exactly what set-store-setting.mjs's mergeSettingValue() does in JavaScript -- and that object-spread has no equivalent in this runner's declarative Steps grammar (REST-CAPTURE can round-trip a whole captured array verbatim, but cannot rewrite one element inside it, and the parser requires a non-empty capture path so the store's OWN root object cannot be captured as a single opaque blob either). This suite therefore accepts the SAME propagation risk RET-GQL-028 already measured on this endpoint (up to 9+ minutes, once never within budget) instead of the faster settle PUT /api/stores was found to give live 2026-09-25 -- a WAIT timeout below is a cache/propagation finding to triage as BLOCKED, not a functional FAIL.","order=@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id); line=@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.lineXItemId)","[AUTH role=USER]
+[GQL-OP before]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id)"") {
+    orderLineItemId isReturnable ineligibilityReason deliveryDate returnableUntil
+  }
+}
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems.0.returnableUntil → BEFORE_UNTIL]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP widen_window]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.WindowDays"": 60}
+[REST-EXEC widen_window]
+[AUTH role=USER]
+[GQL-OP poll_after]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id)"") {
+    orderLineItemId isReturnable ineligibilityReason deliveryDate returnableUntil
+  }
+}
+[GQL-EXEC poll_after]
+[WAIT until=poll_after timeout=300 interval=20] data.returnableItems.0.isReturnable = true
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_window]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.WindowDays"": 30}
+[REST-EXEC restore_window]
+[AUTH role=USER]
+[GQL-OP poll_restored]
+query {
+  returnableItems(orderId: ""@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id)"") {
+    orderLineItemId isReturnable ineligibilityReason returnableUntil
+  }
+}
+[GQL-EXEC poll_restored]
+[WAIT until=poll_restored timeout=300 interval=20] data.returnableItems.0.isReturnable = false","[ERRORS label=before] errors[] empty
+[DATA label=before] data.returnableItems.0.isReturnable = false
+[DATA label=before] data.returnableItems.0.ineligibilityReason = OUTSIDE_RETURN_WINDOW
+[ERRORS label=poll_after] errors[] empty
+[DATA label=poll_after] data.returnableItems.0.isReturnable = true
+[NULL label=poll_after] data.returnableItems.0.ineligibilityReason
+[DATA label=poll_after] data.returnableItems.0.returnableUntil > {{BEFORE_UNTIL}}
+[ERRORS label=poll_restored] errors[] empty
+[DATA label=poll_restored] data.returnableItems.0.isReturnable = false
+[DATA label=poll_restored] data.returnableItems.0.ineligibilityReason = OUTSIDE_RETURN_WINDOW","[EVIDENCE] returnableUntil actually moving forward (not just the boolean flipping) is the oracle that proves the NUMBER 60 was read rather than a branch flipped on any-non-default value -- a defect that only checks WindowDays != 30 would still pass an isReturnable-only assertion","errors[] non-empty on any op; poll_after times out at 300s without isReturnable ever becoming true -- per RET-GQL-028's own measured finding on this same tenant-values endpoint, triage as a cache-propagation BLOCKED result, not a functional FAIL, and escalate the propagation gap rather than re-running; returnableUntil unchanged or moved backward after widening (window read as a flag, not a day count); poll_restored never returns to isReturnable=false (Cleanup failed to restore -- escalate immediately, this leaves the store's window at 60 for every later case in this suite)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.WindowDays"": 30}","VCST-5628","Draft"
+"RET-GQL-032","Return.AllowedOrderStatuses -- Store List Is Read Per-Call, Not A Hardcoded Completed","GraphQL > Returns > Configuration","High","","","Runner-native. No browser. RET-GQL-006 pinned ORDER_STATUS_NOT_ALLOWED against the DEFAULT list (Completed only), which cannot distinguish the setting being read from the single value Completed being hardcoded. Fixture RETURNS_ORDER_D_STATUS_NOT_ALLOWED sits in status Processing, deliberately the only ineligible condition on that order (RET-GQL-006's own design). Widening the store list to Completed,Processing must make the SAME order returnable; narrowing it back to Completed must refuse it again. Also reads returnPolicy.allowedOrderStatuses before/after/restored, since the query exposes the list directly -- a COUNT check (1 -> 2 -> 1) rather than a membership check, because this runner's JSONPath filter syntax (foo[?key=value]) is built for arrays of objects and has no documented form for testing membership in a plain string array; the functional behaviour (poll_after/poll_restored against the Processing-status order) is the primary, unambiguous oracle either way. Written through POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values (the same tenant-values surface RET-GQL-028 already uses) rather than a hand-built PUT /api/stores. PUT /api/stores REPLACES the whole store entity server-side, not just the named fields -- scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage where a partial PUT body nulled defaultCurrency/defaultLanguage/url/secureUrl on a shared env, twice, because the endpoint has no merge semantics of its own. Safely reconstructing the ~100-entry settings array (several entries are SecureString API keys that must never appear in a committed suite) needs a real GET-then-spread-then-PUT step -- exactly what set-store-setting.mjs's mergeSettingValue() does in JavaScript -- and that object-spread has no equivalent in this runner's declarative Steps grammar (REST-CAPTURE can round-trip a whole captured array verbatim, but cannot rewrite one element inside it, and the parser requires a non-empty capture path so the store's OWN root object cannot be captured as a single opaque blob either). This suite therefore accepts the SAME propagation risk RET-GQL-028 already measured on this endpoint (up to 9+ minutes, once never within budget) instead of the faster settle PUT /api/stores was found to give live 2026-09-25 -- a WAIT timeout below is a cache/propagation finding to triage as BLOCKED, not a functional FAIL.","order=@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)","[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC before]
+[GQL-OP policy_before]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { allowedOrderStatuses } }
+[GQL-EXEC policy_before]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP widen_statuses]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.AllowedOrderStatuses"": ""Completed,Processing""}
+[REST-EXEC widen_statuses]
+[AUTH role=USER]
+[GQL-OP poll_after]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC poll_after]
+[WAIT until=poll_after timeout=300 interval=20] data.returnableItems.0.isReturnable = true
+[GQL-OP policy_after]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { allowedOrderStatuses } }
+[GQL-EXEC policy_after]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_statuses]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.AllowedOrderStatuses"": ""Completed""}
+[REST-EXEC restore_statuses]
+[AUTH role=USER]
+[GQL-OP poll_restored]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC poll_restored]
+[WAIT until=poll_restored timeout=300 interval=20] data.returnableItems.0.isReturnable = false
+[GQL-OP policy_restored]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { allowedOrderStatuses } }
+[GQL-EXEC policy_restored]","[ERRORS label=before] errors[] empty
+[DATA label=before] data.returnableItems.0.isReturnable = false
+[DATA label=before] data.returnableItems.0.ineligibilityReason = ORDER_STATUS_NOT_ALLOWED
+[ERRORS label=policy_before] errors[] empty
+[COUNT label=policy_before] data.returnPolicy.allowedOrderStatuses.length = 1
+[DATA label=policy_before] data.returnPolicy.allowedOrderStatuses.0 = Completed
+[ERRORS label=poll_after] errors[] empty
+[DATA label=poll_after] data.returnableItems.0.isReturnable = true
+[NULL label=poll_after] data.returnableItems.0.ineligibilityReason
+[ERRORS label=policy_after] errors[] empty
+[COUNT label=policy_after] data.returnPolicy.allowedOrderStatuses.length = 2
+[ERRORS label=poll_restored] errors[] empty
+[DATA label=poll_restored] data.returnableItems.0.isReturnable = false
+[DATA label=poll_restored] data.returnableItems.0.ineligibilityReason = ORDER_STATUS_NOT_ALLOWED
+[ERRORS label=policy_restored] errors[] empty
+[COUNT label=policy_restored] data.returnPolicy.allowedOrderStatuses.length = 1","[EVIDENCE] The SAME order (status Processing throughout) is asserted ineligible, then eligible, then ineligible again purely by rewriting the store's own allowed-status list -- nothing about the order itself ever changes, isolating the setting as the only moving part","errors[] non-empty on any op; poll_after times out at 300s without isReturnable ever becoming true -- triage as a cache-propagation BLOCKED result per RET-GQL-028's precedent on this endpoint, not a functional FAIL; policy_after reports allowedOrderStatuses.length still 1 despite poll_after already succeeding (the read-model and the eligibility check disagreeing); poll_restored never returns to isReturnable=false (Cleanup failed -- escalate immediately, this leaves every order in Processing status returnable for later suites)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.AllowedOrderStatuses"": ""Completed""}","VCST-5628","Draft"
+"RET-GQL-033","Return.AllowedShipmentStatuses -- Blank Means ANY Status; A Non-Blank List Refuses Delivered","GraphQL > Returns > Configuration","Critical","","ECL-14.1","Runner-native. No browser. INVERTED semantics from every other Return.* store list in this suite -- Return.AllowedOrderStatuses being BLANK would allow NOTHING (RET-GQL-032), but Return.AllowedShipmentStatuses being blank means ANY shipment status is accepted (the module's own documented default). Fixture RETURNS_ORDER_A_HAPPY's shipment carries status Delivered and is returnable under the default blank setting (RET-GQL-001). Restricting the list to Sent (a status this shipment is NOT in) must refuse the SAME line -- and, per live verification, the reported reason is NOT_DELIVERED, the SAME code RET-GQL-005 uses for a shipment with no delivery date at all, even though this shipment genuinely has one; the code is reused rather than split by cause. Restoring the setting to an EMPTY STRING (not null -- a null write leaves the prior override in place, per live verification; only an explicit empty string clears an override on this endpoint) must return the line to returnable. This case exists specifically to pin down the blank-vs-non-blank inversion so it is never assumed to work like AllowedOrderStatuses's blank. Written through POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values (the same tenant-values surface RET-GQL-028 already uses) rather than a hand-built PUT /api/stores. PUT /api/stores REPLACES the whole store entity server-side, not just the named fields -- scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage where a partial PUT body nulled defaultCurrency/defaultLanguage/url/secureUrl on a shared env, twice, because the endpoint has no merge semantics of its own. Safely reconstructing the ~100-entry settings array (several entries are SecureString API keys that must never appear in a committed suite) needs a real GET-then-spread-then-PUT step -- exactly what set-store-setting.mjs's mergeSettingValue() does in JavaScript -- and that object-spread has no equivalent in this runner's declarative Steps grammar (REST-CAPTURE can round-trip a whole captured array verbatim, but cannot rewrite one element inside it, and the parser requires a non-empty capture path so the store's OWN root object cannot be captured as a single opaque blob either). This suite therefore accepts the SAME propagation risk RET-GQL-028 already measured on this endpoint (up to 9+ minutes, once never within budget) instead of the faster settle PUT /api/stores was found to give live 2026-09-25 -- a WAIT timeout below is a cache/propagation finding to triage as BLOCKED, not a functional FAIL.","order=@td(RETURNS_ORDER_A_HAPPY.id); line=@td(RETURNS_ORDER_A_HAPPY.lineXItemId)","[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC before]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restrict_shipment_status]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.AllowedShipmentStatuses"": ""Sent""}
+[REST-EXEC restrict_shipment_status]
+[AUTH role=USER]
+[GQL-OP poll_after]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC poll_after]
+[WAIT until=poll_after timeout=300 interval=20] data.returnableItems.0.isReturnable = false
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_shipment_status]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.AllowedShipmentStatuses"": """"}
+[REST-EXEC restore_shipment_status]
+[AUTH role=USER]
+[GQL-OP poll_restored]
+query { returnableItems(orderId: ""@td(RETURNS_ORDER_A_HAPPY.id)"") { orderLineItemId isReturnable ineligibilityReason } }
+[GQL-EXEC poll_restored]
+[WAIT until=poll_restored timeout=300 interval=20] data.returnableItems.0.isReturnable = true","[ERRORS label=before] errors[] empty
+[DATA label=before] data.returnableItems.0.isReturnable = true
+[NULL label=before] data.returnableItems.0.ineligibilityReason
+[ERRORS label=poll_after] errors[] empty
+[DATA label=poll_after] data.returnableItems.0.isReturnable = false
+[DATA label=poll_after] data.returnableItems.0.ineligibilityReason = NOT_DELIVERED
+[ERRORS label=poll_restored] errors[] empty
+[DATA label=poll_restored] data.returnableItems.0.isReturnable = true
+[NULL label=poll_restored] data.returnableItems.0.ineligibilityReason","[EVIDENCE] Same order, same shipment, same delivery date throughout -- only the store's shipment-status ALLOWLIST changes, so isReturnable flipping false then true again isolates the setting as the sole moving part; ineligibilityReason=NOT_DELIVERED on a shipment that DOES have a delivery date is the reused-code finding this case specifically preserves, not a data-setup mistake","errors[] non-empty on any op; poll_after times out at 300s without isReturnable ever becoming false -- triage as a cache-propagation BLOCKED result per RET-GQL-028's precedent, not a functional FAIL; ineligibilityReason reads something other than NOT_DELIVERED after restricting (a different, undocumented code introduced for this branch); poll_restored never returns to isReturnable=true (Cleanup failed -- escalate immediately, this leaves the store refusing every shipment status but Sent for later suites, likely breaking RET-GQL-001/003/007/008/014 onward)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.AllowedShipmentStatuses"": """"}","VCST-5628","Draft"
+"RET-GQL-034","Return.ReturnNewNumberTemplate -- A Custom Template Renumbers The Next Return, Date/Sequence Still Format","GraphQL > Returns > Mutation","High","","","Runner-native. No browser. RET-GQL-015 pinned only that a Draft's number is non-null against the DEFAULT template (RET{0:yyMMdd}-{1:D5}), which cannot tell a working template setting from a hardcoded RET-prefixed generator. This case changes Return.ReturnNewNumberTemplate to QATEST{0:yyMMdd}-{1:D5}, creates a throwaway Draft on fixture RETURNS_ORDER_E_SPLIT_DELIVERY (8 returnable units, ample headroom), and asserts the new number matches the FULL pattern QATESTyyMMdd-NNNNN -- prefix AND date AND zero-padded sequence -- because a case that only checked the prefix would still pass a template engine that broke the {0:yyMMdd}/{1:D5} format tokens themselves. There is no GraphQL field exposing the raw template string, so the ONLY way to prove restoration is to create a SECOND throwaway Draft after restoring the setting and confirm its number reverts to the RET prefix; both throwaway returns are cancelled inline. Uses fixed [WAIT seconds=60] rather than a polling [WAIT until=...], because createReturn is a MUTATION -- polling it would create a new persisted Draft on every retry interval instead of merely re-reading state, leaving orphaned test data behind on a slow-to-propagate run. Written through POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values (the same tenant-values surface RET-GQL-028 already uses) rather than a hand-built PUT /api/stores. PUT /api/stores REPLACES the whole store entity server-side, not just the named fields -- scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage where a partial PUT body nulled defaultCurrency/defaultLanguage/url/secureUrl on a shared env, twice, because the endpoint has no merge semantics of its own. Safely reconstructing the ~100-entry settings array (several entries are SecureString API keys that must never appear in a committed suite) needs a real GET-then-spread-then-PUT step -- exactly what set-store-setting.mjs's mergeSettingValue() does in JavaScript -- and that object-spread has no equivalent in this runner's declarative Steps grammar (REST-CAPTURE can round-trip a whole captured array verbatim, but cannot rewrite one element inside it, and the parser requires a non-empty capture path so the store's OWN root object cannot be captured as a single opaque blob either). This suite therefore accepts the SAME propagation risk RET-GQL-028 already measured on this endpoint (up to 9+ minutes, once never within budget) instead of the faster settle PUT /api/stores was found to give live 2026-09-25 -- a WAIT timeout below is a cache/propagation finding to triage as BLOCKED, not a functional FAIL.","order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP set_template]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.ReturnNewNumberTemplate"": ""QATEST{0:yyMMdd}-{1:D5}""}
+[REST-EXEC set_template]
+[WAIT seconds=60]
+[AUTH role=USER]
+[GQL-OP create_new_template]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) { id number status } }
+[GQL-EXEC create_new_template]
+[GQL-CAPTURE create_new_template.data.createReturn.id → NEW_TEMPLATE_RETURN_ID]
+[GQL-OP cancel_new_template]
+mutation { cancelReturn(command: { returnId: ""{{NEW_TEMPLATE_RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cancel_new_template]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore_template]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.ReturnNewNumberTemplate"": ""RET{0:yyMMdd}-{1:D5}""}
+[REST-EXEC restore_template]
+[WAIT seconds=60]
+[AUTH role=USER]
+[GQL-OP create_restored_template]
+mutation { createReturn(command: { orderId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)"", items: [{ orderLineItemId: ""@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId)"", quantity: 1 }] }) { id number status } }
+[GQL-EXEC create_restored_template]
+[GQL-CAPTURE create_restored_template.data.createReturn.id → RESTORED_TEMPLATE_RETURN_ID]
+[GQL-OP cancel_restored_template]
+mutation { cancelReturn(command: { returnId: ""{{RESTORED_TEMPLATE_RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cancel_restored_template]","[ERRORS label=create_new_template] errors[] empty
+[DATA label=create_new_template] data.createReturn.status = Draft
+[DATA label=create_new_template] data.createReturn.number matches /^QATEST\d{6}-\d{5}$/
+[ERRORS label=cancel_new_template] errors[] empty
+[DATA label=cancel_new_template] data.cancelReturn.status = Cancelled
+[ERRORS label=create_restored_template] errors[] empty
+[DATA label=create_restored_template] data.createReturn.number matches /^RET\d{6}-\d{5}$/
+[ERRORS label=cancel_restored_template] errors[] empty
+[DATA label=cancel_restored_template] data.cancelReturn.status = Cancelled","[EVIDENCE] MEASURED LIVE 2026-09-25 on vcptcore-qa1: with the template set to QATEST{0:yyMMdd}-{1:D5}, the next created return was numbered QATEST260925-00001 -- prefix, date and zero-padded sequence all intact; this case's regex re-derives that same shape at runtime instead of asserting the literal captured string, so it survives being run on a different day or after other returns have advanced the sequence counter","errors[] non-empty on either create/cancel op; create_new_template.number still carries the RET prefix after the 60s wait -- triage as a cache-propagation BLOCKED result per RET-GQL-028's precedent on this same settings endpoint, not a functional FAIL, and consider a longer wait before re-running; the number matches the prefix but not the full date/sequence pattern (template engine broke the format tokens, a more serious defect than a wrong prefix); create_restored_template still carries the QATEST prefix (Cleanup/restore did not take -- escalate, this renumbers every return created by later suites with a non-standard prefix)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.ReturnNewNumberTemplate"": ""RET{0:yyMMdd}-{1:D5}""}","VCST-5628","Draft"
+"RET-GQL-035","returnReasons -- localizedName Is Per-Culture Admin Text With Code Fallback, Not A Single Global String","GraphQL > Returns > Query","High","","","Runner-native. No browser. RET-GQL-010 asserted only en-US, where D4 (the domain map's own finding) reported EVERY code's localizedName byte-identical to its code -- indistinguishable from a lookup that always falls back, never actually translating anything. Two translations were since entered into the admin dictionary specifically to break that ambiguity, and are now deliberate, durable fixture state this case relies on: FaultyOnArrival has an en-US entry (""Faulty on arrival"") and a ru-RU entry (""Брак при получении""), but nothing entered for de-DE. This case queries all THREE cultures for the SAME code in one pass and asserts a genuine three-way contrast -- translated / translated DIFFERENTLY in another culture / falls back to the bare code where nothing was entered -- which a hardcoded-string lookup cannot produce (it would return the SAME text regardless of cultureName) and a lookup that always falls back cannot produce either (en-US and ru-RU would both just read the code). NoLongerNeeded (one of the four codes with nothing entered in ANY culture) is checked in all three calls and must read as its bare code every time, confirming the fallback is per-CODE, not a global off switch. No store setting is changed by this case -- it is a pure read against existing admin dictionary state, so there is nothing to restore.","store={{STORE_ID}}","[AUTH role=USER]
+[GQL-OP reasons_en]
+query { returnReasons(storeId: ""{{STORE_ID}}"", cultureName: ""en-US"") { code localizedName requiresComment } }
+[GQL-EXEC reasons_en]
+[GQL-OP reasons_ru]
+query { returnReasons(storeId: ""{{STORE_ID}}"", cultureName: ""ru-RU"") { code localizedName requiresComment } }
+[GQL-EXEC reasons_ru]
+[GQL-OP reasons_de]
+query { returnReasons(storeId: ""{{STORE_ID}}"", cultureName: ""de-DE"") { code localizedName requiresComment } }
+[GQL-EXEC reasons_de]","[ERRORS label=reasons_en] errors[] empty
+[COUNT label=reasons_en] data.returnReasons.length = 5
+[DATA label=reasons_en] data.returnReasons[?code=FaultyOnArrival].localizedName = Faulty on arrival
+[DATA label=reasons_en] data.returnReasons[?code=NoLongerNeeded].localizedName = NoLongerNeeded
+[ERRORS label=reasons_ru] errors[] empty
+[DATA label=reasons_ru] data.returnReasons[?code=FaultyOnArrival].localizedName = Брак при получении
+[DATA label=reasons_ru] data.returnReasons[?code=NoLongerNeeded].localizedName = NoLongerNeeded
+[ERRORS label=reasons_de] errors[] empty
+[DATA label=reasons_de] data.returnReasons[?code=FaultyOnArrival].localizedName = FaultyOnArrival
+[DATA label=reasons_de] data.returnReasons[?code=NoLongerNeeded].localizedName = NoLongerNeeded","[EVIDENCE] FaultyOnArrival reading THREE different strings across three calls in the same case -- English text, Russian text, bare code -- is the only shape that rules out both a hardcoded global string and an always-falls-back lookup at once; NoLongerNeeded staying identical across all three confirms the fallback applies per-code, not per-culture-globally","errors[] non-empty on any of the three calls; FaultyOnArrival reads the SAME string in en-US and ru-RU (translations not actually keyed by culture); FaultyOnArrival reads its bare code in en-US or ru-RU (the entered translation was lost or never persisted -- re-check the admin dictionary before filing, since this is fixture state that could have been edited by someone else); NoLongerNeeded reads a translated string in any culture (a code that should have nothing entered started falling back to something other than its own name)","none -- read-only query against existing admin dictionary state, no store setting or return created","VCST-5628","Draft"
+RET-GQL-036,"returnStatuses -- The Decision Statuses Approved, PartiallyApproved And Rejected Are Labelled Alongside The Step-1 Statuses",GraphQL > Returns > Query,Medium,,,"Runner-native. No browser. Read-only. Complements RET-GQL-011, which pins the dictionary shape and the three Step-1 statuses. Step 2 makes Approved, PartiallyApproved and Rejected reachable, so a buyer can now hold a return in each: the localized dictionary the storefront uses to label a status must carry them, or the storefront renders a raw code. The legacy spelling ""Canceled"" may also appear in this dictionary and is deliberately not asserted either way here (only the admin status dropdown is required to offer a single ""Cancelled"").",,"[AUTH role=USER]
+[GQL-OP get_statuses]
+query { returnStatuses { items { key value } } }
+[GQL-EXEC get_statuses]","[ERRORS label=get_statuses] errors[] empty
+[DATA label=get_statuses] data.returnStatuses.items[?key=Requested].value is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=Approved].value is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=PartiallyApproved].value is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=Rejected].value is non-null
+[DATA label=get_statuses] data.returnStatuses.items[?key=Cancelled].value is non-null",,a decision status has no label (the storefront would render the bare code); errors[] non-empty,none -- read-only query,VCST-5883 · Archetype:RENDER · Technique:EP,Draft
+RET-GQL-037,"Approved Return -- Buyer Reads Approved Quantity, Line State And No Available Action; The Approved Unit Stays Held; Returns List Filters By Approved",GraphQL > Returns > Step 2 Read Surface,Critical,,ECL-2.1,"Runner-native. No browser. Self-contained (FIFTH RULE: a decided return is terminal and no seeder survives the previous run, so the case creates its OWN Requested return as the buyer on RETURNS_AUTH_JOURNEY line B (5 ordered; no other case uses line B), decides it as the agent through POST /api/return/{id}/authorize and reads the buyer surface. An APPROVED unit stays held by design - there is no un-authorize and an Approved return cannot be cancelled by an admin edit (OBSERVED: available-statuses of an Approved return is [Approved, Completed, Processing]) - so a case that approves consumes exactly the units named in its Title/Test_Data (qty) from line B, and a run needs line B re-seeded afterwards: npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh. Cases that only DECLINE or that the buyer cancels return every unit. Line B is reserved for the VCST-5883 cases of suites 050o and 073a: run those two suites serially, never on two lanes at once. THIS CASE CONSUMES 1 UNIT of line B.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId); qty=1,"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B0]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineB}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP read]
+query { return(id: ""{{RETURN_ID}}"") { id number status statusDisplayValue rejectReason itemsQuantity items { id orderLineItemId quantity approvedQuantity itemState reasonCode rejectReason } availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC read]
+[GQL-OP list_approved]
+query { returns(storeId: ""{{STORE_ID}}"", first: 50, statuses: [""Approved""]) { totalCount items { id status } } }
+[GQL-EXEC list_approved]
+[GQL-OP after_approve]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_approve]
+[GQL-CAPTURE after_approve.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B1]","[DATA label=before] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity >= 1
+[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Approved
+[ERRORS label=read] errors[] empty
+[DATA label=read] data.return.status = Approved
+[DATA label=read] data.return.items[?id={{LINE_ID}}].quantity = 1
+[DATA label=read] data.return.items[?id={{LINE_ID}}].approvedQuantity = 1
+[DATA label=read] data.return.items[?id={{LINE_ID}}].itemState = Approved
+[NULL label=read] data.return.items.0.rejectReason
+[NULL label=read] data.return.rejectReason
+[COUNT label=read] data.return.availableActions[*?isAvailable=true].length = 0
+[DATA label=read] data.return.availableActions[?name=cancel].isAvailable = false
+[DATA label=read] data.return.availableActions[?name=edit].isAvailable = false
+[DATA label=read] data.return.availableActions[?name=submit].isAvailable = false
+[ERRORS label=list_approved] errors[] empty
+[DATA label=list_approved] data.returns.items[?id={{RETURN_ID}}].status = Approved
+[ERRORS label=after_approve] errors[] empty
+[DATA label=after_approve] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}} - 1
+[EVIDENCE] BLOCKED guard: the first assertion (line B has at least 1 returnable unit) is a fixture prerequisite - when it fails the fixture is exhausted, report BLOCKED and re-seed (npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh), never FAIL.",[REST] authorize is the agent decision the buyer then reads; [EVIDENCE] a fully approved return releases nothing - the approved unit stays held (B1 = B0 - 1),"status is not Approved after a full decision; approvedQuantity differs from the requested 1 or itemState is not Approved; any action is offered to the buyer on a decided return; the approved unit is not held (B1 > B0 - 1); the Approved filter omits the return. Exhausted fixture (B0 = 0) = BLOCKED, not FAIL",none -- an Approved return cannot be undone or cancelled (no un-authorize; an admin edit to Cancelled is refused); the 1 consumed unit of line B is restored only by re-seeding RETURNS_AUTH_JOURNEY,VCST-5883 · Archetype:LIFECYCLE · Technique:ST,Draft
+RET-GQL-038,"Partly Approved Return -- Buyer Reads Per-Line Approved Quantity, Line State And Decline Reason; The Declined Line Is Released, The Approved Unit Stays Held",GraphQL > Returns > Step 2 Read Surface,Critical,,ECL-2.1,"Runner-native. No browser. Self-contained (FIFTH RULE: a decided return is terminal and no seeder survives the previous run, so the case creates its OWN Requested return as the buyer on RETURNS_AUTH_JOURNEY line B (5 ordered; no other case uses line B), decides it as the agent through POST /api/return/{id}/authorize and reads the buyer surface. An APPROVED unit stays held by design - there is no un-authorize and an Approved return cannot be cancelled by an admin edit (OBSERVED: available-statuses of an Approved return is [Approved, Completed, Processing]) - so a case that approves consumes exactly the units named in its Title/Test_Data (qty) from line B, and a run needs line B re-seeded afterwards: npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh. Cases that only DECLINE or that the buyer cancels return every unit. Line B is reserved for the VCST-5883 cases of suites 050o and 073a: run those two suites serially, never on two lanes at once. THIS CASE CONSUMES 1 UNIT of line B. Two lines: line A requested 1 and DECLINED with a reason (net zero on line A), line B requested 2 and approved 1 (a partial approval INSIDE one line - the approved quantity is measured against what was requested, not what was ordered).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId),"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B0]
+[GQL-OP before_a]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before_a]
+[GQL-CAPTURE before_a.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A0]
+[REST-OP upload_a]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_a]
+[REST-CAPTURE upload_a.body.[0].url → ATT_A]
+[REST-OP upload_b]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_b]
+[REST-CAPTURE upload_b.body.[0].url → ATT_B]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_A}}""] }, { orderLineItemId: ""{{lineB}}"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_B}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items[?orderLineItemId={{lineA}}].id → LINE_A_ID]
+[GQL-CAPTURE submit.data.submitReturn.items[?orderLineItemId={{lineB}}].id → LINE_B_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_A_ID}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}, {""lineItemId"": ""{{LINE_B_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP read]
+query { return(id: ""{{RETURN_ID}}"") { id number status statusDisplayValue rejectReason itemsQuantity items { id orderLineItemId quantity approvedQuantity itemState reasonCode rejectReason } availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC read]
+[GQL-OP after_a]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_a]
+[GQL-CAPTURE after_a.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A1]
+[GQL-OP after_b]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_b]
+[GQL-CAPTURE after_b.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B1]","[DATA label=before] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity >= 2
+[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = PartiallyApproved
+[ERRORS label=read] errors[] empty
+[DATA label=read] data.return.status = PartiallyApproved
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].quantity = 1
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].approvedQuantity = 0
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].itemState = Rejected
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].rejectReason = NoLongerNeeded
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].quantity = 2
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].approvedQuantity = 1
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].itemState = Approved
+[COUNT label=read] data.return.availableActions[*?isAvailable=true].length = 0
+[ERRORS label=after_a] errors[] empty
+[DATA label=after_a] data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity = {{A0}}
+[DATA label=after_b] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}} - 1
+[EVIDENCE] BLOCKED guard: the first assertion (line B has at least 2 returnable units) is a fixture prerequisite - when it fails the fixture is exhausted, report BLOCKED and re-seed (npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh), never FAIL.","[REST] authorize is the agent decision; [EVIDENCE] line A returnable is unchanged after a full decline (A1 = A0), line B holds exactly the 1 approved unit (B1 = B0 - 1): the second requested unit was released","status is derived from one line instead of all (Approved or Rejected instead of PartiallyApproved); the declined line reports approvedQuantity above 0, itemState other than Rejected, or no rejectReason; the approved line reports 2 (requested) instead of 1; the declined line keeps its hold (A1 < A0); line B holds 2 (B1 = B0 - 2: the unapproved unit was not released). Exhausted fixture = BLOCKED, not FAIL",none -- the approved unit cannot be undone; the declined line holds nothing; re-seed RETURNS_AUTH_JOURNEY to restore line B,VCST-5883 · Archetype:LIFECYCLE · Technique:DT,Draft
+RET-GQL-039,Units Released By A Partial Decision Are Returnable Again Through returnableItems And Can Be Re-Requested On A New Return,GraphQL > Returns > Step 2 Read Surface,High,,ECL-2.1,"Runner-native. No browser. Self-contained (FIFTH RULE: a decided return is terminal and no seeder survives the previous run, so the case creates its OWN Requested return as the buyer on RETURNS_AUTH_JOURNEY line B (5 ordered; no other case uses line B), decides it as the agent through POST /api/return/{id}/authorize and reads the buyer surface. An APPROVED unit stays held by design - there is no un-authorize and an Approved return cannot be cancelled by an admin edit (OBSERVED: available-statuses of an Approved return is [Approved, Completed, Processing]) - so a case that approves consumes exactly the units named in its Title/Test_Data (qty) from line B, and a run needs line B re-seeded afterwards: npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh. Cases that only DECLINE or that the buyer cancels return every unit. Line B is reserved for the VCST-5883 cases of suites 050o and 073a: run those two suites serially, never on two lanes at once. THIS CASE CONSUMES 1 UNIT of line B. Return 1 requests 2 of line B and the agent approves 1: the other unit goes back to returnable immediately (VCST-5628 quantity model, consequence 3). The buyer then re-requests that released unit on a second return, which the buyer cancels again (net zero for the second return).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId),"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B0]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineB}}"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP after_partial]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_partial]
+[GQL-CAPTURE after_partial.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B1]
+[REST-OP upload_re]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_re]
+[REST-CAPTURE upload_re.body.[0].url → ATT_RE]
+[GQL-OP create_re]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineB}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_RE}}""] }] }) { id status } }
+[GQL-EXEC create_re]
+[GQL-CAPTURE create_re.data.createReturn.id → RE_ID]
+[GQL-OP submit_re]
+mutation { submitReturn(command: { returnId: ""{{RE_ID}}"" }) { id status } }
+[GQL-EXEC submit_re]
+[GQL-OP after_re]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_re]
+[GQL-CAPTURE after_re.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B3]
+[GQL-OP cancel_re]
+mutation { cancelReturn(command: { returnId: ""{{RE_ID}}"" }) { id status } }
+[GQL-EXEC cancel_re]
+[GQL-OP after_cancel_re]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_cancel_re]
+[GQL-CAPTURE after_cancel_re.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B4]","[DATA label=before] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity >= 2
+[ERRORS label=submit] errors[] empty
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = PartiallyApproved
+[ERRORS label=after_partial] errors[] empty
+[DATA label=after_partial] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}} - 1
+[ERRORS label=create_re] errors[] empty
+[ERRORS label=submit_re] errors[] empty
+[DATA label=submit_re] data.submitReturn.status = Requested
+[DATA label=after_re] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}} - 2
+[ERRORS label=cancel_re] errors[] empty
+[DATA label=cancel_re] data.cancelReturn.status = Cancelled
+[DATA label=after_cancel_re] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}} - 1
+[EVIDENCE] BLOCKED guard: the first assertion (line B has at least 2 returnable units) is a fixture prerequisite - when it fails the fixture is exhausted, report BLOCKED and re-seed (npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh), never FAIL.",,"after_partial equals B0 - 2 (the unapproved unit was not released) or B0 (the approved unit holds nothing); the re-request of the released unit is refused (RETURN_QUANTITY_UNAVAILABLE); the second return does not hold exactly its own unit (after_re != B0 - 2); cancelling it does not give the unit back (after_cancel_re != B0 - 1). Exhausted fixture = BLOCKED, not FAIL","cancelReturn on {{RE_ID}} as USER if the inline cancel did not run (Requested, never decided); the approved unit of return 1 cannot be undone - re-seed RETURNS_AUTH_JOURNEY to restore line B",VCST-5883 · VCST-5628 · Archetype:BOUNDARY · Technique:FLOW,Draft
+RET-GQL-040,"Rejected Return -- Buyer Reads Every Line Declined With Its Reason, Return-Level Decline Reason And No Held Quantity",GraphQL > Returns > Step 2 Read Surface,High,,ECL-2.1,"Runner-native. No browser. Self-contained (FIFTH RULE: a decided return is terminal and no seeder survives the previous run, so the case creates its OWN Requested return as the buyer on RETURNS_AUTH_JOURNEY line B (5 ordered; no other case uses line B), decides it as the agent through POST /api/return/{id}/authorize and reads the buyer surface. An APPROVED unit stays held by design - there is no un-authorize and an Approved return cannot be cancelled by an admin edit (OBSERVED: available-statuses of an Approved return is [Approved, Completed, Processing]) - so a case that approves consumes exactly the units named in its Title/Test_Data (qty) from line B, and a run needs line B re-seeded afterwards: npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh. Cases that only DECLINE or that the buyer cancels return every unit. Line B is reserved for the VCST-5883 cases of suites 050o and 073a: run those two suites serially, never on two lanes at once. Both lines are declined (approved 0) with a return-level reason, so the case is quantity-neutral and needs no admin cancel.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId),"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B0]
+[GQL-OP before_a]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before_a]
+[GQL-CAPTURE before_a.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A0]
+[REST-OP upload_a]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_a]
+[REST-CAPTURE upload_a.body.[0].url → ATT_A]
+[REST-OP upload_b]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_b]
+[REST-CAPTURE upload_b.body.[0].url → ATT_B]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_A}}""] }, { orderLineItemId: ""{{lineB}}"", quantity: 3, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_B}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items[?orderLineItemId={{lineA}}].id → LINE_A_ID]
+[GQL-CAPTURE submit.data.submitReturn.items[?orderLineItemId={{lineB}}].id → LINE_B_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""NoLongerNeeded"", ""items"": [{""lineItemId"": ""{{LINE_A_ID}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}, {""lineItemId"": ""{{LINE_B_ID}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP read]
+query { return(id: ""{{RETURN_ID}}"") { id number status statusDisplayValue rejectReason itemsQuantity items { id orderLineItemId quantity approvedQuantity itemState reasonCode rejectReason } availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC read]
+[GQL-OP list_rejected]
+query { returns(storeId: ""{{STORE_ID}}"", first: 50, statuses: [""Rejected""]) { items { id status } } }
+[GQL-EXEC list_rejected]
+[GQL-OP after_a]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_a]
+[GQL-CAPTURE after_a.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A1]
+[GQL-OP after_b]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_b]
+[GQL-CAPTURE after_b.data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity → B1]","[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Rejected
+[ERRORS label=read] errors[] empty
+[DATA label=read] data.return.status = Rejected
+[DATA label=read] data.return.rejectReason = NoLongerNeeded
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].approvedQuantity = 0
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].itemState = Rejected
+[DATA label=read] data.return.items[?id={{LINE_A_ID}}].rejectReason = NoLongerNeeded
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].approvedQuantity = 0
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].itemState = Rejected
+[DATA label=read] data.return.items[?id={{LINE_B_ID}}].rejectReason = NoLongerNeeded
+[COUNT label=read] data.return.availableActions[*?isAvailable=true].length = 0
+[ERRORS label=list_rejected] errors[] empty
+[DATA label=list_rejected] data.returns.items[?id={{RETURN_ID}}].status = Rejected
+[DATA label=after_a] data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity = {{A0}}
+[DATA label=after_b] data.returnableItems[?orderLineItemId={{lineB}}].returnableQuantity = {{B0}}",,status stays Requested or becomes PartiallyApproved when every line is declined; the return-level reason or a line reason is missing on the buyer read; the declined quantities stay held (after_a < A0 or after_b < B0); the Rejected filter omits the return,"none -- every line is declined, so nothing stays held; a Rejected return is terminal",VCST-5883 · Archetype:LIFECYCLE · Technique:DT,Draft
+RET-GQL-041,A Colleague In The Same Organization Cannot Read A Buyer's Decided Return -- return(id) Is Null And The Return Is Absent From Their List,GraphQL > Returns > Step 2 Read Surface,High,,,"Runner-native. No browser. Self-contained (FIFTH RULE: a decided return is terminal and no seeder survives the previous run, so the case creates its OWN Requested return as the buyer on RETURNS_AUTH_JOURNEY line B (5 ordered; no other case uses line B), decides it as the agent through POST /api/return/{id}/authorize and reads the buyer surface. An APPROVED unit stays held by design - there is no un-authorize and an Approved return cannot be cancelled by an admin edit (OBSERVED: available-statuses of an Approved return is [Approved, Completed, Processing]) - so a case that approves consumes exactly the units named in its Title/Test_Data (qty) from line B, and a run needs line B re-seeded afterwards: npm run seed:returns:decisions -- --only RETURNS_AUTH_JOURNEY --fresh. Cases that only DECLINE or that the buyer cancels return every unit. Line B is reserved for the VCST-5883 cases of suites 050o and 073a: run those two suites serially, never on two lanes at once. RETURNS_COLLEAGUE is a second buyer in the SAME organization as {{USER_EMAIL}}. RET-GQL-013 proves this for a Draft; a decided return carries decline reasons the colleague must not see either, and no return query in this schema takes an organization scope.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineB}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""NoLongerNeeded"", ""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[AUTH role=USER2]
+[GQL-OP get_as_colleague]
+query { return(id: ""{{RETURN_ID}}"") { id status rejectReason items { rejectReason } } }
+[GQL-EXEC get_as_colleague]
+[GQL-OP list_as_colleague]
+query { returns(storeId: ""{{STORE_ID}}"", first: 100, statuses: [""Rejected""]) { items { id } } }
+[GQL-EXEC list_as_colleague]
+[AUTH role=USER]
+[GQL-OP get_as_owner]
+query { return(id: ""{{RETURN_ID}}"") { id status } }
+[GQL-EXEC get_as_owner]","[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Rejected
+[ERRORS label=get_as_colleague] errors[] empty
+[NULL label=get_as_colleague] data.return
+[ERRORS label=list_as_colleague] errors[] empty
+[DATA label=list_as_colleague] data.returns.items[?id={{RETURN_ID}}].id is null
+[ERRORS label=get_as_owner] errors[] empty
+[DATA label=get_as_owner] data.return.status = Rejected
+[EVIDENCE] the owner read proves the return exists and is decided at the moment the colleague gets null, so the null is ownership scoping, not an absent id",,"get_as_colleague returns the return (decline reasons leak across the organization); the colleague's own list contains it; get_as_owner is null (the control read failed, the case proves nothing)",none -- the return is Rejected (terminal) and holds no quantity,VCST-5883 · Archetype:SCOPE · Technique:DT,Draft
+RET-GQL-042,"The Buyer xAPI Offers No Mutation That Decides A Return, And A Buyer Token Is Refused On The Agent Authorize Endpoint",GraphQL > Returns > Step 2 Read Surface,High,,,"Runner-native. No browser. Decisions are an agent action (VCST-5628 transitions table: authorize / reject actor = agent). The schema half is read-only introspection; the permission half calls POST /api/return/{id}/authorize with the BUYER's storefront token on a throwaway Requested return created in the case and cancelled by the buyer afterwards (a refused call persists nothing). Uses RETURNS_AUTH_JOURNEY line B for one unit.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); lineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); lineB=@td(RETURNS_AUTH_JOURNEY.lineBItemId),"[AUTH role=USER]
+[GQL-OP mutation_names]
+query { __schema { mutationType { fields { name } } } }
+[GQL-EXEC mutation_names]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineB}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[REST-OP buyer_authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC buyer_authorize]
+[GQL-OP read_back]
+query { return(id: ""{{RETURN_ID}}"") { status } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=mutation_names] errors[] empty
+[DATA label=mutation_names] data.__schema.mutationType.fields[?name=authorizeReturn].name is null
+[DATA label=mutation_names] data.__schema.mutationType.fields[?name=approveReturn].name is null
+[DATA label=mutation_names] data.__schema.mutationType.fields[?name=declineReturn].name is null
+[DATA label=mutation_names] data.__schema.mutationType.fields[?name=rejectReturn].name is null
+[DATA label=mutation_names] data.__schema.mutationType.fields[?name=createReturn].name is non-null
+[ERRORS label=buyer_authorize] HTTP 403
+[ERRORS label=read_back] errors[] empty
+[DATA label=read_back] data.return.status = Requested
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled",,a decision mutation appears on the buyer schema; the buyer token is accepted (200) on authorize or the return is no longer Requested afterwards; the refusal is a 5xx instead of a clean 403,"cancelReturn on {{RETURN_ID}} as USER if the inline cancel did not run (state Requested, never decided)",VCST-5883 · Archetype:SCOPE · Technique:DT,Draft
+RET-GQL-043,"The Storefront Return Contract Exposes No Prices -- ReturnLineItemType And ReturnType Carry No Price, Currency Or Total Fields",GraphQL > Returns > Query,Medium,,,"Runner-native. No browser. Read-only schema introspection. Decided Team fact (VCST-5883, observed live on vcptcore-qa1): return prices exist only in the Admin REST/blade (an agent may edit the price of a line, even a decided one, and Save persists it), and the buyer-facing xAPI has no price fields at all. A price field appearing here is a contract change that needs a deliberate decision (it would expose the negotiated B2B price on a decided return) - this case makes that visible instead of silent.",,"[AUTH role=USER]
+[GQL-OP line_fields]
+query { __type(name: ""ReturnLineItemType"") { fields { name } } }
+[GQL-EXEC line_fields]
+[GQL-OP return_fields]
+query { __type(name: ""ReturnType"") { fields { name } } }
+[GQL-EXEC return_fields]","[ERRORS label=line_fields] errors[] empty
+[DATA label=line_fields] data.__type.fields[?name=approvedQuantity].name is non-null
+[DATA label=line_fields] data.__type.fields[?name=price].name is null
+[DATA label=line_fields] data.__type.fields[?name=extendedPrice].name is null
+[DATA label=line_fields] data.__type.fields[?name=currency].name is null
+[ERRORS label=return_fields] errors[] empty
+[DATA label=return_fields] data.__type.fields[?name=availableActions].name is non-null
+[DATA label=return_fields] data.__type.fields[?name=total].name is null
+[DATA label=return_fields] data.__type.fields[?name=currency].name is null",,"price, extendedPrice, currency or total appears on a buyer return type (the contract grew a price surface without a decision); approvedQuantity or availableActions disappeared (the Step-2 read surface regressed)",none -- read-only introspection,VCST-5883 · VCST-5628 · Archetype:SCOPE · Technique:EG,Draft
+RET-GQL-044,"customerReference And customerComment -- Set On Create, Read Back, Edited On A Draft And Persisted After Submit",GraphQL > Returns > Mutation,Medium,,,"Runner-native. No browser. VCST-5628 B2B readiness: ""CustomerReference on Return, prefilled from the order's PO where present, editable"". The prefill is a wizard behaviour (storefront); this case pins the API half - the field is accepted on create, editable while Draft, and survives submit. Uses RETURNS_ORDER_E_SPLIT_DELIVERY (8 returnable) for one unit, cancelled in the case.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss here makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Return window, days"" (Return.WindowDays) = 30; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the create cases attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(3) Platform configuration FileUpload:Scopes includes return-attachments (without it POST /api/files/return-attachments is refused and every create case cannot attach).
+(4) Seeded fixtures: npm run seed:returns (RETURNS_ORDER_*) and npm run seed:returns:decisions (RETURNS_AUTH_JOURNEY) — check with npm run returns:check / npm run returns:decisions:check; buyer {{USER_EMAIL}} and agent {{ADMIN}} (holds return:authorize); colleague {{USER2_EMAIL}} in the SAME organization (RETURNS_COLLEAGUE).",order=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.id); line=@td(RETURNS_ORDER_E_SPLIT_DELIVERY.lineXItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerReference: ""AGENT-TEST-PO-1"", customerComment: ""AGENT-TEST first comment"", items: [{ orderLineItemId: ""{{line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status customerReference customerComment } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP edit]
+mutation { updateReturn(command: { returnId: ""{{RETURN_ID}}"", customerReference: ""AGENT-TEST-PO-2"", customerComment: ""AGENT-TEST edited comment"" }) { id status customerReference customerComment } }
+[GQL-EXEC edit]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status customerReference customerComment } }
+[GQL-EXEC submit]
+[GQL-OP read_back]
+query { return(id: ""{{RETURN_ID}}"") { status customerReference customerComment } }
+[GQL-EXEC read_back]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=create] errors[] empty
+[DATA label=create] data.createReturn.customerReference = AGENT-TEST-PO-1
+[DATA label=create] data.createReturn.customerComment = AGENT-TEST first comment
+[ERRORS label=edit] errors[] empty
+[DATA label=edit] data.updateReturn.customerReference = AGENT-TEST-PO-2
+[DATA label=edit] data.updateReturn.customerComment = AGENT-TEST edited comment
+[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[DATA label=read_back] data.return.customerReference = AGENT-TEST-PO-2
+[DATA label=read_back] data.return.customerComment = AGENT-TEST edited comment
+[ERRORS label=cleanup_cancel] errors[] empty",,"customerReference is dropped on create, not editable on a Draft, or reset by submit; customerComment loses the edit",cancelReturn on {{RETURN_ID}} as USER if the inline cancel did not run (Draft or Requested),VCST-5628 · Archetype:BOUNDARY · Technique:EP,Draft

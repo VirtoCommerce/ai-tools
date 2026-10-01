@@ -8365,5 +8365,390 @@
       "org": "org"
     },
     "_notes": "050l recipient in its own org; its cases self-seed their message (PUSH_MSG_SEED). Replaces TECHFLOW_ADMIN."
+  },
+  "RETURNS_ORDER_A_HAPPY": {
+    "json": "orders/returns/return-order-a",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture A. Happy path — delivered today, ordered == delivered. The return entry point must appear. Ordered 5 of lineX; delivered 5 across 1 shipment(s) at offset(s) [0] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_A_HAPPY.id)) must report isReturnable=true, returnableQuantity=5, orderedQuantity=5, ineligibilityReason=null for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_A2_PARTIAL_DELIVERY": {
+    "json": "orders/returns/return-order-a2",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture A2. Returnable quantity is capped by what was DELIVERED (4), not by what was ORDERED (10). Ordered 10 of lineX; delivered 4 across 1 shipment(s) at offset(s) [0] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_A2_PARTIAL_DELIVERY.id)) must report isReturnable=true, returnableQuantity=4, orderedQuantity=10, ineligibilityReason=null for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_B_OUTSIDE_WINDOW": {
+    "json": "orders/returns/return-order-b",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture B. A, with the delivery moved 40 days back — past the 30-day window. Nothing else differs. Ordered 5 of lineX; delivered 5 across 1 shipment(s) at offset(s) [-40] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_B_OUTSIDE_WINDOW.id)) must report isReturnable=false, returnableQuantity=0, orderedQuantity=5, ineligibilityReason=\"OUTSIDE_RETURN_WINDOW\" for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_C_NOT_DELIVERED": {
+    "json": "orders/returns/return-order-c",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture C. A, with the delivery date REMOVED (shipment still holds the goods). Nothing else differs. Ordered 5 of lineX; delivered 0 across 1 shipment(s) at offset(s) [null] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_C_NOT_DELIVERED.id)) must report isReturnable=false, returnableQuantity=0, orderedQuantity=5, ineligibilityReason=\"NOT_DELIVERED\" for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_D_STATUS_NOT_ALLOWED": {
+    "json": "orders/returns/return-order-d",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture D. A, with the ORDER STATUS made disallowed. Delivered today, full quantity — the order status is deliberately the ONLY reason it is ineligible, so the assertion cannot pass for the wrong reason. Ordered 5 of lineX; delivered 5 across 1 shipment(s) at offset(s) [0] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id)) must report isReturnable=false, returnableQuantity=0, orderedQuantity=5, ineligibilityReason=\"ORDER_STATUS_NOT_ALLOWED\" for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_E_SPLIT_DELIVERY": {
+    "json": "orders/returns/return-order-e",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture E. TWO deliveries of the SAME line, straddling the window boundary (-40d and today) with DIFFERENT quantities (5 and 3). The window must run from the LATEST delivery, and the delivered total must be the SUM, 8. Ordered 8 of lineX; delivered 8 across 2 shipment(s) at offset(s) [-40,0] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_E_SPLIT_DELIVERY.id)) must report isReturnable=true, returnableQuantity=8, orderedQuantity=8, ineligibilityReason=null for the lineX line. Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_F_CANCELLED_LINE": {
+    "json": "orders/returns/return-order-f",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "cancelledLineItemId": "cancelledLineItemId",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture F. A live line delivered today PLUS a cancelled line, in one order. The cancelled line must be excluded while the live line stays returnable. Ordered 5 of lineX; delivered 5 across 1 shipment(s) at offset(s) [0] day(s) from seed time. returnableItems(orderId: @td(RETURNS_ORDER_F_CANCELLED_LINE.id)) must report isReturnable=true, returnableQuantity=5, orderedQuantity=5, ineligibilityReason=null for the lineX line, and isReturnable=false / \"LINE_CANCELLED\" for @td(RETURNS_ORDER_F_CANCELLED_LINE.cancelledLineItemId). Static fields come from the JSON fixture; id / lineXItemId / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once an in-window fixture has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES": {
+    "json": "orders/returns/return-order-g",
+    "fields": {
+      "number": "number",
+      "status": "status",
+      "currency": "currency",
+      "total": "total",
+      "id": "id",
+      "lineXItemId": "lineXItemId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineADeliveredQuantity": "lineADeliveredQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBDeliveredQuantity": "lineBDeliveredQuantity",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 buyer's own returns, fixture G. TWO lines eligible for return AT THE SAME TIME — different products, different quantities, both delivered today in ONE shipment. The only fixture that reports 2 of 2 lines eligible: F is the other two-line order and its second line is CANCELLED, so it reports 1 of 2. Unlocks bulk-applying a reason across lines, and \"an attachment is required PER LINE, not per return\". Line A = @td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId), ordered 5 / delivered 5 of @td(RETURNS_LINE_X.sku); line B = @td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineBItemId), ordered 3 / delivered 3 of @td(RETURNS_LINE_X.lineYSku). lineAItemId IS lineXItemId — the same seeded line under a neutral name, so a case can address the two lines as A and B. returnableItems(orderId: @td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.id)) must report TWO rows, both isReturnable=true with ineligibilityReason=null, returnableQuantity 5 and 3 respectively. The quantities and the products DIFFER on purpose: equal ones would make a per-line rule indistinguishable from a per-return one (.claude/rules/test-data.md §SECOND RULE), and td:validate:orders FAILS if they ever collapse. Static fields come from the JSON fixture; id / line ids / seededAt / deliveryDates come from aliases.<env>.json (npm run seed:returns). The delivery dates are RELATIVE — this fixture ages, and td:validate:orders FAILS once it has aged past the store's return window. Re-seed, never re-date."
+  },
+  "RETURNS_LINE_X": {
+    "_inline": true,
+    "fields": {
+      "productId": "productId",
+      "sku": "sku",
+      "name": "name",
+      "cancelledProductId": "cancelledProductId",
+      "cancelledSku": "cancelledSku",
+      "lineYProductId": "lineYProductId",
+      "lineYSku": "lineYSku",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5628 — THE line under test, shared by every RETURNS_ORDER_* fixture. Deliberately carries NO committed value: the product is live-discovered per environment at seed time and written to aliases.<env>.json by npm run seed:returns, so no env-specific SKU ever enters a committed file (.claude/rules/test-data.md GOLDEN RULE). `cancelledSku` is the DIFFERENT product used for fixture F's cancelled line — the two must never be the same product or \"a cancelled line is not returnable\" becomes undecidable. `lineYSku` is a THIRD distinct product — fixture G's SECOND eligible line — and must differ from both of the others: two roles on one product would collapse the sku→role mapping and make G's per-line question undecidable. @td(RETURNS_LINE_X.sku) throws until the target env has been seeded, which is the intended loud failure."
+  },
+  "RETURNS_AUTH_PARTIAL_LINE": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBMeasureUnit": "lineBMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "returnLineBRequestedQuantity": "returnLineBRequestedQuantity",
+      "returnLineBReturnLineItemId": "returnLineBReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "lineBReturnableAfterSeed": "lineBReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture PARTIAL. Partial approval of ONE line and full rejection of the other in one decision. Line A: ordered 500 box, requested 240, the test approves 200 — three different numbers, so approving the ordered or the requested quantity is observable. Line B: requested the full 12, the test approves 0. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_MIXED": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBMeasureUnit": "lineBMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "returnLineBRequestedQuantity": "returnLineBRequestedQuantity",
+      "returnLineBReturnLineItemId": "returnLineBReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "lineBReturnableAfterSeed": "lineBReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture MIXED. Approve one line in full and reject the other. Ordered > requested on BOTH lines (8/5, 6/4), so a full approval of the requested quantity is distinguishable from one of the ordered quantity. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_REJECT": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBMeasureUnit": "lineBMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "returnLineBRequestedQuantity": "returnLineBRequestedQuantity",
+      "returnLineBReturnLineItemId": "returnLineBReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "lineBReturnableAfterSeed": "lineBReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture REJECT. Reject the whole return (every line approved 0). Both lines requested PARTIALLY (7 of 9, 3 of 4) so a rejection that released the ORDERED quantity back to returnable is observable against one that released the requested. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_SINGLE": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture SINGLE. Minimal return — one line, quantity 1 of 1. The boundary: approve-all and approve-partial cannot both exist here, so it is the fixture for \"full approval\" and the lower BVA edge of approvedQuantity. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_FR": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnSubmissionCulture": "returnSubmissionCulture",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture FR. Notification language. The ORDER is de-DE; the return is created with cultureName fr-FR. Two candidate sources of Return.LanguageCode exist (order language vs submission culture) and they DISAGREE here, so the language the decision email renders in names its own source. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_TWO_RETURNS": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "return2Id": "return2Id",
+      "return2Number": "return2Number",
+      "return2Status": "return2Status",
+      "return2Via": "return2Via",
+      "return2CustomerReference": "return2CustomerReference",
+      "return2LanguageCode": "return2LanguageCode",
+      "return2LineARequestedQuantity": "return2LineARequestedQuantity",
+      "return2LineAReturnLineItemId": "return2LineAReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture TWO. Two Requested returns by the same buyer on the SAME line, 6 + 4 = the ordered 10. Deciding one must not touch the other, and a rejection of one must release exactly ITS quantity (6 or 4, never 10) back to returnable. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_DUP_LINE": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture DUP. A plain Requested return of 5 of a 5-unit single line. The TEST adds a duplicate return line for the same order line through the admin PUT and then decides — the seeder deliberately does NOT add it, so the duplicate is created by the case that asserts on it and the fixture stays a valid baseline. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_JOURNEY": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "lineBMeasureUnit": "lineBMeasureUnit",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "lineBReturnableAfterSeed": "lineBReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture JOURNEY. A fresh Completed + delivered order with two eligible lines (7 and 5) and NO return — the [JOURNEY] case submits through the storefront UI, which is the mechanism under test there. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_AUTH_NEW_ADMIN": {
+    "_inline": true,
+    "fields": {
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderLanguageCode": "orderLanguageCode",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineAMeasureUnit": "lineAMeasureUnit",
+      "returnId": "returnId",
+      "returnNumber": "returnNumber",
+      "returnStatus": "returnStatus",
+      "returnVia": "returnVia",
+      "returnCustomerReference": "returnCustomerReference",
+      "returnLanguageCode": "returnLanguageCode",
+      "returnLineARequestedQuantity": "returnLineARequestedQuantity",
+      "returnLineAReturnLineItemId": "returnLineAReturnLineItemId",
+      "lineAReturnableAfterSeed": "lineAReturnableAfterSeed",
+      "seededAt": "seededAt"
+    },
+    "notes": "VCST-5883 returns step 2 (agent approve/decline per line + buyer notifications), fixture ADMIN. A return created by an ADMIN through the legacy REST path (PUT /api/return, no id) — status New, not Requested. Asks whether the per-line decision applies to a return that never went through submitReturn. Every value is RUNTIME: written to aliases.<env>.json by `npm run seed:returns:decisions` (scripts/seed-data/orders/seed-return-decisions.mjs); nothing is committed here. Spec + divergence contract: scripts/seed-data/orders/return-decisions-specs.mjs; drift guard: npm run td:validate:orders (sections 7-9); live reconcile: npm run returns:decisions:check. The seeder NEVER decides a return: a decided return is terminal, so re-running the seed rebuilds that fixture (re-seedable per run; --fresh forces it). Line A/B = the order lines; return*/return2* = the seeded returns."
+  },
+  "RETURNS_COLLEAGUE": {
+    "_inline": true,
+    "fields": {
+      "userName": "userName",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "organizationName": "organizationName",
+      "envKey": "envKey"
+    },
+    "notes": "VCST-5883 — a SECOND buyer in the SAME organization as the returns buyer (USER_EMAIL): the negative actor for \"a colleague cannot act on another buyer's return\". It is the existing USER2 persona; the seeder verifies same-org membership live via me.contact.organizations and writes the ids to aliases.<env>.json; it creates nothing. Password = {{USER2_PASSWORD}} (layered env). If USER2 is not in the buyer's org on an env the seeder writes nothing and reports FIXTURE-GAP."
+  },
+  "RETURNS_AGENT_NO_AUTHORIZE": {
+    "_inline": true,
+    "_comment": "Restricted back-office (Manager) account for VCST-5883 (returns step 2): holds return:access + return:read + return:update and EXCLUDES return:authorize, so POST /api/return/{id}/authorize must return 403 while it can still read/edit returns. It holds return:update ON PURPOSE — the permission a mis-wired gate would check instead. platform:access does not exist on this build; userType Manager is the back-office entry. isAdministrator=false (an admin bypasses the gate — ADMIN is the positive control). The PASSWORD is a {{RETURNS_AGENT_NO_AUTHORIZE_PASSWORD}} secret from .env.local (seeder fallback otherwise). Runtime platform_id/user_id/role_id/userName resolve from aliases.<env>.json (npm run seed:rbac -- --only RETURNS_AGENT_NO_AUTHORIZE). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; teardown: npm run seed:rbac:teardown -- --only RETURNS_AGENT_NO_AUTHORIZE.",
+    "email": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com",
+    "login": "AGENT-TEST-return-agent-noauth@test.virtocommerce.com",
+    "email_env": "RETURNS_AGENT_NO_AUTHORIZE_EMAIL",
+    "password_env": "RETURNS_AGENT_NO_AUTHORIZE_PASSWORD",
+    "password_var": "RETURNS_AGENT_NO_AUTHORIZE_PASSWORD",
+    "role": "AGENT-TEST-Return-Agent-NoAuthorize",
+    "excluded_permission": "return:authorize",
+    "user_type": "Manager"
   }
 }

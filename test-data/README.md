@@ -416,6 +416,39 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 > status-string-uncertain states below (invoice, returns/RMA, OOS, discontinued, partially-shipped,
 > BOPIS-pickup) stay **DEFERRED** pending product-owner confirmation. Status strings live in
 > `scripts/seed-data/orders/orders-specs.mjs` (confirm live on first run).
+
+> **VCST-5628 — the RETURNS half is no longer deferred.** `npm run seed:returns`
+> (`scripts/seed-data/orders/seed-return-orders.mjs`) provisions eight orders that isolate each input of
+> the returnable-quantity computation: `RETURNS_ORDER_A_HAPPY`, `..._A2_PARTIAL_DELIVERY`,
+> `..._B_OUTSIDE_WINDOW`, `..._C_NOT_DELIVERED`, `..._D_STATUS_NOT_ALLOWED`, `..._E_SPLIT_DELIVERY`,
+> `..._F_CANCELLED_LINE`, `..._G_TWO_ELIGIBLE_LINES`, plus `RETURNS_LINE_X` for the shared products under
+> test. Acceptance probe: `npm run returns:check`. Teardown: `npm run seed:returns:teardown` (add
+> `--only <KEY>` to seed or tear down ONE fixture without disturbing the others).
+>
+> **G is the only order with TWO lines eligible at the same time** — different products, ordered/delivered
+> 5 and 3, both delivered today in one shipment. F is the other two-line order, but its second line is
+> CANCELLED, so it reports 1 of 2 lines eligible; that is why a bulk-apply-a-reason-across-lines case and
+> an "attachment required PER LINE, not per return" case have no other fixture to run on. Its two lines
+> are addressed as `@td(RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.lineAItemId)` / `.lineBItemId` (with
+> `.lineASku`/`.lineBSku` and the ordered/delivered quantities beside them). The products and the
+> quantities DIFFER deliberately: make them equal and a per-line rule becomes indistinguishable from a
+> per-return one, so `td:validate:orders` FAILS if they ever collapse.
+>
+> **These fixtures AGE.** The feature keys on the shipment's `DeliveryDate` against the store's return
+> window (`returnPolicy(storeId).windowDays`, 30 on B2B-store), with **no fallback to the order date**.
+> Delivery dates are therefore RELATIVE (`_deliveryOffsetDays` in the fixture, resolved at seed time and
+> recorded in `aliases.<env>.json`) — an in-window order seeded more than `windowDays` ago has silently
+> aged into "outside the window" and every case on it is vacuous. `npm run td:validate:orders` §[6]
+> FAILS in that state. **Re-seed, never re-date, and never hardcode a delivery date.** The `ORDER_PAST_
+> RETURN_WINDOW` "uncertain store return window" deferral in the table below is resolved by this: the
+> window is read live from `returnPolicy`, and the seeder aborts if it disagrees with the design.
+>
+> **Returns step 2 (VCST-5883)** — `npm run seed:returns:decisions` provisions `RETURNS_AUTH_*`: fresh
+> orders each carrying the return(s) a case will approve/decline, submitted through xAPI as the buyer
+> (status `Requested`; `RETURNS_AUTH_NEW_ADMIN` is admin-created, status `New`; `RETURNS_AUTH_JOURNEY`
+> has no return). The seeder never decides; a decided return is rebuilt on the next seed. Spec +
+> divergence contract: `scripts/seed-data/orders/return-decisions-specs.mjs`; reconcile
+> `npm run returns:decisions:check`; guard `td:validate:orders` §[7]–[9].
 >
 > **Deferral re-checked 2026-07-25 (TLC-2026-07-25-0415) — the store-config half of the premise is
 > WRONG.** A live read of all 96 settings on `GET /api/stores/{STORE_ID}` found **no** store-level
