@@ -18,6 +18,8 @@ rules:
         ref: vc-module-marketing `BestRewardPromotionPolicy.cs` — coupon/promo reward evaluated against the already-computed `CartTotal` (post catalog/tier price), not the list price.
       - kind: resolution
         ref: VCST-1820 (Done) — a catalog promotion was not applied to each tier price separately; fixed so the discount applies to each tier price
+    scope:
+      code_ref: vc-module-marketing:src/VirtoCommerce.MarketingModule.Data/Services/EvaluationPolicies/BestRewardPromotionPolicy.cs#EvaluatePromotionWithoutCache
     check:
       kind: manual
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
@@ -31,6 +33,8 @@ rules:
     source:
       - kind: code
         ref: vc-module-order `OrderTotalsCalculationTest.cs` + vc-module-cart `CartTotalsCalculationTests.cs` — tax computed on the post-discount total.
+    scope:
+      code_ref: vc-module-cart:src/VirtoCommerce.CartModule.Data/Services/DefaultShoppingCartTotalsCalculator.cs#CalculateLineItemTotals
     check:
       kind: manual
       ref: "In cart/checkout, compare: `taxTotal` should equal `taxRate × (subtotal - totalDiscount)`, not `taxRate × subtotal`."
@@ -46,6 +50,8 @@ rules:
         ref: VP-4639 (Done) — a discounted price was shown rounded up to 2 decimals but truncated in calculations; fixed so the rounded 2-decimal value is used throughout
       - kind: doc
         ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/overriding-rounding-policy.md — money rounding is done by IMoneyRoundingPolicy, which can be replaced
+    scope:
+      code_ref: vc-module-core:src/VirtoCommerce.CoreModule.Core/Currency/DefaultMoneyRoundingPolicy.cs#RoundMoney
     check:
       kind: manual
       ref: "No prices display with 0, 1, or 3+ decimal places. Check edge cases: items at $X.X95 should round to $X.X0 (half-up)."
@@ -63,6 +69,8 @@ rules:
         ref: "platform/user-guide/docs/glossary.md — MOQ entry: quantity-tiered pricing selects specific price breakpoints"
       - kind: doc
         ref: platform/user-guide/docs/price-export-import/importing-price-lists.md — tier/volume pricing is set up as several rows per SKU with different Min quantity
+    scope:
+      code_ref: vc-module-x-api:src/VirtoCommerce.Xapi.Core/Models/ProductPrice.cs#GetTierPrice
     check:
       kind: manual
       ref: Add 9 units → price = $10/unit. Add 1 more (qty=10) → price drops to $8/unit for ALL 10 units. Line total = $80, not $90+$8.
@@ -78,6 +86,8 @@ rules:
         ref: platform/user-guide/docs/pricing/overview.md — a price list stores prices in a single currency
       - kind: doc
         ref: platform/user-guide/docs/multiregional-ecommerce.md — multi-currency is handled with separate price lists per currency (e.g. USD, CAD, EUR)
+    scope:
+      code_ref: vc-module-pricing:src/VirtoCommerce.PricingModule.Data/Services/PricingEvaluatorService.cs#PriceListAssignmentAsync
     check:
       kind: manual
       ref: Switch currency → prices change to values from that currency's price list (not mathematically converted). Products without prices in the new currency disappear or show "Unavailable".
@@ -89,6 +99,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Specifications/ProductIsBuyableSpecification.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
@@ -106,6 +118,8 @@ rules:
         ref: platform/user-guide/docs/pricing/troubleshooting-guide.md — the price list assignment with the highest priority wins; its conditions (e.g. user group membership) must be met
       - kind: resolution
         ref: VP-8162 (Done) — pricing from a user-group-conditioned price list assignment did not work for group members; fixed
+    scope:
+      code_ref: vc-module-pricing:src/VirtoCommerce.PricingModule.Data/Services/PricingEvaluatorService.cs#EvaluatePriceListsAsync
     check:
       kind: manual
       ref: Sign in as Org A member → product shows contract price (e.g., $7) instead of store default ($10). Sign in as non-org user → same product shows $10. Org A member adds to cart → cart uses $7.
@@ -136,6 +150,8 @@ rules:
         ref: "vc-module-x-api `src/VirtoCommerce.Xapi.Core/Models/ProductPrice.cs` — `private const int _discountPercentDecimalDigits = 4;` and `GetDiscountPercent() => ListPrice.Amount > 0 ? Math.Round(DiscountAmount.Amount / ListPrice.Amount, 4, MidpointRounding.AwayFromZero) : 0`; wired 1:1 in vc-module-x-catalog `src/VirtoCommerce.XCatalog.Core/Schemas/PriceType.cs` (`Field(d => d.DiscountPercent, nullable: false)`)."
       - kind: resolution
         ref: VP-9242 (Done) — a discount percent rounded to 2 decimals in x-catalog was reported as inaccurate; resolved (precision increased)
+    scope:
+      code_ref: vc-module-x-api:src/VirtoCommerce.Xapi.Core/Models/ProductPrice.cs#GetDiscountPercent
     check:
       kind: manual
       ref: Query a product's `price { discountPercent }` where a discount is active. Compute `round(discountAmount / listPrice, 4, AwayFromZero)` independently and assert equality. Confirm the value carries up to 4 decimal digits rather than being pre-multiplied by 100 or truncated to fewer decimals. A product with no discount returns `0`, not `null`.

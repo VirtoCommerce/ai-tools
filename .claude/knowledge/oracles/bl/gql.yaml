@@ -21,6 +21,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/best-practices.md (docs) — responses typically return HTTP 200 even when errors occur; inspect errors[] in the body
       - kind: resolution
         ref: VP-6664 (Done) — unauthorized user query returned an unhandled error instead of a structured Access denied error; fixed
+    scope:
+      code_ref: vc-module-x-api:src/VirtoCommerce.Xapi.Web/Module.cs#AddErrorInfoProvider
     check:
       kind: manual
       ref: Validation cases (`INVALID_FIELD`, `nonExistentTopLevelField`, missing `command` arg) → **HTTP 200** with `errors[]` populated referencing the field/arg name and the `data` entry **absent** (omitted per GraphQL spec §7.1; present-but-null only for partial-failure/execution errors); resolver/auth-level failures → HTTP 200 with `errors[]` too. In all cases the message does not match the internal-leak regex `/^((?!at System\.|SqlException|StackTrace|Microsoft\.Data|connection string|SELECT .+ FROM).)*$/i`.
