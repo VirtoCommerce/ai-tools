@@ -237,7 +237,7 @@ export function checkView(oracle: Pick<BlOracle, "preamble" | "domains">, view: 
  */
 export function checkFormat(dir = BL_DIR): string[] {
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".yaml") && !f.startsWith("_"))
+    .filter((f) => f.endsWith(".yaml")) // _oracle.yaml too: bl:fresh writes freshness.closed_checked_through
     .filter((f) => {
       const text = readFileSync(join(dir, f), "utf-8").replace(/\r\n/g, "\n");
       return parseDocument(text).toString({ lineWidth: 0 }) !== text;

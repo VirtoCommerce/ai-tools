@@ -8,7 +8,8 @@
  * What marks a rule SUSPECT (only an ACTIVE one; the text is never touched):
  *   [code]    a change touches its `scope.code_ref` (`--change "<CHANGE_SOURCE>"` or `--changed repo[:path],…`); a
  *             change known only by its repo (`module <name>`, a bare `--changed <repo>`) touches every rule there
- *   [closed]  a bug closed recently names its id (`--closed`: Jira, `freshness.closed_bugs_jql`; or `--bugs`)
+ *   [closed]  a bug closed since the last pass names its id (`--closed`: Jira, `freshness.closed_bugs_jql` from
+ *             `freshness.closed_checked_through`, which a written pass moves to today; or `--bugs`)
  *   [age]     its `verified.date` is older than `freshness.verified_max_age_days`, for the `age_trust` levels
  *   [case]    a case citing it failed (`--results <regression run dir>`) — the bug path; `/qa-bug` files it
  *   [check]   its executable check found a violation (`--rerun`) — the bug path as well
@@ -34,7 +35,8 @@
  *   flags: --run-id <id> (default: the --results dir name) · --version <build> · --today YYYY-MM-DD · --json
  *
  * Exit codes: 0 done (with or without changes) · 3 an input that was asked for could not be read (no Jira
- * credentials, Jira refused, no such results dir), and nothing was written.
+ * credentials, Jira refused, no such results dir, no `freshness` block) · 1 is `config.js` refusing a missing core
+ * env var on the Jira or check path. Neither 1 nor 3 writes anything.
  */
 import "../lib/sync-stdio.mjs";
 import { execFileSync } from "child_process";
@@ -46,10 +48,14 @@ import { BL_DIR, loadBl, renderViews, type BlRule, type BlSource } from "./bl-ya
 import { buildCoverage, extractReferencedBlIds } from "./lint-bl.ts";
 import { adfText, jiraSearch } from "../lib/jira-search.ts";
 import { flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
+import { normalizeStatus, readRunSuites } from "../lib/regression-triage.ts";
 import { placeChange } from "../../ci/lib/affected-suites.ts";
 
 const SUITES_DIR = "regression/suites";
-const KEY_RE = /\b[A-Z][A-Z0-9]+-\d+\b/;
+/** `npx` is `npx.cmd` on Windows and execFileSync has no shell: run tsx's CLI under this node instead. */
+const TSX_CLI = fileURLToPath(new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url));
+/** The bug key a `[bug]` reason waits on: the first token after the tag, nothing found later in the prose. */
+const BUG_KEY_RE = /^\[bug\]\s+([A-Z][A-Z0-9]+-\d+)\b/;
 
 export type Tag = "code" | "closed" | "age" | "case" | "check" | "bug";
 /** Suspicions raised because something around the rule moved, not because it failed: a pass clears them. */
@@ -59,6 +65,8 @@ export interface Freshness {
   verified_max_age_days: number;
   age_trust: string[];
   closed_bugs_jql: string;
+  /** The day the last `--closed --write` pass read through; the next pass asks Jira for bugs resolved since then. */
+  closed_checked_through?: string;
   resolutions: { holds: string[]; rewrite: string[] };
 }
 export type Op = "MARK-SUSPECT" | "RE-VERIFIED" | "RESOLVE" | "REWRITE" | "NO-DECISION" | "NOT-RUN";
@@ -129,7 +137,8 @@ export function markClosed(rules: readonly BlRule[], bugs: readonly ClosedBug[])
     for (const id of new Set(extractReferencedBlIds(b.text ?? ""))) {
       const r = byId.get(id);
       if (!r || r.status !== "ACTIVE" || out.has(id)) continue;
-      if (r.source.some((s) => s.ref.includes(b.key))) continue;
+      const cited = new RegExp(`(^|[^A-Z0-9-])${b.key}(?![0-9])`);
+      if (r.source.some((s) => cited.test(s.ref))) continue;
       if (r.verified && b.resolved && r.verified.date >= b.resolved.slice(0, 10)) continue;
       out.set(id, suspect(id, `[closed] ${b.key} (${b.resolution}) names this rule`));
     }
@@ -139,7 +148,7 @@ export function markClosed(rules: readonly BlRule[], bugs: readonly ClosedBug[])
 
 /** The bug keys the `[bug]` suspicions wait on. */
 export function pendingBugKeys(rules: readonly BlRule[]): string[] {
-  return [...new Set(rules.filter((r) => r.status === "SUSPECT" && reasonTag(r.suspect_reason) === "bug").map((r) => KEY_RE.exec(r.suspect_reason!.slice(5))?.[0]).filter((k): k is string => !!k))];
+  return [...new Set(rules.filter((r) => r.status === "SUSPECT").map((r) => BUG_KEY_RE.exec(r.suspect_reason ?? "")?.[1]).filter((k): k is string => !!k))];
 }
 
 /** RESOLVE: the Jira decision on the bug a `[bug]` suspicion names. `decisions`: key → resolution (null = open). */
@@ -147,7 +156,7 @@ export function resolve(rules: readonly BlRule[], decisions: ReadonlyMap<string,
   const out: Edit[] = [];
   for (const r of rules) {
     if (r.status !== "SUSPECT" || reasonTag(r.suspect_reason) !== "bug") continue;
-    const key = KEY_RE.exec(r.suspect_reason!.slice(5))?.[0];
+    const key = BUG_KEY_RE.exec(r.suspect_reason!)?.[1];
     const res = key ? decisions.get(key) : undefined;
     if (!key || !res) continue;
     if (cfg.resolutions.holds.includes(res)) {
@@ -170,7 +179,8 @@ export function fromResults(rules: readonly BlRule[], outcomes: readonly CaseOut
   const pass = new Map<string, string[]>();
   const fail = new Map<string, string[]>();
   for (const o of outcomes) {
-    const into = o.status === "PASS" ? pass : o.status === "FAIL" ? fail : null;
+    const v = normalizeStatus(o.status);
+    const into = v === "PASS" ? pass : v === "FAIL" ? fail : null;
     if (!into) continue;
     for (const id of blByCase.get(o.caseId) ?? []) into.set(id, [...(into.get(id) ?? []), o.caseId]);
   }
@@ -253,43 +263,70 @@ export function readFreshness(dir = BL_DIR): Freshness {
   return cfg;
 }
 
-/** Every case outcome of a regression run dir: `suite-*-results.json` rows, else the live `suite-*-cases.jsonl`. */
+/**
+ * Every case outcome of a regression run dir, through the reader triage and `tc:promote` use (`readRunSuites`):
+ * batch and lane envelopes, the live JSONL folded in, an unparseable envelope skipped rather than fatal.
+ */
 export function readRunOutcomes(dir: string): CaseOutcome[] {
-  const out: CaseOutcome[] = [];
-  for (const f of readdirSync(dir)) {
-    const m = /^suite-(.+)-results\.json$/.exec(f);
-    if (m) {
-      const rows = (JSON.parse(readFileSync(join(dir, f), "utf-8")) as { testCases?: Array<{ id?: string; status?: string }> }).testCases ?? [];
-      out.push(...rows.filter((c) => c.id).map((c) => ({ caseId: c.id!, status: String(c.status ?? "") })));
-    } else if (/^suite-.+-cases\.jsonl$/.test(f) && !existsSync(join(dir, f.replace(/-cases\.jsonl$/, "-results.json")))) {
-      for (const line of readFileSync(join(dir, f), "utf-8").split("\n")) {
-        try {
-          const c = JSON.parse(line) as { id?: string; caseId?: string; status?: string };
-          if (c.id ?? c.caseId) out.push({ caseId: (c.id ?? c.caseId)!, status: String(c.status ?? "") });
-        } catch {
-          /* a torn last line on a hard kill */
-        }
-      }
-    }
-  }
-  return out;
+  return readRunSuites(dir).flatMap((suite) => suite.cases.map((c) => ({ caseId: c.id, status: c.status })));
 }
 
 function invRun(args: readonly string[]): number {
   try {
-    execFileSync("npx", ["tsx", "scripts/invariants/run.ts", ...args], { stdio: "inherit" });
+    // The check's own output goes to stderr, so `--json` stays one JSON document on stdout.
+    execFileSync(process.execPath, [TSX_CLI, "scripts/invariants/run.ts", ...args], { stdio: ["ignore", 2, 2] });
     return 0;
   } catch (e) {
     return (e as { status?: number }).status ?? 3;
   }
 }
 
+/** config.js announces itself on stdout when Jira first loads it; keep stdout for the report. */
+async function quietly<T>(f: () => Promise<T>): Promise<T> {
+  const log = console.log;
+  console.log = console.error;
+  try {
+    return await f();
+  } finally {
+    console.log = log;
+  }
+}
+
 async function closedBugs(jql: string): Promise<ClosedBug[]> {
-  const issues = await jiraSearch(jql, ["summary", "description", "labels", "resolution", "resolutiondate"]);
+  const issues = await quietly(() => jiraSearch(jql, ["summary", "description", "labels", "resolution", "resolutiondate"]));
   return issues.map((i) => {
     const f = i.fields as { summary?: string; description?: unknown; labels?: string[]; resolution?: { name?: string } | null; resolutiondate?: string };
     return { key: i.key, resolution: f.resolution?.name ?? null, resolved: f.resolutiondate, text: [f.summary ?? "", adfText(f.description), ...(f.labels ?? [])].join(" ") };
   });
+}
+
+/**
+ * The Jira decisions on `keys`. One query for all of them, and per key when Jira refuses the batch (it rejects
+ * the whole `key in (…)` for one unknown or invisible key), so one bad reason cannot block every other decision.
+ */
+async function decisionsFor(keys: readonly string[], notes: string[]): Promise<ClosedBug[]> {
+  if (!keys.length) return [];
+  try {
+    return await closedBugs(`key in (${keys.join(",")})`);
+  } catch {
+    const out: ClosedBug[] = [];
+    for (const k of keys) {
+      try {
+        out.push(...(await closedBugs(`key = ${k}`)));
+      } catch (e) {
+        notes.push(`${k}: Jira refused it (${(e as Error).message.slice(0, 80)}); its rule stays SUSPECT`);
+      }
+    }
+    return out;
+  }
+}
+
+/** Record how far `--closed` has read, in `bl/_oracle.yaml`, leaving every other byte alone. */
+function writeCheckedThrough(day: string, dir = BL_DIR) {
+  const path = join(dir, "_oracle.yaml");
+  const doc = parseDocument(readFileSync(path, "utf-8"));
+  doc.setIn(["freshness", "closed_checked_through"], day);
+  writeFileSync(path, doc.toString({ lineWidth: 0 }));
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -298,9 +335,15 @@ async function main(argv: string[]): Promise<number> {
   const today = flagValue(argv, "--today") ?? new Date().toISOString().slice(0, 10);
   const resultsDir = flagValue(argv, "--results");
   const stamp: Stamp = { today, runId: flagValue(argv, "--run-id") ?? (resultsDir ? basename(resultsDir) : `bl-fresh-${today}`), version: flagValue(argv, "--version") };
-  const cfg = readFreshness();
-  const oracle = loadBl();
-  const original = new Map(oracle.domains.flatMap((d) => d.file.rules.map((r) => [r.id, r] as const)));
+  let cfg: Freshness;
+  let original: Map<string, BlRule>;
+  try {
+    cfg = readFreshness();
+    original = new Map(loadBl().domains.flatMap((d) => d.file.rules.map((r) => [r.id, r] as const)));
+  } catch (e) {
+    console.error(`bl:fresh: ${(e as Error).message}; nothing written`);
+    return 3;
+  }
   const state = new Map(original);
   const edits: Edit[] = [];
   const notes: string[] = [];
@@ -339,14 +382,16 @@ async function main(argv: string[]): Promise<number> {
     }
     if (argv.includes("--age")) step((rules) => markAge(rules, today, cfg));
     if (argv.includes("--closed")) {
-      const bugs = bugFile ?? (await closedBugs(cfg.closed_bugs_jql));
+      // From the day the last pass read through, so a cycle run weeks apart still sees every bug closed between.
+      const since = cfg.closed_checked_through ?? today;
+      const bugs = bugFile ?? (await closedBugs(`${cfg.closed_bugs_jql} AND resolved >= "${since}"`));
       step((rules) => markClosed(rules, bugs));
     }
 
     // 2. Jira decisions on the bugs SUSPECT rules wait on.
     if (argv.includes("--resolve")) {
       const keys = pendingBugKeys([...state.values()]);
-      const found = bugFile ?? (keys.length ? await closedBugs(`key in (${keys.join(",")})`) : []);
+      const found = bugFile ?? (await decisionsFor(keys, notes));
       const decisions = new Map(found.map((b) => [b.key, b.resolution] as const));
       step((rules) => resolve(rules, decisions, cfg));
     }
@@ -367,6 +412,7 @@ async function main(argv: string[]): Promise<number> {
   const write = argv.includes("--write");
   const touched = write && changed.size ? writeRecords(state, changed) : [];
   if (touched.length) renderViews();
+  if (write && argv.includes("--closed") && !flagValue(argv, "--bugs")) writeCheckedThrough(today);
 
   if (argv.includes("--json")) {
     console.log(JSON.stringify({ runId: stamp.runId, written: write, changed: [...changed], edits, notes }, null, 2));

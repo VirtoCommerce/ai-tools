@@ -112,6 +112,32 @@ jobs:
             echo "value=${{ inputs.change_source }}" >> $GITHUB_OUTPUT
           fi
 
+      # BL 2.0 M5 Phase 0, as its own step BEFORE any agent runs: only what bl:fresh writes is committed, so an
+      # agent's later edit to an oracle file is never pushed by this job (scripts/knowledge/bl-fresh.ts).
+      - name: BL freshness (mark)
+        env:
+          CHANGE_SOURCE: ${{ steps.source.outputs.value }}
+          FRONT_URL: ${{ secrets.FRONT_URL }}
+          BACK_URL: ${{ secrets.BACK_URL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          npx tsx scripts/knowledge/bl-fresh.ts --change "$CHANGE_SOURCE" --age --write || echo "::warning::bl:fresh (change, age) exited $? — no rule changed"
+          npx tsx scripts/knowledge/bl-fresh.ts --closed --resolve --write || echo "::warning::bl:fresh (Jira) exited $? — no rule changed"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          BL_PATHS=".claude/knowledge/oracles/bl/ .claude/knowledge/oracles/business-logic.md plugins/vc-fix/knowledge/oracles/business-logic.md"
+          if ! git diff --quiet -- $BL_PATHS; then
+            git add -- $BL_PATHS
+            git commit -m "ci: BL freshness — ${{ steps.source.outputs.value }}"
+            git push
+          else
+            echo "No BL freshness changes to commit"
+          fi
+
       - name: Run sync + lifecycle phases
         id: run
         env:
@@ -120,17 +146,12 @@ jobs:
           SKIP_SYNC: ${{ inputs.skip_sync || 'false' }}
           SKIP_LIFECYCLE: ${{ inputs.skip_lifecycle || 'false' }}
           SKIP_REGRESSION: 'true'
+          SKIP_BL_FRESH: 'true'
           TEST_ENVIRONMENT: ${{ inputs.environment || 'qa' }}
           MAX_BUDGET_USD: ${{ inputs.budget || '20.0' }}
           MODEL: ${{ inputs.model || 'claude-sonnet-4-5-20250929' }}
           FRONT_URL: ${{ secrets.FRONT_URL }}
           BACK_URL: ${{ secrets.BACK_URL }}
-          # Phase 0 BL freshness reads closed bugs from Jira; config.js wants the core credentials to start.
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           # Run phases 1+2 only (regression skipped — it needs Docker).
           # Keep the exit code: `|| true` here meant even a manual run could never report red
@@ -157,9 +178,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          # The BL oracle paths carry Phase 0's freshness marks (bl/*.yaml and the two generated views).
-          if ! git diff --quiet regression/suites/ config/test-suites.json .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/ 2>/dev/null; then
-            git add regression/suites/ config/test-suites.json .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/
+          if ! git diff --quiet regression/suites/ config/test-suites.json 2>/dev/null; then
+            git add regression/suites/ config/test-suites.json
             git commit -m "ci: sync test cases — ${{ steps.source.outputs.value }}
 
           Affected suites: ${{ steps.run.outputs.affected_suites || 'none' }}
@@ -301,8 +321,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/ 2>/dev/null; then
-            git add .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/
+          BL_PATHS=".claude/knowledge/oracles/bl/ .claude/knowledge/oracles/business-logic.md plugins/vc-fix/knowledge/oracles/business-logic.md"
+          if ! git diff --quiet -- $BL_PATHS; then
+            git add -- $BL_PATHS
             git commit -m "ci: BL freshness from regression — ${{ env.SUITE_SELECTION }}"
             git pull --rebase origin ${{ github.ref_name }} && git push
           else

@@ -3,6 +3,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { execFileSync } from "child_process";
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "fs";
 import { join } from "path";
+import { fileURLToPath } from "url";
 import { selectAffectedSuites } from "./lib/affected-suites.js";
 
 /**
@@ -39,6 +40,9 @@ const CHANGE_SOURCE = process.env.CHANGE_SOURCE || "diff";
 const SKIP_SYNC = process.env.SKIP_SYNC === "true";
 const SKIP_LIFECYCLE = process.env.SKIP_LIFECYCLE === "true";
 const SKIP_REGRESSION = process.env.SKIP_REGRESSION === "true";
+const SKIP_BL_FRESH = process.env.SKIP_BL_FRESH === "true";
+/** `npx` is `npx.cmd` on Windows and execFileSync has no shell: run tsx's CLI under this node instead. */
+const TSX_CLI = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url));
 const SUITE_SELECTION = process.env.SUITE_SELECTION || "";
 const MAX_BUDGET_USD = parseFloat(process.env.MAX_BUDGET_USD || "20.0");
 const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
@@ -91,9 +95,10 @@ async function runPhase(
  * that could not read its input (no Jira credentials, say) writes nothing.
  */
 function blFresh(step: string, args: string[]) {
+  if (SKIP_BL_FRESH) return log(`${step}: bl:fresh skipped (SKIP_BL_FRESH — the workflow runs it as its own step)`);
   log(`${step}: bl:fresh ${args.join(" ")}`);
   try {
-    execFileSync("npx", ["tsx", "scripts/knowledge/bl-fresh.ts", ...args, "--write"], { stdio: "inherit" });
+    execFileSync(process.execPath, [TSX_CLI, "scripts/knowledge/bl-fresh.ts", ...args, "--write"], { stdio: "inherit" });
   } catch (err) {
     log(`${step}: bl:fresh exited ${(err as { status?: number }).status ?? "?"} — this step changed no rule`);
   }
