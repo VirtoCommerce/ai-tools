@@ -9,7 +9,7 @@
 // Writes nothing by itself: it returns `ranker.json`'s content. Where that lands is the caller's
 // decision, because ranker.json is base data and base data changes only with the operator's yes.
 
-import { AMBIGUOUS_TOP, answerThreshold, featuresOf, fitLogistic, lowerThresholds, probability } from './verdict.mjs';
+import { AMBIGUOUS_TOP, MODEL_FEATURES, answerThreshold, featuresOf, fitLogistic, lowerThresholds, probability } from './verdict.mjs';
 import { DEFAULT_FUSION, retrieve } from './retrieve.mjs';
 
 /** The name every ask line carries for a verdict ranker; bump it when the method changes. */
@@ -40,7 +40,7 @@ export function scoreSet(prep, rows, { fusion = DEFAULT_FUSION } = {}) {
 export function calibrate(prep, labelled, { precision = 0.95, controlsNone = 0.9, snapshot = null, l2 = 1, fusion = DEFAULT_FUSION } = {}) {
   const dev = scoreSet(prep, labelled.filter((r) => r.split === 'dev'), { fusion });
   const cal = scoreSet(prep, labelled.filter((r) => r.split === 'calibration'), { fusion });
-  const model = fitLogistic(dev.filter((s) => !s.empty).map((s) => ({ f: s.f, y: s.correct ? 1 : 0 })), { l2 });
+  const model = fitLogistic(dev.filter((s) => !s.empty).map((s) => ({ f: s.f, y: s.correct ? 1 : 0 })), { l2, features: MODEL_FEATURES });
   const p = (s) => (s.empty ? 0 : probability(model, s.f));
   const calScored = cal.map((s) => ({ ...s, p: p(s), kind: s.row.kind, unmappedShare: s.f.unmappedShare }));
   const answer = answerThreshold(calScored, { precision });
