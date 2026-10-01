@@ -34,6 +34,7 @@
  * (agent-test-otp-* accounts; contacts only when they carry our outerId or our email) and ends on a
  * zero-residue assert. No store and no store setting is ever written here.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {

@@ -20,6 +20,7 @@
  * Then the hygiene: aliases registered, runtime ids EMPTY in the base (DV-021), passwords only as
  * the {{VAR}} token, no GUID literal, no overlay shadowing a committed email.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
