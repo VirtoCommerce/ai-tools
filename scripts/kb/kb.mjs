@@ -184,7 +184,14 @@ async function main(argv) {
     const setPath = typeof args.flags.set === 'string' ? args.flags.set : new URL('./bench/rank-labelled-set.v2.json', import.meta.url);
     const set = JSON.parse(await readFile(setPath, 'utf8'));
     const prep = prepareRetrieval(retrievable(cat.rows), prepareVocabulary(await readVocabulary(opened.reader)));
-    const ranker = calibrate(prep, labelledRows(set), { snapshot: set.snapshot ?? null });
+    // Every body, once: the head re-rank reads them, and an offline verb can afford what ask cannot.
+    const { parseEntry } = await import('./core/frontmatter.mjs');
+    const bodies = new Map();
+    await Promise.all(retrievable(cat.rows).map(async (row) => {
+      const r = await opened.reader.readEntry(row.path);
+      if (r.ok) { try { bodies.set(row.id, parseEntry(r.text, row.path).body); } catch { /* an unreadable body only weakens the re-rank */ } }
+    }));
+    const ranker = calibrate(prep, labelledRows(set), { snapshot: set.snapshot ?? null, bodies });
     const text = `${JSON.stringify(ranker, null, 2)}
 `;
     if (typeof args.flags.out === 'string') { await writeFile(args.flags.out, text); out(`kb calibrate: wrote ${args.flags.out}`); }

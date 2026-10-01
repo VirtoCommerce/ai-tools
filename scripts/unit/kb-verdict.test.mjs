@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { parseQuestion, prepareVocabulary, stem } from '../kb/core/query.mjs';
 import { prepareRetrieval, retrieve } from '../kb/core/retrieve.mjs';
-import { answerThreshold, decide, fitLogistic, probability } from '../kb/core/verdict.mjs';
+import { answerThreshold, decide, fitLogistic, probability, rerankByBodies } from '../kb/core/verdict.mjs';
 
 const vocab = prepareVocabulary({
   concepts: [
@@ -89,4 +89,16 @@ test('the logistic fit separates a separable feature', () => {
   const samples = [0, 0.1, 0.2, 0.8, 0.9, 1].map((x) => ({ f: { x }, y: x > 0.5 ? 1 : 0 }));
   const m = fitLogistic(samples, { features: ['x'], l2: 0.01 });
   assert.ok(probability(m, { x: 1 }) > 0.9 && probability(m, { x: 0 }) < 0.1);
+});
+
+test('the head re-rank lifts the candidate whose body states the asked words, and only within the head', () => {
+  const prep = prepareRetrieval(rows, vocab);
+  const found = retrieve(prep, 'is a promo code on the basket page shown monochrome');
+  const ids = found.candidates.map((c) => c.row.id);
+  assert.ok(ids.length >= 2);
+  const bodies = new Map(ids.map((id) => [id, id === ids[ids.length - 1] ? 'the code is shown monochrome' : '']));
+  const re = rerankByBodies(prep, found, bodies, { k: ids.length, lambda: 5 });
+  assert.equal(re.candidates[0].row.id, ids[ids.length - 1]);
+  const kept = rerankByBodies(prep, found, bodies, { k: 1, lambda: 5 });
+  assert.deepEqual(kept.candidates.map((c) => c.row.id), ids);
 });
