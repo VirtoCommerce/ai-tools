@@ -139,5 +139,5 @@ cause in a NuGet dependency".
 - `storefront-selectors.md` — stable `data-test-id` / `.vc-*` selector map for finding components
 - `storefront-config-flags.md` — `$cfg.*` flag inventory (rule out config-gating)
 - `critical-ui-scope.md` — regression-enforced 7-components × 8-pages BL-UI matrix the fix must not break
-- `business-logic.md` — BL-UI-* and storefront BL invariants the fix must preserve
+- `npm run bl:extract -- --domain ui` — BL-UI-* and storefront BL invariants the fix must preserve
 - `vc-bug-catalog.md` — VC-UI-* historical storefront failure patterns; don't re-introduce one

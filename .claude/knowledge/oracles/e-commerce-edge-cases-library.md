@@ -73,7 +73,7 @@ This is a structured reference for:
 
 ### 1.4 Layout Shift & Hover-Induced Displacement
 
-*(Cross-cutting layout-stability pattern — filed in this chapter's number range to match established test-suite citations rather than under "Checkout & Payment." Governed by `BL-UI-003` in `business-logic.md`.)*
+*(Cross-cutting layout-stability pattern — filed in this chapter's number range to match established test-suite citations rather than under "Checkout & Payment." Governed by `BL-UI-003`.)*
 
 | Pattern | Description | Frequency | Impact | Status |
 |---------|-------------|-----------|--------|--------|
@@ -636,7 +636,7 @@ Output as: [PATTERN NAME] → [Test Case] → [Expected Result] → [Assertion]
 
 ## 14. Virto Commerce Platform-Specific Patterns
 
-VC-specific patterns observed on the platform. Each entry maps to a business logic invariant (`BL-*` from `business-logic.md`) and an ECL section where analogous generic patterns exist.
+VC-specific patterns observed on the platform. Each entry maps to a business logic invariant (`BL-*`, `npm run bl:extract -- --id <ID>`) and an ECL section where analogous generic patterns exist.
 
 ### 14.1 GraphQL xAPI Error Patterns
 
@@ -766,7 +766,7 @@ Admin SPA order-detail patterns where an editing action must not disturb state i
 
 ## 15. Accessibility Edge Cases
 
-Screen-reader and assistive-technology interaction patterns surfaced by manual/automated WCAG 2.2 AA audits. **Note:** `business-logic.md` carries Domain 21 **Accessibility (`BL-A11Y`)** — `BL-A11Y-001` keyboard operability and focus management, `BL-A11Y-002` accessible naming and label association, `BL-A11Y-003` colour contrast and non-colour status differentiation, `BL-A11Y-004` programmatic status/state/role correctness — all `[P1-data]`, and all grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no conformance target. Cite the invariant a row endangers; the `Status` column records the evidence, not the exposure. **Still uncovered by any invariant:** structural semantics (WCAG 1.3.1) — a list-like structure exposing no `list`/`listitem` roles violates no `BL-A11Y-*` rule as written; see `bl_proposals`.
+Screen-reader and assistive-technology interaction patterns surfaced by manual/automated WCAG 2.2 AA audits. **Note:** the BL oracle carries Domain 21 **Accessibility (`BL-A11Y`)** — `BL-A11Y-001` keyboard operability and focus management, `BL-A11Y-002` accessible naming and label association, `BL-A11Y-003` colour contrast and non-colour status differentiation, `BL-A11Y-004` programmatic status/state/role correctness — all `[P1-data]`, and all grounded in the external WCAG 2.1/2.2 success criteria rather than in Virto documentation, which states no conformance target. Cite the invariant a row endangers; the `Status` column records the evidence, not the exposure. **Still uncovered by any invariant:** structural semantics (WCAG 1.3.1) — a list-like structure exposing no `list`/`listitem` roles violates no `BL-A11Y-*` rule as written; see `bl_proposals`.
 
 ### 15.1 Screen Reader Interaction Patterns
 
@@ -786,7 +786,7 @@ Screen-reader and assistive-technology interaction patterns surfaced by manual/a
 
 ## Appendix D: ECL → Business Logic Invariant Cross-Reference
 
-Quick lookup: which ECL sections map to which BL-* invariants in `business-logic.md`.
+Quick lookup: which ECL sections map to which BL-* invariants (`npm run bl:extract -- --id <ID>`).
 
 | ECL Section | Description | BL Invariants |
 |-------------|-------------|---------------|
@@ -822,8 +822,8 @@ Quick lookup: which ECL sections map to which BL-* invariants in `business-logic
 | ECL-7.4 Mobile & Responsive Layout | Hidden above-fold element, hamburger content, orientation loss | — (gap; see `bl_proposals` in the audit that added this section) |
 | ECL-8.1 Product Information Problems | Misleading images, missing size chart | — (no single BL invariant) |
 | ECL-8.2 Variant & SKU | Hidden variants, price caching | BL-CAT-006 |
-| ECL-9.1 Fake & Manipulated Reviews | Coordinated reviews, revenge reviews | — (not modeled by a platform business-logic invariant) |
-| ECL-9.2 Review Display Issues | Sort bias, vote manipulation | — (not modeled by a platform business-logic invariant) |
+| ECL-9.1 Fake & Manipulated Reviews | Coordinated reviews, revenge reviews | — (not modeled by a platform BL invariant) |
+| ECL-9.2 Review Display Issues | Sort bias, vote manipulation | — (not modeled by a platform BL invariant) |
 | ECL-10.1 Timeout & Slow Load | Checkout API timeout, stale API cache | BL-CROSS-009 |
 | ECL-10.2 Error Handling | Silent failure, vague messages | BL-ORD-001 |
 | ECL-10.3 Admin SPA Module/Blade Availability | Blade fails silently, 500 instead of degraded response | BL-CROSS-003, BL-CROSS-011 |

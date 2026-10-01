@@ -7,7 +7,7 @@ applicability_rationale: "Historical VC bug patterns indexed by domain. Customer
 
 Curated reference of failure modes seen in this Virto Commerce deployment. Use as a **"Familiar Problems"** oracle (HICCUPPS-F) and to seed Bad Neighborhood Tours (`adversarial-heuristics.md`). When exploring a domain, scan this file for the relevant section first — known soft spots reveal themselves faster than fresh exploration.
 
-This file is the **index of VC-specific historical patterns**. Generic e-commerce patterns live in [`e-commerce-edge-cases-library.md`](e-commerce-edge-cases-library.md). Testable invariants live in [`business-logic.md`](business-logic.md).
+This file is the **index of VC-specific historical patterns**. Generic e-commerce patterns live in [`e-commerce-edge-cases-library.md`](e-commerce-edge-cases-library.md). Testable invariants live in the BL oracle (`npm run bl:extract -- --domain <d>`).
 
 ### How to use
 
@@ -333,7 +333,7 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 - **Archetype:** `CONVENTION`
 
 ### VC-UI-005 — Layout-stability invariants (BL-UI-001..006)
-- **Pattern:** Six canonical UI layout-stability invariants codified in `business-logic.md` Domain 15. Defect helpers at `scripts/lib/measure-layout.ts`. **Currently uncovered by any suite** — `048b-layout-stability.csv` was removed 2026-07-25; audit via `/qa-design`.
+- **Pattern:** Six canonical UI layout-stability invariants codified in Domain 15 (`BL-UI-*`, `npm run bl:extract -- --domain ui`). Defect helpers at `scripts/lib/measure-layout.ts`. **Currently uncovered by any suite** — `048b-layout-stability.csv` was removed 2026-07-25; audit via `/qa-design`.
 - **Detection probe:** When exploring for layout bugs, use the measure-layout helper. Reference the BL-UI-* IDs in any filed bug.
 - **Archetype:** `CONVENTION`
 
@@ -634,7 +634,7 @@ entry count, → bug-report count, → citing-case count are all computed at rea
 
 ## See also
 
-- [business-logic.md](business-logic.md) — Testable invariants (BL-* IDs); each catalog entry cross-refs relevant BL invariants
+- BL oracle (`npm run bl:extract -- --domain <d>`) — Testable invariants (BL-* IDs); each catalog entry cross-refs relevant BL invariants
 - [e-commerce-edge-cases-library.md](e-commerce-edge-cases-library.md) — Generic e-commerce patterns (ECL-* IDs); use alongside this catalog
 - [../../skills/qa-methodology/qa-sbtm/adversarial-heuristics.md](../../skills/qa-sbtm/adversarial-heuristics.md) — Uses this catalog as the "Familiar Problems" oracle (HICCUPPS-F) and seeds Bad Neighborhood Tours
 - [../../skills/qa-methodology/qa-sbtm/charter-library.md](../../skills/qa-sbtm/charter-library.md) — Many charters reference specific entries from this catalog

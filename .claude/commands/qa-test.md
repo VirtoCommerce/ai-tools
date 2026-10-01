@@ -394,7 +394,7 @@ left, and asking before knowing what those are fetches the same docs twice.
 
 **2-load** — the actual rule **text and patterns**, never just IDs:
 
-| Always | `business-logic.md` `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` · `.claude/skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for the regression corpus) · `.claude/knowledge/oracles/vc-bug-catalog.md` `VC-*` — each entry's `Detection probe` is a ready-made scenario |
+| Always | `bl:extract -- --domain <d>` `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` · `.claude/skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for the regression corpus) · `.claude/knowledge/oracles/vc-bug-catalog.md` `VC-*` — each entry's `Detection probe` is a ready-made scenario |
 |---|---|
 | **`visual_surface`** | `BL-UI-*` **and `BL-A11Y-001..004`** · `.claude/skills/qa-design/SKILL.md` (§State-Stress) · `.claude/knowledge/oracles/critical-ui-scope.md` · the generated selectors **and** design tokens · `.claude/skills/qa-sbtm/modern-web-attack-surface.md` §`UIP-*` |
 | **`contract_surface`** | the **refreshed** `.claude/knowledge/api/graphql-schema.md` · `.claude/knowledge/api/graphql-test-cases-runner.md` · the `test-data/graphql/index.json` fixture inventory — read it **before** proposing a new fixture (each op lists its `usedBy[]`) |
@@ -668,8 +668,8 @@ and promotion deferred to the exit round
 - Never use WebKit (unsupported on Windows). Never assign two agents to the same browser server
   simultaneously. Fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry). **Max 3 concurrent
   browser agents — counted across checklist agents and regression lanes.**
-- Read all URLs from `config.js` / `.env` — never hardcode. Always load `business-logic.md` for the affected
-  domains.
+- Read all URLs from `config.js` / `.env` — never hardcode. Always load the affected
+  domains' `BL-*`.
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same
   delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
 - **What persists:** `summary.json` + `testing-checklist.md` + screenshots under

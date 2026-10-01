@@ -740,7 +740,7 @@ Walks: AUTH → set up vars → declare op + vars + body → execute → capture
 | Which GraphQL types/fields are real | `knowledge/api/graphql-schema.md` (snapshot) + live introspection |
 | Auth contract (token endpoint, headers) | `knowledge/api/api-auth.md` |
 | Order/checkout flow matrix | `knowledge/api/order-creation-matrix.md` |
-| Business invariants (BL-*) | `knowledge/oracles/business-logic.md` |
+| Business invariants (BL-*) | `npm run bl:extract -- --domain <d>` (source: `knowledge/oracles/bl/<slug>.yaml`) |
 | Edge case taxonomy (ECL-*) | `knowledge/oracles/e-commerce-edge-cases-library.md` |
 | Test-data resolver (`@td()`) | `scripts/lib/test-data-resolver.ts` |
 | Runner CLI usage | this file |

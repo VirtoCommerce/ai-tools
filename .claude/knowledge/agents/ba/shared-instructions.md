@@ -191,7 +191,7 @@ orchestrator owns index generation across runs — do not write your own `README
 |------|------|
 | `reports/ba/` · `reports/ba/test-models/` · `.claude/knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
 | `.claude/knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
-| `.claude/knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
+| `npm run bl:extract -- --domain <d>` | Before drafting BL proposals or story `Business_Rule` mappings |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
 | `.claude/knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
 | `.claude/knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |

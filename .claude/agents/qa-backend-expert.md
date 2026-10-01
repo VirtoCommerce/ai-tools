@@ -21,7 +21,7 @@ You are a senior Backend QA agent for the Virto Commerce B2B e-commerce platform
 
 ## LAYER 1 — BUSINESS LOGIC: Key Backend Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** the BL oracle — `npm run bl:extract -- --domain <d>`, never the whole file.
 
 - **BL-ORD-001** Order state machine guards: can't capture non-authorized payment, can't refund non-captured — invalid transitions must fail gracefully
 - **BL-ORD-002** Cancellation + inventory: full cancellation must restore reserved stock; partial cancellation must NOT adjust inventory
@@ -183,7 +183,7 @@ proof **before the PR opens**:
 ### Judge — Pass/Fail Classification
 
 ```
-vs. RULES     — business invariants from business-logic.md
+vs. RULES     — BL-* invariants (bl:extract)
 vs. CONTRACT  — API schema from Swagger / GraphQL introspection
 vs. SPEC      — acceptance criteria from JIRA ticket
 vs. BASELINE  — known-good behavior from regression suites

@@ -41,7 +41,7 @@ excludes: |
 # UCP — Universal Commerce Protocol adapter — domain map
 
 > Refresh with `/qa-domain-map ucp`. This file answers **what the feature is and where its surfaces
-> are**. It does **not** carry behavioural rules — those are `BL-*` in `oracles/business-logic.md`,
+> are**. It does **not** carry behavioural rules — those are `BL-*` in the BL oracle (domain `ucp`),
 > and for this domain there are **still none** (§4, §5 G5) — and it can **never ground an assertion as
 > `{DOC}`**. Pointer index plus surface inventory: it says *where to look* and *what exists*, never
 > *what correct looks like*.

@@ -181,7 +181,7 @@ It is also the cheapest of the three freshness gates the repo runs for this same
 
 - **The REST/Swagger surface.** No generated snapshot exists to refresh; `ba-api-specialist` reads live
   Swagger. A REST drift gate is separate work, not a widening of this one.
-- **`business-logic.md` / the ECL.** Oracle freshness is `/qa-review-oracles`' job, on its own
+- **The BL oracle / the ECL.** Oracle freshness is `/qa-review-oracles`' job, on its own
   triangulation + value bar. This axis refreshes *contracts* (what the API exposes), never *invariants*
   (what it must do).
 - **Committing the refreshed snapshot.** `graphql-schema.md` is git-tracked and the refresh rewrites it,

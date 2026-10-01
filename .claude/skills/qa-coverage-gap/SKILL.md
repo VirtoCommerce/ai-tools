@@ -46,7 +46,7 @@ npm run suites:lint          # suite + case totals, corpus-wide unique-ID check
 2. **Scope the existing corpus against the change** — `npm run tc:scope -- --domain <d> --observable "<label>"` answers the direction a gap scan does not: *which existing rows does this change make WRONG?* A stale row is a coverage defect, not a gap — route it to `/qa-review-tests --fix`, never re-author over it (`knowledge/execution/regression-selection.md`).
 3. **Read feature inventory** from:
    - `knowledge/domain/<slug>.md` — **the domain map is the first read** (actors, value chain, surface inventory per layer, where the layers disagree, current coverage shape). Build or refresh with `/qa-domain-map <slug>`; check freshness with `npm run domain:check`. A domain with no map gets one *before* gap analysis, not after.
-   - `knowledge/oracles/business-logic.md` — `BL-*` invariants
+   - `npm run bl:extract -- --domain <d>` — `BL-*` invariants
    - `knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge cases
    - `knowledge/domain/sitemap.md` — storefront page inventory
    - `knowledge/execution/module-suite-map.md` — module-to-suite mapping
@@ -200,7 +200,7 @@ Never hardcode suite IDs in this skill — query the manifest.
 - Quality gate (Cycle 4): `td:validate` + `suites:lint` + `suites:review` + `scope:validate` (when applicable) + ≥80% P0 execution rate — all must pass before commit.
 
 **Knowledge sources:**
-- Gap analysis must reference `business-logic.md` invariants (`BL-*`) for priority scoring and case authoring.
+- Gap analysis must reference `BL-*` invariants for priority scoring and case authoring.
 - Query VirtoOZ (`/vc-docs`) during Cycle 1 for any unclear product behaviour; Context7 `/virtocommerce/vc-docs` is the fallback, not the primary. Never rely solely on local knowledge files.
 - For GraphQL cases, consult `graphql-schema.md` (live introspection) before authoring queries/mutations.
 

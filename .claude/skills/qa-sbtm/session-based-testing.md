@@ -49,7 +49,7 @@ The last two fields are the charter's oracle grounding, and they are not bookkee
 is a *floor* of known boundary/failure shapes from
 [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) — never a
 ceiling, since a finding outside every ref is the better finding. `BL Refs` from
-[`business-logic.md`](../../knowledge/oracles/business-logic.md) is what makes a deviation recognisable
+the BL oracle (`npm run bl:extract -- --domain <d>`) is what makes a deviation recognisable
 as a bug *during* the session rather than a "huh" dismissed in 60 seconds. Without the refs a session's
 coverage is unreportable and its ideas silently fork from the oracle they paraphrase — see
 [`charter-library.md`](charter-library.md) §Edge-Case Refs. Both oracles are read-only from a session:

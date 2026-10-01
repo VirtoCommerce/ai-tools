@@ -49,7 +49,7 @@ browser slot. Run autonomously through setup → execute → teardown → JSON r
 - `knowledge/api/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
 - `knowledge/execution/live-discovery.md` — runtime data resolution: a step needing "any product / catalog root / first address / active coupon" is never hardcoded — `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or `scripts/lib/live-discover.ts` (interactive); unasserted unique inputs from `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix, swept by `/qa-seed-data teardown`). Consult before calling a BLOCKED "fixture drift" — discovery may resolve it without a re-seed.
 
-For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
+For BL-* / ECL-* IDs, look up the specific ID with `npm run bl:extract -- --id <ID>` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
 ## Phase 0: Your CSV already contains only your cases
 

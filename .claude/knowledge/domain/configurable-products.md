@@ -40,7 +40,7 @@ excludes: >
 > the broader Catalog domain — this map's `domain_slug: cat` is a field match, not a filename match, and
 > does not collide with `.claude/knowledge/domain/catalog.md`, which carries no `domain_slug` field).
 > This file answers **what the feature is and where its surfaces are**. It does **not** carry
-> behavioural rules — those are `BL-*` in `oracles/business-logic.md` — and it can **never ground an
+> behavioural rules — those are `BL-*` (`npm run bl:extract -- --domain cat`) — and it can **never ground an
 > assertion as `{DOC}`**. Pointer index plus surface inventory: it says *where to look* and *what
 > exists*, never *what correct looks like*.
 
@@ -263,5 +263,5 @@ configurable-products deliverable — it borders this domain at cart-identity (`
 scenario 16) and section-label collapse (`add-to-compare-catalog.vue` dropping `id`, scenario 17), both
 carried into §1 link 6 and §7 G9. Its own note stands: **"NO `BL-*` invariant exists for compare
 itself… every rule above is borrowed"** — for THIS domain, `BL-CAT-006` is the one load-bearing invariant
-identified, and PROPOSED-BL-CAT-013..019 from that model were never minted into `business-logic.md`
+identified, and PROPOSED-BL-CAT-013..019 from that model were never minted into the BL oracle
 (current highest is `BL-CAT-012`) — they remain proposals, not oracles, and this map does not promote them.

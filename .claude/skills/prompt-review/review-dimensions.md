@@ -39,7 +39,7 @@ file, the repo root, `.claude/` and (for `plugins/*`) the plugin root; checks `f
 ```bash
 node -e '
 const fs=require("fs"),path=require("path"),all=require("child_process").execSync("git ls-files",{encoding:"utf8"}).split("\n");
-const bl=fs.readFileSync(".claude/knowledge/oracles/business-logic.md","utf8");
+const bl=require("child_process").execFileSync("npx",["tsx","-e","import(\"./scripts/knowledge/bl-yaml.ts\").then(m=>process.stdout.write(m.oracleText()))"],{encoding:"utf8",maxBuffer:1e8});
 const heads=f=>{try{return fs.readFileSync(f,"utf8").split("\n").filter(l=>/^#+ /.test(l)).map(l=>l.replace(/^#+\s*/,"").toLowerCase())}catch{return null}};
 for(const f of process.argv.slice(1)){const plug=(f.match(/^plugins\/[^/]+\//)||[""])[0];
  const resolve=r=>[path.join(path.dirname(f),r),r,plug&&path.join(plug,r),path.join(".claude",r)].find(p=>p&&fs.existsSync(p));
@@ -50,7 +50,7 @@ for(const f of process.argv.slice(1)){const plug=(f.match(/^plugins\/[^/]+\//)||
   for(const m of l.matchAll(/`([^`\s]+\.md)`\s*§\s*([A-Za-z0-9][^`,;.)*—(]{2,40})/g)){const p=resolve(m[1]);const h=p&&heads(p);const want=m[2].replace(/[^\w\s-]/g," ").trim().toLowerCase().split(/\s+/).slice(0,2).join(" ");
    if(h&&!h.some(x=>x.includes(want)))console.log(`${at}  §MISSING ${m[1]} §${m[2].trim()}`)}
   if(/(^|[^`\w])§\s*\d/.test(l)&&!/\.md/.test(l))console.log(`${at}  §-with-no-file: ${l.trim().slice(0,70)}`);
-  for(const id of new Set(l.match(/\bBL-[A-Z]+-\d+\b/g)||[])){const m=bl.match(new RegExp("^#+ "+id+":?\\s*(.*)$","m"));console.log(`${at}  ${id} = ${m?m[1].slice(0,60):"NOT IN business-logic.md"}`)}
+  for(const id of new Set(l.match(/\bBL-[A-Z]+-\d+\b/g)||[])){const m=bl.match(new RegExp("^#+ "+id+":?\\s*(.*)$","m"));console.log(`${at}  ${id} = ${m?m[1].slice(0,60):"NOT IN the BL oracle"}`)}
  })}' $T
 ```
 An UNRESOLVED name with a "same name at" hint is usually a bare filename that should carry its

@@ -221,7 +221,7 @@ Runs alongside Phase B against the same live contexts, per the [`/qa-design` ski
 
 - Resolved BL-UI invariant list from Step 2.
 - Reference paths the agent must consult:
-  - [business-logic.md § Domain 15](../knowledge/oracles/business-logic.md) — BL-UI invariant definitions.
+  - `npm run bl:extract -- --domain ui` — BL-UI invariant definitions.
   - [measure-layout.ts](../../scripts/lib/measure-layout.ts) — `LAYOUT_SNIPPETS`, `spacingAuditSnippet`, `alignmentAuditSnippet`, `rectSnapshotSnippet`, classifiers.
   - [storefront-selectors.md](../knowledge/automation/storefront-selectors.md) — verified DOM selectors.
   - [/qa-design skill](../skills/qa-design/SKILL.md) — methodology (live-token extraction, audit order, Findings → Filings tree).
