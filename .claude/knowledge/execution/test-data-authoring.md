@@ -176,12 +176,14 @@ learned the hard way:
 Reference implementation: `scripts/seed-data/b2b/addresses-specs.mjs` (`seedOuterId`,
 `isSeededOuterId`, `markerSweepInScope`, `findMarkerProblems`) + `seed-b2b-addresses.mjs`.
 
-## 7. Unit tests (`scripts/unit/<name>.test.mjs`)
+## 7. Unit tests — temporary, deleted before commit
 
-Test the **pure DERIVATION** logic from `*-specs.mjs` (body/row mapping, token resolution,
-transition/status rules, teardown search semantics) with the node test runner via `tsx` — no env, no
-network. Mock the HTTP layer if you must test a seeder function (see
-`scripts/unit/seed-b2b-fixtures.test.mjs` `__setApi` pattern). Run by `npm test`. Green is a gate.
+Check the **pure DERIVATION** logic from `*-specs.mjs` (body/row mapping, token resolution,
+transition/status rules, teardown search semantics) with a **temporary** test under the node test
+runner via `tsx` — no env, no network. Mock the HTTP layer if you must test a seeder function (see the
+`__setApi` pattern in `scripts/lib/user-provision.mjs`). Run it until green, then **delete it**: no new `scripts/unit/`
+file is committed ([`when-to-write-a-test.md`](when-to-write-a-test.md) RULE 2). What stays in the repo
+is the drift guard.
 
 **Do NOT unit-test the declared fixture data, and do NOT re-run the validator's shape check here** —
 see §7a below.
@@ -197,7 +199,7 @@ edit the assertion too. It is a diff notification with a test runner attached.
 
 | What you are checking | Owner | Why |
 |---|---|---|
-| A builder / transform: `buildXBody`, `resolveTokens`, `windowDates`, row→payload mapping, arithmetic, teardown/search semantics | **unit test** | The output is computed, so a wrong implementation produces a wrong value no human wrote down. Nothing else catches it |
+| A builder / transform: `buildXBody`, `resolveTokens`, `windowDates`, row→payload mapping, arithmetic, teardown/search semantics | **temporary unit test** (deleted before commit) | The output is computed, so a wrong implementation produces a wrong value no human wrote down. Nothing else catches it |
 | The fixture's declared values, its non-vacuity contract, alias-registry completeness, GUID leaks, URL shape, cross-file coherence | **`td:validate:<domain>`** | The guard calls the same `validateFixtureShape()` a unit test would, and adds the registry/GUID/URL checks on top. It is strictly stronger, and it also sees seeded state |
 
 **Measured 2026-09-15** (`npm run td:mutation-check`), the two directions that make this a rule rather

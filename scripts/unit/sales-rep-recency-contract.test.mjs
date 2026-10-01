@@ -116,10 +116,6 @@ test('isStrictlyNewest: an unreadable candidate is never newest; an unreadable r
 
 // ---- the static guard ------------------------------------------------------
 
-test('validateRecencyContracts: the committed fixture set is clean', () => {
-  assert.deepEqual(validateRecencyContracts(fixture()), []);
-});
-
 test('validateRecencyContracts: no contract declared anywhere is clean', () => {
   assert.deepEqual(validateRecencyContracts([winNew(), winProc()]), []);
   assert.deepEqual(validateRecencyContracts([]), []);
@@ -151,11 +147,6 @@ test('CONTRADICTION: two rows on one org cannot both be its newest order', () =>
   const problems = validateRecencyContracts(rows);
   assert.ok(problems.some((p) => /2 rows declare/.test(p) && /only one order can be an org's most recent/.test(p)),
     problems.join('\n'));
-});
-
-test('two maximality rows on DIFFERENT orgs are fine — the contract is per-org', () => {
-  const rows = [elec(), elec({ order_key: 'SRO-TECH-ELEC', org: 'ORG-002' }), winNew(), winProc()];
-  assert.deepEqual(validateRecencyContracts(rows), []);
 });
 
 test('a maximality row the seeder never creates cannot be anyone\'s newest order', () => {
