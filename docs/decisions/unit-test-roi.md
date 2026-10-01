@@ -208,3 +208,45 @@ npm run td:mutation-check -- <domain> --max 30
 - `NEITHER` → **the real finding.** Add the check to `validate-<domain>-data.mjs`, not to the unit test.
 
 Run it before and after: the `UNIT ONLY` count must not fall, and the `NEITHER` count should.
+
+## 2026-10-01 — unit tests become temporary
+
+**Why.** The 2026-09-15 cut slowed the growth but did not stop it: `npm test` went from 2,891 tests
+to 3,893 in two weeks, most of it from new `kb-*` and test-data spec files. A committed test pays its
+cost on every run and every refactor, but it pays back only if a later change breaks the code it
+covers. For most new scripts here, that later change is rare, and the drift guards, `context:check`
+and the other gates already run on every PR.
+
+**The rule now** (`.claude/knowledge/execution/when-to-write-a-test.md` RULE 2): write a unit test to
+check a script while you build it, run it until green, and delete it before you commit. No new
+`scripts/unit/` file is committed. The corpus that is already committed only shrinks. `/qa-fix` G2
+reproductions in product repos are unchanged.
+
+**What stays in the committed corpus, and how it was decided:**
+
+1. **Test-data spec tests:** `td:test-attribution` was run on all 24 measurable domains (`--max 24`).
+   A test with a KEEP verdict in any domain stays. Of the DELETE verdicts with no KEEP anywhere (64),
+   **30 were spared** under the synthetic-input safeguard above: they feed a validator deliberately
+   bad input (names such as *rejects*, *FIRES*, *VACUITY*, or an object spread in the body). **34
+   were deleted**, each file re-run to confirm its test count fell by exactly that number and stayed
+   green. `missions-e2e` was not measured, because its guard is red on a clean checkout.
+2. **Every other test:** the per-test form of IFDR. Each function a test file imports is gutted to
+   `return undefined` and the file re-run with the TAP reporter. A test that goes red for at least one
+   gutted function stays. **Result: nothing deleted.** 2,825 tests went red at least once. Of the
+   tests that never went red, most never call a function the tool could break cleanly (the code is
+   reached through a subprocess, a class or a re-export), so they were not measured at all. That left
+   27 that do call a cleanly broken function and still pass. On reading, all 27 are blind spots of the
+   method, not useless tests:
+   - **21 assert a negative property** that `return undefined` cannot violate: *does not mutate its
+     input*, *is a no-op*, *is tolerated*, *ALLOWS the declared rep*.
+   - **6 are tool artefacts.** One symbol name is imported from two modules, so the wrong copy was
+     broken. A broken function returns `NaN`, which makes an "offenders list is empty" check pass.
+
+   The first pass also had a gutting bug: on TypeScript signatures that span lines, it broke the file
+   instead of the function, so the file did not load. It was caught by reading one "useless" test that
+   plainly calls its subject. The lesson from 2026-09-15 holds a second time: **a detector not checked
+   against a case whose answer you know is not evidence.**
+3. **Kept without measurement:** the security and containment tests (redaction, secret gates,
+   self-diagnostics delivery, MCP and credential hygiene, the tracker and label hooks), the
+   `playwright-lane-configs` guard that `.claude/rules/agents.md` names, and any file the tools cannot
+   measure (a subprocess-only subject, or a red baseline).
