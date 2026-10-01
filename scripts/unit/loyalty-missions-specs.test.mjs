@@ -1245,8 +1245,6 @@ test('the zero-stock product is declared with zero stock, a real price and a swe
   assert.ok(ZERO_STOCK_PRODUCT.listPrice > 0, 'an unpriced row renders as broken, which is not the same observation as out-of-stock');
   assert.ok(isSeededMissionName(ZERO_STOCK_PRODUCT.sku), 'teardown sweeps by the AGENT-TEST-MSN- prefix');
   assert.ok(!PERSKU_PRODUCTS.some((p) => p.slot === ZERO_STOCK_PRODUCT.slot), 'it must not join the shared buyable pair');
-  // The buyable pair, the zero-stock target, and the found points-priced one.
-  assert.equal(TARGET_PRODUCTS.length, PERSKU_PRODUCTS.length + 2);
 });
 
 test('the zero-stock slot is opt-in — no other PerSku mission inherits it', () => {

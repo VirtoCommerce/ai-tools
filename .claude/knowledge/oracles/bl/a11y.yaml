@@ -47,7 +47,8 @@ rules:
       kind: manual
       ref: Capture the accessibility tree for the surface and confirm every button/link/input exposes a non-generic accessible name; confirm each visible label's `for`/`id` pairing or `aria-labelledby` resolves correctly; confirm `<img alt>` is present and non-generic (or explicitly empty for decorative images). Corroborate with an axe-core scan (`button-name`, `link-name`, `label`, `image-alt`) — zero violations required.
     violation_signal: An icon-only control announced as bare "button"/"link"; an input with no associated label; a product image missing `alt`; `aria-labelledby` referencing a non-existent id.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] MSNF-090 failed in REG-2026-10-01-1243"
   - id: BL-A11Y-003
     title: Color contrast and non-color status differentiation
     rule: On the accessibility-gated storefront themes, body/paragraph text MUST meet contrast ≥ 4.5:1 against its background, and large text (≥18px, or ≥14px bold) ≥ 3:1 (WCAG 1.4.3). UI-component boundaries and meaning-bearing graphical/icon affordances MUST meet ≥ 3:1 against their adjacent background (WCAG 1.4.11). Status/meaning (error, success, warning) MUST NOT be conveyed by color alone (WCAG 1.4.1).
@@ -64,7 +65,8 @@ rules:
       kind: manual
       ref: Run an axe-core `color-contrast` scan against the surface on an accessibility-gated theme; zero violations required. For a color-conveyed status, confirm an accompanying icon/text label independent of color, and recheck under a colorblind-vision emulation.
     violation_signal: A foreground/background pair below the 4.5:1/3:1 threshold; an axe `color-contrast` violation; a status relying on red/green alone with no icon or text.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] MSNF-090 failed in REG-2026-10-01-1243"
   - id: BL-A11Y-004
     title: Programmatic status, state, and role correctness (axe-clean)
     rule: Every ARIA role/state/property a component sets MUST be valid, complete, and reflect the control's actual state (WCAG 4.1.2). A message appearing asynchronously in response to a user action MUST be exposed to assistive technology at the moment it appears — via `role="alert"`/`aria-live`, or an explicit focus shift plus `aria-describedby` linkage to the field it concerns — not by visual styling alone (WCAG 4.1.3; WCAG 3.3.1 for field-level errors). A surface MUST be free of axe-core Critical/Serious violations.

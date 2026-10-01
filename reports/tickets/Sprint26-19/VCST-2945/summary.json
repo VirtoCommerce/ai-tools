@@ -192,9 +192,11 @@
    "reports/ba/Search/vcst-2945-barcode-scanner-developer-guide.md"
   ],
   "amended": true,
-  "comment_posted": false,
+  "comment_posted": true,
+  "comment_id": "111003",
+  "posted_at": "2026-10-01",
   "refusal": null,
-  "note": "2026-09-30: customer guide amended (header box stays empty during a barcode lookup — VCST-6098 fix, observed D1/D2). Posting HELD by operator: the three PRs are unmerged and frontend CI is red. VCST-6094, the earlier hold reason, is resolved."
+  "note": "2026-09-30: customer guide amended (header box stays empty during a barcode lookup — VCST-6098 fix, observed D1/D2). 2026-10-01: hold lifted — all three PRs merged, CI green, post-test commits touch no barcode/search/English-string file; version banners removed (§10), unverified Lucene claim dropped; posted as ONE comment with all three audience sections (tracker-ops §5d), 2 screenshots rendered inline (renderedBody: 2 img, 0 error)."
  },
  "status_transitions": [
   {
