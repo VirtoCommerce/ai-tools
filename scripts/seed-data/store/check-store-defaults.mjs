@@ -27,6 +27,7 @@
  * (see the header of store-defaults-specs.mjs). This script never writes to the platform.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'csv-parse/sync';

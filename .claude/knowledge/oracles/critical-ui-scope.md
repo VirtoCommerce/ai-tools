@@ -9,9 +9,9 @@ applicability_rationale: "vcst's 7 components × 8 pages coverage matrix. Custom
 
 > ⚠️ **UNCOVERED as of 2026-07-25.** Suite `048b-layout-stability.csv` — the sole carrier of every covering test ID in both matrices — was **removed**. All 197 applicable cells are now marked `GAP`. This file is retained as the **scope definition** (what SHOULD be covered) and as the audit-protocol reference for [`/qa-design`](../../skills/qa-design/SKILL.md), but it no longer gates a regression run. `npm run scope:validate` still hard-fails on a cell pointing at a **nonexistent** test ID, and reports the GAP count as a warning; `--strict` makes GAPs fatal again once a replacement suite lands.
 
-> **Pre-reads:** [BL-UI invariants](business-logic.md#domain-15-ui-display--layout-stability-bl-ui), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts).
+> **Pre-reads:** `BL-UI-*` (`npm run bl:extract -- --domain ui`), [storefront-selectors.md](../automation/storefront-selectors.md), [measure-layout.ts helper](../../../scripts/lib/measure-layout.ts).
 >
-> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as `business-logic.md` promotions per [feedback_business_logic_promotion](../../../memory)).
+> **Owner agent:** [ui-ux-expert](../../agents/ui-ux-expert.md). Other agents may consume this scope as input but should not modify it without explicit per-entry user approval (same convention as BL oracle promotions).
 
 ## Why a matrix, not a list
 
@@ -42,8 +42,8 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 | 7 | **VcSidebar** (account section — VcLayout sidebar slot) | Layout backbone for `/account/*`. **Naming note:** there is no Storybook primitive literally named "VcSidebar" — this row audits the [VcLayout](https://vcst-qa-storybook.govirto.com/?path=/docs/components-atoms-vclayout--docs) sidebar slot pattern. Storybook also ships [VcPopupSidebar](https://vcst-qa-storybook.govirto.com/?path=/docs/components-atoms-vcpopupsidebar--docs) (mobile-drawer pattern) — distinct from this row. Sidebar item alignment drift signals a broken design-token chain. |
 | 8 | **BOPIS Modal** (pickup-locations-modal) | Revenue-critical pickup flow. 102-location scroll list (no pagination) + country/region/city filters + map column → high complexity, layout-stability defects likely. Specialization of VcDialog with unique behaviors warranting dedicated coverage. |
 | 9 | **VcInput** (form primitive) | Every form: sign-in, sign-up, search, address, qty, configurable text. `.vc-input--error` insertion is BL-UI-003 critical — validation message must not shift form below. Mobile-keyboard layout regressions are chronic. |
-| 10 | **VcQuantityStepper** | Revenue-path component: on B2B-store it IS the add-to-cart entry on PDP (per `feedback_qty_stepper_as_add_to_cart`). Renders on PDP, cart line item, and per-option in Configurable PDP. Currently audited only transitively via VcLineItem. |
-| 11 | **Header** (top-header chrome) | Renders on every page — 25+ persistent `data-test-id`s (language/currency/ship-to/account-button/cart-link/search/dark-mode toggle). Layout regressions here cascade everywhere. Mobile hamburger inventory (per `feedback_mobile_hamburger_inventory`) re-mounts header controls at ≤500 px. |
+| 10 | **VcQuantityStepper** | Revenue-path component: on B2B-store it IS the add-to-cart entry on PDP. Renders on PDP, cart line item, and per-option in Configurable PDP. Currently audited only transitively via VcLineItem. |
+| 11 | **Header** (top-header chrome) | Renders on every page — 25+ persistent `data-test-id`s (language/currency/ship-to/account-button/cart-link/search/dark-mode toggle). Layout regressions here cascade everywhere. Mobile hamburger inventory re-mounts header controls at ≤500 px. |
 | 12 | **Notifications/Toast** (`useNotifications`) | Toast appearance must not shift main content (BL-UI-003). Stackable, 4 severity levels — risk of stack-height pushing CTAs out of view. Selector: `.notifications-host__wrapper:not(:empty)`. |
 | 13 | **VcPriceDisplay/VcPrice** | Wherever money renders. Dynamic price on Configurable PDP MUST not reflow sidebar. Sale strikethrough + actual-price baseline alignment is fragile. Partially audited transitively via VcProductCard/VcLineItem; dedicated row formalizes dynamic-update coverage. |
 | 14 | **VcEmptyView/Empty State** | Renders conditionally — easy to miss. Empty cart, empty wishlist, no-search-results layouts differ from populated states. Selector: `.vc-empty-page` and friends. |
@@ -65,7 +65,7 @@ Thirty-six entries, ordered by criticality. Criticality = (revenue-path proximit
 | 30 | **VcExpansionPanels / VcExpansionPanel** (Atoms + Molecules) | Accordion pattern — Atoms ships the group container (`VcExpansionPanels`), Molecules ships the single panel (`VcExpansionPanel`). Used in FAQ, PDP details on mobile, filter facet groups. Expand/collapse triggers a controlled shift of adjacent panels; long content inside a panel stresses BL-UI-004; panel-header touch targets stress BL-UI-006. |
 | 31 | **VcModal** (Organisms) | Underlying modal wrapper primitive (`.vc-modal`, `.vc-modal__wrapper`, `.vc-modal__backdrop`, `.vc-modal__panel`). Hosts `VcDialog` (#5) inside. BOPIS Modal (#8) and VcConfirmationModal (#32) are specializations. Audits the wrapper-level body-scroll-lock + fullscreen-on-mobile contracts (vs. VcDialog #5 which audits the inner dialog frame). |
 | 32 | **VcConfirmationModal** (Organisms) | Yes/no confirmation pattern (thin VcModal specialization with confirm/cancel button row). Used for destructive actions (remove item, clear cart, delete address). Button-row alignment, long-message overflow, button touch targets. |
-| 33 | **VcAddToCart** (Organisms) | Dedicated Add-to-Cart button — used on Configurable PDP (`[data-test-id="sidebar"] .product-price-block button[aria-label="Add to cart"]` per storefront-selectors §12). On standard B2B-store PDP the qty stepper plays this role instead (per `feedback_qty_stepper_as_add_to_cart`). Loading state on click must not shift adjacent content. |
+| 33 | **VcAddToCart** (Organisms) | Dedicated Add-to-Cart button — used on Configurable PDP (`[data-test-id="sidebar"] .product-price-block button[aria-label="Add to cart"]` per storefront-selectors §12). On standard B2B-store PDP the qty stepper plays this role instead. Loading state on click must not shift adjacent content. |
 | 34 | **VcSlider** (Molecules) | Range slider — price-range facet filter on `/catalog`. Handle drag updates value display without shifting surrounding controls. Handle touch target ≥ 24 × 24 is a chronic mobile-slider pain point. |
 | 35 | **VcRating** (Molecules) | Product star rating display. Renders on product cards + PDP. Stars + count baseline alignment; mostly read-only so BL-UI-003 / BL-UI-006 typically N/A. |
 | 36 | **VcBreadcrumbs** (Atoms) | Hierarchical navigation row above PDP / category content. Long path (deep category trees) overflows at 375 px — chronic mobile issue. Breadcrumb items + separators baseline alignment. |
@@ -372,7 +372,7 @@ A) PDP variant (NAV: any in-stock PDP, e.g. /search → click first card → lan
    wait 300 ms for cart-add roundtrip
    browser_evaluate(rectSnapshotSnippet('.product-price-block')) → after
    → compareRectSnapshots — the surrounding price block must not jump
-     when the "View cart" CTA appears (per `feedback_qty_stepper_as_add_to_cart`,
+     when the "View cart" CTA appears (on B2B-store
      the qty stepper drives add-to-cart; the View Cart button rendering is
      the typical shift source)
 
@@ -420,7 +420,7 @@ PREREQ: authenticated user on `/`.
    resize viewport to 375 px
    browser_evaluate(LAYOUT_SNIPPETS.overflowAudit)
    → documentScrolls === false (header chrome must fit at 375 px or
-     re-mount controls into hamburger panel per `feedback_mobile_hamburger_inventory`)
+     re-mount controls into hamburger panel)
    browser_click on hamburger trigger (verify selector live — likely
      `header button[aria-label*="menu" i]` or `[data-test-id="mobile-menu-toggle"]`)
    browser_evaluate(touchTargetAuditSnippet('header'))
@@ -632,8 +632,7 @@ A) Address-form variant (NAV: /account/addresses → click edit/add):
    browser_evaluate(rectSnapshotSnippet('form button[type="submit"]')) → before
    browser_click an option that changes the State/Province option list
      (e.g., switch Country USA → Canada — state list repopulates;
-      switch USA → UK — State field becomes empty/disabled per
-      `reference_address_data_conventions`)
+      switch USA → UK — State field becomes empty/disabled)
    wait 300 ms for downstream field repaint
    browser_evaluate(rectSnapshotSnippet('form button[type="submit"]')) → after
    → compareRectSnapshots — submit button must NOT shift down when state field
@@ -1076,7 +1075,7 @@ NOTE: dismiss the modal (click cancel) before leaving the test to keep
 
 ```text
 SCOPE: dedicated Add-to-Cart button — Configurable PDP only. Standard
-       B2B-store PDP uses qty stepper instead (per `feedback_qty_stepper_as_add_to_cart`).
+       B2B-store PDP uses qty stepper instead.
 PREREQ: anon or auth on Configurable PDP (`@td(CONFIGURABLE.testSlug)`),
         all required sections satisfied so button is enabled.
 
@@ -1245,7 +1244,7 @@ Sixteen pages, ordered by revenue + traffic proximity:
 | 7 | `/company/members` | required + B2B org admin role | B2B member management (VcTable + role controls). Mobile touch targets on invite/role dropdowns. |
 | 8 | `/company/info` | required + B2B org admin role | B2B company profile form. Spacing-grid and validation-shift territory. |
 | 9 | **Configurable PDP** (`@td(CONFIGURABLE.testSlug)`) | anon or auth | High-value B2B SKUs (customized products, wedding cakes, monogrammed items). Section accordions + conditional sections + dynamic price = layout-sensitive interactions. Distinct from standard PDP because of `.product-configuration` section system and per-option qty steppers. |
-| 10 | `/checkout/payment` | required | Redirect target for non-CyberSource processors (Skyflow / Authorize.Net / Datatrans) per `feedback_payment_flow_learnings`. Payment iframe / hosted form layout shift is high-risk on this revenue-path page. |
+| 10 | `/checkout/payment` | required | Redirect target for non-CyberSource processors (Skyflow / Authorize.Net / Datatrans). Payment iframe / hosted form layout shift is high-risk on this revenue-path page. |
 | 11 | `/account/dashboard` | required | Default landing for the account section (top-header "Dashboard" link). Contains latest-orders + monthly-spend chart — charts are CLS-prone. |
 | 12 | `/account/addresses` | required | Address CRUD page (separate chrome from the address-edit modal already covered by VcDialog). TechFlow org has multiple addresses → stress-tests row alignment. Personal-account-only sidebar item (per memory). |
 | 13 | `/sign-in` | anon (incognito) | Highest-traffic anon page. `.vc-input--error` state-insertion is BL-UI-003 critical here. **Test from incognito context** — authenticated browsers redirect to `/catalog` (storefront-selectors.md §6 blocker). |
@@ -1295,7 +1294,7 @@ For each page in the matrix:
 | Configurable PDP | `{{FRONT_URL}}@td(CONFIGURABLE.testSlug)` (resolves to `/products-with-options/wedding-cakes/sections-with-conditions-wedding-cake`) | none (anon or auth both work); fixture SKU `YOC-85609878` |
 | `/checkout/payment` | `{{FRONT_URL}}/checkout/payment` | authenticated; cart with ≥ 1 item; payment method set to a non-CyberSource processor (Skyflow / Authorize.Net / Datatrans); reached by clicking Place Order on `/cart` |
 | `/account/dashboard` | `{{FRONT_URL}}/account/dashboard` | authenticated user (personal account or B2B contact) |
-| `/account/addresses` | `{{FRONT_URL}}/account/addresses` | authenticated personal account (B2B users may not see the sidebar item — per memory `feedback_storefront_virtual_catalog_link` / personal-account convention). Use TechFlow contact for stress (multiple addresses). |
+| `/account/addresses` | `{{FRONT_URL}}/account/addresses` | authenticated personal account (B2B users may not see the sidebar item — personal-account convention). Use TechFlow contact for stress (multiple addresses). |
 | `/sign-in` | `{{FRONT_URL}}/sign-in` | **incognito context only** — authenticated browsers auto-redirect to `/catalog` (see storefront-selectors §6) |
 | `/search?q=` | `{{FRONT_URL}}/search?q={{TEST_SKU}}` for results variant; `{{FRONT_URL}}/search?q=zzz-no-results-test` for empty-state variant | none (anon or auth) |
 | `/sign-up` | `{{FRONT_URL}}/sign-up` | **incognito context only** |
@@ -1349,7 +1348,7 @@ The validator does NOT enforce render-location parity (that's a runtime concern,
 ## When to update this file
 
 - **Add a new component to the inventory** — only with explicit user approval. Update inventory, render-location map, applicability rules, audit protocol, AND coverage matrix in the same edit. Add tests to fill the new row's covered cells.
-- **Add a new BL-UI invariant** — coordinated with [business-logic.md](business-logic.md#domain-15-ui-display--layout-stability-bl-ui) promotion. The matrix grows a column; fill applicable cells.
+- **Add a new BL-UI invariant** — coordinated with a `BL-UI-*` promotion (edit `knowledge/oracles/bl/ui.yaml`, then `npm run bl:render`). The matrix grows a column; fill applicable cells.
 - **A covering test ID is renamed or moved** — update the matrix immediately. Validator will fail until you do.
 - **A covering suite is deleted** — flip its cells to `GAP` (never to `n/a`, which asserts the invariant doesn't apply) and update both Summary blocks. `scope:validate` then warns instead of failing; use `--strict` in CI once coverage is restored.
 - **A component's applicability changes** (e.g., VcSidebar starts containing interactive primary CTAs and BL-UI-006 becomes applicable) — flip the cell from `n/a` to a real test ID and add the test.

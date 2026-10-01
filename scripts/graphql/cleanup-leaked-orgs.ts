@@ -22,6 +22,7 @@
  * Permission: platform admin (ORG_USER / customer tokens return 403).
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { config as loadDotenv } from "dotenv";
 import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { TokenCache } from "../lib/graphql-auth.js";

@@ -165,7 +165,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     ```
 
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
-4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
+4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
 ---
 
@@ -197,6 +197,10 @@ unverified` at `1e`. **`STALE` is never auto-refreshed.**
 **1a. Its mind map**, when 2g recorded `domain_map.mind_map` (`/qa-test-mind-map`). This is the behaviour
 graph beside the map. Read the nodes in the ticket's slice: they are what `1e` Part 0 cites and what the
 `1e-plan` rows name as `behavior`. Its `DRIFT` and `UNVERIFIED` nodes are open questions to hand to `1c`.
+Then read `npm run models:check -- --json` for the same slice and hand two lists to Artifact A's `2a`:
+nodes with no stamped case (`TM-014`) and integration points no case exercises (`TM-032`), which are
+the gaps the run authors when `2a` confirms them, and suspect cases (`TM-017`), which `2a` disposes
+like any other hit ([`coverage-triage.md`](coverage-triage.md) §3).
 Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
 
 **2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),

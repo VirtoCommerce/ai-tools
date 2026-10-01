@@ -159,6 +159,12 @@ then made by an agent that has seen them live.
 `npm run tc:scope` produces the worklist; classifying each hit is judgment, and it is
 `test-management-specialist`'s (§2a-own). The vocabulary is closed and every hit takes exactly one value.
 
+**When the domain has a mind map, its suspect cases join the worklist** (`TM-017`, handed over by
+pre-flight 1a, [`preflight.md`](preflight.md)). A case stamped on a DRIFT, OBSOLETE or changed node is a
+hit even when `tc:scope` did not find it, and it takes one of the same four values. The slice's
+unstamped nodes (`TM-014`) are not hits: they are the gap list the authoring half starts from, once
+`2a` has confirmed that no existing case decides them.
+
 | Disposition | The row is | Action | Timing |
 |---|---|---|---|
 | **`CONFIRMED`** | still correct under the change | nothing | — |

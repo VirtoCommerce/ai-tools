@@ -341,8 +341,8 @@ function newSlide() {
   // right column: code + env table note
   codePanel(s, [
     [{ text: "/plugin", t: "g" }, { text: " marketplace add \\" }],
-    [{ text: "   VirtoCommerce/vc-mcp-testing-module" }],
-    [{ text: "/plugin", t: "g" }, { text: " install vc-fix@vc-tools" }],
+    [{ text: "   VirtoCommerce/ai-tools" }],
+    [{ text: "/plugin", t: "g" }, { text: " install vc-fix@ai-tools" }],
     [{ text: "npm install" }],
     [{ text: "/project-init", t: "g" }, { text: "            " }, { text: "# wizard", t: "c" }],
     [{ text: "npm run env:check" }],

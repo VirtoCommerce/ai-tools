@@ -1,5 +1,5 @@
 {
-  "name": "vc-mcp-testing-module",
+  "name": "ai-tools",
   "version": "0.8.1",
   "description": "",
   "main": "config.js",
@@ -199,6 +199,13 @@
     "bl:extract": "npx tsx scripts/knowledge/extract-bl.ts",
     "bl:extract:list": "npx tsx scripts/knowledge/extract-bl.ts --list",
     "bl:remap": "npx tsx scripts/knowledge/remap-bl-citations.ts",
+    "bl:convert": "npx tsx scripts/knowledge/bl-yaml.ts",
+    "bl:convert:check": "npx tsx scripts/knowledge/bl-yaml.ts --check",
+    "bl:render": "npx tsx scripts/knowledge/bl-yaml.ts --render-oracle",
+    "bl:fresh": "npx tsx scripts/knowledge/bl-fresh.ts",
+    "inv:run": "npx tsx scripts/invariants/run.ts",
+    "detect:mutate": "npx tsx scripts/detection/mutation-trial.ts",
+    "gaps": "npx tsx scripts/detection/gaps.ts",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:extract": "npx tsx scripts/knowledge/extract-ecl.ts",
     "ecl:extract:list": "npx tsx scripts/knowledge/extract-ecl.ts --list",
@@ -282,6 +289,10 @@
     "seed:missions-e2e:only": "node scripts/seed-data/loyalty/seed-missions-e2e.mjs",
     "seed:missions-e2e:teardown": "node scripts/seed-data/loyalty/seed-missions-e2e.mjs --teardown",
     "td:validate:missions-e2e": "node scripts/seed-data/loyalty/validate-missions-e2e-data.mjs",
+    "seed:push": "node scripts/seed-data/push/seed-push.mjs",
+    "seed:push:teardown": "node scripts/seed-data/push/seed-push.mjs --teardown",
+    "seed:push:verify": "node scripts/seed-data/push/validate-push-data.mjs --live",
+    "td:validate:push": "node scripts/seed-data/push/validate-push-data.mjs",
     "summary:validate": "node scripts/qa-test/validate-summary.mjs",
     "summary:validate:baseline": "node scripts/qa-test/validate-summary.mjs --update-baseline",
     "qa-test:doclint": "node scripts/qa-test/doclint.mjs",
@@ -298,27 +309,29 @@
     "ucp:schema:probe": "node scripts/ucp/refresh-ucp-schema.mjs --probe",
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
     "kb:install": "node scripts/kb/install-mcp.mjs",
-    "models:check": "npx tsx scripts/maintenance/check-test-models.ts"
+    "models:check": "npx tsx scripts/maintenance/check-test-models.ts",
+    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VirtoCommerce/vc-mcp-testing-module.git"
+    "url": "git+https://github.com/VirtoCommerce/ai-tools.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues"
+    "url": "https://github.com/VirtoCommerce/ai-tools/issues"
   },
-  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
+  "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
   "dependencies": {
     "@azure/identity": "^4.13.1",
     "@playwright/mcp": "^0.0.77",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.0",
-    "pptxgenjs": "^4.0.1"
+    "pptxgenjs": "^4.0.1",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
@@ -330,5 +343,8 @@
     "playwright": "^1.61.1",
     "tsx": "^4.0.0",
     "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.27.4": true
   }
 }

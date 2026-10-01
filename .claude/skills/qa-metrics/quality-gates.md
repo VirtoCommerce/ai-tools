@@ -143,7 +143,7 @@ and are combined with that math by the verifier.
 |-----------|-----------|--------|
 | `/qa-test` verdict | **PASS** or **PASS WITH NOTES** | `/qa-test` Step 5-verdict |
 | Acceptance criteria + DoD | 100% verified — every atomic condition (story ACs + gap-ACs) carries PASS evidence, all reconciled SATISFIED-live, every DoD item MET/N-A, with the quantified AC-coverage/DoD estimate | `/qa-test` Step 5-verdict |
-| `BL-*` invariants for the domain | Verified, none violated | `business-logic.md` |
+| `BL-*` invariants for the domain | Verified, none violated | `bl:extract -- --domain <d>` |
 | Open P0 bugs in the feature | 0 — non-negotiable, outranks every other criterion | `reports/bugs/` |
 | Open P1/High bugs in the feature | **0 undeferred.** Fixed, or declared via `--p1-deferred N` with workaround + signed risk acceptance + monitoring plan (caps the verdict at CONDITIONAL GO) | `reports/bugs/` |
 | **Run completeness (§0)** | **≤10% of planned cases BLOCKED and untriaged**; ≥1 case produced a verdict | `suite-*-results.json` + `/qa-triage-results` |

@@ -1,11 +1,18 @@
 # UCP `create_cart` — stock limit is bypassed by splitting one quantity across line entries `[P2]` `[BL-CART-002]`
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Env:** vcst-qa @ Platform `3.1072.0-pr-3108-b6ef`, `VirtoCommerce.UCP` `3.1006.0-pr-7-612c`
 **Surface:** MCP `POST {{FRONT_URL}}/ucp/mcp` → `tools/call` `create_cart` (anonymous, no credential)
 **Found:** 2026-09-23, during the VCST-5378 suite-102 machine-lane pass. Re-verified live the same day with the control below.
 **Case:** none yet — suite `102` records the OBSERVATION as `UCPA-035`; it does not assert this as a defect.
+
+## Resolution
+
+- **Fixed in:** `VirtoCommerce.UCP 3.1007.0-pr-9-91ca` — vc-module-ucp PR #9 @ `91ca741` (shared with VCST-6054; **open, unmerged** at verification). `create_cart` now consolidates duplicate `product_id`s (case-insensitive) before the first XCart mutation, so XCart validates the total.
+- **Tracker:** VCST-6056 — verified 2026-09-29 on vcst-qa, verdict **VERIFIED WITH NOTES**.
+- **Method:** direct MCP + REST, anonymous. 4+5 and 9×1 → `insufficient_stock`, requested 9 / available 5, REST 409, 3/3 each; single-entry control identical; valid 2+3 → one line of 5; update/checkout/handoff guards, correction, int32 overflow (400), mixed products and mixed-case ids all pass. Evidence: `reports/tickets/Sprint26-19/VCST-6056/`.
+- **Note:** re-check after merge if the merged artifact differs from `91ca741`. Side effect found: `reports/bugs/open/low/BUG-ucp-consolidation-keeps-first-id-spelling-drops-valid-line-VCST-6056.md`.
 
 ## Summary
 

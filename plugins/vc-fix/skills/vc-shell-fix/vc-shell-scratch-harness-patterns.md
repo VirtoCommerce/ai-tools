@@ -80,7 +80,7 @@ export default mergeConfig(
 ## 3. Worked example — a stale reactive banner not clearing after a mounted action
 
 ```ts
-// .fix-workspace/_scratch/VCST-XXXX/repro.spec.ts
+// .fix-workspace/_scratch/<ticket-key>/repro.spec.ts
 // Outside the sub-app tree entirely — imports the REAL component from the checkout.
 import { describe, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
@@ -105,7 +105,7 @@ Run it against the scratch config:
 
 ```bash
 npx vitest run --config vitest.scratch.config.ts \
-  ../../_scratch/VCST-XXXX/repro.spec.ts
+  ../../_scratch/<ticket-key>/repro.spec.ts
 ```
 
 Red = the banner assertion fails (element still found); green = it passes after the fix. Paste both

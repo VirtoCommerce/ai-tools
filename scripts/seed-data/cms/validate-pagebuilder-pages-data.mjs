@@ -8,6 +8,7 @@
  *   3. every canonical page's @td alias is registered in test-data/aliases.json and GUID-free.
  * Exit 1 on any violation.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

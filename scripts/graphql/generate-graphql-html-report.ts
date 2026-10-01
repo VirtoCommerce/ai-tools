@@ -12,6 +12,7 @@
  *   npx tsx scripts/generate-graphql-html-report.ts --run-id <ID> --open     # opens in default browser
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";

@@ -334,7 +334,7 @@ a single run; `--batch --purge` clears all batched sessions without sending.
   prepared as ready `gh` commands (a human always opens the PR — an irreversible external
   action). Local capture + diagnosis never need consent — only this outbound step does.
 
-**Routes by the GitHub token's real rights** on `VirtoCommerce/vc-mcp-testing-module`
+**Routes by the GitHub token's real rights** on `VirtoCommerce/ai-tools`
 (via `../project-init/probe-lib.mjs`): push/maintain/admin → **PR**; authenticated
 no-push → **fork-PR**; issues-only → **GitHub Issue**; no token → **local + auth
 instructions**.

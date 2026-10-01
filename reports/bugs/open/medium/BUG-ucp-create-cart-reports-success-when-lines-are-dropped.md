@@ -80,3 +80,11 @@ Live probes 2026-09-23, anonymous session, `vcst-qa`. `UCPA-025` in
 `regression/suites/Backend/ucp/102-ucp-agentic-commerce.csv` covers the first two causes and passes
 against the current behaviour; the third (stock) is covered by the inventory block added the same day.
 UCP domain map `D16` (`.claude/knowledge/domain/ucp.md`).
+
+## Verification 2026-09-29 (VCST-6054 build)
+
+On `VirtoCommerce.UCP 3.1007.0-pr-9-91ca` (PR #9, open) the **stock** cause in the table above no longer has this
+shape: an over-stock `create_cart` now returns `isError: true`, `insufficient_stock`, HTTP 409, with
+requested/available quantities. The **other two causes are unchanged**. An all-zero `product_id` still returns
+`ucp.status: success`, empty `line_items` and only `CART_PRODUCT_UNAVAILABLE` (`recoverable`). This report
+stays open for the non-inventory causes. Evidence: `reports/tickets/Sprint26-19/VCST-6054/evidence/VCST-6054-item08-non-inventory-refusals-run1.json`.

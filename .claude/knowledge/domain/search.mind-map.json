@@ -9,106 +9,6 @@
     "built_from": "search.md rev 1 (§1 barcode chain links 1–6, §2a–2h, §3 D1–D8, §5 G1–G7); business-logic.md BL-SRCH-001..005, BL-STORE-001, BL-CAT-003, BL-A11Y-001/002, BL-UI-001; ECL-3.1, ECL-3.2; suites 004, 005, 050a, 103 (Title/References/Automation_Status); reports/ba/test-models/VCST-2945-2026-09-28.md (Part 0 chain, state diagram, 3x amendments); reports/tickets/Sprint26-19/VCST-2945/testing-checklist.md (per-item verdicts); REG-2026-09-28-1518 (suite results + triage-report.md); PR bodies #909/#113/#2501; lane summaries 3x/4a-be/4a-fe/4v; VirtoOZ StorefrontUserGuide §Search Options and PlatformUserGuide §Manage Search Index (queried 2026-09-28).",
     "evidence_convention": "OBSERVED refs `VCST-2945 4a 2026-09-28` / `VCST-2945 3x 2026-09-28` / `VCST-2945 4v 2026-09-28` are LIVE AGENT LANE observations recorded as checklist verdicts (item id in the note). `REG-2026-09-28-1518` is the C1 execution of the 26 Draft cases that VCST-2945 authored; those cases are Draft (C1 ran --no-promote), so the run is cited as a live observation of that execution, NOT as a promotion. SPEC = the PR bodies.",
     "kb_read": "2026-09-28 — 14 questions (npm run kb -- ask). Hits: KB-110E0652, KB-A0B3940F (DISPUTED), KB-71011C1F, KB-C3945D5C, KB-BC55C4F0, KB-417AC3F2, KB-78B45E71, KB-25829330, KB-B77CC09C, KB-041DF407, KB-C466AD5C, KB-2B0274B9, KB-F3B1E987. Misses: index lag after product update; products storeId scope; suggestions dropdown; public store settings keys; sort/paging on results page.",
-    "pending_requirements_note": "There is NO srch data model yet (test-data/models/ holds only loyalty-missions). A `requires`/`produces` id on a node must resolve in a data model (models:check TM-005), so the ids are kept OFF the nodes and recorded here per node until /qa-test-data-model build srch declares them; then move each list onto its node. Fixtures that already reach most of these states are the BARCODE_* and BROWSEFILTERS_* aliases in test-data/aliases.json — the model should point at them, never at a seeder.",
-    "pending_requirements": {
-      "srch.index.freshness": [
-        "data.srch.catalog.indexed"
-      ],
-      "srch.query.keyword": [
-        "data.srch.catalog.indexed"
-      ],
-      "srch.results.facets": [
-        "data.srch.catalog.indexed",
-        "data.srch.index.no-ghost-docs"
-      ],
-      "srch.barcode.config": [
-        "data.srch.store.barcode-dedicated",
-        "data.srch.user.store-admin"
-      ],
-      "srch.barcode.config.set-exact": [
-        "data.srch.store.barcode-defaults"
-      ],
-      "srch.barcode.config.set-fulltext": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.disable": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.stale-on-property-delete": [
-        "data.srch.property.stale-field",
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.config.drop-missing-on-change": [
-        "data.srch.store.barcode-stale-field"
-      ],
-      "srch.barcode.config.generic-write-unvalidated": [
-        "data.srch.store.barcode-dedicated"
-      ],
-      "srch.barcode.config.permission-read-only": [
-        "data.srch.user.browsefilters-read-only"
-      ],
-      "srch.barcode.config.permission-none-api": [
-        "data.srch.user.browsefilters-none"
-      ],
-      "srch.barcode.config.permission-none-blade-false-off": [
-        "data.srch.user.browsefilters-none"
-      ],
-      "srch.barcode.config.per-store": [
-        "data.srch.store.barcode-exact",
-        "data.srch.store.barcode-defaults"
-      ],
-      "srch.barcode.expand": [
-        "data.srch.store.barcode-exact"
-      ],
-      "srch.barcode.expand.case-and-prefix": [
-        "data.srch.product.case-mixed-code"
-      ],
-      "srch.barcode.expand.or-fields": [
-        "data.srch.product.gtin-unique",
-        "data.srch.product.code-or"
-      ],
-      "srch.barcode.expand.property-field": [
-        "data.srch.product.property-code"
-      ],
-      "srch.barcode.expand.variation-scope": [
-        "data.srch.variation.mpn-out-of-stock"
-      ],
-      "srch.barcode.expand.after-code-change": [
-        "data.srch.product.reindex-candidate"
-      ],
-      "srch.barcode.expand.special-values": [
-        "data.srch.product.special-value"
-      ],
-      "srch.barcode.expand.facet-counts": [
-        "data.srch.product.gtin-shared",
-        "data.srch.index.no-ghost-docs"
-      ],
-      "srch.barcode.expand.wildcards": [
-        "data.srch.product.gtin-unique"
-      ],
-      "srch.barcode.expand.scanner-off-still-expands": [
-        "data.srch.store.barcode-disabled-with-fields"
-      ],
-      "srch.barcode.fulltext": [
-        "data.srch.store.barcode-defaults",
-        "data.srch.product.fulltext-discriminator"
-      ],
-      "srch.barcode.resolve.single-hit-opens": [
-        "data.srch.product.gtin-unique"
-      ],
-      "srch.barcode.resolve.multi-hit-lists": [
-        "data.srch.product.gtin-shared"
-      ],
-      "srch.barcode.resolve.variation-hit": [
-        "data.srch.variation.mpn-out-of-stock"
-      ],
-      "srch.barcode.resolve.actor-parity": [
-        "data.srch.customer.b2b-buyer"
-      ],
-      "srch.barcode.resolve.identity-lookup-hides-browsing": [
-        "data.srch.product.gtin-shared"
-      ]
-    },
     "ticket": "VCST-2945"
   },
   "nodes": [
@@ -201,6 +101,9 @@
           "ref": "BL-CAT-003",
           "note": "30–60 s lag acceptable; PDP and cart read live"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -258,6 +161,12 @@
           "note": "desktop 1920 px + mobile 375 px, anonymous + signed-in",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
+      ],
+      "produces": [
+        "data.srch.history.recent-search"
       ]
     },
     {
@@ -332,6 +241,9 @@
           "note": "autocomplete dropdown: categories column, product previews, 'View all N results'",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -370,6 +282,9 @@
           "note": "opening /search?q= directly does not add the term to history; a submit from the bar does",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.history.recent-search"
       ]
     },
     {
@@ -396,6 +311,9 @@
           "ref": "VCST-5729",
           "note": "SRCH-011..013 promoted 2026-08-27"
         }
+      ],
+      "requires": [
+        "data.srch.category.with-subcategory"
       ]
     },
     {
@@ -457,6 +375,9 @@
           "ref": "domain-map:srch@rev1 §2b",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed"
       ]
     },
     {
@@ -505,6 +426,9 @@
           "ref": "BL-SRCH-002",
           "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
         }
+      ],
+      "requires": [
+        "data.srch.query.no-hit-term"
       ]
     },
     {
@@ -526,6 +450,10 @@
           "ref": "BL-SRCH-001",
           "note": "triangulated BL-AUDIT-2026-07-22, CONFIRMED 3/3"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed",
+        "data.srch.customer.b2b-buyer"
       ]
     },
     {
@@ -544,6 +472,9 @@
           "ref": "ECL-3.2",
           "note": "row 3, triangulated docs+live+source ECL-AUDIT-2026-09-03"
         }
+      ],
+      "requires": [
+        "data.srch.facet.overlapping-groups"
       ]
     },
     {
@@ -562,6 +493,9 @@
           "ref": "ECL-3.2",
           "note": "row 2, triangulated ECL-AUDIT-2026-09-03"
         }
+      ],
+      "requires": [
+        "data.srch.product.usd-priced"
       ]
     },
     {
@@ -595,6 +529,10 @@
           "ref": "VCST-5851",
           "note": "SRCH-FSORT-001..006 promoted 2026-09-10"
         }
+      ],
+      "requires": [
+        "data.srch.facet.dictionary-priorities",
+        "data.srch.store.facet-sort-priority"
       ]
     },
     {
@@ -653,6 +591,10 @@
           "note": "Sorting tile present on the Search configuration widget",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.catalog.indexed",
+        "data.srch.results.distinct-prices"
       ]
     },
     {
@@ -706,6 +648,9 @@
           "ref": "REG-2026-07-01-1430",
           "note": "no numbered pager exists — the infinite-scroll model the SRCH-NEW-044/045/048/049 cases were re-authored to"
         }
+      ],
+      "requires": [
+        "data.srch.query.large-result-term"
       ]
     },
     {
@@ -852,7 +797,7 @@
         {
           "class": "DOC",
           "ref": "domain-map:srch@rev1 §1 link 1",
-          "note": "source: ProductDocumentBuilder.BuildSchemaAsync declares gtin/manufacturerPartNumber filterable (declaration-only)"
+          "note": "CORRECTED (Wave 2): ProductDocumentBuilder.BuildSchemaAsync (ProductDocumentBuilder.cs:57-59) calls AddFilterableStringAndContentString for gtin/manufacturerPartNumber — filterable (drives exact barcode match) AND added to the content string, so a plain keyword search also matches these values. Not declaration-only, as the prior note said."
         },
         {
           "class": "SPEC",
@@ -887,6 +832,10 @@
           "note": "A1/A2: three tiles wrap; switch, Full-text / Exact radios, field list only in Exact, two hint blocks",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-dedicated",
+        "data.srch.user.store-admin"
       ]
     },
     {
@@ -906,6 +855,9 @@
           "note": "A3: 204; GET returns the fields; checked first, then by display label",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-defaults"
       ]
     },
     {
@@ -930,6 +882,9 @@
           "note": "storefront window closed by restoring {scannerEnabled:true, fields:[]}; final GET equal to defaults",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact"
       ]
     },
     {
@@ -955,6 +910,9 @@
           "note": "SRCH-016 PASS (Draft case, live execution — not a promotion)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.storefront-exact"
       ]
     },
     {
@@ -1000,7 +958,11 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "No cleanup path (vc-module-catalog#909: the widget is the only validating writer). Whether that is acceptable is a PO question (test model row 19)."
+      "notes": "No cleanup path (vc-module-catalog#909: the widget is the only validating writer). Whether that is acceptable is a PO question (test model row 19).",
+      "requires": [
+        "data.srch.property.stale-field",
+        "data.srch.store.barcode-exact"
+      ]
     },
     {
       "id": "srch.barcode.config.drop-missing-on-change",
@@ -1024,6 +986,9 @@
           "note": "A9: dropped on a field toggle and on a mode change; never re-saved",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-stale-field"
       ]
     },
     {
@@ -1046,6 +1011,9 @@
           "ref": "kb:KB-C3945D5C",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.property.stale-field"
       ]
     },
     {
@@ -1109,6 +1077,9 @@
           "note": "blade renders the stored state; no Save, Reset disabled, rows and radios inert",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.user.browsefilters-read-only"
       ]
     },
     {
@@ -1126,6 +1097,9 @@
           "note": "GET, GET fields and PUT all 403; anonymous 401",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.user.browsefilters-none"
       ]
     },
     {
@@ -1158,7 +1132,10 @@
         "expected": "the blade reflects the stored setup or states that it cannot read it — it never claims a state the store does not hold (vc-module-catalog#909 permission table; checklist A8)",
         "observed": "the blade issues only GET …/fields, gets 403, shows an 'Error 403' banner and still renders the switch OFF with no match mode while the stored value is scannerEnabled=true; after Dismiss the scanner-off UI remains (kb:KB-C466AD5C; VCST-2945 4a A8; SRCHA-056)",
         "route": "vc-module-catalog (PR #909) — Low draft reports/bugs/open/low/BUG-barcode-blade-shows-scanner-off-without-browsefilters-read.md, not filed"
-      }
+      },
+      "requires": [
+        "data.srch.user.browsefilters-none"
+      ]
     },
     {
       "id": "srch.barcode.config.keyboard-operable",
@@ -1211,6 +1188,10 @@
           "note": "A11: exact config on the dedicated store; B2B-store GET unchanged and its barcode: term stays literal (0)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact",
+        "data.srch.store.storefront-defaults"
       ]
     },
     {
@@ -1417,9 +1398,19 @@
           "ref": "VCST-2945 4a 2026-09-28",
           "note": "C0 / C2: ?q=<code> ≥2 hits while ?barcode=<same> in exact mode opens one",
           "date": "2026-09-28"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog#909 ProductDocumentBuilder.cs:57-59",
+          "note": "AddFilterableStringAndContentString explains WHY C0/C2's ?q=<gtin> match works: gtin/mpn are indexed into the content string, not only as a filterable field (Wave 2 correction, see srch.barcode.data.fill)",
+          "date": "2026-09-28"
         }
       ],
-      "notes": "Released behaviour (VCST-2622) that VCST-2945 must leave unchanged when no fields are configured."
+      "notes": "Released behaviour (VCST-2622) that VCST-2945 must leave unchanged when no fields are configured.",
+      "requires": [
+        "data.srch.store.storefront-defaults",
+        "data.srch.product.fulltext-discriminator"
+      ]
     },
     {
       "id": "srch.barcode.fulltext.single-hit-lists",
@@ -1475,6 +1466,9 @@
           "note": "B1–B5 PASS on the dedicated store, Elasticsearch 8 active",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-exact"
       ]
     },
     {
@@ -1496,6 +1490,10 @@
           "note": "/search?barcode=<v> on defaults → barcode empty state",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-defaults",
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1513,6 +1511,10 @@
           "note": "B1/B2: gtin → 1 with isGenerated; gtin and code each → 1 under [gtin,code]",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique",
+        "data.srch.product.code-or"
       ]
     },
     {
@@ -1530,6 +1532,9 @@
           "note": "B3: property value → 1",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.property-code"
       ]
     },
     {
@@ -1553,7 +1558,10 @@
           "note": "case handling follows the provider: Elasticsearch lowercases, Lucene does not"
         }
       ],
-      "notes": "Case-insensitivity is a property of the ACTIVE provider (Elasticsearch 8 on vcst-qa, domain map G7); a Lucene deployment is not covered."
+      "notes": "Case-insensitivity is a property of the ACTIVE provider (Elasticsearch 8 on vcst-qa, domain map G7); a Lucene deployment is not covered.",
+      "requires": [
+        "data.srch.product.case-mixed-code"
+      ]
     },
     {
       "id": "srch.barcode.expand.variation-scope",
@@ -1570,6 +1578,9 @@
           "note": "B4: variation MPN → 1 by default; explicit is:product → 0",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.variation.mpn-out-of-stock"
       ]
     },
     {
@@ -1594,6 +1605,9 @@
           "note": "B7: escaped quote+colon value → 1; whitespace/empty untouched; 600 chars → no 500",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.special-value"
       ]
     },
     {
@@ -1639,7 +1653,10 @@
         "expected": "BL-SRCH-005 (special characters are never interpreted as query operators) + vc-module-x-catalog#113 ('compared exactly as term filters') + the blade hint 'Matching is exact: the scanned value must equal the stored value'",
         "observed": "Elasticsearch 8 honours * and ? inside the expanded term: barcode:\"*\" lists the whole catalog (4714 via xAPI; 3,722 on /search), a truncated GTIN + * returns 1 hit and the storefront single-hit redirect opens that product, ? substitutes one character (kb:KB-110E0652, kb:KB-78B45E71; VCST-2945 4a B6/C12). Generic term-filter wildcards are documented and deliberate (VCST-3840) — the barcode path inherits them unescaped (domain map D8)",
         "route": "vc-module-x-catalog PR #113 author (intent: are * / ? intended on the barcode path?) — VCST-6094; ticket held in Testing pending that answer"
-      }
+      },
+      "requires": [
+        "data.srch.product.gtin-unique"
+      ]
     },
     {
       "id": "srch.barcode.expand.facet-counts",
@@ -1663,6 +1680,10 @@
           "note": "B8: shared GTIN → 3, term-facet counts consistent — after a ghost-index purge (see srch.results.facets.ghost-docs-inflate-counts)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared",
+        "data.srch.index.no-ghost-docs"
       ]
     },
     {
@@ -1739,6 +1760,9 @@
           "note": "G1 CLOSED: xAPI 1 hit and /search?barcode= opened the product with the button hidden",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.barcode-disabled-with-fields"
       ]
     },
     {
@@ -1760,7 +1784,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "Its case CAT-GQL-147 was a test defect in REG-2026-09-28-1518 (setup never saved) and now fails at its own setup assertion until that request is fixed — the node is decided by the 4a observation, not the case."
+      "notes": "Its case CAT-GQL-147 was a test defect in REG-2026-09-28-1518 (setup never saved) and now fails at its own setup assertion until that request is fixed — the node is decided by the 4a observation, not the case.",
+      "requires": [
+        "data.srch.product.reindex-candidate"
+      ]
     },
     {
       "id": "srch.barcode.expand.unpriced-not-found",
@@ -1804,6 +1831,9 @@
           "ref": "kb:KB-71011C1F",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.store.storefront-exact"
       ]
     },
     {
@@ -1827,6 +1857,9 @@
           "note": "SRCH-014 PASS (Draft case, live execution)",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1844,6 +1877,9 @@
           "note": "C3: shared GTIN → 3 cards, no redirect",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared"
       ]
     },
     {
@@ -1865,7 +1901,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "The /product/<variationId> branch for a variation WITHOUT a slug (vc-frontend#2501) was not exercised — the fixture gives variations slugs (domain map G4 still partly open)."
+      "notes": "The /product/<variationId> branch for a variation WITHOUT a slug (vc-frontend#2501) was not exercised — the fixture gives variations slugs (domain map G4 still partly open).",
+      "requires": [
+        "data.srch.variation.mpn-out-of-stock"
+      ]
     },
     {
       "id": "srch.barcode.resolve.zero-hit-empty",
@@ -1911,7 +1950,16 @@
           "class": "OBSERVED",
           "ref": "kb:KB-71011C1F",
           "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r3: sort, the grid/list toggle and the paging state stay active during a lookup — only the facet/filter sidebar UI is hidden, so C6's 'sort works' generalises to the whole non-facet control set",
+          "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-shared"
       ]
     },
     {
@@ -1929,6 +1977,9 @@
           "note": "C10: 390 px opens the same PDP, overlay closed",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1949,6 +2000,10 @@
           "note": "C8: signed-in org buyer reached the same PDP",
           "date": "2026-09-28"
         }
+      ],
+      "requires": [
+        "data.srch.customer.b2b-buyer",
+        "data.srch.product.gtin-unique"
       ]
     },
     {
@@ -1967,7 +2022,10 @@
           "date": "2026-09-28"
         }
       ],
-      "notes": "A crafted category route (/<category>?barcode=) applies the term INSIDE that category (kb:KB-25829330) — only the /search route is global."
+      "notes": "A crafted category route (/<category>?barcode=) applies the term INSIDE that category (kb:KB-25829330) — only the /search route is global.",
+      "requires": [
+        "data.srch.product.gtin-unique"
+      ]
     },
     {
       "id": "srch.barcode.resolve.whitespace-value",
@@ -2014,6 +2072,580 @@
           "note": "C14: ?barcode=<b>x</b> escaped",
           "date": "2026-09-28"
         }
+      ]
+    },
+    {
+      "id": "srch.barcode.resolve.hides-intent-search-filters",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "Intent-search AI filter suggestions are hidden only while a barcode lookup is active",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r1: AI intent-search filter suggestions are suppressed for the duration of a barcode lookup and restored once it ends, instead of persisting across it",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "No browser this wave (/qa-test-fast Stage 1); needs a live pass with intent-search enabled to confirm both the suppress and the restore-after-lookup halves."
+    },
+    {
+      "id": "srch.barcode.resolve.page-reset-on-change",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Scanning a second barcode resets the loaded page and page history instead of appending to the prior scan's results",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r2: page / pageHistory reset when the barcode value changes — covers load-more-then-second-scan",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Needs a URL-driven scan lane plus a load-more step before the second scan to verify live; not exercised this run (no camera/fake-media lane, no browser this wave)."
+    },
+    {
+      "id": "srch.barcode.resolve.keyword-suppressed-with-barcode",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "A barcode value takes precedence over a co-present keyword; Reset clears both together",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r4: with ?barcode=X&q=Y the keyword is suppressed while the barcode drives the query; Reset clears barcode and q together",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "C4 corroborates the Reset-clears-both half on the zero-hit case only; the co-present-keyword-suppressed half was not separately exercised",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Distinct from srch.barcode.resolve.zero-hit-empty's Reset observation: this is the general suppression rule for any hit count, not only the empty state."
+    },
+    {
+      "id": "srch.barcode.resolve.repeated-query-param-coerced",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A URL with barcode repeated as multiple query values is coerced to its first value instead of crashing",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r5: a route with barcode given twice (?barcode=a&barcode=b), which the router parses as an array, is coerced with toFirstString instead of throwing",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Distinct from srch.barcode.expand.second-term-literal, which is the xAPI filter-syntax case of two barcode: term filters inside one query value; this is the URL-query-array case the storefront composable guards against. Not live-verified this wave."
+    },
+    {
+      "id": "srch.barcode.resolve.request-response-binding",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "The single-hit redirect only fires from the response matching its own request, never a superseded one",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r6: shouldOpenSingleBarcodeHit binds the redirect decision to the request that produced it, guarding a fast second scan/edit from redirecting on a stale response",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Corresponds to the test model's RACE archetype row (shouldOpenSingleBarcodeHit request-binding), WAIVED there as not deterministically drivable through MCP; covered by the PR's own unit tests, not live this wave."
+    },
+    {
+      "id": "srch.barcode.resolve.analytics-fires",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "A barcode lookup fires the same view-search-results analytics event as a keyword search",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "vc-frontend#2501",
+          "note": "review-thread fix r7: viewSearchResults analytics now fires for barcode lookups too, not only ?q= keyword searches",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "Not live-verified this wave (no browser; GA4 dataLayer/gtag() inspection is the permitted live-check method for a future pass)."
+    },
+    {
+      "id": "srch.barcode.config.shape-fields-offered-by-value-type",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "name": "The barcode-fields list offers a catalog property by its value type, level and multiplicity",
+      "maturity": "new",
+      "description": "Open question: does the blade list only short-text properties, or every filterable one? Either answer is a finding when the other layer disagrees (dedicated PUT validates against the index schema, D3).",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs AddCustomPropertiesAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "the index schema declares every Product/Variation property of type Boolean, DateTime, Integer, Number, ShortText, Color (filterable) and LongText, Html, GeoPoint (searchable only), lowercased; which of these GET …/barcode-search/store/{id}/fields lists is decided by catalog#909"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "domain-map:srch@rev1 §1 link 1",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry; the map and PR wording say only lowercased short-text Product/Variation properties"
+        }
+      ],
+      "requires": [
+        "data.srch.property.value-type-zoo",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-number-property",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A Number property configured as a barcode field matches a numeric scan of its value",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Number is indexed as a Double, filterable, under the lowercased name"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "search.md D3",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-numeric-leading-zero",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A scan with leading zeros equals a numeric property value without them (12-digit UPC-A vs its 11-digit numeric form)",
+      "maturity": "new",
+      "description": "The same scan can hit a ShortText product by string and a Number product by value; equal counts would hide the collapse.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "a Number/Integer value is stored as a number, so the leading zero of the stored string is not part of the value"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "numeric term equality",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-integer-overflow",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A 13-digit EAN scan against an Integer property field is out of the field's range",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs AddCustomPropertiesAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Integer maps to IndexDocumentFieldValueType.Integer (32-bit range in the index) while an EAN-13 is 13 digits"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "BVA at 2147483647",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-typed-field-non-matching-scan",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A scan that is not a number, boolean or date, expanded over a typed field, still returns the other fields' hits instead of failing the query",
+      "maturity": "new",
+      "description": "The integration risk: one typed field in the OR list turns a valid ShortText scan into a provider error or an empty page.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "Integer/Number/Boolean/DateTime fields are typed in the index; the OR expansion adds one term filter per configured field with the same raw string"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "error guessing",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-boolean-default-false",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "EG",
+      "name": "A Boolean property with no value is indexed as false, so a scan of false matches every product that never set it",
+      "maturity": "new",
+      "description": "Source also writes that default under property.Name (not lowercased) while other values use PropertyName lowercased; whether the provider folds the case is not established.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "\"replace empty value for Boolean property with default False\" — the false is written for every product carrying the property definition without a value"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "barcode consequence",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-dictionary-alias",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A dictionary ShortText property is indexed by its alias, so a scan of the displayed value and a scan of the alias differ",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "ShortText/Color index \"propValue.Alias ?? propValue.Value\" in the language-independent base field"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "alias semantics for dictionary items",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-multivalue-property",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A multivalue property holds several codes on one product and a scan of any one of them finds it",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "isCollection = property.Multivalue; each value is added to the same collection field"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "scan of any element",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-multilanguage-property",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "A multilanguage property's per-language values all sit in one base field and each language also gets a <name>_<lang> field",
+      "maturity": "new",
+      "description": "A scan of the French value matches with no language context; whether the per-language fields can be configured is part of the fields-list question.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "ShortText base field per value plus \"{propertyName}_{languageCode}\" for Multilanguage properties; the per-language names are not in the declared schema (AddCustomPropertiesAsync)"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "language-blind match",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dictionary-multivalue-multilanguage-values",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-longtext-property",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A LongText or Html property is searchable but not filterable and its value is stored lowercased, so an exact mixed-case scan does not equal it",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs IndexCustomProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "LongText/Html: IsSearchable only, value.ToLowerInvariant(); AddCustomPropertiesAsync declares no IsFilterable"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "term filter on a non-filterable field",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.typed-property-values",
+        "data.srch.store.barcode-typed-fields",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-variation-property-double-hit",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "A code held in a Variation-type property matches the variation and its parent, while a variation's own MPN/GTIN/code matches only the variation",
+      "maturity": "new",
+      "description": "Two hits for one physical code make the storefront list instead of opening a page (srch.barcode.resolve.multi-hit-lists).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.IndexProductVariation (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "the parent document receives the variation code as content and the variation properties of type Variation only (IndexCustomProperties(document, variation.Properties, [PropertyType.Variation])); gtin/manufacturerPartNumber/code fields are written per document in CreateDocument, so they never reach the parent"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B4: variation MPN found the variation only (1 hit); the Variation-type property half is source-only",
+          "date": "2026-09-28"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-inactive-variation",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Deactivating a variation removes its Variation-type property values from the parent's document but leaves the variation's own document",
+      "maturity": "new",
+      "description": "Whether the variation's own document is still returned to a shopper (status hidden, availability SoldOut) is srch.barcode.expand.shape-inactive-or-hidden-product.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.GetDocumentsAsync (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "IndexProductVariation(doc, variation) runs only when variation.IsActive is true; CreateDocumentAsync(variation, product) runs for every variation"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-inactive-or-hidden-product",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "An inactive product, or one under an inactive category, is indexed as hidden and SoldOut; a scan of its code finds it or not depending on the visibility filter",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.GetProductStatus/GetProductAvailability (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "status = visible only if IsActive and ParentCategoryIsActive; availability SoldOut when inactive"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "storefront visibility filter on the barcode path",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.inactive-hidden",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-product-type",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "CT",
+      "name": "Physical, Digital, BillOfMaterials and configurable products are found by the same fields and open the same result flow",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "productType is one filterable string and no indexing branch depends on it; the type index field is written only on the parent for its variations (IndexProductVariation)"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "no product-type branch in the expansion",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.product-type-matrix",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-cross-catalog-duplicate-code",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "The same code on products in two catalogs is found only through the catalog the store exposes",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "one document per product id with a \"catalog\" collection; code is unique per catalog, not globally"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/catalog/barcode-specs.mjs header",
+          "note": "seven live products share one GTIN in a catalog B2B-store does not expose; the scan outcome there was never observed"
+        }
+      ],
+      "requires": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-linked-category-single-hit",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A product linked into a virtual-catalog category is one index document with several outlines, so a scan returns it once",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "IndexDocument(product.Id); outlines and catalog values are collections on that one document"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "one hit, not one per link",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.catalog-placement",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-product-and-variation-share-value",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "A product and its variation carrying the same GTIN both match a scan, so the result is a list",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-catalog: CatalogModule.Data/Search/Indexing/CatalogDocumentBuilder.cs ProductDocumentBuilder.CreateDocument (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "each variation has its own document with its own gtin field"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-2945 4a 2026-09-28",
+          "note": "B4: the default scope covers products and variations",
+          "date": "2026-09-28"
+        }
+      ],
+      "requires": [
+        "data.srch.variation.variation-property-active-inactive",
+        "data.srch.store.barcode-exact"
+      ]
+    },
+    {
+      "id": "srch.barcode.expand.shape-dynamic-property",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "A dynamic (platform) property value is indexed under its lowercased name, is not in the catalog property list, and may or may not be offered as a barcode field",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "vc-module-search: SearchModule.Core/Extensions/IndexDocumentDynamicPropertyExtensions.cs AddDynamicProperty (VirtoOZ PlatformBackendSourceCode, master, queried 2026-09-28)",
+          "note": "filterable field per dynamic property (dictionary: item names of all locales); ShortText also added to __content"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "fields list",
+          "note": "the expansion itself (x-catalog#113) and the fields endpoint (catalog#909) are open PRs outside the VirtoOZ corpus and unreachable from this session; kb_ask had no entry"
+        }
+      ],
+      "requires": [
+        "data.srch.product.dynamic-property-value",
+        "data.srch.store.barcode-exact"
       ]
     }
   ],
@@ -2419,6 +3051,41 @@
       "type": "branches_to"
     },
     {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.hides-intent-search-filters",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.page-reset-on-change",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve.page-reset-on-change",
+      "to": "srch.results.paging",
+      "type": "depends_on"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.keyword-suppressed-with-barcode",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.repeated-query-param-coerced",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.request-response-binding",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.resolve",
+      "to": "srch.barcode.resolve.analytics-fires",
+      "type": "branches_to"
+    },
+    {
       "from": "srch.barcode.state.fulltext",
       "to": "srch.barcode.state.exact",
       "type": "transitions_to",
@@ -2540,6 +3207,137 @@
       "from": "srch.results.facets",
       "to": "srch.index.freshness",
       "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.config",
+      "to": "srch.barcode.config.shape-fields-offered-by-value-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-number-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-numeric-leading-zero",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-integer-overflow",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-typed-field-non-matching-scan",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-boolean-default-false",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-dictionary-alias",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-multivalue-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-multilanguage-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-longtext-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-variation-property-double-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-inactive-variation",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-inactive-or-hidden-product",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-product-type",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-cross-catalog-duplicate-code",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-linked-category-single-hit",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-product-and-variation-share-value",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.barcode.expand",
+      "to": "srch.barcode.expand.shape-dynamic-property",
+      "type": "branches_to"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "cat.cfg.listing",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.results.render",
+      "to": "cat.cfg.identity.configuration-inactive",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "cat.cfg.listing.keyword-search-hit",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.query.keyword",
+      "to": "cat.cfg.listing.option-products-in-results",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.results.sort",
+      "to": "cat.cfg.listing.price-sort",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.resolve.single-hit-opens",
+      "to": "cat.cfg.listing.barcode-hit",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.barcode.expand.shape-product-type",
+      "to": "cat.cfg.identity",
+      "type": "affected_by"
+    },
+    {
+      "from": "srch.index.freshness",
+      "to": "cat.cfg.visibility.rename-lag",
+      "type": "affected_by"
     }
-  ]
+  ],
+  "amended": "2026-09-28"
 }

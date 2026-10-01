@@ -24,6 +24,8 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per product bug. Give it, **as fi
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
+- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
+  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
 `qa-bug` then does what this flow must not do by hand: duplicate check, 4-layer validation, source and
 log research, owning-repo resolution (the `/qa-fix` handoff block), and the report file. **Cite the
@@ -31,7 +33,7 @@ path `qa-bug` returns.** Never move or rewrite its report. **Its tracker-ticket 
 bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 **`vc-fix` not installed** (`/vc-fix:qa-bug` unavailable) ⇒ STOP at this step. Tell the user to run
-`/plugin install vc-fix@vc-tools` and keep the drafts in chat. Never fall back to a hand-written report.
+`/plugin install vc-fix@ai-tools` and keep the drafts in chat. Never fall back to a hand-written report.
 
 ## Verdict
 
@@ -71,6 +73,7 @@ functional ticket.
 
 ## Not tested, and why
 - <item / charter item> — <reason>
+- <node id> — candidate case (passed here, no suite case stamps it)
 
 ## Data
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
@@ -80,7 +83,10 @@ Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPP
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
-contradicted, or a scenario that fit no node. They are handed to the next
+contradicted, a scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its
+evidence, and an UNVERIFIED node the exploratory session established. A DRIFT that holds and whose
+route `TM-018` flags as unfiled is a bug: it goes through `/vc-fix:qa-bug` like any other, and the key
+or path that returns becomes the finding's proposed route. They are handed to the next
 `/qa-test-mind-map update --from <TICKET>`, never applied here
 ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-docs-map).
 
@@ -93,10 +99,16 @@ Load the `artifact-design` skill, then copy
 - embeds at most 4 screenshots, as `data:` URIs (the page must stand alone and stay under 1 MB)
 - links every bug report and the other files by their repo path
 
-Publish it with the Artifact tool, which makes it private by default. **Then**, after it is
+Publish it with the Artifact tool. **Then**, after it is
 published, add the link as a `Page: <url>` line directly under `verdict.md`'s one-sentence line and
 into `summary.json.report.page_url`. The page is built from `verdict.md`, so the link can only be added
 afterwards.
+
+**Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
+tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes
+every page private and cannot change sharing, so after publishing, tell the user in one line to set
+**Share → Anyone at Virto Commerce**, and do it **before** the tracker-comment question: a link to a
+private page reaches no one. Never describe the page as private in the comment or in `verdict.md`.
 
 ## Tracker comment
 

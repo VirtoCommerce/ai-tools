@@ -22,7 +22,7 @@ No preconditions — nonsense query","url={{FRONT_URL}}; query=xyzabc123","[NAV]
 [ASSERT] Verify empty state / no results UI","[DOM] No results message displayed (not blank page, not error page)
 [DOM] Suggestions or alternatives shown if available
 [STATE] No JavaScript errors or crashes","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 5xx)
-[CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","No-results message absent; page showing 500 error; console TypeError on empty result set","none",regression-qa-theme-26.csv | Behavior:srch.results.empty | DataProfile:profile.srch.results-empty,"Automated"
 "SRCH-004","Search - Special Characters","Search > Edge Cases","Medium","BL-SRCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 No preconditions","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'test & test'; [KEY] press [Enter]; [WAIT]
@@ -45,7 +45,7 @@ Search returns multiple products","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT
 [MATH] Combined filters narrow result set (AND logic)
 [MATH] Result count updates after each filter","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 with filters applied
 [NETWORK] no 4xx/5xx on filter request
-[CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none","regression-qa-theme-26.csv","Automated"
+[CONSOLE] no TypeError or JS errors","Sidebar filters absent on search results page; filters not narrowing results; result count unchanged after filter; 4xx on filtered search; console TypeError","none",regression-qa-theme-26.csv | Behavior:srch.results.facets | DataProfile:profile.srch.results-facets,"Automated"
 "SRCH-009","Organization Search - Find Org","Search > Organization","Medium","BL-SRCH-001","","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Multiple organizations exist; user has org search access","url={{FRONT_URL}}; email=@td(ACME_ADMIN.email); password=@td(ACME_ADMIN.password)","[NAV] Navigate to organization search on {{FRONT_URL}}
 [ACT] fill organization name search field with a known org name
@@ -175,7 +175,7 @@ Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [STATE] URL encodes the input as literal text
 [DOM] Heading displays query as literal escaped text (not rendered HTML)","[NETWORK] no 5xx responses triggered by XSS payload
 [CONSOLE] no script execution errors
-[CONSOLE] no TypeError or JS errors","Alert dialog appearing (script executed); heading rendering HTML instead of escaping it; 5xx from server; console TypeError","none","E2E-SEC-002","Manual"
+[CONSOLE] no TypeError or JS errors","Alert dialog appearing (script executed); heading rendering HTML instead of escaping it; 5xx from server; console TypeError","none",E2E-SEC-002 | Behavior:srch.query.keyword.special-characters | DataProfile:profile.srch.query-special-characters,"Manual"
 "SRCH-NEW-021","Search - SQL Injection Attempt","Search > Security","High","BL-SRCH-004","ECL-5.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] Click search input
@@ -186,7 +186,7 @@ Storefront is accessible","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [STATE] API returns HTTP 200","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 (not 500)
 [NETWORK] no 5xx responses
 [CONSOLE] no script execution errors
-[CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError","none","E2E-SEC-002","Manual"
+[CONSOLE] no TypeError or JS errors","Database error or stack trace visible in page; 5xx from server; JS crash; console TypeError","none",E2E-SEC-002 | Behavior:srch.query.keyword.special-characters | DataProfile:profile.srch.query-special-characters,"Manual"
 "SRCH-NEW-022","Search - Special Characters Are URL-Encoded Correctly","Search > Edge Cases","High","BL-SRCH-003","ECL-8.1","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront open at any page","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}
 [ACT] fill 'Search': 'hoodie & jeans'; [KEY] press [Enter]; [WAIT]
@@ -400,7 +400,7 @@ Category page with products and sortable/filterable options; storefront uses vc-
 [ASSERT] Verify combobox accessible name still = price-descending option label after filter removal","[STATE] Sort selection (price-descending, selected by code not hardcoded label) persists after applying a facet filter
 [STATE] Combobox accessible name = price-descending label both during filter and after filter removal
 [STATE] Sort dropdown value unchanged after filter apply and remove","[NETWORK] no 4xx/5xx on sort + filter combination requests
-[CONSOLE] no TypeError or JS errors","Sort combobox accessible name resetting to default after applying filter; native select-option failing on VcSelect; {first_id_desc} == {first_id_before} and URL unchanged (sort not applied); combobox name changing on filter apply; console TypeError","none","VCST-5177; BL-CAT-005, ECL-3.2, GAP-CS-10; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26)","synced"
+[CONSOLE] no TypeError or JS errors","Sort combobox accessible name resetting to default after applying filter; native select-option failing on VcSelect; {first_id_desc} == {first_id_before} and URL unchanged (sort not applied); combobox name changing on filter apply; console TypeError","none","VCST-5177; BL-CAT-005, ECL-3.2, GAP-CS-10; Synced: VCST-5177 (2026-06-26); Corrected: VcSelect combobox + no-monotonic-price oracle (2026-06-26) | Behavior:srch.results.sort.survives-requery | DataProfile:profile.srch.sort-survives-requery","synced"
 "SRCH-NEW-042","Price Range Boundary Precision - Integer-Step Slider Inclusion/Exclusion","Search > Price Filter","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Catalog has at least 1 product on a page that exposes the price-range slider (vcst-qa: /catalog). Storefront slider has integer step=1 and the end value is clamped to start+1 minimum — boundary tests use [N TO N+1] inclusion and [N+1 TO max] exclusion rather than literal min=max.","url={{FRONT_URL}}","[NAV] Navigate to /catalog (or any category page that renders the sidebar price-range slider) on {{FRONT_URL}}
 [WAIT] Wait for the product grid and price-range slider to load
@@ -421,7 +421,7 @@ Catalog has at least 1 product on a page that exposes the price-range slider (vc
 [NAV] URL reflects facets=""price"":[N TO M] notation for both states
 [STATE] No off-by-one errors at the integer boundary","[NETWORK] POST /graphql with the price filter returns HTTP 200 for both windows
 [NETWORK] no 4xx/5xx during slider adjustments
-[CONSOLE] no TypeError or JS errors","Captured product missing from inclusion window; products outside the configured range visible in either window; captured product still visible in exclusion window; URL not reflecting facet price syntax; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11; live-discovery.md Recipe 2; rewrite from REG-2026-05-22-MINI RUNNER-GAP (slider step=1 + end>start constraint)","Generated"
+[CONSOLE] no TypeError or JS errors","Captured product missing from inclusion window; products outside the configured range visible in either window; captured product still visible in exclusion window; URL not reflecting facet price syntax; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-11; live-discovery.md Recipe 2; rewrite from REG-2026-05-22-MINI RUNNER-GAP (slider step=1 + end>start constraint) | Behavior:srch.results.facets.price-range-inclusive | DataProfile:profile.srch.facets-price-range","Generated"
 "SRCH-NEW-043","Cross-Facet AND Logic - Multiple Facet Groups Combine Correctly","Search > Facets","Medium","BL-CAT-002","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Category page with multiple facet groups (e.g. Brand and Color) with overlapping product sets","url={{FRONT_URL}}","[NAV] Navigate to a category page with multiple facet groups on {{FRONT_URL}}
 [WAIT] Wait for facet panel to load
@@ -439,7 +439,7 @@ Category page with multiple facet groups (e.g. Brand and Color) with overlapping
 [STATE] Removing one cross-facet filter restores the single-facet result count
 [MATH] No products appear that match only one of the two criteria
 [DOM] Chip bar shows chips for both active facets","[NETWORK] POST /graphql returns filtered results with correct AND combination
-[CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-12","Manual"
+[CONSOLE] no TypeError or JS errors","Cross-facet returning OR logic (count increases or stays same); products matching only one criterion appearing; removing one facet not restoring single-facet count; console TypeError","none","BL-CAT-002, ECL-3.2, GAP-CS-12 | Behavior:srch.results.facets.or-within-and-across | DataProfile:profile.srch.facets-or-and","Manual"
 "SRCH-NEW-100","Facet Terms Ordered by Dictionary Item Priority (not alphabetically)","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
 - At least one dictionary-type facet property configured with explicit priority ordering on dictionary items (e.g. TerrainConditions or Weather facet)
 - Products indexed with those property values","facet_property: dictionary-type property with known priority order
@@ -569,7 +569,7 @@ Storefront accessible; /catalog or any results page exposes a facet group with >
 [MATH] {count_only_A} <= {count_A_or_B} <= {count_all}
 [DOM] Chip bar shows both {val_A} and {val_B} as active filters
 [STATE] No visible product violates the OR constraint (every card matches val_A OR val_B)","[NETWORK] POST /graphql (searchProducts) returns HTTP 200 for both single and multi-value facet applications
-[CONSOLE] no TypeError or JS errors","Selecting val_B narrows or replaces val_A (AND-within-group bug instead of OR); chip for val_A disappears when val_B is selected; visible products contain values matching neither A nor B; count_A_or_B < count_only_A (impossible under OR logic); console TypeError","none","Buyer-journey extension 2026-05-22; tests within-group OR-logic — a behavior no prior case covers explicitly","Manual"
+[CONSOLE] no TypeError or JS errors","Selecting val_B narrows or replaces val_A (AND-within-group bug instead of OR); chip for val_A disappears when val_B is selected; visible products contain values matching neither A nor B; count_A_or_B < count_only_A (impossible under OR logic); console TypeError","none",Buyer-journey extension 2026-05-22; tests within-group OR-logic — a behavior no prior case covers explicitly | Behavior:srch.results.facets.or-within-and-across | DataProfile:profile.srch.facets-or-and,"Manual"
 "SRCH-JRNY-008","Buyer Journey - Chip-by-Chip Removal vs Reset All (Two Restore Paths)","Search > Buyer Journey > Filter Removal","High","BL-CAT-004","ECL-3.2","[PRE:SIGNIN_AS:ORG_USER_DEFAULT]
 Storefront accessible; catalog page exposes >=2 distinct facet groups (e.g. Brand and Color), each with >=1 value with count >0; chip bar + 'Reset filters' button both present in storefront","url={{FRONT_URL}}","[NAV] Navigate to {{FRONT_URL}}/catalog
 [WAIT] Wait for catalog + facet sidebar
@@ -616,7 +616,7 @@ Example seen on vcptcore-qa: Color -> Blue=1, White=11, Beige=13 rendered as Blu
 [DOM] The value with the LOWEST Priority is present as the first entry of the ""<facet_property>"" panel and the highest as the last (the pre-fix defect rendered this reversed) {OBSERVED}
 [DOM] The ""<facet_property>"" panel order is neither alphabetical by label nor descending by result count {OBSERVED}
 [MATH] For every adjacent pair (a,b) in the rendered list where both carry a priority: priority(a) <= priority(b) {OBSERVED}","[NETWORK] POST /graphql (products) term_facets returns the terms in the same order the DOM renders (no client-side re-sort)
-[CONSOLE] no JS errors while loading facets","Highest-priority value rendered last (reversed - the original bug); alphabetical order; count-descending order; DOM order differs from the GraphQL term_facets order","none","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Admin hint on the Priority field reads 'The lowest value will be used first'. Archetype:PARITY. Technique:EP. Promoted: VCST-5851 (2026-09-10).","Automated"
+[CONSOLE] no JS errors while loading facets","Highest-priority value rendered last (reversed - the original bug); alphabetical order; count-descending order; DOM order differs from the GraphQL term_facets order","none","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Admin hint on the Priority field reads 'The lowest value will be used first'. Archetype:PARITY. Technique:EP. Promoted: VCST-5851 (2026-09-10). | Behavior:srch.results.facets.priority-order | DataProfile:profile.srch.facets-priority-order","Automated"
 "SRCH-FSORT-002","Facet Sorting 'Priority descending' reverses the priority order","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
 - Same store/property/dictionary setup as SRCH-FSORT-001
 - That facet's Sorting set to 'Priority descending'","facet_property: same dictionary-type facet as SRCH-FSORT-001
@@ -628,7 +628,7 @@ Example seen on vcptcore-qa: Color -> Beige(13), White(11), Blue(1)","[NAV] {{FR
 [ASSERT] Compare against priority_map sorted DESCENDING (highest Priority first)","[DOM] The ""<facet_property>"" facet panel lists its values in descending Priority order == priority_map sorted highest-number-first {OBSERVED}
 [DOM] The value with the HIGHEST Priority is present as the first entry of the ""<facet_property>"" panel; among values that all carry a priority the order is the exact reverse of SRCH-FSORT-001 {OBSERVED}
 [MATH] For every adjacent pair (a,b) where both carry a priority: priority(a) >= priority(b) {OBSERVED}","[NETWORK] POST /graphql (products) term_facets order matches the DOM
-[CONSOLE] no JS errors","Descending renders the same order as ascending (direction ignored); values without a priority jump to the front; DOM order differs from term_facets order","Restore the facet's Sorting to its original value","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Archetype:PARITY. Technique:EP. Promoted: VCST-5851 (2026-09-10).","Automated"
+[CONSOLE] no JS errors","Descending renders the same order as ascending (direction ignored); values without a priority jump to the front; DOM order differs from term_facets order","Restore the facet's Sorting to its original value","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Archetype:PARITY. Technique:EP. Promoted: VCST-5851 (2026-09-10). | Behavior:srch.results.facets.priority-order | DataProfile:profile.srch.facets-priority-order","Automated"
 "SRCH-FSORT-003","Legacy 'Priority' store config keeps working and means ascending (upgrade path)","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
 - A store whose facet was configured BEFORE the ascending/descending split, so its persisted termValuesSortingType is the bare string 'Priority'
 - Verify that persisted value via the aggregationproperties API BEFORE opening the blade: opening and saving the blade rewrites it to 'PriorityAscending' and destroys the specimen
@@ -664,7 +664,7 @@ regression guard: before the fix a missing dictionary item was treated as priori
 [DOM] DESCENDING: in the ""<facet_property>"" panel every orphan_value is STILL present after every dictionary_value - they must not flip to the front {OBSERVED}
 [DOM] Within the orphan block of the ""<facet_property>"" panel the values keep case-insensitive alphabetical order, in both directions {OBSERVED}
 [DOM] Ties in Priority break by value name ascending in BOTH directions, so the descending head of the ""<facet_property>"" panel is not always a pure reversal {OBSERVED}","[NETWORK] term_facets order matches the DOM in both directions
-[CONSOLE] no JS errors","Orphan values render first in descending (the old priority-0 fallback); orphans interleaved among dictionary values; orphan block order changes between reloads","Restore the facet's Sorting to its original value","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Orphans sort last via OrderBy(hasPriority ? 0 : 1) then priority then name. Archetype:FALLBACK. Technique:BVA. Promoted: VCST-5851 (2026-09-10).","Automated"
+[CONSOLE] no JS errors","Orphan values render first in descending (the old priority-0 fallback); orphans interleaved among dictionary values; orphan block order changes between reloads","Restore the facet's Sorting to its original value","VCST-5851; vc-module-catalog PR #906. Grounded {OBSERVED} vcptcore-qa 2026-09-10, VirtoCommerce.Catalog 3.1043.0-pr-906-d339. Orphans sort last via OrderBy(hasPriority ? 0 : 1) then priority then name. Archetype:FALLBACK. Technique:BVA. Promoted: VCST-5851 (2026-09-10). | Behavior:srch.results.facets.priority-order | DataProfile:profile.srch.facets-priority-order","Automated"
 "SRCH-FSORT-005","Virtual catalog: dictionary priorities from LINKED catalogs take effect on facets","Search Filters > Facet Sort Order","High","BL-CAT-002","ECL-3.1","[PRE:CLEAR_SESSION]
 - A store whose catalog is VIRTUAL, with at least two linked source catalogs
 - Two or more linked catalogs each declare a property with the SAME name (e.g. 'Brand'/'BRAND'), each carrying its own dictionary items and priorities
@@ -713,3 +713,41 @@ NOTE: observed 2026-09-10 on a Color property (no numeric values) — Numeric as
 [DOM] 'Score' leaves the ""<facet_property>"" panel in the search engine's own relevance order, applying no re-sort {OBSERVED}
 [MATH] order(Name ascending) != order(Priority ascending) whenever priority_map disagrees with alphabetical order - proving the mode is actually applied and not silently falling through to a single shared branch {OBSERVED}","[NETWORK] POST /graphql (products) term_facets order matches the DOM for every mode
 [CONSOLE] no JS errors while switching modes","A non-priority mode renders priority order (the direction split leaked into the shared sorting branch); a mode is silently ignored and the facet keeps its previous order; switching modes has no effect until a reindex; save returns 4xx/5xx","Restore the facet's Sorting to its original value","VCST-5851; vc-module-catalog PR #906. Regression guard for the TryApplySimpleSorting switch, where the two new priority constants were added alongside the existing cases. Grounded {OBSERVED} vcptcore-qa 2026-09-10: Name ascending -> Beige, Blue, White. Archetype:PARITY. Technique:EP. Promoted: VCST-5851 (2026-09-10).","Automated"
+SRCH-NEW-104,"Search — Zero Results Under An Active Filter Offers Reset search, And Reset Restores The Exact Result Set And A Working Filter Sidebar (VCST-4367, VCST-4121)",Search > No Results > [JOURNEY] Filters Then Reset,High,BL-SRCH-002; BL-SRCH-001,ECL-14.2,"[PRE:CLEAR_SESSION]. Anonymous browsing is enough. Journey across the listing, the zero-result state and the restored listing — the defects lived in the seams: after the zero-result state the sidebar was broken (VCST-4367), and the Reset button was missing when filters were active (VCST-4121).
+Zero results are reached by keeping an ACTIVE FACET and replacing the keyword with a term that matches nothing (a random-data token such as agenttest<random 8 letters>, which no product name contains; an input, never asserted on). A zero reached by filters alone needs a facet pair with an empty intersection, which the QA data does not guarantee; that sub-variant (VCST-4121's own repro) is reported UNCOVERED when no such pair is found, not waived silently.
+The facet value is DERIVED: the first value of the first facet group on the listing that has a count of at least 2.",front_url={{FRONT_URL}}; keyword=@td(SEARCH_KITCHEN.query); no_match_keyword=agenttest<random-data 8 letters>,"--- SCREEN: listing ---
+[NAV] {{FRONT_URL}}/search?q=@td(SEARCH_KITCHEN.query)
+[WAIT] the product grid and the filter sidebar render
+[CAPTURE] the result total as T0
+[CAPTURE] the facet groups with each group's value counts as G0
+[ACT] tick the first facet value whose count is at least 2
+[WAIT] the grid reloads
+[CAPTURE] the result total as T1
+[CAPTURE] the page URL as URL1
+[ASSERT] T1 is at least 1 and smaller than T0, otherwise the facet did not narrow the listing: stop and report INCONCLUSIVE
+--- SCREEN: zero results ---
+[NAV] URL1 with the q parameter replaced by the no_match_keyword (every other parameter, including the facet, unchanged)
+[WAIT] the no-results state renders
+[CAPTURE] whether a 'Reset search' button is visible
+--- SCREEN: restored listing ---
+[ACT] click 'Reset search'
+[WAIT] the listing renders
+[CAPTURE] the URL Reset search landed on as URL2
+[CAPTURE] the result total as T2
+[CAPTURE] the keyword input value and the active filter chips
+[CAPTURE] the facet groups with each group's value counts as G2
+[ACT] tick the same facet value as in the listing screen
+[WAIT] the grid reloads
+[CAPTURE] the result total as T3
+[NAV] URL2 as a fresh load, with no filter
+[WAIT] the listing renders
+[CAPTURE] the result total as T_FRESH
+[CAPTURE] the facet groups with each group's value counts as G_FRESH
+[NAV] URL2 with the facets parameter taken from URL1
+[WAIT] the listing renders
+[CAPTURE] the result total as T_FRESH_FILTERED","[DOM] on the zero-result page with a facet active, a 'Reset search' button is visible {SPEC} (VCST-4121)
+[STATE] after Reset search the keyword input is empty and no facet chip is active {SPEC} (VCST-4121)
+[COUNT] T2 equals T_FRESH — Reset search restores the whole result set, not a filtered or empty one {SPEC} (VCST-4367)
+[REL] G2 equals G_FRESH — no facet group is missing, empty or stuck after Reset {SPEC} (VCST-4367)
+[COUNT] T3 equals T_FRESH_FILTERED — the sidebar is clickable after Reset and the filtered total matches a fresh load with the same facet {SPEC} (VCST-4367)
+[CONSOLE] no TypeError while the sidebar re-renders after Reset {SPEC} (VCST-4367)",[NETWORK] the products query issued after Reset carries no keyword and no filter; no 4xx/5xx on /graphql,"no Reset search button with a facet active at zero results; sidebar empty, missing groups or unresponsive after Reset; totals after Reset differ from a fresh load; console TypeError after Reset",Clear filters and keyword; none server-side,VCST-4367 VCST-4121 · Archetype:STALE · Technique:ST · Catches:VCST-4367 Catches:VCST-4121 · BL-SRCH-002; related SRCH-NEW-017,Draft

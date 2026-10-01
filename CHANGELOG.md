@@ -8,6 +8,53 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Origin labels on bugs Claude files; a tracker-neutral ticket placeholder — `vc-fix` `0.9.4` — 2026-09-30
+
+Ships the `plugins/vc-fix/` changes from #355 and #357, which merged after `0.9.3` without a version bump. Text
+only; no code changed. `vc-perf` is unchanged and stays at `0.3.1`.
+
+**Added: origin labels on Jira bugs Claude files (#355).** `/qa-bug` now records who found the bug on the
+report's line 4 (`**Found by:** agent — testing <TICKET>` / `agent — regression <RUN_ID>` / `human`), set from a
+new `found-by:agent-testing` / `found-by:agent-regression` argument, and Step 5 turns that line into labels:
+`found-by-agent` + `found-in-testing` or `found-in-regression`, else `reported-by-human`. An unclear origin is
+`reported-by-human`. The rule is `knowledge/execution/tracker-ops.md` §2a. The labels apply on VC's own Jira
+only, never on a client project's tracker. The PreToolUse hook that enforces them
+(`.claude/hooks/enforce-bug-labels.mjs`) lives in this repo's `.claude/` and does not ship with the plugin.
+
+**Changed: the ticket placeholder is `<ticket-key>`, not `VCST-XXXX` (#357).** A client Jira uses its own
+prefix and Azure Boards keys are bare numbers, so branch names (`claude/qa-autofix/<ticket-key>`), output paths,
+command examples, argument hints and templates across 31 plugin files now use `<ticket-key>`. Where
+`qa-evidence/output-paths.md` illustrates the key format it shows Jira `ABC-123` next to Azure `12345`.
+`knowledge/diagnostics/skill-expectations.md` changed in the plugin and `.claude/` copies together.
+
+---
+
+## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0`, `vc-fix` `0.9.3`, `vc-perf` `0.3.1` — 2026-09-30
+
+**BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
+`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Both plugins bump a patch version, because their
+code changed (the `deliver` target, the install resolvers) and an unchanged version would never reach an
+existing install. The `claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`,
+`project-init/verify-access.mjs` `pickPluginInstall`) accept both ids and always prefer `…@ai-tools`,
+whatever order the CLI prints them in. `/project-init`'s readiness table WARNs when both ids are enabled,
+because each copy's `hooks.json` starts its own telemetry collector (the duplicate-collector fault in
+`CLAUDE.md`, VCST-5582 H).
+**Migration — uninstall first, so two copies never run together:** `/plugin uninstall vc-fix@vc-tools` (and
+`vc-perf@vc-tools`), then `/plugin marketplace add VirtoCommerce/ai-tools`, `/plugin install vc-fix@ai-tools`
+(and `vc-perf@ai-tools` if you use it), then restart Claude Code.
+
+**Changed:** GitHub repo `VirtoCommerce/vc-mcp-testing-module` → `VirtoCommerce/ai-tools`. Every live reference
+now uses the new name: the marketplace-add command in the READMEs, onboarding and workshop material,
+`package.json` (`name`, `repository`, `bugs`, `homepage`), both plugins' `homepage`/`repository`, the
+`customer-template.yml` checkout, and the `/vc-self-check deliver` target (`PLUGIN_REPO`, changed in the
+`plugins/vc-fix/` copy and the `.claude/` copy together). `ci/lib/affected-suites.ts` now labels a local
+git diff with the repo name `ai-tools`. Older entries in this file keep the name the repo had then.
+**Migration:** in an existing clone run `git remote set-url origin https://github.com/VirtoCommerce/ai-tools.git`.
+If you added the marketplace under the old name, run
+`/plugin marketplace add VirtoCommerce/ai-tools`. GitHub still redirects the old URL.
+
+---
+
 ## The headless CI auto-fix twin is removed; auto-fix PR bodies follow Virto's PR-description guide — `vc-fix` `0.9.2` — 2026-09-28
 
 **Removed: the headless auto-fix lane.** `ci/run-fix-cycle.ts`, `ci/agents/fix-{triage,backend,frontend}-agent.md`,

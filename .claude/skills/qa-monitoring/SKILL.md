@@ -54,11 +54,11 @@ A layer with no App ID/key is skipped with a clear message; some envs have none.
 
 Each query `summarize`s by a stable `signature` with `count_`, first/last seen, and a
 sample `operation_Id` for a portal deep-link. Signatures use route/path **templates**,
-not concrete URLs, so they don't drift with test data (`feedback_env_resilience`).
+not concrete URLs, so they don't drift with test data.
 
 ## Triage taxonomy (`ci/agents/monitor-triage-agent.md`)
 `REAL_BUG` · `KNOWN_ISSUE` · `NOISE` · `CONFIG_GATED` · `THIRD_PARTY` · `TRANSIENT`.
-Oracles: `vc-bug-catalog.md` (familiar failures), `business-logic.md` (BL-* violations
+Oracles: `vc-bug-catalog.md` (familiar failures), `bl:extract` (BL-* violations
 are always high severity), `debugging-signals.md` (benign-noise filter),
 `platform-patterns.md` (expected desync/cache behavior). When ambiguous, prefer
 NEEDS_REVIEW over REAL_BUG — a log line alone is not a defect.

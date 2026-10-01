@@ -71,6 +71,32 @@ stamp)**. It adds no engine, registry, resolver, database or new CSV column.
   pulls in the grant behaviour's own requirements first. That is the "customer → order → order.id"
   chain the proposal asked for.
 
+## First use review (2026-09-28)
+
+A review of how the two pilot maps were actually used found the mechanics sound (valid stamps, routed
+DRIFTs, evidence rules held) and four gaps in use, each now closed or made visible:
+
+- **A DRIFT could park a defect.** Three routes named a draft bug or "open product defect" and no ticket,
+  so the conflict was known only to the map. `TM-018` (warn) now flags a route with no trackable owner,
+  and any route marked `UNFILED`. Only a key of the deployment's own tracker project counts, because
+  case ids (`MSN-032`) and checker codes (`TM-018`) have the same shape. An oracle id or a docs URL
+  does not count either: both are the expected side of the conflict, not someone who resolves it.
+- **No human view.** A mind map's classic value is scope review with people, and a JSON file cannot be
+  reviewed. `npm run models:view` projects the map into a Mermaid mindmap, a state diagram and an HTML
+  page. It is regenerated on demand and never stored, so it cannot drift from the map.
+- **Uncovered nodes were an info line nobody acted on.** They are now triaged. Existing cases that
+  already decided a node were stamped, and the rest are a ranked backlog under `reports/coverage/`.
+- **Search had the behaviour graph without the data contract**, and sales-rep, the domain with the most
+  suite churn, had no map. Both have been built. Search cases now carry `DataProfile:` stamps next to
+  their `Behavior:` stamps. The requirements that no seeder reaches are named in the data model rather
+  than papered over: several states are DISCOVER only, with no discover function that filters on them.
+- **Two checker signals were silently wrong.** Stamps in a legacy-header suite were parsed by position
+  and never read, and now raise `TM-019`. A node's first data contract no longer marks its cases
+  suspect (`TM-017`); editing an existing contract still does.
+
+The checker's `TM-014` counts a behaviour as uncovered when only its branches are stamped. The view
+counts cases per subtree instead, because that is what a reviewer means by "covered".
+
 ## Known limits (V1)
 
 - **No state-liveness check.** The `*_at_seed` overlay fields are still never read back

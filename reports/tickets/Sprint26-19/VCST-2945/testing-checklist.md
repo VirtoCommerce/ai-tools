@@ -1,92 +1,109 @@
-# Testing checklist — VCST-2945 (Barcode scanner search setup)
+# Testing checklist — VCST-2945 (Barcode scanner search PASS · box empty, scan button visible, 3-card list; SearchProducts query:"" + barcode term only · d-D1-desktop-barcode-plus-q-box-empty.png PASS · 390 px overlay box empty, scan visible · d-D2-390-overlay-box-empty-scan-visible.png PASS · empty Enter → /search (no q, no barcode); new term → /search?q=<t2> keyword search · d-D3-*.png PASS · URL replaced by the PDP, box empty, Back no loop · d-D4-single-hit-pdp-box-empty.png PASS · parity holds on all 3: empty → keyword + box <t>; whitespace → lookup + box empty (value untrimmed, known Low); [empty, shared] → keyword + box <t> · d-D5a/b/c-*.png PASS · ?q= shows term + hides scan; clear → button back; D1→submit t3 → box t3; /catalog → box empty · d-D6-catalog-box-empty-scan-back.png PASS · scanner OFF: box empty, no button desktop + 390, list of 3 still renders · d-D7-*.png PASS · 122 GraphQL POSTs, no errors[]; no non-image 4xx/5xx; console: 2 image DNS errors (catalog data) · d-lane-storefront-2026-09-30.har.gz ||||||||setup)
 
-**Run:** /qa-test FULL · 2026-09-28 · vcst-qa · Catalog 3.1046.0-pr-909-2839 · XCatalog 3.1022.0-pr-113-f4a8 · theme 2.59.0-pr-2501-7e0c
-**Model:** `reports/ba/test-models/VCST-2945-2026-09-28.md` (incl. 3x amendments) · **Discovery:** `reports/exploratory/SBTM-VCST-2945-2026-09-28.md`
-**Written by:** the orchestrator inline (deviation from test-management-specialist: it held the 1d + 3x context this list is built from).
-**Data:** `npm run seed:barcode` (proven 2026-09-28) — `@td(BARCODE_*)`, `@td(BROWSEFILTERS_READ_ONLY|NONE)`, `@td(ORG_USER_DEFAULT)`, `{{ADMIN}}`. Images: `@td(<ALIAS>.image)`.
+**Run:** /qa-test-fast FASTG-VCST-2945-2026-09-28 · vcst-qa · Platform 3.1073.0-pr-3121-9965 · Catalog 3.1046.0-pr-909-2839 · XCatalog 3.1022.0-pr-113-f4a8 · theme 2.59.0-pr-2501-7e0c (PR heads = deployed; same build as the FULL run earlier today)
+**Model:** `reports/ba/test-models/VCST-2945-2026-09-28.md` (Rounds 1–3) · **Mind map:** `.claude/knowledge/domain/search.mind-map.json` · **Domain map:** PRESENT (`search.md`, srch rev 1)
+**Data:** persistent fixtures from `npm run seed:barcode` — `@td(BARCODE_*.field)`, `@td(BROWSEFILTERS_READ_ONLY.email)`, `@td(BROWSEFILTERS_NONE.email)`; admin `{{ADMIN_EMAIL}}`/`{{ADMIN_PASSWORD}}`; storefront buyer `@td(AGENT_POOL_SLOT_1.b2b_email)`; `{{STORE_ID}}` = B2B-store. No pre-seed: each item's Data cell is the instruction.
+**Crosswalk (model L → domain-map §1):** L1/L2 → index · L3/L4 → store search configuration · L5 → enter query/scan · L6 → build filter + index search · L7 → results · L8 → PDP/cart.
 
 **Rules for every executor**
-- **B2B-store is shared.** Only the storefront track may write its barcode settings, inside ONE window (§C), and it MUST restore `{"scannerEnabled":true,"fields":[]}` and re-GET to prove it. The backend track uses `@td(BARCODE_STORE.id)` only.
-- **A scan cannot be dispatched in this env** (no camera ⇒ Browse stays disabled — 3x). Storefront exact-mode items enter at `/search?barcode=<value>`, the route the composable pushes; say so in the evidence.
-- The SPA reads store settings at app load: after any settings write, **hard-reload** the storefront before observing.
-- Case column: `PENDING-A:<plan>#<n>` = the Artifact-A row now being authored (plan order); `—` = checklist-only.
+- **B2B-store settings: lane C is the ONLY writer**, inside ONE window (§C header). Restore `{"scannerEnabled":true,"fields":[]}`, re-GET, record both timestamps. Lane A writes only `@td(BARCODE_STORE.id)` settings and restores them to defaults at its end (re-GET). The exploratory lane writes no store setting.
+- **A scan cannot be dispatched here** (no camera ⇒ Browse stays disabled; no fake-media lane). Exact-mode storefront items enter at `/search?barcode=<v>`, the route the composable pushes — say so in the evidence.
+- Store settings load at SPA start: **hard-reload** after every settings write before observing.
+- Teardown by ledger id only — never `seed:barcode:teardown` (it removes the persistent fixtures).
+- Same build as the filing run: VCST-6094 is re-confirmed (B6/C12), the a11y bugs VCST-6095/6096/6097 are not re-run (see Not covered).
 
-## A. Admin SPA + REST — `qa-backend-expert`, playwright-edge, store `@td(BARCODE_STORE.id)`
+## A. Admin SPA + REST + xAPI — `qa-backend-expert`, playwright-edge, store `@td(BARCODE_STORE.id)`
 
-| # | Condition (AC) | Expected | Oracle | Case | Result |
+| # | Condition (AC) | Ref | Expected | Oracle | Data | Result |
+|---|---|---|---|---|---|---|
+| A1 | Store → Search configuration shows Facets / Sorting / Barcode scanner tiles; third opens the blade (T1, AC-2) | S#16 · srch.barcode.config | blade opens: switch, Full-text/Exact radios, field list only in Exact, hint blocks — quote them | {SPEC} pr909 | {{ADMIN_EMAIL}} || PASS · three tiles; blade + hints quoted · fast-A1-blade-fulltext.png |
+| A2 | Save Exact + `gtin`,`code` → 204; GET returns them; reopen shows them checked first then alphabetical (T2, AC-3) | S#1 L3 · config.set-exact · state.exact | as stated | {SPEC} pr909 | setting BARCODE_STORE barcode-search flip+restore || PASS · 204, GET echoes, checked-first then by label · fast-A2-reopen-exact-gtin-code-checked-first.png |
+| A3 | Save gating: order frozen while toggling; Exact + 0 fields ⇒ Save disabled; Reset restores; dirty close asks (AC-5) | S#16 · config.save-gating | as stated | {SPEC} pr909 | setting BARCODE_STORE barcode-search flip+restore || PASS · Save disabled at 0 fields, Reset restores, dirty-close + dirty-invalid dialogs · fast-A3-*.png |
+| A4 | Save Full-text (fields []) → 204, GET `fields:[]` (reverse edge of A2) | S#2 L3 · config.set-fulltext · state.fulltext | as stated | {SPEC} pr909 "clear to full-text" | setting BARCODE_STORE barcode-search flip+restore || PASS · fields [] 204 · HAR |
+| A5 | PUT unknown field / `sku` → 400 naming it, nothing persisted; null body 400; unknown store PUT 404, GET 200 defaults; `GTIN,gtin,Code` → `gtin,code` (AC-8) | S#13 · config.validation | as stated | {SPEC} pr909 | {{ADMIN_EMAIL}} + live-discover a non-existent store id (random-data) || PASS · 400 unknown/sku/null, 404 unknown store, GET 200 defaults, normalised · fast-A-api-xapi-transcript.log |
+| A6 | `/fields` lists code, gtin, manufacturerPartNumber first, then lowercased Product/Variation ShortText properties | S#7 L3 · data.fill | as stated; Catalog-type property absent | {SPEC} pr909 | @td(BARCODE_PROP.propertyName) || PASS · 87 entries, built-ins first, Catalog/Category-type absent · transcript |
+| A7 | Read-only role: blade shows stored state, controls disabled, no Save; PUT with own token → 403, re-GET unchanged (AC-6) | S#14 · config.permission-read-only | as stated | {SPEC} pr909 Update gate | @td(BROWSEFILTERS_READ_ONLY.email) || PASS · PUT 403, blade read-only, no Save · fast-A7-readonly-blade.png |
+| A8 | No-permission role: GET, GET /fields, PUT → 403; blade must not claim the scanner is off | S#15, S#26 · config.permission-none-api · permission-none-blade-false-off | 403 ×3; access error, no false "off" | {SPEC} pr909 | @td(BROWSEFILTERS_NONE.email) || **FAIL** · API 403 ×3 ok; blade "Error 403" + false OFF (known Low); also on any /fields network error · fast-A8-no-permission-blade-false-off.png, fast-A2-incidental-fields-neterror-blank-state.png |
+| A9 | Configured property deleted ⇒ stale field stays in settings; blade: checked + disabled + MISSING FROM INDEX; dropped on toggle AND on mode change; re-PUT of same set → 400 | S#17, S#19 · config.stale-on-property-delete · config.drop-missing-on-change · state.exact-stale | as stated | {SPEC} pr909 | fixture BARCODE_STALE_FIELD mutate + npm run seed:barcode -- --only stale-field || PASS · stale field kept, badge, dropped on toggle/mode change, re-PUT 400; restored --only stale-field · fast-A9-*.png |
+| A10 | Generic `PUT /api/stores/{id}` with an unknown barcode field → 204, stored verbatim; dedicated GET echoes it; blade shows it missing; malformed JSON → dedicated GET `fields:[]` | S#18 · config.generic-write-unvalidated · settings.public.malformed-json | as stated | {SPEC} pr909 "only validating writer" | setting BARCODE_STORE Catalog.Search.BarcodeSearchFields flip+restore (GET-merge-PUT the whole store) || PASS · generic PUT stores unknown verbatim, badge; malformed → fields [] · fast-A10-generic-put-unknown-missing-from-index.png |
+| A11 | Store independence: config on BARCODE_STORE ⇒ B2B-store dedicated GET unchanged and its `barcode:` term stays literal (0) | S#10 · config.per-store | as stated | {BL-STORE-001} | setting BARCODE_STORE barcode-search flip+restore || PASS · B2B-store untouched, literal 0 · transcript |
+| A12 | Product blade shows the code / GTIN / MPN and the ShortText property value the scan matches (L1) | S#1 L1 · data.fill | values visible, English labels, no raw `catalog.*` keys | {SPEC} pr909 · DoD | @td(BARCODE_GTIN_UNIQUE.sku) || PASS · SKU/GTIN/MPN + property value, no raw keys · fast-A12-*.png |
+| A13 | xAPI `[gtin]`: `barcode:"<gtin>"` → 1; `filters[]` report gtin `isGenerated:true`, no `barcode` user filter (AC-9, AC-13) | S#1 L6 · expand | 1 hit | {SPEC} pr113 · {DOC} graphql-schema.md (refreshed this run) | @td(BARCODE_GTIN_UNIQUE.gtin) + setting BARCODE_STORE fields flip+restore || PASS · 1 hit, gtin isGenerated:true · transcript |
+| A14 | `[gtin,code]`: GTIN and `CODE_OR.sku` each → 1 (OR, not AND) | S#5 · expand.or-fields | 1 + 1 | {SPEC} pr113 | @td(BARCODE_CODE_OR.sku) || PASS · 1 + 1 (OR) · transcript |
+| A15 | `[<prop>]`: property value → 1 | S#7 · expand.property-field | 1 | {SPEC} pr909/pr113 | @td(BARCODE_PROP.value) || PASS · 1 · transcript |
+| A16 | `[manufacturerPartNumber]`: variation MPN → 1 variation (scope widened); explicit `is:product` → 0 | S#8 · expand.variation-scope | 1 / 0 | {SPEC} pr113 | @td(BARCODE_VARIATION_MPN.mpn) || PASS · variation 1 / is:product 0 · transcript |
+| A17 | Case lower/upper → 1; strict prefix → 0; leading/trailing space → record | S#4 · expand.case-and-prefix | 1 / 1 / 0 | {SPEC} pr113 + {OBSERVED} case-insensitive (Elastic) | @td(BARCODE_CASE.value) · @td(BARCODE_CASE.prefix) || PASS · case-insensitive, prefix 0, leading/trailing space 0 · transcript |
+| A18 | Wildcards: `*`, `<gtin prefix>*`, `?`-substituted GTIN must NOT widen (VCST-6094 re-confirm) | S#25 · expand.wildcards | 0 / 0 / 0 | {BL-SRCH-005} + {SPEC} pr113 "compared exactly" | @td(BARCODE_GTIN_UNIQUE.gtin) || **FAIL** → VCST-6094 re-confirmed · `*` 313, `29451000*` 1, `?` 1 · transcript |
+| A19 | Quote + colon value escaped → 1; whitespace-only / empty → no error; 600-char value → no 500 (AC-16) | S#12 · expand.special-values | 1; `errors[]` empty | {BL-SRCH-005} | @td(BARCODE_SPECIAL.value) + random-data 600-char string || PASS · special 1; blank/empty 0; 600-char 200 no errors · transcript |
+| A20 | Shared GTIN → 3; term-facet counts consistent with totalCount | S#6 · expand.facet-counts | 3; counts follow | {BL-SRCH-001} | @td(BARCODE_GTIN_SHARED.gtin) || PASS · 3; gtin bucket 3 = totalCount · transcript |
+| A21 | Code changed on product: old → 0, new → 1 after the index window | S#11 · expand.after-code-change | 0 / 1 within 120 s | {BL-SRCH-003} | fixture BARCODE_REINDEX mutate + npm run seed:barcode || PASS · old 0 / new 1 in ~4.6 s (manual reindex); restored seed:barcode · transcript |
+| A22 | `scannerEnabled:false` + fields ⇒ `barcode:` still expands; no fields ⇒ literal 0; second `barcode:` term literal; comma values OR | S#3 · expand.scanner-off-still-expands · expand.no-fields-untouched · expand.second-term-literal | 1 / 0 / 0 / N | {SPEC} pr113 runtime note | setting BARCODE_STORE barcode-search flip+restore || PASS · 1 / 0 / 0 / 4 · transcript |
+| A23 | Product unpriced in the store currency is not found by barcode | model precondition · expand.unpriced-not-found | 0 hits, no error | {OBSERVED} price filter still applied — PO-confirmable | live-discover a B2B-mixed product with a code and no USD price (else FIXTURE-GAP) || PASS · unpriced → 0 on storefront; bare xAPI returns it (price term is the filter) · fast-A23-unpriced-barcode-empty.png |
+| A24 | Public store settings: `store { settings { modules } }` carries both keys with the saved values (L4) | S#1 L4 · settings.public | keys present | {SPEC} pr2501 | setting BARCODE_STORE barcode-search flip+restore || PASS · both keys, saved values · transcript |
+
+## C. Storefront — `qa-frontend-expert`, playwright-chrome, B2B-store — ONE serialised window
+
+Open: `PUT api/catalog/barcode-search/store/{{STORE_ID}}` `{"scannerEnabled":true,"fields":["gtin","code","manufacturerPartNumber","<@td(BARCODE_PROP.propertyName)>"]}` → re-GET → hard-reload. **Close: restore `{"scannerEnabled":true,"fields":[]}` → re-GET (must equal) → hard-reload.** Data for every windowed item: `setting B2B-store barcode-search flip+restore` + the alias named.
+
+| # | Condition (AC) | Ref | Expected | Oracle | Data | Result |
+|---|---|---|---|---|---|---|
+| C0 | Before the window (defaults): scan button in desktop bar and 390 px overlay; `?q=<FULLTEXT_DISCRIM.gtin>` ≥2 hits; `?barcode=<same>` → barcode empty state (T3.1, V5) | S#2 · fulltext · scan.button-visibility · expand.no-fields-untouched | as stated | {SPEC} full-text unchanged | @td(BARCODE_FULLTEXT_DISCRIM.gtin) || PASS · button both bars; ?q= 2, ?barcode= empty state · fast-C0-mobile-overlay-scan-button-defaults.png |
+| C1 | [JOURNEY] `/search?barcode=<GTIN_UNIQUE.gtin>` → URL replaced by the product page; Back does not loop; reload no second redirect; Add to cart → line appears (AC-10, L8) | S#1 · resolve.single-hit-opens | PDP; cart +1 | {SPEC} pr2501 | @td(BARCODE_GTIN_UNIQUE.gtin) · @td(BARCODE_GTIN_UNIQUE.url) + remove the line after (ledger) || PASS · URL replaced, Back no loop, reload stays, cart +1 (removed) · fast-C-lane-storefront-2026-09-28.har |
+| C2 | Same code `?barcode=` vs `?q=`: exact → opens 1; full-text → list ≥2 (single full-text hit still lists) | S#2 · fulltext.single-hit-lists | as stated | {SPEC}; full-text single-hit = PO question (VCST-2622) | @td(BARCODE_FULLTEXT_DISCRIM.gtin) || PASS · exact 1 opens; full-text 2 list; full-text single hit lists · HAR |
+| C3 | Shared GTIN → list of 3 under the barcode heading, no redirect | S#6 · resolve.multi-hit-lists | 3 cards | {SPEC} totalCount===1 only | @td(BARCODE_GTIN_SHARED.gtin) || PASS · 3 listed, no redirect · fast-C3-C6-shared-gtin-barcode-list.png |
+| C4 | Unknown code → "No products found for barcode <v>", empty view, Reset → /catalog clearing barcode and q (AC-4, AC-12) | S#9 · resolve.zero-hit-empty | as stated | {BL-SRCH-002} + {SPEC} | random-data AGENT-TEST- code || PASS · empty state, Reset → /catalog · fast-C4-unknown-code-empty-state.png |
+| C5 | Variation MPN (out of stock, Show in stock ON) → opens the variation's page | S#8 · resolve.variation-hit | variation PDP | {SPEC} pr2501 prefs ignored | @td(BARCODE_VARIATION_MPN.mpn) || PASS · variation PDP, out of stock, Show in stock on · fast-C5-variation-mpn-pdp.png |
+| C6 | Barcode list: no facet sidebar / in-stock / purchased-before / branch controls / chips; sort, grid-list toggle and paging present; `&facets=` ignored; `&sort=` does not redirect (AC-11, AC-13) | S#23, S#30 · resolve.identity-lookup-hides-browsing | as stated | {SPEC} pr2501 r3 | @td(BARCODE_GTIN_SHARED.gtin) || PASS · controls hidden, sort + grid/list work, facets ignored, &sort no redirect; paging NOT observed (no value >16 hits) · fast-C3-C6-shared-gtin-barcode-list.png |
+| C7 | Property value and `CODE_OR.sku` via URL open their products (T3.4, T3.5) | S#5, S#7 | PDPs | {SPEC} | @td(BARCODE_PROP.value) · @td(BARCODE_CODE_OR.sku) || PASS · property + code open PDPs · HAR |
+| C8 | Anonymous vs signed-in B2B buyer: C1 resolves identically | S#21 · resolve.actor-parity | identical | {BL-SRCH-004} | @td(AGENT_POOL_SLOT_1.b2b_email) || PASS · identical anon/B2B · HAR |
+| C9 | From a category page `?barcode=` → the category's scope is used (record); history dropdown gains no entry | S#22 · resolve.global-scope · scan.not-in-history | record scope; no history entry | {SPEC} pr2501 (kb KB-25829330 says category scope — compare) | live-discover a category slug containing GTIN_UNIQUE || PASS · category scope applied (product outside → 0); no history entry · fast-C9-*.png |
+| C10 | 390 px: C1 opens the PDP, overlay closed | S#20 · resolve.mobile-parity | as stated | {SPEC} pr2501 both bars | @td(BARCODE_GTIN_UNIQUE.gtin) || PASS · 390 px PDP, overlay closed · fast-C10-mobile-390-pdp-overlay-closed.png |
+| C11 | `scannerEnabled:false` with fields: button gone in desktop + mobile; `?barcode=` still opens the product. Then fields `[]` + disabled: button gone, `?q=` unaffected (AC-1) | S#3 · scan.button-visibility · config.disable · config.enable · state.hidden-but-expanding · state.hidden | as stated | {SPEC} pr2501 + pr113 | @td(BARCODE_GTIN_UNIQUE.gtin) || PASS · button gone both bars; ?barcode= still opens; fields [] + off: ?q= 2 · fast-C11-desktop-disabled-no-scan-button.png |
+| C12 | Special value (quote + colon) → one term, no 500; `<gtin prefix>*` must NOT open a product (VCST-6094 re-confirm) | S#12, S#25 · expand.wildcards | exact only | {BL-SRCH-005} | @td(BARCODE_SPECIAL.value) · @td(BARCODE_GTIN_UNIQUE.gtin) || **FAIL** → VCST-6094 re-confirmed · special value PASS; `2945100000*` opens QA-BC-2945-001 · fast-C12-VCST-6094-prefix-wildcard-opens-pdp.png |
+| C13 | Whitespace-only `?barcode=%20%20` → no crash; heading value | S#12 · resolve.whitespace-value | empty state; record blank heading (known Low) | {BL-SRCH-005} | literal `%20%20` (URL shape, not data) || PASS · no crash; blank heading (known Low) · fast-C13-whitespace-blank-heading.png |
+| C14 | HTML in the value rendered as text in the heading | resolve.value-rendered-literally | escaped | {BL-SRCH-005} | random-data AGENT-TEST- `<b>` string || PASS · literal text · fast-C14-html-value-rendered-literal.png |
+| C15 | `?barcode=<GTIN_UNIQUE>&q=<other term>` → keyword suppressed (same single-hit result); on a 0-hit barcode with q, Reset clears both in one navigation | S#27 · resolve.keyword-suppressed-with-barcode | as stated | {SPEC} pr2501 r4 | @td(BARCODE_GTIN_UNIQUE.gtin) + random-data term || PASS · q ignored; Reset clears both in one navigation (box still shows q — see Exploratory X3) · HAR |
+| C16 | `?barcode=<GTIN_SHARED>&barcode=<GTIN_UNIQUE>` → no crash, no `replaceAll` console error; first value wins (list of 3) | S#28 · resolve.repeated-query-param-coerced | as stated | {SPEC} pr2501 r5 | @td(BARCODE_GTIN_SHARED.gtin) · @td(BARCODE_GTIN_UNIQUE.gtin) || PASS · first value wins, no console error · HAR |
+| C17 | N-hit list → page 2 / load more → navigate to a second barcode → results from page 1, not empty | S#29 · resolve.page-reset-on-change | second lookup shows its hits | {SPEC} pr2501 r2 | live-discover a configured-field value shared by more products than one page (else FIXTURE-GAP) · @td(BARCODE_GTIN_SHARED.gtin) || BLOCKED · FIXTURE-GAP: live-discover found no field value with >16 hits (max 7) · HAR |
+| C18 | Console / network on every C item: no new errors; GraphQL `errors[]` empty | always-on | clean | always-on | none — observes the C0–C17 traffic || PASS · 455 GraphQL POSTs, no errors[], no non-image 4xx/5xx · fast-C-lane-storefront-2026-09-28.har |
+
+## Exploratory — `qa-testing-expert`, playwright-firefox (`/qa-exploratory ticket VCST-2945`)
+Charter = the model's unresolved items: S#18/S#19 storefront consequence ({HYPOTHESIS}: unknown / stale field ⇒ every scan 0 with no signal), S#31 `viewSearchResults` for barcode lookups ({HYPOTHESIS}), S#32 intent-search filters during a lookup ({HYPOTHESIS} — WAIVE if intent search is off), plus the mind-map UNVERIFIED branches declared below as omissions, and the prior session's NOT REACHED (AC-14). Read-only on store settings.
+
+**Not covered, deliberately:**
+- S#24 a11y · config.keyboard-operable · scan.browse-named · VCST-6095/6096/6097 — same build as the filing run and no fix deployed; re-observation adds nothing.
+- scan.dispatch · scan.no-camera-dead-end (camera/Browse hop) — no fake-media lane; PR unit tests only. Pre-existing dead-end already reported.
+- resolve.request-response-binding (r6) — RACE, not deterministically drivable through MCP (model archetype sweep WAIVED).
+- expand.reserved-name (a property literally named `barcode`) · expand.barcode-field-is-facet — WAIVED: no such property/facet on B2B-mixed; creating one would alter the shared catalog.
+- resolve.hides-intent-search-filters · resolve.analytics-fires — exploratory charter (S#32, S#31).
+- AC-14 older backend; Lucene provider — no lane.
+- Story goal "instructions on the product edit screen" — not in these PRs; PO question.
+
+**Mind-map DRIFT:** none new — Wave 2 placed r1–r7, the content-string change and the wildcard node.
+
+## Result — 2026-09-28 (FASTG-VCST-2945-2026-09-28)
+- Checklist: 39 PASS / 3 FAIL (A8 known Low; A18 + C12 = VCST-6094) / 1 BLOCKED (C17 FIXTURE-GAP).
+- Exploratory: reports/exploratory/SBTM-VCST-2945-2026-09-28-2.md — S#31 analytics observed (matches r7), S#19 observed, S#18 by source, S#32 WAIVED (IntentSearch not installed); candidates X1–X4.
+
+---
+
+## Round — 2026-09-30 delta re-test (`/qa-test VCST-2945 --iterate --max-rounds 2`)
+
+**Build delta vs 2026-09-28:** backend unchanged (Catalog `3.1046.0-pr-909-2839`, XCatalog `3.1022.0-pr-113-f4a8` = same PR heads). Theme `2.59.0-pr-2501-7e0c` → **`2.59.0-pr-2501-3a82`** (commit `3a82025` "fix: vcst-6098" + a `dev` merge `044c`). Platform `3.1074.0-pr-3125-c3b8`. Deployed theme confirmed in the storefront bundle.
+**Scope (operator decision):** delta only. Rows A*/B*/C* above carry forward as evidence for the unchanged backend. **VCST-6094 is reclassified PRE-EXISTING / by-design** (operator decision; Elasticsearch expands `*`/`?` in every term filter — `code:"*"` on B2B-store returns 4566 live; PR descriptions no longer promise literal matching) — no item re-tests it.
+**Fix under test:** `useSearchPhraseInUrl()` — both header bars show `""` while `toFirstString(barcode)` is truthy, "decided as the results page decides" (`isBarcodeLookup`). So the oracle for the edge rows is **parity**: *the box shows `q` iff the page ran a keyword search.*
+**Window:** lane D is the ONLY writer of B2B-store barcode settings; restore `{"scannerEnabled":true,"fields":[]}`, re-GET, record both timestamps. Hard-reload after every write. SRCH-014..023 run AFTER this window closes (they write the same settings).
+
+| # | Condition | Expected | Oracle | Data | Result |
 |---|---|---|---|---|---|
-| A1 | Search configuration shows three tiles (Facets / Sorting / Barcode scanner) wrapping, no horizontal scroll (AC-2) | third tile opens the blade | {SPEC} pr909 | — | PASS |
-| A2 | Blade content: switch, Full-text / Exact radios, field list only in Exact, two hint blocks (AC-2, AC-7) | as listed; quote the hints | {SPEC} pr909 | — | PASS · "Matching is exact" hint also shows in Full-text (Low, draft) |
-| A3 | Save Exact + `gtin`,`code` → GET returns them; reopen shows them checked first (AC-2, AC-3) | 204; persisted; checked-first then alphabetical | {SPEC} | PENDING-A:admin#4 | PASS |
-| A4 | Field order frozen while toggling; Exact + 0 fields ⇒ Save disabled; Reset restores; dirty close asks (AC-3, AC-5) | as stated | {SPEC} | PENDING-A:admin#4 | PASS · Save-disabled has no reason (Low, draft) |
-| A5 | PUT unknown field → 400 naming it, nothing persisted; null body 400; unknown store 404; mixed case/dup normalised (AC-8) | as stated | {SPEC} pr909 | PENDING-A:admin#1 | PASS |
-| A6 | GET unknown store → 200 defaults (3x) | `{"scannerEnabled":true,"fields":[]}` | {SPEC} pr909 | PENDING-A:admin#1 | PASS |
-| A7 | Read-only role: blade read-only, no Save; PUT with own token → 403, unchanged (AC-6, G2) | as stated | {SPEC} Update gate | PENDING-A:admin#2 | PASS |
-| A8 | No-permission role: GET, GET fields, PUT → 403; blade must NOT claim the scanner is off (G2, B3) | 403 ×3; access error, no false state | {SPEC} | PENDING-A:admin#3, admin#8 | **FAIL** · false "off" state after 403 (Low, draft; SRCHA-056) |
-| A9 | Missing-from-index field: delete `@td(BARCODE_STALE_FIELD)` property ⇒ checked + disabled + badge; dropped on field toggle AND mode change; never re-saved (AC-4, RE1) | as stated | {SPEC} pr909 | PENDING-A:admin#5, admin#7 | PASS |
-| A10 | Generic `PUT /api/stores/{id}` with an unknown field → stored as-is; blade shows it missing (G13, row 18) | 204 + badge; record xAPI effect | {SPEC} "only validating writer" | PENDING-A:admin#6 | PASS |
-| A11 | Store independence: config on BARCODE_STORE ⇒ B2B-store GET unchanged and its `barcode:` term untouched (G10) | B2B-store defaults; 0 hits literal | {BL-STORE-001} | PENDING-A:graphql#4 | PASS |
-| A12 | Localization: blade strings English, no raw keys (DoD) | no `catalog.*` keys visible | {SPEC} English-only convention | — | PASS |
+| D1 | [VCST-6098 STR] Exact `[gtin]`; `/search?barcode=<GTIN_SHARED>&q=<term>` desktop 1920 | box EMPTY, scan button visible, 3-card barcode list, `q` not sent in `products` | {SPEC} 3a82025 · VCST-6098 expected | @td(BARCODE_GTIN_SHARED.gtin) · random-data AGENT-TEST- term | |
+| D2 | D1 at 390 px, search overlay opened | overlay box EMPTY, scan button visible | {SPEC} both bars | as D1 | |
+| D3 | From D1: Enter in the empty box; then type a new term + Enter | empty Enter does not navigate to `?q=<ignored term>`; new term → `?q=<new>` keyword search (record URL) | {SPEC} VCST-6098 | as D1 + a 2nd random term | |
+| D4 | Single hit `?barcode=<GTIN_UNIQUE>&q=<term>` | PDP opens (C15 unchanged); header box on the PDP empty | {SPEC} pr2501 r4 | @td(BARCODE_GTIN_UNIQUE.gtin) | |
+| D5 | Parity edges: `?barcode=&q=<t>` · `?barcode=%20%20&q=<t>` · `?barcode=&barcode=<GTIN_SHARED>&q=<t>` | for each: box shows `<t>` **iff** the page ran a keyword search; record page mode + box value | {SPEC} "decided as the results page decides" | literal URL shapes + as D1 | |
+| D6 | Non-regression: `/search?q=<t>` → box shows `<t>`, scan button hidden; clear box → button back. Client-side from D1 submit `<t2>` → box `<t2>`; then `/catalog` → box empty | as stated | {SPEC} existing behaviour | random-data terms | |
+| D7 | Scanner OFF (`scannerEnabled:false`, fields `[gtin]`) + `?barcode=<GTIN_SHARED>&q=<t>` | box EMPTY, NO scan button, barcode list still shown (C11 rule) | {SPEC} pr2501 + 3a82025 | as D1 | |
+| D8 | Console / network across D1–D7 | no new console errors; GraphQL `errors[]` empty; no non-image 4xx/5xx | always-on | observes D traffic | |
+| R | Scoped regression SRCH-014..SRCH-023 (`004-search-core.csv`) on the new theme — not C1 (this run authored/changed no case); covers the `dev`-merge blast radius on the barcode surface | cases pass | suite oracles | suite @td() | |
 
-**Restore** BARCODE_STORE to defaults at the end; `npm run seed:barcode` if A9 deleted the property.
-
-## B. xAPI contract — `qa-backend-expert` (same agent, after §A), store `@td(BARCODE_STORE.id)`
-
-| # | Condition | Expected | Oracle | Case | Result |
-|---|---|---|---|---|---|
-| B1 | fields `[gtin]`: `barcode:"<GTIN_UNIQUE.gtin>"` → 1; filters report `gtin` with `isGenerated:true`, no `barcode` user filter (AC-9, AC-13) | 1 hit | {SPEC} pr113 | PENDING-A:graphql#2 | PASS |
-| B2 | fields `[gtin,code]`: GTIN and `CODE_OR.sku` each → 1 (OR) (AC-9) | 1 + 1 | {SPEC} | PENDING-A:graphql#2 | PASS |
-| B3 | fields `[<BARCODE_PROP.propertyName>]`: `PROP.value` → 1 (AC-9) | 1 | {SPEC} | PENDING-A:graphql#3 | PASS |
-| B4 | fields `[manufacturerPartNumber]`: `VARIATION_MPN.mpn` → 1 variation (default scope widened); explicit `is:product` → 0 (AC-9) | 1 / 0 | {SPEC} pr113 | — (covered by storefront C5 + graphql plan) | PASS |
-| B5 | Case: `CASE.value` lower/upper → 1; `CASE.prefix` → 0; leading/trailing space → record (row 4) | 1 / 1 / 0 | {SPEC} + {OBSERVED} insensitive | PENDING-A:graphql#1 | PASS · whitespace-sensitive |
-| B6 | Wildcards: `*`, `<GTIN prefix>*`, `?` substitution → must NOT widen (row 25, B1 candidate) | 0 / 0 / 0 | {BL-SRCH-005} + {SPEC} "exactly" | PENDING-A:graphql#8 | **FAIL** → VCST-6094 |
-| B7 | Special value `SPECIAL.value` (quote + colon), escaped → 1; whitespace-only / empty → untouched, no error; a 600-char value → no 500 (AC-16, G3, G4) | 1; no errors[] | {BL-SRCH-005} | PENDING-A:graphql#6 | PASS |
-| B8 | Shared GTIN → 3; term-facet counts sum consistent with totalCount (G6, BL-SRCH-001) | 3; counts follow | {BL-SRCH-001} | PENDING-A:graphql#7 | PASS (after ghost-index purge) |
-| B9 | Reindex: change `REINDEX.gtin` → `newGtin`; after ≤120 s old → 0, new → 1 (row 11) | 0 / 1 | {BL-SRCH-003} | PENDING-A:graphql#5 | PASS contract · 120 s window BLOCKED-env (event indexation off) |
-| B10 | `scannerEnabled:false` + fields ⇒ `barcode:` still expands (RE2 — documented) | 1 hit | {SPEC} pr113 runtime note | PENDING-A:storefront#3 | PASS (by design) |
-| B11 | Second `barcode:` term stays literal; comma values inside one term OR (3x) | 0 / N | {SPEC} pr113 | — | PASS |
-| B12 | Store settings exposed publicly: `store { settings { modules } }` carries both keys (L4) | keys present, values = saved | {SPEC} pr2501 | — | PASS |
-
-## C. Storefront — `qa-frontend-expert`, playwright-chrome — ONE serialised B2B-store window
-
-Open the window: `PUT barcode-search/store/{{STORE_ID}}` `{"scannerEnabled":true,"fields":["gtin","code","manufacturerPartNumber","<BARCODE_PROP.propertyName>"]}` → re-GET → hard-reload. **Close it: restore defaults → re-GET (must equal defaults) → hard-reload.** Record both timestamps.
-
-| # | Condition | Expected | Oracle | Case | Result |
-|---|---|---|---|---|---|
-| C0 | Before the window (defaults): scanner button in desktop bar + 390 px mobile bar; `?q=<FULLTEXT_DISCRIM.gtin>` ≥2 hits; `?barcode=` → literal, 0 (AC-14 proxy, V5) | as stated | {SPEC} full-text unchanged | PENDING-A:storefront#2 | PASS |
-| C1 | [JOURNEY] `/search?barcode=<GTIN_UNIQUE.gtin>` → replaced by `@td(BARCODE_GTIN_UNIQUE.url)`; Back does not loop; Add to cart → line appears (AC-10, L8) | PDP of QA-BC-2945-001; cart +1 | {SPEC} | PENDING-A:storefront#1 | PASS |
-| C2 | Same code as `?barcode=` vs `?q=`: exact → 1 (opens), full-text → ≥2 list (mode discriminates) | as stated | {SPEC} | PENDING-A:storefront#2 | PASS |
-| C3 | Shared GTIN → list of 3, heading `header_barcode`, no redirect (G6) | 3 cards | {SPEC} | PENDING-A:storefront#4 | PASS |
-| C4 | Unknown code → `header_barcode_empty` with the code, VcEmptyView, Reset clears `barcode` and `q` (AC-12) | intact empty state | {BL-SRCH-002} | PENDING-A:storefront#6 | PASS |
-| C5 | `VARIATION_MPN.mpn` → opens `/product/<variationId>` although out of stock, with in-stock preference ON (AC-10, ECL-8.2) | variation PDP | {SPEC} | PENDING-A:storefront#5 | PASS (variation has its own slug; /product/<id> branch not exercised) |
-| C6 | Barcode result: no sidebar, no in-stock/purchased/branch controls, no chips; `&facets=` appended ignored; sort works and does not redirect (AC-11, AC-13) | as stated | {SPEC} | PENDING-A:storefront#10 | PASS |
-| C7 | Property value and `CODE_OR.sku` open their products (AC-9 via UI) | PDPs | {SPEC} | — | PASS |
-| C8 | Anonymous vs `@td(ORG_USER_DEFAULT.email)`: same resolution for C1 (G7) | identical | {BL-SRCH-004} | PENDING-A:storefront#8 | PASS |
-| C9 | From a category page, `?barcode=` result is global; history dropdown gains no entry (AC-15) | as stated | {SPEC} | PENDING-A:storefront#9 | PASS · history rule only unit-tested (URL entry never writes history) |
-| C10 | 390 px: C1 opens the PDP, overlay closed (G8) | as stated | {SPEC} | PENDING-A:storefront#7 | PASS |
-| C11 | `scannerEnabled:false` (inside the window): button gone in desktop + mobile; `?barcode=` still resolves (AC-1, RE2) | as stated | {SPEC} | PENDING-A:storefront#3 | PASS |
-| C12 | Special value (quote + colon) and `<code>*` via URL: one term, no 500; `*` must not open a product (G3, row 25) | exact only | {BL-SRCH-005} | — | **FAIL** → VCST-6094 |
-| C13 | Whitespace-only `?barcode=%20%20` → no crash, sensible heading (row 12) | empty state | {BL-SRCH-005} | — | PASS · untrimmed value (Low, draft) |
-| C14 | HTML in the code (`?barcode=<b>x</b>`) rendered as text in the heading (BL-SRCH-005 XSS) | escaped | {BL-SRCH-005} | — | PASS |
-| C15 | Camera denied → Browse usable or a message shown (B2 — pre-existing) | record | {HYPOTHESIS} — PO | — | **FAIL** pre-existing → draft (Medium, filing deferred) |
-| C16 | Console / network: no new errors on every C item; GraphQL `errors[]` empty | clean | always-on | — | PASS |
-
-## D. Visual + a11y — **FAIL (a11y, standalone)** → VCST-6095 (blade keyboard), VCST-6096 (VcButton loading name), VCST-6097 (mobile overlay); CLS 0.25–0.73 pre-existing → draft (Medium, filing deferred). See design-report.md — `ui-ux-expert` (4v), Chrome DevTools MCP — read-only against B2B-store
-
-Barcode scanner blade (BARCODE_STORE), storefront search bar + scanner modal (desktop + 390 px), `?barcode=` result and empty headings. BL-UI-* layout invariants; BL-A11Y-001..004 (names/roles of switch, radios, checkbox rows, badge, Browse, overlay close — 3x B4/B5); design spec: **SKIPPED — ticket carries no Prototype link**.
-
-## Uncovered / not executable this run
-- G11 a catalog property literally named `barcode` (name reserved once fields are configured — pr113): no such property exists and none was seeded — WAIVED this run, documented runtime note.
-- G12 a configured field that is also a facet (multi-select suspended inside its own aggregation): WAIVED — no barcode field is a facet in B2B-mixed; B8 checks counts follow.
-- G1 blade error on a rejected save: not reachable through the blade (a missing field is dropped on the first change and Save stays disabled until then — 3x); the server half is A5/A9.
-- Real scan dispatch (camera or upload): needs a fake-media lane — covered only by PR unit tests.
-- AC-14 older backend: no lane. Lucene case-sensitive provider: not installed-active here.
-- Story goal "clear instructions for filling barcode properties" on the PRODUCT edit surface: not implemented by these PRs (1d) — PO question.
-- VCST-2622 AC "single match opens product" on the full-text path: never implemented (3x) — PO question.
-
-
-## Result — 2026-09-28
-- Checklist: 37 PASS / 4 FAIL (A8, B6, C12 IN-SCOPE — B6+C12 are one bug; C15 pre-existing) + D a11y FAIL (standalone).
-- C1 exact set REG-2026-09-28-1518: 23/26 PASS — FAIL CAT-GQL-150 (VCST-6094), SRCHA-056 (Low draft), CAT-GQL-147 (test defect, fixed).
-- Verdict: **FAIL** — IN-SCOPE VCST-6094 violates BL-SRCH-005.
-- Evidence note: the run's original lane screenshots were deleted from the working tree at ~17:21 by an unknown actor; screenshots/c1-*.png are from the C1 run folder.
+**Not covered, deliberately:** backend rows (unchanged build — 09-28 evidence stands) · VCST-6094 (reclassified) · VCST-6095/6096/6097 a11y (no fix in `3a82025`; not re-run) · C17 paging (FIXTURE-GAP stands) · camera scan (no lane).

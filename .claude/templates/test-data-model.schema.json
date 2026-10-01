@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/VirtoCommerce/vc-mcp-testing-module/.claude/templates/test-data-model.schema.json",
+  "$id": "https://github.com/VirtoCommerce/ai-tools/.claude/templates/test-data-model.schema.json",
   "title": "Test Data Model — the data STATE each behaviour requires",
   "$comment": "SINGLE SOURCE OF TRUTH for the shape of `test-data/models/<file>.data-model.json`, loaded by `npm run models:check` through ajv. It answers 'what state must exist before this behaviour runs?' — NEVER 'which API calls create it': that is the existing seeders' job, named here by `seed_capability` (a package.json script or a spec-module export) and addressed at run time through the existing `@td(ALIAS.field)` resolver (`td_alias`). No new engine, registry or runtime handle. Rules this file encodes: .claude/rules/test-data.md (SECOND RULE ⇒ `discriminates`; DISPOSABLE FIXTURES ⇒ `lifecycle` + `shared_state`). Method: .claude/skills/qa-test-data-model/SKILL.md.",
   "type": "object",

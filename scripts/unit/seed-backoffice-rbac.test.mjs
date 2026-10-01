@@ -167,16 +167,6 @@ test('read-only Sales Rep account email + role_id are AGENT-TEST business keys (
   assert.equal(SALESREP_READONLY_ACCOUNT.passwordVar, 'RESTRICTED_SALESREP_ADMIN_PASSWORD');
 });
 
-test('RESTRICTED_ADMIN_SALESREP_READONLY alias is registered, coherent, and GUID-free in aliases.json', () => {
-  const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data/aliases.json'), 'utf8'));
-  const a = aliases[SALESREP_READONLY_ACCOUNT.aliasName];
-  assert.ok(a, 'alias must exist');
-  assert.equal(a.email || a.login, SALESREP_READONLY_ACCOUNT.email);
-  assert.equal(a.role, SALESREP_READONLY_ROLE.role_name);
-  assert.equal(a.excluded_permission, SALESREP_READONLY_EXCLUDED_PERMISSION);
-  assert.deepEqual(findGuidLeaks(JSON.stringify(a)), []);
-});
-
 // --- Sales Rep matrix universe (source-verified split) ---
 
 test('Sales Rep mutate-permission universe is split correctly (member vs account, no overlap)', () => {

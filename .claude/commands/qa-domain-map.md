@@ -71,8 +71,8 @@ so `--has-domain` accepts it and this command proceeds.
 
 ## Step 2 — Dispatch `ba-system-analyzer`
 
-It is the **sole writer** of `knowledge/domain/*.md`, on the same single-writer discipline it already
-holds for `business-logic.md` and the ECL. The brief must carry:
+It is the **sole writer** of `knowledge/domain/*.md`, on the same single-writer discipline the
+oracles use. The brief must carry:
 
 | Must carry | Why |
 |---|---|
@@ -121,7 +121,7 @@ here.**
 
 | Found | Goes to |
 |---|---|
-| A prior-art claim that is **`DRIFT`** | recorded in §6. If a **`BL-*`** depends on it → a `/qa-review-oracles bl` **proposal** (`ba-system-analyzer` is the sole writer; never an edit from here) |
+| A prior-art claim that is **`DRIFT`** | recorded in §6. If a **`BL-*`** depends on it → a finding for `/qa-review-oracles bl` (only a human source changes a rule; never an edit from here) |
 | A **selection-group** defect (a group missing half the coverage, or running a suite with none) | report it; the fix is `config/test-suites.json` via `suites:sync`, not a hand edit |
 | A **zero-coverage** area that matters | a `/qa-test-plan` input, or a `GAP-NN` in the next sprint plan |
 | An **over-covered** area | the same, as a culling candidate for `/qa-review-tests` |

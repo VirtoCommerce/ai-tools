@@ -72,7 +72,8 @@ Full briefs, merge rules and the context bundle:
 3. **Wave 2 — one message:**
    - `/qa-test-model <TICKET> --context <bundle>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
-     **without** build step 10
+     **without** build step 10; then copy the map signals into the bundle
+     ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
 4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
    `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
 5. **Stage gate.** Every model gate clause is `PASS`/`FIXED`. Every in-scope scenario row and node is
@@ -108,7 +109,8 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    Then run `npm run summary:validate`.
 5. **HTML page.** Load the `artifact-design` skill, fill in
    [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
-   publish it as a private Artifact.
+   publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
+   ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
    comment, and write the returned id into `summary.json.tracker.comment_id` — a re-run amends that id
    (Step 0.3). No status transition.

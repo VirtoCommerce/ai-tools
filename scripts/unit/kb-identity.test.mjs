@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mintId } from '../kb/core/canonical.mjs';
-import { findDuplicate, identityKey, refusalMessage, rowKey } from '../kb/core/identity.mjs';
+import { claimKey, findDuplicate, identityKey, refusalMessage, rowKey } from '../kb/core/identity.mjs';
 import { normalizeRow, normalizeScope } from '../kb/core/index-load.mjs';
 import { trustOf } from '../kb/core/verbs.mjs';
 
@@ -40,7 +40,7 @@ test('order does not change the key; a differing scope axis does', () => {
     identityKey({ anchors: ['/a/y'], scope: ['surface=admin-spa'] }));
 });
 
-test('wording is NOT part of the test — same anchors and scope, opposite prose, one identity', () => {
+test('identityKey is the PLACE only — same anchors and scope, opposite prose, one key (the claim is compared by findDuplicate)', () => {
   // MEASURED in the prior art: the wording-similarity range of pairs that MUST collapse CONTAINS
   // the range of pairs that must not, and one pair stating a single fact scored 0.00.
   const one = identityKey({ anchors: ['/cart/checkout'], scope: ['surface=storefront-ui'] });
@@ -61,10 +61,46 @@ test('normalizeScope accepts both the row form and the frontmatter form', () => 
 // ─── what capture does with it ────────────────────────────────────────────────────────────────
 
 test('a matching row is found, and the key it matched on is returned', () => {
-  const rows = [row({ id: 'KB-AAAA0001', anchors: ['/company/members'], scope: ['surface=storefront-ui'] })];
-  const dupe = findDuplicate(rows, { anchors: ['{FRONT_URL}/company/members'], scope: ['surface=storefront-ui'] });
+  const rows = [row({ id: 'KB-AAAA0001', subject: 'members Active column reads contact status', anchors: ['/company/members'], scope: ['surface=storefront-ui'] })];
+  const dupe = findDuplicate(rows, { anchors: ['{FRONT_URL}/company/members'], scope: ['surface=storefront-ui'], subject: 'Members: Active column reads contact status.' });
   assert.equal(dupe.row.id, 'KB-AAAA0001');
   assert.equal(dupe.key, rowKey(rows[0]));
+});
+
+// ─── the claim is part of identity (VCST-6102) ────────────────────────────────────────────────
+
+test('a DIFFERENT claim at the same anchors and scope is not a duplicate', () => {
+  // 2026-09-28, verbatim shape: an expired-password fact was refused as a duplicate of a Sales Rep
+  // blade fact because both anchored on the same Admin SPA coordinate — and at push it CONFIRMED it.
+  const rows = [row({ id: 'KB-C60BA776', subject: 'Sales Rep details blade requires first/last name and caps their length',
+    anchors: ['/api/members'], scope: ['surface=admin-spa'] })];
+  const at = { anchors: ['/api/members'], scope: ['surface=admin-spa'] };
+  assert.equal(findDuplicate(rows, { ...at, subject: 'vcptcore-qa admin password is expired: the AngularJS platform SPA forces a password change' }), null);
+  assert.equal(findDuplicate(rows, { ...at, subject: 'Sales Rep details blade requires first/last name and caps their length' }).row.id, 'KB-C60BA776',
+    'the same claim at the same place is still refused');
+});
+
+test('claimKey ignores case, whitespace and sentence punctuation, and nothing else', () => {
+  assert.equal(claimKey('  Cart totals LAG, a (quantity) change. '), claimKey('cart totals lag a quantity change'));
+  assert.equal(claimKey('Members: "Active" reads status!'), claimKey('members active reads status'));
+  // Typesetting is not the claim: backticks, an edge ellipsis, a free-standing dash.
+  assert.equal(claimKey('`sku:` is an alias of `code` — mpn is not…'), claimKey('sku: is an alias of code mpn is not'));
+  assert.equal(claimKey('scan spins forever – no message'), claimKey('scan spins forever no message'));
+  assert.notEqual(claimKey('cart totals lag a quantity change'), claimKey('cart totals lag after a quantity change'), 'a word is a word');
+  assert.notEqual(claimKey('limit is 10'), claimKey('limit is 100'), 'digits are kept');
+  assert.equal(claimKey('Größe übernimmt'), 'größe übernimmt', 'letters outside ASCII are kept');
+});
+
+test('claimKey keeps every symbol that can carry meaning — opposite claims never collide (VCST-6102 review)', () => {
+  // Merging these would refuse the second claim, then CONFIRM the opposite one at push.
+  for (const [a, b] of [
+    ['quantity -1 is rejected', 'quantity 1 is rejected'],
+    ['price > 0 is required', 'price < 0 is required'],
+    ['total shown in $', 'total shown in €'],
+    ['limit is 1.5 MB', 'limit is 15 MB'],
+    ['* and ? are wildcards', '* and are wildcards'],
+    ['quantity-change resets', 'quantity change resets'],
+  ]) assert.notEqual(claimKey(a), claimKey(b), `${a} / ${b}`);
 });
 
 test('a RETIRED entry never blocks a fresh capture', () => {

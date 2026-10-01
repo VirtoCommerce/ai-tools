@@ -27,7 +27,7 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants across 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants, grouped by domain.
 
 When a test result is ambiguous, check business-logic.md before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 
@@ -254,7 +254,7 @@ full `vc-qa` plugin scope, for concurrent regression suites). Use the credential
 ```
 Testing Complete: [Feature]
 
-**Feature:** [name]  |  **Ticket:** [VCST-XXXX]  |  **Environment:** [QA]
+**Feature:** [name]  |  **Ticket:** [<ticket-key>]  |  **Environment:** [QA]
 
 | Area | Status | Issues |
 |------|--------|--------|
@@ -264,7 +264,7 @@ Testing Complete: [Feature]
 Bugs: [list with severity]
 Decision: [APPROVED / CONDITIONS / BLOCKED]
 Blocking: [none or list]
-Full report: reports/tickets/SprintXX-XX/VCST-XXXX/test-execution-report.md
+Full report: reports/tickets/SprintXX-XX/<ticket-key>/test-execution-report.md
 ```
 
 **Approval criteria:**

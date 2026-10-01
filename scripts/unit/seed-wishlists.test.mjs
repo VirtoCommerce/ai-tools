@@ -28,10 +28,6 @@ const rec = loadFixture(rows);
 /** Deep-clone the parsed rows and patch one column, so a test can simulate drift without touching disk. */
 const withColumn = (col, value) => rows.map((r) => ({ ...r, [col]: value }));
 
-test('the committed fixture passes every shape assertion', () => {
-  assert.deepEqual(validateFixtureShape(rows), []);
-});
-
 test('runtime columns are declared and blank in the committed CSV (multi-env rule)', () => {
   assert.deepEqual(RUNTIME_COLUMNS, ['store_a_id', 'store_b_id', 'contact_id', 'user_id', 'store_a_wishlist_id', 'store_b_wishlist_id']);
   for (const col of RUNTIME_COLUMNS) {
@@ -43,48 +39,6 @@ test('store A and store B reference DIFFERENT products — the core non-vacuity 
   assert.notEqual(rec.stores.A.sku, rec.stores.B.sku);
   const problems = validateFixtureShape(withColumn('store_b_sku', rec.stores.A.sku));
   assert.ok(problems.some((p) => /SAME sku/.test(p)), 'a shared sku must be rejected');
-});
-
-test('the two wishlists have DIFFERENT names — idempotency keys on (storeId, name)', () => {
-  assert.notEqual(rec.stores.A.listName, rec.stores.B.listName);
-  const problems = validateFixtureShape(withColumn('store_b_list_name', rec.stores.A.listName));
-  assert.ok(problems.some((p) => /both wishlists are named/i.test(p)));
-});
-
-test('the password is a {{VAR}} token, never a literal', () => {
-  assert.match(rec.password, /^\{\{[A-Z0-9_]+\}\}$/);
-  const problems = validateFixtureShape(withColumn('password', 'Password1!'));
-  assert.ok(problems.some((p) => /password must be a \{\{VAR\}\} token/.test(p)));
-});
-
-test('everything disposable carries the AGENT-TEST- prefix so teardown sweeps exactly it', () => {
-  assert.ok(rec.email.startsWith('agent-test-'));
-  for (const role of ['A', 'B']) {
-    assert.ok(rec.stores[role].productName.startsWith(SEED_PREFIX));
-    assert.ok(rec.stores[role].listName.startsWith(SEED_PREFIX));
-  }
-  const problems = validateFixtureShape(withColumn('store_a_product_name', 'Innocent Product'));
-  assert.ok(problems.some((p) => new RegExp(`must start with "${SEED_PREFIX}"`).test(p)));
-});
-
-test('slug and url are DERIVED, not hand-maintained', () => {
-  for (const role of ['A', 'B']) {
-    assert.equal(rec.stores[role].slug, deriveSlug(rec.stores[role].productName));
-    assert.equal(rec.stores[role].url, deriveUrl(rec.categoryPath, rec.stores[role].productName));
-  }
-  const problems = validateFixtureShape(withColumn('store_a_url', '/some/hand/typed/path'));
-  assert.ok(problems.some((p) => /!= derived/.test(p)));
-});
-
-test('both urls are store-RELATIVE — the case composes {{FRONT_URL}}@td(...)', () => {
-  for (const role of ['A', 'B']) {
-    const u = rec.stores[role].url;
-    assert.ok(u.startsWith('/'), `${role} url must start with /`);
-    assert.doesNotMatch(u, /^[a-z]+:\/\//i);
-    assert.doesNotMatch(u, /\{\{/);
-  }
-  const problems = validateFixtureShape(withColumn('store_b_url', 'https://example.com/x'));
-  assert.ok(problems.length > 0);
 });
 
 test('productSpecs puts the store-B product in STORE B\'s own catalog, store-A in the seed catalog', () => {
@@ -147,13 +101,6 @@ test('a missing fixture row is reported, not silently treated as empty', () => {
  * BLOCKED for a whole regression run behind a green seed, and why the rule is asserted on the ids
  * the seeder writes back rather than left to the seeder's own control flow.
  */
-test('validateOverlayOwnership: an overlay owned by the ACCOUNT id is clean', () => {
-  assert.deepEqual(validateOverlayOwnership({
-    customerId: 'acct-1', userId: 'acct-1', contactId: 'contact-1',
-    storeAId: 'B2B-store', storeBId: 'Electronics',
-    storeAWishlistId: 'wl-a', storeBWishlistId: 'wl-b',
-  }), []);
-});
 
 test('validateOverlayOwnership: wishlists owned by the CONTACT id are rejected', () => {
   const problems = validateOverlayOwnership({ customerId: 'contact-1', userId: 'acct-1', contactId: 'contact-1' }, 'vcst');

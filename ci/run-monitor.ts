@@ -1,3 +1,4 @@
+import "../scripts/lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { config as loadEnv } from "dotenv";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
@@ -208,7 +209,8 @@ interface SignalOutcome {
 const ORACLES = [
   ".claude/knowledge/oracles/vc-bug-catalog.md",
   ".claude/knowledge/execution/debugging-signals.md",
-  ".claude/knowledge/oracles/business-logic.md",
+  // The BL oracle by domain (BL 2.0): this phase has no Bash for `bl:extract`, so it Greps a rule id or reads one domain file.
+  ".claude/knowledge/oracles/bl/<domain>.yaml (BL-* invariants, one file per domain — Grep the id, never read them all)",
   ".claude/knowledge/api/platform-patterns.md",
 ];
 

@@ -40,7 +40,7 @@ excludes: >
 > the broader Catalog domain — this map's `domain_slug: cat` is a field match, not a filename match, and
 > does not collide with `.claude/knowledge/domain/catalog.md`, which carries no `domain_slug` field).
 > This file answers **what the feature is and where its surfaces are**. It does **not** carry
-> behavioural rules — those are `BL-*` in `oracles/business-logic.md` — and it can **never ground an
+> behavioural rules — those are `BL-*` (`npm run bl:extract -- --domain cat`) — and it can **never ground an
 > assertion as `{DOC}`**. Pointer index plus surface inventory: it says *where to look* and *what
 > exists*, never *what correct looks like*.
 
@@ -67,7 +67,7 @@ rather than trusted.
 | 4 | Required sections gate purchase | `Add to cart` stays disabled until every `isRequired` section is complete — `BL-CAT-006`. Live-reconfirmed 2026-09-16: on `AGENT-TEST-Req-File-Child-20260519`, `Add to cart` was `[disabled]` with the required `ID Proof` File section still unfilled |
 | 5 | The configuration is priced and becomes a cart line | `addItem(command: InputAddItemType)` carries `configurationSections: [ConfigurationSectionInput]{sectionId, type, option, customText, fileUrls}`; each selected Product-type option contributes its own price into the line total (live: base `$150.00`→`$120.00` sale, options add/subtract per selection) |
 | 6 | The line's identity strips file sections | `withoutFileSections` (established fact, cross-referenced by VCST-5735 scenario 16) — two configurations differing ONLY by an attached file are the SAME cart-line identity; the second `addItem` is a silent no-op. **Not independently re-observed this pass** (would require touching a cart — out of scope under this run's hard constraint) |
-| 7 | The configured line carries through Order; Quote drops part of it | `CartConfigurationItemType` → `OrderConfigurationItemType` (same shape minus selection state) preserves `sectionId`/`sectionName`; `QuoteConfigurationItemType` does **not** — it carries only `{id, name, type, customText, files}`, the VCST-5431 gap (established fact; project-memory `project_vcst5431_quote_section_gap` corroborates) |
+| 7 | The configured line carries through Order; Quote drops part of it | `CartConfigurationItemType` → `OrderConfigurationItemType` (same shape minus selection state) preserves `sectionId`/`sectionName`; `QuoteConfigurationItemType` does **not** — it carries only `{id, name, type, customText, files}`, the VCST-5431 gap (established fact) |
 | 8 | An uploaded file is reachable only while it stays where it was put | Unattached: anonymously readable. Attached to a cart: owner-only (403 to anon/other buyers). **Reversal is unmapped** — no observed "detach/delete an attached configuration file" path on either layer this pass (G3) |
 
 ### Actors
@@ -263,5 +263,5 @@ configurable-products deliverable — it borders this domain at cart-identity (`
 scenario 16) and section-label collapse (`add-to-compare-catalog.vue` dropping `id`, scenario 17), both
 carried into §1 link 6 and §7 G9. Its own note stands: **"NO `BL-*` invariant exists for compare
 itself… every rule above is borrowed"** — for THIS domain, `BL-CAT-006` is the one load-bearing invariant
-identified, and PROPOSED-BL-CAT-013..019 from that model were never minted into `business-logic.md`
+identified, and PROPOSED-BL-CAT-013..019 from that model were never minted into the BL oracle
 (current highest is `BL-CAT-012`) — they remain proposals, not oracles, and this map does not promote them.

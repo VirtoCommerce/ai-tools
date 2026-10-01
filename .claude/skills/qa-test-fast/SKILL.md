@@ -42,13 +42,14 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 |---|---|---|
 | 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
 | 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
-| 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the private Artifact page + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
+| 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
 
 | Excuse | Reality |
 |---|---|
 | "The mind map doesn't exist and nothing requires it — skip it." | Rule 4: build it (domain map present) or record the observable reason. The checklist's node tracing is where it pays off. |
+| "That node is already DRIFT in the map, so there's nothing to check." | A DRIFT is a question. Re-observe it: `HOLDS` or `RESOLVED` with evidence is the finding the next map update needs ([`context-wave.md`](context-wave.md) §Wave 3). |
 | "Pre-seed with the domain seeder first, then test." | Rule 3: data is made per item. A seeder runs only when an item's Data cell names it. A pre-seed wave is FULL's `3a`, not this flow. |
 | "I'll write the bug reports into `reports/bugs/open/` myself." | Rule 1: `/vc-fix:qa-bug` does the 4-layer validation, the owning-repo resolution and the `/qa-fix` handoff block. A hand-written report has none of them. |
 | "The opening status hop is automatic." | Rule 2: this flow makes no transition, and that includes the opening one. |

@@ -842,7 +842,7 @@ query {
 [COUNT label=exact_case_prefix] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-API-004 | Behavior:srch.barcode.expand.case-and-prefix,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA · Probe:VC-API-004 | Behavior:srch.barcode.expand.case-and-prefix | DataProfile:profile.srch.expand-case-prefix,Draft
 CAT-GQL-144,xCatalog barcode filter ORs every configured field,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_GTIN_UNIQUE.gtin) is only findable via the gtin field; @td(BARCODE_CODE_OR.sku) is a different product findable only via the code field — together they prove the two configured fields are OR-ed, not the first one only.","store=@td(BARCODE_STORE.id), gtinCode=@td(BARCODE_GTIN_UNIQUE.gtin), skuCode=@td(BARCODE_CODE_OR.sku)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -873,7 +873,7 @@ query {
 [DATA label=by_code] data.products.filters[?name=code].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT | Behavior:srch.barcode.expand.or-fields,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:DT | Behavior:srch.barcode.expand.or-fields | DataProfile:profile.srch.expand-or-fields,Draft
 CAT-GQL-145,xCatalog barcode filter matches a configured short-text property,xCatalog > Barcode filter,High,,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_PROP.propertyName) is the lowercased index field name for the ShortText property AGENT_TEST_BARCODE_UPC, exactly as GET .../fields lists it; @td(BARCODE_PROP.value) is set on @td(BARCODE_PROP.sku) only.","store=@td(BARCODE_STORE.id), prop=@td(BARCODE_PROP.propertyName), value=@td(BARCODE_PROP.value)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -892,7 +892,7 @@ query {
 [DATA label=by_prop] data.products.filters[?name={{prop}}].isGenerated = true {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:EP | Behavior:srch.barcode.expand.property-field,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SILENT · Technique:EP | Behavior:srch.barcode.expand.property-field | DataProfile:profile.srch.expand-property-field,Draft
 CAT-GQL-146,xCatalog barcode configuration on one store does not change another store's results,xCatalog > Barcode filter,High,"BL-STORE-001, BL-SRCH-004",,Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite. {{STORE_ID}} (B2B-store) is left untouched by this case's setup — it must still have no barcode fields configured.,"store=@td(BARCODE_STORE.id), defaultStore={{STORE_ID}}, code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
 {""scannerEnabled"": true, ""fields"": [""gtin""]}
@@ -915,7 +915,7 @@ query {
 [COUNT label=on_default] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.config.per-store,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:SCOPE · Technique:DT | Behavior:srch.barcode.config.per-store | DataProfile:profile.srch.config-per-store,Draft
 CAT-GQL-147,xCatalog barcode filter stops finding a product after its code is changed,xCatalog > Barcode filter,Medium,"BL-SRCH-003, BL-CAT-003",,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_REINDEX.sku) is DISPOSABLE per seed — this case changes its gtin from @td(BARCODE_REINDEX.gtin) to @td(BARCODE_REINDEX.newGtin) and restores it as the LAST step of Steps (not Cleanup — the runner's Cleanup phase only executes [AUTH] and one-shot [REST <METHOD> <path>] blocks, never [REST-OP]/[REST-EXEC], so a restore placed there silently never ran); do not run this case concurrently with another case referencing BARCODE_REINDEX (any field).
 Event-based indexation is OFF on vcst-qa and the scheduled IndexChangesJob can lag ~59 minutes with its own start-date semantics that a manual reindex request moves — so a plain fixed wait would observe environment configuration, not BL-SRCH-003. This case instead triggers a manual reindex of the changed product itself (POST /api/search/indexes/index) and polls until it settles, re-requesting the reindex once more if the first request no-ops because another indexation held the lock. BL-SRCH-003's 120s timing claim is therefore NOT asserted here — that number only holds when event-based indexation is ON, which this case does not control; only eventual index correctness is asserted.
@@ -988,7 +988,7 @@ Body: [{""id"": ""@td(BARCODE_REINDEX.id)"", ""productType"": ""{{REINDEX_PRODUC
 [COUNT label=after_old] data.products.totalCount = 0 {BL}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST | Behavior:srch.barcode.expand.after-code-change,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:STALE · Technique:ST | Behavior:srch.barcode.expand.after-code-change | DataProfile:profile.srch.expand-after-code-change,Draft
 CAT-GQL-148,"xCatalog barcode filter treats quotes, colons and whitespace-only values safely",xCatalog > Barcode filter,High,BL-SRCH-005,ECL-3.1,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_SPECIAL.value) is set on @td(BARCODE_SPECIAL.sku) (the same property as @td(BARCODE_PROP.propertyName)) and contains a literal double-quote and colon. The GQL-VARS filter string below is the same value after the escaping escapeFilterSyntaxValue applies client-side (one backslash-quote pair per literal quote) — hand-derived from the alias's own value, not a separate fixture. A 611-character barcode value is built WITHOUT a literal in the CSV: @td(BARCODE_GTIN_UNIQUE.gtin) (13 chars) repeated 47 times by the runner's own {{VAR}}/@td() substitution — the source cell holds the short, repeatable expression, never a hand-typed long string.","store=@td(BARCODE_STORE.id), special=@td(BARCODE_SPECIAL.value)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1026,7 +1026,7 @@ query($filter: String!) {
 [COUNT label=long_value] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA | Behavior:srch.barcode.expand.special-values,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:BVA | Behavior:srch.barcode.expand.special-values | DataProfile:profile.srch.expand-special-values,Draft
 CAT-GQL-149,xCatalog barcode filter facet counts follow the barcode result,xCatalog > Barcode filter,Medium,BL-SRCH-001,ECL-3.2,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 @td(BARCODE_GTIN_SHARED.count) products share one GTIN — the case compares term-facet counts under the barcode filter against the same facet on the whole (unfiltered) catalog to falsify ""facet counts describe the whole catalog"".","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_SHARED.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1054,7 +1054,7 @@ query {
 [DATA label=whole_catalog] data.products.term_facets.0.terms[?term={{FACET_TERM}}].count > @td(BARCODE_GTIN_SHARED.count) {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.expand.facet-counts,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EP | Behavior:srch.barcode.expand.facet-counts | DataProfile:profile.srch.expand-facet-counts,Draft
 CAT-GQL-150,xCatalog barcode filter treats asterisk and question mark in the scanned value literally,xCatalog > Barcode filter,High,BL-SRCH-005,,"Runner-native. @td(BARCODE_STORE.id) is isolated from B2B-store; serialised with the other 7 cases in this suite.
 Candidate defect B1 (3x, not yet filed): the live pre-fix build treats '*' and '?' as wildcards rather than literal characters. This case asserts the pr113 SPEC (""compared exactly as term filters"") — it is expected to FAIL until that defect is fixed; a FAIL here is the finding, not an authoring error.","store=@td(BARCODE_STORE.id), code=@td(BARCODE_GTIN_UNIQUE.gtin)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
@@ -1096,4 +1096,47 @@ query {
 [COUNT label=question_mark] data.products.totalCount = 0 {SPEC}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
-{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG | Behavior:srch.barcode.expand.wildcards,Draft
+{""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG | Behavior:srch.barcode.expand.wildcards | DataProfile:profile.srch.expand-wildcards,Draft
+CAT-GQL-151,"xCatalog — Listing Walked At The Storefront Page Size (16) On The Default Sort Returns Full Pages, A Stable totalCount And No Repeats (VCST-5881)",GraphQL > xCatalog > Pagination Walk (VCST-5881),High,BL-SRCH-006,ECL-2.1,"Runner-native. PUBLIC role. Breaking condition (more than one page x default sort): xCatalog cuts a page of N and only THEN drops index documents that cannot be hydrated, decrementing totalCount by the same amount and never back-filling — so a page of 16 comes back as 3, and the next page as 0, which is where the storefront's infinite scroll stops. The default sort (no `sort` argument) is used on purpose: its single score clause has no unique tiebreaker, and name:asc never lost items.
+Needs >= 64 products in the B2B virtual catalog (four pages of 16). Fewer makes the totalCount >= 64 assertion fail — report it as an inconclusive fixture, never as a pass.
+Honest limit: Jira closed VCST-5881 as Cancelled, so there is no shipped fix and no pre-fix/post-fix pair. The case encodes the spec expectation (BL-SRCH-006) and fails only while the Product index holds documents that cannot be hydrated (a partial reindex); on a clean index the pre-fix code is indistinguishable and a PASS is weak evidence. Seen failing once on the QA stand, 2026-09-03.
+Page size 16 and the cursors 0/16/32/48 mirror what the storefront sends; first:1/2/3 walks are what the existing pagination cases use, and a full page of 3 passes them.",b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id); page_size=16,"[GQL-OP page0]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""0"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } } }
+[GQL-EXEC page0]
+[GQL-CAPTURE page0.data.products.totalCount → TOTAL0]
+[GQL-CAPTURE page0.data.products.items.0.id → P0_FIRST]
+[GQL-OP walk]
+  query {
+    p1: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""16"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+    p2: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""32"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+    p3: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""48"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+  }
+[GQL-EXEC walk]","[ERRORS label=page0] errors[] empty {SPEC} (VCST-5881)
+[ERRORS label=walk] errors[] empty {SPEC} (VCST-5881)
+[DATA label=page0] data.products.totalCount >= 64 {BL} (BL-SRCH-006 — fixture floor: four full pages must exist)
+[COUNT label=page0] data.products.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p1.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p2.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p3.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[DATA label=walk] data.p1.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[DATA label=walk] data.p2.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[DATA label=walk] data.p3.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[COUNT label=walk] data.p1.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)
+[COUNT label=walk] data.p2.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)
+[COUNT label=walk] data.p3.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)","[ROUNDTRIP] Storefront /catalog on the default sort: scrolling to the footer loads batches 2 and 3, so the grid grows past 16 and then past 32 cards and never stalls under a heading promising more {SPEC} (VCST-5881)",a page with fewer than 16 items while totalCount says more remain (unhydrated documents dropped after the page was cut); a page returning 0 items before the last; totalCount different between pages of one walk; an item id repeated on a later page,none — read-only,VCST-5881 · Archetype:BOUNDARY · Technique:BVA · Catches:VCST-5881 · xAPI; Query.products pagination; BL-SRCH-006,Draft
+CAT-GQL-152,xCatalog — categories Still Returns The Matching Category When The Storefront Adds Product-Only Filters (price + inStock_variations) (VCST-4374),GraphQL > xCatalog > Categories Filter Parity (VCST-4374),High,,ECL-2.1,"Runner-native. PUBLIC role. Breaking condition (sort x search x filter — a filter combination changes WHICH items come back): the storefront search drop-down sends ONE filter string to both `products` and `categories`. With `price.USD:(0 TO) inStock_variations:true` appended, `categories` returned nothing; with only `category.subtree:` it returned the category. Product-only terms must not empty a category result.
+Discovers a live category (any category under the B2B virtual catalog root) and searches for it by its own name, so no category name is hardcoded.",b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id),"[GQL-OP discover_cat]
+  query { categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 5 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id name } } }
+[GQL-EXEC discover_cat]
+[GQL-CAPTURE discover_cat.data.categories.items.0.id → CAT_ID]
+[GQL-CAPTURE discover_cat.data.categories.items.0.name → CAT_NAME]
+[GQL-OP both]
+  query {
+    plain: categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" query: ""{{CAT_NAME}}"" first: 20 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id name } }
+    with_product_filter: categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" query: ""{{CAT_NAME}}"" first: 20 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { totalCount items { id name } }
+  }
+[GQL-EXEC both]","[ERRORS label=discover_cat] errors[] empty {SPEC} (VCST-4374)
+[ERRORS label=both] errors[] empty {SPEC} (VCST-4374)
+[COUNT label=both] data.plain.items[*?id={{CAT_ID}}].length = 1 {SPEC} (VCST-4374 — control: the category is found by its own name with the subtree filter alone)
+[COUNT label=both] data.with_product_filter.items[*?id={{CAT_ID}}].length = 1 {SPEC} (VCST-4374 — the same category is still returned when product-only filters are added)
+[DATA label=both] data.with_product_filter.totalCount >= 1 {SPEC} (VCST-4374)",[ROUNDTRIP] Storefront search drop-down for the same term with the catalog's price/stock filters active lists the category in its Categories group {SPEC} (VCST-4374),with_product_filter.totalCount = 0 while plain.totalCount >= 1; the discovered category id missing from with_product_filter.items; errors[] non-empty,none — read-only,VCST-4374 · Archetype:PARITY · Technique:DT · Catches:VCST-4374 · xAPI; Query.categories filter; storefront search drop-down,Draft

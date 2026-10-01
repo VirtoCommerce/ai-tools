@@ -40,4 +40,4 @@ Cross-layer architecture knowledge shared by all QA agents.
 
 ## Data Cascade Effects
 
-> **Moved to:** `knowledge/oracles/business-logic.md` § Cross-Domain Invariants (BL-CROSS) — business-framed cascade rules with verification instructions and violation signals.
+> **Moved to:** the BL oracle, Cross-Domain Invariants (`BL-CROSS-*`, `npm run bl:extract -- --domain cross`) — business-framed cascade rules with verification instructions and violation signals.

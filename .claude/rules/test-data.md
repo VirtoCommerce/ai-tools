@@ -63,13 +63,17 @@ Runtime platform GUIDs land in `test-data/aliases.{TEST_ENV}.json` (every env, `
 
 The three rules above govern where a value comes from, which values exist, and where evidence lands. This one governs **what deserves a unit test**, and it is the GOLDEN RULE pointed at our own test code: a test that re-states a literal the spec module declares — same repo, same commit, same author — is a transcribed constant with a test runner attached. It cannot fail for a reason nobody intended.
 
-**Test the DERIVATION, never the DECLARATION.** Builders, transforms, token resolution, teardown/search semantics → unit test, because the value is computed and a wrong implementation writes something no human wrote down. Declared fixture values, non-vacuity contracts, alias-registry completeness, GUID leaks → **`td:validate:<domain>`**, which calls the same validator and adds the registry/GUID/URL checks on top.
+**Test the DERIVATION, never the DECLARATION — and only temporarily.** Builders, transforms, token resolution, teardown/search semantics → a **temporary** unit test while you build them, deleted before commit (no new `scripts/unit/` file is committed: [`knowledge/execution/when-to-write-a-test.md`](../knowledge/execution/when-to-write-a-test.md) RULE 2). Declared fixture values, non-vacuity contracts, alias-registry completeness, GUID leaks → **`td:validate:<domain>`**, which calls the same validator and adds the registry/GUID/URL checks on top.
 
 Measured 2026-09-15 with `npm run td:mutation-check`: four *data* mutations (`catalog-edge`, `variation-stock`, `orders`, `rbac`) were caught by **both** the unit test and the guard — the test added nothing; three *logic* mutations in `missions-specs.mjs` builders were caught **only** by the unit test. **A spec module that is pure declaration gets no unit-test file, and that is a pass, not a gap.** The arbiter, the table and the full measurement: [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §7a — Unit test or drift guard.
 
+## FIFTH RULE — seed what the environment leaves alone; create in the case what it can take away
+
+The rules above govern where a value comes from, which values exist, where evidence lands and what deserves a unit test. This one governs **who provisions a state: a seeder or the case**. If something other than the tests can move a state out of what a case needs (tracked or auto-enrolment queries, broadcasts, background jobs, expiry, another suite on pooled state), the case creates it right before the step that reads it (`STEP`), guards it (`BLOCKED`, never `FAIL`, if the environment already touched it) and deletes it in Cleanup. A seeded fixture for such a state is stale from the moment it is created, and every guard stays green. The decision questions, the recipe, when not to create in the case, and the incident (2026-09-29, `068` PD-04, empty push inbox): [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §FIFTH RULE — seed or create in the case.
+
 ## Where this rule is enforced (on demand)
 
-Every skill, agent, script and per-domain `td:validate:<domain>` guard that enforces this file — 28 rows — is listed in [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §Where this rule is enforced. Adding a seeder means adding a row there.
+Every skill, agent, script and per-domain `td:validate:<domain>` guard that enforces this file is listed in [`knowledge/execution/test-data-authoring.md`](../knowledge/execution/test-data-authoring.md) §Where this rule is enforced. Adding a seeder means adding a row there.
 
 ## Canonical references (on demand)
 
