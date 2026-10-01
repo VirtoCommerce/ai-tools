@@ -21,6 +21,7 @@ import {
 } from "./lib/suite-caps.ts";
 import {
   BudgetLedger,
+  ExclusiveGroups,
   runLanePool,
   type LaneKind,
   type PoolSlot,
@@ -1030,6 +1031,9 @@ async function main() {
 
   // --- Dispatch: one continuous-refill pool per lane, all three concurrently -------
 
+  // ONE lock set for all three pools: a group's members can land in different lanes.
+  const exclusiveGroups = new ExclusiveGroups();
+
   const runLane = async (lane: LaneKind, concurrency: number) => {
     const suites = byLane[lane];
     if (suites.length === 0) return;
@@ -1045,6 +1049,7 @@ async function main() {
     const outcomes = await runLanePool<SuiteResult>({
       suites,
       slots: slotsFor(lane, concurrency),
+      groups: exclusiveGroups,
       canDispatch: (suite) => {
         if (!metered) return { ok: true };
         const entry = byId.get(suite.id);

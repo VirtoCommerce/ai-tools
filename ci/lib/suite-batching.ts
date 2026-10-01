@@ -30,9 +30,12 @@
 //      a subtle affinity bug would strand.
 //   2. A suite is never SPLIT. A suite larger than the budget is its own batch and stays whole;
 //      splitting a suite is `suites:lanes`' job and changes what a result file means.
-//   3. Suites sharing an `exclusiveGroup` (same shared mutable state, e.g. a store-wide setting) go
-//      into ONE batch, whatever the budget: one session runs its suites in sequence, so they can never
-//      overlap — and the batch carries the group so the pool never runs it beside another holder.
+//   3. A suite with an `exclusiveGroup` (shared mutable state, e.g. a store-wide setting) is its OWN
+//      batch, carrying the group; serialising the group is the dispatcher's job (`ExclusiveGroups`
+//      in `scheduler.ts`, and the orchestrator's never-two-batches-of-one-group rule). Merging a group
+//      into one session used to be the safeguard, and it failed twice: members of different affinity
+//      landed in different buckets (two batches, no serialisation), and a merged group ignored the
+//      case budget (two 50-case suites became one 100-case session).
 
 import { minutesOf, type SuiteCapsInput } from "./suite-caps.ts";
 
@@ -98,10 +101,8 @@ export function batchSuites(
       const d = minutesOf(b) - minutesOf(a);
       return d !== 0 ? d : a.id.localeCompare(b.id);
     });
-    // Invariant 3: each exclusive group is one batch, taken out before the budgeted fill.
-    const exclusive = new Map<string, BatchableSuite[]>();
-    for (const s of ordered) if (s.exclusiveGroup) exclusive.set(s.exclusiveGroup, [...(exclusive.get(s.exclusiveGroup) ?? []), s]);
-    for (const members of exclusive.values()) batches.push(toBatch(members));
+    // Invariant 3: a group member is never merged with anything — its batch carries the group.
+    for (const s of ordered) if (s.exclusiveGroup) batches.push(toBatch([s]));
     let current: BatchableSuite[] = [];
     let cases = 0;
     const flush = (): void => {

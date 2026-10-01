@@ -13,8 +13,7 @@ const LOCK = cust({ kind: 'lockout', storeId: STORE_TOKEN });
 const NOSTORE = cust({ kind: 'no-store', storeId: '' });
 const TRUSTED = cust({ kind: 'trusted-store', storeId: TRUSTED_TOKEN });
 const FOREIGN = cust({ kind: 'foreign-store', storeId: 'AGENT-TEST-NOWHERE' });
-const ADMIN = { alias: 'A', email: 'a@x.test', kind: 'admin', userType: 'Administrator', isAdministrator: true, hasContact: false, storeId: '' };
-const MGR = { alias: 'M', email: 'm@x.test', kind: 'manager', userType: 'Manager', isAdministrator: false, hasContact: false, storeId: '' };
+const BLOCKED = cust({ kind: 'blocked', storeId: STORE_TOKEN });
 const now = Date.parse('2026-09-30T12:00:00Z');
 const ctx = { envStoreId: 'S1', trustedGroups: ['Partner'], now };
 const armed = (over = {}) => ({ storeId: 'S1', userType: 'Customer', isAdministrator: false, memberId: 'm', lockoutEnabled: true,
@@ -28,11 +27,10 @@ test('resolveStoreId: env token, live trusted store (never STORE_ID itself), lit
   assert.equal(resolveStoreId(NOSTORE, 'S1'), '');
 });
 
-test('accountBody: flags always armed; back-office account carries no member and no store', () => {
+test('accountBody: flags always armed; an empty store is sent as null', () => {
   const a = accountBody(TRUSTED, { envStoreId: 'S1', trustedGroups: ['Partner'], password: 'p', memberId: 'm' });
-  assert.deepEqual([a.storeId, a.memberId, a.lockoutEnabled, a.emailConfirmed, a.passwordExpired], ['Partner', 'm', true, true, false]);
-  const b = accountBody(ADMIN, { envStoreId: 'S1', password: 'p', memberId: 'leaked' });
-  assert.deepEqual([b.memberId, b.storeId, b.userType, b.isAdministrator], [null, null, 'Administrator', true]);
+  assert.deepEqual([a.storeId, a.memberId, a.lockoutEnabled, a.emailConfirmed, a.passwordExpired, a.status], ['Partner', 'm', true, true, false, 'Approved']);
+  assert.equal(accountBody(NOSTORE, { envStoreId: 'S1', password: 'p', memberId: 'm' }).storeId, null);
 });
 
 test('seededProblems: armed lockout account is clean; each disarming state is reported', () => {
@@ -40,9 +38,17 @@ test('seededProblems: armed lockout account is clean; each disarming state is re
   // unlock leaves the platform's min date, which must read as unlocked (KB-B9D1132A)
   assert.deepEqual(seededProblems(LOCK, armed({ lockoutEnd: '0001-01-01T00:00:00+00:00' }), ctx), []);
   for (const over of [{ lockoutEnd: '2026-09-30T12:10:00Z' }, { accessFailedCount: 2 }, { lockoutEnabled: false },
-    { storeId: 'Other' }, { passwordExpired: true }, { memberId: '' }]) {
+    { storeId: 'Other' }, { passwordExpired: true }, { memberId: '' }, { status: 'Rejected' }]) {
     assert.equal(seededProblems(LOCK, armed(over), ctx).length, 1, JSON.stringify(over));
   }
+  // a blocked CONTACT refuses too, and --verify-only must say so instead of printing ✓
+  assert.equal(seededProblems(LOCK, armed({ status: 'Approved' }), { ...ctx, member: { memberType: 'Contact', status: 'Blocked' } }).length, 1);
+  assert.deepEqual(seededProblems(LOCK, armed({ status: 'Approved' }), { ...ctx, member: { memberType: 'Contact', status: 'Approved' } }), []);
+});
+
+test('seededProblems: the blocked-account fixture must sit on STORE_ID', () => {
+  assert.deepEqual(seededProblems(BLOCKED, armed(), ctx), []);
+  assert.equal(seededProblems(BLOCKED, armed({ storeId: 'Partner' }), ctx).length, 1);
 });
 
 test('seededProblems: trusted vs foreign store are complementary for the same live store id', () => {
@@ -54,19 +60,9 @@ test('seededProblems: trusted vs foreign store are complementary for the same li
   assert.equal(seededProblems(FOREIGN, armed({ storeId: null }), ctx).length, 1);
 });
 
-test('seededProblems: admin and manager branches', () => {
-  const bo = (o) => armed({ storeId: null, memberId: '', ...o });
-  assert.deepEqual(seededProblems(ADMIN, bo({ userType: 'Administrator', isAdministrator: true }), ctx), []);
-  assert.equal(seededProblems(ADMIN, bo({ userType: 'Administrator', isAdministrator: false }), ctx).length, 1);
-  assert.equal(seededProblems(ADMIN, bo({ userType: 'Administrator', isAdministrator: true, memberId: 'c' }), ctx).length, 1);
-  assert.deepEqual(seededProblems(MGR, bo({ userType: 'Manager' }), ctx), []);
-  assert.equal(seededProblems(MGR, bo({ userType: 'Manager', roles: [{ name: 'R' }] }), ctx).length, 1);
-  assert.equal(seededProblems(MGR, null, ctx).length, 1);
-});
-
 test('planScope: seed and verify share one scope — opt-in only via --only, undecidable trusted skipped', () => {
   const T = { ...TRUSTED, alias: 'T', key: 'TK' };
-  const OPT = { ...ADMIN, optIn: true };
+  const OPT = { ...NOSTORE, alias: 'A', optIn: true };
   const all = [LOCK, T, OPT];
   const names = (r) => [r.active.map((s) => s.alias), r.skipped.map((s) => s.alias)];
   assert.deepEqual(names(planScope(all, { envStoreId: 'S1', trustedGroups: ['Partner'] })), [['X', 'T'], []]);

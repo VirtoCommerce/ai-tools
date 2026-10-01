@@ -5,8 +5,9 @@
  *
  * A VACUITY guard first — each check below is a one-cell edit that still seeds, still resolves, and
  * makes a case pass while testing nothing:
- *   - the two lockout accounts must be DISTINCT and appear in no committed .env layer (a lockout
- *     account shared with a happy-path persona locks that persona's suites for ~15 min);
+ *   - the two lockout accounts must be DISTINCT, and no destructive account (lockout / blocked) may
+ *     appear in a committed .env layer or another alias (a locked account shared with a happy-path
+ *     persona BLOCKS that persona's suites for the lockout window);
  *   - the long-address pair must stay 254 vs 255 with the SAME shape (otherwise a 254-accept /
  *     255-reject split could be caused by syntax, not by MaxLength(254));
  *   - each malformed code must stay malformed in exactly its one way; each missing-param body must
@@ -14,8 +15,9 @@
  *   - unknownEmail must stay a generator directive (a fixed address can be registered later).
  *   - the store-rule pair must stay decidable: the trusted account resolves its store from the LIVE
  *     trustedGroups (a transcribed store id is env configuration), the foreign one sits on an
- *     AGENT-TEST- id; the admin must stay an administrator with no member, the manager a
- *     non-administrator with no member (each is the branch its case exists to probe);
+ *     AGENT-TEST- id;
+ *   - every account is a contact-backed Customer: the inboxes are public, so a back-office account
+ *     here is a sign-in code for anyone (otp-signin-specs.mjs header). RETIRED_ACCOUNTS stay retired;
  *   - every account is OURS (agent-test-otp-* email) — no borrowed account may come back.
  * Then the hygiene: aliases registered, runtime ids EMPTY in the base (DV-021), passwords only as
  * the {{VAR}} token, no GUID literal, no overlay shadowing a committed email.
@@ -25,7 +27,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  EMAIL_PREFIX, PASSWORD_TOKEN, STORE_TOKEN, TRUSTED_TOKEN, FOREIGN_STORE_ID, SEEDED_ACCOUNTS,
+  EMAIL_PREFIX, PASSWORD_TOKEN, STORE_TOKEN, TRUSTED_TOKEN, FOREIGN_STORE_ID, SEEDED_ACCOUNTS, RETIRED_ACCOUNTS,
 } from './otp-signin-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
@@ -42,17 +44,21 @@ const specText = readFileSync(join(ROOT, 'scripts/seed-data/auth/otp-signin-spec
 // [1] seeded aliases
 const lockouts = SEEDED_ACCOUNTS.filter((s) => s.kind === 'lockout');
 if (lockouts.length !== 2) fail(`[1] expected exactly 2 lockout accounts (one per lockout case), found ${lockouts.length}`);
+const destructive = SEEDED_ACCOUNTS.filter((s) => s.destructive);
+for (const s of SEEDED_ACCOUNTS) if (['lockout', 'blocked'].includes(s.kind) && !s.destructive) fail(`[1] ${s.alias}: a ${s.kind} account must be flagged destructive`);
+for (const r of RETIRED_ACCOUNTS) {
+  if (SEEDED_ACCOUNTS.some((s) => s.alias === r.alias || s.email === r.email)) fail(`[1] retired ${r.alias} is seeded again`);
+  if (base[r.alias]) fail(`[1] retired ${r.alias} is still registered in aliases.json`);
+}
 const emails = SEEDED_ACCOUNTS.map((s) => s.email.toLowerCase());
 if (new Set(emails).size !== emails.length) fail('[1] seeded account emails are not unique — two cases would share one lockout counter');
 for (const s of SEEDED_ACCOUNTS) {
   if (!s.email.toLowerCase().startsWith(EMAIL_PREFIX)) fail(`[1] ${s.alias}: email ${s.email} lacks the ${EMAIL_PREFIX} sweep prefix`);
-  if (s.kind === 'lockout' && s.storeId !== STORE_TOKEN) fail(`[1] ${s.alias}: storeId must be ${STORE_TOKEN}`);
+  if (['lockout', 'blocked'].includes(s.kind) && s.storeId !== STORE_TOKEN) fail(`[1] ${s.alias}: storeId must be ${STORE_TOKEN}`);
   if (s.kind === 'no-store' && s.storeId !== '') fail(`[1] ${s.alias}: storeId must be EMPTY — that is the whole fixture`);
   if (s.kind === 'trusted-store' && s.storeId !== TRUSTED_TOKEN) fail(`[1] ${s.alias}: storeId must be ${TRUSTED_TOKEN} (resolved live), never a transcribed store id`);
   if (s.kind === 'foreign-store' && (s.storeId !== FOREIGN_STORE_ID || !FOREIGN_STORE_ID.startsWith('AGENT-TEST-'))) fail(`[1] ${s.alias}: storeId must be the AGENT-TEST- foreign id`);
-  if (s.kind === 'admin' && !(s.isAdministrator === true && s.userType === 'Administrator' && !s.hasContact && !s.storeId)) fail(`[1] ${s.alias}: must be an Administrator, isAdministrator true, no member, no store`);
-  if (s.kind === 'manager' && !(s.isAdministrator === false && s.userType === 'Manager' && !s.hasContact && !s.storeId)) fail(`[1] ${s.alias}: must be a Manager, not administrator, no member, no store`);
-  if (s.hasContact && s.userType !== 'Customer') fail(`[1] ${s.alias}: a contact-backed account must be a Customer`);
+  if (!(s.hasContact && s.userType === 'Customer' && s.isAdministrator === false)) fail(`[1] ${s.alias}: must be a contact-backed Customer, never a back-office account — its yopmail inbox is public`);
   if (!s.expectOutcome && s.kind !== 'no-store') fail(`[1] ${s.alias}: no expectOutcome — --verify could not probe it`);
   const a = base[s.alias];
   if (!a) { fail(`[1] ${s.alias} not registered in aliases.json`); continue; }
@@ -71,12 +77,12 @@ else if (tr.expectOutcome === fo.expectOutcome) fail('[2] trusted and foreign st
 // [3] a destructive account must not be a committed persona anywhere
 for (const f of readdirSync(ROOT).filter((n) => /^\.env\.[a-z0-9_]+$/i.test(n) && !/local|playwright/.test(n))) {
   const t = readFileSync(join(ROOT, f), 'utf8').toLowerCase();
-  for (const s of lockouts) if (t.includes(s.email.toLowerCase())) fail(`[3] ${s.alias} (${s.email}) appears in ${f} — a lockout account must not double as a persona`);
+  for (const s of destructive) if (t.includes(s.email.toLowerCase())) fail(`[3] ${s.alias} (${s.email}) appears in ${f} — a destructive account must not double as a persona`);
 }
 for (const [name, a] of Object.entries(base)) {
   if (SEEDED_ACCOUNTS.some((s) => s.alias === name)) continue;
   const t = JSON.stringify(a).toLowerCase();
-  for (const s of lockouts) if (t.includes(s.email.toLowerCase())) fail(`[3] ${s.alias}'s email is also used by alias ${name}`);
+  for (const s of destructive) if (t.includes(s.email.toLowerCase())) fail(`[3] ${s.alias}'s email is also used by alias ${name}`);
 }
 
 // [4] overlays: no shadowing of a seeded business key; referenced emails reported per env
@@ -127,7 +133,7 @@ for (const [k, [missing, present]] of Object.entries(lacks)) {
 }
 
 // [6a] seeded ⇔ consumed: a default-seeded account no case reads is a real account created for nothing
-// (the admin is a REAL administrator); an opt-in account a case DOES read would never be seeded for it.
+// (on a shared env); an opt-in account a case DOES read would never be seeded for it.
 const suiteText = [];
 const walk = (d) => readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(join(d, e.name))
   : e.name.endsWith('.csv') && suiteText.push(readFileSync(join(d, e.name), 'utf8'))));

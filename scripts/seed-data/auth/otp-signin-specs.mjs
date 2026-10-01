@@ -9,9 +9,13 @@
  * account drifts (password expiry, store move, role change) with no signal to this run.
  *
  *   OTP_LOCKOUT_USER_1 / _2   Customer contact + account on STORE_ID. DISPOSABLE and DESTRUCTIVE:
- *                             the lockout cases lock them for the platform lockout window (~15 min).
- *                             One account PER CASE — isolation is per ACCOUNT; two cases on one
- *                             account would read each other's failed-attempt count.
+ *                             the lockout cases lock them for the platform lockout window — env
+ *                             configuration, never assume a length (observed: 5 failures, 120 s on
+ *                             vcptcore_qa1). One account PER CASE — isolation is per ACCOUNT; two
+ *                             cases on one account would read each other's failed-attempt count.
+ *   OTP_BLOCKED_USER          Customer contact + account on STORE_ID. DISPOSABLE and DESTRUCTIVE:
+ *                             OTP-028 administrator-blocks it. Its own account, so no other case
+ *                             depends on the order the two run in or on OTP-028's cleanup.
  *   OTP_NO_STORE_CONTACT      Customer contact + account with NO storeId.
  *   OTP_TRUSTED_STORE_CONTACT Customer contact + account whose storeId is a store in STORE_ID's
  *                             trustedGroups — resolved LIVE at seed time (TRUSTED_TOKEN), never
@@ -19,14 +23,17 @@
  *   OTP_FOREIGN_STORE_CONTACT Customer contact + account whose storeId is FOREIGN_STORE_ID, an id
  *                             that exists on no env: it can never be STORE_ID, never be trusted by
  *                             it, and never acquire an OTP configuration of its own.
- *   OTP_ADMIN_LOCKOUT_ON      back-office ADMINISTRATOR, no member, lockoutEnabled. A real admin on a
- *                             shared env — teardown deletes it; do not leave it seeded longer than
- *                             the run needs.
- *   OTP_MANAGER_NON_CONTACT   back-office Manager, not admin, no member, NO roles.
  *
- * `optIn: true` (ADMIN, MANAGER): no case consumes the account yet, so a plain seed / bootstrap does
- * NOT create it — only `--only <alias>` does. Teardown still sweeps it (it may exist from an earlier
- * seed). Drop the flag in the same change that adds the first case that reads the alias.
+ * NO BACK-OFFICE ACCOUNT, by design. Every address here is a PUBLIC yopmail inbox and these accounts
+ * sign in by emailed code, so anyone can request a code for one and read it. That is acceptable for a
+ * storefront Customer on a test env and never for a back-office user: an Administrator here was an
+ * admin token for anyone who knew its address. The two that existed are RETIRED_ACCOUNTS — swept by
+ * teardown, never seeded. A future back-office case needs an inbox only we can read.
+ *
+ * `optIn: true`: no case consumes the account yet, so a plain seed / bootstrap does NOT create it —
+ * only `--only <alias>` does. Teardown still sweeps it. Drop the flag in the same change that adds
+ * the first case that reads the alias. `destructive: true`: a case locks or blocks the account, so
+ * it may never double as a persona (validate-credentials.mjs, validate-otp-signin-data.mjs [3]).
  */
 
 export const SEED_PREFIX = 'AGENT-TEST-OTP';
@@ -40,33 +47,39 @@ export const TRUSTED_TOKEN = '{{TRUSTED_STORE_OF_STORE_ID}}';
 export const FOREIGN_STORE_ID = 'AGENT-TEST-OTP-FOREIGN-STORE';
 
 const customer = (o) => ({ userType: 'Customer', isAdministrator: false, hasContact: true, ...o });
-const backOffice = (o) => ({ storeId: '', hasContact: false, ...o });
 
 export const SEEDED_ACCOUNTS = [
   customer({ key: 'LOCKOUT-1', alias: 'OTP_LOCKOUT_USER_1', kind: 'lockout', email: 'agent-test-otp-lockout-1@yopmail.com',
-    lastName: 'Lockout One', storeId: STORE_TOKEN, expectOutcome: 'succeeded',
+    lastName: 'Lockout One', storeId: STORE_TOKEN, expectOutcome: 'succeeded', destructive: true,
     consumer: '105 OTP-019 — wrong codes lock the account at the platform threshold' }),
   customer({ key: 'LOCKOUT-2', alias: 'OTP_LOCKOUT_USER_2', kind: 'lockout', email: 'agent-test-otp-lockout-2@yopmail.com',
-    lastName: 'Lockout Two', storeId: STORE_TOKEN, expectOutcome: 'succeeded',
+    lastName: 'Lockout Two', storeId: STORE_TOKEN, expectOutcome: 'succeeded', destructive: true,
     consumer: '105 OTP-020 — OTP and password share one failed-attempt counter' }),
+  customer({ key: 'BLOCKED', alias: 'OTP_BLOCKED_USER', kind: 'blocked', email: 'agent-test-otp-blocked@yopmail.com',
+    lastName: 'Blocked', storeId: STORE_TOKEN, expectOutcome: 'succeeded', destructive: true,
+    consumer: '105 OTP-028 — an administrator-blocked account receives no sign-in code' }),
   customer({ key: 'NO-STORE', alias: 'OTP_NO_STORE_CONTACT', kind: 'no-store', email: 'agent-test-otp-nostore@yopmail.com',
     lastName: 'No Store', storeId: '', expectOutcome: null,
     consumer: '105 OTP-024 — a contact of another store is refused (email2)' }),
   customer({ key: 'TRUSTED', alias: 'OTP_TRUSTED_STORE_CONTACT', kind: 'trusted-store', email: 'agent-test-otp-trusted@yopmail.com',
     lastName: 'Trusted Store', storeId: TRUSTED_TOKEN, expectOutcome: 'succeeded',
-    consumer: '105 OTP-023 / OTP-028 — a contact of a trusted-group store signs in to STORE_ID' }),
+    consumer: '105 OTP-023 — a contact of a trusted-group store signs in to STORE_ID' }),
   customer({ key: 'FOREIGN', alias: 'OTP_FOREIGN_STORE_CONTACT', kind: 'foreign-store', email: 'agent-test-otp-foreign@yopmail.com',
     lastName: 'Foreign Store', storeId: FOREIGN_STORE_ID, expectOutcome: 'user_cannot_login_in_store',
     consumer: '105 OTP-024 — a contact of another store is refused and no code is sent' }),
-  backOffice({ key: 'ADMIN', alias: 'OTP_ADMIN_LOCKOUT_ON', kind: 'admin', email: 'agent-test-otp-admin@yopmail.com',
-    userType: 'Administrator', isAdministrator: true, expectOutcome: 'succeeded', optIn: true,
-    consumer: 'none yet — back-office administrator via the storefront grant (lockout ON twin of ADMIN_DEFAULT)' }),
-  backOffice({ key: 'MANAGER', alias: 'OTP_MANAGER_NON_CONTACT', kind: 'manager', email: 'agent-test-otp-manager@yopmail.com',
-    userType: 'Manager', isAdministrator: false, expectOutcome: 'succeeded', optIn: true,
-    consumer: 'none yet — back-office non-contact account via the storefront grant' }),
 ].map((s) => ({ firstName: SEED_PREFIX, lastName: s.key, ...s }));
 
 export const SEEDED_ALIASES = SEEDED_ACCOUNTS.map((a) => a.alias);
+
+/**
+ * Accounts an earlier version of this seeder created and this one must never create again (see the
+ * header: back-office users on a public inbox). Teardown only — it deletes them wherever they still
+ * exist. Keep an entry until no env can still hold the account.
+ */
+export const RETIRED_ACCOUNTS = [
+  { key: 'ADMIN', alias: 'OTP_ADMIN_LOCKOUT_ON', email: 'agent-test-otp-admin@yopmail.com', hasContact: false },
+  { key: 'MANAGER', alias: 'OTP_MANAGER_NON_CONTACT', email: 'agent-test-otp-manager@yopmail.com', hasContact: false },
+];
 
 export const seedOuterId = (key) => `${SEED_PREFIX}:${key}`;
 export const isSeededOuterId = (v) => String(v || '').startsWith(`${SEED_PREFIX}:`);
@@ -137,6 +150,9 @@ export function seededProblems(spec, user, { member = null, envStoreId, trustedG
   if (user.lockoutEnabled !== true) p('lockoutEnabled is not true — OTP request would answer LockoutDisabled');
   if (user.emailConfirmed !== true) p('emailConfirmed is not true');
   if (user.passwordExpired !== false) p(`passwordExpired is ${user.passwordExpired}, expected false`);
+  // A Rejected / Blocked account (left by a manual test or a case) refuses for a reason no case is about.
+  if (user.status && user.status !== 'Approved') p(`account status ${user.status}, expected Approved`);
+  if (member?.status && member.status !== 'Approved') p(`contact status ${member.status}, expected Approved`);
   const end = user.lockoutEnd ? new Date(user.lockoutEnd).getTime() : 0;
   if (end > now) p(`LOCKED until ${user.lockoutEnd} — re-seed to re-arm`);
   if ((user.accessFailedCount || 0) > 0) p(`accessFailedCount ${user.accessFailedCount} — a lockout case would start mid-count`);
@@ -146,13 +162,11 @@ export function seededProblems(spec, user, { member = null, envStoreId, trustedG
   } else if (user.memberId) p(`memberId ${user.memberId} present — expected NO member`);
   switch (spec.kind) {
     case 'lockout':
+    case 'blocked':
       if (store !== lc(envStoreId)) p(`storeId "${user.storeId ?? ''}", expected "${envStoreId}"`);
       break;
     case 'no-store':
-    case 'admin':
-    case 'manager':
       if (store) p(`storeId "${user.storeId}", expected none`);
-      if (spec.kind === 'manager' && (user.roles || []).length) p(`has roles [${user.roles.map((r) => r.name || r).join(', ')}], expected none`);
       break;
     case 'trusted-store':
       if (!store) p('storeId empty — STORE_ID has no trusted store to borrow on this env');

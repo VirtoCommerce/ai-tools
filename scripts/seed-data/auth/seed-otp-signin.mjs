@@ -4,17 +4,19 @@
  *
  * WHAT IT MAKES (why each exists: otp-signin-specs.mjs) — every one is OURS, none is borrowed:
  *   OTP_LOCKOUT_USER_1/_2      Customer contact + account on STORE_ID (DESTRUCTIVE, one per case)
+ *   OTP_BLOCKED_USER           Customer contact + account on STORE_ID (DESTRUCTIVE, OTP-028 blocks it)
  *   OTP_NO_STORE_CONTACT       Customer contact + account, no storeId
  *   OTP_TRUSTED_STORE_CONTACT  Customer contact + account on a store in STORE_ID.trustedGroups (live)
  *   OTP_FOREIGN_STORE_CONTACT  Customer contact + account on AGENT-TEST-OTP-FOREIGN-STORE (no such store)
- *   OTP_ADMIN_LOCKOUT_ON       Administrator, isAdministrator, no member — a REAL admin, torn down after  [opt-in]
- *   OTP_MANAGER_NON_CONTACT    Manager, no member, no roles                                            [opt-in]
  * All: lockoutEnabled, emailConfirmed, passwordExpired false, password {{DEFAULT_TEST_PASSWORD}}.
+ * NO back-office account — every inbox here is public (otp-signin-specs.mjs header). `--teardown` also
+ * deletes the RETIRED_ACCOUNTS (an Administrator and a Manager an earlier version seeded).
  * [opt-in] = no case consumes it yet: created only with `--only <alias>`, never by a plain seed or the
  * bootstrap; `--teardown` still removes it. Seed and `--verify` cover the SAME accounts (planScope).
  *
  * RE-ARM: re-running on an existing account unlocks it (POST /users/{id}/unlock keys on the GUID —
- * KB-B9D1132A), zeroes accessFailedCount, re-asserts every flag above and re-sets the password.
+ * KB-B9D1132A), zeroes accessFailedCount, re-asserts every flag above (status Approved included, on
+ * the account AND its contact) and re-sets the password.
  * Re-seed BEFORE each lockout run, never between a lockout observation and its audit
  * (test-data-authoring.md §DISPOSABLE FIXTURES).
  *
@@ -30,8 +32,8 @@
  * `expectOutcome` (needs DetailedErrors on; with it off every outcome is masked). It sends a real
  * code email for CodeSent and makes NO grant attempt, so it never burns a failed attempt.
  *
- * Safety: assertSafeTarget (ENV_RISK=production aborts). Teardown removes only SEEDED_ACCOUNTS
- * (agent-test-otp-* accounts; contacts only when they carry our outerId or our email) and ends on a
+ * Safety: assertSafeTarget (ENV_RISK=production aborts). Teardown removes only SEEDED_ACCOUNTS +
+ * RETIRED_ACCOUNTS (agent-test-otp-* accounts; contacts only when they carry our outerId or our email) and ends on a
  * zero-residue assert. No store and no store setting is ever written here.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -42,7 +44,7 @@ import {
   DRY_RUN, TEARDOWN, ONLY, STORE_ID, BACK_URL, ROOT,
 } from '../../lib/seed-common.mjs';
 import {
-  SEED_PREFIX, PASSWORD_VAR, SEEDED_ACCOUNTS, FOREIGN_STORE_ID,
+  SEED_PREFIX, PASSWORD_VAR, SEEDED_ACCOUNTS, RETIRED_ACCOUNTS, FOREIGN_STORE_ID,
   contactBody, accountBody, seededProblems, isSeededOuterId, planScope,
 } from './otp-signin-specs.mjs';
 
@@ -109,6 +111,9 @@ async function ensureAccount(spec, password, overlay, ctx) {
       if (!created?.id && !DRY_RUN) throw new Error(`POST /api/members ${spec.email} returned no contact id — refusing to link the account to a placeholder`);
       contact = created?.id ? created : { id: `dry-contact-${spec.key}` };
       log(`  ✓ create contact ${contact.id} (${spec.email})`);
+    } else if (contact.status && contact.status !== 'Approved' && !DRY_RUN) {
+      await api('PUT', '/api/members', { ...contact, status: 'Approved' }, { expectStatus: [200, 204] });
+      log(`  ↻ contact ${contact.id} status ${contact.status} → Approved (${spec.email})`);
     } else verbose(`reuse contact ${contact.id} (${spec.email})`);
     contactId = contact.id;
   }
@@ -222,12 +227,12 @@ async function verify(ctx) {
 /* ── teardown ────────────────────────────────────────────────────────────────── */
 
 async function teardown() {
-  log(`Teardown: removing ${SEED_PREFIX} accounts (incl. the seeded ADMINISTRATOR) + their contacts`);
+  log(`Teardown: removing ${SEED_PREFIX} accounts (incl. the RETIRED back-office ones) + their contacts`);
   const overlay = readOverlay();
   // Snapshot every id BEFORE deleting — deleting an account re-writes the member's index document
   // and a later by-email search can miss it (measured on vcptcore_qa1 2026-09-24, push-audience).
   const snap = [];
-  for (const spec of SEEDED_ACCOUNTS.filter(inScope)) {
+  for (const spec of [...SEEDED_ACCOUNTS, ...RETIRED_ACCOUNTS].filter(inScope)) {
     const user = await findUser(spec.email);
     let contactId = null;
     if (spec.hasContact) {
@@ -258,7 +263,9 @@ async function teardown() {
     left.forEach((x) => log(`  residual ${x}`));
     return left;
   });
-  writeEnvAliasOverride(Object.fromEntries(snap.map((s) => [s.spec.alias, { id: '', user_id: '' }])));
+  // Retired aliases are not registered any more — writing them back would re-create the overlay keys.
+  const live = snap.filter((s) => SEEDED_ACCOUNTS.includes(s.spec));
+  writeEnvAliasOverride(Object.fromEntries(live.map((s) => [s.spec.alias, { id: '', user_id: '' }])));
   log(residue === 0 ? 'Teardown complete — zero residue.' : `WARN: ${residue} residual entity/entities remain.`);
   if (residue) process.exitCode = 1;
 }

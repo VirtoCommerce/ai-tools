@@ -32,10 +32,11 @@ import { USER_ROLES } from '../lib/user-roles.mjs';
 import { SEEDED_ACCOUNTS as OTP_ACCOUNTS, PASSWORD_VAR as OTP_PASSWORD_VAR } from './auth/otp-signin-specs.mjs';
 
 /**
- * Destructive accounts declared OUTSIDE user-roles.mjs: the VCST-5748 OTP lockout fixtures (one per
- * lockout case, seeded by auth/seed-otp-signin.mjs). Registered as roles so [3] and [4] see them.
+ * Destructive accounts declared OUTSIDE user-roles.mjs: the VCST-5748 OTP fixtures a case locks or
+ * blocks (spec flag `destructive`, seeded by auth/seed-otp-signin.mjs). Registered as roles so [3] and
+ * [4] see them. Keyed on the flag, not on `kind`, so a new destructive kind cannot slip past.
  */
-const SPEC_DESTRUCTIVE = OTP_ACCOUNTS.filter((s) => s.kind === 'lockout')
+const SPEC_DESTRUCTIVE = OTP_ACCOUNTS.filter((s) => s.destructive)
   .map((s) => ({ key: s.alias, email: s.email, passwordVar: OTP_PASSWORD_VAR }));
 const DESTRUCTIVE_KEYS = [...DESTRUCTIVE_ROLE_KEYS, ...SPEC_DESTRUCTIVE.map((r) => r.key)];
 

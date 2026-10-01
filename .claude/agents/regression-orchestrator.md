@@ -210,8 +210,8 @@ The three lanes do **not** share slots.
 `npm run regression:plan -- <selection>` prints, per lane, what batching costs and saves on THIS
 selection. Group the lane's queue with the same rule the plan prices (`ci/lib/suite-batching.ts`,
 `batchSuites`): fill a session up to **60 cases**, never past it; a suite bigger than that goes alone
-and is never split; only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session; and
-suites marked `EXCLUSIVE <group>` all go in ONE session, whatever the size, so they never overlap.
+and is never split; only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session; an
+`EXCLUSIVE <group>` suite is its own batch — **never two of one group in flight at once**.
 
 Each dispatch then carries a `{{SUITE_BATCH}}` of one or more suites. **A batch of one is the normal
 case** — nothing changes for a long suite.

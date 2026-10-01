@@ -86,12 +86,13 @@ test("an empty input yields no batches, and the default budget is the measured o
   assert.equal(DEFAULT_MAX_BATCH_CASES, 60, "60 was chosen on measurement — changing it needs a new one");
 });
 
-test("an exclusiveGroup is ONE batch whatever the budget, and the batch carries the group", () => {
+test("an exclusiveGroup member is its own batch, carries the group, and never breaks the budget", () => {
   const batches = batchSuites(
-    [s("104", 40, { exclusiveGroup: "otp" }), s("105", 40, { exclusiveGroup: "otp" }), s("a", 10), s("b", 10)],
+    [s("104", 50, { exclusiveGroup: "otp" }), s("105", 50, { exclusiveGroup: "otp", preferredBrowser: "playwright-chrome" }), s("a", 5), s("b", 5)],
     { maxCases: 60 },
   );
-  const group = batches.find((b) => b.exclusiveGroup === "otp")!;
-  assert.deepEqual(group.suites.map((q) => q.id).sort(), ["104", "105"]);
-  assert.ok(batches.filter((b) => b !== group).every((b) => b.suites.every((q) => !q.exclusiveGroup)));
+  const grouped = batches.filter((b) => b.suites.some((q) => q.exclusiveGroup));
+  assert.deepEqual(grouped.map((b) => b.id).sort(), ["104", "105"], "one batch per member, never merged");
+  assert.ok(grouped.every((b) => b.exclusiveGroup === "otp"), "every member's batch carries the group");
+  assert.ok(batches.every((b) => b.suites.length === 1 || b.testCount <= 60));
 });

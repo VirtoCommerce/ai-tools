@@ -75,16 +75,23 @@ export function orderLpt<T extends SuiteCapsInput & { id: string }>(suites: read
  * Deliberately ignores slot affinity (deny lists / preferred browsers): it is a planning
  * model, not the dispatcher. Affinity can only make the real makespan longer, so this is a
  * lower bound — do not present it as a guarantee.
+ *
+ * It does NOT ignore `exclusiveGroup`: the pool serialises a group, so a member starts no earlier
+ * than the previous member ends. Ignoring that predicted `104,105` on 3 slots at 60 min for a run
+ * that takes ~100 — exactly the plan-vs-run drift a predicted makespan exists to expose.
  */
 export function simulateMakespan(
-  suites: readonly SuiteCapsInput[],
+  suites: readonly (SuiteCapsInput & { exclusiveGroup?: string })[],
   concurrency: number,
 ): { makespanMinutes: number; perSlotMinutes: number[] } {
   const slots = new Array(Math.max(1, concurrency)).fill(0) as number[];
+  const groupFreeAt = new Map<string, number>();
   for (const suite of suites) {
     let lightest = 0;
     for (let i = 1; i < slots.length; i++) if (slots[i] < slots[lightest]) lightest = i;
-    slots[lightest] += minutesOf(suite);
+    const group = suite.exclusiveGroup;
+    slots[lightest] = Math.max(slots[lightest], group ? groupFreeAt.get(group) ?? 0 : 0) + minutesOf(suite);
+    if (group) groupFreeAt.set(group, slots[lightest]);
   }
   return { makespanMinutes: Math.max(...slots), perSlotMinutes: slots };
 }
@@ -184,6 +191,37 @@ export interface PoolOutcome<T> {
 }
 
 /**
+ * The `exclusiveGroup` locks held by suites in flight. ONE instance is shared by every pool of a
+ * run: `run-regression.ts` runs the browser, fastpath and deterministic pools concurrently, and a
+ * group's members can sit in different lanes (a suite converted to runner-native steps moves to
+ * `fastpath`; its group sibling stays `browser`). A per-pool set only serialised within a lane.
+ */
+export class ExclusiveGroups {
+  private readonly held = new Set<string>();
+  private waiters: Array<() => void> = [];
+
+  has(group: string): boolean {
+    return this.held.has(group);
+  }
+
+  acquire(group: string): void {
+    this.held.add(group);
+  }
+
+  release(group: string): void {
+    this.held.delete(group);
+    const wake = this.waiters;
+    this.waiters = [];
+    for (const w of wake) w();
+  }
+
+  /** Resolves on the next release by ANY pool — how a pool waits on a group another lane holds. */
+  nextRelease(): Promise<void> {
+    return new Promise((resolve) => this.waiters.push(resolve));
+  }
+}
+
+/**
  * Run `suites` through `slots` with continuous refill: the moment one settles, the head of
  * the queue that the freed slot can accept is dispatched. No barrier.
  *
@@ -195,7 +233,8 @@ export interface PoolOutcome<T> {
  * dropped or forced onto a slot that cannot run it.
  *
  * A suite whose `exclusiveGroup` is held by an in-flight suite WAITS (it is skipped for now, never
- * deferred): the group frees when the holder settles, so it always becomes dispatchable.
+ * deferred): the group frees when the holder settles, so it always becomes dispatchable. Pass the
+ * run's shared `groups` to every concurrent pool — the holder may be in another lane.
  */
 export async function runLanePool<T>(opts: {
   suites: readonly SchedulableSuite[];
@@ -203,8 +242,10 @@ export async function runLanePool<T>(opts: {
   run: (suite: SchedulableSuite, slot: PoolSlot) => Promise<T>;
   canDispatch?: (suite: SchedulableSuite) => DispatchDecision;
   onDispatch?: (suite: SchedulableSuite, slot: PoolSlot) => void;
+  groups?: ExclusiveGroups;
 }): Promise<Array<PoolOutcome<T>>> {
   const { suites, slots, run, canDispatch, onDispatch } = opts;
+  const groups = opts.groups ?? new ExclusiveGroups();
   const outcomes: Array<PoolOutcome<T>> = [];
 
   if (suites.length === 0) return outcomes;
@@ -216,8 +257,11 @@ export async function runLanePool<T>(opts: {
   const queue = orderLpt(suites as readonly (SchedulableSuite & { id: string })[]);
   const freeSlots: PoolSlot[] = [...slots];
   const inFlight = new Map<Promise<void>, true>();
-  const heldGroups = new Set<string>();
   let stopped: string | null = null;
+
+  /** A queued suite waits on a group that some pool — this one or another lane's — holds. */
+  const waitingOnGroup = (): boolean =>
+    queue.some((s) => s.exclusiveGroup !== undefined && groups.has(s.exclusiveGroup));
 
   const deferRest = (reason: string): void => {
     while (queue.length > 0) outcomes.push({ suite: queue.shift()!, deferredReason: reason });
@@ -242,7 +286,7 @@ export async function runLanePool<T>(opts: {
       let slotIndex = -1;
       pair: for (let q = 0; q < queue.length; q++) {
         const group = queue[q].exclusiveGroup;
-        if (group && heldGroups.has(group)) continue;
+        if (group && groups.has(group)) continue;
         for (let s = 0; s < freeSlots.length; s++) {
           if (slotAccepts(queue[q], freeSlots[s])) {
             index = q;
@@ -269,7 +313,7 @@ export async function runLanePool<T>(opts: {
 
       queue.splice(index, 1);
       freeSlots.splice(slotIndex, 1);
-      if (suite.exclusiveGroup) heldGroups.add(suite.exclusiveGroup);
+      if (suite.exclusiveGroup) groups.acquire(suite.exclusiveGroup);
       dispatchedAny = true;
       onDispatch?.(suite, slot);
 
@@ -279,7 +323,7 @@ export async function runLanePool<T>(opts: {
           outcomes.push({ suite, slot, result });
         } finally {
           freeSlots.push(slot);
-          if (suite.exclusiveGroup) heldGroups.delete(suite.exclusiveGroup);
+          if (suite.exclusiveGroup) groups.release(suite.exclusiveGroup);
         }
       })();
       const tracked = task.then(
@@ -300,6 +344,11 @@ export async function runLanePool<T>(opts: {
 
     if (inFlight.size === 0) {
       if (queue.length === 0) break;
+      if (waitingOnGroup()) {
+        // Nothing of ours is running, but another lane holds a group we need: wait for it.
+        await groups.nextRelease();
+        continue;
+      }
       if (!dispatchedAny) {
         // Nothing running and nothing dispatchable: no slot will ever accept these.
         deferRest("no configured slot accepts this suite (browser deny-list / preferred browser)");
@@ -308,7 +357,8 @@ export async function runLanePool<T>(opts: {
       continue;
     }
 
-    await Promise.race(inFlight.keys());
+    // Wake on our own settle, or on a group another lane releases while ours are still running.
+    await Promise.race(waitingOnGroup() ? [...inFlight.keys(), groups.nextRelease()] : inFlight.keys());
   }
 
   // Drain anything still running (the loop exits early only via `stopped`).
