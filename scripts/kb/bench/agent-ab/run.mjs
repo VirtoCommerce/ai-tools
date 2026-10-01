@@ -43,7 +43,9 @@ disputed entry. This is a measurement run: do not capture, confirm or dispute an
 };
 KB_RULES.v2 = `${KB_RULES.v1}
 How to ask: ONE short question per fact, 5 to 12 words, naming the one concept and, if there is one,
-its coordinate -- e.g. "do two cart subtotal promotions stack". Never several questions in one call.
+its coordinate -- e.g. "is the storefront robots.txt editable in Admin". Never several questions in
+one call. (The example is deliberately off-topic for every bench task: an on-topic example hands the
+agent the query.)
 If the answer is "holds nothing", rephrase ONCE with different words before you investigate yourself.
 `;
 
