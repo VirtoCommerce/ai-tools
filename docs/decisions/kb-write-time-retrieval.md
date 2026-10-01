@@ -321,6 +321,27 @@ at a quarter of `two-stage-1`'s payload, and never answers a control alone. Whet
 precision bar of 0.95 cannot be settled on 33 rows; the next measurement needs a larger held-out set,
 which the logged `kb_show` / `kb_none` of a live wave provide for free (M6).
 
+## After the gate (2026-10-01): wired, switched off, base branch refreshed
+
+- **`ask` runs the verdict when the base carries `ranker.json`** (`loadVerdictRanker` in
+  `scripts/kb/core/verbs.mjs`); a base without one -- every base in production -- runs `floor-1`
+  byte for byte, and a malformed one is treated as absent. `ambiguous` is a new state (exit 0) that
+  prints an ask handle; `kb_show` takes it as `ask`, and `kb_none` (MCP) / `kb none` (CLI) is new.
+  Both log `after: <handle>`, so the pick or the none pairs with ITS ask, not the session's latest --
+  the M6 labels depend on that pairing.
+- **The base branch was rebuilt on main**, not hand-merged: the 16 plans whose entry gained one
+  confirmation or dispute on main were re-stamped (bodies checked unchanged), the migration re-applied,
+  and the two split parents' four children inherited the new evidence. 408 rows, 364 active (334 with
+  a card, 30 new entries without one); `kb reindex --dry-run` agrees; recorded as a merge commit, so
+  the branch history was not rewritten.
+- **Decision 8, observed rather than argued.** A pre-change client (main's code) reading the migrated
+  base does not crash, but it is BLIND: its closed frontmatter schema refuses `questions` /
+  `concepts`, so `ask` reports "the base was NOT read" whenever a migrated entry is a hit, and `show`
+  of a migrated entry does the same. By reading its `push`: a queued confirm on a migrated entry is
+  recorded as a problem and NOT applied, while the push itself succeeds -- the evidence is lost, with
+  only a `problems` count on the flush line. The order is therefore not a preference: the client PR
+  merges and the team pulls it before the data PR reaches main.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
