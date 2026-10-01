@@ -4,15 +4,15 @@ Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform:
 bug filing, autonomous bug fixing, fix verification, and online bug monitoring — as a fully
 self-contained Claude Code plugin. **10 agents, 8 commands, 16 skills.**
 
-Part of the [`vc-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
-[`vc-mcp-testing-module`](https://github.com/VirtoCommerce/vc-mcp-testing-module) — currently the
+Part of the [`ai-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
+[`ai-tools`](https://github.com/VirtoCommerce/ai-tools) — currently the
 **only** plugin listed there.
 
 ## Install
 
 ```
-/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-fix@vc-tools
+/plugin marketplace add VirtoCommerce/ai-tools
+/plugin install vc-fix@ai-tools
 /reload-plugins
 ```
 
@@ -141,8 +141,7 @@ breakdown of what's included and what was intentionally dropped:
 
 `/qa-fix` never auto-merges. Every fix ends at an open PR for human review. The full G0–G7 gate
 ladder (triage → reproduce → fix → review → CI/E2E → human review) is documented in
-[`.claude/rules/quality-gates.md`](.claude/rules/quality-gates.md) — the single source of truth
-both this interactive plugin and any future headless twin must follow.
+[`.claude/rules/quality-gates.md`](.claude/rules/quality-gates.md) — the single source of truth.
 
 ## Reference
 

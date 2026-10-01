@@ -1,0 +1,286 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 6: B2B / Organization (BL-B2B)"
+  prefixes:
+    - BL-B2B
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+rules:
+  - id: BL-B2B-001
+    title: Org switching isolates cart, addresses, and lists
+    rule: When a B2B user switches between organizations, the cart, saved addresses, wish lists, and pricing context must completely reset to the new organization's scope. No data from the previous org should leak into the new org's context.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: storefront/user-guide/docs/account/overview.md (published) — corporate accounts shop on behalf of a company using company-associated addresses; users can switch organizations
+    check:
+      kind: manual
+      ref: Org A has items in cart → switch to Org B → cart is empty (or shows Org B's cart). Org A's addresses not visible under Org B. Switch back → Org A's cart restored.
+    violation_signal: Org A's cart items visible under Org B; addresses from wrong org shown; prices from wrong org applied.
+    status: ACTIVE
+  - id: BL-B2B-002
+    title: Organization-specific pricing overrides store default
+    rule: "When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → \"Unavailable.\" If the org price list doesn't cover a product, the store default applies as fallback."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/pricing/troubleshooting-guide.md (published) — top-priority price list assignment wins; assignments may carry conditions such as user group membership
+    check:
+      kind: manual
+      ref: Org A has custom price list (Product X = $50). Store default has Product X = $75. Sign in as Org A member → Product X shows $50. Sign in as non-org user → Product X shows $75. Check a product NOT in org's price list → should show store default price.
+    violation_signal: Org member sees store default price instead of org price; non-org user sees org prices; product without org price shows "Unavailable" instead of falling back to store default.
+    status: ACTIVE
+  - id: BL-B2B-003
+    title: Quote expiry makes quote non-convertible
+    rule: Quotes (RFQ) have an expiration date set by the seller. After expiry, the buyer cannot convert the quote to an order — the "Convert to Order" action must be disabled or show an "Expired" message. Expired quotes remain visible in history but are not actionable. The seller can extend or reissue an expired quote.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/quotes/manage-quotes.md (published) — quote general info includes expiry and reminder dates
+    check:
+      kind: manual
+      ref: Create quote with expiry in 1 hour → wait for expiry → buyer attempts to convert → blocked with "Quote expired" message. Seller re-opens and extends → buyer can now convert.
+    violation_signal: Expired quote converted to order; no expiry indication shown; "Convert" button active on expired quote; order placed at expired quote prices.
+    status: ACTIVE
+  - id: BL-B2B-004
+    title: Pre-purchase approval is quote-based; no native per-order spending limit
+    rule: 'Virto Commerce has **no** native per-order spending-limit / budget-threshold gate, and **no** auto-approval order status (live-verified 2026-07-15: the settable `Order.Status` set is an admin-editable dictionary (e.g. New, Pending, Payment required, Ready for pickup, Completed, Cancelled, Custom, and Processing — all settable, not a fixed enum; see BL-ORD-009) — there is **no** "Pending approval"). Pre-purchase approval is **quote-based**: a buyer submits a Purchase Request / Quote (`submitQuoteRequest`), which an organization approver accepts or declines (`approveQuoteRequest` / `declineQuoteRequest`) before it can become an order. The `CustomerOrderType.isApproved` boolean is a passive data flag with no workflow or mutation behind it — not a spending-limit gate. Any budget-threshold / delegated-limit enforcement is a **custom or roadmap** capability, not stock platform behavior.'
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/glossary.md (published) — approval workflow is quote-based; base platform has no native spending limits or multi-level approval chains
+    check:
+      kind: manual
+      ref: "As an org member, create a Purchase Request / Quote → `submitQuoteRequest` → an org approver `approveQuoteRequest` / `declineQuoteRequest` before it is ordered. Introspect xAPI: order-status enum has **no** `PendingApproval`; there is **no** `approveOrder`/`rejectOrder` mutation and no org/member `limit`/`budget` field."
+    violation_signal: A test asserts a stock budget-limit order-approval workflow ("Pending approval" order status, per-order spending cap, self-approval block) — this feature does not exist in the base platform and must not be asserted as native. (A custom deployment MAY add one; scope such tests to that deployment.)
+    status: ACTIVE
+  - id: BL-B2B-005
+    title: Member role determines feature visibility
+    rule: "Organization features visible on the storefront depend on the member's role. Org Admins see: member management, quotes, order approval, lists. Buyers see: order placement (within limits), lists, own orders. Members without purchasing role see: catalog browsing only. Feature visibility is controlled by both role permissions and the store's feature flags (`quotesEnabled`, etc.)."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/security/roles-and-permissions.md (published) — effective permissions are the union of global, organization and membership roles, re-evaluated at each sign-in
+      - kind: doc
+        ref: storefront/user-guide/docs/account/company-members.md (published) — members hold inherited org roles plus individual roles; role changes apply at next sign-in
+      - kind: ac
+        ref: VCST-5239 (Done) — org-level role assignment makes all organization employees inherit its permissions
+    check:
+      kind: manual
+      ref: Sign in as Org Admin → see "Members", "Quotes", "Approval" menu items. Sign in as Buyer → see "Orders", "Lists" but NOT "Members." Sign in as view-only member → no cart, no checkout access.
+    violation_signal: Buyer sees member management; non-purchasing member can add to cart; features visible when feature flag is OFF; role change not reflected until re-login.
+    status: SUSPECT
+    suspect_reason: Docs (storefront/user-guide/docs/account/company-members.md; platform/user-guide/docs/security/roles-and-permissions.md) state role changes take effect at the member's next sign-in / permissions are re-evaluated on each sign-in, while the rule's Violation signal lists 'role change not reflected until re-login' as a violation.
+  - id: BL-B2B-006
+    title: White labeling resolution order
+    rule: "White labeling resolution now lives in **Domain 19 (BL-WL-001..006)**. The authoritative behavior: a **store master switch** (`WhiteLabeling.WhiteLabelingEnabled`, store-level public setting, storefront-enforced in `useWhiteLabeling.ts`) gates all WL for the store — when OFF, the storefront applies no branding at all and everyone (incl. org users) sees theme defaults (**BL-WL-003 layer 1** — this validates the original claim's spirit). When ON, org and store WL *records* are merged **per-field** with the org value preferred (**BL-WL-002**), each record filtered by its own `IsEnabled` flag (**BL-WL-003 layer 2** — a disabled/absent store record removes only the store's contribution and does NOT suppress an enabled org record). The current `GetWhiteLabelingSettingsQueryHandler` resolves **organization + store** only — a user-level override is not present in the handler (do not assume it)."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/white-labeling/settings.md (published) — white labeling can be enabled/disabled per store in store settings (General)
+      - kind: doc
+        ref: platform/deployment-on-cloud/docs/store-branding.md (published) — white labeling must be enabled in the store before custom branding applies
+    check:
+      kind: manual
+      ref: See BL-WL-002 (per-field merge) and BL-WL-003 (store master switch + record-level gating).
+    violation_signal: Master switch OFF but WL still applied; whole-object override instead of per-field merge; an enabled org's branding suppressed merely by a disabled/absent store *record* (confusing the record flag with the master switch).
+    status: ACTIVE
+  - id: BL-B2B-007
+    title: Per-org JWT permission set is org-scoped; pageContext must match it
+    rule: A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: VCST-5028 (Done) — roles must be scoped to a single organization so a user can hold different roles in different organizations
+      - kind: resolution
+        ref: VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles apply to an individual within a particular organization
+    check:
+      kind: manual
+      ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
+    violation_signal: JWT carries another org's permissions; `pageContext.user.permissions` diverges from the JWT (BUG-A condition — pageContext returned `[]` while the JWT held 8 maintainer perms).
+    status: ACTIVE
+  - id: BL-B2B-008
+    title: Org-scoped role change mutates only the target org's membership
+    rule: Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: VCST-5028 (Done) — roles scoped to one organization, governing an org without affecting the user's access elsewhere
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles are assigned per individual per organization via the memberships widget
+    check:
+      kind: manual
+      ref: Member is employee in X, manager in Y. Change X → manager. `POST /api/customer/organization-memberships/search {userId}` → X role = manager, Y role still manager. `GET /api/platform/security/users/{userId}` → global `roles[]` unchanged.
+    violation_signal: Role change in X also alters Y's membership or the global account roles.
+    status: ACTIVE
+  - id: BL-B2B-009
+    title: Inviting a member creates a per-org membership, not a global role
+    rule: Inviting a user into org X with a role MUST create an `OrganizationMembership` for (newUserId, orgX) with that role; the global `ApplicationUser.Roles` MUST NOT be modified. After acceptance, `GET /api/customer/organization-memberships/user/{userId}/count` ≥ 1. (VCST-5028.)
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: storefront/user-guide/docs/account/company-members.md (published) — membership is tracked separately for each company when inviting users
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/inviteUser.md (published) — invite takes organizationId and roleIds to assign
+      - kind: ac
+        ref: VCST-5028 (Done) — roles scoped per organization rather than on the global account
+    check:
+      kind: manual
+      ref: Invite a new user into X as employee; after acceptance, `POST /search {userId}` → contains org X with role employee. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / no org-specific role.
+    violation_signal: No membership record after invite acceptance; the invite writes a global role instead.
+    status: ACTIVE
+  - id: BL-B2B-010
+    title: Self-service company registration grants org-membership roles only, never global roles
+    rule: Self-service company registration (storefront `/sign-up`, "Organization" account type) MUST create the `Organization`, the registrant `Contact`, and an `OrganizationMembership` for (newUserId, newOrg) carrying the registrant's org role(s) (e.g. org-maintainer); the registration flow MUST NOT write any platform security role to the global `ApplicationUser.Roles`. This is the registration-time counterpart of BL-B2B-009 (which covers the invite path). (VCST-5028.)
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/requestRegistration.md (published) — company registration makes the registrant a member/owner with the Organization maintainer role
+      - kind: resolution
+        ref: "VCST-5401 (Done) — expected: a B2B customer's global account roles stay empty; permissions come only from membership roles"
+    check:
+      kind: manual
+      ref: Register a new company with a fresh `AGENT-TEST-` user. `POST /api/customer/organization-memberships/search {userEmail}` → membership exists with non-empty org role(s) and `isActive=true`. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / contains no platform admin role. The two assertions together prove roles live in the membership record, not on the global account.
+    violation_signal: After registration the global `ApplicationUser.Roles` is non-empty with platform roles; or no membership/org role is created for the new organization.
+    status: ACTIVE
+  - id: BL-B2B-011
+    title: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate
+    rule: |-
+      Two dictionary platform settings — `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`
+        (`ValueType=ShortText`, `IsDictionary=true`) — each hold a SELECTED subset of the live platform roles list
+        (`GET /api/platform/security/roles/search`), never free-text. **Which field carries the SELECTED set is
+        API-VERSION-dependent — a claim true on one settings surface is inverted on the other** (measured live on vcst
+        2026-09-18 + source: `vc-module-customer` `ModuleConstants.cs` + `Scripts/services/rolesPickerService.js`):
+        - **Legacy v1** (`GET`/`POST /api/platform/settings`, the surface suite `027b`'s `[REST-OP]` steps use today):
+          the SELECTED set is reported/written in **`allowedValues`**; `value` carries nothing for a dictionary setting here.
+        - **v2 tenant API**: the POOL and the SELECTED value are two separate resources, and the field names are
+          **INVERTED** relative to v1 on the same underlying data. `GET /api/platform/settings/v2/tenant/{tenantType}/schema`
+          returns the POOL in `allowedValues` — for both whitelists this is the hardcoded C# literal
+          `["Organization employee","Purchasing agent","Organization maintainer"]` in `ModuleConstants.cs`, not per-tenant
+          state. `GET`/`POST /api/platform/settings/v2/tenant/{tenantType}/{tenantId}/values` returns/accepts a flat
+          `{settingName: value}` map (106 keys for `Store`/`B2B-store`) in which a dictionary setting's **`value` IS the
+          array of SELECTED entries**. `POST` to this path is a **partial MERGE** (only supplied keys move — measured: a
+          single-key POST left the other 105 keys intact) and does **NOT** validate the write against the pool (measured:
+          an out-of-pool role name was accepted and persisted).
+        The Organization whitelist filters the org-level "Change roles" picker in Admin SPA (org-record `Organization.Roles`,
+        `PUT /api/organizations`); the Membership whitelist filters the per-member role editor in the Organization
+        memberships widget (`OrganizationMembership.Roles`, `changeOrganizationContactRole` /
+        `PUT /api/customer/organization-memberships/{id}`). Each picker's option set = (assignable roles ∩ its own
+        whitelist) − roles already assigned to that org/membership — the two whitelists are independent settings and must
+        never cross-contaminate each other's picker.
+        **"Empty = NO restriction — the picker offers ALL platform roles" holds at GLOBAL scope only** (source-grounded:
+        `rolesPickerService.js` applies the whitelist filter *only* inside `if (whitelist.length) { … }`, so an empty
+        GLOBAL array skips filtering — confirmed at source + live 2026-07-15 during VCST-5441, corrects the earlier
+        assumption that empty must lock out to zero options). **At STORE tenant scope the same service gates differently,
+        and empty does NOT mean "all roles" directly** — `var storeValues = (values && values[options.whitelistSettingId])
+        || []; if (storeValues.length) { whitelist = storeValues; reapplyWhitelist(); }`: an empty/absent STORE value is
+        falsy-length, so the store override is **skipped** and the picker falls through to the **GLOBAL** whitelist — a
+        second hop, not "all roles" outright. Whether the picker ends up showing all roles then depends on the GLOBAL
+        whitelist's own state at that moment; on vcst the global value happens to be `[]` so the two coincide, but a
+        deployment with a non-empty global whitelist would show a narrowed set even with an empty store override.
+        **Clearing a store-scoped whitelist to empty is therefore a third behavioural state, not a neutral reset** — a
+        teardown must restore the captured pre-state, never write empty. The Admin SPA's documented editor
+        (`PlatformUserGuide` "Manage Organization-Scoped Roles" § Restrict role assignment — Settings → Customer → Roles)
+        edits the **GLOBAL** scope only; the store-scope override is API-only, and VirtoOZ's published guides (Platform
+        Developer Guide's settings/v2 coverage, Platform User Guide's whitelist article) name no such override or its
+        fallback — a released, in-use mechanism the docs do not cover (docs axis finding, not a defect in the mechanism
+        itself). **Server-side enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story
+        EPIC-5239-03): as of 2026-07, `PUT /api/organizations` and `changeOrganizationContactRole` accept a
+        non-whitelisted `roleId` with no rejection (backend finding F1 — zero whitelist references in
+        `profile-experience-api#137` or the REST organizations endpoint) — the whitelist today constrains only the Admin
+        UI picker's *offered* options, not what the API will *accept*.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — whitelists for organization and membership roles restrict assignable roles; reset cache after edits
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/settings.md (published) — role whitelists in Customer settings control which roles are eligible for organizations and memberships
+      - kind: resolution
+        ref: VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
+    check:
+      kind: manual
+      ref: |-
+        Remove a currently-visible role from a NON-EMPTY GLOBAL whitelist → cache-reset + reload → picker no
+          longer offers it. Empty GLOBAL whitelist → picker shows **ALL** platform roles (filter skipped) — this is correct,
+          NOT a fallback bug. For a STORE-scoped override: write a NON-EMPTY store value via
+          `POST /api/platform/settings/v2/tenant/Store/{storeId}/values` → picker narrows to the store set regardless of the
+          global value; clear the store value to empty/absent → picker falls back to whatever the GLOBAL whitelist currently
+          holds — verify that explicitly by reading the global value at the same time, rather than assuming "all roles".
+          When asserting the legacy v1 surface, read `allowedValues`; when asserting the v2 tenant surface, read `value` —
+          same content, inverted field name, not interchangeable across API versions. Add-direction persists round-trip
+          after reload; clear-to-empty **persists** after reload as of Platform 3.1044.0 / vc-platform PR #3076 (VCST-5441
+          fixed 2026-07-15; previously silently reverted). Direct PUT/GraphQL bypass with a non-whitelisted role currently
+          succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the
+          same path.
+    violation_signal: |-
+      With a NON-EMPTY GLOBAL whitelist, the picker offers a role outside it after a genuine
+        cache-reset+reload, OR fails to narrow to the whitelist's entries; an EMPTY GLOBAL whitelist wrongly locks out /
+        shows zero options (empty must show ALL roles — the filter is skipped by design); a case asserts "empty STORE
+        value ⇒ all roles" without independently confirming the GLOBAL whitelist is also empty at read time (the two-hop
+        fallback makes that a coincidence, not a guaranteed outcome); a test reads/writes `value` against the legacy v1
+        `/api/platform/settings` endpoint or `allowedValues` against the v2 tenant `.../values` endpoint (the field-name
+        inversion — silently asserts against the wrong field and can pass vacuously); a write is attempted against the v2
+        `schema` endpoint's `allowedValues` (the pool is a hardcoded module constant, not a writable per-tenant resource);
+        one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently reverts (the pre-fix VCST-5441
+        signature — a re-appearance now means PR #3076 regressed); once server enforcement ships — a non-whitelisted role
+        is accepted by the API, OR a whitelisted role is rejected (over-blocking).
+    status: ACTIVE
+  - id: BL-B2B-012
+    title: Declining or revoking an invite changes a status — it never deletes the membership row
+    rule: |-
+      The membership lifecycle is **status transitions on a persistent row**, not row creation/deletion:
+        - Declining an invitation (`rejectOrganizationInvite`) sets `OrganizationMembership.Status = "Rejected"`. The **row survives**, the contact **keeps** its association with the organization, and the member remains listed in the organization's member list. `Rejected` is a blocking status, so access is refused (BL-AUTH-013) — the user is blocked, not detached.
+        - Revoking a pending invite likewise sets `Status = "Deleted"`. **`Deleted` is a status value, not a row deletion** — the row is still returned by a membership search.
+        - **Re-invite is gated on `ReinvitableStatuses` = {`Rejected`, `Deleted`} only.** So a declined or revoked member CAN be invited again, while an **already-`Invited`** (still pending) membership CANNOT — re-inviting it fails as already-a-member; it can only be *resent*. `Approved` is likewise not re-invitable.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "`vc-module-profile-experience-api` `RejectOrganizationInviteCommandHandler.Handle` (a single `SetStatusAsync(..., Rejected)` — no row delete, no mutation of the contact's organizations) + `vc-module-customer` `InviteCustomerService` `RevokeInviteAsync` (`SetStatusAsync(..., Deleted)`), `InviteExistingUserToOrganization` (the `ReinvitableStatuses.Contains(...)` gate, else already-a-member) and `ModuleConstants.MembershipStatuses` (`BlockingStatuses` = {Invited, Rejected, Deleted}; `ReinvitableStatuses` = {Rejected, Deleted}). Live-confirmed on the environment: memberships at rest at `Rejected` and at `Deleted` are both still present in the organization's member list (rendered under an inactive label) and their users still resolve as associated contacts. The **mutation** half is now **live-confirmed** (2026-08-25): a membership created at `Invited` and rejected by the invitee resolved to `Rejected` on an authoritative admin re-read, with the row still present. Note the mutation's own **response payload** reports the stale pre-write value (`Approved`, the BL-B2B-013 default) — the write is correct, the returned projection is not; tracked separately as a response-shape defect. Docs axis: N/A — the published storefront guide documents inviting and block/unblock/delete of members but has no accept/decline-invitation surface at all, and names no status vocabulary (waived)."
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — Deleted or Rejected allow re-invitation without creating duplicate membership records
+      - kind: doc
+        ref: storefront/user-guide/docs/account/company-members.md (published) — deleting a member sets status Inactive; the record remains in the list
+      - kind: ac
+        ref: VCST-5281 (Done) — invite existing customers to multiple organizations with membership-based statuses
+    check:
+      kind: manual
+      ref: Decline an invitation → membership search still returns the row with `Status = "Rejected"`; the contact's organization list still contains that organization; the member is still listed in the organization's member list (surfaced under an inactive-style label, not removed). Re-invite the same user into the same organization → succeeds. Repeat against a membership at `Invited` → rejected as already-a-member. A test asserting a member is *gone* must check the **row's absence**, not a `Deleted` status; teardown must delete the row.
+    violation_signal: Declining removes the membership row or strips the contact's organization association (a later re-invite then has nothing to reactivate, and a "still a member?" assertion silently inverts); a `Deleted` status is treated as row removal by a search consumer; re-invite succeeds against an `Invited` membership (duplicating the pending invite) or fails against a `Rejected`/`Deleted` one (declining becomes irreversible).
+    status: ACTIVE
+  - id: BL-B2B-013
+    title: Membership status resolves per-org-first, then contact, then `Approved`
+    rule: |-
+      A membership's **effective status** is resolved by a three-tier fallback — `ResolveEffectiveStatus(membershipStatus, memberStatus)`:
+        1. the **membership's own** `Status`, if set — a per-organization override that **wins over the contact's status**;
+        2. else the **contact's** `Status` — inherited, which is what a membership row with a null status does;
+        3. else **`Approved`**.
+
+        So `Approved` is the effective default, and a **null** membership status is a **legacy/inheritance** shape (rows predating the status field, or rows deliberately left to inherit) — not a distinct fourth state. The legal manually-selectable set is exactly four values — `Invited`, `Approved`, `Rejected`, `Deleted` — carried by the `Customer.OrganizationMembershipStatuses` dictionary setting whose default is `Approved`; because it is a dictionary, a fifth value observed on an environment is **admin-added environment data, not the contract**.
+        **Status is a separate axis from lock.** `IsLocked`/`LockoutEnd` → `IsCurrentlyLocked` is not a status value and never appears in the status set; a UI may render both on one column, but the two must be assertable independently (BL-AUTH-016 defines their precedence when both apply).
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "`vc-module-customer` `OrganizationMembership.ResolveEffectiveStatus` (the three tiers) and `IsCurrentlyLocked` (the separate lock axis) + `ModuleConstants.MembershipStatuses` (`ManuallySelectableStatuses` / `BlockingStatuses` / `ReinvitableStatuses`) and the `OrganizationMembershipStatuses` setting descriptor (`IsDictionary = true`, `DefaultValue = Approved`, `AllowedValues = ManuallySelectableStatuses`). Live-confirmed on the environment: a membership at `Rejected` whose contact was `Approved` resolved to the membership's value (the org was excluded from access), i.e. tier 1 beats tier 2; and the member list rendered the lock axis as its own label distinct from every status label. Tiers 2 and 3 (inherit-from-contact, and the terminal `Approved`) are **source-only this run**. Docs axis: N/A — the published guide documents that Customer statuses are configurable dictionaries but names no membership-status value, default, or resolution order (waived)."
+      - kind: doc
+        ref: platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — values Approved/Invited/Rejected/Deleted; 'Inherit from member' sentinel; Approved full access, others block
+    check:
+      kind: manual
+      ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.
+    violation_signal: A contact-level status overrides an explicit membership status (tiers inverted — a per-org block silently ignored, or a healthy org blocked by an unrelated contact status); a null membership status is treated as blocking (or as a fifth state) instead of inheriting; a lock is written into the `Status` field, or a status value is used to express a lock, collapsing the two axes so one cannot be cleared without the other.
+    status: ACTIVE

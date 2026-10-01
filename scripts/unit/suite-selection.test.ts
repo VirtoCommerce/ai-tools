@@ -437,7 +437,7 @@ test("CORPUS: a changed test-case CSV selects the suites it belongs to", () => {
   // ci/run-full-cycle.ts Phase 1 → Phase 2 does. The path's own segments carry the answer.
   const r = selectSuites({
     suites: realSuites(),
-    changed: [{ repo: "vc-mcp-testing-module", path: "regression/suites/Frontend/cart/028-cart-core.csv" }],
+    changed: [{ repo: "ai-tools", path: "regression/suites/Frontend/cart/028-cart-core.csv" }],
     suiteRepos: realRepoIndex(),
     concurrency: CONCURRENCY,
     rotationCount: 0,

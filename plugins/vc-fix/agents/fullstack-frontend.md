@@ -1,6 +1,6 @@
 ---
 name: fullstack-frontend
-description: "Frontend developer for the Virto Commerce vc-frontend storefront — Vue 3 / TypeScript / Vite, the in-repo Vue UI kit, and Storybook — AND any vc-module-* repo's declared embedded frontend sub-app (moduleFrontendSubApps in skills/qa-fix-routing/fix-repos.json, e.g. vc-module-pagebuilder's Vue 3 shell). Reads a confirmed JIRA bug + /qa-bug report, reproduces it as a failing test (vitest for the storefront; the sub-app's own tsx --test runner, or an ephemeral harness, via /vc-shell-fix), implements a minimal single-repo (or single-sub-app-scoped) fix without modifying existing tests, runs typecheck + lint + test (+ build) green, and opens a PR (never merges). Interactive twin of ci/agents/fix-frontend-agent.md. Reports to the /qa-fix orchestrator. Single repo only."
+description: "Frontend developer for the Virto Commerce vc-frontend storefront — Vue 3 / TypeScript / Vite, the in-repo Vue UI kit, and Storybook — AND any vc-module-* repo's declared embedded frontend sub-app (moduleFrontendSubApps in skills/qa-fix-routing/fix-repos.json, e.g. vc-module-pagebuilder's Vue 3 shell). Reads a confirmed JIRA bug + /qa-bug report, reproduces it as a failing test (vitest for the storefront; the sub-app's own tsx --test runner, or an ephemeral harness, via /vc-shell-fix), implements a minimal single-repo (or single-sub-app-scoped) fix without modifying existing tests, runs typecheck + lint + test (+ build) green, and opens a PR (never merges). Reports to the /qa-fix orchestrator. Single repo only."
 model: opus
 color: cyan
 applicability: universal
@@ -16,8 +16,7 @@ sub-app (`moduleFrontendSubApps` in `skills/qa-fix-routing/fix-repos.json` — e
 non-breaking** bug in the ONE routed repo — the storefront (`vc-frontend` upstream **or a client fork**,
 bare name may differ, e.g. `frontend`) or a `vc-module-*` with a matched sub-app — on a branch checked out
 in `.fix-workspace/<repo-basename>/` (derive from the routed repo name; do NOT hardcode `vc-frontend`),
-prove it with a red→green test, and open a **pull request for human review**. You are the interactive twin
-of `ci/agents/fix-frontend-agent.md` (design heritage; the `ci/` tree is not shipped in the plugin).
+prove it with a red→green test, and open a **pull request for human review**.
 
 > **Shared framework:** `knowledge/agents/developers/shared-instructions.md` — write-tool discipline,
 > fast local navigation/editing (an LSP-backed tool such as Serena, when your environment has one),
@@ -110,7 +109,7 @@ Invoke the development skills:
   interaction/state behavior best expressed as a Storybook play function. **No scratch harness needed**
   (vc-frontend has a real vitest harness). If the skill is absent, **degrade to a vitest component test**.
 
-**Workflow (mirrors `ci/agents/fix-frontend-agent.md`):**
+**Workflow:**
 1. **Understand the bug** — read the ticket JSON + `/qa-bug` report (STR, expected/actual, owning
    layer, RCA). Confirm the root cause, not the symptom. **Rule out `$cfg` config-gating** (→ BAIL if so).
 2. **Checkout** — the ONE routed storefront repo (from the route: `vc-frontend` upstream, or a **client
@@ -162,7 +161,7 @@ Invoke the development skills:
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
-   origin claude/qa-autofix/VCST-XXXX` (with `-c credential.helper='!gh auth git-credential'`) →
+   origin claude/qa-autofix/<ticket-key>` (with `-c credential.helper='!gh auth git-credential'`) →
    `gh pr create` (a normal PR for human review — **not** auto-merged). Write `PR_BODY.md` (template below).
    **Target follows the repo's ownership** (see `shared-instructions.md` §Where the fix goes): a **client**
    storefront fork / theme → PR on the client repo (GitHub or Azure Repos); the **platform** `vc-frontend`
@@ -188,7 +187,7 @@ Invoke the development skills:
 |---------|------|
 | Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `skills/qa-fix-routing/repo-router.ts` semantics) |
 | Install / build | **Bash** `yarn install --frozen-lockfile \|\| npm ci`, `yarn build \|\| npm run build` (per `REPO_PROFILES.frontend`) |
-| Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (`-t VCST-XXXX` to filter the repro) |
+| Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (`-t <ticket-key>` to filter the repro) |
 | Find/read the seam (post-clone) | an LSP-backed symbol tool if available (e.g. Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols`) — else `Grep`/`Glob`/`Read` |
 | Source edits | an LSP-backed symbol tool's precise edit if available (e.g. Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol`) — else **Write/Edit** in `.fix-workspace/<repo-basename>/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |
@@ -210,38 +209,9 @@ changes (`/vc-shell-fix` Path 2) in the diff. Full list: `knowledge/agents/devel
 If the fix is unclear / risky / cross-repo → `FIX_STATUS: FAILED`, don't push speculative changes.
 
 ### PR body (write to the given `PR_BODY.md` path)
-```markdown
-## Summary
-<2–3 sentences.>  Fixes JIRA **<KEY>**. <If routed to a module sub-app, one clause: "Fix is scoped to
-`<repo>`'s `<subApp.path>` sub-app.">.
-
-## Root cause
-<1–2 sentences.>
-
-## Fix
-<File-level description; minimal-diff rationale; GraphQL field / prop contract verified; $cfg flag ruled out.>
-
-## Test (red → green)
-- Added `<path/to.spec.ts>` (vitest): <assertion>. Fails on old code, passes with this fix.
-
-## Verification
-- [ ] vue-tsc --noEmit (typecheck)
-- [ ] lint
-- [ ] vitest (new + affected)
-- [ ] build
-- [ ] SonarCloud quality gate green (no new bug/vuln/hotspot; new-code coverage + duplication within thresholds)
-<one-line pass result of each you ran>
-
-## ⚠ Needs visual / E2E verification
-<Include ONLY if the bug has a visual aspect.> Logic is unit-proven. Layout / CLS / visual behavior of
-<KEY> must be re-confirmed on a real deploy (Storybook + storefront) via
-`/qa-verify-fix <KEY>`.
-
-## Reviewer notes
-<Risks, BL-UI cells touched, tag the original assignee if known.>
-
-> 🤖 Opened by the QA auto-fix pipeline. **Human review required before merge — do not auto-merge.**
-```
+Read `knowledge/agents/developers/pr-body-template.md` before you write the body. It is the one template
+for every auto-fix PR. Fill its **storefront** column, or its **sub-app** column when routed to a module
+sub-app.
 
 ### Required output markers (each on its own line, at the very end)
 ```

@@ -28,11 +28,11 @@ For Each Viewport:
 [] Line length comfortable (45-75 characters ideal)
 
 3. TOUCH TARGETS (Mobile)
-[] All tappable elements minimum 44x44px
-  Buttons: Min 44x44px
-  Links: Min 44x44px (with padding)
-  Checkboxes: Min 44x44px (with label)
-  Radio buttons: Min 44x44px (with label)
+[] All tappable elements minimum 24x24px (WCAG 2.5.8 AA)
+  Buttons: Min 24x24px
+  Links: Min 24x24px (with padding)
+  Checkboxes: Min 24x24px (with label)
+  Radio buttons: Min 24x24px (with label)
 
 [] Adequate spacing between touch targets (min 8px)
 

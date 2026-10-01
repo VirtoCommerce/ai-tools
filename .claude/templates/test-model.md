@@ -7,7 +7,7 @@ day §2 raised it.
 
 **The methodology — why Part 0 is derived first, the eight rules the scenario table must satisfy, when
 Part 0r role scenarios are required, the gate, and the worked references — lives in
-[`.claude/skills/qa-test/test-model.md`](../skills/qa-test/test-model.md). Read that before filling this
+[`.claude/skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md). Read that before filling this
 in.** This file is the shape only, so it can be copied without carrying the argument with it.
 
 ```
@@ -20,6 +20,7 @@ Prior model: [reports/ba/test-models/<PREDECESSOR>-<date>.md — the newest mode
 Domain map:  [.claude/knowledge/domain/<name>.md @ rev N (generated YYYY-MM-DD) | ABSENT]
              ABSENT is a valid value and blocks nothing — but then Chain position below reads
              "unverified", so the omission is recorded rather than invisible (gate clauses 11/11b).
+Mind map:    [.claude/knowledge/domain/<name>.mind-map.json — node ids this ticket touches | ABSENT]
 Chain position: [this ticket's chain as a SLICE of the domain chain — the links it TOUCHES and,
              explicitly, the links it DOES NOT. "L1, L4-L6 of L1-L9; does not touch L2-L3, L7-L9."
              Naming what you did not cover is contradictable; "the matrix is complete" is not.

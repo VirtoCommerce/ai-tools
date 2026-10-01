@@ -19,17 +19,22 @@ about to change how a step works.
 | File | Covers | Read it when |
 |---|---|---|
 | [`preflight.md`](preflight.md) | Steps **1a–1b** — the fetch, the classify/route branch, the two I/O waves | Running or changing pre-flight |
-| [`test-model.md`](test-model.md) | Step 1e — the fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, Part 0r, the gate, worked refs | Building or reviewing a Test Model |
+| [`../qa-test-model/test-model.md`](../qa-test-model/test-model.md) | Step 1e — moved to `/qa-test-model`, which 1e invokes. The fault model: why Part 0 comes first, the eight rules the scenario table must satisfy, Part 0r, the gate, worked refs | Building or reviewing a Test Model |
 | [`authoring.md`](authoring.md) | Steps 2–3 — oracle loading, Artifacts A/B/C1, the scaffold + KEEP gate, the per-surface fan-out (3b), review/auto-fix | Authoring cases, or changing how they are authored |
 | [`close-out.md`](close-out.md) | Step 5 **spine** — AC/DoD reconciliation, the verdict table, the severity floor on filing | Deciding what the run concluded |
 | [`triage.md`](triage.md) | **5-triage** — correlate, validate evidence, classify, provenance, severity, dedup | Turning raw results into findings |
 | [`reporting.md`](reporting.md) | **5-report · 5-status · 5-docs** — the release gate, the tracker comment, `summary.json`, the checklist, the transition | Delivering the run |
-| [`axes.md`](axes.md) | The four pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
+| [`axes.md`](axes.md) | The six pre-flight axes as ONE mechanism — the contract they share, and the fail-CLOSED/fail-OPEN split the old "same discipline" phrasing hid | Adding an axis, or deciding whether one runs on FAST |
 | [`visual-axis.md`](visual-axis.md) | The visual axis — the `visual_surface` derivation, surface → axes → executor, the invariant-blocks/spec-advises verdict rule, the browser budget | A UI-visible ticket, or changing how design/a11y is scheduled |
 | [`contract-refresh.md`](contract-refresh.md) | The contract-refresh axis — the `contract_surface` derivation at `1b` 2d, the two-artifacts/two-commands split, `UNKNOWN` never falling back, drift as a `1e` input | A ticket touching GraphQL/xAPI, or changing when the schema + fixtures are refreshed |
 | [`coverage-triage.md`](coverage-triage.md) | The coverage-triage axis — the `coverage_surface` derivation at `1b` 2e, the `2a` phase's four dispositions, and why a `RE-BASE` is resolved BY the run rather than before it | A change that renames, moves or removes something existing cases already assert |
 | [`exploratory-lane.md`](exploratory-lane.md) | Step 3x — the discovery lane: why it runs beside 3a and before authoring, the five charter sources, the four routed outputs | A FULL run, or changing when discovery happens |
 | [`modes.md`](modes.md) | `--epic` and `--iterate` (5-loop) | Running either opt-in mode |
+| [`sequencing.md`](sequencing.md) | Ordering (what may move) and concurrency (what batches, what must stay serial) | Changing the step order, or batching / parallelising a step |
+| [`context-wave.md`](context-wave.md) | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | A FULL run's context dispatches |
+| [`dispatch-pack.md`](dispatch-pack.md) | What a brief carries as TEXT and what stays a PATH | Writing any dispatch brief |
+| [`ui-kit-class.md`](ui-kit-class.md) | The `ui-kit` shape class — when the change IS the design system | A design-system / token / primitive change |
+| [`technical-change.md`](technical-change.md) | The `technical-change` FLOW — a refactor, migration or dependency bump | A change with no user-facing subject |
 | [`../../templates/test-model.md`](../../templates/test-model.md) | The Test Model fill-in shape + the authoring-plan JSON shape | Writing the model or a plan |
 
 ## The two things that hold the whole pipeline together
@@ -123,115 +128,12 @@ Every other step — 1, 2, 4, 5-file, 5-status, 5-docs — and the entire FAST p
 
 ## Ordering — what may move, and the three things that may not
 
-Restructured 2026-09-10 to cut time-to-first-test. The command carries the order; this is why it is that
-order. Full record, including what the first design got wrong:
-[`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Cutting
-time-to-first-test.
-
-**The graph, not the step numbers, decides what can move.** The checklist execution consumes exactly two
-things — Artifact B and seeded data. It consumed **neither Artifact A nor the Step-3 verifier**, and yet
-waited behind both. Removing that wait is most of the restructure; it is a re-reading, not an invention.
-
-**Three things stay ahead of the checklist, and none of them is negotiable for speed:**
-
-| Ahead of `B` | Because |
-|---|---|
-| **`1e` the Test Model** | a checklist written against an unnamed value chain produces per-screen field checks that are individually well-formed and collectively unable to notice the feature is broken — §1 above, and the Loyalty Missions numbers behind it |
-| **`3x` discovery** | its fifth routed output is *conditions the ACs never named*. A checklist written before it is written from the ACs and a guess; written after, every item has been **seen** or deliberately left a hypothesis. It also means the checklist does not need re-running when the model corrects itself |
-| **`3a` seeded data** | a checklist cannot execute against fixtures that do not resolve. `3a` is browserless, so it runs *beside* `3x` for free — serialising it behind discovery would add the whole box and buy nothing |
-
-**`3x` is itself a live read of the product** — *"nothing touches the feature until Step 4"* has not been
-true here for some time: the browser is on it at `1r`, and in depth from `3x`.
-
-**What moved: `A`, and only in the sense of what waits for it.** Authoring is the largest pre-execution
-cost — alloc, the journey case, matrix assignment, per-layer packs, a 3–4-way fan-out, serial appends,
-review. It still starts when `3x` closes and still waits for both `3a` and `3x` (§Concurrency, the
-never-parallelise table). **What changed is that nothing waits for it to FINISH except `4c`** — which is
-why the join back to it is an explicit step, not an assumption ([`qa-test.md`](../../commands/qa-test.md)
-Step 4).
-
-**An early checklist was tried first and rejected.** A thin checklist off `1d`'s ACs, executed before the
-model existed, with a second pass for the model's delta: faster, and it needed a naming guard, a second
-execution pass and per-item pass attribution — machinery whose only job was compensating for the model not
-being ready. Ordering discovery first deletes all of it and yields one checklist, one pass.
+Moved to [`sequencing.md`](sequencing.md) §Ordering — read it before changing the step order.
 
 ## Concurrency — the unit to save is a ROUND-TRIP, not a second
 
-Measured on vcst-qa, 2026-09-02, so the optimisation is aimed at the right thing: **every deterministic
-script in this pipeline costs 1–2 s except one.**
-
-| Script | Wall clock |
-|---|---|
-| `schema:refresh` / `schema:check` (live introspection) | **~8.5 s** |
-| `graphql:fixtures:validate:refresh` (74 documents) | ~1.8 s |
-| `suites:lint` (corpus-wide) | ~1.9 s |
-| `td:validate` | ~1.3 s |
-| `regression:select` | ~1.2 s |
-
-Total deterministic script time across a whole FULL run is well under a minute. So **squeezing script
-wall-clock is not where the time is** — parallelising 2d's pair saves 1.8 s, and that is close to the
-ceiling for this kind of win. Two things actually cost:
-
-1. **Round-trips.** A numbered list of independent operations, walked one tool call per turn, spends a
-   full model turn per item. `1b` has **seven** independent probes/reads; done one at a time that is
-   seven turns to accomplish ~3 s of work. Batching them into one message is worth far more than every
-   script optimisation in the table above, combined.
-2. **Agent dispatches and regression runs**, which are minutes to tens of minutes each. The two largest
-   structural wins in the pipeline are both about *what a long-running job overlaps*, not about making it
-   faster: **3x runs inside 3a's wall-clock** (one browser lane against a browserless seeder), **the corpus
-   step runs past `3-exec`** (its `2a` phase included), and the release-scoped Critical sweep is **no longer in this
-   pipeline at all** — it was on the critical path to a verdict that discarded its result by its own
-   provenance rules, so `5r`/C2 was removed (2026-09-10); cutting a release runs
-   [`/qa-regression`](../../commands/qa-regression.md) deliberately.
-
-   The pipeline already parallelises what it can — `1c ‖ 1d ‖ 2-load` in one message, the `3x ‖ 3a` pair,
-   Step 3b one batch per execution surface, Step 4's agents inside the max-3 cap. That work is done; do
-   not re-derive it.
-
-**So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
-This is the harness's own guidance applied per step, not a new mechanism.
-
-### `1b` is two I/O waves, not nine steps
-
-| Wave | Contains | Consumes |
-|---|---|---|
-| **A** — one message | item 1 env health · item 2 build/version (both GitHub reads + the `/api/platform/modules` probe) · item 2-release release-ledger read · item 2b's local reads (suite manifest, repo-router) · item 3 sprint resolve → item 4 duplicate check | only `1a`'s fetch |
-| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface` and **2e** `coverage_surface` — pure computation over what Wave A returned | Wave A |
-| **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope`, **scope + risk terms ONLY** ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
-
-**Wave B's scan takes no `--cases`/`--also-ids`** — neither exists yet, and passing them would mark every
-future Draft row `FILTERED_OUT`, the failure the `2a` phase exists to prevent (§4). Wave B **scans only** —
-disposing those hits is Artifact A's `2a` phase at Step 3, same agent, before it authors a row (§2a-own).
-
-Two more waves follow the same test, and both were serial for no reason anyone had measured:
-
-| Wave | Contains | Consumes |
-|---|---|---|
-| **Step 1c/1d + 2-load** — one message | `1c` ‖ `1d` ‖ **`1r` reachability** (FULL, ~5 min) ‖ **`1c-map`** (only when 2g says `ABSENT` + all-layer, FULL) ‖ **the domain-keyed oracle text** (`BL-*` / `ECL-*` / `E2E-*` / `VC-*` / the UI + a11y set) | only `1a`'s domains + `1b`'s tokens — **nothing `1c` returns**, which is why waiting a full dispatch wave to open a markdown file was pure latency. `1c-map` is domain-scoped where `1c` is ticket-scoped: they share prior art and consume nothing of each other's, so the map costs the run a lane, not a wave. Only `2-topup` (the VirtoOZ gap fill) is genuinely downstream |
-| **Step 3** — one message | `3a` test-data ‖ **`3x` discovery** ‖ `B` checklist | `1e` + Step 2. `3a` is browserless, `3x` takes exactly one lane, `B` is pure authoring — mutually independent. **Artifact A alone waits on all three** |
-
-Items 3 → 4 stay ordered inside Wave A as the command states. They are both local globs costing
-milliseconds, so splitting them buys nothing — **and that is the general test: parallelise where the
-operations are independent *and* the cost is real.** Reordering something free to look concurrent is
-churn.
-
-### What must NOT be parallelised — each for a reason the repo paid for
-
-Do not read the above as "parallelise everything." Every entry here is a place where concurrency has a
-known cost, and three were measured:
-
-| Never | Because |
-|---|---|
-| `2d` concurrently with `1c` / `1d` / `1e` / the 3b pack | they READ what it writes; a refresh that races its readers is a refresh that did nothing |
-| Two writers on one suite CSV — the Step-3b append stays **serial**, `suites:sync` runs **once**, and the `2a` **`REPAIR` writes close before the same step's append opens** ([`coverage-triage.md`](coverage-triage.md) §2a-own) | `suites:lint`/`sync` hard-fail on a parse error anywhere in the corpus, so N parallel writers multiply a tree-wide outage by N and block every other author ([`regression.md` Suite inventory](../../rules/regression.md#suite-inventory) — measured: one mid-write invalid CSV blocked two sessions' gates ~15 min) |
-| `suites:sync` ‖ `suites:lint` | lint reads what sync wrote |
-| Artifact A ‖ 3a, or Artifact A ‖ 3x | cases are authored against fixtures that already resolve **and against the model 3x amended**. Authoring beside the discovery lane produces cases written from the guesses the lane exists to replace — the lane's value is entirely in the order ([`exploratory-lane.md`](exploratory-lane.md) §2) |
-| `3x` ‖ Step 4's execution agents | **Artifact B is written from what `3x` returns** (2026-09-10) and `3-exec` gates on `B`, so execution cannot start while the lane is open — the cap still holds by construction on FULL. What changed is that `3x` now **outranks** execution in the priority order ([`qa-test.md`](../../commands/qa-test.md) Step 4): it is upstream of both `B` and `A`, so starving it stalls the whole run rather than one track |
-| Two suites ‖ on one disposable fixture set | **measured**: `075d` lost 5 of 34 cases to fixtures suite `083d` had already consumed on the same accounts. Serialise with a re-seed between, or give each its own accounts (`.claude/knowledge/execution/test-data-authoring.md` §The scope of "isolated") |
-| More than 3 browser agents, or two agents on one session | the lane cap is hard, and a shared session means agents fighting over navigation and cookies |
-| `1c-map` ‖ `1c` **on the same lane** | both are `ba-system-analyzer` and `.claude/rules/agents.md` puts that agent on `playwright-firefox` — so the concurrency is fine and the *default lane* is not. Two instances of one agent definition inherit one lane unless told otherwise, which is a shared session by accident — pin `1c-map` to a different free lane **in its brief** |
-| A verifier ‖ its own doer | the verifier re-derives evidence *after* the doer's write; concurrent, it verifies a half-finished step. The three gates are sequential by design |
-| `--iterate` rounds | test → fix → deploy → re-test is inherently serial |
+Moved to [`sequencing.md`](sequencing.md) §Concurrency — read it before batching or parallelising a step; the
+never-parallelise table is there.
 
 ## Agent dispatch — routing and the prompt contract
 
@@ -263,14 +165,10 @@ lane when `visual_surface: true`** — the one documented exception, reasoned in
   C1 (`4c`)** ([`qa-test.md`](../../commands/qa-test.md) Step 4). `3x` leads not because it matters more
   than the verdict but because it is upstream of the checklist the verdict rests on. State the order
   chosen. Counting the lanes before dispatching is part of the step, not an afterthought.
-- **A P0 / critical-revenue ticket must NOT go to `qa-testing-expert` on its default lane.** That default
-  is `playwright-firefox`, and `.claude/rules/agents.md` states the harder rule: *"never schedule a
-  click-driven suite on firefox — cart, checkout, merge, PDP interaction, sign-in, or **any** Admin SPA
-  suite"* (confirmed 6×; a firefox placement costs a whole wasted attempt, not a degraded one). A P0
-  critical-revenue flow **is** click-driven by definition, so the two rules pointed in opposite
-  directions. **Resolution: the extra P0 pass runs on a free chrome/edge lane** — that file's hard rule
-  outranks its own per-agent default table, exactly as `/qa-exploratory` already overrides it. If no
-  browser lane is free, **QUEUE** — all three take click-driven work since 2026-09-08.
+- **The P0 / critical-revenue extra pass takes any free click-capable lane** — `playwright-firefox`
+  included since 2026-09-08, unless `defaults.firefoxClickOk` in `config/test-suites.json` is `false`,
+  in which case `browserDenyListFor` denies it (`.claude/rules/agents.md` §Parallel Execution). No
+  eligible lane free ⇒ **QUEUE**.
 
 `visual_surface` is derived at `1b` item 2c, recorded with its sources, and replaces the undefined
 *"UI/component"* trigger this table used to carry — a phrase no gate ever checked was applied. The lane's
@@ -282,8 +180,8 @@ hardcode IDs, `.claude/rules/test-data.md`); the **`BL-*`** rule text + **`ECL-*
 (**cut them, do not re-summarise them**: `npm run bl:extract -- --domain <d>` and
 `npm run ecl:extract -- --domain <d>` emit the oracles' own markdown verbatim — what may travel as text
 and what must stay a path is [`dispatch-pack.md`](dispatch-pack.md));
-the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C is NOT in
-the agent prompt** — it goes to `/qa-regression` (`feedback_long_runner_sessions_unreliable`).
+the browser server; env URLs; the screenshot path; and the evidence-capture policy. **Artifact C1 is NOT in
+the agent prompt** — it goes to `/qa-regression`.
 
 **Artifact A is NOT in the agent prompt either, since 2026-09-10.** It used to be, and `4c`'s C1 run
 executed the same rows — so every authored case ran twice, and only C1 emits the `RUN_ID` promotion needs,
@@ -309,7 +207,7 @@ Edge cases to cover: ECL-1.1: [pattern]
 Evidence policy: .claude/skills/qa-evidence/evidence-capture-policy.md — screenshots on failures + final
 state of critical flows; console errors only; network 4xx/5xx + >2s; HAR always.
 
-Always-on bug detection (shared-instructions §Always-On Bug Detection): the checklist is the floor, not
+Always-on bug detection (.claude/knowledge/agents/qa/shared-instructions.md §Always-On Bug Detection): the checklist is the floor, not
 the ceiling. Hunt across EVERY layer (UI/visual, functional, console, network, GraphQL errors[] inside
 200, a11y, perf); file any incidental defect (out-of-scope-bug rule). Verify before filing (disabled
 control / API-only / by-design are not bugs).

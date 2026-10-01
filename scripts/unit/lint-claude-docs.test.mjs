@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH, charCount } from '../maintenance/lint-claude-docs.mjs';
+import { BUDGET, BASELINE, alwaysLoadedFiles, measureBudget, isPlaceholderPath, isEphemeralPath, citationTarget, citedFromRoot, pathResolves, headingMatch, DERIVED_COUNT_RE, isTranscribedCount, MAY_NOT_EXIST, classifyScript, ratchet, lint, isGitIgnored, promptFiles, checkPromptBudget, PROMPT_BASELINE_PATH, charCount, memoryRefs } from '../maintenance/lint-claude-docs.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -55,6 +55,16 @@ test('classifyScript: exact / prefix family / generic other-repo / missing', () 
   assert.equal(classifyScript('seed:', scripts), 'prefix-family');
   assert.equal(classifyScript('build', scripts), 'generic-other-repo');
   assert.equal(classifyScript('model:lint', scripts), 'missing');
+});
+
+test('DOC-007 memoryRefs: memory slugs and the memory index are citations; policy text and product values are not', () => {
+  assert.deepEqual(memoryRefs('per `feedback_env_resilience` memory'), ['feedback_env_resilience']);
+  assert.deepEqual(memoryRefs('see reference_additem_async_settle and project_promotion_engine'), ['reference_additem_async_settle', 'project_promotion_engine']);
+  assert.deepEqual(memoryRefs('check MEMORY.md, or the note in MEMORY'), ['MEMORY.md', 'in MEMORY']);
+  assert.deepEqual(memoryRefs('a `feedback_*` / `project_*` slug is policy text'), []);
+  assert.deepEqual(memoryRefs('`project_name` is a template variable'), []);
+  assert.deepEqual(memoryRefs('code `user_is_locked_in_organization`'), []);
+  assert.deepEqual(memoryRefs('state kept in memory'), []);
 });
 
 test('ratchet fails only on GROWTH past the baseline', () => {

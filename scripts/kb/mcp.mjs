@@ -153,7 +153,8 @@ export const TOOLS = Object.freeze([
     name: 'kb_capture',
     description: 'Record a NEW observation about platform behaviour that you verified yourself on a live deployment, '
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
-      + 'Refused if an entry already covers the same anchors and scope — confirm that one instead. '
+      + 'Refused if an entry already states the same subject at the same anchors and scope — confirm that one instead; '
+      + 'a different fact at the same coordinates is recorded as its own entry. '
       + 'Names back the entries YOU OPENED earlier in this session and asks whether what you just wrote '
       + 'disagrees with any of them — if it does, kb_dispute that entry rather than leaving the base '
       + 'holding two answers to one question. Also lists entries sitting at the same coordinates. '

@@ -1,4 +1,4 @@
-// Unit tests for ci/lib/repo-router.ts — client/platform OWNERSHIP routing.
+// Unit tests for plugins/vc-fix/skills/qa-fix-routing/repo-router.ts — client/platform OWNERSHIP routing.
 // Focus: the H1 bare-name collision guard (a client fork that keeps the upstream
 // name must NOT capture the platform repo), client toolchain overrides, and the
 // upstream-provenance accessor. Pure `computeOwnership` is tested directly; the
@@ -43,7 +43,7 @@ const profilePath = join(dir, "project-profile.json");
 writeFileSync(profilePath, JSON.stringify(FIXTURE));
 process.env.PROJECT_PROFILE_PATH = profilePath;
 
-const rr = await import("../../ci/lib/repo-router.ts");
+const rr = await import("../../plugins/vc-fix/skills/qa-fix-routing/repo-router.ts");
 
 // ---- computeOwnership (pure) -------------------------------------------------
 
@@ -120,6 +120,8 @@ test("clientUpstream: returns provenance for a forked client repo, null for plat
   assert.deepEqual(rr.clientUpstream("Lakeshirt-LEO/vc-frontend"), {
     upstream: "VirtoCommerce/vc-frontend",
     upstreamRef: "v2.31.0",
+    upstreamRefResolved: true, // a concrete ref with no explicit unresolved flag
+    forkVersion: "",
   });
   assert.equal(rr.clientUpstream("Lakeshirt-LEO/leo-main-module"), null); // no upstream declared
   assert.equal(rr.clientUpstream("VirtoCommerce/vc-frontend"), null); // platform

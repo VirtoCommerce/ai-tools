@@ -18,6 +18,7 @@
  * Usage:  node scripts/seed-data/validate-configurable-data.mjs   (exit 1 on any hard problem)
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -82,7 +82,7 @@ Every generated case MUST conform to [`test-case-template.md`](../qa-test-cases-
 - **Case IDs are unique CORPUS-WIDE, not per suite.** Do not number off “the highest existing ID in the target suite” — allocate a disjoint block up front with `npm run tc:alloc -- --prefix <PREFIX> --count <n>` and append with `--check-global-ids`. A cross-suite duplicate silently overwrites the other suite’s per-case results and failure evidence at run time, and surfaces weeks later as a confusing regression report. Enforced corpus-wide by `npm run suites:lint`.
 
 ### Mandatory Column Population
-- **`Business_Rule`** — at least one `BL-*` invariant from `business-logic.md` (the rule being verified). Empty `Business_Rule` is a review failure.
+- **`Business_Rule`** — at least one `BL-*` invariant (the rule being verified). Empty `Business_Rule` is a review failure.
 - **`Edge_Case_Refs`** — for negative/edge-case cases, populate at least one `ECL-*` from `e-commerce-edge-cases-library.md`.
 - **`Test_Data`** — resolve via `{{VAR}}` / `@td()` / `live-discover` / `random-data` per [`.claude/rules/test-data.md`](../../rules/test-data.md). Literal IDs/SKUs/emails/prices/order-numbers/paths are review failures. Use `AGENT-TEST-` prefix for generated entities.
 - **`Assertions`** — predicate-driven (`[STATUS]/[DATA]/[DOM]/…`), never "verify it looks correct".
@@ -189,7 +189,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
 1. **Current regression coverage** — every suite CSV referenced in `config/test-suites.json` (`suites[*].file`). Routing fields: `domain`, `layer`, `concern`, `priority`.
 2. **Existing rows the change puts at risk** — `npm run tc:scope -- --domain <d> --observable "<label>"`. Flag `STALE_COVERAGE` per §1b and route repairs to `/qa-review-tests --fix`; never author over a stale row.
 3. **Feature inventory** — all of:
-   - `knowledge/oracles/business-logic.md` (`BL-*` invariants)
+   - `npm run bl:extract -- --domain <d>` (`BL-*` invariants)
    - `knowledge/oracles/e-commerce-edge-cases-library.md` (`ECL-*`)
    - `knowledge/domain/sitemap.md`
    - `knowledge/execution/module-suite-map.md`

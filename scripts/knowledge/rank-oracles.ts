@@ -23,10 +23,12 @@
  * Reporting only — it never edits an oracle, never edits a CSV, and exits 0 unless its
  * own inputs are unreadable. Truncation always announces itself.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { parseOracle, buildCoverage } from "./lint-bl.ts";
+import { BL_DIR, oracleText } from "./bl-yaml.ts";
 import { parseLibrary, buildCitations } from "./lint-ecl.ts";
 import {
   gate,
@@ -52,8 +54,7 @@ interface Row {
 }
 
 function collectBl(repoRoot: string): Ranked<Row>[] {
-  const oracle = join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md");
-  const invariants = parseOracle(readFileSync(oracle, "utf-8"));
+  const invariants = parseOracle(oracleText(join(repoRoot, BL_DIR)));
   const coverage = buildCoverage(join(repoRoot, "regression", "suites"));
   const known = new Set(invariants.map((i) => i.id));
 
@@ -86,7 +87,7 @@ function collectEcl(repoRoot: string): Ranked<Row>[] {
   // supplies that link for the 5-column chapters, which have no `BL Invariant` column of
   // their own — without it the business axis is unreachable for 45 of 54 sections.
   const blSeverity = new Map(
-    parseOracle(readFileSync(join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md"), "utf-8")).map((i) => [i.id, i.severity]),
+    parseOracle(oracleText(join(repoRoot, BL_DIR))).map((i) => [i.id, i.severity]),
   );
   const blSeverityOf = (id: string) => blSeverity.get(id);
   const citations = buildCitations(join(repoRoot, "regression", "suites"));

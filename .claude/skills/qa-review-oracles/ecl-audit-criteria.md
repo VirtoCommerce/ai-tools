@@ -1,9 +1,9 @@
 # ECL Audit Criteria — the evidence bar, source map, and verdict table
 
 Reference for `/qa-review-oracles ecl`. The skill's SKILL.md holds the flow; this file holds
-the judgment rules the triangulation runs against. Direct sibling of `bl-audit-criteria.md`
-— same three axes, same bar, same waiver — differing only where the ECL library's **content
-shape** differs from BL's.
+the judgment rules the triangulation runs against. The BL axis stopped triangulating on 2026-10-01
+(`bl-audit-criteria.md`: rules change only from a human source); the three-axis bar, the waiver and
+the `docs: N/A` allowance below now belong to the ECL axis alone.
 
 ## 0. What an ECL entry actually is (and why the bar bends)
 
@@ -24,7 +24,7 @@ field no longer exists, the flow was removed). When in doubt, CONFIRMED-by-defau
 
 ## 1. The evidence bar (what "confirmed" requires)
 
-Same tuple as BL: concrete artifacts from all three **applicable** axes, agreeing.
+The tuple: concrete artifacts from all three **applicable** axes, agreeing.
 
 | Axis | Concrete evidence required | Source |
 |------|----------------------------|--------|
@@ -68,16 +68,16 @@ bar. Reserve UNGROUNDED for "I could not reach the surface at all", not "I did n
 
 ## 1a. `docs: N/A` allowance
 
-Inherited verbatim from `bl-audit-criteria.md` §1a, and it fires **more often** here. Two
-classes can never satisfy the Docs axis:
+Formerly shared with the BL axis, and it fires **more often** here. Two classes can never satisfy the
+Docs axis:
 
 1. **Implementation / UX mechanics** the VirtoOZ guides do not narrate.
 2. **Project-specific or cross-industry patterns** — most of chapters 1–13 are generic
    e-commerce risk patterns (race conditions, coupon abuse, impossible-travel velocity) that
    no Virto document will ever describe. These are **doc-N/A by construction**.
 
-Same guards as BL: `Source AND Live must both be present this run and agree`; the entry
-records the reason; `N/A` means *genuinely undocumentable*, never "no doc found this session".
+Guards: `Source AND Live must both be present this run and agree`; the entry records
+`Docs: N/A — <reason>`; `N/A` means *genuinely undocumentable*, never "no doc found this session".
 **When in doubt, UNGROUNDED, not N/A.**
 
 ## 2. Per-chapter source map
@@ -143,7 +143,7 @@ non-existent section; ECLL-003: body section missing from the appendix).
 - Every section added/merged/retired in a run **must** be reflected in Appendix D in the same run.
 - Appendix D's BL references are themselves auditable and were a real drift source: rows cited
   `BL-SEARCH-*` and `BL-ORG-*`, **domains that do not exist** (the real prefixes are `BL-SRCH-*`
-  and `BL-B2B-*`). Verify each BL ref against `business-logic.md` — `bl:lint` will not catch a
+  and `BL-B2B-*`). Verify each BL ref with `bl:extract -- --id <ID>` — `bl:lint` will not catch a
   bad ref inside the ECL library, only inside a suite CSV.
 - Update it as its **own deliberate edit**, never as an incidental side effect of a body change.
 
@@ -204,7 +204,7 @@ it here, and do not treat a green `ecl:lint` as evidence the citations are corre
 
 ## 9. Value — which sections are worth the audit budget, and what a new one must declare
 
-Same purpose and the same code as `bl-audit-criteria.md` §6 (`scripts/knowledge/oracle-significance.ts`,
+Same purpose and the same code as `bl-audit-criteria.md` §5 (`scripts/knowledge/oracle-significance.ts`,
 via `npm run oracles:rank -- --axis=ecl`), with the signals a pattern row actually carries.
 
 **Business value — what a violation costs — comes ONLY from a declared `BL-*` link:** the section's

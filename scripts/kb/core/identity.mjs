@@ -10,11 +10,22 @@
 // CONFIRMATION instead, and the base gets more trustworthy out of a retrieval failure rather than
 // more bloated.
 //
-// THE TEST IS NOT WORDING, AND THAT IS MEASURED. In the prior art the wording-similarity range of
-// pairs that MUST collapse CONTAINS the range of pairs that must not, and one pair stating a
-// single fact scored 0.00. Anchors and scope are structured and comparable; prose is not.
+// THE TEST IS NOT WORDING SIMILARITY, AND THAT IS MEASURED. In the prior art the wording-similarity
+// range of pairs that MUST collapse CONTAINS the range of pairs that must not, and one pair stating
+// a single fact scored 0.00. So no similarity threshold decides identity.
 //
-//   > Two records are the same fact when their normalised anchors and their scope axes agree.
+// BUT ANCHORS + SCOPE ALONE ARE A PLACE, NOT A FACT (VCST-6102). One coordinate holds many honest
+// facts, and on 2026-09-28 the anchors+scope-only rule refused 9 captures of which 7 were DIFFERENT
+// facts ("vcptcore-qa admin password is expired" as a duplicate of "Sales Rep details blade requires
+// first/last name"). At push time 4 of those were then CONVERTED into a confirmation of the unrelated
+// incumbent: the new claim was written nowhere and the incumbent gained trust nobody earned.
+//
+//   > Two records are the same fact when their normalised anchors and scope axes agree AND their
+//   > subjects are equal after `claimKey` normalisation (case, whitespace, punctuation).
+//
+// Equality, not similarity, on purpose: it is the conservative end. A reworded repeat at the same
+// coordinate now becomes a second entry, which is visible and cheap to consolidate; the old rule's
+// failure was invisible and destroyed a claim. A fuzzy threshold is a separate, measured decision.
 //
 // THE ACCEPTED LIMIT, stated rather than hidden: an agent that captures the same phenomenon under
 // DIFFERENT anchors evades the test and a second entry gets in. That is deliberate -- it fails in
@@ -42,6 +53,31 @@ export function identityKey({ anchors = [], scope = [] } = {}) {
 export const rowKey = (row) => `${(row.anchorKeys ?? []).join('|')}::${(row.scope ?? []).join('|')}`;
 
 /**
+ * The claim half of identity: the subject lowercased, whitespace collapsed, and SENTENCE punctuation
+ * (. , ; : ! ? quotes brackets) stripped from the edges of each word — nothing else. "Cart totals lag,
+ * a quantity change." and "cart totals lag a quantity change" are one claim.
+ *
+ * Every other symbol is part of the claim, because it can carry the meaning: "quantity -1 is
+ * rejected" and "quantity 1 is rejected", `>` and `<`, `$` and `€`, `1.5` and `15` are different facts,
+ * and merging them would confirm the opposite claim. A word that is ONLY punctuation (`?` in "* and
+ * ? are wildcards") is kept whole for the same reason.
+ *
+ * FORMATTING is not the claim either (VCST-6102 review 2): backticks anywhere, an ellipsis at a word's
+ * edge, and a free-standing em or en dash ("a — b") are how a subject is typeset, never what it says.
+ * A hyphen stays: "-1" and "quantity-change" are text.
+ */
+const SENTENCE_EDGES = /^[.,;:!?"'“”‘’()[\]…]+|[.,;:!?"'“”‘’()[\]…]+$/gu;
+const TYPESETTING = /^[—–]+$/u;
+export const claimKey = (subject) => String(subject ?? '')
+  .toLowerCase()
+  .replace(/`/g, '')
+  .split(/\s+/)
+  .filter((w) => !TYPESETTING.test(w))
+  .map((w) => w.replace(SENTENCE_EDGES, '') || w)
+  .filter(Boolean)
+  .join(' ');
+
+/**
  * Does the base already hold this fact?
  *
  * Runs TWICE in the shipping design: once at `capture` against the session's cached index, and
@@ -54,12 +90,16 @@ export const rowKey = (row) => `${(row.anchorKeys ?? []).join('|')}::${(row.scop
  * serve; refusing a fresh observation on its account would leave the base unable to relearn
  * something it once knew.
  *
+ * The CLAIM must agree too (VCST-6102). A row at the same coordinates with a different subject is
+ * a different fact: it is never a duplicate, and so never converted into a confirmation at push.
+ *
  * @returns {{row: object, key: string}|null}
  */
-export function findDuplicate(rows, { anchors, scope }) {
+export function findDuplicate(rows, { anchors, scope, subject }) {
   const key = identityKey({ anchors, scope });
   if (key === '::') return null; // no anchors and no scope is not an identity, it is an empty one
-  const row = rows.find((r) => r.status === 'active' && rowKey(r) === key);
+  const claim = claimKey(subject);
+  const row = rows.find((r) => r.status === 'active' && rowKey(r) === key && claimKey(r.subject) === claim);
   return row ? { row, key } : null;
 }
 
@@ -83,7 +123,7 @@ export function subjectTakenMessage(row, { sameSubject = true } = {}) {
 export function refusalMessage(row) {
   const anchors = (row.anchors ?? row.anchorKeys ?? []).join(', ');
   const scope = (row.scope ?? []).join(', ');
-  return `${row.id} is already this fact — same anchors (${anchors}), same scope (${scope}).\n`
+  return `${row.id} is already this fact — same subject, same anchors (${anchors}), same scope (${scope}).\n`
     + `  ${row.subject}\n`
     + `Read it: kb show ${row.id}\n`
     + `If it agrees with what you saw, confirm it:  kb confirm ${row.id} --deployment <env>\n`

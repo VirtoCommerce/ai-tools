@@ -13,7 +13,7 @@ Tours model how different kinds of testers think. Each forces a specific lens on
 | Tour | Mindset | What to do | What it finds |
 |------|---------|------------|---------------|
 | **Garbage Collector** | Inventory-keeper | Visit every menu item, every link, every footer entry, every settings tab. Don't go deep — touch each surface once. | Dead links, 404s, broken navigation, orphaned pages, unauthorized routes that should be gated |
-| **Bad Neighborhood** | Detective at a crime scene | Go to the modules with the worst bug history (check `MEMORY.md` + recent JIRA bugs). Poke around there. | Regressions in chronically fragile areas (in VC: Apollo cache, virtual-catalog link, Configurable Products, promotion engine) |
+| **Bad Neighborhood** | Detective at a crime scene | Go to the modules with the worst bug history (check `vc-bug-catalog.md` + recent JIRA bugs). Poke around there. | Regressions in chronically fragile areas (in VC: Apollo cache, virtual-catalog link, Configurable Products, promotion engine) |
 | **Couch Potato** | The laziest possible user | Pass through every screen doing the minimum — click Next/OK with nothing filled in, accept all defaults, never type. | Missing required-field validation, empty-state crashes, broken defaults, unsafe "Continue" buttons |
 | **Antagonistic** | The contrarian | Do the *opposite* of what the app expects. Cancel everything. Type negative numbers. Pick the wrong option. Click No when asked Yes. | Brittle happy-path assumptions, missing cancel handlers, state corruption on rejection |
 | **Saboteur** | Someone trying to break it on purpose | Deliberately trigger every error path. Invalid input, network drop mid-request, force 4xx/5xx via DevTools, kill the tab and reopen. | Error recovery gaps, partial-state writes, unhandled exceptions, ugly error pages |
@@ -127,7 +127,7 @@ When you find something suspicious, the question is *"is this actually a bug?"*.
 | **P** | **Product** | Is it internally consistent? Same action in two places should produce the same result. |
 | **P** | **Purpose** | Does the feature actually accomplish its stated goal? Does it solve the user's real problem? |
 | **S** | **Standards & statutes** | Does it comply with WCAG, GDPR, PCI-DSS, the OWASP top 10? Does it follow REST/GraphQL conventions? |
-| **F** | **Familiar problems** | Is this a known bug pattern? Have you seen this exact failure mode in this app before? Check `vc-bug-catalog.md` + `e-commerce-edge-cases-library.md` + `MEMORY.md`. |
+| **F** | **Familiar problems** | Is this a known bug pattern? Have you seen this exact failure mode in this app before? Check `vc-bug-catalog.md` + `e-commerce-edge-cases-library.md`. |
 
 ### Using oracles in practice
 

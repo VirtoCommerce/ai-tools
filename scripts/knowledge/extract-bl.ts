@@ -15,6 +15,9 @@
  * Counts are never transcribed here (CLAUDE.md §Where the rules live) — `npm run bl:extract:list`
  * prints the live domains and sizes, and `--stats` prints the ratio for whatever you just extracted.
  *
+ * SOURCE. Since BL 2.0 M4 the oracle is read from `bl/*.yaml`, rendered in memory by `oracleText()` — the same
+ * text `npm run bl:render` writes to business-logic.md, which this script no longer opens.
+ *
  * VERBATIM, NOT SUMMARISED. The output is the oracle's own markdown, sliced by line range — never a
  * re-rendering. An agent reading extracted text is reading the same authority, character for
  * character, and `BL-*` ids keep their citation contract with the suites. Anything that paraphrased
@@ -46,11 +49,10 @@
  * Exit codes: 0 on a non-empty extract; 2 on a filter that matches nothing (a silent empty brief is
  * worse than a loud failure — an agent handed zero invariants would report "no invariant applies").
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from "fs";
-import { join } from "path";
 import { DOMAIN_RE, ENTRY_RE } from "./lint-bl.ts";
-
-export const BL_PATH = join(".claude", "knowledge", "oracles", "business-logic.md");
+import { BL_DIR, oracleText } from "./bl-yaml.ts";
 
 export interface Slice {
   id: string;
@@ -267,7 +269,7 @@ export function renderMarkdown(selected: readonly Slice[], scope: string, total:
   return [
     `# BL invariants — extract (${selected.length} of ${total})`,
     "",
-    `> Verbatim slice of \`${BL_PATH}\`, produced by \`npm run bl:extract -- ${scope}\`.`,
+    `> Verbatim slice of the oracle rendered from \`${BL_DIR}/*.yaml\`, produced by \`npm run bl:extract -- ${scope}\`.`,
     "> **This is a SUBSET.** Invariants outside the filter are not shown and are not absent — if the",
     "> task turns out to touch another domain, extract that domain too rather than concluding no rule",
     "> applies. The `BL-*` ids are the citation contract the suites use; cite them, do not renumber.",
@@ -295,8 +297,10 @@ function listArg(argv: readonly string[], name: string): string[] {
 
 function main(): void {
   const argv = process.argv.slice(2);
-  const file = argv.find((a) => !a.startsWith("--") && a.endsWith(".md")) ?? BL_PATH;
-  const text = readFileSync(file, "utf-8");
+  // An explicit .md argument is read as given (tests, a frozen copy); otherwise the oracle is rendered from the YAML.
+  const given = argv.find((a) => !a.startsWith("--") && a.endsWith(".md"));
+  const file = given ?? `${BL_DIR}/*.yaml`;
+  const text = given ? readFileSync(given, "utf-8") : oracleText();
   const slices = sliceOracle(text);
 
   const domains = listDomains(text);

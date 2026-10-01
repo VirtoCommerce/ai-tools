@@ -12,6 +12,7 @@
  * Usage (standalone only, at your own risk):
  *   node scripts/seed-data/seed-catalog-categories.mjs --force [--dry-run] [--verbose]
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { DRY_RUN, log, assertSafeTarget, auth, api, seedCategoryTree } from '../../lib/seed-common.mjs';
 
 (async () => {

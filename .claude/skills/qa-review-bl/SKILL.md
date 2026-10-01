@@ -1,35 +1,40 @@
 ---
 name: qa-review-bl
-description: "[QA Method] ALIAS of /qa-review-oracles bl — triangulate each BL invariant against docs + live + source code, auto-apply confirmed changes to business-logic.md, and reconcile test-case coverage. The methodology now lives in the merged qa-review-oracles skill."
-argument-hint: "all | domain <name> | BL-<ID> | diff [--dry-run]"
-disable-model-invocation: true
+description: "[QA Method] Pipeline entry point for the BL sync — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* a run contradicted or surfaced (mark SUSPECT, resolve from the Jira decision, sync from the ticket's AC or docs; edits bl/<slug>.yaml only from a human source; reconcile test-case citations). For a manual oracle review, use /qa-review-oracles."
+argument-hint: "all | domain <name> | BL-<ID> | suspect | inferred | diff [--dry-run]"
 ---
 
 # /qa-review-bl — alias of `/qa-review-oracles bl`
 
 **This skill is an alias. The methodology lives in [`/qa-review-oracles`](../qa-review-oracles/SKILL.md).**
 
-`/qa-review-bl <args>` is exactly `/qa-review-oracles bl <args>`. Invoke the merged skill and
-follow it, with the axis fixed to **`bl`** (oracle `knowledge/oracles/business-logic.md`,
-deterministic core `bl:lint`/`bl:audit:collect`, criteria file
-[`bl-audit-criteria.md`](../qa-review-oracles/bl-audit-criteria.md), proposals
-`reports/ba/bl-proposals-<date>.md`, report `reports/knowledge/BL-AUDIT-<date>.md`).
+`/qa-review-bl <args>` is exactly `/qa-review-oracles bl <args>`. **Read
+[`../qa-review-oracles/SKILL.md`](../qa-review-oracles/SKILL.md) in full and follow it** with the
+axis fixed to **`bl`** — every `bl`-specific file, script, rule code and output path is in that
+skill's **Axis contract** table, the `bl` column. Read the file rather than invoking
+`/qa-review-oracles`: that skill is `disable-model-invocation: true` (a manual audit stays
+user-invoked). This alias is model-invocable only so that `/qa-test-lifecycle` Phase 4c can reach
+it — **when a model invokes it, the scope is the `BL-<ID>` candidates Phase 4c passes.** A broader
+scope (`all`, `domain <name>`, `suspect`, `inferred`, `diff`) runs only when the user asked for it, because
+it writes `.claude/knowledge/oracles/bl/<slug>.yaml` (rules: `../qa-review-oracles/bl-audit-criteria.md`).
 
 | `/qa-review-bl …` | ≡ |
 |---|---|
 | `all` | `/qa-review-oracles bl all` |
 | `domain cart` | `/qa-review-oracles bl domain cart` |
 | `BL-CART-010` | `/qa-review-oracles bl BL-CART-010` |
+| `suspect` | `/qa-review-oracles bl suspect` |
+| `inferred` | `/qa-review-oracles bl inferred` |
 | `diff` | `/qa-review-oracles bl diff` |
 | `… --dry-run` | `/qa-review-oracles bl … --dry-run` |
 
 ## Why the alias exists rather than a rename
 
-`/qa-review-bl` is referenced from `/qa-test-lifecycle` **Phase 4c** (which runs it
-automatically — a silent break there would be invisible), `/ba-analyze`, `.claude/rules/*`,
-and the `ba-system-analyzer` agent definition. Keeping the name working was cheaper and safer
-than editing every call site. New work should call `/qa-review-oracles` directly; both reach
-the same implementation.
+`/qa-review-bl` is invoked by name from `/qa-test-lifecycle` **Phase 4c** (automatically — a
+silent break there would be invisible) and cited from other prompts and agent definitions
+(`grep -rn "qa-review-bl" .claude` lists them). Keeping the name working was cheaper and safer
+than editing every call site. New manual work should call `/qa-review-oracles` directly; both
+reach the same implementation.
 
 There is deliberately **no ECL alias** — `/qa-review-oracles ecl` is new surface with no legacy
 call sites to preserve.

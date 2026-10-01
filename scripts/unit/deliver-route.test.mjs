@@ -125,7 +125,7 @@ test("classifyGithubTokenKind: no token at all", () => {
 
 // ─── isAllowedUpstreamRepo (destination allowlist) ───────────────────────────────
 test("isAllowedUpstreamRepo: allows VirtoCommerce/* only", () => {
-  assert.equal(isAllowedUpstreamRepo("VirtoCommerce/vc-mcp-testing-module"), true);
+  assert.equal(isAllowedUpstreamRepo("VirtoCommerce/ai-tools"), true);
   assert.equal(isAllowedUpstreamRepo("VirtoCommerce/vc-platform"), true);
   assert.equal(isAllowedUpstreamRepo("virtocommerce/vc-frontend"), true); // case-insensitive org
 });
@@ -133,7 +133,7 @@ test("isAllowedUpstreamRepo: allows VirtoCommerce/* only", () => {
 test("isAllowedUpstreamRepo: rejects any non-VirtoCommerce / malformed target (misroute guard)", () => {
   for (const bad of [
     "acme/secret-module",              // a client/personal repo
-    "attacker/vc-mcp-testing-module",  // look-alike owner
+    "attacker/ai-tools",  // look-alike owner
     "VirtoCommerce",                   // no repo segment
     "VirtoCommerce/vc/extra",          // extra path segment
     "VirtoCommerceEvil/x",             // org is not exactly VirtoCommerce

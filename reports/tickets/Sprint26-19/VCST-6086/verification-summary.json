@@ -1,0 +1,43 @@
+{
+  "ticket": "VCST-6086",
+  "verdict": "VERIFIED",
+  "date": "2026-09-29",
+  "flow": "verify-fix",
+  "type": "Bug",
+  "path_route": "verify-fix (Bug x fix-ready) via /qa-test 1a",
+  "environment": "https://vcst-qa.govirto.com",
+  "build": {
+    "platform": "3.1074.0",
+    "platform_image_tag": "3.1074.0-pr-3125-c3b8-vcst-6086-c3b85c0c",
+    "theme": "unchanged (not in scope: Admin SPA only)",
+    "relevant_modules": { "VirtoCommerce.Loyalty": "3.1009.0-pr-18-4411" },
+    "pr_build": "VirtoCommerce/vc-platform#3125 @ c3b85c0c",
+    "deploy_pin": "VirtoCommerce/vc-deploy-dev#6649 (merged 2026-09-29T13:12Z)",
+    "deployed_check": "served /dist/app.js?v=9aDNCP23PPNSZOy4W8osXT1s5I16wvT1BRVaZrN17LY contains getErrorBody guard; old unguarded errors.join absent"
+  },
+  "agent_used": "qa-backend-expert (playwright-edge)",
+  "str_result": "3/3 POST, 3/3 PUT",
+  "baseline_reproduction": "from-qa-bug (reports/bugs BUG-Admin-SPA-setError-TypeError-join-on-list-error-body-VCST-6086.md, 5/5 TypeError on 3.1073.0-pr-3121) + ticket attachment VCST-6086-empty-error-details.png + fix-harness render-before-bare-list.png",
+  "checklist_total": 9,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_blocked": ["#8 White Labeling bare-list rejection: validator not reachable from admin input without changing real settings; same body shape covered by matrix row a"],
+  "shape_matrix": "13/13 expected errorBody, 0 throws",
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "bugs_not_filed": ["Not filed (below severity floor / unconfirmed): loyalty mission GET appears to fill a cached search copy's dynamicExpression.availableChildren in place (UI metadata only; observation, not a confirmed defect)"],
+  "business_rules_verified": [],
+  "status_transitions": [
+    { "at": "1a/verify-fix Step 3", "from": "Ready for test", "to": "Testing", "transition": "On QA (4)", "confirmed_by_operator": true },
+    { "at": "verify-fix Step 6", "from": "Testing", "to": "Tested", "transition": "Finish test (8)", "confirmed_by_operator": true, "note": "stops at Tested; Done is a human step" }
+  ],
+  "tracker_transition": { "role": "tested", "state": "Tested" },
+  "tracker": { "comment_id": "110714" },
+  "kb": { "pushed_commit": "VirtoCommerce/vc-knowledge@4ab0a77", "disputed": ["KB-E84AAF1D"], "captured": ["KB-79DB4E17"] },
+  "evidence": "reports/tickets/Sprint26-19/VCST-6086/evidence.html",
+  "evidence_artifact": null,
+  "har": "test-results/edge/har/VCST-6086-verify-2026-09-29.har",
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6086/",
+  "follow_up": "vcst-qa platform is pinned to the PR image (replaced VCST-4464 build 3.1073.0-pr-3121); re-pin after #3125 merges"
+}

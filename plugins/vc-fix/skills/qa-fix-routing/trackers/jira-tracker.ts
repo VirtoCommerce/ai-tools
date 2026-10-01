@@ -1,8 +1,6 @@
 /**
- * JiraTracker — the Tracker implementation extracted VERBATIM from the inline
- * JIRA REST helpers that used to live in ci/run-fix-cycle.ts. Behaviour is
- * identical: same endpoints, same auth (Basic email:token), same guards, same
- * log strings. This is the default tracker, so existing runs are unaffected.
+ * JiraTracker — the Jira REST Tracker implementation (Basic email:token auth).
+ * This is the default tracker.
  *
  * Config (unchanged env vars): JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN.
  */

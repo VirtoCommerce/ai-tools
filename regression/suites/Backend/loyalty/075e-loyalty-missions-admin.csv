@@ -57,7 +57,7 @@ MSNA-004,Add — creating a mission with an OrderValueGoal shows the currency-qu
 [FORM] the goal row reads 'Reach order total of 100.00 <currency> per mission period', currency matches @td(STORE_PRIMARY.currency) {OBSERVED}
 [GRID] a new row with Name = {{mission_name}}, Status = Draft appears in the missions list {SPEC}",[API] MSN-001 (075d) confirms the equivalent goal.id = OrderValueGoal via REST read-back,Save button stays enabled and the blade title does not change after clicking (save silently failed); the goal row shows no currency (contract mismatch with C19); the new mission is missing from the grid after Save,"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [ACT] select the row with Name = {{mission_name}}
-[ACT] click 'Delete' in the toolbar and confirm",VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: no toast exists — real signal is blade re-title + Save/Reset disable; added missing Store + condition steps) | Promoted: VCST-5319 (2026-09-01),Automated
+[ACT] click 'Delete' in the toolbar and confirm",VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: no toast exists — real signal is blade re-title + Save/Reset disable; added missing Store + condition steps) | Promoted: VCST-5319 (2026-09-01) | Behavior:loy.mission.author,Automated
 MSNA-005,Add — creating a mission with an OrderCountGoal shows the count-qualified goal sentence,Admin > Loyalty Missions > Details > Create > OrderCountGoal,High,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]",back_url={{BACK_URL}}; mission_name=AGENT-TEST-MSNA-OC,"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [WAIT] grid loaded
@@ -188,7 +188,7 @@ MSNA-013,Publish transitions a Draft mission to Published; the Publish action is
 [DOM] the read-only banner is now shown ('Only draft missions can be edited...') {OBSERVED}
 [DOM] the 'Publish' toolbar button is disabled or absent now that the mission is Published {SPEC}",[API] status transition mirrors the REST contract (Draft creatable directly as Published too — MSN-004..007 use that path),Status stays Draft after clicking Publish; 'Publish' remains clickable on an already-Published mission (would let a second click attempt an illegal re-publish),"[NAV] {{BACK_URL}}/#!/workspace/loyalty-missions
 [ACT] select the row with Name = {{mission_name}}
-[ACT] click 'Archive' then 'Delete' in the toolbar and confirm",VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: added missing Store + condition steps; corrected the two 'success notification visible' waits — no toast exists on this blade),Draft
+[ACT] click 'Archive' then 'Delete' in the toolbar and confirm",VCST-5319; loyalty-mission-details | Promoted: REG-2026-08-27-1846 (2026-08-27) | Corrected: 2026-08-27 (live re-verify: added missing Store + condition steps; corrected the two 'success notification visible' waits — no toast exists on this blade) | Behavior:loy.mission.publish,Draft
 MSNA-014,No Public/Private control exists anywhere in the mission details blade,Admin > Loyalty Missions > Details > Public flag (gap),Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ADMIN_DEFAULT]
 1. @td(MSN_PUBLISHED_PRIVATE.id) is Published, public=false (set only via the API/seeder — no Admin control was found for it).",back_url={{BACK_URL}},"[PRE:CLEAR_SESSION]

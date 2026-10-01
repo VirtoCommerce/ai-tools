@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VirtoCommerce/ai-tools/.claude/templates/test-data-model.schema.json",
+  "title": "Test Data Model — the data STATE each behaviour requires",
+  "$comment": "SINGLE SOURCE OF TRUTH for the shape of `test-data/models/<file>.data-model.json`, loaded by `npm run models:check` through ajv. It answers 'what state must exist before this behaviour runs?' — NEVER 'which API calls create it': that is the existing seeders' job, named here by `seed_capability` (a package.json script or a spec-module export) and addressed at run time through the existing `@td(ALIAS.field)` resolver (`td_alias`). No new engine, registry or runtime handle. Rules this file encodes: .claude/rules/test-data.md (SECOND RULE ⇒ `discriminates`; DISPOSABLE FIXTURES ⇒ `lifecycle` + `shared_state`). Method: .claude/skills/qa-test-data-model/SKILL.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "domain_slug", "generated", "requirements", "profiles"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "1.0" },
+    "domain_slug": { "type": "string", "pattern": "^[a-z][a-z0-9]*$" },
+    "generated": { "type": "string", "format": "date" },
+    "amended": { "type": "string", "format": "date" },
+    "requirements": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/requirement" } },
+    "profiles": { "type": "array", "items": { "$ref": "#/$defs/profile" } },
+    "metadata": { "type": "object" }
+  },
+  "$defs": {
+    "requirementId": { "type": "string", "pattern": "^data\\.[a-z][a-z0-9]*(\\.[a-z0-9][a-z0-9-]*)+$" },
+    "nodeId": { "type": "string", "pattern": "^[a-z][a-z0-9]*(\\.[a-z0-9][a-z0-9-]*)+$" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "ref"],
+      "properties": {
+        "class": { "enum": ["SPEC", "BL", "DOC", "OBSERVED", "HYPOTHESIS"] },
+        "ref": { "type": "string", "minLength": 3 },
+        "note": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "entity", "purpose", "required_state", "lifecycle", "acquisition", "cleanup", "status"],
+      "properties": {
+        "id": { "$ref": "#/$defs/requirementId" },
+        "entity": { "type": "string", "pattern": "^[A-Z][A-Za-z]+$" },
+        "purpose": { "type": "string", "minLength": 5 },
+        "required_state": {
+          "type": "object",
+          "minProperties": 1,
+          "$comment": "The state, stated explicitly — `{\"status\": \"Published\"}`, never 'a mission'."
+        },
+        "constraints": { "type": "object" },
+        "relationships": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["requirement", "required"],
+            "properties": {
+              "requirement": { "$ref": "#/$defs/requirementId" },
+              "required": { "type": "boolean" },
+              "note": { "type": "string" }
+            }
+          },
+          "$comment": "Must-exist-first edges of the data dependency graph. No cycles (checker)."
+        },
+        "lifecycle": {
+          "enum": ["STATIC", "FIXTURE", "SCENARIO", "STEP", "DYNAMIC", "DERIVED"],
+          "$comment": "STATIC = environment layer ({{VAR}}, store settings). FIXTURE = shared per SUITE — name the shared mutable state. SCENARIO = per RUN, minted with a run handle. STEP = created right before one step. DYNAMIC = random-data, never asserted on. DERIVED = produced by an earlier action — name its source."
+        },
+        "shared_state": {
+          "type": "string",
+          "minLength": 5,
+          "$comment": "FIXTURE only: what mutable state the suite shares on this data, and what may therefore never be asserted on it (DISPOSABLE FIXTURES rule 4)."
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "minProperties": 1,
+          "properties": {
+            "produced_by": { "$ref": "#/$defs/nodeId", "$comment": "The mind-map node whose `produces` lists this requirement." },
+            "requirement": { "$ref": "#/$defs/requirementId" },
+            "field": { "type": "string" }
+          }
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy"],
+          "properties": {
+            "strategy": {
+              "enum": ["EXISTING", "DISCOVER", "CREATE", "TRANSITION", "DERIVE", "GENERATE"],
+              "$comment": "Only strategies with a real executor here. EXISTING = a registered @td() alias. DISCOVER = scripts/lib/live-discover.ts. CREATE/TRANSITION = a seeder or the case's own steps. DERIVE = [GQL-CAPTURE] / an earlier step. GENERATE = scripts/lib/random-data.ts. MOCK/IMPORT are deliberately absent until something executes them."
+            },
+            "executor": {
+              "enum": ["seed", "case"],
+              "default": "seed",
+              "$comment": "Who reaches the state: a seeder (`seed_capability`) or the case's own Steps (e.g. a store-setting toggle, cancelling the order under test)."
+            },
+            "from_state": { "type": "object", "minProperties": 1 },
+            "transition": { "type": "string", "minLength": 3 },
+            "discover_fn": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9]*$" },
+            "discover_constraints": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" },
+              "$comment": "SECOND RULE: constrain discovery on every dimension the feature reads — live-discover selects on availability, not suitability."
+            },
+            "generator": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9]*$" },
+            "fallback": { "enum": ["EXISTING", "DISCOVER", "CREATE", "TRANSITION", "DERIVE", "GENERATE"] }
+          },
+          "allOf": [
+            { "if": { "properties": { "strategy": { "const": "TRANSITION" } } }, "then": { "required": ["from_state", "transition"] } },
+            { "if": { "properties": { "strategy": { "const": "DISCOVER" } } }, "then": { "required": ["discover_fn", "discover_constraints"] } },
+            { "if": { "properties": { "strategy": { "const": "GENERATE" } } }, "then": { "required": ["generator"] } }
+          ]
+        },
+        "seed_capability": {
+          "type": "string",
+          "pattern": "^([a-z][a-z0-9:-]*|scripts/[A-Za-z0-9_./-]+\\.mjs#[A-Za-z_][A-Za-z0-9_]*)$",
+          "$comment": "A package.json script name (`seed:missions-e2e`) or `scripts/…-specs.mjs#EXPORT`. Resolved by the checker — never a new registry."
+        },
+        "td_alias": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*\\.[A-Za-z_][A-Za-z0-9_.]*$",
+          "$comment": "`ALIAS.field` as written inside @td(…). Must resolve in test-data/aliases.json."
+        },
+        "cleanup": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required"],
+          "properties": {
+            "required": { "type": "boolean" },
+            "via": { "type": "string", "minLength": 3, "$comment": "A teardown script, the AGENT-TEST- prefix sweep, or the case's Cleanup column." }
+          },
+          "allOf": [{ "if": { "properties": { "required": { "const": true } } }, "then": { "required": ["via"] } }]
+        },
+        "discriminates": {
+          "type": "string",
+          "minLength": 10,
+          "$comment": "SECOND RULE: which branch or chain link this data makes DECIDABLE, and the divergent values that make it so."
+        },
+        "limits": { "type": "string", "$comment": "What this data cannot decide (SECOND RULE: state the fixture's own limits)." },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "status": { "enum": ["CONFIRMED", "UNVERIFIED", "DRIFT", "OBSOLETE"] },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "lifecycle": { "const": "FIXTURE" } } }, "then": { "required": ["shared_state"] } },
+        { "if": { "properties": { "lifecycle": { "const": "DERIVED" } } }, "then": { "required": ["source"] } },
+        {
+          "if": { "properties": { "acquisition": { "properties": { "strategy": { "const": "DERIVE" } } } } },
+          "then": { "required": ["source"] }
+        },
+        {
+          "if": { "properties": { "acquisition": { "properties": { "strategy": { "const": "EXISTING" } } } } },
+          "then": { "required": ["td_alias"] }
+        },
+        {
+          "$comment": "A seeder-executed CREATE/TRANSITION must name its seeder; a case-executed one names none.",
+          "if": {
+            "properties": {
+              "acquisition": {
+                "properties": { "strategy": { "enum": ["CREATE", "TRANSITION"] } },
+                "not": { "properties": { "executor": { "const": "case" } }, "required": ["executor"] }
+              }
+            }
+          },
+          "then": { "required": ["seed_capability"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "lifecycle": { "enum": ["SCENARIO", "STEP"] },
+              "acquisition": { "properties": { "strategy": { "enum": ["CREATE", "TRANSITION"] } } }
+            }
+          },
+          "then": { "properties": { "cleanup": { "properties": { "required": { "const": true } } } } }
+        },
+        {
+          "if": { "properties": { "lifecycle": { "enum": ["FIXTURE", "SCENARIO", "STEP", "DERIVED"] } } },
+          "then": { "required": ["discriminates"] }
+        }
+      ]
+    },
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "behavior", "purpose", "requirements"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^profile\\.[a-z][a-z0-9]*(\\.[a-z0-9][a-z0-9-]*)+$" },
+        "behavior": { "$ref": "#/$defs/nodeId", "$comment": "The mind-map node (behaviour or branch) this profile makes executable." },
+        "purpose": { "type": "string", "minLength": 5 },
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/requirementId" },
+          "$comment": "The MINIMAL set: the checker warns on a requirement outside the behaviour's requires-closure."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

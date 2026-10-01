@@ -18,20 +18,33 @@ This repo is mostly **not code**. The default answer is therefore *no test*, and
 | You changed | Unit test? | What actually gates it |
 |---|---|---|
 | A prompt — `.claude/commands/*.md`, `.claude/agents/*.md`, `**/SKILL.md`, `.claude/rules/*.md`, `CLAUDE.md` | **No** | `npm run context:check` (budgets, dangling paths, `§` anchors), `qa-test:doclint` |
-| Knowledge / oracles — `.claude/knowledge/**`, `business-logic.md`, `e-commerce-edge-cases-library.md` | **No** | `bl:lint`, `ecl:lint` (citation integrity), `domain:check` |
+| Knowledge / oracles — `.claude/knowledge/**`, `oracles/bl/*.yaml`, `e-commerce-edge-cases-library.md` | **No** | `bl:lint`, `ecl:lint` (citation integrity), `domain:check` |
 | A regression suite CSV, `config/test-suites.json`, a selection group | **No** | `suites:lint`, `suites:executability:check`, `scope:validate` |
 | Declarative fixture data — a CSV row, a JSON fixture, literals in a `*-specs.mjs` | **No** | `td:validate` + `td:validate:<domain>` (the per-domain drift guard) |
 | Docs — `docs/**`, `README.md`, `CHANGELOG.md`, a report under `reports/**` | **No** | nothing, correctly |
 | A workflow `.yml`, `.mcp.json`, an `.env.*` layer, an npm script wiring | **No** | the pipeline itself, on its next run |
-| **A function whose output is computed** — parser, planner, classifier, reducer, builder, token resolution, arithmetic, routing, redaction, teardown/search semantics | **YES** | nothing else. See RULE 2 |
+| **A function whose output is computed** — parser, planner, classifier, reducer, builder, token resolution, arithmetic, routing, redaction, teardown/search semantics | **Temporary only** | a test you write, run and delete before commit. See RULE 2 |
 
 A test for anything in the **No** rows is not caution — it is a second, weaker copy of a gate that
 already runs, and it fails only when someone edits the data on purpose. See RULE 3.
 
-## RULE 2 — test the DERIVATION, never the DECLARATION
+## RULE 2 — a unit test for new code is TEMPORARY: write it, run it, delete it
 
-Where there *is* code, a unit test earns its place only when **the expected value is derived
-independently of the thing asserted**. Restating a literal that lives one file away, in the same
+**No new `scripts/unit/` file is committed.** Where there is code, write a unit test to check the
+script while you build it — the red → green, the edge cases, the bad input — run it until it is
+green, then **delete it before you commit**. Its job is to check the script once, at authoring time;
+after that the drift guards, `context:check` and the other gates are what run on every PR.
+
+- **The committed corpus only shrinks.** What is in `scripts/unit/` was kept on evidence on
+  2026-10-01 (§The committed corpus below). Changing a function that a committed test covers means
+  updating that test, never adding a new file beside it.
+- **Missing coverage still goes in the guard** (RULE 3), not into a committed unit test.
+- **Exempt:** `/qa-fix` G2 reproductions in product repos (RULE 4).
+
+### Writing the temporary test — derivation, never declaration
+
+A temporary test still has to be able to fail. It checks something only when **the expected value is
+derived independently of the thing asserted**. Restating a literal that lives one file away, in the same
 commit, by the same author, is a transcribed constant with a test runner attached — the GOLDEN RULE
 (`.claude/rules/test-data.md`) pointed at our own test code.
 
@@ -72,6 +85,25 @@ None of the above touches `/qa-fix`. A confirmed bug still gets a **new failing 
 it** before any fix, per `quality-gates.md` G2 — including the MEDIUM RULE about *where* the red is
 observed. That test is derived from the ticket's Actual result, not from the code, so it satisfies
 RULE 2 by construction. It is the one place where "write a test" is unconditional.
+
+## The committed corpus — kept on evidence, 2026-10-01
+
+A committed test stays only if it is **proven**: it goes red when the code it covers breaks and nothing
+else would notice. Two measurements decide this:
+
+- **Test-data spec tests:** `td:test-attribution` KEEP, i.e. the test catches a mutation that
+  `td:validate:<domain>` misses.
+- **Every other test:** it goes red when one of the functions it imports is gutted to
+  `return undefined` (the per-test form of `npm run test:quality`). No guard calls that code, so a
+  catch here is unique by definition.
+
+Also kept whole, without measurement: the **security and containment** tests (redaction, secret
+gates, the self-diagnostics delivery boundary, MCP/credential hygiene, the tracker and label hooks).
+Their failure is a leak, not a wrong number. A test the tools cannot measure (it reaches its code
+through a subprocess, asserts a negative property such as "does not mutate", or its baseline is
+red) is not cut by this rule either. A human decides.
+Rationale and counts: [`docs/decisions/unit-test-roi.md`](../../../docs/decisions/unit-test-roi.md)
+§2026-10-01.
 
 ## How to settle an argument
 

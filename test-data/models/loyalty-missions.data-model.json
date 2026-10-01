@@ -1,0 +1,375 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "loy",
+  "generated": "2026-09-28",
+  "metadata": {
+    "scope": "The data states the loy mind map's mission behaviours require. Every row points at an EXISTING seeder and @td() alias — nothing here is seeded by a new mechanism.",
+    "mind_map": ".claude/knowledge/domain/loyalty-missions.mind-map.json",
+    "ticket": "VCST-6090",
+    "known_limit": "One requirement stands for a per-case family: data.loy.customer.fresh-account names MSN_E2E_USER_001 as its representative alias; each 083d case binds its own MSN_E2E_USER_<case> account of the same shape."
+  },
+  "requirements": [
+    {
+      "id": "data.loy.store.missions-enabled",
+      "entity": "Store",
+      "purpose": "The store has loyalty and missions switched on — the ambient state every mission behaviour reads.",
+      "required_state": { "Loyalty.Enable": true, "Loyalty.Missions.Enable": true },
+      "lifecycle": "STATIC",
+      "acquisition": { "strategy": "EXISTING" },
+      "td_alias": "MSN_STORE_SETTINGS.missions_enabled",
+      "cleanup": { "required": false },
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 links 1, 1b", "date": "2026-09-18" }]
+    },
+    {
+      "id": "data.loy.store.missions-disabled",
+      "entity": "Store",
+      "purpose": "The same store with only the missions switch turned off.",
+      "required_state": { "Loyalty.Missions.Enable": false },
+      "relationships": [{ "requirement": "data.loy.store.missions-enabled", "required": true, "note": "flipped FROM the enabled baseline" }],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": { "Loyalty.Missions.Enable": true },
+        "transition": "store settings GET-merge-PUT of Loyalty.Missions.Enable=false, read back before the next step"
+      },
+      "td_alias": "MSN_STORE_SETTINGS.setting_name",
+      "cleanup": { "required": true, "via": "the case's Cleanup column restores Loyalty.Missions.Enable=true" },
+      "discriminates": "The switch is the ONLY difference from the enabled baseline, so an empty loyaltyMissionProgress or an unaccrued order is attributable to the gate.",
+      "limits": "Store-level shared state: the flip hides missions for every concurrent run on the store — never schedule beside 083c/083d.",
+      "status": "CONFIRMED",
+      "evidence": [
+        { "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 1b", "note": "the setting is read at the write path, the read path and route registration" },
+        { "class": "SPEC", "ref": "VCST-5319", "note": "C1, C2, C25" }
+      ]
+    },
+    {
+      "id": "data.loy.mission.stable-definition",
+      "entity": "Mission",
+      "purpose": "Long-lived missions, one per goal type, for cases that assert a mission's DEFINITION.",
+      "required_state": { "status": "Published", "public": true },
+      "constraints": { "goal_type": { "one_of_each": ["OrderValueGoal", "OrderCountGoal", "PerSkuGoal"] } },
+      "lifecycle": "FIXTURE",
+      "shared_state": "The definition is shared; its PROGRESS accumulates across runs and freezes at Completed, so no case may assert progress movement on it.",
+      "acquisition": { "strategy": "CREATE", "fallback": "EXISTING" },
+      "seed_capability": "seed:loyalty-missions",
+      "td_alias": "MSN_ORDERCOUNT.name",
+      "cleanup": { "required": false, "via": "seed:loyalty-missions:teardown" },
+      "discriminates": "One mission per goal type, so the three goal types are distinguishable on one read.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "header: why the stable set exists separately from the per-run set" }]
+    },
+    {
+      "id": "data.loy.mission.draft",
+      "entity": "Mission",
+      "purpose": "A Draft sibling of the Published fixtures.",
+      "required_state": { "status": "Draft" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Publishing it is one-way (Draft → Published), so a case that publishes it consumes it for every later run.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:loyalty-missions",
+      "td_alias": "MSN_DRAFT.status",
+      "cleanup": { "required": false, "via": "seed:loyalty-missions:teardown" },
+      "discriminates": "Differs from the Published fixtures only in status, so publish and draft-exclusion are decidable.",
+      "limits": "A publish case must mint its own Draft — this fixture only answers read-side questions repeatably.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b", "note": "one-way lifecycle" }]
+    },
+    {
+      "id": "data.loy.mission.expired",
+      "entity": "Mission",
+      "purpose": "A Published mission whose window has ended and that nobody has progress on.",
+      "required_state": { "status": "Published", "window": "ended", "progress": "none" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Any order against it would create progress and change which branch it exercises.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:loyalty-missions",
+      "td_alias": "MSN_EXPIRED.window_intent",
+      "cleanup": { "required": false, "via": "seed:loyalty-missions:teardown" },
+      "discriminates": "Published but out of window with no prior progress — separates window exclusion from status filtering.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-008 promoted on this fixture" }]
+    },
+    {
+      "id": "data.loy.mission.group-targeted",
+      "entity": "Mission",
+      "purpose": "A Published mission restricted to one customer group.",
+      "required_state": { "status": "Published", "condition": "UserGroupIsCondition", "groups": ["VIP"] },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Definition only — visibility is asserted, never progress.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:loyalty-missions",
+      "td_alias": "MSN_GROUP_VIP.condition_groups",
+      "cleanup": { "required": false, "via": "seed:loyalty-missions:teardown" },
+      "discriminates": "Read by a member and an outsider of the SAME group: one must see it and one must not.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-011 promoted" }]
+    },
+    {
+      "id": "data.loy.customer.group-member",
+      "entity": "Customer",
+      "purpose": "An account inside the targeted group.",
+      "required_state": { "groups": "includes the mission's group" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A long-lived account whose balance and progress drift — assert visibility only.",
+      "acquisition": { "strategy": "EXISTING" },
+      "td_alias": "MSN_GROUP_AUDIENCE.member_role",
+      "cleanup": { "required": false },
+      "discriminates": "Differs from the outsider ONLY in group membership.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 actors", "date": "2026-09-18" }]
+    },
+    {
+      "id": "data.loy.customer.group-outsider",
+      "entity": "Customer",
+      "purpose": "An authenticated account outside the targeted group.",
+      "required_state": { "groups": "excludes the mission's group" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A long-lived account — assert visibility only.",
+      "acquisition": { "strategy": "EXISTING" },
+      "td_alias": "MSN_GROUP_AUDIENCE.nonmember_role",
+      "cleanup": { "required": false },
+      "discriminates": "Differs from the member ONLY in group membership.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 actors", "date": "2026-09-18" }]
+    },
+    {
+      "id": "data.loy.mission.private",
+      "entity": "Mission",
+      "purpose": "A Published mission flagged public=false.",
+      "required_state": { "status": "Published", "public": false },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Definition only.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:loyalty-missions",
+      "td_alias": "MSN_PUBLISHED_PRIVATE.public",
+      "cleanup": { "required": false, "via": "seed:loyalty-missions:teardown" },
+      "discriminates": "Identical to a public sibling except the flag, so the flag's effect (or its absence) is observable.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 D7", "date": "2026-09-18" }]
+    },
+    {
+      "id": "data.loy.mission.fresh-per-run",
+      "entity": "Mission",
+      "purpose": "A mission minted this run, so no account has progress on it.",
+      "required_state": { "status": "Published", "progress": "none for every account" },
+      "relationships": [{ "requirement": "data.loy.store.missions-enabled", "required": true }],
+      "lifecycle": "SCENARIO",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_ORDERCOUNT.name",
+      "cleanup": { "required": true, "via": "seed:missions-e2e:teardown — AGENT-TEST-MSN-E2E- prefix sweep with an age floor" },
+      "discriminates": "Every account starts at 0% on it, so 'progress advances' is observable; a stable mission may already be Completed and frozen, which makes the same assertion undecidable.",
+      "status": "CONFIRMED",
+      "evidence": [
+        { "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "header: THE ONE SHAPE THAT IS REPEATABLE" },
+        { "class": "OBSERVED", "ref": "kb:KB-608F7C05", "note": "a mission with progress can be neither edited nor deleted — a fresh mission is the only way forward" }
+      ]
+    },
+    {
+      "id": "data.loy.mission.ordervalue-between",
+      "entity": "Mission",
+      "purpose": "A per-run OrderValueGoal whose target sits strictly between the order's merchandise value and its total.",
+      "required_state": { "status": "Published", "goal": "OrderValueGoal", "progress": "none" },
+      "constraints": { "goal_target": "> the order's merchandise value AND <= the order's total" },
+      "relationships": [{ "requirement": "data.loy.store.missions-enabled", "required": true }],
+      "lifecycle": "SCENARIO",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_ORDERVALUE_003.goal_target",
+      "cleanup": { "required": true, "via": "seed:missions-e2e:teardown" },
+      "discriminates": "Only a target between the two readings separates 'accrues order.Total' from 'accrues merchandise' — BL-LOY-016 §Verify.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "BL", "ref": "BL-LOY-016" }]
+    },
+    {
+      "id": "data.loy.mission.ordervalue-discount-boundary",
+      "entity": "Mission",
+      "purpose": "A per-run OrderValueGoal whose target the undiscounted total would clear and the discounted total does not.",
+      "required_state": { "status": "Published", "goal": "OrderValueGoal", "progress": "none" },
+      "constraints": { "goal_target": "<= the undiscounted total AND > the discounted total" },
+      "relationships": [
+        { "requirement": "data.loy.store.missions-enabled", "required": true },
+        { "requirement": "data.loy.coupon.percent", "required": true, "note": "the target is computed against this coupon's effect" }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_ORDERVALUE_005.goal_target",
+      "cleanup": { "required": true, "via": "seed:missions-e2e:teardown" },
+      "discriminates": "Straddles the discount: completing it would prove progress ignores the discount; not completing proves it is net of discount.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "BL", "ref": "BL-LOY-016", "note": "accepted consequence: a discount moves the customer away from the goal" }]
+    },
+    {
+      "id": "data.loy.coupon.percent",
+      "entity": "Coupon",
+      "purpose": "An active percentage coupon.",
+      "required_state": { "active": true, "discount": "20%" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "A shared coupon — assert its effect on this order only, never its usage count.",
+      "acquisition": { "strategy": "EXISTING" },
+      "td_alias": "COUPON_20PCT.code",
+      "cleanup": { "required": false },
+      "discriminates": "Large enough to move the order total across the discount-boundary target.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "DISCOUNT_ALIAS / DISCOUNT_RATE" }]
+    },
+    {
+      "id": "data.loy.customer.fresh-account",
+      "entity": "Customer",
+      "purpose": "A per-case account with no orders against this run's missions.",
+      "required_state": { "orders_against_run_missions": 0 },
+      "lifecycle": "SCENARIO",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_USER_001.email",
+      "cleanup": { "required": true, "via": "seed:missions-e2e:teardown" },
+      "discriminates": "Bound to one case, so the progress read on it is attributable to that case's own orders.",
+      "limits": "Representative alias only — each case binds its own MSN_E2E_USER_<case> (see metadata.known_limit).",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "CASE_ACCOUNT_PREFIX, boundAccounts()" }]
+    },
+    {
+      "id": "data.loy.customer.zero-balance",
+      "entity": "Customer",
+      "purpose": "An account whose loyalty balance is below the mission reward.",
+      "required_state": { "loyalty_balance": "< the mission reward" },
+      "lifecycle": "SCENARIO",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:loyalty:zero-user",
+      "td_alias": "LOYALTY_ZERO_USER.email",
+      "cleanup": { "required": true, "via": "seed:loyalty:zero-user:teardown" },
+      "discriminates": "The grant at least doubles the balance, so 'the points spent came from the mission' is arithmetic; on a ~964M-PTS account a 500-PTS reward is not legible.",
+      "limits": "The balance CLIMBS on every completion — re-checked each run, never provisioned once.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "header §LEGIBILITY" }]
+    },
+    {
+      "id": "data.loy.product.unit-cash",
+      "entity": "Product",
+      "purpose": "A cash-priced product that can always be bought.",
+      "required_state": { "currency": "store default", "trackInventory": false },
+      "lifecycle": "FIXTURE",
+      "shared_state": "Carries no per-user state, so sharing it across runs costs nothing.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_PRODUCT_UNIT.sku",
+      "cleanup": { "required": false },
+      "discriminates": "Never out of stock, so no accrual case can be BLOCKED by inventory instead of answered.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "header: WHAT IS RUN-SCOPED AND WHAT IS NOT" }]
+    },
+    {
+      "id": "data.loy.product.pts-priced",
+      "entity": "Product",
+      "purpose": "A product priced in the loyalty currency — the thing a reward is spent on.",
+      "required_state": { "currency": "loyalty" },
+      "lifecycle": "FIXTURE",
+      "shared_state": "No per-user state.",
+      "acquisition": { "strategy": "CREATE" },
+      "seed_capability": "seed:missions-e2e",
+      "td_alias": "MSN_E2E_PRODUCT_PTS.sku",
+      "cleanup": { "required": false },
+      "discriminates": "Buying it spends points, not cash — the only purchase that proves a reward is spendable.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "PTS_PRODUCT" }]
+    },
+    {
+      "id": "data.loy.order.contributing",
+      "entity": "Order",
+      "purpose": "The order placed by the case account against a fresh mission.",
+      "required_state": { "placed_after": "the mission was minted", "placed_by": "the case account" },
+      "lifecycle": "DERIVED",
+      "source": { "produced_by": "loy.mission.progress.accrue", "field": "order number from the confirmation page" },
+      "acquisition": { "strategy": "DERIVE", "executor": "case" },
+      "cleanup": { "required": false },
+      "discriminates": "Its own total is the expected currentValue, so contribution is checked against a number the case produced.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "BL", "ref": "BL-LOY-016", "note": "currentValue == order.Total" }]
+    },
+    {
+      "id": "data.loy.order.cancelled",
+      "entity": "Order",
+      "purpose": "The contributing order after it completed a mission, now cancelled.",
+      "required_state": { "status": "Cancelled" },
+      "relationships": [{ "requirement": "data.loy.order.contributing", "required": true }],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": { "status": "placed", "mission": "Completed from this order" },
+        "transition": "set Order.Status to the Cancelled dictionary value (BL-ORD-009 — never bind to isCancelled)"
+      },
+      "cleanup": { "required": true, "via": "none possible on the order itself; the per-run account isolates it and seed:missions-e2e:teardown sweeps its missions" },
+      "discriminates": "Cancelling THE order that completed the mission is what makes 'the grant is reversed' decidable — any other order's cancellation says nothing.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "BL", "ref": "BL-LOY-019", "note": "Verify" }]
+    },
+    {
+      "id": "data.loy.ledger.mission-reward",
+      "entity": "LedgerEntry",
+      "purpose": "The points-history row a completed mission wrote.",
+      "required_state": { "operation": "Earned", "label": "Mission reward" },
+      "lifecycle": "DERIVED",
+      "source": { "produced_by": "loy.mission.reward.grant", "field": "loyaltyPointsHistory row" },
+      "acquisition": { "strategy": "DERIVE", "executor": "case" },
+      "cleanup": { "required": false },
+      "discriminates": "Landing on a zero-balance account, the spendable balance equals the reward exactly.",
+      "status": "CONFIRMED",
+      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 link 7", "note": "the row label is 'Mission reward'", "date": "2026-09-18" }]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.loy.gate-off",
+      "behavior": "loy.missions.gate.off-read",
+      "purpose": "Read missions with the switch off.",
+      "requirements": ["data.loy.store.missions-enabled", "data.loy.store.missions-disabled"]
+    },
+    {
+      "id": "profile.loy.visibility-group",
+      "behavior": "loy.mission.visibility.group-match",
+      "purpose": "One group-targeted mission read by a member and an outsider.",
+      "requirements": ["data.loy.store.missions-enabled", "data.loy.mission.group-targeted", "data.loy.customer.group-member", "data.loy.customer.group-outsider"]
+    },
+    {
+      "id": "profile.loy.author-definition",
+      "behavior": "loy.mission.author.goal-types",
+      "purpose": "Assert the three goal-type definitions.",
+      "requirements": ["data.loy.mission.stable-definition"]
+    },
+    {
+      "id": "profile.loy.grant-order-count",
+      "behavior": "loy.mission.reward.grant.once-per-owner",
+      "purpose": "Two orders against a fresh target-2 OrderCountGoal: accrues, completes once, grants once.",
+      "requirements": ["data.loy.store.missions-enabled", "data.loy.mission.fresh-per-run", "data.loy.customer.fresh-account", "data.loy.product.unit-cash"]
+    },
+    {
+      "id": "profile.loy.order-total-bva",
+      "behavior": "loy.mission.progress.accrue.order-total-basis",
+      "purpose": "One order whose merchandise misses the target and whose total clears it.",
+      "requirements": ["data.loy.store.missions-enabled", "data.loy.mission.ordervalue-between", "data.loy.customer.fresh-account", "data.loy.product.unit-cash"]
+    },
+    {
+      "id": "profile.loy.order-total-discount",
+      "behavior": "loy.mission.progress.accrue.discount-reduces",
+      "purpose": "One discounted order straddling the target.",
+      "requirements": ["data.loy.store.missions-enabled", "data.loy.mission.ordervalue-discount-boundary", "data.loy.coupon.percent", "data.loy.customer.fresh-account", "data.loy.product.unit-cash"]
+    },
+    {
+      "id": "profile.loy.reward-spend",
+      "behavior": "loy.mission.reward.spend",
+      "purpose": "Earn a mission reward on a zero-balance account, then spend it on a points-priced product.",
+      "requirements": ["data.loy.ledger.mission-reward", "data.loy.customer.zero-balance", "data.loy.product.pts-priced"]
+    },
+    {
+      "id": "profile.loy.reversal",
+      "behavior": "loy.mission.reversal",
+      "purpose": "Complete a mission with one order, then cancel that order.",
+      "requirements": ["data.loy.order.cancelled"]
+    }
+  ]
+}

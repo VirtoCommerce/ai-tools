@@ -27,7 +27,7 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 | **qa-testing-expert** | opus | green | Interactive testing, Figma comparison, debugging |
 | **ui-ux-expert** | sonnet | pink | Storybook, WCAG 2.1 AA, design system |
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
-| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators + unit tests (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
+| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators — unit tests only temporary (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
 | **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 
@@ -45,16 +45,16 @@ Team framework: `knowledge/agents/ba/shared-instructions.md`.
 ### Developers Team (4 agents + shared-instructions)
 
 The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). The QA
-team stays read-only on GitHub. Driven by `/qa-fix` (interactive twin of `ci/run-fix-cycle.ts`); reuses
-`ci/config/fix-repos.json` + `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts`. **One developer +
+team stays read-only on GitHub. Driven by `/qa-fix`; reuses the routing in
+`plugins/vc-fix/skills/qa-fix-routing/`. **One developer +
 one reviewer per repo kind**, picked by the routed repo's `kind`. Gate ladder:
 `.claude/knowledge/execution/quality-gates.md`. **Never auto-merges.** No browser.
 
 | Agent | Model | Color | Purpose |
 |-------|-------|-------|---------|
-| **fullstack-backend** | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Interactive twin of `ci/agents/fix-backend-agent.md`. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
+| **fullstack-backend** *(plugin-only)* | opus | green | Fixes a single `vc-module-*` / `vc-platform` repo — .NET 10 / C# + the module's Admin SPA (Angular). Reproduce-as-test → minimal fix → PR. Skills: `/dotnet-unit-test`, `/dotnet-fix`, `/angular-admin`. |
 | **backend-reviewer** | sonnet | blue | Reviews the C#/Angular local diff before the PR (Gate 4): single-repo, no test edits, no breaking changes, BL-* preserved, minimal & idiomatic. |
-| **fullstack-frontend** | opus | cyan | Fixes the `vc-frontend` storefront — Vue 3 / TS / Vite + the in-repo UI kit + Storybook — **and** a `vc-module-*` repo's declared embedded Vue 3 frontend sub-app (e.g. `vc-module-pagebuilder`'s page-builder shell, scoped to the sub-app path). Reproduce-as-vitest-test (or the sub-app's own `tsx --test`/ephemeral harness) → minimal fix → PR. Interactive twin of `ci/agents/fix-frontend-agent.md`. Skills: `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix` (`/storybook-test` optional). |
+| **fullstack-frontend** | opus | cyan | Fixes the `vc-frontend` storefront — Vue 3 / TS / Vite + the in-repo UI kit + Storybook — **and** a `vc-module-*` repo's declared embedded Vue 3 frontend sub-app (e.g. `vc-module-pagebuilder`'s page-builder shell, scoped to the sub-app path). Reproduce-as-vitest-test (or the sub-app's own `tsx --test`/ephemeral harness) → minimal fix → PR. Skills: `/vue-unit-test`, `/vue-fix`, `/vc-shell-fix` (`/storybook-test` optional). |
 | **frontend-reviewer** | sonnet | blue | Reviews the Vue/TS local diff before the PR (Gate 4): single-repo, no test/story edits, no breaking prop/event/slot or GraphQL contract, BL-UI preserved, minimal & idiomatic. |
 
 ---
@@ -201,18 +201,18 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 
 QA agents use a **four-layer prompt architecture**:
 
-1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/oracles/business-logic.md`
+1. **Business Logic** (invariants) — what the correct business outcome is → `npm run bl:extract -- --domain <d>`
 2. **Domain Knowledge** (judgment) — what good implementation looks like
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
+Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes the BL oracle (`oracles/bl/`), `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
 
 ---
 
 ## Customizing Agents
 
-All agents are flat `.md` files under `.claude/agents/` (agent discovery is non-recursive — no team subfolders); the roster and the QA / BA / Developers split are the tables above, and `ls .claude/agents` is the count. The three per-team `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components). Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior. **Creating a new agent, skill or command:** [`authoring-standard.md`](authoring-standard.md) is the checklist it is reviewed against.
+All agents are flat `.md` files under `.claude/agents/` (agent discovery is non-recursive — no team subfolders); the roster and the QA / BA / Developers split are the tables above, and `ls .claude/agents` is the count. The QA and BA `shared-instructions.md` files and this README live under `knowledge/agents/` (a plain reference dir, not scanned as components); the Developers team's is `plugins/vc-fix/knowledge/agents/developers/shared-instructions.md`. Shared knowledge files are in `knowledge/` (28 files). Each agent is a Markdown file with YAML frontmatter (name, description, model, color). Edit the `.md` file to customize behavior. **Creating a new agent, skill or command:** [`authoring-standard.md`](authoring-standard.md) is the checklist it is reviewed against.
 
 ---
 

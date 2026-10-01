@@ -51,8 +51,8 @@ excludes: Impersonation (suite 082) is recorded as adjacent, not folded in — i
 # Sales Rep — domain map
 
 > Refresh with `/qa-domain-map sr`. This file answers **what the feature is and where its surfaces
-> are**. It does **not** carry behavioural rules — those are `BL-SR-*` in `oracles/business-logic.md`
-> (32 invariants, cited by id below, never restated) — and it can **never ground an assertion as
+> are**. It does **not** carry behavioural rules — those are `BL-SR-*` in the BL oracle
+> (`npm run bl:extract -- --domain sr`; cited by id below, never restated) — and it can **never ground an assertion as
 > `{DOC}`**. It is a pointer index plus a surface inventory: it tells you *where to look* and *what
 > exists*, never *what correct looks like*.
 

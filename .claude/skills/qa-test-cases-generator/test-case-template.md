@@ -52,7 +52,7 @@ Maps to P0/P1/P2/P3:
 - `Low` = P3 — nice to have
 
 ### Business_Rule
-One or more `BL-*` invariant IDs from `business-logic.md`, comma-separated.
+One or more `BL-*` invariant IDs (`npm run bl:extract -- --domain <d>`), comma-separated.
 This tells the agent *why* the test exists and how to classify ambiguous results.
 
 Examples: `BL-CART-001`, `BL-PRICE-001, BL-PRICE-004`, `BL-ORD-001`
@@ -277,7 +277,7 @@ as `{HYPOTHESIS}`).
 | Tag | Source of truth | May be a hard assertion? |
 |-----|-----------------|--------------------------|
 | `{SPEC}` | the requirement / acceptance criterion in the **tracker ticket** (Jira **or** Azure Boards) | ✅ |
-| `{BL}` | a real `BL-*` / `BL-UI-*` invariant in `business-logic.md` | ✅ |
+| `{BL}` | a real `BL-*` / `BL-UI-*` invariant in the BL oracle | ✅ |
 | `{DOC}` | confirmed in VirtoOZ docs or product source (`/vc-docs`, `PlatformFrontendSourceCode`, an i18n file) | ✅ |
 | `{OBSERVED}` | confirmed live this session against the deployed build (DOM snapshot / smoke exec) | ✅ |
 | `{HYPOTHESIS}` | a plausible-bug guess with **no** traceable source | ❌ — phrase as "verify whether…"; **cannot be promoted** |
@@ -377,6 +377,14 @@ Examples:
 - Infrastructure/smoke cases with no originating ticket use the placeholder `smoke-baseline` (never leave empty)
 
 Examples: `VCST-4499`, `VCST-3387 VCST-4499`, `REQ-PAY-007`, `smoke-baseline`
+
+**`Catches:` — the bug a functional case exists to catch.** A `FUNC` case written from a closed bug carries
+`Catches:<ISSUE-KEY>` (its expectation is the fixed behaviour, so it must fail on the pre-fix behaviour); one
+built against a response mutant carries `Catches:mutant:<ID>`. It sits with the other `References` stamps
+(`Archetype:` · `Technique:`), and it is what makes an escaped bug count as traced in `npm run gaps`. Rules
+and the fail-once proof: [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md).
+
+Examples: `VCST-4499 Archetype:BOUNDARY Technique:BVA Catches:VCST-1825`, `Catches:mutant:TRUNCATE_PAGE`
 
 ### Automation_Status
 Dual-purpose field: **review state** + **execution mode**.

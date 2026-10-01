@@ -80,7 +80,7 @@ mcp__Chrome_DevTools__evaluate_script:
 ```
 
 **Expected:** Server-side validation rejects the submission with a clear, actionable error.
-**Bug:** Server accepts the call → check `feedback_no_force_disabled_controls` to confirm this is a real bug vs validation working as designed.
+**Bug:** Server accepts the call → a real bug: the server must reject it on its own, not rely on the disabled control (see VC-EXEC-003 in `vc-bug-catalog.md` for how to test it without forcing the control in the UI).
 
 ### 1.2 Hidden field tampering
 
@@ -143,7 +143,7 @@ The single biggest source of "I can't reproduce this" bugs. Apollo Client mainta
 
 **Probe:** Open the cart in Tab A. Open the same cart in Tab B. In Tab A, increase a line-item quantity. In Tab B (without refreshing), apply a coupon. Compare totals across both tabs.
 
-**Bug class:** Stale Apollo cache (cross-ref `feedback_apollo_cart_shipment_stale_data`), missing optimistic-UI invalidation, lost-update on the older tab.
+**Bug class:** Stale Apollo cache, missing optimistic-UI invalidation, lost-update on the older tab.
 
 ### 2.2 Sign-out propagation
 
@@ -174,7 +174,7 @@ The browser caches more than you think. After a deploy, three layers can be stal
 
 **Probe:** Note the current build version (see `agent-dispatch.md` Build Verification). Force-refresh (Ctrl+Shift+R) — does the version change? If the page still shows the old build after Ctrl+Shift+R, ServiceWorker is serving stale.
 
-**Recovery:** DevTools → Application → Service Workers → Unregister, then reload. Cross-ref `feedback_mcp_browser_cache`.
+**Recovery:** DevTools → Application → Service Workers → Unregister, then reload.
 
 ### 3.2 LocalStorage / sessionStorage corruption
 
@@ -185,7 +185,7 @@ The browser caches more than you think. After a deploy, three layers can be stal
 
 ### 3.3 Apollo cache inconsistency after mutation
 
-**Probe:** Perform a mutation (e.g., `addItem`). Check the Apollo DevTools cache. Then perform a related query (e.g., `cart`). Does the cache update? Cross-ref `reference_additem_async_settle` — known case where `addItem` response is empty due to async settle.
+**Probe:** Perform a mutation (e.g., `addItem`). Check the Apollo DevTools cache. Then perform a related query (e.g., `cart`). Does the cache update? Known case (VC-CART-001 in `vc-bug-catalog.md`): the `addItem` response is empty due to async settle.
 
 ### 3.4 IndexedDB stale data
 
@@ -416,5 +416,5 @@ r.getBoundingClientRect();   // compare against the neighbouring cell's text rec
 - [personas.md](personas.md) — Malicious User + Session-Corrupted User personas use most of these probes
 - [charter-library.md](charter-library.md) — "Cache & State Drift" and "Performance & Resource Stress" charters explicitly use these probes
 - [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bugs, many of which were found via these probes
-- [../../../agents/knowledge/oracles/business-logic.md](../../knowledge/oracles/business-logic.md) — BL-UI-001..006 layout-stability invariants relevant to zoom/print/dark-mode probes
+- `npm run bl:extract -- --domain ui` — `BL-UI-*` layout-stability invariants relevant to zoom/print/dark-mode probes
 - [../../../knowledge/execution/browser-lanes.md](../../knowledge/execution/browser-lanes.md) — Chrome DevTools MCP + Playwright MCP setup

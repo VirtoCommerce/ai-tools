@@ -20,6 +20,7 @@
  *   node scripts/seed-inventory.mjs --dry-run --verbose
  *   node scripts/seed-inventory.mjs --teardown                       # delete AGENT-TEST- fulfillment centers
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   DATE_STAMP, DRY_RUN, TEARDOWN, VERBOSE,
   log, verbose, assertSafeTarget, auth, api, loadCsv, loadAliases, storeMainFulfillmentCenter,

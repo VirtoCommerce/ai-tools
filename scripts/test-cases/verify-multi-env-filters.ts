@@ -19,6 +19,7 @@
  * Exit code: 0 iff every declared expectation matched the actual filter output.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 

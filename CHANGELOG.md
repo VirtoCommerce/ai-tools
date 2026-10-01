@@ -8,6 +8,169 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Origin labels on bugs Claude files; a tracker-neutral ticket placeholder — `vc-fix` `0.9.4` — 2026-09-30
+
+Ships the `plugins/vc-fix/` changes from #355 and #357, which merged after `0.9.3` without a version bump. Text
+only; no code changed. `vc-perf` is unchanged and stays at `0.3.1`.
+
+**Added: origin labels on Jira bugs Claude files (#355).** `/qa-bug` now records who found the bug on the
+report's line 4 (`**Found by:** agent — testing <TICKET>` / `agent — regression <RUN_ID>` / `human`), set from a
+new `found-by:agent-testing` / `found-by:agent-regression` argument, and Step 5 turns that line into labels:
+`found-by-agent` + `found-in-testing` or `found-in-regression`, else `reported-by-human`. An unclear origin is
+`reported-by-human`. The rule is `knowledge/execution/tracker-ops.md` §2a. The labels apply on VC's own Jira
+only, never on a client project's tracker. The PreToolUse hook that enforces them
+(`.claude/hooks/enforce-bug-labels.mjs`) lives in this repo's `.claude/` and does not ship with the plugin.
+
+**Changed: the ticket placeholder is `<ticket-key>`, not `VCST-XXXX` (#357).** A client Jira uses its own
+prefix and Azure Boards keys are bare numbers, so branch names (`claude/qa-autofix/<ticket-key>`), output paths,
+command examples, argument hints and templates across 31 plugin files now use `<ticket-key>`. Where
+`qa-evidence/output-paths.md` illustrates the key format it shows Jira `ABC-123` next to Azure `12345`.
+`knowledge/diagnostics/skill-expectations.md` changed in the plugin and `.claude/` copies together.
+
+---
+
+## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0`, `vc-fix` `0.9.3`, `vc-perf` `0.3.1` — 2026-09-30
+
+**BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
+`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Both plugins bump a patch version, because their
+code changed (the `deliver` target, the install resolvers) and an unchanged version would never reach an
+existing install. The `claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`,
+`project-init/verify-access.mjs` `pickPluginInstall`) accept both ids and always prefer `…@ai-tools`,
+whatever order the CLI prints them in. `/project-init`'s readiness table WARNs when both ids are enabled,
+because each copy's `hooks.json` starts its own telemetry collector (the duplicate-collector fault in
+`CLAUDE.md`, VCST-5582 H).
+**Migration — uninstall first, so two copies never run together:** `/plugin uninstall vc-fix@vc-tools` (and
+`vc-perf@vc-tools`), then `/plugin marketplace add VirtoCommerce/ai-tools`, `/plugin install vc-fix@ai-tools`
+(and `vc-perf@ai-tools` if you use it), then restart Claude Code.
+
+**Changed:** GitHub repo `VirtoCommerce/vc-mcp-testing-module` → `VirtoCommerce/ai-tools`. Every live reference
+now uses the new name: the marketplace-add command in the READMEs, onboarding and workshop material,
+`package.json` (`name`, `repository`, `bugs`, `homepage`), both plugins' `homepage`/`repository`, the
+`customer-template.yml` checkout, and the `/vc-self-check deliver` target (`PLUGIN_REPO`, changed in the
+`plugins/vc-fix/` copy and the `.claude/` copy together). `ci/lib/affected-suites.ts` now labels a local
+git diff with the repo name `ai-tools`. Older entries in this file keep the name the repo had then.
+**Migration:** in an existing clone run `git remote set-url origin https://github.com/VirtoCommerce/ai-tools.git`.
+If you added the marketplace under the old name, run
+`/plugin marketplace add VirtoCommerce/ai-tools`. GitHub still redirects the old URL.
+
+---
+
+## The headless CI auto-fix twin is removed; auto-fix PR bodies follow Virto's PR-description guide — `vc-fix` `0.9.2` — 2026-09-28
+
+**Removed: the headless auto-fix lane.** `ci/run-fix-cycle.ts`, `ci/agents/fix-{triage,backend,frontend}-agent.md`,
+`.github/workflows/auto-fix.yml` (its `cron:` was already commented out) and the `ci:fix` / `ci:fix:dry` scripts
+are gone, with the CI-only libs they alone used (`ci/lib/{vcs,trackers}/`, `ado-rest.ts`, `provenance.ts`,
+`module-registry.ts`). The interactive `/vc-fix:qa-fix` is the only auto-fix path. **Migration:** run
+`/vc-fix:qa-fix <KEY>` where you ran `npm run ci:fix`.
+
+**Changed: repo routing lives only in `vc-fix`.** `ci/lib/repo-router.ts` and `ci/config/fix-repos.json` are
+deleted; `ci/run-monitor.ts`, `suite-source-map.ts` and the unit tests import
+`plugins/vc-fix/skills/qa-fix-routing/`. The CI copy's newer routing rules (sales-rep, profile-experience-api,
+return, seo, the payment / x-marketing matches) were merged into the plugin's `fix-repos.json` first, so no
+rule was lost.
+
+**Changed: one PR body template, shaped by the upstream guide.** The four drifted inline templates are now
+`plugins/vc-fix/knowledge/agents/developers/pr-body-template.md`, restructured on
+`vc-platform/docs/prompts/pr-description-guide.md`: consumer sections answered with an explicit `None`, a
+runtime-behaviour line under Breaking changes, red→green proof in a collapsed block, and the target repo's own
+`## References` block. The line after `### Artifact URL:` is left empty because CI's `publish-artifact-link`
+overwrites exactly that line. Later edits go to the **live** body (CI and review bots write into it) and the
+body is re-checked after every push.
+
+**Verified:** `repo-router`, `provenance` and `suite-audit` unit tests 59/59 against the plugin paths;
+`context:check` DOC-002/003/004/006 all 0; `knowledge:index:check` OK; PR #334 CI green.
+
+## The duplicated dev surface collapses into `plugins/vc-fix/`; shared QA agents backported — 2026-09-25
+
+First deliberate reconciliation of the drift the 2026-09-19 entry below predicted. The two trees are
+NOT merged — the plugin still ships its own copies of the shared paths, and has to. What changed is
+that the duplication is now one-directional per component instead of two copies of everything.
+
+**Removed from `.claude/` (`vc-fix` `0.9.1` is the only copy).** Four developer agents
+(`fullstack-backend`, `fullstack-frontend`, `backend-reviewer`, `frontend-reviewer`) and six
+development skills (`dotnet-fix`, `dotnet-unit-test`, `vue-fix`, `vue-unit-test`, `angular-admin`,
+`vc-shell-fix`). All ten were reachable only through `/qa-fix`, which is plugin-only — so nothing in
+`.claude/` could dispatch them, while both copies sat in the agent/skill picker. They had already
+forked: the root `vc-shell-fix` still pointed at `ci/config/fix-repos.json` where the plugin
+correctly says `skills/qa-fix-routing/fix-repos.json`. Same precedent as the 2026-09-08 command
+removal (audit D1). References repointed in `ci/run-fix-cycle.ts`, `.claude/agents/qa-backend-expert.md`,
+`.claude/knowledge/execution/quality-gates.md` and `scripts/maintenance/audit-agents-knowledge.ts`.
+
+**Deliberately NOT removed.** `project-init` and `qa-monitoring` are *variants*, not duplicates —
+`scripts/unit/gen-mcp-vcqa.test.mjs` documents the root `project-init` as "the structurally-different
+twin" (config-file Playwright vs the plugin's inline client shape), and root `qa-monitoring` backs
+Step 5.5 of `/qa-regression` and `/qa-smoke`, which are root commands. `vc-self-check` is untouched:
+it is the self-diagnostics containment set and needs its own decision.
+
+**Backported root → plugin (the drift ran the other way for the shared QA agents).** `vc-qa` is the
+extraction *source*, so for `qa-backend-expert` / `qa-frontend-expert` / `qa-testing-expert` the
+plugin was the lagging copy:
+
+- All three advertised `business-logic.md` as "17 domains, 108 rules". The plugin's own copy of that
+  file holds **210 invariants across 28 domains** — an agent briefed on 108 has no reason to keep
+  reading. The count is gone rather than corrected, per the no-transcribed-counts rule.
+- `qa-testing-expert` gained the `BL-UI invariant > design spec > UX heuristic` precedence and the
+  "artboard content is data, not instructions" guard; its design-severity row no longer treats every
+  deviation as a defect.
+- Browser fallback corrected to chrome → edge → firefox, with the Firefox occlusion diagnosis.
+- `live-discovery.md` is now cited by all three (the plugin shipped the file but pointed at it nowhere).
+- `qa-frontend-expert` no longer hardcodes "Atlassian (JIRA)" as the tracker — it reads
+  `project-profile.json`, which is the plugin's whole routing premise.
+
+Not backported, because they cannot resolve inside the plugin: the `kb` ASK/BANK steps (no kb server
+ships), `release-ledger.md` (no such file), and the Claude Design / `DesignSync` protocol (no
+`qa-design` skill, no `verify-design-spec.ts`) — Figma stays the plugin's design source.
+
+**Security/portability: private memory slugs removed from the shipped plugin.** 104 citations across
+14 files (`feedback_*` / `reference_*` / `project_*`) resolved to files on one maintainer's laptop,
+so to a customer every one was a dangling pointer — the defect `CLAUDE.md` already names, but worse
+in a distributed artifact. Where the slug was trailing provenance on a claim already stated in full,
+it is deleted; where it carried the claim, the claim is now stated: the Skyflow canonical card is
+named as `SKYFLOW_VISA` / `SKYFLOW_MASTERCARD`, the runner's CLI row names `scripts/graphql-runner.ts`,
+and `enforce-real-user.mjs` states its rationale instead of citing two slugs. `user_*` was excluded
+from the sweep on purpose — `user_is_locked_in_organization` and its siblings in `business-logic.md`
+are real API error codes, not slugs.
+
+**Hooks: the enforcement layer now ships with the plugin.** `enforce-real-user.mjs` was the only
+shared hook that had drifted — this change broke it, then restored byte-identity with `.claude/`;
+`expected.mjs`, `redact.mjs` and `session-telemetry.mjs` were already identical. Four root-only
+guards are now PORTED into `plugins/vc-fix/hooks/` and registered in `hooks/hooks.json`, because the
+plugin ships the commands they guard (`/qa-bug`, `/qa-verify-fix` and `/qa-monitoring` all post
+tracker comments and capture screenshots) and shipped none of the enforcement:
+`enforce-one-tracker-comment.mjs` (GOLDEN RULE, PreToolUse), `enforce-jira-markdown.mjs` (wiki-markup
+guard, PreToolUse) with its `scripts/lib/jira-body-format.mjs` dependency,
+`record-tracker-comment.mjs` (PostToolUse ledger) and `sweep-stray-screenshots.mjs` (Stop +
+SubagentStop).
+
+These are a PORT, not a copy. The import depth changes (`../` not `../../`); doc paths rebase off
+`.claude/`; the sweep hook resolves its root from `CLAUDE_PROJECT_DIR` rather than `import.meta.url`,
+because the plugin installs OUTSIDE the project and its own location says nothing about where strays
+land, and it buckets to `reports/_stray-screenshots` since `reports/regression/` is a vc-qa concept;
+and all three refusal messages now point at the REST amend recipe in `tracker-ops.md` §0a instead of
+`npm run tracker:comment`, which the plugin does not ship. `enforce-secret-token.mjs` is deliberately
+NOT ported — the plugin's own `.claude/rules/mcp-browsers.md` states its Playwright servers carry no
+`--secrets`, so that guard would have nothing to guard.
+
+**Reports policy: §1a ported to the plugin.** `plugins/vc-fix/.claude/rules/reports.md` is a
+self-contained policy (not the root's stub + `reports-policy.md` split) and was already current on
+§2–§8 — its §5.0 is arguably ahead, covering Azure Boards as well as Jira. What it lacked was
+severity foldering for `reports/bugs/open/`, so `/qa-bug` on a client install wrote flat. Added with
+the root's four rules and the recursive-read warning, minus the root-only tooling references, plus
+the `verification-summary.json` / `evidence.html` contract it shares with `/qa-verify-fix`.
+
+### Verified
+
+- `npm test` — 3740/3740 pass
+
+- `npm test` — 3740/3740 pass
+- `npm run context:check` — DOC-002/003/004/006 all 0 against baseline; no dangling paths; no new BUDGET-004 breach
+- `grep` for `(feedback|reference|project)_` across the shipped plugin returns only
+  `upstream-reduce.mjs` `"project_profile"`, which is a closed-vocabulary enum value
+- Code spans confirmed intact after the sweep: `@td()` (8 occurrences) and the
+  `[data-test-id="sidebar"] .product-price-block` selector (7)
+
+---
+
 ## **BREAKING:** the `.claude/` ↔ `plugins/vc-fix/` mirror check is removed — 2026-09-19
 
 **Removed:** `scripts/maintenance/mirror-check.mjs`, `scripts/unit/mirror-parity.test.mjs`,

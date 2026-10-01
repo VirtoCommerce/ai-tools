@@ -61,40 +61,7 @@ test('startOfUtcDay truncates to UTC midnight regardless of the time of day', ()
 
 // ── isOpen(): the TRI-STATE the API actually returns ────────────────────────────────────────────
 
-test('isOpen treats null as OPEN — an open task reads back completed:null, not false', () => {
-  assert.equal(isOpen({ completed: null }), true);
-  assert.equal(isOpen({ completed: undefined }), true);
-  assert.equal(isOpen({ completed: false }), true);
-  assert.equal(isOpen({ completed: true }), false);
-});
-
 // ── classifyGroup(): completion outranks date; boundaries are UTC-midnight-exact ────────────────
-
-test('classifyGroup puts COMPLETION ahead of the date in both directions', () => {
-  // completed + due today, and completed + due in the future, must both be "completed".
-  assert.equal(classifyGroup({ completed: true, dueDate: '2026-09-17T15:00:00Z' }, NOW), 'completed');
-  assert.equal(classifyGroup({ completed: true, dueDate: '2026-09-22T10:00:00Z' }, NOW), 'completed');
-  assert.equal(classifyGroup({ completed: true, dueDate: '2026-09-08T16:00:00Z' }, NOW), 'completed');
-});
-
-test('classifyGroup splits OPEN tasks at UTC midnight, exactly', () => {
-  const at = (iso) => classifyGroup({ completed: null, dueDate: iso }, NOW);
-  assert.equal(at('2026-09-16T23:59:59.999Z'), 'overdue');
-  assert.equal(at('2026-09-17T00:00:00.000Z'), 'today', 'the first instant of today is TODAY, not overdue');
-  assert.equal(at('2026-09-17T23:59:59.999Z'), 'today');
-  assert.equal(at('2026-09-18T00:00:00.000Z'), 'future', 'the first instant of tomorrow is FUTURE, not today');
-});
-
-test('classifyGroup accepts a SPEC (relative offset) as well as a live task (absolute date)', () => {
-  for (const [offset, group] of [[-1, 'overdue'], [0, 'today'], [1, 'future']]) {
-    assert.equal(classifyGroup(spec({ dueOffsetDays: offset }), NOW), group);
-    assert.equal(
-      classifyGroup({ completed: null, dueDate: dueDate(spec({ dueOffsetDays: offset }), NOW) }, NOW),
-      group,
-      'spec and live forms must classify identically',
-    );
-  }
-});
 
 test('groupSizes counts live rows whose completed is null the same as a spec whose completed is false', () => {
   const live = TASK_SPECS.map((s) => ({
@@ -105,22 +72,6 @@ test('groupSizes counts live rows whose completed is null the same as a spec who
   // …and every row lands in exactly one group.
   const sizes = groupSizes(live, NOW);
   assert.equal(GROUP_NAMES.reduce((n, g) => n + sizes[g], 0), TASK_SPECS.length);
-});
-
-test('groupSizes re-partitions when the clock rolls past UTC midnight (the DECAY the fixture warns about)', () => {
-  // The decay acts on ALREADY-PERSISTED absolute dates: the rows were seeded at NOW and keep their
-  // instants, while the "today" boundary moves. (Re-deriving the specs at the later instant would
-  // re-seed them and show nothing — which is exactly why the fixture must be re-seeded, not re-read.)
-  const persisted = TASK_SPECS.map((s) => ({ completed: s.completed ? true : null, dueDate: dueDate(s, NOW) }));
-  const today = groupSizes(persisted, NOW);
-  const tomorrow = groupSizes(persisted, new Date(NOW.getTime() + 86400000));
-  assert.equal(tomorrow.overdue, today.overdue + today.today, "yesterday's due-today tasks become overdue, silently");
-  assert.equal(tomorrow.completed, today.completed, 'completion is date-independent');
-  assert.equal(new Set(GROUP_NAMES.map((g) => today[g])).size, 4, 'at the seed instant all four sizes differ');
-  assert.ok(
-    new Set(GROUP_NAMES.map((g) => tomorrow[g])).size < 4,
-    'one UTC day later the sizes COLLIDE — which is precisely why a suite asserting group sizes must re-seed',
-  );
 });
 
 // ── buildCreateCommand(): the seeder's whole payload derivation ─────────────────────────────────

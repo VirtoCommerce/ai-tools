@@ -21,15 +21,17 @@
  *   - The business-key value must carry the `AGENT-TEST-` prefix (warn otherwise).
  *
  * Usage:
- *   npx tsx scripts/author-fixtures.ts --plan plan.json          # author + validate
- *   npx tsx scripts/author-fixtures.ts --plan plan.json --dry-run
- *   cat plan.json | npx tsx scripts/author-fixtures.ts -         # plan via stdin
+ *   npx tsx scripts/test-data/author-fixtures.ts --plan plan.json          # author + validate
+ *   npx tsx scripts/test-data/author-fixtures.ts --plan plan.json --dry-run
+ *   cat plan.json | npx tsx scripts/test-data/author-fixtures.ts -         # plan via stdin
  *
  * Plan shape: see the PlanSchema interfaces below (and the /qa-generate-data SKILL.md).
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 
 const ROOT = process.cwd();
@@ -113,7 +115,7 @@ function loadPlan(): Plan {
     return JSON.parse(readFileSync(0, "utf-8")); // fd 0 = stdin
   }
   console.error(
-    "Usage: npx tsx scripts/author-fixtures.ts --plan <plan.json> [--dry-run] [--no-validate]   (or pipe plan via stdin with '-')"
+    "Usage: npx tsx scripts/test-data/author-fixtures.ts --plan <plan.json> [--dry-run] [--no-validate]   (or pipe plan via stdin with '-')"
   );
   process.exit(2);
 }
@@ -184,11 +186,7 @@ function main() {
       if (!/AGENT-TEST-/i.test(bkVal)) warnings.push(`Business key "${bkVal}" (${fx.combo}) lacks AGENT-TEST- prefix — teardown won't sweep it.`);
 
       const newLine = header.map((c) => csvField(merged[c] ?? "")).join(",");
-      if (!DRY) {
-        // Append, keeping a single trailing newline.
-        const trimmed = content.replace(/\s*$/, "");
-        writeFileSync(csvPath, `${trimmed}\n${newLine}\n`, "utf-8");
-      }
+      if (!DRY) writeFileSync(csvPath, appendCsvRow(content, newLine), "utf-8");
       changes.push({ file: `${fx.file}.csv`, combo: fx.combo, action: "append", businessKey: bkStr });
     }
 
@@ -249,7 +247,7 @@ function main() {
     console.log(`\n▶ validate-td-refs.ts`);
     try {
       // execSync (shell) so Windows resolves `npx.cmd`; execFileSync("npx",…) ENOENTs on win32.
-      const out = execSync("npx tsx scripts/validate-td-refs.ts", { cwd: ROOT, encoding: "utf-8", stdio: "pipe" });
+      const out = execSync("npx tsx scripts/test-data/validate-td-refs.ts", { cwd: ROOT, encoding: "utf-8", stdio: "pipe" });
       console.log(out.split(/\r?\n/).slice(-6).join("\n"));
       console.log("  ✓ validation green");
     } catch (e) {
@@ -262,7 +260,19 @@ function main() {
     console.log(`\n(skipped validate-td-refs.ts — dry run)`);
   }
 
-  console.log(`\nNext: gap fixtures are templates (seeded=false). Run /qa-seed-data <domains> to provision, then tests reference @td(<combo alias>).\n`);
+  console.log(`\nNext: gap fixtures are templates (seeded=false). Run /qa-seed-data <domains> to provision, then tests reference @td(<combo alias>).`);
+  console.log(`      Seeders skip seeded=false rows (e.g. seed-company-users.mjs), so provisioning flips them to seeded=true first.\n`);
 }
 
-main();
+/**
+ * Append one CSV record, keeping the file's own line terminator. A CSV written with CRLF and no
+ * trailing newline used to get `\n`-joined rows: the parser detects CRLF from the header, so the
+ * last original record and every appended one fused into a single oversized record.
+ */
+export function appendCsvRow(content: string, newLine: string): string {
+  const eol = content.includes("\r\n") ? "\r\n" : "\n";
+  return `${content.replace(/\s*$/, "")}${eol}${newLine}${eol}`;
+}
+
+const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isCli) main();

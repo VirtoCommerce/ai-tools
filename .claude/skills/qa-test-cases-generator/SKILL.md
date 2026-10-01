@@ -35,12 +35,12 @@ Generate structured test cases in the enriched CSV format defined by `test-case-
 ## Cross-Agent Knowledge (`knowledge/`)
 
 Load these references during generation:
-- **business-logic.md** — `BL-*` invariant IDs to populate `Business_Rule` column
+- **`bl:extract`** — `BL-*` invariant IDs to populate `Business_Rule` column
 - **e-commerce-edge-cases-library.md** — `ECL-*` IDs to populate `Edge_Case_Refs` column
 - **catalog.md**, **store-settings.md** — Product types, store config for realistic test data
 - **platform-patterns.md** — Common platform behaviors to inform assertions
 - **For any Storefront/UI case — these were previously invisible to this skill and are what make a UI assertion strong:**
-  - **business-logic.md Domain 15 (`BL-UI-*`)** — the measurable UI invariants (CLS, spacing grid, state-induced shift, content boundary, alignment, touch target, keyboard operability), each with its own `Verify` recipe. Assert them with the measurable tags, never in prose.
+  - **`bl:extract -- --domain ui` (`BL-UI-*`)** — the measurable UI invariants (CLS, spacing grid, state-induced shift, content boundary, alignment, touch target, keyboard operability), each with its own `Verify` recipe. Assert them with the measurable tags, never in prose.
   - **oracles/critical-ui-scope.md** — 36 components × applicable `BL-UI-*`, each with a per-component audit protocol and **real selectors**. Use it as the scope list: which components this change touches, and which invariants apply to each.
   - **skills/qa-design/SKILL.md §State-Stress Pass** — the seven states every UI surface must survive (loading · empty · error/disabled · overflow · validation-error · anonymous · dark theme). This is a ready-made case matrix; sweep it rather than inventing states.
   - **automation/storefront-selectors.md** + `scripts/lib/storefront-selectors.generated.ts` — real `data-test-id` values. Prefer a test id over a label (a label is an i18n key, so a label-based locator is locale-dependent — and the language selector is itself under test).
@@ -88,7 +88,7 @@ Each layer produces its own test case block with layer-appropriate tags from `te
 ### Step 2: Gather Context
 
 1. **Identify affected domain(s)** — map input to one or more of the 63 domains in `/qa-checklist`
-2. **Load business rules** — read `business-logic.md`, find all `BL-*` invariants relevant to the domain
+2. **Load business rules** — run `bl:extract -- --domain <d>`, find all `BL-*` invariants relevant to the domain
 3. **Load edge cases** — read `e-commerce-edge-cases-library.md`, find all `ECL-*` patterns for the domain
 4. **Check existing coverage** — read the target suite CSV (if it exists) to avoid duplicating existing test cases
 5. **Get UI context** — read `knowledge/domain/sitemap.md` for page URLs, product types, navigation paths
@@ -275,7 +275,7 @@ Generation is offline, so you tag by best-available source. For **each assertion
 
 1. **`{SPEC}`** — the expected behavior is stated in the **tracker ticket's** requirement/AC (Jira or
    Azure Boards). This is the workhorse for a new feature.
-2. **`{BL}`** — it restates a real `BL-*`/`BL-UI-*` invariant from `business-logic.md`.
+2. **`{BL}`** — it restates a real `BL-*`/`BL-UI-*` invariant in the BL oracle.
 3. **`{DOC}`** — you confirmed it in VirtoOZ docs or product source (`/vc-docs`,
    `PlatformFrontendSourceCode`, an i18n file). Only tag `{DOC}` if you actually looked it up.
 4. **`{HYPOTHESIS}`** — none of the above; it is an educated guess of a plausible bug. **Phrase it as a
@@ -450,7 +450,7 @@ Generated test cases route to the correct executing agent by layer:
   red.** If you discover that a field you were pinning on does not exist, is always null, or means
   something else, re-audit every assertion that leaned on it: they will keep passing, which is why
   nobody notices. Re-check the whole file, not the one case that prompted the discovery.
-- **No case may certify a defect** — the expected result comes from the specification, never from the current build (Step 3 §6). A suite tuned to the implementation is unfalsifiable by construction and inverts the day the bug is fixed.
+- **No case may certify a defect** — the expected result comes from the specification, never from the current build (Step 3 §6). A `FUNC` case names the bug it catches, seen to fail once: `knowledge/execution/cases-that-catch-bugs.md`.
 - **Minimum effective set** — a smaller suite of targeted cases is better than a large suite of shallow ones. Prefer 5 focused cases over 20 that repeat the same failure mode.
 - **Suite sizing & packing (one suite = one runnable unit)** — pack cases so each CSV is a single feature/module area that **one isolated agent reads and runs in one session** (`/qa-regression` dispatches exactly one QA-expert agent per CSV, batched 3 at a time — the browser pool):
   - **Target ~20–40 cases per CSV** (repo median is 28). ≤20 is fine for a small feature; treat **>40 as a signal to split**, not a target to fill.

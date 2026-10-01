@@ -33,7 +33,7 @@
 [BODY] the authorizePayment GraphQL mutation parameters array carries only the opaque token entry - no cardNumber/cvv/expiry field
 [STATUS] authorizePayment returns its documented success shape with no 4xx/5xx","[API] any order created references only a processor transaction id, never a raw PAN
 [CONSOLE] no JS error logs the raw card data","Raw card number or CVV appears in any request body captured during the flow; authorizePayment parameters carry a raw card field instead of an opaque token","Cancel/void the order via admin if one was created","VCST-4576 (payment security family). Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue (createToken() then authorizePayment with a token-only parameters array), source fetched live 2026-09-19. Business_Rule corrected from the nonexistent BL-SEC-001 to BL-PAY-003 (business-logic.md:1473) - PARTIAL-FIT: cites only its ""raw PAN never appears in storefront network payloads (SDK tokenization)"" clause; the invariant primary subject is order/transaction creation.","Draft"
-"SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","BL-SEC-001",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-PCI-005","No Card Data in Browser Storage","PCI Compliance > Storage","Critical","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Payment form interaction complete",,,,,,,,
 "SEC-PCI-006","HTTPS Enforcement","PCI Compliance > Transport","Critical","","","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Payment page loaded","front_url={{FRONT_URL}}","[NAV] {{FRONT_URL}}/cart - confirm the CyberSource card-payment form is displayed
@@ -42,9 +42,9 @@
 [CAPTURE] every network request made while the payment form is active","[STATE] {{FRONT_URL}} itself, the injected CyberSource script src and every payment-related network request use https - no mixed-content request
 [DOM] the injected CyberSource script tag carries a non-empty integrity attribute and crossorigin=anonymous whenever the initializeCartPayment/initializePayment response supplies clientLibraryIntegrity - Subresource Integrity is enforced
 [CONSOLE] no mixed-content or SRI-mismatch warning or error","[NETWORK] no plain-http request observed for any payment-related resource","Any payment-related request or the CyberSource script itself loads over http; the injected script tag has no integrity/crossorigin attributes when the mutation response supplied clientLibraryIntegrity; console shows an SRI or mixed-content warning","none","Grounded in vc-frontend client-app/shared/payment/components/payment-processing-cyber-source.vue useDynamicScript() (integrity + crossOrigin anonymous set from publicParameters.clientLibraryIntegrity), source fetched live 2026-09-19. Business_Rule cleared: BL-SEC-00N does not exist (no BL-SEC-* family in the oracle) and no promoted invariant covers this behaviour - oracle gap, candidate for /qa-review-oracles. A platform-wide HTTPS/SRI invariant would belong under a new BL-SEC or BL-PLAT family, not fabricated here.","Draft"
-"SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","BL-SEC-002",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-PCI-007","JWT Token Authentication","PCI Compliance > Auth","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - CyberSource payment selected",,,,,,,,
-"SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","BL-SEC-004",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-AUTH-001","Session Token Security","Authentication > Tokens","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in
 - DevTools open",,,,,,,,
 "SEC-AUTH-002","Logout Token Revocation","Authentication > Logout","High","","","[PRE:SIGNIN_AS:USER_DEFAULT]
@@ -55,36 +55,36 @@ User is logged in to the storefront","front_url={{FRONT_URL}}","[ACT] Log out fr
 [WAIT] Receive the GraphQL response","[NETWORK] a token-revocation request is sent on logout
 [STATUS] the reused (revoked) storefront token is rejected by the GraphQL endpoint (401, or a GraphQL errors[] entry carrying an authentication code) rather than returning the authenticated payload","[CONSOLE] no TypeError or JS errors
 [NETWORK] no unexpected 5xx","Revoked token still returns authenticated GraphQL data; no revocation request observed on logout; 500 instead of 401/errors[]","none","Row re-split 2026-09-19 (REG-2026-09-19-1035): a stray trailing quote had swallowed Steps/Assertions into Preconditions, leaving 0 assertions and 0 Failure_Signals. Retargeted at {{FRONT_URL}}/graphql because the captured token is storefront-issued (iss=...-storefront, role=__customer), so asserting it against the platform BACK_URL endpoint was the wrong audience. Business_Rule cleared: BL-SEC-004 does not exist (there are no BL-SEC-* entries at all) and no promoted invariant covers storefront logout revocation - oracle gap, candidate for /qa-review-oracles.",""
-"SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","BL-SEC-004","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-AUTH-003","Account Lockout Protection","Authentication > Brute Force","High","","ECL-3.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Dedicated lockout-test user exists (LOCKOUT_TEST_EMAIL) isolated from agent pool slot accounts",,,,,,,,
-"SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-INPUT-001","XSS Prevention - Search","Input Validation > XSS","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Search functionality available",,,,,,,,
-"SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation)","Input Validation > XSS","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-INPUT-002","XSS Prevention - Forms (Server-Side Validation)","Input Validation > XSS","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Registration or profile form accessible",,,,,,,,
-"SEC-INPUT-003","SQL Injection Prevention","Input Validation > SQLi","High","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-INPUT-003","SQL Injection Prevention","Input Validation > SQLi","High","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Search functionality available",,,,,,,,
-"SEC-INPUT-004","Path Traversal Prevention","Input Validation > Path","Medium","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-INPUT-004","Path Traversal Prevention","Input Validation > Path","Medium","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Application with URL parameters or file upload accessible",,,,,,,,
-"SEC-CSRF-001","CSRF Token Validation","CSRF Protection","High","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-CSRF-001","CSRF Token Validation","CSRF Protection","High","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Any form submission available
 - DevTools open",,,,,,,,
-"SEC-CORS-001","CORS Configuration","API Security > CORS","Medium","BL-SEC-003",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-CORS-001","CORS Configuration","API Security > CORS","Medium","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - DevTools Network tab open",,,,,,,,
-"SEC-SENSITIVE-001","No Credentials in Logs","Data Protection > Logging","Critical","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-SENSITIVE-001","No Credentials in Logs","Data Protection > Logging","Critical","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Various operations performed including login",,,,,,,,
-"SEC-SENSITIVE-002","Error Message Safety","Data Protection > Errors","Medium","BL-SEC-005",,"[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-SENSITIVE-002","Error Message Safety","Data Protection > Errors","Medium","",,"[PRE:SIGNIN_AS:USER_DEFAULT]
 - Application accessible for error triggering",,,,,,,,
-"SEC-SESSION-001","Session expiry during checkout — re-auth preserves cart","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-SESSION-001","Session expiry during checkout — re-auth preserves cart","Authentication > Session Expiry","High","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Customer logged in with items in cart
 - Checkout flow started (shipping address entered)
 - Token expiry mechanism available",,,,,,,,
-"SEC-SESSION-002","Session re-auth during checkout — resume from last step","Authentication > Session Expiry","High","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-SESSION-002","Session re-auth during checkout — resume from last step","Authentication > Session Expiry","High","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - Customer logged in with items in cart
 - Checkout flow in progress (shipping address and method selected)
 - Token expiry mechanism available",,,,,,,,
-"SEC-SESSION-003","Session expiry does not create partial or orphan order","Authentication > Session Expiry","Critical","BL-SEC-004","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-SESSION-003","Session expiry does not create partial or orphan order","Authentication > Session Expiry","Critical","","ECL-6.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Customer logged in with items in cart
 - Checkout flow started with all required information entered
 - xAPI access available for order verification
@@ -104,9 +104,9 @@ User is logged in to the storefront","front_url={{FRONT_URL}}","[ACT] Log out fr
 "SEC-CSRF-003","CSRF Protection - Checkout Order Placement","CSRF Protection","Critical","BL-CHK-002","ECL-1.2","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 - User logged in with cart ready for checkout; - DevTools open",,,,,,,,
-"SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-VALIDATION-001","Server-Side Name Field Validation (NameValidationPattern)","Input Validation > Server-Side","Critical","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - Registration or profile edit form accessible",,,,,,,,
-"SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","BL-SEC-003","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
+"SEC-VALIDATION-002","Script Injection Validation in Free-Text Fields (EnableScriptInjectionValidation)","Input Validation > Server-Side","Critical","","ECL-5.1","[PRE:SIGNIN_AS:USER_DEFAULT]
 - User logged in; - Profile with description/about field accessible",,,,,,,,
 "SEC-PAT-001","Persistent Access Token — Active Token Authorizes API Request","Security > Token Validation > State: Active","High","BL-AUTH-005, BL-AUTH-006","ECL-3.1","[PRE:CLEAR_SESSION]
 - Platform has Authorization__EnablePersistentStorageTokenValidation=true configured

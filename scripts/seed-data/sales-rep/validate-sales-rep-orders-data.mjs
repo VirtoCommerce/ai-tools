@@ -18,6 +18,7 @@
  *    is time-dependent, not a drift, so it warns — the fix is to re-run the seeder, not to edit data.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

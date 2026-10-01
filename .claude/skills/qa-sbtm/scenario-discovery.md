@@ -34,7 +34,7 @@ The fastest way to find gaps: compare what *exists in the product* against what'
 
 ### 1.3 Suite vs production logs
 
-**Probe:** Open the Azure App Insights failures dashboard for vcst-qa and vcst-qa-storefront (URLs in `MEMORY.md` § Azure Application Insights). Look at error patterns over the last 14 days. For each recurring error, search the regression suite for a test that would have caught it. If none exists → discovery candidate.
+**Probe:** Open the Azure App Insights failures dashboard for vcst-qa and vcst-qa-storefront (resources: `APPINSIGHTS_RESOURCE_BACKEND` / `APPINSIGHTS_RESOURCE_STOREFRONT` in `.env.<env>`; `/qa-monitoring` resolves them). Look at error patterns over the last 14 days. For each recurring error, search the regression suite for a test that would have caught it. If none exists → discovery candidate.
 
 ### 1.4 Suite vs JIRA bug history
 
@@ -175,7 +175,7 @@ The richest source of "scenarios we don't cover" is production itself — real u
 
 ### Process
 
-1. Open Azure App Insights for vcst-qa-storefront (URL in `MEMORY.md` § Azure)
+1. Open Azure App Insights for vcst-qa-storefront (resource: `APPINSIGHTS_RESOURCE_STOREFRONT` in `.env.<env>`)
 2. Filter by Failures in the last 14 days, group by exception type
 3. For each error pattern (>5 occurrences), pull a sample stack trace and request payload
 4. Reconstruct the user's path: "what was the user doing when this fired?"

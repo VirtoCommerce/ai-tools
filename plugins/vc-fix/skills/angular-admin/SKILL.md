@@ -18,7 +18,7 @@ There is no in-repo JS test command to run, and you must NOT scaffold one (no `p
 
 So Gate 2 (red→green proof) is satisfied by a throwaway harness outside the repo — and **which harness
 depends on the bug** (see *Two fix paths* below):
-- **Logic** bugs → a **Node scratch harness**: a script in `.fix-workspace/_scratch/VCST-XXXX/`
+- **Logic** bugs → a **Node scratch harness**: a script in `.fix-workspace/_scratch/<ticket-key>/`
   (gitignored, never committed, never in the PR diff) that loads the real blade/service file with a stubbed
   `angular` global, drives the buggy seam, and asserts the expected behavior. Red before, green after —
   both runs' output pasted into the PR body. Recipe + verified stub: `scratch-harness-patterns.md`.
@@ -77,7 +77,7 @@ a rendered DOM?*
    on blade ids, template text, controller names, settings keys). See `angular-patterns.md` for the
    anatomy (module.js registration → blades/ → widgets/ → resources/).
 2. **Reproduce (red) in the scratch harness.** Write
-   `.fix-workspace/_scratch/VCST-XXXX/repro.cjs` (the `.cjs` extension is required — the workspace
+   `.fix-workspace/_scratch/<ticket-key>/repro.cjs` (the `.cjs` extension is required — the workspace
    sits under a `"type": "module"` package.json) following `scratch-harness-patterns.md`: stub
    `angular`, `require` the real file from the checkout, instantiate the controller/factory with
    stubbed collaborators, assert the EXPECTED behavior. `node repro.cjs` must **fail** on current

@@ -538,6 +538,85 @@ export function assertCatalogReadOnlyRolePermissions(permissions = CATALOG_READO
   });
 }
 
+// ============================================================================
+// VCST-2945 — barcode-search configuration RBAC (BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE)
+// ============================================================================
+//
+// pr909's endpoints `api/catalog/barcode-search/store/{storeId}[/fields]` are gated like their Sorting
+// and Facets siblings: GET needs catalog:BrowseFilters:Read, PUT needs catalog:BrowseFilters:Update.
+// Two accounts make both gates decidable, and they differ in EXACTLY ONE permission so a result can
+// only be attributed to it:
+//   READ_ONLY = base + catalog:BrowseFilters:Read   → GET 200, GET fields 200, PUT 403
+//   NONE      = base (no BrowseFilters at all)      → GET 403, GET fields 403, PUT 403
+// The shared BASE (store:access + store:read + catalog:access) is what lets either user open the
+// Store blade that hosts the Search configuration widget, so a blade-level difference is also the
+// BrowseFilters difference and nothing else. Neither holds store:update — the store itself must not
+// be writable through the generic settings path either.
+
+export const BROWSEFILTERS_READ_PERMISSION = 'catalog:BrowseFilters:Read';
+export const BROWSEFILTERS_UPDATE_PERMISSION = 'catalog:BrowseFilters:Update';
+export const BROWSEFILTERS_BASE_PERMISSIONS = ['store:access', 'store:read', 'catalog:access'];
+const BROWSEFILTERS_NEVER = [BROWSEFILTERS_UPDATE_PERMISSION, 'store:update', 'store:create', 'store:delete'];
+
+export const BROWSEFILTERS_READONLY_REQUIRED_PERMISSIONS = [...BROWSEFILTERS_BASE_PERMISSIONS, BROWSEFILTERS_READ_PERMISSION];
+export const BROWSEFILTERS_READONLY_EXCLUDED_PERMISSIONS = [...BROWSEFILTERS_NEVER];
+export const BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION = BROWSEFILTERS_UPDATE_PERMISSION;
+export const BROWSEFILTERS_READONLY_ROLE = {
+  role_id: 'AGENT-TEST-BrowseFilters-Read-Only',
+  role_name: 'AGENT-TEST-BrowseFilters-Read-Only',
+  description: 'AGENT-TEST back-office role for VCST-2945 (barcode search configuration): store:access + store:read + catalog:access + catalog:BrowseFilters:Read, EXCLUDES catalog:BrowseFilters:Update and store:update — may VIEW barcode settings (GET 200) but not save them (PUT 403). Safe to delete.',
+  permissions: [...BROWSEFILTERS_READONLY_REQUIRED_PERMISSIONS],
+};
+export const BROWSEFILTERS_READONLY_ACCOUNT = {
+  aliasName: 'BROWSEFILTERS_READ_ONLY',
+  email: 'AGENT-TEST-browsefilters-readonly@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'BROWSEFILTERS_READ_ONLY_PASSWORD',
+  passwordFallback: 'Password1!', // localhost-safe default (mirrors user-provision.mjs PW_FALLBACK)
+};
+
+export const BROWSEFILTERS_NONE_REQUIRED_PERMISSIONS = [...BROWSEFILTERS_BASE_PERMISSIONS];
+export const BROWSEFILTERS_NONE_EXCLUDED_PERMISSIONS = [BROWSEFILTERS_READ_PERMISSION, ...BROWSEFILTERS_NEVER];
+export const BROWSEFILTERS_NONE_EXCLUDED_PERMISSION = BROWSEFILTERS_READ_PERMISSION;
+export const BROWSEFILTERS_NONE_ROLE = {
+  role_id: 'AGENT-TEST-BrowseFilters-None',
+  role_name: 'AGENT-TEST-BrowseFilters-None',
+  description: 'AGENT-TEST back-office role for VCST-2945: store:access + store:read + catalog:access and NO catalog:BrowseFilters permission — barcode settings GET, GET fields and PUT must all 403. Differs from AGENT-TEST-BrowseFilters-Read-Only by exactly catalog:BrowseFilters:Read. Safe to delete.',
+  permissions: [...BROWSEFILTERS_NONE_REQUIRED_PERMISSIONS],
+};
+export const BROWSEFILTERS_NONE_ACCOUNT = {
+  aliasName: 'BROWSEFILTERS_NONE',
+  email: 'AGENT-TEST-browsefilters-none@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'BROWSEFILTERS_NONE_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+/** The three pr909 routes the --verify step probes, and the status each account must get. */
+export const BARCODE_SEARCH_ENDPOINT = (storeId) => `/api/catalog/barcode-search/store/${encodeURIComponent(storeId)}`;
+export const BARCODE_FIELDS_ENDPOINT = (storeId) => `${BARCODE_SEARCH_ENDPOINT(storeId)}/fields`;
+export const BROWSEFILTERS_EXPECTED_STATUS = {
+  BROWSEFILTERS_READ_ONLY: { get: 200, fields: 200, put: 403 },
+  BROWSEFILTERS_NONE: { get: 403, fields: 403, put: 403 },
+};
+
+export function assertBrowseFiltersReadOnlyRolePermissions(permissions = BROWSEFILTERS_READONLY_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: BROWSEFILTERS_READONLY_REQUIRED_PERMISSIONS,
+    excluded: BROWSEFILTERS_READONLY_EXCLUDED_PERMISSIONS,
+    label: 'BrowseFilters read-only (VCST-2945)',
+  });
+}
+export function assertBrowseFiltersNoneRolePermissions(permissions = BROWSEFILTERS_NONE_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: BROWSEFILTERS_NONE_REQUIRED_PERMISSIONS,
+    excluded: BROWSEFILTERS_NONE_EXCLUDED_PERMISSIONS,
+    label: 'BrowseFilters none (VCST-2945)',
+  });
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

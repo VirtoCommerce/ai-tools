@@ -127,20 +127,20 @@ Any value in an analysis report, story AC, or doc that depends on the environmen
 Never hardcode GUIDs, SKUs, prices, emails, coupon codes, or URL hosts. Full rule:
 `.claude/rules/test-data.md`. Sales docs use generic business language and rarely need values at all.
 
-## Business-invariant proposals are advisory only
+## Business-invariant candidates are routed, never staged
 
-`ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never modify
-`.claude/knowledge/oracles/business-logic.md`.** Proposals are staged to `reports/ba/bl-proposals-{date}.md`
-for **explicit per-entry user approval**. Every proposal must cite a source (VirtoOZ/Context7 quote,
-GitHub `file:line`, VC docs §, or UI screenshot path); drop unsourced entries. See `/ba-analyze` Step 4.5.
+`ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never edit the oracle
+(`knowledge/oracles/bl/*.yaml`, nor the generated `business-logic.md`) outside `/qa-review-bl`, and write
+no proposals file.** A candidate with a human source (docs, AC, Jira resolution) goes to `/qa-review-bl`;
+one grounded only in code or live goes to the `kb`; a contradiction is a finding. Every candidate cites a source; drop unsourced
+ones. See `/ba-analyze` Step 4.5.
 
 ## External-write discipline (hard rule)
 
 Do **not** write to JIRA, Confluence, GitHub (issues/PRs/comments), or Teams unless the user explicitly
 requested it **in the current turn**. Drafting a story or doc to a local file in `reports/ba/` is the
 default; pushing it to an external system is a separate, explicitly-authorized action. Subagents must not
-bypass this via Bash→powershell indirection. Codified in memory `feedback_subagent_external_writes`,
-`feedback_subagent_interpreter_bypass`.
+bypass this via Bash→powershell indirection.
 
 **When the write IS authorized, the mechanics are not yours to invent.** Pushing a doc, guide, release
 note or analysis to a ticket follows `.claude/knowledge/execution/tracker-ops.md` — read it BEFORE the
@@ -172,7 +172,7 @@ proof the content is correct or complete. This is a hard rule for every BA agent
 - Report honestly what you verified versus what remains an open question — don't present an unverified
   assumption as a finding.
 
-Codified in memory `feedback_agents_self_check_and_verify`.
+
 
 ## Output policy
 
@@ -191,7 +191,7 @@ orchestrator owns index generation across runs — do not write your own `README
 |------|------|
 | `reports/ba/` · `reports/ba/test-models/` · `.claude/knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
 | `.claude/knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
-| `.claude/knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
+| `npm run bl:extract -- --domain <d>` | Before drafting BL proposals or story `Business_Rule` mappings |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
 | `.claude/knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
 | `.claude/knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |

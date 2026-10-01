@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.55",
+    "version": "1.5.59",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -58,7 +58,10 @@
     "changelog_1_5_49": "VCST-5319 Loyalty Missions (VirtoCommerce.Loyalty 3.1006.0-pr-14-1be7) — first fixture set for the Missions feature. 12 aliases: MSN_STORE_SETTINGS (the Loyalty.Missions.Enable gate + the OBSERVED value of the base Loyalty.Enable switch), MSN_PERSKU_PRODUCT_A/_B (two live-discovered catalog products shared by the PerSku pair), and 9 missions — MSN_ORDERVALUE, MSN_ORDERVALUE_ALTCURRENCY, MSN_ORDERCOUNT, MSN_PERSKU_ALL, MSN_PERSKU_ANY, MSN_PUBLISHED_PRIVATE, MSN_ZEROTARGET, MSN_ZEROREWARD, MSN_DRAFT. Source of truth: scripts/seed-data/loyalty/missions-specs.mjs (side-effect-free); seeder seed-loyalty-missions.mjs; drift guard td:validate:missions; unit tests scripts/unit/loyalty-missions-specs.test.mjs. NO GUIDs in this base file — every mission id, product id/sku and the per-env store id live in aliases.<env>.json. THREE API FACTS the fixtures are shaped around, verified live on vcst-qa 2026-08-27 and cross-checked against source: (1) a PerSkuGoal carries NO inline items — the SKU targets are a separate LoyaltyMissionGoalItem entity keyed by missionId, so a mission-only seed produces a permanently uncompletable PerSku mission that passes every existence check; (2) a Published mission is IMMUTABLE (only Published -> Archived) and cannot be un-published, so idempotency is signature-compare-then-delete-and-recreate, never repair-in-place; (3) a mission can be created directly as Published. FOUR BEHAVIOURS worth knowing when authoring cases, all observed live: StartDate > EndDate is ACCEPTED SILENTLY (no validation at save); an unrecognised status string is ACCEPTED (no status vocabulary validation); the immutability refusal comes back as HTTP 500, not 4xx; and GET /api/loyalty-missions/{id} answers 200 + a null body for a missing id rather than 404. Server-side validators that DO exist (all HTTP 400): name required, store required, at least one condition, exactly one goal, at least one reward, and CURRENCY CODE REQUIRED ON AN ORDER-VALUE GOAL. That last one contradicts the DTO: OrderValueGoal.currencyCode is `nullable` in the published Swagger, but null AND \"\" are both rejected 400 — so a currency-agnostic order-value mission is NOT expressible, and the original C19 plan of leaving it null is impossible. The validation is also ASYMMETRIC: presence is enforced, validity is not (\"XYZ\" and lowercase \"usd\" persist verbatim), so a wrong-currency defect cannot surface at save time. Hence the MSN_ORDERVALUE / MSN_ORDERVALUE_ALTCURRENCY pair — identical threshold and reward, differing ONLY in currency — which moves C19 to accrual time where it is answerable. Both resolve their currency from the STORE (defaultCurrency / currencies) at seed time into the per-env overlay; neither commits a literal. NOT validated at save either: a negative goal value, a negative order count, and a negative reward are all accepted. TARGETING is group-only (UserGroupIsCondition.groups: string[]) — there is NO customer-id condition anywhere in the module, so a single-customer mission is not expressible.",
     "changelog_1_5_54": "VCST-5730 Shared Document Library for Sales Reps — 2 new CSV-backed rep aliases (SR_REP_DOCS = Advanced Sales Representative, i.e. sales-rep-documents:read; SR_REP_DOCS_WRITER = Sales Representative + Sales Rep Documents Manager, i.e. :write WITHOUT :read, which is what makes the deployed read-gate disjunction falsifiable) backed by test-data/sales-rep/document-reps.csv, plus 12 inline SR_DOC_* document aliases whose single source of truth is scripts/seed-data/sales-rep/sales-rep-docs-specs.mjs (the file BYTES are part of each fixture and are synthesized there, so a CSV mirror would be a second hand-maintained source). The 12 cover pdf/docx/xlsx/txt/png/jpg + an unknown .vcqa extension, a Cyrillic file name with spaces, a ~3 MB file, a blank display name (the NormalizeName fallback), 3 categories and 2 pinned rows — and 12 is chosen so \"exactly page size\" and \"page size + 1\" are both reachable at a page size of 5 AND of 10. Guard: npm run td:validate:sales-rep-docs.",
     "changelog_1_5_55": "VCST-5732 Sales Rep TASK fixtures: 14 task aliases (SR_TASK_OVERDUE_*/TODAY_*/FUTURE_*/DONE_*) + SR_TASK_GROUPS group-size expectations. Seeded by npm run seed:sales-rep-tasks against the scoped /graphql/sales-rep endpoint as the owning rep; guarded by npm run td:validate:sales-rep-tasks. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks).",
-    "changelog_1_5_56": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7."
+    "changelog_1_5_56": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7.",
+    "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac).",
+    "changelog_1_5_58": "VCST-6054 UCP stock-refusal fixtures: PROD_MIN_ABOVE_STOCK (test-products.csv PROD-112 / QA-MINQ-001, minQuantity 3 > stock 2 > 0 -> inventory_unavailable) and PROD_STOCK_DROP (PROD-113 / QA-DROP-001, stock 10 / cart_qty 2 / dropped_stock 1 -> insufficient_stock after an accepted cart). New test-products.csv columns min_quantity (seeded as the product minQuantity) and cart_qty / dropped_stock (scenario quantities, not seeded). Ordering guarded by td:validate:standard check [14]. Both aliases expose id = the runtime product GUID from aliases.<env>.json (seed:products writes it for these two rows only), and seed:products now also writes FC_EAST.id - the FFC their stock sits on.",
+    "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -1485,6 +1488,7 @@
     "_status_note": "CFG-029. [P?P!] with dep. No survivor."
   },
   "FC_EAST": {
+    "notes": "The store MAIN fulfillment center as this repo defines it (fulfillment-centers.csv store_role=main). id is the RUNTIME FFC id from aliases.<env>.json, written by seed:products and seed:variation-stock (the CSV ffc_id FFC-001 is a business key, not a platform id). Every seed:products fixture is stocked here, so it is the fulfillmentCenterId a case PUTs to /api/inventory/plenty when it mutates a fixture stock (e.g. PROD_STOCK_DROP). On vcst it sits in the store additionalFulfillmentCenterIds, not store.mainFulfillmentCenterId; UCP search_products available_quantity counts its stock (KB-25388E6C).",
     "file": "inventory/fulfillment-centers",
     "filter": {
       "ffc_id": "FFC-001"
@@ -2123,6 +2127,44 @@
     "notes": "MOQ / pack-size fixture (minQuantity=6, packSize=6, stock=60 — applied at create time from standard-specs.mjs SPEC_OVERLAYS['PROD-103']; reconfirmed live 2026-07-25). Resolves by business key (code/SKU QA-PACK-001) — no runtime GUID pinned here (env-specific; ids live in aliases.<env>.json). NAVIGATE VIA @td(PROD_PACK_SIZE.url), composed as {{FRONT_URL}}@td(PROD_PACK_SIZE.url); /product/<sku> does not resolve. Unblocks CART-054/CART-055. Env var PACK_SIZE_SKU must equal this sku (enforced by td:validate:standard).",
     "_status": "seeded"
   },
+  "PROD_MIN_ABOVE_STOCK": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-112"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "stock": "stock_qty",
+      "min_qty": "min_quantity"
+    },
+    "notes": "VCST-6054 minimum-order-above-stock fixture: min_qty (3) strictly above stock (2), stock >= 1, packSize 1, stocked only on the FC_EAST fulfillment center. create_cart at quantity = @td(PROD_MIN_ABOVE_STOCK.min_qty) is refused by UCP with inventory_unavailable (available_quantity omitted) - distinct from PROD_OOS (out_of_stock) and PROD_LOW_STOCK (insufficient_stock). STATIC: never mutate its stock. Cannot tell whether UCP evaluates the minimum against the cart or the requested quantity (equal at qty = min). Seeded by seed-standard-products.mjs from test-products.csv PROD-112; id resolves from aliases.<env>.json (on an unseeded env it falls back to the business key PROD-112, not a GUID - prefer capturing products.0.id from search_products). Ordering guarded by td:validate:standard check [14].",
+    "_status": "seeded-20260929"
+  },
+  "PROD_STOCK_DROP": {
+    "file": "products/test-products",
+    "filter": {
+      "product_id": "PROD-113"
+    },
+    "fields": {
+      "sku": "sku",
+      "name": "product_name",
+      "price": "price",
+      "id": "product_id",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "stock": "stock_qty",
+      "min_qty": "min_quantity",
+      "cart_qty": "cart_qty",
+      "dropped_stock": "dropped_stock"
+    },
+    "notes": "VCST-6054 stock-drop fixture: baseline stock 10, cart_qty 2, dropped_stock 1 (1 <= dropped < cart_qty <= stock, min_qty 1 <= dropped). A case carts @td(PROD_STOCK_DROP.cart_qty), then PUT {{BACK_URL}}/api/inventory/plenty [{fulfillmentCenterId:@td(FC_EAST.id), productId:@td(PROD_STOCK_DROP.id), inStockQuantity:@td(PROD_STOCK_DROP.dropped_stock), reservedQuantity:0, status:Enabled}] and expects get_cart/create_checkout to refuse insufficient_stock, then RESTORES inStockQuantity @td(PROD_STOCK_DROP.stock). SHARED MUTABLE fixture - the consuming case owns it until restore; serialise consumers (test-data.md DISPOSABLE FIXTURES rule 4); If a run died before restoring, TEST_ENV=<env> npm run seed:products -- --only PROD-113 resets it: the seeder re-PUTs stock_qty on an existing product every run. Seeded by seed-standard-products.mjs from test-products.csv PROD-113; id resolves from aliases.<env>.json. Ordering guarded by td:validate:standard check [14].",
+    "_status": "seeded-20260929"
+  },
   "PROD_TIER_PRICED": {
     "file": "products/test-products",
     "filter": {
@@ -2403,7 +2445,7 @@
       "org_id": "org_id",
       "roles": "roles"
     },
-    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
+    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Resolve the password ONLY through @td(ORG_USER_DEFAULT.password) (the users.csv {{DEFAULT_TEST_PASSWORD}} token) — this alias has no password_env, and .env ORG_USER_EMAIL / ORG_USER_PASSWORD belong to a DIFFERENT account on vcst (pairing this email with ORG_USER_PASSWORD returns 400; measured 2026-09-30, REG-2026-09-30-1536 SRCH-021). Added 2026-04-24 as part of preflight-tag rollout."
   },
   "ORG_XSS": {
     "file": "security/xss-payloads",
@@ -8042,5 +8084,286 @@
     "decays_at_utc": "",
     "owner_rep_email": "",
     "_notes": "VCST-5732 GROUP-SIZE EXPECTATIONS for the Sales Rep task fixture — so no case ever hardcodes a count. All four sizes DIFFER on purpose (overdue=2, today=3, future=5, completed=4): if any two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. shared_day_offset is the one calendar day carrying TWO tasks (multi-task day indicator); empty_day_offsets are the days immediately after it that must carry NONE (empty-day indicator). DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). seeded_at / decays_at_utc / owner_rep_email are written per-env by the seeder and are EMPTY here. Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "BARCODE_STORE": {
+    "_inline": true,
+    "_notes": "VCST-2945 dedicated AGENT-TEST store bound to B2B-store's catalog (B2B-mixed), en-US/USD, a non-storefront URL. API/xAPI barcode cases own ITS settings (Catalog.Search.BarcodeScannerEnabled / BarcodeSearchFields) so no case ever writes B2B-store's. Every seed resets them to scannerEnabled=true, fields=[]; serialise the cases that write them. id is a stable business key (the store id itself). Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "id": "AGENT-TEST-BARCODE",
+    "name": "AGENT-TEST-Barcode-Store",
+    "catalogId": ""
+  },
+  "BARCODE_GTIN_UNIQUE": {
+    "_inline": true,
+    "_notes": "VCST-2945 — the ONLY product holding this EAN-13 GTIN (GS1 restricted range 2…, cannot collide with a real item): exact mode on [gtin] must OPEN it (1 hit). Buyable, priced USD, in stock. Navigate {{FRONT_URL}}@td(BARCODE_GTIN_UNIQUE.url); slug is the SEO leaf. image = EAN-13 PNG decoded back with zxing-wasm before commit. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "sku": "QA-BC-2945-001",
+    "gtin": "2945100000018",
+    "slug": "agent-test-barcode-gtin-unique",
+    "url": "/seed-test-fixtures/agent-test-barcode-gtin-unique",
+    "image": "test-data/uploads/barcodes/barcode-gtin-unique-ean13.png",
+    "id": ""
+  },
+  "BARCODE_FULLTEXT_DISCRIM": {
+    "_inline": true,
+    "_notes": "VCST-2945 — gtin G is product `sku`'s GTIN AND a whole word in product `otherSku`'s NAME. Full-text scan (fields=[]) must return >=2 (both); exact on [gtin] must return exactly 1 (`sku`). Equal counts = the mode switch changed nothing. image = EAN-13 of G. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "gtin": "2945200000017",
+    "sku": "QA-BC-2945-002",
+    "otherSku": "QA-BC-2945-003",
+    "image": "test-data/uploads/barcodes/barcode-fulltext-ean13.png",
+    "id": "",
+    "otherId": ""
+  },
+  "BARCODE_GTIN_SHARED": {
+    "_inline": true,
+    "_notes": "VCST-2945 — `count` products (`skus`) share one GTIN: exact mode must LIST them (header_barcode) and never auto-open one. Also the facet-count case (facet sums vs totalCount). image = EAN-13 of the shared GTIN. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "gtin": "2945300000016",
+    "count": "3",
+    "skus": "QA-BC-2945-004,QA-BC-2945-005,QA-BC-2945-006",
+    "image": "test-data/uploads/barcodes/barcode-gtin-shared-ean13.png",
+    "ids": ""
+  },
+  "BARCODE_CODE_OR": {
+    "_inline": true,
+    "_notes": "VCST-2945 — product whose code (`sku`) is a scan value no GTIN holds, and whose own gtin differs from BARCODE_GTIN_UNIQUE's. With fields [gtin, code], @td(BARCODE_GTIN_UNIQUE.gtin) and @td(BARCODE_CODE_OR.sku) must BOTH hit; a first-field-only or AND build finds 0 for the code. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "sku": "QA-BC-2945-007",
+    "gtin": "2945400000015",
+    "id": ""
+  },
+  "BARCODE_PROP": {
+    "_inline": true,
+    "_notes": "VCST-2945 — AGENT_TEST_BARCODE_UPC, a Product-type ShortText property on the AGENT-TEST-SEED physical catalog, value set on ONE product. `propertyName` is the lowercased index field name exactly as GET api/catalog/barcode-search/store/{id}/fields lists it (use it in fields[]); `catalogPropertyName` is the catalog property's own name. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "propertyName": "agent_test_barcode_upc",
+    "catalogPropertyName": "AGENT_TEST_BARCODE_UPC",
+    "value": "294500000084",
+    "sku": "QA-BC-2945-008",
+    "id": "",
+    "propertyId": ""
+  },
+  "BARCODE_VARIATION_MPN": {
+    "_inline": true,
+    "_notes": "VCST-2945 — parent + two variations; ONLY `variationSku` carries the MPN and it is OUT OF STOCK (0) while the parent and `siblingSku` are in stock. Exact on [manufacturerPartNumber] must still find/open the variation (/product/<variationId>). image = Code 128 of the MPN. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "parentSku": "QA-BC-2945-010",
+    "variationSku": "QA-BC-2945-011",
+    "siblingSku": "QA-BC-2945-012",
+    "mpn": "MPN-2945-VAR-A",
+    "image": "test-data/uploads/barcodes/barcode-variation-mpn-code128.png",
+    "parentId": "",
+    "variationId": "",
+    "siblingId": ""
+  },
+  "BARCODE_CASE": {
+    "_inline": true,
+    "_notes": "VCST-2945 — a product whose code is MIXED case. `value` must match exactly (and case-insensitively on vcst-qa's provider); `prefix` is a strict prefix that matches NOTHING (exact term, not prefix/contains). `valueFlipped` is `value` with the case of EVERY letter inverted — DERIVED by flipCase() in the spec module, never hand-typed — so a case-insensitivity case scans @td(BARCODE_CASE.valueFlipped) instead of transcribing a flipped literal. Use fields [code]. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode` (fails if valueFlipped stops equalling flipCase(value)), teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "value": "QaBc-2945-MiXeD",
+    "valueFlipped": "qAbC-2945-mIxEd",
+    "prefix": "QaBc-2945",
+    "sku": "QaBc-2945-MiXeD",
+    "id": ""
+  },
+  "BARCODE_SPECIAL": {
+    "_inline": true,
+    "_notes": "VCST-2945 — a QR-payload-like value containing a double quote and a colon, set on AGENT_TEST_BARCODE_UPC (BARCODE_PROP's property) of another product. Configure fields [@td(BARCODE_PROP.propertyName)]. image = QR code of the value. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "value": "QR:2945\"SN\"07",
+    "sku": "QA-BC-2945-014",
+    "image": "test-data/uploads/barcodes/barcode-special-qr.png",
+    "id": ""
+  },
+  "BARCODE_REINDEX": {
+    "_inline": true,
+    "_notes": "VCST-2945 — DISPOSABLE per seed: a test changes this product's gtin from `gtin` to `newGtin` and asserts old stops / new starts matching after the index window (BL-SRCH-003). The next seed restores `gtin`. Never share with a concurrent suite. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "sku": "QA-BC-2945-015",
+    "gtin": "2945600000013",
+    "newGtin": "2945600000020",
+    "id": ""
+  },
+  "BARCODE_STALE_FIELD": {
+    "_inline": true,
+    "_notes": "VCST-2945 — DISPOSABLE per seed: a second AGENT_TEST ShortText Product property whose ONLY value is `value`, on ONE dedicated product (`sku`, id in the overlay) that no other alias reads. With fields [@td(BARCODE_STALE_FIELD.name)] a scan of @td(BARCODE_STALE_FIELD.value) finds 1; DELETE the property (never BARCODE_PROP's — ~10 cases read it), re-index the product (event-based indexation is off on vcst-qa, so the case must POST api/search/indexes/index for @td(BARCODE_STALE_FIELD.id) itself), and the same scan finds 0 while the field stays configured-but-missing. `name` = the lowercased /fields name. The next seed re-creates the property AND this product's value. Serialise with any other case that deletes it. Single source of truth: scripts/seed-data/catalog/barcode-specs.mjs; seed `npm run seed:barcode` (TEST_ENV-aware), drift guard `npm run td:validate:barcode`, teardown `npm run seed:barcode:teardown`. Runtime ids resolve from aliases.<env>.json only.",
+    "name": "agent_test_barcode_stale",
+    "catalogPropertyName": "AGENT_TEST_BARCODE_STALE",
+    "value": "QABC-STALE-2945-016",
+    "sku": "QA-BC-2945-016",
+    "id": "",
+    "propertyId": ""
+  },
+  "BROWSEFILTERS_READ_ONLY": {
+    "_inline": true,
+    "_comment": "VCST-2945 back-office (Manager) account that may VIEW but not SAVE barcode search settings: role holds store:access + store:read + catalog:access + catalog:BrowseFilters:Read, EXCLUDES catalog:BrowseFilters:Update (and store:update). Expected on @td(BARCODE_STORE.id): GET barcode-search 200, GET fields 200, PUT 403; the blade controls render read-only. isAdministrator=false so the gate applies. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{BROWSEFILTERS_READ_ONLY_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac -- --only BROWSEFILTERS_READ_ONLY). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; live proof: npm run seed:rbac -- --only BROWSEFILTERS_READ_ONLY --verify.",
+    "email": "AGENT-TEST-browsefilters-readonly@test.virtocommerce.com",
+    "login": "AGENT-TEST-browsefilters-readonly@test.virtocommerce.com",
+    "password": "{{BROWSEFILTERS_READ_ONLY_PASSWORD}}",
+    "password_var": "BROWSEFILTERS_READ_ONLY_PASSWORD",
+    "role": "AGENT-TEST-BrowseFilters-Read-Only",
+    "excluded_permission": "catalog:BrowseFilters:Update",
+    "user_type": "Manager"
+  },
+  "BROWSEFILTERS_NONE": {
+    "_inline": true,
+    "_comment": "VCST-2945 back-office (Manager) account with store access but NO catalog:BrowseFilters permission: differs from BROWSEFILTERS_READ_ONLY by exactly catalog:BrowseFilters:Read. Expected on @td(BARCODE_STORE.id): GET barcode-search 403, GET fields 403, PUT 403. isAdministrator=false so the gate applies. email is an env-invariant AGENT-TEST business key; the PASSWORD is a {{BROWSEFILTERS_NONE_PASSWORD}} secret from .env.local (never committed). Runtime platform_id/user_id/role_id resolve from aliases.<env>.json (written by scripts/seed-data/platform/seed-backoffice-rbac.mjs — npm run seed:rbac -- --only BROWSEFILTERS_NONE). Single source of truth: scripts/seed-data/platform/backoffice-rbac-specs.mjs; drift-guard: npm run td:validate:rbac; live proof: npm run seed:rbac -- --only BROWSEFILTERS_NONE --verify.",
+    "email": "AGENT-TEST-browsefilters-none@test.virtocommerce.com",
+    "login": "AGENT-TEST-browsefilters-none@test.virtocommerce.com",
+    "password": "{{BROWSEFILTERS_NONE_PASSWORD}}",
+    "password_var": "BROWSEFILTERS_NONE_PASSWORD",
+    "role": "AGENT-TEST-BrowseFilters-None",
+    "excluded_permission": "catalog:BrowseFilters:Read",
+    "user_type": "Manager"
+  },
+  "PUSH_ORG_INBOX": {
+    "file": "b2b/organizations",
+    "filter": {
+      "org_name": "AGENT-TEST-Org-PushInbox"
+    },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id"
+    },
+    "notes": "Gap fixture for PD-01 (Push Messages inbox isolation for suite 068 (storefront bell + Notifications page). No sales rep may serve this org and no case may add a member to it at runtime.). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_ORG_API": {
+    "file": "b2b/organizations",
+    "filter": {
+      "org_name": "AGENT-TEST-Org-PushApi"
+    },
+    "fields": {
+      "name": "org_name",
+      "platform_id": "platform_id"
+    },
+    "notes": "Gap fixture for PD-05 (Push Messages inbox isolation for suite 050l (xAPI mark/clear). Separate org so an org-targeted send or a bulk mark/clear never reaches suite 068 recipients. No sales rep may serve this org and no case may add a member to it at runtime.). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_RECIPIENT_READER": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-026"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id",
+      "store_id": "store_id"
+    },
+    "notes": "Gap fixture for PD-01 (068 main recipient: populated inbox with read AND unread messages; targeted by PUSH-024 (user A) and PUSH-033). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_RECIPIENT_BYSTANDER": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-027"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id",
+      "store_id": "store_id"
+    },
+    "notes": "Gap fixture for PD-02 (068 PUSH-024 user B: same org as the reader, never in any memberIds). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_RECIPIENT_BULK": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-028"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id",
+      "store_id": "store_id"
+    },
+    "notes": "Gap fixture for PD-03 (068 PUSH-021/029: absorbs mark-all-read and clear-all so the reader keeps its read/unread divergence). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_RECIPIENT_API": {
+    "file": "b2b/users",
+    "filter": {
+      "user_id": "USR-029"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "user_name",
+      "platform_id": "platform_id",
+      "org_id": "org_id",
+      "store_id": "store_id"
+    },
+    "notes": "Gap fixture for PD-05 (050l xAPI recipient: replaces TECHFLOW_ADMIN, whose inbox 068 also reads). Generated by /qa-generate-data; seeded 2026-09-29 on vcst via `npm run seed:b2b -- --only agent-test-push` (runtime platform_id / userId / contactId in aliases.<env>.json; contactId is the member id push memberIds takes)."
+  },
+  "PUSH_RECIPIENT_EMPTY": {
+    "file": "users/test-users",
+    "filter": {
+      "email": "agent-test-push-empty@test-agent.com"
+    },
+    "fields": {
+      "email": "email",
+      "password": "password"
+    },
+    "notes": "RETIRED 2026-09-29: a tracked push message with a broad memberQuery reached this account at creation (KB-CB05268E), so it can never show an empty inbox. 068 PUSH-025 now creates its account on the fly. Do not use for empty-inbox cases."
+  },
+  "PUSH_DATA_READER_INBOX": {
+    "_inline": true,
+    "combo": "PD-01",
+    "recipient": "PUSH_RECIPIENT_READER",
+    "org": "PUSH_ORG_INBOX",
+    "min_visible_messages": "11",
+    "min_read": "1",
+    "min_unread": "1",
+    "link_message_id": "",
+    "fields": {
+      "recipient": "recipient",
+      "org": "org",
+      "min_visible_messages": "min_visible_messages",
+      "min_read": "min_read",
+      "min_unread": "min_unread",
+      "link_message_id": "link_message_id"
+    },
+    "_notes": "Reader inbox: >=11 visible Sent AGENT-TEST messages (page size 10 + 1) with >=1 read and >=1 unread, so unread != total, and exactly one message whose body carries an <a href> to {{FRONT_URL}}/account/orders. Provisioned by `npm run seed:push` (scripts/seed-data/push/seed-push.mjs, TOP-UP: counts the reader's visible AGENT-TEST rows and sends only the difference - a second run sends nothing); these threshold fields are what the seeder and `td:validate:push` read. Runtime link_message_id resolves from aliases.<env>.json. Messages are irrevocable (a Sent push can be neither edited nor deleted); never run mark-all or clear-all on this inbox. Cases: 068 PUSH-017/018/019/020/022/036, target of 024 and 033."
+  },
+  "PUSH_DATA_TARGETING_PAIR": {
+    "_inline": true,
+    "combo": "PD-02",
+    "targeted": "PUSH_RECIPIENT_READER",
+    "bystander": "PUSH_RECIPIENT_BYSTANDER",
+    "org": "PUSH_ORG_INBOX",
+    "fields": {
+      "targeted": "targeted",
+      "bystander": "bystander"
+    },
+    "_notes": "Same org, divergent inboxes: memberIds names the reader only; the bystander must receive nothing. 068 PUSH-024."
+  },
+  "PUSH_DATA_BULK": {
+    "_inline": true,
+    "combo": "PD-03",
+    "recipient": "PUSH_RECIPIENT_BULK",
+    "min_visible_unread": "3",
+    "batch_marker": "",
+    "batch_message_ids": "",
+    "fields": {
+      "recipient": "recipient",
+      "min_visible_unread": "min_visible_unread",
+      "batch_marker": "batch_marker",
+      "batch_message_ids": "batch_message_ids"
+    },
+    "_notes": "Consumed every run (mark-all-read, clear-all hide everything); `npm run seed:push` sends min_visible_unread FRESH unread messages to this account on EVERY run and polls until they are visible + unread. Runtime batch_marker (the string every body of the latest batch starts with) and batch_message_ids (';'-joined) resolve from aliases.<env>.json. 068 PUSH-021, PUSH-029 - run 021 before 029."
+  },
+  "PUSH_DATA_EMPTY": {
+    "_inline": true,
+    "combo": "PD-04",
+    "recipient": "PUSH_RECIPIENT_EMPTY",
+    "fields": {
+      "recipient": "recipient"
+    },
+    "_notes": "RETIRED 2026-09-29: a tracked push message with a broad memberQuery reached this account at creation (KB-CB05268E), so it can never show an empty inbox. 068 PUSH-025 now creates its account on the fly. Do not use for empty-inbox cases."
+  },
+  "PUSH_DATA_API": {
+    "_inline": true,
+    "combo": "PD-05",
+    "recipient": "PUSH_RECIPIENT_API",
+    "org": "PUSH_ORG_API",
+    "fields": {
+      "recipient": "recipient",
+      "org": "org"
+    },
+    "_notes": "050l recipient in its own org; its cases self-seed their message (PUSH_MSG_SEED). Replaces TECHFLOW_ADMIN."
   }
 }

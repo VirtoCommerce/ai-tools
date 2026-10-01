@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-5746",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-25",
+  "environment": "vcmp-dev Vendor Portal",
+  "build": {
+    "platform": null,
+    "theme": null,
+    "relevant_modules": { "@vc-shell/framework": "2.6.0-rc.1 (gitHead cd4eeb6)", "vendor-portal app": "2.2.0-rc.2, build 30207" },
+    "pr_build": "vc-shell #310 merge 06cb54b, ancestor of cd4eeb6 (47 ahead / 0 behind)"
+  },
+  "agent_used": "qa-testing-expert (playwright-edge) + general-purpose (unit baseline)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED via source revert: VcAiAgentPanel.vue #310 hunks reverse-applied on cd4eeb6 -> 1/12 fails ('leaves mod+\\ unclaimed when focus is outside the panel'); GREEN 12/12 x3",
+  "checklist_total": 6,
+  "checklist_passed": 6,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "Low a11y: focus drops to document after Ctrl+\\ toggles the panel from its header button; a second press maximizes the topmost blade",
+    "Low visual: language-selector flag of an underlying blade paints over a maximized blade"
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": ["both Low side effects (below severity floor)"],
+  "related_existing": ["VCST-5816 (unreadcount 500, pre-existing, observed again)"],
+  "business_rules_verified": [],
+  "business_rules_note": "BL-*/ECL-* are storefront-calibrated; none apply to vc-shell. VirtoOZ has no page on vc-shell shortcuts; ground truth = ticket AC + source + live.",
+  "tracker_transition": { "role": "tested", "state": "Tested" },
+  "tracker": { "comment_id": "110451" },
+  "evidence": "reports/tickets/Sprint26-19/VCST-5746/screenshots/",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5746/"
+}

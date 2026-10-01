@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/VirtoCommerce/ai-tools/.claude/templates/mind-map.schema.json",
+  "title": "Test Mind Map — the behaviour graph of one domain",
+  "$comment": "SINGLE SOURCE OF TRUTH for the shape of `.claude/knowledge/domain/<file>.mind-map.json`. `npm run models:check` (scripts/maintenance/check-test-models.mjs) loads THIS file through ajv — it holds no second copy of these rules. Cross-file rules (edge endpoints, data references, case stamps, oracle ids, stable ids) are the checker's, because a schema cannot see other files. The map answers 'how can this domain behave?' and is NOT an oracle: an expected outcome cites BL-*/ECL-*/kb/doc through `oracle_refs`/`evidence`, never the map itself. Method: .claude/skills/qa-test-mind-map/SKILL.md. Linked tests are DERIVED from `Behavior:` stamps in suite References — deliberately not a field here, so the case↔behaviour link has exactly one writer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "domain_slug", "domain_map_rev", "generated", "nodes", "edges"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schema_version": { "const": "1.0" },
+    "domain_slug": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*$",
+      "$comment": "Must equal the `domain_slug` of an existing domain map — the checker resolves it. Every node id starts with `<domain_slug>.`."
+    },
+    "domain_map_rev": {
+      "type": "integer",
+      "minimum": 1,
+      "$comment": "The domain-map `rev` this graph was derived from. Behind the map's current rev ⇒ a staleness warning."
+    },
+    "generated": { "type": "string", "format": "date" },
+    "amended": { "type": "string", "format": "date" },
+    "nodes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } },
+    "metadata": { "type": "object" }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(\\.[a-z0-9][a-z0-9-]*)+$",
+      "$comment": "Dotted, stable, NEVER renamed. A removed behaviour becomes status OBSOLETE; the id stays."
+    },
+    "requirementId": { "type": "string", "pattern": "^data\\.[a-z][a-z0-9]*(\\.[a-z0-9][a-z0-9-]*)+$" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "ref"],
+      "properties": {
+        "class": {
+          "enum": ["SPEC", "BL", "DOC", "OBSERVED", "HYPOTHESIS"],
+          "$comment": "The provenance-tag vocabulary of .claude/skills/qa-test-cases-generator/test-case-template.md — no fourth vocabulary. DOC covers docs AND source code."
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 3,
+          "$comment": "A ticket key, a BL-/ECL- id, `kb:<KB-id>`, a VirtoOZ page, `repo-file:line`, a GraphQL op label, a run id or a case id."
+        },
+        "note": { "type": "string" },
+        "date": { "type": "string", "format": "date" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "status", "evidence"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["feature", "capability", "behavior", "branch", "state"] },
+        "name": { "type": "string", "minLength": 3 },
+        "description": { "type": "string" },
+        "chain_link": {
+          "type": "string",
+          "$comment": "The `#` of the domain map §1 value-chain row this node realises, e.g. `2b`."
+        },
+        "actors": { "type": "array", "items": { "type": "string" } },
+        "preconditions": { "type": "array", "items": { "type": "string" } },
+        "postconditions": { "type": "array", "items": { "type": "string" } },
+        "state_before": { "$ref": "#/$defs/id" },
+        "state_after": { "$ref": "#/$defs/id" },
+        "terminal": { "type": "boolean", "$comment": "State nodes only: no transition may leave a terminal state." },
+        "branch_kind": { "enum": ["happy", "negative", "boundary", "permission", "state", "integration"] },
+        "technique": {
+          "type": "string",
+          "pattern": "^[A-Z]{2,5}$",
+          "$comment": "A §0 token of .claude/skills/qa-test-design/test-design-techniques.md — the checker validates it against that table at run time."
+        },
+        "requires": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/requirementId" } },
+        "produces": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/requirementId" } },
+        "interfaces": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["admin-ui", "storefront", "graphql", "rest", "job", "event"] }
+        },
+        "oracle_refs": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^(BL-[A-Z0-9]+-\\d{3}|ECL-\\d+\\.\\d+)$" },
+          "$comment": "Promoted oracle entries only. A PROPOSED- invariant is evidence (class SPEC/HYPOTHESIS), not an oracle."
+        },
+        "maturity": {
+          "enum": ["released", "new"],
+          "default": "released",
+          "$comment": "CLAUDE.md §Product context: released vs new decides the source. A released CONFIRMED node needs DOC, BL or OBSERVED evidence; a new one may rest on SPEC."
+        },
+        "status": {
+          "enum": ["CONFIRMED", "UNVERIFIED", "DRIFT", "OBSOLETE"],
+          "$comment": "The domain-map verdict vocabulary plus OBSOLETE. No numeric confidence: the checker derives consistency from the evidence classes."
+        },
+        "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } },
+        "drift": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["expected", "observed"],
+          "properties": {
+            "expected": { "type": "string", "$comment": "What the higher-precedence source says, with its ref." },
+            "observed": { "type": "string", "$comment": "What the platform was seen to do, with its ref." },
+            "route": { "type": "string", "$comment": "Who resolves the conflict, as something trackable: a tracker key of this deployment (JIRA_PROJECT_KEY), an issue/PR in a named repo or its URL, /qa-review-oracles, or a kb dispute. A route marked UNFILED, or naming none of these, is TM-018 (warn)." }
+          }
+        },
+        "obsolete": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date", "reason"],
+          "properties": {
+            "date": { "type": "string", "format": "date" },
+            "reason": { "type": "string", "minLength": 5 },
+            "replaced_by": { "$ref": "#/$defs/id" }
+          }
+        },
+        "last_verified": { "type": "string", "format": "date" },
+        "notes": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "branch" } } }, "then": { "required": ["branch_kind"] } },
+        { "if": { "properties": { "status": { "const": "DRIFT" } } }, "then": { "required": ["drift"] } },
+        { "if": { "properties": { "status": { "const": "OBSOLETE" } } }, "then": { "required": ["obsolete"] } },
+        {
+          "if": { "properties": { "status": { "const": "CONFIRMED" } } },
+          "then": { "properties": { "evidence": { "minItems": 1 } } }
+        },
+        {
+          "if": { "not": { "properties": { "type": { "const": "state" } } } },
+          "then": { "not": { "required": ["terminal"] } }
+        }
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "type"],
+      "properties": {
+        "from": { "$ref": "#/$defs/id" },
+        "to": { "$ref": "#/$defs/id" },
+        "type": {
+          "enum": ["contains", "branches_to", "transitions_to", "depends_on", "affected_by"],
+          "$comment": "Node-to-node relations only. requires/produces point into the data model and live on the node; covers is derived from Behavior: stamps; implements is evidence."
+        },
+        "via": {
+          "$ref": "#/$defs/id",
+          "$comment": "transitions_to only: the behaviour node that performs the transition."
+        },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "transitions_to" } } }, "then": { "required": ["via"] } }
+      ]
+    }
+  }
+}

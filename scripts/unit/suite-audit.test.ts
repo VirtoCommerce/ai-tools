@@ -254,7 +254,7 @@ function realRow(moduleName: string) {
 }
 
 const REAL_ROUTING: Array<{ name: string; match: string }> = JSON.parse(
-  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "ci", "config", "fix-repos.json"), "utf-8"),
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "plugins", "vc-fix", "skills", "qa-fix-routing", "fix-repos.json"), "utf-8"),
 ).routing;
 
 function realRepos(moduleName: string): string[] {

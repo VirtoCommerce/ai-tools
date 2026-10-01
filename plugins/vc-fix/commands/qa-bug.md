@@ -30,6 +30,7 @@ Create a structured bug report from a description, screenshot, or observed issue
 /qa-bug Cart total shows $0 after adding item     # Bug from description
 /qa-bug VCST-1234                                   # Bug from a JIRA ticket (adds QA evidence)
 /qa-bug screenshot path/to/screenshot.png           # Bug from a screenshot
+/qa-bug "<defect>" found-by:agent-testing VCST-1234 # Filed by an agent flow (also agent-regression <RUN_ID>)
 ```
 
 ---
@@ -42,7 +43,7 @@ Create a structured bug report from a description, screenshot, or observed issue
    - **`ticket`** (frontend-only client bug) — take the storefront version from the ticket's system info; do NOT call the admin modules endpoint.
    - Record platform version, theme version, and modules relevant to the bug area — include in the bug report (Step 3)
 2. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected area (e.g., `"cart pricing calculations"`, `"order status workflow"`) with `tokens: 8000`. Verify expected behavior before concluding it's a bug — the observed behavior may be by design.
-3. **Duplicate check** — scan `reports/bugs/open/` and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
+3. **Duplicate check** — scan `reports/bugs/open/**` (recursively — it is foldered by severity) and `reports/bugs/fixed/` for existing bug reports with the same component/title. If found in `open/`, warn user and show existing report. If found in `fixed/`, check whether it's a regression (same bug resurfaced).
 
 ## Step 1 — Gather Bug Details
 
@@ -67,6 +68,13 @@ Create a structured bug report from a description, screenshot, or observed issue
 **If screenshot provided:**
 - Read the screenshot to identify the page and issue
 - Use qa-testing-expert to navigate to the same page and verify
+
+**Who found it — decide now, write it on the report's line 4.** An agent flow that saw the failure in its own
+run passes `found-by:agent-testing <TICKET>` (`/qa-test`, `/qa-test-fast`, exploratory) or
+`found-by:agent-regression <RUN_ID>` (a regression run or its triage); write it as
+`**Found by:** agent — testing <TICKET>` / `**Found by:** agent — regression <RUN_ID>`. Anything else — a person's
+description, a ticket key or screenshot a user handed over, no argument — is `**Found by:** human`. Step 5's
+origin labels are read from this line (`knowledge/execution/tracker-ops.md` §Labels on bugs Claude files).
 
 ---
 
@@ -108,7 +116,7 @@ Validate the failing scenario across all four layers. Record per-layer PASS / FA
 ### Layer 3 — GraphQL xAPI
 - **Where:** `{BACK_URL}/graphql` (POST runtime) — GraphiQL UI at `{BACK_URL}/ui/graphiql`. Consult `knowledge/api/graphql-schema.md` for schema and `knowledge/api/graphiql-interaction.md` for interaction steps
 - **Tool:** qa-backend-expert via `playwright-edge` + GraphiQL, or Postman MCP
-- **Verify:** re-run the query/mutation the storefront executed (copy operation name + variables from Layer 1 network capture). Compare the raw response to what the UI rendered. Introspect field names/types before writing ad-hoc queries (`feedback_graphql_introspection`).
+- **Verify:** re-run the query/mutation the storefront executed (copy operation name + variables from Layer 1 network capture). Compare the raw response to what the UI rendered. Introspect field names/types before writing ad-hoc queries.
 - **Signal:** xAPI returns wrong data = xAPI resolver/aggregation bug. xAPI returns correct data but UI shows wrong = frontend rendering bug.
 
 ### Layer 4 — Platform REST API
@@ -232,14 +240,14 @@ mv reports/bugs/screenshots/_incoming/*/<kept>.png reports/bugs/screenshots/<slu
 - If a capture is not where you expect, **list `reports/bugs/screenshots/_incoming/`** — do not
   guess a path. A guessed path was one of the two `Read` failures on the OPUS run.
 
-Generate a report in `reports/bugs/open/` using this naming convention:
-`BUG-{Short-Description}.md` or `BUG-{Short-Description}-VCST-XXXX.md` (if a JIRA ticket is known)
+Generate a report in `reports/bugs/open/<bucket>/` — `critical-high/` · `medium/` · `low/`, chosen by the severity the report declares (`.claude/rules/reports.md` §1a; a straddling grade files at the lower bucket), using this naming convention:
+`BUG-{Short-Description}.md` or `BUG-{Short-Description}-<ticket-key>.md` (if a JIRA ticket is known)
 
 ### Bug Report Folder Structure
 
 ```
 reports/bugs/
-├── open/        # Active bugs (confirmed, reproduced, ready-to-submit)
+├── open/        # Active bugs, foldered by severity: critical-high/ · medium/ · low/
 ├── fixed/       # Verified fixes — kept for regression reference
 ├── closed/      # Won't fix, cannot reproduce, false positive, duplicate
 ├── templates/   # Investigation templates (not actual bugs)
@@ -254,6 +262,7 @@ Every bug report MUST include a status line immediately after the title (line 3)
 
 ```markdown
 ## Status: OPEN | CONFIRMED | REPRODUCED | READY_TO_SUBMIT | FIXED | CLOSED
+**Found by:** agent — testing <TICKET> | agent — regression <RUN_ID> | human
 ```
 
 Valid statuses:
@@ -276,12 +285,12 @@ When moving to `fixed/`, add a Resolution block below the status:
 
 ### Report Template
 
-> **Scope: local markdown report only** (`reports/bugs/open/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
+> **Scope: local markdown report only** (`reports/bugs/open/<bucket>/BUG-*.md`). For the JIRA ticket payload (Severity / Priority / Labels / Component / Affects Version / Assignee / Linked Issues), use the Frontend + Backend templates in [`skills/qa-defect/defect-report-templates.md`](../skills/qa-defect/defect-report-templates.md) — invoked via `/qa-defect classify` in Step 5. The two templates intentionally diverge: this one adds VC-specific **Status lifecycle**, **4-Layer Validation**, **Module Versions**, **Root Cause Analysis**, and the **Fix Routing** block below; the `/qa-defect` templates carry the JIRA fields.
 
 ### Fix Routing block (REQUIRED — the `/qa-fix` handoff contract)
 
-Every report MUST end with this block. It is the **strongest signal** the `/qa-fix` triage agent reads
-(per `ci/agents/fix-triage-agent.md`) — naming the layer + exact repo lets Gate 1 *confirm* your finding
+Every report MUST end with this block. It is the **strongest signal** the `/qa-fix` triage reads
+— naming the layer + exact repo lets Gate 1 *confirm* your finding
 instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact repo).
 
 ```markdown
@@ -306,7 +315,7 @@ instead of re-deriving it. Fill it from Step 2 (owning layer) + Step 3a (exact r
 
 ## Step 5 — Create the Tracker Ticket (optional)
 
-> **Skills:** Use `/qa-defect triage VCST-XXXX` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
+> **Skills:** Use `/qa-defect triage <ticket-key>` for triage routing (duplicate check, classification, assignment). Use `/qa-risk` to assess severity if unclear.
 
 **Ask via `AskUserQuestion`** — question `"Create a bug-tracker ticket for this bug?"`, options
 **"Yes — create the ticket"** / **"No — keep the local report only"**. Use the tool, **never prose**:
@@ -382,7 +391,8 @@ Fields either way:
 - Summary: from bug title
 - Description: the full structured report — **Jira** = markdown; **Azure** = HTML (`azure-html-format.md`)
 - Priority: mapped from severity (Critical→Highest, High→High, Medium→Medium, Low→Low — Jira; Azure uses the numeric `Priority` field)
-- **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine and `ci/run-fix-cycle.ts` (`FIX_LABEL`) select tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
+- **Origin labels (VC's own Jira only — never on a client project's tracker).** Say who found the bug: `found-by-agent` + `found-in-testing` (a `/qa-test` run) or `found-in-regression` (a regression run or its triage) when the report's `**Found by:**` line says `agent — testing …` or `agent — regression …` (Step 1); `reported-by-human` when a person found it and asked for it to be filed, and whenever the origin is unclear. Rule: `knowledge/execution/tracker-ops.md` §2a.
+- **Labels / Tags — apply `vc-fix` AND `qa-autofix` when `/qa-fix` could fix this bug.** These two labels ARE the auto-fix queue: the hourly `/qa-fix` routine selects tickets by them, so an eligible bug missing them is never picked up. Jira → the `labels` field; Azure Boards → `--tags` (`System.Tags`). Apply **both, or neither** — never one.
   - **Apply when the report would survive `/qa-fix` Gate 0** (`.claude/rules/quality-gates.md` §1): concrete reproduction steps (navigation path, explicit action sequence, or an API call with its inputs) + clear expected-vs-actual; an environment and at least one version; a localized root cause — the **Fix Routing** block names ONE repo at **Routing confidence: HIGH | MEDIUM**; small diff, no refactoring, no breaking change (no public REST/GraphQL/DTO contract change, no DB schema/migration, no manifest or domain-event change).
   - **Withhold for every Gate-0 bail:** no real STR, ambiguous, by-design, config- or permission-gated, environment/data drift, API-only repro, security disclosure, needs refactoring, breaking change, multi-repo (**Routing confidence: LOW**). **When in doubt, withhold** — a missing label costs one manual `/qa-fix <KEY>`; a wrong one burns a cycle on a BAIL and leaves an out-of-scope comment on the ticket.
   - **Intermittency is not a bail.** "Not always reproducible", or other QA failing to reproduce it on their environments, does not by itself withhold the labels — a flaky symptom can have a deterministic code cause (VCST-5940: reported as intermittent, fixed the same day by one PR).

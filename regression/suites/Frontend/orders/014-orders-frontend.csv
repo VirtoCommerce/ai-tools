@@ -539,15 +539,15 @@ Buyer logged in as {{USER_EMAIL}}; account has 3+ orders; mobile viewport (375px
 [ASSERT] verify orders list renders without horizontal scrollbar
 [ASSERT] verify each order row shows order number and date and status
 [ASSERT] verify text is readable without zooming (font size >= 16px)
-[ASSERT] verify touch targets (tap areas) are at least 44x44px
+[ASSERT] verify touch targets (tap areas) are at least 24x24px
 [SCROLL] scroll through order list
 [ASSERT] verify all orders accessible via scrolling
 [ACT] tap on an order row","[DOM] order list renders within 375px viewport without horizontal overflow
 [DOM] order number and date and status visible per row without truncation that hides meaning
 [FORMAT] font size >= 16px for body text (no iOS auto-zoom trigger)
-[DOM] touch targets >= 44x44px for interactive elements
+[DOM] touch targets >= 24x24px for interactive elements
 [NAV] tapping order navigates to detail page successfully at mobile viewport
-[STATE] order detail page loads correctly at mobile width",[CONSOLE] no layout-related JS warnings at 375px; [NETWORK] 2xx on orders page load at mobile viewport,horizontal scrollbar appears at 375px; text overlaps or clips making content unreadable; touch targets too small (< 44px); order detail fails to load after tap; auto-zoom triggered on iOS due to small font,none,Coverage Gap Analysis — GAP-F02,Draft
+[STATE] order detail page loads correctly at mobile width",[CONSOLE] no layout-related JS warnings at 375px; [NETWORK] 2xx on orders page load at mobile viewport,horizontal scrollbar appears at 375px; text overlaps or clips making content unreadable; touch targets too small (< 24px); order detail fails to load after tap; auto-zoom triggered on iOS due to small font,none,Coverage Gap Analysis — GAP-F02,Draft
 ORD-027,Mobile - Order Filters Collapsed and Expandable,Orders > Mobile,Medium,BL-ORD-003,ECL-3.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has orders in multiple statuses",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[ACT] resize browser to 375px width
 [NAV] navigate to /account/orders
@@ -560,7 +560,7 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); account has or
 [WAIT] wait for results
 [ASSERT] verify filtered results displayed
 [ACT] tap filter toggle again to collapse","[DOM] filter controls collapsed by default at 375px width
-[DOM] filter toggle/expand button visible and tappable (>= 44x44px)
+[DOM] filter toggle/expand button visible and tappable (>= 24x24px)
 [DOM] expanded filter shows status options
 [STATE] selecting filter updates results while panel is open
 [STATE] collapsing filter panel preserves the active filter
@@ -575,7 +575,7 @@ Buyer logged in as {{USER_EMAIL}}; mobile viewport (375px width); order exists w
 [DOM] line items readable with product name and qty and price visible
 [DOM] shipping address text does not overflow or truncate critically
 [DOM] order totals visible and correctly formatted
-[DOM] action buttons >= 44px height and full-width or near-full-width at mobile
+[DOM] action buttons >= 24px height and full-width or near-full-width at mobile
 [FORMAT] all monetary amounts display 2 decimal places
 [STATE] all sections accessible without horizontal scrolling
 [STATE] action buttons (Reorder and Return) are full-width or adequately sized for touch",[CONSOLE] no layout errors at 375px on order detail; [NETWORK] 2xx on order detail page load,horizontal scroll required to see content; line item details truncated making them unreadable; totals section hidden or clipped; action buttons too small for touch interaction,none,Coverage Gap Analysis — GAP-F02,Draft

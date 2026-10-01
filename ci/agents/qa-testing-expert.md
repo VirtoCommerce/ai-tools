@@ -55,7 +55,7 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `.claude/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `npm run bl:extract -- --domain <d>` | Ambiguous test result — check BL-* rules |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | ECL-* pattern referenced in test case |
 | `.claude/knowledge/execution/performance-thresholds.md` | Performance test benchmarks |
 | `.claude/knowledge/automation/browser-quirks.md` | Cross-browser compatibility issues |

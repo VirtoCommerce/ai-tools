@@ -42,7 +42,7 @@ browser automation with AI agents, **not** traditional `.spec.js` files.
 ## Directory Structure
 
 ```
-vc-mcp-testing-module/
+ai-tools/
 ├── CLAUDE.md                       # Project instructions for Claude Code
 ├── README.md                       # Setup & quick-start
 ├── INDEX.md                        # This file

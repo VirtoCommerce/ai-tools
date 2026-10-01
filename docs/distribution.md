@@ -106,7 +106,7 @@ Full triage flow, SLA targets, communication templates, and patch-release workfl
 
 ## Customer Migration Path (Phase 4 pilot → GA)
 
-1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `vc-tools` marketplace. No external customers yet.
+1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `ai-tools` marketplace. No external customers yet.
 2. **Pilot start (v0.1.0):** one friendly VC customer installs from a specific commit SHA. We support them directly through Phase 4.
 3. **Pilot close (v0.2.0):** consolidate pilot feedback into a versioned release. Possibly bump to `0.2.0-beta` for second-customer dogfood.
 4. **GA (v1.0.0):** at least 3 successful customer installs on a stable contract. Tier A gets the freeze stamp. `^1.0` becomes the recommended pin.

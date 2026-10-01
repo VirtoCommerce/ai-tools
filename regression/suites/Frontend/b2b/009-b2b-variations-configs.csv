@@ -85,7 +85,7 @@ Mobile device (375x667), product with variations","url={{FRONT_URL}},viewport=37
 5. [ACT] Select size from picker
 6. [ASSERT] Verify selection updates
 7. [ACT] Repeat for color selector
-8. [ACT] Click the Increase quantity (+) button on mobile to add to cart","[DOM] Variant selectors optimized for touch (min 44x44px)
+8. [ACT] Click the Increase quantity (+) button on mobile to add to cart","[DOM] Variant selectors optimized for touch (min 24x24px)
 [STATE] Selected values clearly visible after tap
 [DOM] Quantity stepper accessible on mobile (B2B store add-to-cart mechanism)
 [DOM] No horizontal scrolling required","[CONSOLE] no uncaught JS errors","Selectors too small to tap; selection not registering on touch; Quantity stepper not accessible on mobile","none","VCST-4547","Manual"
@@ -311,7 +311,7 @@ Mobile device (375x667), configurable product","url={{FRONT_URL}},viewport=375x6
 6. [ASSERT] Verify price updates are visible
 7. [ACT] Click Add to Cart","[DOM] Configuration UI is responsive
 [DOM] Dropdowns use native pickers on mobile
-[DOM] Visual selectors (color swatches) large enough to tap (44x44px min)
+[DOM] Visual selectors (color swatches) large enough to tap (24x24px min)
 [DOM] Price updates visible (sticky footer or always-visible element)
 [DOM] No horizontal scrolling
 [DOM] Add to Cart accessible without scrolling off-screen","[CONSOLE] no uncaught JS errors","Horizontal scrolling on mobile; swatches too small to tap; price updates hidden below fold; Add to Cart not accessible","none","VCST-4547","Manual"

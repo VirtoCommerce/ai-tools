@@ -79,6 +79,7 @@
  *      exactly like a quiet month, which is the one failure mode this ledger must not have.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
@@ -555,7 +556,7 @@ async function loadRss() {
   }
   try {
     const res = await fetch(RSS_URL, {
-      headers: { 'User-Agent': 'vc-mcp-testing-module release-ledger (+github.com/VirtoCommerce)' },
+      headers: { 'User-Agent': 'ai-tools release-ledger (+github.com/VirtoCommerce)' },
     });
     if (!res.ok) throw new Error(`GET ${RSS_URL} → ${res.status}`);
     return { xml: await res.text(), origin: RSS_URL };
@@ -578,7 +579,7 @@ async function probeUpdatedAt(items) {
   for (const it of items.slice(0, PROBE_NEWEST)) {
     try {
       const res = await fetch(`${FORUM}/t/${it.topicId}.json`, {
-        headers: { 'User-Agent': 'vc-mcp-testing-module release-ledger' },
+        headers: { 'User-Agent': 'ai-tools release-ledger' },
       });
       if (!res.ok) throw new Error(`→ ${res.status}`);
       const j = await res.json();

@@ -13,10 +13,10 @@ Normative sources, in order: [`CLAUDE.md`](../../../CLAUDE.md) → [`.claude/rul
 | Surface | Lives in | Reaches you how | Contains |
 |---|---|---|---|
 | **`vc-qa`** (this repo) | `.claude/{commands,agents,skills,knowledge,rules,hooks}` | Auto-discovered on any clone — no install | The full QA + BA offering: `/qa-*`, `/ba-*` |
-| **`vc-fix`** plugin | `plugins/vc-fix/` | `/plugin install vc-fix@vc-tools` | Bug lifecycle: `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/project-init`, `/qa-env-check`, `/vc-self-check`, `/vc-feedback` + the dev/review team |
-| **`vc-perf`** plugin | `plugins/vc-perf/` | `/plugin install vc-perf@vc-tools` (depends on `vc-fix`) | `/perf-init`, `/perf-loop`, `/perf-benchmark`, `/perf-fix`, `/perf-verify` + `perf-analyst` |
+| **`vc-fix`** plugin | `plugins/vc-fix/` | `/plugin install vc-fix@ai-tools` | Bug lifecycle: `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/project-init`, `/qa-env-check`, `/vc-self-check`, `/vc-feedback` + the dev/review team |
+| **`vc-perf`** plugin | `plugins/vc-perf/` | `/plugin install vc-perf@ai-tools` (depends on `vc-fix`) | `/perf-init`, `/perf-loop`, `/perf-benchmark`, `/perf-fix`, `/perf-verify` + `perf-analyst` |
 
-Marketplace: `/plugin marketplace add VirtoCommerce/vc-mcp-testing-module`.
+Marketplace: `/plugin marketplace add VirtoCommerce/ai-tools`.
 Versions are per-plugin (`plugins/*/.claude-plugin/plugin.json`) — read them, don't quote them.
 
 **On a fresh machine / new customer: run `/project-init` first.** It writes `project-profile.json`,
@@ -276,7 +276,7 @@ node -e "console.log(Object.keys(require('./package.json').scripts).join('\n'))"
 | Family | What it does |
 |--------|--------------|
 | `env:check` | Validate the active env layer — **run this before anything else** |
-| `ci:*` | Headless pipelines: `ci:smoke`, `ci:critical`, `ci:frontend`, `ci:backend`, `ci:full`, `ci:regression`, `ci:cycle*`, `ci:fix*`, `ci:monitor*`, `ci:audit*`, `ci:notify` |
+| `ci:*` | Headless pipelines: `ci:smoke`, `ci:critical`, `ci:frontend`, `ci:backend`, `ci:full`, `ci:regression`, `ci:cycle*`, `ci:monitor*`, `ci:audit*`, `ci:notify` |
 | `seed:*` | Seed / teardown per domain (`seed:bootstrap`, `seed:b2b`, `seed:loyalty`, `seed:teardown`, `seed:dry-run`, …) |
 | `suites:*` | Manifest health: `suites:lint` (prints the suite + case totals), `suites:gates`, `suites:lanes`, `suites:filter` |
 | `td:*` | Test-data guards: `td:validate`, `td:validate:<domain>`, `td:reconcile`, `td:mutation-check` |

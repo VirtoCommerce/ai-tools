@@ -59,7 +59,7 @@ excludes: |
 
 > Refresh with `/qa-domain-map page-builder`. This file answers **what the feature is and where
 > its surfaces are**. It does **not** carry behavioural rules — those are `BL-*` in
-> `oracles/business-logic.md`, and for this domain there are **none yet** (§4/§5 G7) — and it can
+> the BL oracle (`npm run bl:extract -- --list`), and for this domain there are **none yet** (§4/§5 G7) — and it can
 > **never ground an assertion as `{DOC}`**.
 
 **Every claim carries a verdict.** `CONFIRMED` = observed live or read at source this pass ·

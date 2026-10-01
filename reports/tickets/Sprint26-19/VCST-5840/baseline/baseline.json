@@ -1,0 +1,73 @@
+{
+  "ticket": "VCST-5840",
+  "env": "vcst-qa storefront",
+  "url": "https://vcst-qa-storefront.govirto.com/",
+  "capturedAt": "2026-09-25T13:18:00Z",
+  "runningTheme": "vc-theme-b2b-vue-2.59.0-alpha.2525",
+  "method": "DOM inspection of header language selector options (built-in browser)",
+  "result": "RED",
+  "triggerFlagAlt": "English (United States)",
+  "options": [
+    {
+      "text": "Polski",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Svenska",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Norsk",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Deutsch",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Français",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Italiano",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "English",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "中文（中国）",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Português",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "日本語",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Ελληνικά",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Suomi",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "English",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Русский",
+      "alt": "English (United States)"
+    },
+    {
+      "text": "Español",
+      "alt": "English (United States)"
+    }
+  ],
+  "expected": "alt=\"\" on each option flag (decorative)"
+}

@@ -190,7 +190,7 @@ Only the **product** needs live discovery (it drifts between seeds); the **root*
 `userId`/`currencyCode`/`cultureName` (the buyer context the cart will use) and gates on
 `price.USD:(0 TO)`, so the discovered product is one `addItem` actually accepts — not merely one that
 exists in catalog browse. (Cart buyability = placed + indexed in the B2B-mixed catalog with a valid
-price, which is stricter than "appears in `products()`"; see `project_vcstqa_cart_price_invalid_blocker`.)
+price, which is stricter than "appears in `products()`".)
 
 ```text
 [AUTH role=ORG_USER]
@@ -279,12 +279,9 @@ The regression orchestrator runs up to 3 browser agents in parallel (chrome / fi
 | 2 | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.email)` / `@td(AGENT_POOL_SLOT_2.password)` | `@td(AGENT_POOL_SLOT_2.b2b_email)` in `@td(AGENT_POOL_SLOT_2.b2b_org)` (paired with slot 1 for same-org tests) |
 | 3 | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.email)` / `@td(AGENT_POOL_SLOT_3.password)` | `@td(AGENT_POOL_SLOT_3.b2b_email)` in `@td(AGENT_POOL_SLOT_3.b2b_org)` (cross-org pair) |
 
-**vcst-qa values for reference** (customers edit `test-data/users/agent-user-pool.csv` with their own; the pattern stays):
-- Slot 1: `qa-agent-slot1@virtocommerce.com` / `TestAgent1!` · `test-john.mitchell-…` in TechFlow
-- Slot 2: `qa-agent-slot2@virtocommerce.com` / `TestAgent2!` · `test-emily.johnson-…` in TechFlow
-- Slot 3: `qa-agent-slot3@virtocommerce.com` / `TestAgent3!` · `test-carlos.rodriguez-…` in BuildRight
+The accounts themselves are rows of `test-data/users/agent-user-pool.csv`, and a customer edits that file with their own. Its password columns are `{{VAR}}` tokens (`{{AGENT_SLOT1_PASSWORD}}` …) resolved from `.env.local`, with safe non-prod defaults in `templates/.env.local.template`. No value is repeated here: a transcribed password is correct once and then silently wrong (`.claude/rules/test-data.md` §GOLDEN RULE).
 
-Agents should authenticate against their slot user (resolve at runtime via `@td(AGENT_POOL_SLOT_N.*)` from `agent-user-pool.csv`, never hardcode), so each agent's `discoverFirstCart` / `discoverFirstAddress` returns *its own* isolated state. Cross-reference: `user_test_accounts.md` memory.
+Agents should authenticate against their slot user (resolve at runtime via `@td(AGENT_POOL_SLOT_N.*)` from `agent-user-pool.csv`, never hardcode), so each agent's `discoverFirstCart` / `discoverFirstAddress` returns *its own* isolated state.
 
 For read-only discovery (catalog root, product list, any active coupon) the shared user is fine — those calls don't mutate state.
 

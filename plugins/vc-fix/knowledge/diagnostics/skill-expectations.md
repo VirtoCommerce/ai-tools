@@ -323,7 +323,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-bug` — reproduce, evidence, report, (optional) file
 - **Expected phases** (`commands/qa-bug.md`): Step 0 pre-flight (build/version + Context7 + dup check) → Step 1 gather/reproduce → **Step 2 4-Layer Validation** → Step 3 research + resolve exact repo → Step 4 write report → Step 5 (optional, consent-gated) create ticket.
-- **Required outputs:** a `reports/bugs/open/BUG-*.md` with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
+- **Required outputs:** a `reports/bugs/open/<bucket>/BUG-*.md` with the **Fix Routing block** filled; a tracker ticket **only if** the user said yes.
 - **Anti-patterns:**
   - **S1** — no bug report written despite a reproduced defect; or a ticket was filed **without** the explicit user "yes" (consent violation). *Signal:* required-output missing; a tracker-create tool call with no preceding consent in the transcript.
   - **S2** — report written but **over the bug-report cap** (`reports.md` §2: simple ≤80 / functional ≤120 / cross-layer ≤150), or Step 2 4-layer validation never ran (owning layer unproven → route untrustworthy). *Signal:* oversized report; missing-phase.
@@ -340,7 +340,7 @@ Step-1 collector's signals can actually surface.
 
 ### `/qa-verify-fix` — verify a deployed fix, transition the ticket
 - **Expected phases** (`commands/qa-verify-fix.md`): Step 0 pre-flight → Step 1 fetch ticket → **Step 2 confirm-deployment hard gate** → Step 3 transition to `testing` (ONLY after Step 2) → Step 4 checklist → Step 5 execute (STR ×3) → Step 6 decide + transition by role → Step 7 summary.
-- **Required outputs:** `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json` with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
+- **Required outputs:** `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json` with a verdict; a role transition consistent with the verdict (or a BLOCKED with no transition).
 - **Anti-patterns:**
   - **S1** — transitioned the ticket to `testing` (or `tested`/`reopen`) **before/without** the Step-2 deploy confirmation — tested old code and moved the ticket on a false "deployed". *Signal:* a transition tool call before any deploy-check evidence; missing Step-2 phase.
   - **S1** — an undeployed fix was transitioned to `reopen` (an undeployed fix is not a failed fix). *Signal:* `reopen` transition + a "not deployed" marker in the same span.

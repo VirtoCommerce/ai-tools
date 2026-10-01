@@ -46,7 +46,7 @@ excludes: <what was deliberately left out, and that it is a later pass>
 # <Domain> — domain map
 
 > Refresh with `/qa-domain-map <slug>`. This file answers **what the feature is and where its surfaces
-> are**. It does **not** carry behavioural rules — those are `BL-*` in `oracles/business-logic.md` — and
+> are**. It does **not** carry behavioural rules — those are `BL-*` (`npm run bl:extract -- --domain <slug>`) — and
 > it can **never ground an assertion as `{DOC}`**. Pointer index plus surface inventory: it says *where
 > to look* and *what exists*, never *what correct looks like*.
 
@@ -209,3 +209,4 @@ Self-checked by the author; `/qa-domain-map` re-derives it before writing.
 | `/qa-test-plan`, `/qa-regression` | §4's selection-group and executability findings |
 | `/qa-review-oracles` | §3 and §6 rows that contradict a `BL-*` become audit inputs — as **proposals**, never edits |
 | `npm run domain:check` | staleness only; a **missing** map never fails a build |
+| `/qa-test-mind-map` | derives the machine-readable behaviour graph `<name>.mind-map.json` (sitting beside this map) from §1–§3; a map `rev` bump makes that graph's `domain_map_rev` stale (`models:check` TM-011) |

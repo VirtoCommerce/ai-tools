@@ -12,10 +12,13 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
-import { captureLines } from '../kb/core/render.mjs';
+import { captureLines, evidenceLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
+
+/** A process with no session: its pid plus a random tail, so two machines cannot share one. */
+const PROCESS_KEY = /^p\d+-[0-9a-f]{4}$/;
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 const opened = () => ({ reader: localReader(FIXTURE), locator: FIXTURE, how: 'test', why: null });
@@ -39,13 +42,51 @@ const CAPTURE = {
   scope: ['surface=storefront-ui'],
 };
 
+// KB-55C8E448's subject in another case and punctuation: the same claim after `claimKey`.
+const SAME_CLAIM = 'Cart promotion discount lands on the cart total, and never on the line items.';
+
 // ─── session identity is free ─────────────────────────────────────────────────────────────────
 
 test('the session id comes from the inherited env, not from a caller remembering to pass it', () => {
   // CLAUDE_CODE_HOST_SESSION_ID is inherited by children, so the prior art's measured pain -- one
   // missed prefix drops a question row silently -- does not arise.
   assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'f3d05dd3abcdef' }), 'f3d05dd3');
-  assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
+  assert.match(sessionId({}), PROCESS_KEY, 'with no session, the honest answer is "this process"');
+});
+
+test('a CLI or IDE session is keyed by CLAUDE_CODE_SESSION_ID, never by its process (VCST-6091)', () => {
+  // Only the desktop app sets CLAUDE_CODE_HOST_SESSION_ID. The CLI and the IDE extensions set
+  // CLAUDE_CODE_SESSION_ID on every child they spawn, and before it was read, three of four
+  // operators fell through to the process key on every single call.
+  const transcript = '52b778cc-1111-2222-3333-444455556666';
+  assert.equal(sessionId({ CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+  // The desktop key still wins, so every key already published keeps its meaning.
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_f3d05dd3-25c1', CLAUDE_CODE_SESSION_ID: transcript }), 'f3d05dd3');
+  // An UNUSABLE earlier value falls through to the next name, not straight to the process key.
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd', CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+  assert.equal(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ', CLAUDE_CODE_SESSION_ID: transcript }), '52b778cc');
+});
+
+test('a hook with no session variable keys itself by its payload, and agrees with its own session', () => {
+  // A hook is a new process every turn. Keyed by its process, each turn recounted the transcript
+  // from zero and became its own "session" (VCST-6091: 125 of 126 lines said `turns: 1`).
+  const payload = { session_id: '52b778cc-1111-2222-3333-444455556666', transcript_path: 'x.jsonl' };
+  const cliChild = { CLAUDE_CODE_SESSION_ID: payload.session_id };
+  assert.equal(sessionId(hookEnv({}, payload)), sessionId(cliChild), 'the hook and the CLI derive one key');
+  assert.equal(sessionId(hookEnv({}, payload)), sessionId(hookEnv({}, payload)), 'and it is the same every turn');
+  // A usable variable is never overridden: in the desktop app the payload id is a different identifier.
+  const desktop = { CLAUDE_CODE_HOST_SESSION_ID: 'local_f3d05dd3-25c1' };
+  assert.equal(sessionId(hookEnv(desktop, payload)), 'f3d05dd3');
+  // No payload, or an unusable one, leaves the process key as the honest answer.
+  assert.match(sessionId(hookEnv({}, null)), PROCESS_KEY);
+  assert.match(sessionId(hookEnv({}, { session_id: 'a/b' })), PROCESS_KEY);
+});
+
+test('the process key is stable for one process and carries more than a pid', () => {
+  // A pid is unique on one machine at one moment; on 2026-09-28 `p24300` on two laptops was one file.
+  assert.match(processKey(), PROCESS_KEY);
+  assert.equal(processKey(), processKey(), 'one process, one key, for its whole life');
+  assert.equal(sessionId({}), processKey());
 });
 
 test('the short key is taken from the part of the host id that VARIES, not from its marker', () => {
@@ -81,9 +122,9 @@ test('an id that is absent, blank, or unusable as a file name falls back to the 
   // The key becomes a public file name (`log/<YYYYMMDD>-<key>.jsonl`). A key carrying a
   // separator would nest the queue file one directory down and write a path nobody parses back —
   // so it is not repaired into something plausible, it admits there was no usable session.
-  assert.match(sessionId({}), /^p\d+$/, 'with no session, the honest answer is "this process"');
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), /^p\d+$/);
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), /^p\d+$/);
+  assert.match(sessionId({}), PROCESS_KEY, 'with no session, the honest answer is "this process"');
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: '   ' }), PROCESS_KEY);
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'sess_a/b' }), PROCESS_KEY);
 });
 
 test('an unsafe character PAST the cut still refuses the id — the guard runs before the slice', () => {
@@ -100,7 +141,7 @@ test('an unsafe character PAST the cut still refuses the id — the guard runs b
   assert.equal(shortSession('sessionx/etc/passwd'), '', 'and so is a separator past the cut');
   assert.equal(shortSession('local_f3d05dd3-25c1-434b'), 'f3d05dd3', 'safe ids are untouched');
   // The fallback is the same honest one every other unusable id takes.
-  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), /^p\d+$/);
+  assert.match(sessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), PROCESS_KEY);
 });
 
 test('an over-long run handle is BOUNDED before it reaches the public log', () => {
@@ -219,7 +260,7 @@ test('an ANSWER, a MISS and an UNREACHABLE each write exactly one line, and say 
 
 test('a REFUSED capture is logged — it is a ranking miss that did not become a duplicate', () => withQueue(async (dir, env) => {
   const r = await capture({
-    ...CAPTURE, anchors: ['POST /api/carts', 'Mutations.addCouponToCart'], scope: ['surface=platform-api'],
+    ...CAPTURE, subject: SAME_CLAIM, anchors: ['POST /api/carts', 'Mutations.addCouponToCart'], scope: ['surface=platform-api'],
   }, opened(), { env });
   assert.equal(r.state, 'refused');
   assert.equal(r.dupeOf.id, 'KB-55C8E448');
@@ -228,13 +269,13 @@ test('a REFUSED capture is logged — it is a ranking miss that did not become a
   assert.equal(lines.length, 1);
   assert.equal(lines[0].kind, 'capture-refused');
   assert.equal(lines[0].dupeOf, 'KB-55C8E448');
-  assert.equal(lines[0].why, 'anchors+scope');
+  assert.equal(lines[0].why, 'anchors+scope+claim');
   assert.equal(lines[0].when, 'call', 'the push-time re-check logs the same line with when: "push"');
 }));
 
 test('the refusal tells the caller to confirm or dispute, naming the existing id', () => withQueue(async (dir, env) => {
   const r = await capture({
-    ...CAPTURE, anchors: ['POST /api/carts', 'Mutations.addCouponToCart'], scope: ['surface=platform-api'],
+    ...CAPTURE, subject: SAME_CLAIM, anchors: ['POST /api/carts', 'Mutations.addCouponToCart'], scope: ['surface=platform-api'],
   }, opened(), { env });
   assert.match(r.message, /KB-55C8E448 is already this fact/);
   assert.match(r.message, /confirm KB-55C8E448/);
@@ -304,10 +345,66 @@ test('dispute without --saw is refused: a contradiction with no observation is n
   assert.match(r.why, /--saw/);
 }));
 
+test('dispute --saw and confirm --note are repaired from a Git Bash rewrite — both land on a public entry (VCST-6102)', () => withQueue(async (dir, env) => {
+  const d = await dispute('KB-06664A3A', { deployment: 'qa', saw: 'C:/Program Files/Git/search sorted by the displayed price here' }, opened(), { env });
+  assert.equal(d.state, 'queued');
+  assert.equal(d.repaired, 'msys');
+  assert.equal(d.item.note, '/search sorted by the displayed price here');
+  assert.match(evidenceLines('dispute', d)[1], /MSYS_NO_PATHCONV=1/);
+
+  const c = await confirm('KB-06664A3A', { deployment: 'qa', note: 'C:/Program Files/Git/search still sorts by index' }, opened(), { env });
+  assert.equal(c.item.note, '/search still sorts by index');
+
+  const { lines } = await readQueue({ env });
+  assert.deepEqual(lines.map((l) => l.repaired), ['msys', 'msys'], 'the marker is on each public line');
+  assert.ok(!/Program Files/.test(JSON.stringify(lines)), 'not in the payload either');
+
+  const clean = await confirm('KB-06664A3A', { deployment: 'qa', note: 'plain note' }, opened(), { env });
+  assert.ok(!('repaired' in clean));
+}));
+
 test('capture refuses an unusable anchor before it reaches the base', () => withQueue(async (dir, env) => {
-  const r = await capture({ ...CAPTURE, anchors: ['C:/Program Files/Git/checkout/shipping'] }, opened(), { env });
+  // A real local path — not the MSYS root — is not repaired, so it is still refused (VCST-6102).
+  const r = await capture({ ...CAPTURE, anchors: ['C:/Users/someone/checkout/shipping'] }, opened(), { env });
   assert.equal(r.state, 'invalid');
   assert.equal(r.problems[0].kind, 'local-path');
+}));
+
+test('capture REPAIRS a Git Bash-rewritten anchor instead of refusing it, and says so (VCST-6102)', () => withQueue(async (dir, env) => {
+  // 16 of the 28 `capture-invalid` on 2026-09-28 were this: `--anchor /api/return/{id}/authorize`
+  // arriving as `C:/Program Files/Git/api/return/{id}/authorize`.
+  const r = await capture({ ...CAPTURE, anchors: ['C:/Program Files/Git/api/return/{id}/authorize'] }, opened(), { env });
+  assert.equal(r.state, 'queued');
+  assert.equal(r.repaired, 'msys');
+  assert.deepEqual(r.entry.anchors, [{ coordinate: '/api/return/{id}/authorize' }]);
+  assert.match(captureLines(r)[1], /MSYS_NO_PATHCONV=1/, 'the writer is told how to stop it happening');
+  const { lines } = await readQueue({ env });
+  assert.equal(lines[0].repaired, 'msys');
+  assert.ok(!/Program Files|C:\//.test(JSON.stringify(lines)), 'no local path reaches the queue or the log');
+
+  // The same rewrite hits a subject, question or claim that STARTS with a route; all three are published.
+  const text = await capture({
+    ...CAPTURE, subject: 'C:/Program Files/Git/account/returns cancel shifts the layout',
+    question: 'C:/Program Files/Git/account/returns why does the layout shift', claim: 'C:/Program Files/Git/account/returns shifts.',
+  }, opened(), { env });
+  assert.equal(text.repaired, 'msys');
+  assert.equal(text.entry.subject, '/account/returns cancel shifts the layout');
+  assert.ok(!/Program Files/.test(JSON.stringify((await readQueue({ env })).lines)), 'not in the payload either');
+
+  // A root in the MIDDLE of a one-argument field is prose the author wrote, not the shell's work.
+  const prose = await capture({ ...CAPTURE, subject: 'a fact about Git Bash', claim: 'The anchor arrived as C:/Program Files/Git/cart.' }, opened(), { env });
+  assert.ok(!('repaired' in prose));
+  assert.equal((await readQueue({ env })).lines.at(-1).payload.body, 'The anchor arrived as C:/Program Files/Git/cart.');
+
+  // A checkout under `D:/git/...` is a real local path: refused, not turned into a route.
+  const local = await capture({ ...CAPTURE, subject: 'a local one', anchors: ['D:/git/client-portal/src/x'] }, opened(), { env });
+  assert.equal(local.state, 'invalid');
+  assert.equal(local.problems[0].kind, 'local-path');
+
+  // An anchor that needed no repair carries no marker.
+  const clean = await capture({ ...CAPTURE, subject: 'another fact', anchors: ['/api/return/{id}/reject'] }, opened(), { env });
+  assert.equal(clean.state, 'queued');
+  assert.ok(!('repaired' in clean));
 }));
 
 test('capture judges a one-segment anchor against the corpus: a page is accepted, a namespace refused', () => withQueue(async (dir, env) => {
@@ -388,7 +485,7 @@ test('disabled: a capture or a confirm is REFUSED and nothing is queued — it w
 // ─── the subject is the id: a taken subject is refused at the door (PR #313 review 2) ─────────
 
 test('a capture whose SUBJECT an entry already holds, at other anchors, is REFUSED while the writer can act on it', () => withQueue(async (dir, env) => {
-  // `findDuplicate` compares anchors + scope only; the id is a pure function of the subject. So this
+  // `findDuplicate` needs the same anchors + scope as well as the claim; the id is a pure function of the subject. So this
   // used to come back `queued` and lose its claim at push. Now it is refused, naming the incumbent.
   const r = await capture({
     ...CAPTURE,
@@ -424,4 +521,10 @@ test('askAbout pairs a capture with an ask through a PREFIXED anchor — the ask
     { at: '2026-09-18T10:05:00Z', q: 'something else entirely about pricing' },
   ];
   assert.equal(askAbout(asks, { text: 'unrelated words only', anchors: ['{BACK_URL}/api/platform/modules'] }), '2026-09-18T10:00:00Z');
+});
+
+test('hasSessionId says whether a key is a session or a per-process fallback (VCST-6091 review 4)', () => {
+  assert.equal(hasSessionId({ CLAUDE_CODE_SESSION_ID: '52b778cc-1111' }), true);
+  assert.equal(hasSessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), false, 'an unusable id is none');
+  assert.equal(hasSessionId({}), false);
 });

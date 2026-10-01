@@ -65,3 +65,7 @@ deliberate `/qa-regression` pass over the forms that use it, not just this featu
 Accessibility-tree reads of both modals, 2026-09-21 (visual lane). Note that **axe-core does not catch
 this class**: a non-empty but *wrong* accessible name satisfies both axe and Lighthouse, and on the prior
 round axe returned zero violations while this and ten other genuine AA failures were live.
+
+## Also observed — 2026-09-29, `/qa-test-fast VCST-5728`
+- **Another consumer, same defect class:** the sales-rep list **Share** dialog's **Message (optional)** textarea (vc-frontend#2476 head `0604e3f1`, theme `2.59.0-pr-2476-0604` on vcst-qa). Its `aria-labelledby` points to its own id (`textarea-887`), so the accessible name is empty. Evidence: checklist B12 in `reports/tickets/Sprint26-19/VCST-5728/testing-checklist.md` · HAR `reports/tickets/Sprint26-19/VCST-5728/screenshots/pm-B-lane.har`.
+- **Separate, not this defect:** after **Cancel** on the Stop-sharing confirmation, focus goes to the page root instead of returning to the dialog's Save button. It is recorded as a note on VCST-5728 and not filed.

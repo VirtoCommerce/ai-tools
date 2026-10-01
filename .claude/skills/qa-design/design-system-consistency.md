@@ -1,12 +1,12 @@
 # Design System Consistency — Coffee Theme
 
-> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: [BL-UI-002 (spacing grid)](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) and [BL-UI-005 (alignment)](../../knowledge/oracles/business-logic.md#bl-ui-005-alignment-in-horizontal-groups-p2-ux). Canonical helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
+> Reference file for ui-ux-expert agent. Read when validating that a component honors the active design system. Canonical invariants: `BL-UI-002` (spacing grid) and `BL-UI-005` (alignment) — `npm run bl:extract -- --id BL-UI-002,BL-UI-005`. Canonical helper: [`scripts/lib/measure-layout.ts`](../../../scripts/lib/measure-layout.ts). Canonical suite: none — `048b-layout-stability.csv` was removed 2026-07-25; these checks now run only through this skill.
 
 ---
 
 ## Core principle — read live tokens, never hardcode
 
-Coffee is a **multi-preset theme** (6 light + 3 dark variants — see memory `reference_theme_presets`). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
+Coffee is a **multi-preset theme** (6 light + 3 dark variants). Exact color hex, typography stack, and shadow values rotate per preset and per store config. **Hardcoded values in this file would be wrong half the time.** Always read tokens from the live page.
 
 ### Live-token extraction snippet
 
@@ -126,7 +126,7 @@ Coffee uses a consistent icon library (likely from vc-frontend). Audit:
 | Duration | `--duration-fast` (≈ 150 ms), `--duration-normal` (≈ 300 ms), `--duration-slow` (≈ 500 ms) — or the literal values from `:root` |
 | Easing | `--easing-standard` (ease-in-out), `--easing-decelerate` (ease-out), `--easing-accelerate` (ease-in) |
 
-**Violation pattern:** `transition: all 247ms cubic-bezier(0.12, 0.34, ...)` — off-token. Theme switch FOUC (flicker) on transitions = also flag (see [BL-UI-001](../../knowledge/oracles/business-logic.md#bl-ui-001-layout-stability-on-initial-render-p2-ux)).
+**Violation pattern:** `transition: all 247ms cubic-bezier(0.12, 0.34, ...)` — off-token. Theme switch FOUC (flicker) on transitions = also flag (see `BL-UI-001`).
 
 ---
 
@@ -136,7 +136,7 @@ A single design-system audit produces 0–N findings. Decision tree for what to 
 
 1. **One component, one violation** → file individual bug via [/qa-bug](../../../plugins/vc-fix/commands/qa-bug.md) tagged with the violated `BL-UI-NNN`.
 2. **One component, multiple violations** → file ONE bug per component listing all violations (don't fragment).
-3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference [BL-UI-002](../../knowledge/oracles/business-logic.md#bl-ui-002-spacing-grid-compliance-p2-ux) or whichever invariant.
+3. **Multiple components share the same violation** (e.g. five components all use the same off-token color) → file ONE rollup bug describing the systemic drift. Title: `Design System Drift — [violation type] across [N] components`. Reference `BL-UI-002` or whichever invariant.
 4. **Token itself is wrong** (e.g. theme switch broke `--color-primary` resolution) → P1 bug, the design system is broken, not the components.
 
 ---
@@ -149,7 +149,7 @@ Example: VcButton — BL-UI-002 spacing off-grid (padding 13px)
 
 **Component:** [Component name + variant]
 **Location:** [Storybook URL or storefront route]
-**Invariant violated:** BL-UI-NNN (link to business-logic.md)
+**Invariant violated:** `BL-UI-NNN` (cite the id)
 **Active theme preset:** [Coffee variant name — read from `<html data-theme>` or `--theme-name`]
 
 **Observed (computed):**

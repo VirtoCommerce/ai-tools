@@ -24,9 +24,9 @@ This document defines the `[PRE:*]` tag vocabulary and the decision tree that tu
 **Scope:** this protocol applies to storefront UI tests executed via Playwright MCP (`playwright-chrome`, `playwright-firefox`, `playwright-edge`) and Chrome DevTools MCP. Admin SPA tests have their own setup flow; API-only tests bypass the UI primitives entirely.
 
 **Hard constraints (from project memory):**
-- NEVER hardcode credentials in agent prompts or test cases. Read from `.env` at runtime via resolvers. (`feedback_agents_read_env_creds`)
-- ALL actions must use real user interaction — click, type, hover. No JS shortcuts to bypass UI. (`feedback_real_user_interaction`)
-- There is no sign-out page. Sign-out is an action in the account-menu popup, not a route. (`feedback_no_signout_page`)
+- NEVER hardcode credentials in agent prompts or test cases. Read from `.env` at runtime via resolvers.
+- ALL actions must use real user interaction — click, type, hover. No JS shortcuts to bypass UI.
+- There is no sign-out page. Sign-out is an action in the account-menu popup, not a route.
 - Close Chrome windows before `playwright-chrome` (user data directory conflict).
 - Never use WebKit on Windows.
 
@@ -197,7 +197,7 @@ writing to. Downstream the shipping address silently never binds and Place order
 `errors: null`, no console error — which reads as a product defect in whatever case runs next. That is
 exactly how `COMP-E2E-007` failed in `REG-2026-08-26-0943`: a cart leaked from earlier agent activity on a
 shared account, not a storefront bug.
-See `reports/bugs/open/BUG-multi-cart-users-cannot-set-checkout-shipping-address-VCST-5811.md`; rules live in
+See VCST-5811 (its local bug report was withdrawn and deleted 2026-08-26, in `b2fe79da`); rules live in
 `scripts/seed-data/carts/cart-hygiene-specs.mjs`. **42 suites declare `[PRE:RESET_CART]`**, so any of them
 can inherit this.
 
@@ -230,7 +230,7 @@ outside the model.
 
 ### CLEAR_CACHE
 
-**Purpose:** force the MCP browser to fetch fresh assets. Required when a module hotfix PR has shipped a new artifact (per `feedback_mcp_browser_cache`, Playwright MCP can cache admin SPA bundles up to 4h).
+**Purpose:** force the MCP browser to fetch fresh assets. Required when a module hotfix PR has shipped a new artifact (Playwright MCP can cache admin SPA bundles up to 4h).
 
 **Steps:**
 1. Append a cache-buster query string to the URL (e.g., `?_cb=<timestamp>`) and navigate.
@@ -431,9 +431,8 @@ Do not use these tags in CSVs yet — they have no runner support. Until then, e
 - `knowledge/execution/test-runner-tags.md` — `[PRE:*]` quick reference and failure-policy summary
 - `skills/qa-test-cases-generator/test-case-template.md` — Preconditions column spec and when to use `[PRE:*]`
 - `agents/test-runner-agent.md` — Phase 2 step 2 triggers this protocol
-- Project memory:
-  - `feedback_agents_read_env_creds` — credentials are read from `.env` at runtime
-  - `feedback_real_user_interaction` — UI actions only, no JS shortcuts
-  - `feedback_no_signout_page` — sign-out is an action, not a route
-  - `feedback_mcp_browser_cache` — MCP cache `CLEAR_CACHE` rationale
-  - `user_test_accounts` — which passwords belong to which users
+- Rules that apply:
+  - credentials are read from `.env` at runtime
+  - UI actions only, no JS shortcuts
+  - sign-out is an action, not a route
+  - MCP cache `CLEAR_CACHE` rationale

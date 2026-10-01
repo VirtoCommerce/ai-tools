@@ -23,6 +23,7 @@
  * Env: resolves TEST_ENV via scripts/lib/resolve-test-env.js, then reads the layered .env files
  *      (.env.defaults → .env.${TEST_ENV} → .env.local) to pre-fill the env header. No hardcoding.
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import {
   existsSync,
   mkdirSync,

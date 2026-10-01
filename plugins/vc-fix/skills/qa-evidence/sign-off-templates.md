@@ -11,7 +11,7 @@
 Testing Complete: [Feature/Flow] Frontend
 
 **Feature:** [Feature Name]
-**Ticket:** [STORE-XXXX / VCST-XXXX]
+**Ticket:** [<ticket-key>]
 **Environment:** [Dev / QA / Staging]
 **Testing Scope:** [User flow / Full regression / Specific pages]
 

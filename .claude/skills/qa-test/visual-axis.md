@@ -233,7 +233,7 @@ The pass also writes its own per-ticket `design-report.md` **into the run's own 
 already permits a ticket-scoped `/qa-design` run; 30–60 lines, cap 120. Note this is deliberately the
 **ticket-folder** path, not the `reports/tickets/{SPRINT}/qa-design/<slug>-<date>/` tree a standalone
 `/qa-design` invocation uses: dispatched from `/qa-test` the audit belongs to the ticket's evidence, beside
-`summary.json` and the checklist. `reports/tickets/Sprint26-17/VCST-5346/design-report.md` is the precedent.
+`summary.json` and the checklist.
 
 Its machine half lands in `summary.json.visual`. A `null` `visual` block means the step never ran — a gap,
 not a clean result.

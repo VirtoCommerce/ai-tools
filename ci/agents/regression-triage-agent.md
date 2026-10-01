@@ -53,7 +53,7 @@ Each `IssueInput`:
 | File | Use it to |
 |------|-----------|
 | `.claude/knowledge/oracles/vc-bug-catalog.md` | Match a known VC failure pattern (VC-CART-*, VC-CHECKOUT-*, …). A match → likely `REAL_BUG` or a `KNOWN_ISSUE`. |
-| `.claude/knowledge/oracles/business-logic.md` | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
+| `npm run bl:extract -- --domain <d>` | A failed assertion that maps to a BL-* invariant (pricing, cart, checkout, orders) is a high-severity `REAL_BUG` **if** the product actually violated it. |
 | `.claude/knowledge/execution/debugging-signals.md` | Filter benign noise (favicon 404s, analytics beacons, expected Vue warnings, cancelled requests) that a test wrongly asserts against. |
 | `.claude/knowledge/api/platform-patterns.md` | Recognize expected platform behavior mis-read as a bug: search-index lag (30–60s), async cart projection, cache desync. These are usually `TEST_STEPS_DEFECT` (missing `[WAIT]`) or `ENV`, not `REAL_BUG`. |
 | `.claude/rules/test-data.md` + `test-data/aliases.json` | Decide if a data miss is a `TEST_DATA_DEFECT` (drifted `@td()`/GUID, unseeded env). |

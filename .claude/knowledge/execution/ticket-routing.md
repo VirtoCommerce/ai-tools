@@ -183,7 +183,7 @@ contribution that genuinely needs a durable new case is itself a reason to route
 > classify as PRE-EXISTING or OUT-OF-SCOPE, neither of which fails the ticket. **Two narrowings did not fix
 > that; the third was deletion.** The argument is kept here because it is the reasoning a future proposal
 > to re-add a cross-suite sweep to this pipeline has to answer. This began as item 10 of
-> `docs/agentic-system-audit-2026-09-07.md` §6 (`--release-sweep` there).
+> the 2026-09-07 agentic-system audit §6 (`--release-sweep` there; the audit file was removed 2026-10-01).
 
 | Runs by default | Opt-in | Not on FAST at all |
 |---|---|---|
@@ -249,7 +249,7 @@ exactly one artifact — a Test Model **Part 0** — and a Story is the only thi
 precisely the run that must not take FAST: it is the only step that would have declared the surface, and
 FAST defers that indefinitely while looking like a saving. On a surface whose Part 0 already exists the
 story is refining a known mechanism and its new model carries that Part 0 forward
-(`skills/qa-test/test-model.md` §Why it is a durable file) — there, FAST is honest.
+(`skills/qa-test-model/test-model.md` §Why it is a durable file) — there, FAST is honest.
 
 **Say what the downgrade costs, in the run's own words.** A Story on FAST authors **no test cases** and
 builds **no model**, so the story's behaviour gets no durable regression coverage from this run and the

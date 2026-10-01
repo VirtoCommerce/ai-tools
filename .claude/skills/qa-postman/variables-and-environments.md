@@ -55,7 +55,7 @@ Map project `.env` variables to Postman environment variables. Agent must read `
 | `frontUrl` | `VIRTO_START_FRONT` | `default` |
 | _(rest same as QA)_ | | |
 
-> Per-agent test users (`agent-user-pool.csv`, slot-specific `TestAgent1!`/`TestAgent2!`/`TestAgent3!`) live in [test-data-fixtures.md](test-data-fixtures.md). Use those — never hardcode passwords in agent prompts.
+> Per-agent test users (`agent-user-pool.csv`, slot-specific `{{AGENT_SLOTn_PASSWORD}}` tokens resolved from `.env.local`) live in [test-data-fixtures.md](test-data-fixtures.md). Use those — never hardcode passwords in agent prompts.
 
 ---
 

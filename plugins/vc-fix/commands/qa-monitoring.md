@@ -74,10 +74,10 @@ and the triage agent (`monitor-triage-agent`).
 > **Owner:** `qa-frontend-expert` (storefront, playwright-chrome) / `qa-backend-expert`
 > (API/Admin, playwright-edge) by the triage `REPRO_LAYER`.
 - Reproduce as a real user (never force disabled controls; never bypass the UI with
-  scripts — see `feedback_no_force_disabled_controls`, `feedback_real_user_interaction`).
+  scripts).
   Backend signals may be confirmed via a real API/Admin interaction. Confirm a second
-  source before treating a payload-only signal as a bug (`feedback_verify_payload_bugs_second_source`).
-- **Reproduced** → draft a bug report to `reports/bugs/open/BUG-AI-<fp>-<date>.md` with the
+  source before treating a payload-only signal as a bug.
+- **Reproduced** → draft a bug report to `reports/bugs/open/<bucket>/BUG-AI-<fp>-<date>.md` (severity bucket per `.claude/rules/reports.md` §1a) with the
   standard structure **and the `## Fix Routing` block** — the same profile-based contract
   `commands/qa-bug.md` defines, including its client|platform **Ownership hint** (a hint only;
   `/qa-fix` Gate 1/1b decides ownership from the profile). So the draft carries no native-only
@@ -108,9 +108,8 @@ and the triage agent (`monitor-triage-agent`).
 ## Rules
 - **Detect-and-report only** — never file a bug tracker ticket, never open a PR, never
   auto-fix. The human is the gate (per the approved design).
-- Read-only on App Insights + GitHub. Agent prompts forbid external-system writes
-  (`feedback_subagent_external_writes`).
+- Read-only on App Insights + GitHub. Agent prompts forbid external-system writes.
 - Dedup before triage; cap + log deferrals; normalize signatures so they don't drift with
-  test data (`feedback_env_resilience`).
+  test data.
 - Reports follow `.claude/rules/reports.md` (the `reports/monitoring/` category). Long logs
   via SendMessage, not on disk.

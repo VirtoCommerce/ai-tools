@@ -75,8 +75,7 @@ expensive mistake available here.
 1. **Decide which question you are answering** (routing table above). "Is this slow?" and "does this do
    redundant work?" are different measurements with different instruments and different verdicts.
 2. **If A/B: confirm both sides are the builds you think they are.** Live version comes from the login
-   page, never `/health`, which lies during a restart
-   (`reference_platform_live_version_from_login_page`). The pin of record is
+   page, never `/health`, which lies during a restart. The pin of record is
    `vc-deploy-dev@<env-branch>` → `backend/packages.json`.
 3. **Ask the base per coordinate** — for each GraphQL op / endpoint you will measure:
    `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), e.g. a known N+1 or a no-op
@@ -95,7 +94,7 @@ expensive mistake available here.
 - **Same request text straight to the backend on both sides.** Never drive two storefronts: theme
   versions differ per env, so the query text differs, so the resolution graph differs. A runner-native
   CSV case (`scripts/graphql/graphql-runner.ts --case <csv>:<ID>`) with byte-identical `[GQL-OP]` blocks
-  guarantees it (`feedback_use_canonical_graphql_runner`).
+  guarantees it.
 - **Hold the input *shape* fixed** — same collection size, same page size, same quantity. Entities
   necessarily differ between environments; shape is what a count comparison needs.
 - **Verify the fixture actually exercises the path.** A precondition that silently fails leaves you
@@ -105,7 +104,7 @@ expensive mistake available here.
   search/request across the board and looked like "already at the floor" — the targets had been
   enumerated minutes earlier. Discover, then measure *different* targets; or measure first.
 - **Pick an auth role that exists on both envs** — a missing per-env password variant silently costs you
-  an arm (`feedback_agents_read_env_creds`).
+  an arm.
 
 ## Phase 2 — Count, with a control that can fail
 
@@ -165,7 +164,7 @@ category correctly is the whole point of this phase.
 ## Rules
 
 - **Never hardcode a threshold or baseline.** A call count has no budget in `performance-thresholds.md`;
-  inventing one manufactures phantom regressions (`feedback_never_hardcode_in_scripts`).
+  inventing one manufactures phantom regressions.
 - **Warm vs warm — a *latency* rule.** When reporting duration, discard the first request of every cell;
   cold start dominates by two orders of magnitude (1613 ms / 75 SQL vs 20 ms / 3 SQL on the same build).
   **Never apply it to a count** — that discards the discriminating observation and manufactures a false
@@ -175,11 +174,11 @@ category correctly is the whole point of this phase.
   use sustained k6 traffic.
 - **Every figure re-traceable to the query that produced it** — cite the window and the arm.
 - **State what you did not measure.** A number whose confounds you have not addressed costs more than
-  no number (`feedback_verify_payload_bugs_second_source`).
+  no number.
 - **Deliverables carry the finding, not the story of getting there** — audit trail goes in
-  `summary.json` (`feedback_no_self_referential_commentary_in_deliverables`).
+  `summary.json`.
 - Read-only on App Insights and the code host; agents must not write to external systems
-  (`feedback_subagent_external_writes`) — the one sanctioned write is the Phase 4 `kb` bank step.
+  — the one sanctioned write is the Phase 4 `kb` bank step.
 
 ## Agent delegation
 
@@ -190,13 +189,13 @@ category correctly is the whole point of this phase.
 | Confirm a symptom is user-visible | `qa-frontend-expert` | `playwright-chrome` |
 
 > **`vc-perf` is a separate plugin and is not enabled by default.** `perf-analyst`, the k6 L2 harness
-> (`--load`) and the L3 `dotnet-trace` path all live in `plugins/vc-perf/` — a distinct `vc-tools`
+> (`--load`) and the L3 `dotnet-trace` path all live in `plugins/vc-perf/` — a distinct `ai-tools`
 > marketplace plugin, absent from `enabledPlugins` in the tracked `.claude/settings.json` and not one of the
 > 19 project agents in `.claude/rules/agents.md`. **Everything this skill's core measurement needs
 > (Phases 0–4, App Insights counts, N+1 detection, the controls) works without it.** If it is not installed:
 > `--load` and L3 attribution are **unavailable — say so rather than substituting one-shot repeats, which
 > measure cache warming**; and ranking is done inline by `qa-backend-expert` from the same artifacts. To
-> enable it: `/plugin install vc-perf@vc-tools`, then restart Claude Code (plugin agents bind at session
+> enable it: `/plugin install vc-perf@ai-tools`, then restart Claude Code (plugin agents bind at session
 > start).
 
 ## Cross-references

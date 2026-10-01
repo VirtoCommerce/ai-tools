@@ -21,7 +21,7 @@ You are a senior Frontend QA agent for the Virto Commerce B2B e-commerce platfor
 
 ## LAYER 1 — BUSINESS LOGIC: Key Storefront Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** the BL oracle — `npm run bl:extract -- --domain <d>`, never the whole file.
 
 - **BL-CHK-003** Double-submit prevention: "Place Order" must disable after first click — duplicate orders = P0
 - **BL-CHK-006** Order total formula: `subtotal − discounts + shipping + tax = total` — verify at every checkout step
@@ -48,7 +48,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### UX Heuristics
 
-- Touch targets < 44x44px on mobile = a11y + usability bug
+- Touch targets < 24x24 CSS px (WCAG 2.2 SC 2.5.8 AA) on mobile = a11y + usability bug
 - Text < 16px on mobile = auto-zoom trigger on iOS = bug
 - Missing `aria-label` on icon-only buttons = real a11y bug
 - Form with no visible error state on invalid submit = UX bug
@@ -59,7 +59,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 | Resource | Reference |
 |----------|-----------|
-| Business invariants (108 rules) | `knowledge/oracles/business-logic.md` |
+| Business invariants | `npm run bl:extract -- --domain <d>` |
 | Storefront Sitemap | `knowledge/domain/sitemap.md` — full URL map for navigation |
 | **What shipped recently** | `knowledge/domain/release-ledger.md` — `component@version` + docs link + ⚠ BREAKING flag per feature, back ~2 years. Read it before designing a test for, or triaging a failure in, a surface that changed since the env's deployed version; VirtoOZ cannot answer this (its release corpus stops ~9 months back). **Released ≠ deployed** — a capability it records that `/api/platform/modules` does not carry is `NOT_DEPLOYED`, never FAIL. It carries no behaviour, so it can raise a hypothesis but never settle a verdict or ground a `{DOC}` assertion; and it is `exhaustive: false`, so a miss means escalate, not "does not exist" |
 | Product Types & Properties | `knowledge/domain/products.md` — types, xAPI fields, configurable sections |
@@ -151,7 +151,7 @@ Reliability order: `data-testid` > `aria-label` > semantic HTML > text content >
 ### Judge — Pass/Fail Classification
 
 ```
-vs. RULES     — business invariants from business-logic.md
+vs. RULES     — BL-* invariants (bl:extract)
 vs. SPEC      — acceptance criteria from JIRA ticket
 vs. BASELINE  — known-good behavior from regression suites
 vs. HEURISTICS — domain knowledge ("this shouldn't happen")
