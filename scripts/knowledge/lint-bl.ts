@@ -34,7 +34,7 @@
  * so the suite CSV schema stays single-sourced.
  *
  * Usage:
- *   npx tsx scripts/knowledge/lint-bl.ts [business-logic.md] [--json] [--filter=<id-regex>] [--fail-on=Blocker|Critical|High|Medium]
+ *   npx tsx scripts/knowledge/lint-bl.ts [<oracle.md>, default: rendered from bl/*.yaml] [--json] [--filter=<id-regex>] [--fail-on=Blocker|Critical|High|Medium]
  *   npm run bl:lint                # human report, gate on High
  *   npm run bl:audit:collect       # --json inventory for /qa-review-bl
  *
@@ -45,6 +45,7 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, type Row } from "../test-cases/append-test-cases-to-suite.js";
+import { BL_DIR, oracleText } from "./bl-yaml.ts";
 
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
@@ -69,7 +70,7 @@ export interface Invariant {
   domainPrefix: string; // e.g. "BL-CART"
   seq: number;
   title: string;
-  heading: string; // the heading's raw text after `BL-…:`, tags and notes included (bl:convert compares titles on it)
+  heading: string; // the heading's raw text after `BL-…:`, tags and notes included (kept verbatim for findings that quote it)
   severity: string; // raw tag or "" if missing/malformed
   domain: string; // the `## Domain` heading text
   fields: Record<string, string>; // Rule / Verify / Violation signal / Agents / Source / Suite coverage / Amended / Promoted / ...
@@ -133,7 +134,7 @@ function truncate(s: string, n = 80): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
 }
 
-/** `Rule` or a qualified form of it (`Rule (write path — …)`): BLL-003 and `bl:convert` share this. */
+/** `Rule` or a qualified form of it (`Rule (write path — …)`): BLL-003 and the extractors share this. */
 export function isField(label: string, base: string): boolean {
   return label === base || label.startsWith(base + " ") || label.startsWith(base + "(");
 }
@@ -415,7 +416,9 @@ function main(): void {
   const argv = process.argv.slice(2);
   const here = dirname(fileURLToPath(import.meta.url));
   const repoRoot = resolve(here, "..", "..");
-  const file = argv.find((a) => !a.startsWith("--")) ?? join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md");
+  // An explicit file is read as given; otherwise the oracle is rendered from bl/*.yaml (BL 2.0 M4 — no script reads the markdown).
+  const given = argv.find((a) => !a.startsWith("--"));
+  const file = given ?? join(repoRoot, BL_DIR, "*.yaml");
   const json = argv.includes("--json");
   const filterArg = argv.find((a) => a.startsWith("--filter="))?.split("=")[1];
   const filterRe = filterArg ? new RegExp(filterArg, "i") : null;
@@ -424,7 +427,7 @@ function main(): void {
 
   let raw: string;
   try {
-    raw = readFileSync(file, "utf-8");
+    raw = given ? readFileSync(given, "utf-8") : oracleText(join(repoRoot, BL_DIR));
   } catch (e) {
     console.error(`Cannot read oracle: ${file}\n${(e as Error).message}`);
     process.exit(1);
