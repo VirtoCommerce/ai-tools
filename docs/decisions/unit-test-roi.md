@@ -232,8 +232,20 @@ reproductions in product repos are unchanged.
    green. `missions-e2e` was not measured, because its guard is red on a clean checkout.
 2. **Every other test:** the per-test form of IFDR. Each function a test file imports is gutted to
    `return undefined` and the file re-run with the TAP reporter. A test that goes red for at least one
-   gutted function stays. A test that stays green for every gutting is deleted. Applied in a
-   follow-up commit of the same change.
+   gutted function stays. **Result: nothing deleted.** 2,825 tests went red at least once. Of the
+   tests that never went red, most never call a function the tool could break cleanly (the code is
+   reached through a subprocess, a class or a re-export), so they were not measured at all. That left
+   27 that do call a cleanly broken function and still pass. On reading, all 27 are blind spots of the
+   method, not useless tests:
+   - **21 assert a negative property** that `return undefined` cannot violate: *does not mutate its
+     input*, *is a no-op*, *is tolerated*, *ALLOWS the declared rep*.
+   - **6 are tool artefacts.** One symbol name is imported from two modules, so the wrong copy was
+     broken. A broken function returns `NaN`, which makes an "offenders list is empty" check pass.
+
+   The first pass also had a gutting bug: on TypeScript signatures that span lines, it broke the file
+   instead of the function, so the file did not load. It was caught by reading one "useless" test that
+   plainly calls its subject. The lesson from 2026-09-15 holds a second time: **a detector not checked
+   against a case whose answer you know is not evidence.**
 3. **Kept without measurement:** the security and containment tests (redaction, secret gates,
    self-diagnostics delivery, MCP and credential hygiene, the tracker and label hooks), the
    `playwright-lane-configs` guard that `.claude/rules/agents.md` names, and any file the tools cannot
