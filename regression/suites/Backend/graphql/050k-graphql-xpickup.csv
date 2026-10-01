@@ -471,3 +471,25 @@
 [DATA label=set_shipment_duplicate] data.addOrUpdateCartShipment.shipments.0.price.amount = 0
 [DATA label=set_shipment_duplicate] data.addOrUpdateCartShipment.shipments.0.id = {{SHIP_ID}}","[EVIDENCE] shipments.length stays at exactly 1 across both calls, and shipment id is unchanged — re-sending the identical shipment command WITH its id is a true update, idempotent not additive (BL-BOPIS-001)
 [EVIDENCE] NOTE: an id-less duplicate addOrUpdateCartShipment call is pre-existing platform mutation semantics that appends a 2nd shipment by design — a possible BL-BOPIS-001 concern but NOT introduced by this PR/suite; flagged for qa-lead-orchestrator awareness, not filed","shipments.length = 2 after the duplicate call (duplicate shipment created — double-submit bug); pickupLocation.id or price drifts between the two calls; errors[] non-empty on either call","none — clearCart at end","VCST-4646; BL-BOPIS-001; BL-BOPIS-002; aliases.json BOPIS.lastLocationId; graphql-schema.md — Query.cartPickupLocations, Mutation.addOrUpdateCartShipment","Draft"
+PCK-GQL-140,"xPickup — productPickupLocations Keyword Is Whitespace-Insensitive: Padded Keyword Equals The Trimmed One, Spaces-Only Equals No Keyword (VCST-4651)",GraphQL > xPickup > Keyword Normalization (VCST-4651),Medium,,ECL-14.2,"Runner-native. ORG_USER. Breaking condition (a sibling resolver disagrees): the product-page resolver passed the keyword to the search index untouched, so ' Apollo Theater' (leading space) and '   ' (spaces only) returned 0 locations, while `cartPickupLocations` already trimmed and returned 1 / all.
+Uses the seeded BOPIS fixture (@td(BOPIS.testSku) product, @td(BOPIS.location51Name) location, indexed search on). The data is divergent on purpose: the unfiltered total must exceed the keyword total, otherwise 'spaces-only = unfiltered' and 'spaces-only = zero' could not be told apart.
+Not covered here: a double space BETWEEN words (ticket issue 3). It cannot be derived from the alias value without transcribing the location name as a literal; it needs an alias field carrying a double-spaced variant (test-data-engineer).",sku=@td(BOPIS.testSku); location=@td(BOPIS.location51Name),"[AUTH role=ORG_USER]
+[GQL-OP setup_prod]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" query: ""@td(BOPIS.testSku)"" first: 1 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { items { id code } } }
+[GQL-EXEC setup_prod]
+[GQL-CAPTURE setup_prod.data.products.items.0.id → PRODUCT_ID]
+[GQL-OP variants]
+  query {
+    all: productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1) { totalCount }
+    exact: productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1 keyword: ""@td(BOPIS.location51Name)"") { totalCount items { name } }
+    leading: productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1 keyword: ""  @td(BOPIS.location51Name)"") { totalCount }
+    trailing: productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1 keyword: ""@td(BOPIS.location51Name)  "") { totalCount }
+    blank: productPickupLocations(productId: ""{{PRODUCT_ID}}"" storeId: ""{{STORE_ID}}"" cultureName: ""en-US"" first: 1 keyword: ""   "") { totalCount }
+  }
+[GQL-EXEC variants]","[ERRORS label=setup_prod] errors[] empty {SPEC} (VCST-4651)
+[ERRORS label=variants] errors[] empty {SPEC} (VCST-4651)
+[DATA label=variants] data.exact.totalCount >= 1 {SPEC} (VCST-4651 — the trimmed keyword finds the location; guards a 0 = 0 equality below)
+[DATA label=variants] data.all.totalCount > data.exact.totalCount {SPEC} (VCST-4651 — divergence: the unfiltered list is larger than the keyword list)
+[DATA label=variants] data.leading.totalCount = data.exact.totalCount {SPEC} (VCST-4651 — leading whitespace is ignored)
+[DATA label=variants] data.trailing.totalCount = data.exact.totalCount {SPEC} (VCST-4651 — trailing whitespace is ignored)
+[DATA label=variants] data.blank.totalCount = data.all.totalCount {SPEC} (VCST-4651 — a spaces-only keyword is treated as no keyword, not as zero results)",[ROUNDTRIP] Storefront product page > pickup modal: typing ' <location name>' and pressing Search lists the same locations as the trimmed name {SPEC} (VCST-4651),leading.totalCount = 0 while exact.totalCount >= 1; blank.totalCount = 0 while all.totalCount > 0; leading or trailing differs from exact,none — read-only,VCST-4651 · Archetype:PARITY · Technique:EP · Catches:VCST-4651 · xAPI; Query.productPickupLocations vs cartPickupLocations; graphql-schema.md,Draft

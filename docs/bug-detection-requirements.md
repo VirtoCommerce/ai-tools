@@ -27,7 +27,7 @@ no case uses the real page size, and no case walks the pages and reconciles them
 |---|---|---|---|
 | D1 | We find the "visible", not the complex | top bug archetype is `RENDER`; 0 bugs for `STALE`/`LIFECYCLE`/`CONFIG` | `grep -rhoE '\*\*Archetype:?\*\*:? *\`?[A-Z-]+' reports/bugs` |
 | D2 | The fault model does not reach the cases | archetype on 314 of 4,886 cases (~6%); `RACE` 6, `STALE` 16 | grep `Archetype` across `regression/suites/` |
-| D3 | Presence-only assertions | ~650 presence-only cases (rough regex that ignores the case's purpose — some are legitimate happy-path / visual cases); 518 of them cite BL | estimate script, see REQ-02 (an exact one is needed) |
+| D3 | Presence-only assertions | exact (2026-10-01, `npm run assert:strength`): of the cases whose derived purpose is `FUNC`, about a quarter assert only presence; `HAPPY` cases do so at a similar rate and `VISUAL` rarely — the per-purpose figures are printed by the command, not transcribed here | REQ-02 |
 | D4 | Citing a rule ≠ checking it | 2,971 cases cite BL | grep `BL-[A-Z]+-\d+` across the suites |
 | D5 | A third of executions give no verdict | 6,267 executions / 35 runs: pass 57%, fail 10%, **blocked 22%, skipped 9%** | `reports/regression/history.json` |
 | D6 | Deep bugs are found by investigation | module TypeLoad, missions resolver, catalog paging — `Found by: manual` / monitoring | `grep -rl 'Found by:\*\* manual' reports/bugs` |
@@ -72,7 +72,7 @@ Checked against search results on 2026-09-30; arxiv is not directly reachable fr
 
 Priority: **P0** — do first, **P1** — next, **P2** — after the pilot. Status: `NEW` / `IN-PROGRESS` / `DONE` / `DROPPED`.
 
-### REQ-01 · Detection metric · P0 · NEW
+### REQ-01 · Detection metric · P0 · IN-PROGRESS → `npm run detect:mutate` (response mutants); first live run pending
 **Why:** D12 — right now we cannot say whether we catch bugs.
 **What:** two measures of test-suite strength.
 1. *Replay of fixed bugs:* for the bugs in `reports/bugs/fixed/` — would the relevant case have failed on the pre-fix behaviour.
@@ -82,7 +82,7 @@ Priority: **P0** — do first, **P1** — next, **P2** — after the pilot. Stat
 - the pilot domain has a baseline figure before any change;
 - the metric is recomputed by a command, not written into prose.
 
-### REQ-02 · Assertion strength matches the case's purpose · P0 · NEW
+### REQ-02 · Assertion strength matches the case's purpose · P0 · IN-PROGRESS → `npm run assert:strength` (report only)
 **Why:** D3, the reference escape.
 **What does NOT change:** happy-path and visual/UI cases **stay and keep being written** — especially for the frontend.
 "Is visible / is displayed" is a legitimate oracle for the question "does the user see this".
@@ -101,7 +101,14 @@ The problem is not them but a **mismatch between purpose and assertion**: a func
 - no `HAPPY`/`VISUAL` case is blocked by the strength rule;
 - an exact D3 figure (broken down by purpose) replaces the rough estimate in §2.
 
-### REQ-03 · Library of cross-cutting invariants in code · P0 · NEW
+**Status (2026-10-01):** items 1–2 done as report only. The purpose is a `Purpose:` stamp in `References`
+(`cases-that-catch-bugs.md` §3a); a case without one gets a derived purpose (a data/logic `BL-*` citation or a
+`Catches:` bug → `FUNC`, a visual suite → `VISUAL`, else `HAPPY`), always reported as derived. The classifier is
+`scripts/detection/assertion-strength.ts` (`--case <ID>` shows the class and rule per line); `suites:lint` prints the
+figure as an info line. **Not yet:** stamping the corpus (no case declares a purpose yet), the ratchet on new `FUNC`
+cases with its shrink-only baseline (item 3 / Phase 2).
+
+### REQ-03 · Library of cross-cutting invariants in code · P0 · IN-PROGRESS → `scripts/invariants/` (PAGE-WALK, SORT-SET, LAYER-PARITY)
 **Why:** D1, D2, D8 — complex bugs live between features.
 **What:** reusable checks applied by surface type, not by feature. Initial set:
 - `PAGE-WALK` — walk all pages, union == `totalCount`, full pages at the real page size;
@@ -180,7 +187,7 @@ Snapshot 2026-09-30 (`npm run bl:lint`): references to non-existent `BL-SEC-001�
 - time from a code change to the `SUSPECT` mark is no more than one `full-cycle` run;
 - false traceability (`BLC-002`) = 0.
 
-### REQ-12 · Scenario gaps: find what no case exercises · P0 · NEW
+### REQ-12 · Scenario gaps: find what no case exercises · P0 · IN-PROGRESS → `npm run gaps` (escape-derived + mind-map behaviour gaps)
 **Why:** D13, D8. REQ-02 and REQ-03 make existing cases stronger, but a bug in a scenario nobody wrote
 escapes whatever the assertions are. The reference escape is partly this: no case walks the pages.
 **What:**
@@ -320,11 +327,11 @@ File: `.claude/knowledge/oracles/bl/<domain>.yaml` (one per domain). Schema: `te
   status: ACTIVE                  # ACTIVE | SUSPECT | RETIRED
   suspect_reason: null            # the PR / release / case failure / bug that made it SUSPECT
   owner: <team> # who receives the bug when the check fails (not a reviewer)
-  history: docs/decisions/bl/BL-CART-004.md       # optional: write-ups, rationale, past versions
 ```
 
-Fields that are **not carried into the record** and move to `history`: `Promoted`, `Amended`, `Live`,
-`Severity rationale`, `Suite coverage` (the last is computed, not written). `Agents` is not stored:
+Fields that are **not carried into the record**: `Promoted`, `Amended`, `Live`, `Severity rationale`,
+`Suite coverage` (the last is computed, not written). A rule's grounding is its `source` list; there is no
+history file (removed 2026-10-01). `Agents` is not stored:
 it is derived from the domain.
 
 ### 7.3 Lifecycle
@@ -377,10 +384,10 @@ Decided per rule during the domain triage, **with no automatic deletion**.
 |---|---|
 | `business-logic.md` | generated from YAML (a "generated — do not edit" header); after consumers switch over — decide whether to keep it as a view or delete it |
 | `bl:extract`, `bl:lint`, `oracles:rank`, `bl:remap` | rewritten to read YAML; `bl:lint` adds checks for the schema, `SUSPECT`, expiry, references to non-existent/`RETIRED` IDs |
-| `/qa-review-oracles bl`, `/qa-review-bl` | instead of an audit that auto-applies from code + live — syncing from human sources (AC, docs, Jira resolutions) and re-running `SUSPECT` checks |
-| The "three sources" rule and auto-apply | removed |
+| `/qa-review-oracles bl`, `/qa-review-bl` | instead of an audit that auto-applies from code + live — syncing from human sources (AC, docs, Jira resolutions) and re-running `SUSPECT` checks — **done 2026-10-01 (M4)** |
+| The "three sources" rule and auto-apply | removed for BL (2026-10-01); the ECL axis keeps them |
 | `reports/ba/bl-proposals-*.md` | **deleted** in M0 (#351) without the planned one-off pass, by the owner's decision; no new proposal files. A real contradiction they held resurfaces as a finding the next time a run observes it |
-| The `plugins/vc-fix/knowledge/oracles/business-logic.md` copy | generated by the same generator (or from a chosen subset) so the plugin does not drift |
+| The `plugins/vc-fix/knowledge/oracles/business-logic.md` copy | generated by the same generator (or from a chosen subset) so the plugin does not drift — **done 2026-10-01: the whole oracle** |
 
 ### 7.6 Migration
 
@@ -389,9 +396,9 @@ Decided per rule during the domain triage, **with no automatic deletion**.
 | **M0. Freeze** — **done 2026-09-30 (#351)** | now, 1 day | turn off `DRIFT`/`MISSING` verdicts from code + live in `/qa-review-oracles` and `/qa-test-lifecycle` 4c; forbid creating new `bl-proposals-*`; fix the false traceability of `BL-SEC-001…005` (`BLC-002`) | `BLC-002` = 0; no BL edit without a human source; no new proposal files. **Met:** `bl:lint` reports 0 `BLC-002`; the audit rule is in `bl-audit-criteria.md` §M0 freeze; the proposals output path is removed from the report policies and the six existing files are deleted (moved forward from M4) |
 | **M1. Schema and converter** — **done 2026-09-30** | week 1 | `templates/bl.schema.json`; a `md → yaml` converter (mechanical: `Rule`, `Verify` → `check: manual`, `Violation signal`, `Source`/`Docs` → `source`, the priority tag; the rest → `history`); a `yaml → md` generator; `trust: UNREVIEWED` for all | round-trip: the generated md has the same IDs and rule texts; a unit test on the converter and the generator (derivation)  **Met:** `npm run bl:convert:check` round-trips every domain through YAML and back, and `bl:lint`'s parser sees the same ids, order, titles, severities and Rule / Verify / Violation-signal texts; `scripts/unit/bl-yaml.test.ts` also checks that no line of an entry is lost (it goes to a field or to the domain's history file) and that the comparator catches a changed rule. No YAML is committed yet: `business-logic.md` stays the source of truth until a domain migrates in M2 (`npm run bl:convert -- --domain <slug> --write`) |
 | **M2. Pilot domain** — **done 2026-09-30** | weeks 1–2 | catalog/search (same as the §6.4 pilot): triage each rule (keep / reference / `RETIRED`), `trust`, `code_ref`, `verified`; top rules → REQ-03 executable checks | no `UNREVIEWED` in the domain; ≥ N rules with `check: executable` (N to be decided) **Met:** `srch` and `cat` are owned by `bl/<slug>.yaml`; their sections of `business-logic.md` are generated (`npm run bl:render`) and `npm run bl:convert:check` (now a CI gate) fails a hand edit. 0 `UNREVIEWED`; trust is `DECLARED` only where a docs page, ticket AC or Fixed bug states the core claim, else `INFERRED`, and a clause disputed by a closed ticket makes the rule `SUSPECT` (BL-CAT-006). Every rule stays: each is cited by suites. Two rules created from Fixed bugs (BL-SRCH-006 paging, BL-SRCH-007 sort). Four rules carry an executable check (`scripts/invariants/`: PAGE-WALK, SORT-SET, LAYER-PARITY; N = 3 checks). Not done: `verified` (no live run from this environment) and `code_ref` beyond what the old `Source` lines named |
-| **M3. Remaining domains** | weeks 2–4 | by priority: P0 domains first (cart/checkout, B2B/scope, pricing, security); `trust` set automatically from the presence of AC/docs/a resolution in `source`; no source → `INFERRED` | `UNREVIEWED` share → 0; metric: share of rules with a check and with a human source |
-| **M4. Switch consumers** | weeks 4–5 | scripts read YAML; `/qa-review-oracles` rewritten to sync from sources + re-run `SUSPECT`; references to the `business-logic.md` path replaced by `bl:extract` | no consumer reads the md directly |
-| **M5. Freshness automation** | weeks 5–6 | `SUSPECT` on PR/release (`code_ref`), case failure, closed bug, age → automatic check re-run; Jira resolutions synced into rules | from a code change to the re-run is no more than one `full-cycle` run; no queue for people |
+| **M3. Remaining domains** — **done 2026-09-30** | weeks 2–4 | by priority: P0 domains first (cart/checkout, B2B/scope, pricing, security); `trust` set automatically from the presence of AC/docs/a resolution in `source`; no source → `INFERRED` | `UNREVIEWED` share → 0; metric: share of rules with a check and with a human source **Met:** all 28 domains are owned by `bl/<slug>.yaml` and 0 records are `UNREVIEWED`. The remaining 204 rules were triaged like M2 (vc-docs, ticket AC, Jira resolutions; `DECLARED` only when a human source states the core claim). The per-domain split is printed by `npm run bl:convert:check`; each rule's sources are in its `source` list. Rules disputed by a closed ticket or a doc page are `SUSPECT` with the reason, never rewritten by hand |
+| **M4. Switch consumers** — **done 2026-10-01** | weeks 4–5 | scripts read YAML; `/qa-review-oracles` rewritten to sync from sources + re-run `SUSPECT`; references to the `business-logic.md` path replaced by `bl:extract` | no consumer reads the md directly **Scripts done (2026-10-01):** `bl:extract`, `bl:lint`, `oracles:rank`, `bl:remap`, `models:check`, `domain:check` and `gaps` read `bl/*.yaml` (through `oracleText()` / `readDomains()` in `scripts/knowledge/bl-yaml.ts`); `business-logic.md` is rendered whole from the YAML plus `bl/_oracle.yaml` (preamble, section order), carries a generated header, and its coverage table is computed. The md → YAML converter is retired. **Prompts done (2026-10-01):** agents, CI agents, skills, commands and knowledge files get BL rules through `npm run bl:extract` (`--domain` / `--id`), never by opening the md; the monitor's Read-only triage phase Greps `bl/<domain>.yaml`. **Oracle review done (2026-10-01):** `/qa-review-oracles bl` / `/qa-review-bl` no longer triangulate — they write `bl/<slug>.yaml` only from a human source and run the operations SYNC / SYNC-UPDATE / NEW / MARK-SUSPECT / RESOLVE / RE-RUN (RETIRE only proposed); `/qa-test-lifecycle` 4c marks a contradicted rule `SUSPECT` with its bug; the M0 freeze is folded into those rules (`bl-audit-criteria.md`). **Plugin copy done (2026-10-01):** `plugins/vc-fix/knowledge/oracles/business-logic.md` is the same render, written by `bl:render` and compared by `bl:convert:check`; it had drifted (6 rules missing). **M4 done.** |
+| **M5. Freshness automation** | weeks 5–6 | `SUSPECT` on PR/release (`code_ref`), case failure, closed bug, age → automatic check re-run; Jira resolutions synced into rules | from a code change to the re-run is no more than one `full-cycle` run; no queue for people **Mechanism done (2026-10-01):** `npm run bl:fresh` (`scripts/knowledge/bl-fresh.ts`) marks `SUSPECT` on a change at `scope.code_ref` (a `module <name>` change, which names no files, touches every rule in that repo), a closed bug naming the id, `verified` past the age threshold and a failing citing case; clears a `[code]`/`[closed]`/`[age]` suspicion on a pass (all citing cases in a run, or the check's `check.run` via `inv:run`) and stamps `verified`; turns a Fixed decision on a `[bug] <KEY>` suspicion into `ACTIVE` with the resolution in `source`. Every `/qa-regression` run (delegated `/qa-test` runs included) calls it at Step 6.6 with its results; `full-cycle` also calls it before Phase 1 and after the regression, but needs an Anthropic key the repo does not have, so the local runs are the path that runs today. Settings in `bl/_oracle.yaml` `freshness`. Tags and what clears each: `bl-audit-criteria.md` §1b. **`code_ref` filled (2026-10-01):** every rule enforced in one place carries `scope.code_ref`, located in the default-branch source and checked to exist (path and symbol); a rule spread over modules, set by configuration or with no enforcement point has none, and a change cannot reach it (`bl:fresh` prints how many can be reached). **Not yet:** `verified` is empty until the first run with results, so the age trigger has nothing to age; the re-run of a `By design` / `Won't fix` decision still needs the agent that rewrites the rule |
 
 **Risks:** dozens of prompts and scripts reference the `business-logic.md` path — mitigated by the generated view until M4;
 IDs are a citation contract, the converter must not change them; the `vc-fix` copy drifts — generated from the same source.
@@ -402,7 +409,7 @@ IDs are a citation contract, the converter must not change them; the `vc-fix` co
 2. ~~Where does the invariant library live~~ — closed 2026-09-30: `scripts/invariants/<check>.ts`, each a pure verdict over fetched responses (unit-tested), with one live driver `npm run inv:run` that only fetches. The CSV runner can call the same functions later.
 3. Always-loaded budget (REQ-08): a concrete number.
 4. ~~Who confirms `INFERRED` → `DECLARED`~~ — closed 2026-09-30: confirmation comes only from a human source (AC, docs, a Jira resolution); there is no separate confirmer.
-5. BL 2.0: the `verified` age threshold for `SUSPECT` (90 days proposed) and the lifetime of an unconfirmed `INFERRED` rule (N days).
+5. BL 2.0: the `verified` age threshold for `SUSPECT` (90 days proposed; set in `bl/_oracle.yaml` `freshness.verified_max_age_days` until decided) and the lifetime of an unconfirmed `INFERRED` rule (N days).
 6. BL 2.0: keep the generated `business-logic.md` after M4 or delete it.
 7. ~~BL 2.0: the minimum number of executable checks in the pilot domain (N in M2)~~ — closed 2026-09-30 by the owner: N = 3 (PAGE-WALK, SORT-SET, LAYER-PARITY).
 8. BL 2.0: the `vc-fix` copy — all rules or a subset for clients.
@@ -423,3 +430,14 @@ IDs are a citation contract, the converter must not change them; the `vc-fix` co
 | 2026-09-30 | Owner's addition: bugs also live in gaps — scenarios no case exercises. D13 added (escape traceability 17%: 74 of 448 closed bugs are referenced by a suite) and REQ-12 (computed scenario space, escape-derived gaps, production signals first, exploratory aimed at gaps, no human queue). |
 | 2026-09-30 | **M1 done.** `templates/bl.schema.json`, and `scripts/knowledge/bl-yaml.ts` (`npm run bl:convert`) converts md → YAML and renders YAML → md. The file holds a `domain` block (heading, prefixes, agents, intro) above `rules`, so a domain's section can be regenerated whole; agents are kept per domain, as §7.2 says. Everything a record does not carry goes verbatim to `docs/decisions/bl/<slug>.md`. No domain is converted in the repo yet, so there is still one source of truth. |
 | 2026-09-30 | **M2 done** on `srch` + `cat` (owner: both domains, N = 3). The YAML owns those sections; `bl:render` regenerates them and `bl:convert:check` guards them in CI. Triage: `DECLARED` needs a human source for the rule's core claim (docs, AC, a Fixed bug), else `INFERRED`; BL-CAT-006 is `SUSPECT` from a Cancelled ticket that disputes its UI clause. BL-SRCH-006 and BL-SRCH-007 were created from Fixed bug resolutions (§7.0). The record gained `check.steps` so an executable rule keeps its manual steps. Checks live in `scripts/invariants/` (§8 Q2 closed). |
+| 2026-09-30 | **M3 done**: every domain is YAML-owned, 0 `UNREVIEWED`; 7 rules `SUSPECT` from closed tickets or docs that dispute a clause (BL-CART-009, BL-AUTH-008, BL-AUTH-009, BL-B2B-005, BL-NOTIF-005, BL-NOTIF-007, BL-GQL-004). REQ-01 harness rebuilt as code only (`npm run detect:mutate`; `DETECTION_OP` scopes a mutant to one operation so a parity check can see it); REQ-12 `npm run gaps` prints the gap list and escape traceability and writes no file (the figures are internal and go to the tracking ticket). `inv:run` reports a `200` with `errors[]` as a violation. The first live run of `inv:run` and `detect:mutate` — the REQ-01 "before" — needs a machine that can reach the QA stand. |
+| 2026-10-01 | Owner removed `docs/decisions/bl/` (the per-domain history and per-rule triage notes) and the two 2026-09-07 audit files. The records' `history` links were dropped and the oracle re-rendered; a rule's grounding is its `source` list. `bl:convert` no longer writes a history file or a `history` link; `--write` prints the lines a record does not carry, and the schema has no `history` field. |
+| 2026-10-01 | Owner's direction: **cases exist to catch bugs, never to turn green.** New rule `.claude/knowledge/execution/cases-that-catch-bugs.md`: a mismatch on a human-sourced expectation (`{SPEC}`, `{DOC}`, `{BL}`, a `Catches:` bug key) is a bug candidate and is never rewritten to the build — ENV-008 (`/qa-review-tests`, `/qa-test-lifecycle`) and the docs-N/A DRIFT row of triangulation fixed accordingly (code + live agreeing is not a source); every `FUNC` case names the bug it catches (`Catches:`) and is seen to fail once; escapes from `npm run gaps` become cases or stated reasons (REQ-06); the breaking dimensions of trial 1 are a mandatory checklist / error-guessing axis. Pilot: catalog-search cases written from that domain's escapes. |
+| 2026-10-01 | **M4, scripts.** Every script that read `business-logic.md` reads `bl/*.yaml`; the markdown is rendered whole from the YAML and `bl/_oracle.yaml` (preamble, section order), its hand-kept coverage table (stale: 192 rules, 21 of 28 domains) is now computed, and `bl:convert:check` compares the whole file. The md → YAML converter is removed: the markdown is an output, not an input. Prompts and the plugin copy follow. |
+| 2026-10-01 | **M4, prompts.** Every prompt that read `business-logic.md` by path now uses `npm run bl:extract` (or, for the monitor's tool-restricted triage, Greps `bl/<domain>.yaml`); transcribed rule counts next to the oracle were dropped. Kept: history and provenance (Amended notes, domain-map `sources:`), and the oracle-audit / writer lines, which the `/qa-review-oracles` rewrite changes next. |
+| 2026-10-01 | **M4, oracle review.** The BL axis of `/qa-review-oracles` (and its alias `/qa-review-bl`, `/qa-test-lifecycle` 4c, `ba-system-analyzer`, `/ba-analyze` 4.5) stopped triangulating: a rule changes only from a human source, a contradicted rule goes `SUSPECT` with its bug, `SUSPECT` rules are resolved from the Jira decision or a check re-run, and writes go to `bl/<slug>.yaml`. `bl-audit-criteria.md` holds the operations; the `docs: N/A` allowance now belongs to the ECL axis alone. |
+| 2026-10-01 | **M4 done — plugin copy.** Owner's decision: the `vc-fix` plugin ships the whole oracle. `bl:render` writes the same render to `plugins/vc-fix/knowledge/oracles/business-logic.md` and `bl:convert:check` fails a drift there too; the copy had lost BL-SRCH-006/007 and BL-GA4-001..004. Stale rule counts in the plugin's prompts dropped. |
+| 2026-10-01 | M5 mechanism: `npm run bl:fresh` marks and clears `SUSPECT` from code changes, closed bugs, age, case results and executable re-runs, and applies Fixed decisions; wired into `full-cycle` before Phase 1 and after the regression. Filling `scope.code_ref` per domain is the remaining step before a code change reaches a rule. |
+| 2026-10-01 | M5: `scope.code_ref` filled for every rule with a single enforcement point (located in the product repos' default branches; path and symbol verified against the clones). A `module <name>` change now reaches the rules implemented in that module. |
+| 2026-10-01 | M5: the repo has no Anthropic key, so no CI workflow runs. `bl:fresh` is therefore called from `/qa-regression` Step 6.6 after every local run (delegated `/qa-test` runs included); a key-less scheduled workflow for age / Jira / module releases is a possible next step. |
+| 2026-10-01 | REQ-02 started: `Purpose:` stamp (HAPPY / VISUAL / FUNC), an exact assertion classifier (PRES / REL / INV / DER / SHAPE) and `npm run assert:strength`, report only; `suites:lint` prints the FUNC-only-presence figure. The D3 estimate is replaced by the command's figure. |

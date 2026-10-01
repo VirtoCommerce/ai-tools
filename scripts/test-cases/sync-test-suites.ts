@@ -35,6 +35,7 @@ import { COLUMNS, extractExistingIds, isCanonicalHeader, parseSuite } from "./ap
 import { AUTOMATION_STATUSES } from "./lint-test-cases.js";
 import { CLASSIFIER_VERSION } from "../lib/case-classifier.js";
 import { classifySuiteCases, type ClassifiableRow } from "../lib/case-classifier.js";
+import { strengthLine } from "../detection/assertion-strength.ts";
 
 const MANIFEST_PATH = join("config", "test-suites.json");
 const CHECK_MODE = process.argv.includes("--check");
@@ -924,6 +925,8 @@ function main(): void {
     }
     const ruleCount = Object.keys(manifest.selections).filter((k) => !k.startsWith("_")).length;
     console.log(`[suites:lint] OK (${next.suites.length} suites, ${ruleCount} selections)`);
+    // REQ-02 assertion strength — informational until its ratchet lands (docs/bug-detection-requirements.md).
+    console.log(`[suites:lint] info: ${strengthLine()}`);
     return;
   }
 

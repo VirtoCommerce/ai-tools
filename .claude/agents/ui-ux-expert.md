@@ -19,7 +19,7 @@ You are a senior UI/UX QA specialist for the Virto Commerce B2B e-commerce platf
 
 ## LAYER 1 — BUSINESS LOGIC: UI Display Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md`
+> **Reference:** `npm run bl:extract -- --domain ui`
 
 - **BL-PRICE-003** Rounding display: prices must display consistently rounded (2 decimal places) — $10.00 not $10, $9.99 not $9.994
 - **BL-CAT-002** Sold-out UI: when `availableQuantity = 0`, show "Out of Stock" and disable "Add to Cart" — silent availability = bug
@@ -27,7 +27,7 @@ You are a senior UI/UX QA specialist for the Virto Commerce B2B e-commerce platf
 
 ### UI-Specific Invariants (always applicable, regardless of feature spec)
 
-Canonical definitions live in `business-logic.md` — Domain 15 (BL-UI). Treat the lines below as a one-glance cheat sheet; for the full `Rule / Verify / Violation signal / Suite coverage` of any entry, jump to `business-logic.md#bl-ui-NNN`.
+Canonical definitions: `BL-UI-*` (`npm run bl:extract -- --domain ui`). Treat the lines below as a one-glance cheat sheet; for the full `Rule / Verify / Violation signal / Suite coverage` of any entry, run `bl:extract -- --id BL-UI-NNN`.
 
 | ID | One-liner | Threshold |
 |---|---|---|
@@ -320,7 +320,7 @@ Conditions, cleanup obligations and the measured evidence: [`.claude/knowledge/e
 ### Judge — Pass/Fail Classification
 
 ```
-vs. RULES    — business invariants from business-logic.md
+vs. RULES    — BL-* invariants (bl:extract)
 vs. DESIGN   — Claude Design spec: token / geometry / icon-parity diff via
                verify-design-spec.ts (CONFIRMED / DRIFT / MISSING / UNSPEC / SKIPPED).
                Figma is a manual fallback reference only.

@@ -418,3 +418,40 @@ Customer holds a wishlist in the CURRENT store ({{STORE_ID}}) containing @td(WIS
 [STATE] the in-wishlist marker on this store's catalog grid reflects only wishlists scoped to {{STORE_ID}} — a wishlist entry created in another store never lights up the marker here {SPEC}","[API] the wishlist-membership lookup underlying the catalog grid's markers is scoped by storeId (the FindWishlistsByProductsAsync fix) {SPEC}
 [CONSOLE] no uncaught JS errors while the grid renders wishlist markers
 [NETWORK] no 4xx/5xx on the wishlist-lookup request",wishlist button shows an in-wishlist/filled state for the storeB-only product; wishlist button shows the neutral/unfilled state for the storeA product; console TypeError while rendering markers; test executed on a single-store deployment and reported PASS instead of SKIPPED,none — read-only browse; no state change,VCST-5705 | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
+CAT-081,"Catalog Page — Root Categories In The Left Sidebar Are Listed Alphabetically By Name, Not By Internal Id (VCST-4909)",Catalog > Navigation > Sidebar Order,Medium,,,"Anonymous browsing of {{FRONT_URL}}/catalog in the default store culture.
+Breaking condition (a wrong default): the sidebar listed root categories in the order of their internal UUIDs instead of by name.
+Divergence is a precondition, not an assumption: the case is only meaningful when the id order and the name order DIFFER on this stand (otherwise a sort by id passes by coincidence). Both orders are computed from the xAPI response and compared; if they are equal the case is INCONCLUSIVE with that reason.",front_url={{FRONT_URL}}; store_id={{STORE_ID}},"[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/catalog
+[WAIT] the left sidebar category list renders
+[CAPTURE] the visible root-category names in DOM order as NAMES_DOM
+[CAPTURE] the number of those names as N
+[HTTP] POST {{BACK_URL}}/graphql with the categories query for {{STORE_ID}} at the catalog's top level (the level the sidebar lists)
+[CAPTURE] id and name of each returned category
+[CAPTURE] NAMES_BY_ID = those names ordered by id
+[CAPTURE] NAMES_BY_NAME = those names ordered alphabetically, case-insensitive, with the page culture's collation","[COUNT] N is at least 3, otherwise INCONCLUSIVE {SPEC} (VCST-4909)
+[REL] NAMES_BY_ID differs from NAMES_BY_NAME, otherwise INCONCLUSIVE — a fixture where both orders agree cannot catch the defect {SPEC} (VCST-4909)
+[REL] NAMES_DOM equals NAMES_BY_NAME element by element {SPEC} (VCST-4909)
+[REL] NAMES_DOM does not equal NAMES_BY_ID {SPEC} (VCST-4909)",[API] the set of names in NAMES_DOM equals the set returned by the categories query — the sort neither adds nor drops a category,sidebar order follows the id order; a category missing from or added to the sidebar relative to the query,none — read-only,VCST-4909 · Archetype:FALLBACK · Technique:EP · Catches:VCST-4909 · Storefront /catalog sidebar,Draft
+CAT-082,"Catalog List View — The Variations Button Is Singular For One Variation And Plural For Two, And Its Number Equals The Variation Count (VCST-6046)",Catalog > Product Card > Variations Button Pluralization,Low,,,"Anonymous browsing in the default (English) culture, List view. Breaking condition (non-default form of a count): the button used a fixed '{0} variations' template, so a product with exactly ONE variation read '1 variations' while the panel it opens read '1 available variation'.
+Divergent fixture, discovered live and never named: one product with exactly 1 variation and one with exactly 2 or more. The scan reads up to 200 products from xAPI products (variations selected) and picks the first of each kind; if either kind is absent the case is BLOCKED:FIXTURE_MISSING.
+Other locales carry the same key and needed plural forms too; they are not asserted here because the QA stand's second culture is not known to define plural forms.",front_url={{FRONT_URL}},"[PRE:CLEAR_SESSION]
+[HTTP] POST {{BACK_URL}}/graphql with products(storeId: ""{{STORE_ID}}"", first: 50) { items { id name hasVariations variations { id } } }, paging with after until 200 products are read
+[CAPTURE] ONE_VAR = the first product with exactly 1 variation (its name, N_ONE = 1)
+[CAPTURE] MANY_VAR = the first product with 2 or more variations (its name, N_MANY = their count)
+[NAV] {{FRONT_URL}}/search?q=<ONE_VAR name>
+[WAIT] the result grid renders
+[ACT] switch to 'List' view
+[WAIT] the list renders
+[CAPTURE] the variations button text on the ONE_VAR card as TEXT_ONE
+[ACT] click the variations toggle labelled 'TEXT_ONE' on that card
+[WAIT] the variations panel opens
+[CAPTURE] the panel heading as HEAD_ONE
+[NAV] {{FRONT_URL}}/search?q=<MANY_VAR name>
+[WAIT] the result grid renders
+[CAPTURE] the variations button text on the MANY_VAR card as TEXT_MANY
+[ACT] click the variations toggle labelled 'TEXT_MANY' on that card
+[WAIT] the variations panel opens
+[CAPTURE] the panel heading as HEAD_MANY","[DOM] TEXT_ONE reads '1 variation' — singular {SPEC} (VCST-6046)
+[DOM] TEXT_MANY reads the variation count of MANY_VAR followed by 'variations' — plural {SPEC} (VCST-6046)
+[REL] the number in TEXT_ONE equals N_ONE and the number in TEXT_MANY equals N_MANY — the label cannot be right by default text {SPEC} (VCST-6046)
+[REL] the noun in TEXT_ONE is the singular of the noun in HEAD_ONE, and the same holds for the plural pair — the button and the panel agree {SPEC} (VCST-6046)","[API] the count in each button equals variations.length from the xAPI response; the same wording rule holds on the related-products, recently-browsed, compare and wishlist cards that use the same key",'1 variations'; a count that differs from the xAPI length; button and panel disagree on singular/plural,none — read-only,VCST-6046 · Archetype:MONEY · Technique:BVA · Catches:VCST-6046 · Storefront product-card; locales/en.json pages.catalog.variations_button,Draft

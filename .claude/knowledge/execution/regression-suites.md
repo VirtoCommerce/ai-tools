@@ -118,7 +118,7 @@ tier 1, in [`.claude/rules/regression.md`](../../rules/regression.md) §Suite in
 reasoning and the how-to.
 
 **Why one author, specifically for a CSV.** The same discipline `/qa-review-oracles` applies to
-`business-logic.md` and `e-commerce-edge-cases-library.md` — triangulation fans out, the **apply is
+the BL records and `e-commerce-edge-cases-library.md` — evidence gathering fans out, the **apply is
 single-writer** — plus two reasons specific to suites:
 
 - **A CSV is not mergeable in practice.** Rows are multi-line, quoted, and the safe writers

@@ -1,0 +1,31 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 14: Profile & Member Data (BL-PROFILE)"
+  prefixes:
+    - BL-PROFILE
+  agents:
+    - qa-backend-expert
+    - qa-frontend-expert
+    - test-management-specialist
+rules:
+  - id: BL-PROFILE-001
+    title: Silent duplicate-skip on `updateMemberAddresses` and matching `checkDuplicateAddress` detection
+    rule: |-
+      (write path — `updateMemberAddresses`) When `updateMemberAddresses` is called with an address whose key fields — `firstName` + `lastName` + `city` + `line1` + `line2` + `countryCode` + `regionId` + `postalCode` + `phone` + `email` (compared case-insensitively; `addressType` and the auto-computed `name` are **NOT** part of the dedup key) — exactly match an already-saved address on the same member, the server MUST silently skip the insert. No new record is created, no error is raised in `errors[]`, and the member's total address count (`currentCustomerAddresses.totalCount`) MUST remain unchanged. This holds regardless of the size of `addresses[]` (one or many) AND regardless of `memberType` (Contact or Organization — same endpoint, same dedup semantics). The dedup check is **against the member's stored collection**, not only within the incoming batch, and must NOT depend on auto-computed fields like `name` that the client submits as null.
+      (read path — `checkDuplicateAddress`) `checkDuplicateAddress(memberId, address)` MUST return `isDuplicated: true` if and only if an existing stored address on `memberId` matches the submitted address by the same key fields listed above. Novel addresses return `isDuplicated: false`; exact matches return `true`. The detection contract MUST agree with the write-path dedup contract — whatever `updateMemberAddresses` silently skips, `checkDuplicateAddress` must flag. The query MUST require authentication (no anonymous access) and MUST enforce same-member / same-org authorization (no cross-member probing).
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "`vc-module-profile-experience-api` `MemberAggregateRootBase.cs` (address comparer + `IsDuplicateAddress`), `CheckDuplicateAddressQueryHandler.cs` (delegates to the same method), `OrganizationAggregate.cs` / `ContactAggregate.cs` (no override — inherit the shared logic)."
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/updateMemberAddresses.md (published) — documents the mutation shape only; no dedup semantics
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Aggregates/MemberAggregateRootBase.cs#IsDuplicateAddress
+    check:
+      kind: manual
+      ref: |-
+        (write path) Capture totalCount = N and the full field set of an existing address. Call `updateMemberAddresses(command: { memberId, addresses: [{…same fields}] })` with exactly one byte-identical element. Re-query totalCount → must equal N. Count rows in `items[]` matching the duplicate's line1 + firstName + lastName → must equal 1 (not 2). `errors[]` must be empty. Repeat with a 2-element `addresses[]` where one element is identical-to-existing and one is novel → novel row is added, duplicate is skipped, totalCount = N+1. Repeat both scenarios for a Contact memberId AND an Organization memberId.
+        (read path) With a valid bearer token, call `checkDuplicateAddress(memberId: <own>, address: {…byte-identical fields of an existing saved address})` → `isDuplicated: true`. Call with a novel address → `isDuplicated: false`. Call anonymously (no Authorization header) → request rejected with 401 or equivalent authz error; not HTTP 200. Call with a foreign memberId (different user) → authz error, no data returned.
+    violation_signal: "`totalCount` = N+1 after single-element submission; two rows with identical key fields appear in `items[]`; the mutation raises an error instead of silently skipping. For the read path: `checkDuplicateAddress` returns `isDuplicated: false` for an address that clearly exists on the member; or returns data to an unauthenticated caller (HTTP 200 without 401); or returns data when a foreign memberId is used."
+    status: ACTIVE

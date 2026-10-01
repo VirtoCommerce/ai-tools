@@ -448,6 +448,12 @@ where full coverage is infeasible.
 
 **When to use:** After baseline techniques are applied. Especially valuable for mature features where obvious bugs are already found, and for VC-specific platform behaviors.
 
+**Start from what actually broke, not from a generic list.** Two sources come first: the domain's closed
+bugs no case cites (`npm run gaps -- --domain <token>`, customer-reported first: each is a ready-made guess
+with a known breaking condition), and the breaking dimensions customer bugs share — non-default culture,
+timezone, sort × search × filter, more than one page, concurrency, a second login path, a swallowed upstream
+error, a dependency upgrade. Table and archetypes: [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §4–§5.
+
 ### Empty / Null Operations
 
 | Scenario | What to Test | Why It Breaks |

@@ -1,0 +1,74 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 10: Shipping & BOPIS (BL-SHIP)"
+  prefixes:
+    - BL-SHIP
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+    - qa-testing-expert
+rules:
+  - id: BL-SHIP-001
+    title: Ship-to address determines available methods
+    rule: "Available shipping methods and rates are driven by the shipping (delivery) address, never the billing address: the platform asks every active shipping method for a rate, passing it the delivery-address-bearing shipment. VC's out-of-box **Fixed Rate** method returns flat Ground/Air rates that do **NOT** vary by destination — there are **no built-in shipping zones**. Destination-/zone-dependent availability or rates require a **custom shipping provider** registered via the module's extensibility point. Where such a provider is configured, changing the shipping address must refresh the available methods and their rates."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: vc-module-shipping `FixedRateShippingMethod.CalculateRates` — flat Ground/Air rates from settings, independent of the shipping context destination (no built-in zones).
+      - kind: doc
+        ref: platform/deployment-on-cloud/docs/store-configuration.md (published) — shipping methods configure fixed rates per shipping type such as ground or air
+      - kind: doc
+        ref: platform/developer-guide/docs/Fundamentals/Shipments/new-shipping-method-registration.md (published) — custom shipping method implements CalculateRates and is registered via the shipping methods registrar
+    scope:
+      code_ref: vc-module-shipping:src/VirtoCommerce.ShippingModule.Data/FixedRateShippingMethod.cs#CalculateRates
+    check:
+      kind: manual
+      ref: "Confirm options derive from the delivery address, not billing. Default install (Fixed Rate): Ground/Air appear at their configured flat rates regardless of destination. Store with a zone/address-aware provider: changing to an out-of-zone address removes uncovered methods and updates rates; an uncovered zone blocks checkout with a message."
+    violation_signal: Billing address used instead of shipping to compute methods/rates; a zone-aware provider's methods/rates don't change when the delivery address changes; methods shown for an uncovered zone; rates don't update for a new destination on a zone-aware provider.
+    status: ACTIVE
+  - id: BL-SHIP-002
+    title: BOPIS requires store pickup location
+    rule: Buy Online, Pick Up In Store (BOPIS) is only available when at least one fulfillment center is configured for store pickup in the customer's area. The customer must select a specific pickup location during checkout. BOPIS orders skip the shipping address step but still require a billing address.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/shipping/managing-shipping-methods.md (published) — BOPIS shipping method is configured with admin-defined pickup locations shown to customers selecting in-store pickup
+      - kind: doc
+        ref: platform/user-guide/docs/x-pickup/overview.md (published) — xPickup lets customers choose a pickup point from available locations during checkout
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/composables/useCheckout.ts#isValidCheckout
+    check:
+      kind: manual
+      ref: Select BOPIS → prompted to choose pickup location from list → no shipping address form shown → billing address still required → order placed with pickup location in order details.
+    violation_signal: BOPIS shown when no pickup locations exist; shipping address required for BOPIS; no pickup location selection; order lacks pickup location reference.
+    status: ACTIVE
+  - id: BL-SHIP-003
+    title: Free shipping threshold recalculates on cart change
+    rule: When a store offers free shipping above a threshold (e.g., orders over $100), the shipping cost must recalculate every time the cart changes (add/remove items, change quantity, apply/remove coupon). The threshold applies to the cart subtotal after discounts but before tax. A progress indicator ("$15 away from free shipping") is recommended.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/marketing/promotion-rules.md (published) — free-shipping threshold = cart subtotal-at-least condition combined with a 100%-off shipping reward
+    scope:
+      code_ref: vc-module-marketing:src/VirtoCommerce.MarketingModule.Core/Model/Promotions/Conditions/CartConditions/ConditionCartSubtotalLeast.cs#IsSatisfiedBy
+    check:
+      kind: manual
+      ref: Cart = $90 → standard shipping = $10. Add item ($20) → cart = $110 → shipping = $0 (free). Apply coupon reducing total to $95 → free shipping removed, shipping = $10 again.
+    violation_signal: Free shipping not recalculated after cart change; threshold applies to pre-discount total; free shipping persists after coupon reduces total below threshold.
+    status: ACTIVE
+  - id: BL-SHIP-004
+    title: Shipping method selection persists through checkout edits
+    rule: Once a customer selects a shipping method, that selection must persist through address edits, payment entry, and back-navigation within checkout — unless the address change invalidates the method (BL-SHIP-001). The selected method's rate is locked at selection time — no silent rate changes during checkout.
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Validators/CartShipmentValidator.cs
+    check:
+      kind: manual
+      ref: Select "Express $15" → go to payment step → go back to shipping → "Express $15" still selected. Edit address (same zone) → method and rate persist. Edit address (different zone) → method deselected with notification.
+    violation_signal: Shipping selection lost on back-navigation; rate changes silently during checkout; method persists after address change to incompatible zone.
+    status: ACTIVE

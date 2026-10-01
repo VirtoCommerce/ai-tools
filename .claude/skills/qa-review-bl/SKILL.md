@@ -1,7 +1,7 @@
 ---
 name: qa-review-bl
-description: "[QA Method] Pipeline entry point for the BL-invariant audit — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* candidates a run surfaced (triangulate against docs + live + source; auto-apply to business-logic.md only what a human source grounds — M0; reconcile test-case citations). For a manual oracle audit, use /qa-review-oracles."
-argument-hint: "all | domain <name> | BL-<ID> | diff [--dry-run]"
+description: "[QA Method] Pipeline entry point for the BL sync — ALIAS of /qa-review-oracles bl. Called automatically by /qa-test-lifecycle Phase 4c on the BL-* a run contradicted or surfaced (mark SUSPECT, resolve from the Jira decision, sync from the ticket's AC or docs; edits bl/<slug>.yaml only from a human source; reconcile test-case citations). For a manual oracle review, use /qa-review-oracles."
+argument-hint: "all | domain <name> | BL-<ID> | suspect | inferred | diff [--dry-run]"
 ---
 
 # /qa-review-bl — alias of `/qa-review-oracles bl`
@@ -15,14 +15,16 @@ skill's **Axis contract** table, the `bl` column. Read the file rather than invo
 `/qa-review-oracles`: that skill is `disable-model-invocation: true` (a manual audit stays
 user-invoked). This alias is model-invocable only so that `/qa-test-lifecycle` Phase 4c can reach
 it — **when a model invokes it, the scope is the `BL-<ID>` candidates Phase 4c passes.** A broader
-scope (`all`, `domain <name>`, `diff`) runs only when the user asked for it, because it auto-applies
-to `.claude/knowledge/oracles/business-logic.md`.
+scope (`all`, `domain <name>`, `suspect`, `inferred`, `diff`) runs only when the user asked for it, because
+it writes `.claude/knowledge/oracles/bl/<slug>.yaml` (rules: `../qa-review-oracles/bl-audit-criteria.md`).
 
 | `/qa-review-bl …` | ≡ |
 |---|---|
 | `all` | `/qa-review-oracles bl all` |
 | `domain cart` | `/qa-review-oracles bl domain cart` |
 | `BL-CART-010` | `/qa-review-oracles bl BL-CART-010` |
+| `suspect` | `/qa-review-oracles bl suspect` |
+| `inferred` | `/qa-review-oracles bl inferred` |
 | `diff` | `/qa-review-oracles bl diff` |
 | `… --dry-run` | `/qa-review-oracles bl … --dry-run` |
 

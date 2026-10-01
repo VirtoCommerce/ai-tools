@@ -49,7 +49,7 @@ Companion to `~/.claude/plans/functional-singing-cosmos.md` (the strategic plan)
 
 | File | Tier | Notes |
 |------|------|-------|
-| `business-logic.md` | **C** | 76 storefront BLs. **Becomes template** `business-logic.{product}.md`. BL IDs need namespacing (`BL-STOREFRONT-PRICE-001`). |
+| `bl/<slug>.yaml` | **C** | Storefront BLs. **Becomes template** per product. BL IDs need namespacing (`BL-STOREFRONT-PRICE-001`). |
 | `e-commerce-edge-cases-library.md` | **C** | 13 generic ECL + 7 VC-specific. **The 13 generic are Tier A candidates** — split this file. |
 | `module-suite-map.md` | **C** | Maps storefront modules → suites. Per-product. |
 | `products.md` | **C** | Storefront product types, configurable sections. |

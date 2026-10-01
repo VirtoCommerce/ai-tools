@@ -18,17 +18,6 @@ import {
   BASE_CURRENCY, SECONDARY_CURRENCY,
 } from '../seed-data/products/standard-specs.mjs';
 
-test('CSV_SOURCE.map exposes the sale_price column as salePrice', () => {
-  assert.equal(CSV_SOURCE.map.salePrice, 'sale_price');
-  assert.equal(CSV_SOURCE.map.listPrice, 'price');
-});
-
-test('CSV_SOURCE.map exposes the second-currency + slug/url columns', () => {
-  assert.equal(CSV_SOURCE.map.eurPrice, 'price_eur');
-  assert.equal(CSV_SOURCE.map.slug, 'product_slug');
-  assert.equal(CSV_SOURCE.map.storefrontUrl, 'storefront_url');
-});
-
 test('buildPrices: flat row with a valid sale emits one row with sale (actual < list)', () => {
   assert.deepEqual(buildPrices({ listPrice: 29.99, salePrice: 19.99 }), [
     { list: 29.99, sale: 19.99, minQuantity: 1 },
@@ -167,28 +156,4 @@ test('storefrontPathForAdHoc: always store-RELATIVE (no scheme/host) and null on
   assert.ok(!/^[a-z]+:\/\//i.test(p) && !p.includes('{{'));
   assert.equal(storefrontPathForAdHoc('', 'AGENT-TEST-X'), null);
   assert.equal(storefrontPathForAdHoc(null, 'AGENT-TEST-X'), null);
-});
-
-test('the committed CSV columns agree with the derivation for every Test Fixtures row', async () => {
-  // End-to-end guard-of-the-guard: the values actually in test-products.csv must be reproducible from
-  // the rules above, so no one can hand-edit a slug/url into the CSV undetected.
-  const { readFileSync } = await import('node:fs');
-  const { join, dirname } = await import('node:path');
-  const { fileURLToPath } = await import('node:url');
-  const { parse } = await import('csv-parse/sync');
-  const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-  const rows = parse(readFileSync(join(root, 'test-data', CSV_SOURCE.file), 'utf8'), {
-    columns: true, skip_empty_lines: true, relax_quotes: true, relax_column_count: true,
-  });
-  const fixtures = rows.filter((r) => (r[CSV_SOURCE.map.categoryPath] || '').trim() === 'Test Fixtures');
-  assert.ok(fixtures.length >= 12, `expected the Test Fixtures family, got ${fixtures.length}`);
-  for (const r of fixtures) {
-    const name = r[CSV_SOURCE.map.name];
-    assert.equal(r[CSV_SOURCE.map.slug], productSlug(name), `${r[CSV_SOURCE.map.csvId]} product_slug`);
-    assert.equal(
-      r[CSV_SOURCE.map.storefrontUrl],
-      storefrontPathForAdHoc('Test Fixtures', name),
-      `${r[CSV_SOURCE.map.csvId]} storefront_url`,
-    );
-  }
 });

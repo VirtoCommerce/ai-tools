@@ -1097,3 +1097,46 @@ query {
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/catalog/barcode-search/store/{{store}}]
 {""scannerEnabled"": true, ""fields"": []}",VCST-2945 · Archetype:BOUNDARY · Technique:EG | Behavior:srch.barcode.expand.wildcards | DataProfile:profile.srch.expand-wildcards,Draft
+CAT-GQL-151,"xCatalog — Listing Walked At The Storefront Page Size (16) On The Default Sort Returns Full Pages, A Stable totalCount And No Repeats (VCST-5881)",GraphQL > xCatalog > Pagination Walk (VCST-5881),High,BL-SRCH-006,ECL-2.1,"Runner-native. PUBLIC role. Breaking condition (more than one page x default sort): xCatalog cuts a page of N and only THEN drops index documents that cannot be hydrated, decrementing totalCount by the same amount and never back-filling — so a page of 16 comes back as 3, and the next page as 0, which is where the storefront's infinite scroll stops. The default sort (no `sort` argument) is used on purpose: its single score clause has no unique tiebreaker, and name:asc never lost items.
+Needs >= 64 products in the B2B virtual catalog (four pages of 16). Fewer makes the totalCount >= 64 assertion fail — report it as an inconclusive fixture, never as a pass.
+Honest limit: Jira closed VCST-5881 as Cancelled, so there is no shipped fix and no pre-fix/post-fix pair. The case encodes the spec expectation (BL-SRCH-006) and fails only while the Product index holds documents that cannot be hydrated (a partial reindex); on a clean index the pre-fix code is indistinguishable and a PASS is weak evidence. Seen failing once on the QA stand, 2026-09-03.
+Page size 16 and the cursors 0/16/32/48 mirror what the storefront sends; first:1/2/3 walks are what the existing pagination cases use, and a full page of 3 passes them.",b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id); page_size=16,"[GQL-OP page0]
+  query { products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""0"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } } }
+[GQL-EXEC page0]
+[GQL-CAPTURE page0.data.products.totalCount → TOTAL0]
+[GQL-CAPTURE page0.data.products.items.0.id → P0_FIRST]
+[GQL-OP walk]
+  query {
+    p1: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""16"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+    p2: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""32"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+    p3: products(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 16 after: ""48"" filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id } }
+  }
+[GQL-EXEC walk]","[ERRORS label=page0] errors[] empty {SPEC} (VCST-5881)
+[ERRORS label=walk] errors[] empty {SPEC} (VCST-5881)
+[DATA label=page0] data.products.totalCount >= 64 {BL} (BL-SRCH-006 — fixture floor: four full pages must exist)
+[COUNT label=page0] data.products.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p1.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p2.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[COUNT label=walk] data.p3.items.length = 16 {BL} (BL-SRCH-006 — every page but the last is full)
+[DATA label=walk] data.p1.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[DATA label=walk] data.p2.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[DATA label=walk] data.p3.totalCount = {{TOTAL0}} {BL} (BL-SRCH-006 — totalCount does not move between pages of one listing)
+[COUNT label=walk] data.p1.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)
+[COUNT label=walk] data.p2.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)
+[COUNT label=walk] data.p3.items[*?id={{P0_FIRST}}].length = 0 {BL} (BL-SRCH-006 — no item repeats on a later page)","[ROUNDTRIP] Storefront /catalog on the default sort: scrolling to the footer loads batches 2 and 3, so the grid grows past 16 and then past 32 cards and never stalls under a heading promising more {SPEC} (VCST-5881)",a page with fewer than 16 items while totalCount says more remain (unhydrated documents dropped after the page was cut); a page returning 0 items before the last; totalCount different between pages of one walk; an item id repeated on a later page,none — read-only,VCST-5881 · Archetype:BOUNDARY · Technique:BVA · Catches:VCST-5881 · xAPI; Query.products pagination; BL-SRCH-006,Draft
+CAT-GQL-152,xCatalog — categories Still Returns The Matching Category When The Storefront Adds Product-Only Filters (price + inStock_variations) (VCST-4374),GraphQL > xCatalog > Categories Filter Parity (VCST-4374),High,,ECL-2.1,"Runner-native. PUBLIC role. Breaking condition (sort x search x filter — a filter combination changes WHICH items come back): the storefront search drop-down sends ONE filter string to both `products` and `categories`. With `price.USD:(0 TO) inStock_variations:true` appended, `categories` returned nothing; with only `category.subtree:` it returned the category. Product-only terms must not empty a category result.
+Discovers a live category (any category under the B2B virtual catalog root) and searches for it by its own name, so no category name is hardcoded.",b2b_catalog_root=@td(VIRTUAL_CATALOG_B2B.id),"[GQL-OP discover_cat]
+  query { categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" first: 5 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id name } } }
+[GQL-EXEC discover_cat]
+[GQL-CAPTURE discover_cat.data.categories.items.0.id → CAT_ID]
+[GQL-CAPTURE discover_cat.data.categories.items.0.name → CAT_NAME]
+[GQL-OP both]
+  query {
+    plain: categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" query: ""{{CAT_NAME}}"" first: 20 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id)"") { totalCount items { id name } }
+    with_product_filter: categories(storeId: ""{{STORE_ID}}"" currencyCode: ""USD"" cultureName: ""en-US"" query: ""{{CAT_NAME}}"" first: 20 filter: ""category.subtree:@td(VIRTUAL_CATALOG_B2B.id) price.USD:(0 TO) inStock_variations:true"") { totalCount items { id name } }
+  }
+[GQL-EXEC both]","[ERRORS label=discover_cat] errors[] empty {SPEC} (VCST-4374)
+[ERRORS label=both] errors[] empty {SPEC} (VCST-4374)
+[COUNT label=both] data.plain.items[*?id={{CAT_ID}}].length = 1 {SPEC} (VCST-4374 — control: the category is found by its own name with the subtree filter alone)
+[COUNT label=both] data.with_product_filter.items[*?id={{CAT_ID}}].length = 1 {SPEC} (VCST-4374 — the same category is still returned when product-only filters are added)
+[DATA label=both] data.with_product_filter.totalCount >= 1 {SPEC} (VCST-4374)",[ROUNDTRIP] Storefront search drop-down for the same term with the catalog's price/stock filters active lists the category in its Categories group {SPEC} (VCST-4374),with_product_filter.totalCount = 0 while plain.totalCount >= 1; the discovered category id missing from with_product_filter.items; errors[] non-empty,none — read-only,VCST-4374 · Archetype:PARITY · Technique:DT · Catches:VCST-4374 · xAPI; Query.categories filter; storefront search drop-down,Draft

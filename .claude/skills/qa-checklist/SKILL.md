@@ -45,7 +45,7 @@ Checklist items are written to be testable; they assume readers will resolve tes
 | [`../qa-postman/test-data-fixtures.md`](../qa-postman/test-data-fixtures.md) + [`test-data/aliases.json`](../../../test-data/aliases.json) | Any checklist item that mentions a specific entity (product, org, address, coupon, card, store) — resolve via `@td(ALIAS.field)` instead of inventing values |
 | [`../../../agents/knowledge/api/graphql-schema.md`](../../knowledge/api/graphql-schema.md) | Any GraphQL query/mutation/field name in a checklist item — verify it exists in the live schema before deriving a test case |
 | [`../../../agents/knowledge/api/graphql-test-cases-runner.md`](../../knowledge/api/graphql-test-cases-runner.md) | Authoring runner-native GraphQL test cases derived from `graphql-checklist.md` items (CSV format, `[GQL-OP]/[GQL-VARS]/[GQL-EXEC]/[GQL-CAPTURE]` grammar) |
-| [`../../../agents/knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) | **Mandatory input, not a cross-link** — see §Oracle Grounding below. A checklist item that states an expected outcome must cite the `BL-*` it restates |
+| BL oracle — `npm run bl:extract -- --domain <d>` | **Mandatory input, not a cross-link** — see §Oracle Grounding below. A checklist item that states an expected outcome must cite the `BL-*` it restates |
 | [`../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) | **Mandatory input** — the `ECL-<n>.<m>` sections are where the domain's edge-case items come FROM (§Oracle Grounding). The library names checklists as one of its own consumers (§Using This Library) |
 | [`../../knowledge/domain/<slug>.md`](../../knowledge/domain/) | A domain map exists for this surface — read it before the UI walk (Mode 3 step 4) for the surface inventory, the layer disagreements and the existing coverage shape. It never grounds an assertion, and its live rows are dated |
 
@@ -56,7 +56,7 @@ already answer, and it must read them rather than re-derive them from the UI:
 
 | Oracle | Answers | How it lands in a checklist |
 |---|---|---|
-| [`business-logic.md`](../../knowledge/oracles/business-logic.md) (`BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
+| BL oracle (`BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
 | [`e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) (`ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
 
 `npm run bl:lint` / `npm run ecl:lint` print how many of each exist and validate every citation.
@@ -226,7 +226,7 @@ Products · xCart Wishlists & Saved for Later · xOrder · xProfile · xQuote ·
    account's cart, balance or data is shared with the suites that run against it.
 6. Apply the methodology in `checklist-creation-guide.md` Steps 3–5 — map interactions to items, add
    cross-layer verification, add the VC-specific patterns. Two constraints that are this skill's, not
-   the guide's: a state-transition or business-rule item comes **from `business-logic.md`, cited by
+   the guide's: a state-transition or business-rule item comes **from the BL oracle, cited by
    ID** (a rule you inferred from the UI and cannot tie to a `BL-*` is a `/qa-review-oracles` proposal,
    not a fact), and an error/edge-case item is derived from an `[OBSERVED]` ECL section and cites its
    `ECL-<n>.<m>` (`[THEORETICAL]` goes to `/qa-exploratory`)

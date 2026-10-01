@@ -1,0 +1,130 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 3: Checkout (BL-CHK)"
+  prefixes:
+    - BL-CHK
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+    - qa-testing-expert
+    - test-management-specialist
+rules:
+  - id: BL-CHK-001
+    title: Guest vs authenticated checkout
+    rule: Guest checkout is only available when the store setting `createAnonymousOrderEnabled = true`. When disabled, anonymous users must sign in before reaching checkout. Guest checkout skips address book (no saved addresses) and order history is not linked to an account.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-frontend `client-app/pages/checkout/index.vue` — no auth guard on the checkout route; a guest may initialize and complete checkout, and the guest order is not linked to an account.
+      - kind: doc
+        ref: platform/user-guide/docs/cart/overview.md — the cart module supports anonymous carts and submitting orders without creating an account
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/update-xapi-modules.md — the anonymous order creation setting moved to its functional X-module
+    scope:
+      code_ref: vc-module-x-order:src/VirtoCommerce.XOrder.Data/Schemas/OrderSchema.cs#Build
+    check:
+      kind: manual
+      ref: With flag OFF → "Add to cart" → "Checkout" → redirect to sign-in. With flag ON → anonymous user can complete full checkout without account.
+    violation_signal: Anonymous user reaches checkout when flag is OFF; guest order appears in a registered user's order history; saved addresses shown to guest.
+    status: ACTIVE
+  - id: BL-CHK-002
+    title: Double-submit prevention (Place Order idempotency)
+    rule: Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
+    priority: P0-revenue
+    trust: INFERRED
+    source: []
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/components/proceed-to.vue
+    check:
+      kind: manual
+      ref: Click "Place Order" → immediately click again → only 1 order created. Check Admin → Orders → verify single order. Check button state (disabled/loading after first click).
+    violation_signal: Two orders with same items created; button remains clickable during processing; no loading indicator.
+    status: SUSPECT
+    suspect_reason: "[code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check"
+  - id: BL-CHK-003
+    title: Address validation by country
+    rule: Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: 'vc-frontend `address-form.vue` — `postalCode: yup.string().trim().max(32).required()` (no country branch); `regionRules: .when("countryCode", { is: () => !!country.regions.length, then: required, otherwise: nullable })`.'
+    scope:
+      code_ref: vc-frontend:client-app/shared/common/components/address-form.vue#regionRules
+    check:
+      kind: manual
+      ref: Select US → State and ZIP required. Select a country with no regions → State/Province hidden/optional, but ZIP/Postal code **still required**. Attempt to submit without ZIP → blocked before the payment step regardless of country.
+    violation_signal: 'State/Province required for a country that has no regions; the address form is identical regardless of country (no region-conditional State field); ZIP silently not enforced. (Note: the earlier expectation that "countries without postal codes must not require ZIP" does NOT match the form — ZIP is always required.)'
+    status: ACTIVE
+  - id: BL-CHK-004
+    title: Payment retry after decline
+    rule: When a payment is declined by the gateway (insufficient funds, expired card, etc.), the user must be able to retry with a different card or correct the issue — without losing their cart or shipping selections. The checkout state (address, shipping method) must persist through payment retries. After 3 consecutive declines, the system may lock the checkout temporarily.
+    priority: P0-revenue
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Enter invalid card → decline message shown → change card details → retry → success. Verify shipping address and method are unchanged after decline. Check that a new order is not partially created on each decline.
+    violation_signal: Cart emptied after payment decline; shipping address reset; partial/ghost orders created on each failed attempt; no retry option shown.
+    status: ACTIVE
+  - id: BL-CHK-005
+    title: Shipping method depends on address
+    rule: Available shipping methods are determined by the shipping address. Changing the address must refresh the list of available shipping methods and their rates. Previously selected shipping method that is no longer available for the new address must be deselected with a notification. BOPIS (store pickup) option depends on proximity or store assignment.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: vc-frontend `shipping-details-section.vue` — binds `availableShippingMethods` (server-computed per cart/address); `onShipmentMethodChange` → `updateShipment`.
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartAvailMethodsService.cs#GetAvailableShippingRatesAsync
+    check:
+      kind: manual
+      ref: Enter domestic address → see standard/express options. Change to international address → shipping methods update → rates change. Select BOPIS → change to address far from any store → BOPIS option disappears.
+    violation_signal: Shipping methods don't update when address changes; unavailable method remains selected; rates don't change for different destinations.
+    status: ACTIVE
+  - id: BL-CHK-006
+    title: Order total formula
+    rule: "The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)"
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/objects/CartTotalType.md — per-currency bucket with total, subTotal, taxTotal, discountTotal
+      - kind: resolution
+        ref: VCST-661 (Done) — a '% off cart subtotal' reward ignored which items were selected in the cart; fixed
+    scope:
+      code_ref: vc-module-cart:src/VirtoCommerce.CartModule.Data/Services/DefaultShoppingCartTotalsCalculator.cs#CalculateTotals
+    check:
+      kind: manual
+      ref: "Manually calculate: add all line totals + shipping + tax - discounts. Compare to displayed total. After placing order → check order confirmation → check Admin order detail → all three must match."
+    violation_signal: Total doesn't match manual calculation; checkout total differs from confirmation page; Admin order shows different amount; unexplained $0.01+ discrepancy.
+    status: ACTIVE
+  - id: BL-CHK-007
+    title: Minimum order amount enforcement
+    rule: '**NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.'
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: "platform/user-guide/docs/glossary.md — MOQ entry: minimum order requirements use quantity limits, pack size and tiered pricing rather than a single setting"
+    check:
+      kind: manual
+      ref: Set min order = $50 → add items totaling $40 → checkout blocked with message "Minimum order is $50, you need $10 more." Add more items to exceed $50 → checkout unblocked.
+    violation_signal: Order placed below minimum; no message shown; minimum checked against grand total instead of subtotal; checkout not blocked.
+    status: ACTIVE
+  - id: BL-CHK-008
+    title: Address-popup State/Province facet renders only when result set contains regionId values
+    rule: 'The "State/Province" facet in the address-selection popup is rendered if and only if the term aggregation for `regionId` in the current address result set returns at least one non-null value. When `term: []` (all addresses in the set have `null regionId`), the facet element is absent from the DOM — it is not rendered as an empty dropdown. This rule is data-driven: facet presence changes dynamically as the result set changes (e.g., filtering to a country whose addresses all have null regionId causes the facet to disappear). Currently: USA and Canada addresses carry non-null regionId; other countries (UK/GB, Albania, etc.) carry null regionId.'
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: ac
+        ref: "VCST-4710 (Done) — address selection popup story: sorting, full-text search, and faceted filtering by Country, City and State"
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/composables/usePickupFilterContext.ts#createAddressFilterContext
+    check:
+      kind: manual
+      ref: Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
+    violation_signal: '"State/Province" facet visible with empty/zero values when result set has no non-null regionId; facet persists in DOM after filter narrows the set to null-region addresses only; facet missing when USA/Canada addresses are present.'
+    status: ACTIVE

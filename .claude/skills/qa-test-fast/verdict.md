@@ -114,7 +114,8 @@ private page reaches no one. Never describe the page as private in the comment o
 
 Ask once: *"Post the verdict comment to <TICKET>?"* On yes:
 - post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`),
-  then write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends it
+  with `--artifact "<build.deployed>"`, then write the returned id into `summary.json.tracker.comment_id` —
+  a same-build re-run amends it; a re-run on a NEW build posts a new comment (`tracker-ops.md` §0 rule 5)
 - it is **one** comment, amended and never appended to, per
   [`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0
 - screenshots go **inline**, verified from `renderedBody` ([`../../rules/reports.md`](../../rules/reports.md) §5.0)
