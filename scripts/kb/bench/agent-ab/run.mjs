@@ -16,7 +16,7 @@ import { spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -40,14 +40,26 @@ Before you state how the Virto Commerce platform behaves, call mcp__kb__kb_ask a
 disputed entry. This is a measurement run: do not capture, confirm or dispute anything.
 `;
 
-const PREAMBLE = (vars) => `You are a QA engineer working on a Virto Commerce B2B deployment.
+const PREAMBLE = (vars) => `You are a QA engineer on a Virto Commerce B2B deployment. A colleague needs an
+ANSWER from you, not an experiment.
+
 Storefront: ${vars.FRONT_URL}   Platform (REST, GraphQL, Admin): ${vars.BACK_URL}   Store id: ${vars.STORE_ID}
-Credentials are in environment variables (read them with $NAME in Bash, never print them):
+Credentials are in environment variables (use them as $NAME in Bash, never print them):
 ADMIN / ADMIN_PASSWORD (platform admin), USER_EMAIL / USER_PASSWORD and USER2_EMAIL / USER2_PASSWORD
 (storefront buyers in one company), ORG_USER_EMAIL / ORG_USER_PASSWORD, LOCKOUT_TEST_EMAIL /
-LOCKOUT_TEST_PASSWORD (a dedicated account you may lock).
-Work autonomously; nobody will answer questions. Any entity you create must be named AGENT-TEST-...
-and deleted before you finish. End with a section headed "FINAL ANSWER".
+LOCKOUT_TEST_PASSWORD.
+
+Rules:
+- The environment is shared with other people: treat it as READ-ONLY. Reading is fine (GET requests,
+  signing in, searches, GraphQL queries). Do not create, change or delete anything (no promotions,
+  orders, carts, returns, settings), unless the task itself names an exception.
+- Stop as soon as you can back the answer. Effort beyond that is waste.
+- Work alone; nobody will answer questions. Do not start sub-agents.
+- If something cannot be established without changing the environment, say so and give your best
+  answer with its basis. "Not established" is a legitimate answer; a confident guess is not.
+
+End with a section headed "FINAL ANSWER": the concrete answer (exact values, statuses, field names,
+verdict), and for each claim, where it comes from.
 
 Task:
 `;
@@ -103,7 +115,11 @@ function claude(args, stdin, cwd, env, timeoutMs) {
 }
 
 // ── metrics from the stream-json transcript ───────────────────────────────────────────────────
-const WRITE = /-X\s*(PUT|PATCH|DELETE)\b|\bmutation\b|method:\s*['"](PUT|PATCH|DELETE)/i;
+const HARD_WRITE = /-X\s*['"]?(PUT|PATCH|DELETE)\b|\bmutation\s*(\w+\s*)?[({]|method:\s*['"](PUT|PATCH|DELETE)/i;
+const POSTISH = /-X\s*['"]?POST\b|--data|\s-d\s|method:\s*['"]POST/i;
+const READ_POST = /connect\/token|\/graphql|search|listentries/i;
+const isWrite = (text) => HARD_WRITE.test(text)
+  || (POSTISH.test(text) && (text.match(/\/api\/[\w\/{}$.-]+/g) ?? []).some((u) => !READ_POST.test(u)));
 const HTTP_FAIL = /\b(40[0-5]|500)\b[^\n]{0,40}(Not Found|Unauthorized|Forbidden|Bad Request|Method Not Allowed|Internal Server Error)|"errors"\s*:\s*\[\s*\{/i;
 
 const LEAK = /_VIRTO|vc-mcp-testing-module|business-logic\.md|vc-bug-catalog|[\\/]plugins[\\/].*knowledge|kb-ab|agent-work[\\/]*(\.\.|\*)|\.\.[\\/]\.\./i;
@@ -111,17 +127,19 @@ const LEAK = /_VIRTO|vc-mcp-testing-module|business-logic\.md|vc-bug-catalog|[\\
 function measure(raw, arm) {
   const events = raw.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
   const m = { toolCalls: 0, byTool: {}, toolErrors: 0, httpFailures: 0, envCalls: 0, envWrites: 0,
-    kbAsks: 0, kbAnswered: 0, contaminated: false, final: '', result: null };
+    kbAsks: 0, kbAnswered: 0, contaminated: false, models: new Set(), final: '', result: null };
   const pending = new Map();
   for (const e of events) {
     const blocks = e.message?.content;
+    if (e.type === 'assistant' && e.message?.model) m.models.add(e.message.model);
     if (e.type === 'assistant' && Array.isArray(blocks)) {
       for (const b of blocks.filter((x) => x.type === 'tool_use')) {
+        if (/^(Task|Agent)$/.test(b.name)) m.subagents = (m.subagents ?? 0) + 1;
         m.toolCalls += 1; m.byTool[b.name] = (m.byTool[b.name] ?? 0) + 1;
         const input = JSON.stringify(b.input ?? {});
-        if (hosts.some((h) => input.includes(h)) || /\$(FRONT_URL|BACK_URL)|playwright|browser_/i.test(input + b.name)) {
-          m.envCalls += 1; if (WRITE.test(input)) m.envWrites += 1;
-        }
+        const touchesEnv = hosts.some((h) => input.includes(h)) || /\$\{?(FRONT_URL|BACK_URL)|process\.env\.(FRONT_URL|BACK_URL)|playwright|browser_/i.test(input + b.name);
+        if (touchesEnv && /^(Bash|WebFetch)$|browser_/.test(b.name)) m.envCalls += 1;
+        if (touchesEnv && isWrite(input)) m.envWrites += 1;
         if (/kb_ask$/.test(b.name)) m.kbAsks += 1;
         // A run that reached knowledge it was not given is void, in EITHER arm: this repo, the plugin
         // cache's knowledge/ copy, another run's folder or results, or (without the base) the base.
@@ -142,7 +160,8 @@ function measure(raw, arm) {
   const r = m.result ?? {};
   const u = r.usage ?? {};
   m.final = String(r.result ?? '');
-  return { ...m, result: undefined, status: r.subtype ?? 'no-result', turns: r.num_turns ?? null,
+  const models = [...m.models];
+  return { ...m, models, modelChanged: models.length > 1, result: undefined, status: r.subtype ?? 'no-result', turns: r.num_turns ?? null,
     durationSec: r.duration_ms != null ? Math.round(r.duration_ms / 1000) : null, costUsd: r.total_cost_usd ?? null,
     tokens: { input: u.input_tokens ?? 0, output: u.output_tokens ?? 0, cacheWrite: u.cache_creation_input_tokens ?? 0,
       cacheRead: u.cache_read_input_tokens ?? 0 } };
@@ -187,11 +206,17 @@ async function cell(task, arm, n) {
   if (arm === 'kb') writeFileSync(join(dir, 'CLAUDE.md'), KB_RULE);
   const env = { ...SYSTEM_ENV, ...vars, KB_ENABLED: '0', PWD: dir, TEMP: join(dir, 'tmp'), TMP: join(dir, 'tmp') };
   const allowed = 'Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch' + (arm === 'kb' ? ',mcp__kb__kb_ask,mcp__kb__kb_show' : '');
+  const NO_SUBAGENTS = 'Task,Agent';
   const args = ['-p', '--output-format', 'stream-json', '--verbose', '--model', MODEL, '--strict-mcp-config',
     '--mcp-config', join(dir, 'mcp.json'), '--allowedTools', allowed, '--max-budget-usd', String(BUDGET),
     '--no-session-persistence', '--disable-slash-commands'];
-  if (arm === 'nokb') args.push('--disallowedTools', 'mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute');
+  args.push('--disallowedTools', NO_SUBAGENTS + (arm === 'nokb'
+    ? ',mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute'
+    : ',mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute'));
   const prompt = PREAMBLE(vars) + task.prompt.replace(/\$([A-Z_]+)/g, (s, k) => (k in vars && !/PASSWORD/.test(k) ? vars[k] : s));
+  mkdirSync(join(OUT, 'prompts'), { recursive: true });
+  writeFileSync(join(OUT, 'prompts', `${name}.md`), prompt);
+  const promptSha = createHash('sha256').update(prompt).digest('hex').slice(0, 12);
   const t0 = Date.now();
   const r = await claude(args, prompt, dir, env, TIMEOUT_MS);
   writeFileSync(join(OUT, `${name}.jsonl`), r.out);
@@ -199,13 +224,14 @@ async function cell(task, arm, n) {
   if (r.timedOut) m.status = 'timeout';
   m.wallSec = Math.round((Date.now() - t0) / 1000);
   m.grade = m.final ? await judge(task, m.final, dir, env) : { score: 0, falseClaim: null, reason: 'no final answer' };
-  const row = { task: task.id, kind: task.kind, arm, run: n, workDir: dir, ...m };
+  const row = { task: task.id, kind: task.kind, arm, run: n, workDir: dir, promptSha, ...m };
   delete row.final;
   writeFileSync(join(OUT, `${name}.json`), JSON.stringify({ ...row, final: m.final }, null, 2));
   // Whatever this agent wrote (scripts, notes, its CLAUDE.md) must not be there for the next one to find.
   rmSync(dir, { recursive: true, force: true });
   console.log(`${name.padEnd(34)} ${row.status.padEnd(8)} calls=${row.toolCalls} errs=${row.toolErrors + row.httpFailures} `
-    + `$${row.costUsd?.toFixed(2) ?? '?'} ${row.durationSec ?? row.wallSec}s score=${row.grade.score}${row.contaminated ? ' CONTAMINATED' : ''}`);
+    + `${row.costUsd?.toFixed(2) ?? '?'} ${row.durationSec ?? row.wallSec}s writes=${row.envWrites} score=${row.grade.score}`
+    + `${row.contaminated ? ' CONTAMINATED' : ''}${row.modelChanged ? ' MODEL-CHANGED' : ''}${row.subagents ? ' SUBAGENT' : ''}${row.status === 'timeout' ? ' TIMEOUT' : ''}`);
   return row;
 }
 
@@ -247,11 +273,16 @@ const agg = (rs) => ({
   timeSpread: spread(rs.map((r) => r.durationSec ?? r.wallSec)),
   costPerCorrect: (() => { const c = sum(rs.map((r) => r.costUsd)); const ok = sum(graded(rs).map((r) => r.grade.score)) / 2; return ok ? +(c / ok).toFixed(2) : null; })(),
   contaminated: rs.filter((r) => r.contaminated).length,
+  void: rs.filter((r) => r.contaminated || r.modelChanged || r.subagents).length,
 });
 const byTask = {};
 for (const t of tasks) byTask[t.id] = Object.fromEntries(ARMS.map((a) => [a, agg(rows.filter((r) => r.task === t.id && r.arm === a))]));
 const overall = Object.fromEntries(['real', 'control'].flatMap((g) => ARMS.map((a) => [`${g}.${a}`,
   agg(rows.filter((r) => r.arm === a && (g === 'control' ? r.kind === 'control' : r.kind !== 'control')))])));
+for (const t of tasks) {
+  const shas = new Set(rows.filter((r) => r.task === t.id).map((r) => r.promptSha));
+  if (shas.size > 1) console.error(`agent-ab: ${t.id} -- the arms received DIFFERENT prompts (${[...shas].join(', ')}); this task's delta is void`);
+}
 writeFileSync(join(OUT, 'summary.json'), JSON.stringify({ model: MODEL, runs: RUNS, overall, byTask }, null, 2));
 
 const cols = ['correctness', 'falseClaims', 'evidence', 'passAll', 'costPerCorrect', 'toolCalls', 'deadEnds', 'envWrites', 'tokens', 'costUsd', 'costSpread', 'timeSec', 'timeSpread', 'kbAsks', 'contaminated'];

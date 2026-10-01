@@ -1,68 +1,96 @@
 {
   "v": 1,
-  "about": "A/B tasks for agents with and without the knowledge base. Each task needs exactly the fact an active, well-attested entry already holds, is counter-intuitive enough that a model's prior guess is wrong, and is expensive or destructive to establish live. Controls are questions the base holds nothing on: they measure the cost of asking, not its benefit. Retrieval for every task was checked with `npm run kb -- ask` on 2026-10-01 (318 entries).",
-  "demoSet": ["T1-promo-stack", "T4-line-discount", "T6-api-navigation", "T7-lockout", "T8-returns-colleague", "C1-punchout"],
+  "about": "A/B tasks for agents with and without the knowledge base. Each task needs exactly the fact an active, well-attested entry already holds, is counter-intuitive enough that a model's prior guess is wrong, and is expensive or destructive to establish live. Controls are questions the base holds nothing on: they measure the cost of asking, not its benefit. Retrieval for every task was checked with `npm run kb -- ask` on 2026-10-01 (318 entries). Prompts ask for an ANSWER on a read-only environment (2026-10-01 rewrite): the first pilots showed that a prompt asking for a test or a validation made both arms experiment live, which measures the experiment, not the knowledge.",
+  "demoSet": [
+    "T1-promo-stack",
+    "T4-line-discount",
+    "T6-api-navigation",
+    "T7-lockout",
+    "T8-returns-colleague",
+    "C1-punchout"
+  ],
   "tasks": [
     {
       "id": "T1-promo-stack",
       "kind": "trap",
-      "entries": ["KB-5ADBFB34"],
-      "prompt": "Marketing configured two active, non-exclusive cart promotions on store $STORE_ID: \"15% off the cart subtotal\" and \"$50 off the cart subtotal\", both for subtotals above $1,000. Write the expected result of a regression test for a cart with subtotal $1,612.97: which discount rows the cart and the placed order carry, and the total discount. Explain the platform mechanism that produces it.",
+      "entries": [
+        "KB-5ADBFB34"
+      ],
+      "prompt": "Marketing configured two active, non-exclusive cart promotions on store $STORE_ID: \"15% off the cart subtotal\" and \"$50 off the cart subtotal\", both for subtotals above $1,000. A cart has a subtotal of $1,612.97. Which discount rows will the cart carry, what is the total discount, and which setting or rule decides that?",
       "rubric": {
         "correct": [
           "Only ONE cart-subtotal reward applies: the 15% (241.95); the $50 reward is discarded.",
           "The store setting Marketing.Promotion.CombinePolicy decides; its default BestReward keeps the reward worth the most money.",
           "isExclusive / priority do not decide this; both would apply only with CombinePolicy = CombineStackable."
         ],
-        "wrong": ["Both promotions stack (total 291.95)", "isExclusive or priority named as the deciding factor"]
+        "wrong": [
+          "Both promotions stack (total 291.95)",
+          "isExclusive or priority named as the deciding factor"
+        ]
       }
     },
     {
       "id": "T2-cancel-cascade",
       "kind": "trap",
-      "entries": ["KB-0C102D97"],
-      "prompt": "Write the post-conditions for the test \"a customer cancels a placed order on the storefront\": the expected status of the order, of its payment and of its shipment, as read with GET /api/order/customerOrders/{id}. Include any timing a test must allow for.",
+      "entries": [
+        "KB-0C102D97"
+      ],
+      "prompt": "A customer cancels a placed order on the storefront. What are the statuses of the order, of its payment and of its shipment as GET /api/order/customerOrders/{id} returns them afterwards? Say whether any of them changes later rather than at once.",
       "rubric": {
         "correct": [
           "Order: Cancelled, isCancelled true, cancelReason set.",
           "Payment: becomes Cancelled shortly after (background job, ~2 s) - a test must poll or wait.",
           "Shipment: stays New with isCancelled false - cancellation does not cascade to the shipment."
         ],
-        "wrong": ["Shipment expected to be Cancelled", "Payment expected to change synchronously in the same response"]
+        "wrong": [
+          "Shipment expected to be Cancelled",
+          "Payment expected to change synchronously in the same response"
+        ]
       }
     },
     {
       "id": "T3-shipping-tax",
       "kind": "trap",
-      "entries": ["KB-8793DFE7"],
-      "prompt": "Write the assertions for a regression test on GET /api/order/customerOrders/{id}: an order whose single shipment costs 150.00 with a 20% tax rate. Assert the order HEADER's shipping amounts: shipping total, shipping total with tax, and shipping tax total, with the exact expected values and field names.",
+      "entries": [
+        "KB-8793DFE7"
+      ],
+      "prompt": "An order has a single shipment that costs 150.00 with a 20% tax rate. Which values will the order HEADER returned by GET /api/order/customerOrders/{id} hold for the shipping total, the shipping total with tax and the shipping tax total? Give the exact field names and expected values a regression test should assert.",
       "rubric": {
         "correct": [
           "Expects shippingTotal 150 and shippingTotalWithTax 180.",
           "Knows the header's shippingTaxTotal reads 0 even when shipping is taxed (a known defect): it does not assert 30 there, or asserts it while flagging it as known-failing.",
           "Derives the shipping tax from shippingTotalWithTax - shippingTotal or the shipment's own taxTotal (30)."
         ],
-        "wrong": ["Asserts shippingTaxTotal == 30 as a plain expectation, with no mention that it reads 0"]
+        "wrong": [
+          "Asserts shippingTaxTotal == 30 as a plain expectation, with no mention that it reads 0"
+        ]
       }
     },
     {
       "id": "T4-line-discount",
       "kind": "trap",
-      "entries": ["KB-F1542157"],
-      "prompt": "A tester reports: \"On an order with an order-level promotion, the Admin 'Line items' blade header shows Discount 0.00 and Total 1,612.97, while the order header shows Discount 241.95 and Total 1,371.02. Looks like the discount is lost.\" Triage it: is it a bug? What should the regression assertion check instead?",
+      "entries": [
+        "KB-F1542157"
+      ],
+      "prompt": "A tester reports: \"On an order with an order-level promotion, the Admin Line items blade header shows Discount 0.00 and Total 1,612.97, while the order header shows Discount 241.95 and Total 1,371.02. Looks like the discount is lost.\" Is this a bug? Give a verdict and the assertion a regression test should make instead.",
       "rubric": {
         "correct": [
           "Not a bug: an order-level reward is not allocated to line items (items[].discountAmount = 0).",
           "The amount lives in the order's own discounts collection; the Line items header is the pre-discount sum of lines.",
           "Assertion should check the order header / order.discounts, not the line-item sum."
         ],
-        "wrong": ["Classified as a bug", "Assertion that line-item discounts sum to the order discount"]
+        "wrong": [
+          "Classified as a bug",
+          "Assertion that line-item discounts sum to the order discount"
+        ]
       }
     },
     {
       "id": "T5-token-after-logout",
       "kind": "trap",
-      "entries": ["KB-7564A9BF"],
+      "entries": [
+        "KB-7564A9BF"
+      ],
       "note": "The entry is a single observation (trust 1). Keep it out of the headline numbers if the demo stresses trust.",
       "prompt": "A client's security team reports: after a storefront user signs out, an access token captured before the sign-out still works against the platform API. Is this a vulnerability in Virto Commerce? Give a verdict, the mechanism and the remediation.",
       "rubric": {
@@ -71,14 +99,21 @@
           "Refresh-token reuse after revocation does fail.",
           "Remediation is configuration: enable persistent-storage token validation and/or shorten the access-token lifetime."
         ],
-        "wrong": ["Classified as a critical code vulnerability with a code fix", "Claims logout already revokes access tokens"]
+        "wrong": [
+          "Classified as a critical code vulnerability with a code fix",
+          "Claims logout already revokes access tokens"
+        ]
       }
     },
     {
       "id": "T6-api-navigation",
       "kind": "navigation",
-      "entries": ["KB-0407F36E", "KB-C440D4E3", "KB-1144B33E"],
-      "prompt": "Write a dependency-free Node.js script (native fetch) that: (1) signs in as $USER_EMAIL / $USER_PASSWORD and obtains an access token; (2) as admin ($ADMIN / $ADMIN_PASSWORD) finds products whose name contains \"bolt\" through the platform REST API; (3) reads the signed-in user's current cart through the storefront GraphQL API. Run it against the environment and make it work end to end. Report the endpoints you ended up using.",
+      "entries": [
+        "KB-0407F36E",
+        "KB-C440D4E3",
+        "KB-1144B33E"
+      ],
+      "prompt": "Write a dependency-free Node.js script (native fetch) that: (1) signs in as $USER_EMAIL / $USER_PASSWORD and obtains an access token; (2) as admin ($ADMIN / $ADMIN_PASSWORD) finds products whose name contains \"bolt\" through the platform REST API; (3) reads the signed-in user's current cart through the storefront GraphQL API. Running it is part of the task: make it work end to end (all three steps only read). Report the endpoints the working script uses.",
       "rubric": {
         "correct": [
           "Token from POST /connect/token (password grant).",
@@ -86,14 +121,20 @@
           "GraphQL at POST /graphql (not /xapi/graphql), with storeId/currency/culture context supplied.",
           "The script ran successfully."
         ],
-        "wrong": ["Script never ran successfully", "Final script still calls /xapi/graphql or a non-existent search route"]
+        "wrong": [
+          "Script never ran successfully",
+          "Final script still calls /xapi/graphql or a non-existent search route"
+        ]
       }
     },
     {
       "id": "T7-lockout",
       "kind": "expensive",
-      "entries": ["KB-8646A9CB", "KB-0407F36E"],
-      "prompt": "Write test cases for the storefront sign-in lockout policy: after how many failed attempts the account is locked, for how long, what the token endpoint returns during the lockout, and whether it differs for an organization member or an account blocked by an administrator. If you must experiment, use only the dedicated account $LOCKOUT_TEST_EMAIL.",
+      "entries": [
+        "KB-8646A9CB",
+        "KB-0407F36E"
+      ],
+      "prompt": "What is the storefront sign-in lockout policy? After how many failed attempts is an account locked, for how long, what does the token endpoint return during the lockout, and does it differ for an organization member or for an account an administrator blocked? The one exception to read-only: you may make failed sign-in attempts on $LOCKOUT_TEST_EMAIL.",
       "rubric": {
         "correct": [
           "5 failed attempts -> 15-minute lockout.",
@@ -101,35 +142,46 @@
           "Organization members get the same temporary code (the old permanent user_is_locked_out was a fixed bug).",
           "An administrator's organization block is a different path: user_is_locked_in_organization."
         ],
-        "wrong": ["Wrong attempt count or duration", "Organization members said to get a permanent lock"]
+        "wrong": [
+          "Wrong attempt count or duration",
+          "Organization members said to get a permanent lock"
+        ]
       }
     },
     {
       "id": "T8-returns-colleague",
       "kind": "expensive",
-      "entries": ["KB-657521DF"],
-      "prompt": "Two buyers belong to the same company. Buyer A created a return on one of their orders. Write the expected behaviour for Buyer B (the colleague): what /account/returns shows them, what the xAPI query return(id) returns for A's return, and what happens when B calls cancelReturn on it.",
+      "entries": [
+        "KB-657521DF"
+      ],
+      "prompt": "Two buyers belong to the same company. Buyer A has a return on one of their orders. What does Buyer B (the colleague) get: what does /account/returns show them, what does the xAPI query return(id) return for A's return, and what happens if B calls cancelReturn on it?",
       "rubric": {
         "correct": [
           "Returns are owner-scoped: B's /account/returns list is empty and the detail page says the return was not found.",
           "return(id) returns null for B.",
           "cancelReturn answers HTTP 200 with errors[] code RETURN_NOT_FOUND, and the return is unchanged."
         ],
-        "wrong": ["Colleague can see or cancel the return (assumed organization-wide like orders)"]
+        "wrong": [
+          "Colleague can see or cancel the return (assumed organization-wide like orders)"
+        ]
       }
     },
     {
       "id": "T9-wishlist-link",
       "kind": "trap",
-      "entries": ["KB-7A9D4927"],
-      "prompt": "A customer accidentally posted the share link of one of their storefront lists publicly. Support plans to tell them: \"switch the list to Private and the link stops working\". Is that correct advice? Give the right advice and a test that proves it.",
+      "entries": [
+        "KB-7A9D4927"
+      ],
+      "prompt": "A customer accidentally posted the share link of one of their storefront lists publicly. Support plans to tell them: \"switch the list to Private and the link stops working\". Is that correct? Give the right advice.",
       "rubric": {
         "correct": [
           "Switching to Private only SUSPENDS the link: the sharing key stays the same and works again the moment the list is shared again.",
           "There is no storefront control that issues a new key.",
           "Only deleting the list revokes the link."
         ],
-        "wrong": ["Private revokes the link permanently"]
+        "wrong": [
+          "Private revokes the link permanently"
+        ]
       }
     },
     {
@@ -137,14 +189,28 @@
       "kind": "control",
       "entries": [],
       "prompt": "Does the Virto Commerce storefront support a cXML PunchOut session setup out of the box? Name the module and the endpoint, or say that it does not.",
-      "rubric": { "correct": ["Claims are evidenced (docs, module list, live check) rather than asserted"], "wrong": ["A module or endpoint stated as fact with no evidence"] }
+      "rubric": {
+        "correct": [
+          "Claims are evidenced (docs, module list, live check) rather than asserted"
+        ],
+        "wrong": [
+          "A module or endpoint stated as fact with no evidence"
+        ]
+      }
     },
     {
       "id": "C2-bulk-order-limit",
       "kind": "control",
       "entries": [],
-      "prompt": "What is the maximum number of rows the storefront Bulk order page accepts from a CSV upload? Back the number with evidence.",
-      "rubric": { "correct": ["Claims are evidenced (source, docs, live check) rather than asserted"], "wrong": ["A number stated as fact with no evidence"] }
+      "prompt": "What is the maximum number of rows the storefront Bulk order page accepts from a CSV upload?",
+      "rubric": {
+        "correct": [
+          "Claims are evidenced (source, docs, live check) rather than asserted"
+        ],
+        "wrong": [
+          "A number stated as fact with no evidence"
+        ]
+      }
     }
   ]
 }
