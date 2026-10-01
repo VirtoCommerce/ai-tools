@@ -13,7 +13,7 @@
 // capturing into, or logging to, the public base.
 
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, rmSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir, homedir } from 'node:os';
 import { randomBytes, createHash } from 'node:crypto';
@@ -33,11 +33,18 @@ const PASS_THROUGH = ['FRONT_URL', 'BACK_URL', 'STORE_ID', 'ADMIN', 'ADMIN_PASSW
   'USER_PASSWORD', 'USER2_EMAIL', 'USER2_PASSWORD', 'ORG_USER_EMAIL', 'ORG_USER_PASSWORD',
   'LOCKOUT_TEST_EMAIL', 'LOCKOUT_TEST_PASSWORD'];
 
-const KB_RULE = `# Rule
+const KB_RULES = {
+  v1: `# Rule
 Before you state how the Virto Commerce platform behaves, call mcp__kb__kb_ask and put the coordinate
 (page path, REST endpoint or GraphQL operation) in the question. A "well attested" or
 "corroborated" answer is evidence you can build on; re-check live only a single observation or a
 disputed entry. This is a measurement run: do not capture, confirm or dispute anything.
+`,
+};
+KB_RULES.v2 = `${KB_RULES.v1}
+How to ask: ONE short question per fact, 5 to 12 words, naming the one concept and, if there is one,
+its coordinate -- e.g. "do two cart subtotal promotions stack". Never several questions in one call.
+If the answer is "holds nothing", rephrase ONCE with different words before you investigate yourself.
 `;
 
 const PREAMBLE = (vars) => `You are a QA engineer on a Virto Commerce B2B deployment. A colleague needs an
@@ -75,6 +82,9 @@ const RUNS = Number(opt('runs', 3));
 const ARMS = opt('arms', 'kb,nokb').split(',');
 const MODEL = opt('model', 'sonnet');
 const JUDGE = opt('judge-model', 'sonnet');
+const RULE = opt('kb-rule', 'v1');
+if (!KB_RULES[RULE]) fail(`unknown --kb-rule ${RULE} (known: ${Object.keys(KB_RULES).join(', ')})`);
+const REJUDGE = opt('rejudge', null);
 // One at a time by default: two agents on one task share the live environment (two runs of T1 would
 // create promotions in the same store; two of T7 would lock the same account), so parallel runs of
 // one task contaminate each other through the environment itself.
@@ -82,7 +92,7 @@ const PARALLEL = Number(opt('parallel', 1));
 const BUDGET = opt('budget', '4');
 const TIMEOUT_MS = Number(opt('timeout-min', 25)) * 60_000;
 const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-const OUT = resolve(opt('out', join(tmpdir(), 'kb-ab', stamp)));
+const OUT = resolve(opt('out', REJUDGE ?? join(tmpdir(), 'kb-ab', stamp)));
 mkdirSync(OUT, { recursive: true });
 // Agents work somewhere that names neither the repo nor the bench, and that holds no results: a
 // working folder next to OUT would let an agent `ls ..` and read the other arm's answer.
@@ -189,7 +199,10 @@ ${final.slice(-12000)}`;
     // `--output-format json` prints the result object on some CLI versions and every event on others.
     const parsed = JSON.parse(r.out);
     const text = (Array.isArray(parsed) ? parsed.find((e) => e.type === 'result') : parsed)?.result ?? '';
-    return JSON.parse(text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
+    // The grade object, not the first brace: a judge that quotes code or JSON from the answer would
+    // otherwise hand back an unparseable span.
+    const obj = text.match(/{[^{}]*"score"[^{}]*}/);
+    return JSON.parse(obj ? obj[0] : text.slice(text.indexOf('{'), text.lastIndexOf('}') + 1));
   } catch { return { score: null, falseClaim: null, evidence: null, reason: 'judge output unreadable' }; }
 }
 
@@ -203,7 +216,7 @@ async function cell(task, arm, n) {
     ? { mcpServers: { kb: { command: 'node', args: [join(REPO, 'scripts/kb/mcp.mjs')], env: { KB_ENABLED: '0' } } } }
     : { mcpServers: {} };
   writeFileSync(join(dir, 'mcp.json'), JSON.stringify(mcp, null, 2));
-  if (arm === 'kb') writeFileSync(join(dir, 'CLAUDE.md'), KB_RULE);
+  if (arm === 'kb') writeFileSync(join(dir, 'CLAUDE.md'), KB_RULES[RULE]);
   const env = { ...SYSTEM_ENV, ...vars, KB_ENABLED: '0', PWD: dir, TEMP: join(dir, 'tmp'), TMP: join(dir, 'tmp') };
   const allowed = 'Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch' + (arm === 'kb' ? ',mcp__kb__kb_ask,mcp__kb__kb_show' : '');
   const NO_SUBAGENTS = 'Task,Agent';
@@ -224,7 +237,7 @@ async function cell(task, arm, n) {
   if (r.timedOut) m.status = 'timeout';
   m.wallSec = Math.round((Date.now() - t0) / 1000);
   m.grade = m.final ? await judge(task, m.final, dir, env) : { score: 0, falseClaim: null, reason: 'no final answer' };
-  const row = { task: task.id, kind: task.kind, arm, run: n, workDir: dir, promptSha, ...m };
+  const row = { task: task.id, kind: task.kind, arm, run: n, kbRule: arm === 'kb' ? RULE : null, workDir: dir, promptSha, ...m };
   delete row.final;
   writeFileSync(join(OUT, `${name}.json`), JSON.stringify({ ...row, final: m.final }, null, 2));
   // Whatever this agent wrote (scripts, notes, its CLAUDE.md) must not be there for the next one to find.
@@ -242,6 +255,24 @@ for (let n = 1; n <= RUNS; n += 1) for (const t of tasks) for (const a of (n % 2
 console.log(`agent-ab: ${grid.length} runs (${tasks.length} tasks × ${ARMS.length} arms × ${RUNS}), model ${MODEL}, out ${OUT}`);
 const rows = [];
 let next = 0;
+if (REJUDGE) {
+  const dirR = resolve(REJUDGE);
+  for (const f of readdirSync(dirR).filter((x) => /\.(kb|nokb)\.\d+\.json$/.test(x))) {
+    const full = JSON.parse(readFileSync(join(dirR, f), 'utf8'));
+    const task = spec.tasks.find((t) => t.id === full.task);
+    if (full.grade?.score == null || argv.includes('--rejudge-all')) {
+      const jdir = join(WORK_ROOT, randomBytes(4).toString('hex'));
+      mkdirSync(jdir, { recursive: true });
+      full.grade = await judge(task, full.final, jdir, { ...SYSTEM_ENV, PWD: jdir });
+      rmSync(jdir, { recursive: true, force: true });
+      writeFileSync(join(dirR, f), JSON.stringify(full, null, 2));
+      console.log(`rejudged ${f}: score=${full.grade.score} ${full.grade.reason ?? ''}`);
+    }
+    delete full.final;
+    rows.push(full);
+  }
+  grid.length = 0;
+}
 await Promise.all(Array.from({ length: Math.min(PARALLEL, grid.length) }, async () => {
   while (next < grid.length) { const [t, a, n] = grid[next++]; rows.push(await cell(t, a, n)); }
 }));
