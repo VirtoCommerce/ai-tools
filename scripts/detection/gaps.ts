@@ -16,8 +16,7 @@
  * THE FIGURES ARE NOT COMMITTED. ai-tools is public, and bug counts are internal statistics: this command
  * prints to stdout (or `--json`) and writes no file. The numbers go to the tracking ticket.
  *
- * Bugs come from Jira REST (JIRA_BASE_URL + JIRA_EMAIL / JIRA_API_TOKEN, the same credentials
- * `scripts/tracker/comment.mjs` uses) with `--jql`, or from `--input <file.json>`: an array of
+ * Bugs come from Jira REST (`scripts/lib/jira-search.ts`) with `--jql`, or from `--input <file.json>`: an array of
  * `{ key, summary, labels?, resolved? }` exported by any other means.
  *
  * Usage:
@@ -37,6 +36,7 @@ import { loadCases } from "../maintenance/check-test-models.ts";
 import { listDomains } from "../knowledge/extract-bl.ts";
 import { oracleText } from "../knowledge/bl-yaml.ts";
 import { flagValue, intFlag, rejectUnknownFlags } from "../lib/cli-args.ts";
+import { jiraSearch } from "../lib/jira-search.ts";
 
 const SUITES_DIR = "regression/suites";
 const MAPS_DIR = ".claude/knowledge/domain";
@@ -134,28 +134,11 @@ export function domainTable(bugs: readonly Bug[], cited: ReadonlySet<string>, do
 }
 
 async function fetchJira(jql: string): Promise<Bug[]> {
-  // Loaded only here: config.js refuses to start without the storefront/admin core variables, which a run
-  // on an exported --input file does not need.
-  await import(new URL("../../config.js", import.meta.url).href);
-  const base = (process.env.JIRA_BASE_URL ?? "").replace(/\/+$/, "");
-  const email = process.env.JIRA_EMAIL;
-  const token = process.env.JIRA_API_TOKEN;
-  if (!base || !email || !token) throw new Error("no --input and no Jira credentials (JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN in .env.local)");
-  const auth = "Basic " + Buffer.from(`${email}:${token}`).toString("base64");
-  const out: Bug[] = [];
-  let next: string | undefined;
-  do {
-    const res = await fetch(`${base}/rest/api/3/search/jql`, {
-      method: "POST",
-      headers: { Authorization: auth, "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify({ jql, fields: ["summary", "labels", "resolutiondate"], maxResults: 100, ...(next ? { nextPageToken: next } : {}) }),
-    });
-    if (!res.ok) throw new Error(`Jira ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    const page = (await res.json()) as { issues: Array<{ key: string; fields: { summary: string; labels?: string[]; resolutiondate?: string } }>; nextPageToken?: string };
-    for (const i of page.issues) out.push({ key: i.key, summary: i.fields.summary, labels: i.fields.labels, resolved: i.fields.resolutiondate });
-    next = page.nextPageToken;
-  } while (next);
-  return out;
+  const issues = await jiraSearch(jql, ["summary", "labels", "resolutiondate"]);
+  return issues.map((i) => {
+    const f = i.fields as { summary: string; labels?: string[]; resolutiondate?: string };
+    return { key: i.key, summary: f.summary, labels: f.labels, resolved: f.resolutiondate };
+  });
 }
 
 function suiteTexts(dir = SUITES_DIR): string[] {
