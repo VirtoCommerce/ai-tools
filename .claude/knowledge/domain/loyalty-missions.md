@@ -2,317 +2,275 @@
 domain_slug: loy
 applicability: universal
 rationale: |
-  What the Loyalty & Missions feature IS — actors, the two independent accrual paths
-  (LoyaltyProgramHandler earn/redeem vs LoyaltyMissionLogicService mission grant), the NEW
-  organization-vs-customer owner scope that PR #17 added, the surface inventory per layer
-  (Admin AngularJS SPA / storefront Vue / GraphQL xAPI / Hangfire jobs), where the layers and
-  the published docs DISAGREE, the shape of existing QA coverage, and the open gaps. Rev 1
-  (2026-09-10) was built with the LIVE AXIS FULLY BLOCKED. Rev 2 (2026-09-11) closed that axis
-  and recorded org-level loyalty as UNMERGED and ABSENT (D11) — correct when written. Rev 3
-  (2026-09-18) re-derives every axis after `vc-module-loyalty` PR #17 MERGED on 2026-09-17 and
-  shipped as the tagged release the environment now runs: D11 is overturned by events, and the
-  org scope is enumerated here for the first time. Domain 17 in oracles/business-logic.md
-  (BL-LOY-001..020 — 19 promoted invariants, 011 reserved and never promoted) remains the
-  behavioural oracle; this map never restates its rule text, only cites it.
-generated: 2026-09-18
-rev: 3
+  What the Loyalty & Missions feature IS: actors, the two independent accrual paths
+  (LoyaltyProgramHandler earn/redeem vs LoyaltyMissionLogicService mission grant), the
+  organization-vs-customer owner scope (PR #17), the surface inventory per layer (Admin AngularJS
+  SPA / storefront Vue / GraphQL xAPI / Hangfire jobs), where the layers and the published docs
+  DISAGREE, the shape of existing QA coverage, and the open gaps. Rev 1 (2026-09-10) had the live
+  axis blocked; rev 2 (2026-09-11) closed it; rev 3 (2026-09-18) re-derived everything after PR #17
+  merged. Rev 4 (2026-10-01) re-derives after PR #18 (negative mission reward/goal validation,
+  Admin blade error display) landed as a PR-preview build, and — more consequentially — after the
+  reserved loyalty FIXTURES moved under the map: the VIP account was recreated, the primary
+  loyalty organization no longer exists, and its member contacts belong to no organization (D16). Domain 17 of the BL oracle (BL-LOY-001..020,
+  19 promoted invariants, 011 reserved) is the behavioural oracle; this map only cites it.
+generated: 2026-10-01
+rev: 4
+amended: 2026-10-01
 stale_after_days: 60
 expires_after_days: 120
 sources:
-  - rev 2 (2026-09-11) and rev 1 (2026-09-10) of this file, in full — amended, not replaced.
-    Every rev-2 source still applies unless contradicted in §0. Rows carried forward WITHOUT a
-    fresh check this pass are labelled as such, inline, and never as a fresh confirmation
-  - live enumeration on Env-A, 2026-09-18, this pass: Admin REST with a context-free admin
-    token (modules, platform settings, store settings, loyalty swagger, missions search,
-    operation-log search, mission-progress search, both balance routes), anonymous GraphQL
-    introspection of all three loyalty queries WITH argument nullability, and a storefront walk
-    in firefox across THREE contrasting accounts
-  - GET /api/platform/modules (context-free admin token), 2026-09-18 — authoritative deployed
-    versions; storefront theme read live from the rendered page footer; platform build read
-    live from the Admin SPA menu
-  - VirtoCommerce/vc-module-loyalty PR #17 "VCST-5024: Organization level balance calculations",
-    **MERGED 2026-09-17T14:29:27Z**, merge commit `ab0908a8`, 64 files — read via GitHub MCP +
-    `gh api` this pass, including the full patches of ModuleConstants, StoreExtensions,
-    CanAccessLoyaltyAuthorizationHandler, all three xAPI query classes, LoyaltyLogicService,
-    LoyaltyMissionLogicService, LoyaltyProgramHandler, LoyaltyPaymentMethod, LoyaltyCartValidator,
-    LoyaltyBalanceOperationLogController, module.js, organization-loyalty-widget.js
-  - GitHub tag/commit ancestry, 2026-09-18: release tag `3.1008.0` is **identical** to merge
-    commit `ab0908a8`; `dev` HEAD `e95b9351` is the 3.1009.0 version bump (version string only)
-  - VirtoCommerce/vc-frontend `dev` — the whole `client-app/modules/loyalty/**` tree listed and
-    the three GraphQL documents + constants.ts read this pass; a repo-scoped code search for
-    `organizationId` under that path returns **0 hits**
-  - VirtoOZ, queried first-hand this pass across SIX topic tools (PlatformUserGuide,
-    StorefrontUserGuide, PlatformDeveloperGuide, FrontendSourceCode, PlatformBackendSourceCode,
-    B2BExperts), five queries each — every quote below was fetched in this run
-  - .claude/knowledge/api/graphql-schema.md, refreshed 2026-09-17 — not relied on for arguments;
-    the contract rows below come from live introspection performed this pass
-  - config/test-suites.json + regression/suites/{Backend,Frontend}/loyalty/** — **all eleven**
-    suite CSVs re-parsed from scratch by csv-parse, 2026-09-18. No rev-2 count carried forward
-  - test-data/aliases.json + test-data/aliases.vcst.json — LOYALTY_VIP_USER, ORG_LOY_A/B,
-    LOY_PERSONAL_NOORG resolved (passwords never reproduced, per G10)
-  - reports/bugs/open/critical-high/BUG-org-mode-contact-level-transactions-written-but-unreachable-VCST-5024.md
-    and BUG-loyalty-mission-progress-serves-non-session-currency-price.md — both read, both
-    DRAFTED-NOT-FILED; recorded here as existing drafts naming a surface, never filed from here
+  - rev 3 (2026-09-18), rev 2, rev 1 of this file, amended not replaced. Rows carried forward
+    WITHOUT a fresh check this pass are labelled inline and never as a fresh confirmation
+  - live enumeration on Env-A, 2026-10-01: Admin REST with a context-free admin token (modules,
+    swagger route inventory, store settings, loyalty-setting contract, missions / mission-progress /
+    operation-log / programs search, program + mission templates, both balance routes, platform
+    security user lookup, members lookup), anonymous GraphQL introspection with argument
+    nullability, a storefront walk in firefox across five accounts, and an Admin SPA walk
+  - GET /api/platform/modules (context-free admin token), 2026-10-01 — authoritative deployed
+    versions; storefront theme read from the rendered page footer; platform build read from the
+    Admin SPA header
+  - VirtoCommerce/vc-module-loyalty via `gh api`: PR #18 commits, compare ab0908a8...4411e195,
+    4411e195...ebdd10f6, ebdd10f6...81c7319a, tag 3.1009.0 ref, `dev` commit list since 2026-09-17
+  - VirtoCommerce/vc-module-customer (GitHub code search + that repo's own `view-organization-details` doc page) for
+    the Admin path to blade `organizationDetail2`
+  - VirtoOZ, queried first-hand this pass: PlatformUserGuide (4 queries), StorefrontUserGuide (3),
+    PlatformDeveloperGuide (1), FrontendSourceCode (1), PlatformBackendSourceCode (1). Every
+    quote below was fetched this run. `B2BExperts` skipped (no Virto product docs — rev 3)
+  - config/test-suites.json + all 11 loyalty suite CSVs re-parsed by csv-parse 2026-10-01; every
+    other suite CSV scanned for loyalty rows (D-free count in §4)
+  - prior art read by path: reports/tickets/Sprint26-19/VCST-5855/verification-summary.json and
+    VCST-6084/verification-summary.json; vc/shared/archive/sprints/Sprint26-18/VCST-5024/
+    design-report.md; the 8 drafted-unfiled bug reports named in §6
+  - adjacent artifacts, cited not restated: .claude/knowledge/domain/loyalty-missions.mind-map.json
+    (domain_map_rev 3), test-data/models/loyalty-missions.data-model.json
+  - KB: KB-EDDBBE75 (confirmed), KB-EC1EDCE2 (captured)
 excludes: |
-  Every mutation this pass could not perform under the read-only constraint, carried forward
-  from rev 2 and extended: order placement, order cancellation, mission
-  create/edit/publish/archive, seeder runs and teardown, and — NEW this rev — **the store-setting
-  write `Loyalty.LoyaltyBalanceCalculationMode = Organization` on the store under test**, which
-  is the single mutation that would make the whole organization-scope branch observable at
-  runtime (G12). The mixed-cart split UI and the checkout "Pay with points" tab still need a
-  non-empty cart (a mutation) and stay UNVERIFIED (G4). The Admin Organization-blade loyalty
-  widget's RENDER was attempted live this pass and not reached — the org row opens the member
-  LIST blade, not the detail blade the widget registers against (G11). The `LoyaltyPaymentMethod`
-  gateway's internal earn/redeem path is still not enumerated field-by-field (BL-LOY-012 governs
-  it). Marketplace guides were not queried. The **28 loyalty-relevant rows in six non-loyalty
-  suites** (§4) were NOT re-derived this pass and are carried forward from rev 2 as a labelled
-  estimate.
+  Every mutation: order placement/cancellation, mission create/edit/publish/archive, seeder runs and
+  teardown/re-seed, and the store-setting write `Loyalty.LoyaltyBalanceCalculationMode =
+  Organization` (G12). PR #18's two new rejection messages and the Admin blade's error display are
+  observable only by a PUT/POST against /api/loyalty-missions and were NOT triggered (G14); the
+  mixed-cart split UI and the checkout "Pay with points" tab need a non-empty cart (G4). Not
+  re-checked this pass: Hangfire dashboard / ExpireMissions firing, `LoyaltyPaymentMethod`
+  field-by-field, Marketplace guides, the wrong-currency mission-progress symptom (G15), and every
+  rev-3 `CONFIRMED (source)` row outside the two files PR #18 touched (carried, with the diff that
+  justifies carrying them stated in D10).
 ---
 
 # Loyalty & Missions — domain map
 
 > Refresh with `/qa-domain-map loy`. This file answers **what the feature is and where its
-> surfaces are**. It does **not** carry behavioural rules — those are `BL-LOY-*` in
-> the BL oracle (`npm run bl:extract -- --domain loy`; cited by id below, never restated) — and it can
-> **never ground an assertion as `{DOC}`**. It is a pointer index plus a surface inventory: it
-> tells you *where to look* and *what exists*, never *what correct looks like*.
+> surfaces are**. It does **not** carry behavioural rules — those are `BL-LOY-*` in the BL oracle
+> (`npm run bl:extract -- --domain loy`; cited by id, never restated) — and it can **never ground
+> an assertion as `{DOC}`**. Pointer index plus surface inventory.
 
-**Verdict vocabulary** (unchanged from rev 2): `CONFIRMED (source)` = read in the module or
-storefront source at the revision named · `CONFIRMED (docs)` = fetched first-hand from VirtoOZ,
-quoted verbatim, with its URL · `CONFIRMED (corpus read)` = read from `config/test-suites.json`
-or the suite CSVs · `CONFIRMED (prior-art)` = a dated prior deliverable's own capture, not
-re-observed here · `CONFIRMED (live)` = observed **this pass** against the real environment
-(REST, GraphQL, or a firefox render) · `DRIFT` = two of the above disagree · `MISSING` =
-documented/expected, does not exist · `UNVERIFIED` = not established, and **not** to be treated
-as true.
+**Verdict vocabulary** (unchanged): `CONFIRMED (source)` read in module/storefront source at the
+revision named · `CONFIRMED (docs)` fetched first-hand from VirtoOZ, verbatim, with URL ·
+`CONFIRMED (corpus read)` from `config/test-suites.json` or the CSVs · `CONFIRMED (prior-art)` a
+dated prior deliverable's own capture, not re-observed here · `CONFIRMED (live)` observed this pass
+· `DRIFT` two of the above disagree · `MISSING` documented/expected, does not exist · `UNVERIFIED`
+not established, and not to be treated as true.
 
-**This map names no environment and no environment URL.** Every live observation is attributed
-to **Env-A**, defined by variable, never by value: the deployment reachable at
-`BACK_URL`/`FRONT_URL` under `TEST_ENV`. There is exactly one environment in scope (no Env-B
-contrast, unlike the Sales Rep map).
-
-**Read-only pass, all three revisions.** No create/edit/publish/archive/seed/teardown/delete/
-lock/order-placement/store-setting write was performed against any environment or repository.
-Sessions were established by real sign-in and pages rendered by navigation only. Every
-capability confirmable only by mutating is `UNVERIFIED` **with the mutation named** (§2's "not
-manageable from here" rows, §5).
+**No environment name or URL appears here.** Every live observation is attributed to **Env-A**
+(`BACK_URL`/`FRONT_URL` under `TEST_ENV=vcst`). **Read-only pass**: no create / edit / publish /
+seed / teardown / delete / order / cart / store-setting write was performed. Sessions were real
+sign-ins; the three reserved-fixture accounts were only signed in and viewed. Any capability
+confirmable only by mutating is `UNVERIFIED` **with the mutation named**.
 
 ---
 
-## §0 — Changed since rev 2 (2026-09-11 → 2026-09-18)
+## §0 — Changed since rev 3 (2026-09-18 → 2026-10-01)
 
-**Headline: rev 2's D11 is OVERTURNED BY EVENTS, not by a rev-2 error.** D11 stated that
-organization-level loyalty existed only on an open, unmerged PR and that *"no organization-level
-accrual code, GraphQL argument, or Admin surface exists on Env-A."* **That was true on
-2026-09-11 and is false on 2026-09-18.** PR #17 merged 2026-09-17T14:29:27Z as `ab0908a8`; the
-release tag `3.1008.0` is **identical** to that merge commit; and `GET /api/platform/modules`
-reports `VirtoCommerce.Loyalty = 3.1008.0` on Env-A. Anyone who cited D11 to conclude "there is
-no org surface to test" must re-read it — the conclusion has inverted, and the two suites
-authored against that surface (`075f`, `083e`) are now testing deployed code.
+Rev 3's own §0 table (rev 2 → rev 3) lives in git history; this table replaces it.
 
-| Rev 2 said | Rev 3 says |
+**Headline 1 — Loyalty is again a PR-preview build, and the version string carries the old trap
+a second time.** Env-A runs `VirtoCommerce.Loyalty 3.1009.0-pr-18-4411` (rev 3: tagged `3.1008.0`).
+`4411` is commit `4411e195`, the **third commit of PR #18** ("show mission validation errors in the
+admin blade", 2026-09-25) — it already contains the Admin `onSaveError` re-fix. Everything rev 3 read
+at `ab0908a8` still describes deployed code except the validator and one Admin blade (D10).
+
+**Headline 2 — the reserved loyalty fixtures no longer match the environment (D16).** The VIP
+account was **recreated 2026-09-19**: it now reads `Balance: 0` / "No records found", while the old
+security-account id (still in the alias registry) keeps a 2,804,551,662-point, 223-row ledger that
+nothing can reach. **The primary loyalty organization (`ORG_LOY_A.org_id`) no longer exists**; the sibling
+(`sibling_org_id`) still exists as an organization, but the three `ORG_LOY_*` contacts belong to no
+organization at all. Rev 3's §2b table, the "Company" sidebar claim and §1's org-member rows are
+contradicted below.
+
+| Rev 3 said | Rev 4 says |
 |---|---|
-| **D11**: org-level loyalty is unmerged, absent from Env-A; a map built on the brief's premise "would have invented a whole surface family that does not exist" | **OVERTURNED BY EVENTS — and rev 2 was RIGHT when it wrote this.** PR #17 merged 2026-09-17; tag `3.1008.0` ≡ merge commit `ab0908a8`; Env-A runs `3.1008.0`. Every org surface rev 2 said was absent is now live-confirmed present: the setting, the split REST balance routes, `OrganizationId`/`OwnerId` on the persisted entities, the org-keyed distributed lock, the Admin Organization widget registration. See the rewritten **D11** |
-| **D10**: both tiers are PR-preview builds; backend `3.1007.0-pr-16-cfa5`, provably byte-identical to `dev` | **HALF RESOLVED, half persists.** Backend is now a **tagged release**, `3.1008.0`, and it is *exactly* PR #17's merge commit — so every `CONFIRMED (source)` row below describes code that IS deployed, with no diff at all. The **storefront theme is still a PR-preview build**, and it MOVED: `2.58.0-pr-2468-8e45-8e45ee74` → **`2.58.0-pr-2467-1f40-1f40b001`** (read live from the page footer) — a *lower* PR number than rev 2 saw. Rev 2's "a version-matcher would be misled" warning survives in a new form, described in **D10** |
-| §2c: no `organizationId` argument on any Loyalty query, and *"since the org-level branch is unmerged (D11), that absence is current-and-correct, not a gap to close"* | **The EXCUSE is void; the OBSERVATION survives, and is now a finding.** Live introspection this pass returns the same three queries with **still no `organizationId` argument** — but that is now **deliberate design, proven in source**: every query sets `OrganizationId = context.GetCurrentOrganizationId()` from the ambient session, and `LoyaltyMissionLogicService` carries the comment *"The store mode - not the caller - decides, so a passed organizationId cannot redirect a user-scoped lookup."* New **D12** records what that costs |
-| §2c: *"3 queries, 0 loyalty-specific mutations — unchanged"* | **The COUNT is unchanged; the ARGUMENTS are not.** `loyaltyBalance` and `loyaltyPointsHistory` each gained **`storeId: String!` — NON-NULL**, live-verified by introspection this pass. `loyaltyMissionProgress` also gained **`currencyCode`**. Two of three queries changed shape in a minor release |
-| §2a / G2: `Loyalty.Missions.Enable` and `DefaultProductMultiplyFactor` are `isPublic: true` and reachable from the generic Modules→Settings surface | **Re-confirmed live, and now incomplete.** A **fourth** store-scoped Loyalty setting exists: `Loyalty.LoyaltyBalanceCalculationMode`, group `Loyalty\|Missions`, ShortText, allowed `["Customer","Organization"]`, default `Customer` — and it is the **only Loyalty setting with `isPublic: false`**. On Env-A its store value is explicitly persisted as `"Customer"`. New **D13** |
-| §2a: the module's own store blade carries exactly 3 fields | **Re-confirmed live and now load-bearing.** `GET /api/loyalty-setting/store/{storeId}` returns exactly `{storeId, loyaltyEnabled, loyaltyMode, loyaltyCurrency}` — the new calculation mode is **not** in the module's own settings contract, although PR #17's own description says to *"select Organization mode in a store settings"*. Folded into **D13** |
-| §1 link 7 / §6: points-history mission rows show the literal label **"Mission"** (VCST-5916) | **DRIFT — the label is now "Mission reward".** Live this pass on two separate accounts. Rev 2's precise wording is wrong in its literal; its *substance* (a coarse label, still no mission name or id) holds. `BL-LOY-015` unaffected |
-| **D4**: Missions have zero surface across every official guide, *"strengthened this pass: `B2BExperts` newly queried, zero hits, extending the finding to a fourth source"* | **The FINDING holds; rev 2's STRENGTHENING is withdrawn.** `B2BExperts` re-queried this pass on five queries: it is a **generic B2B/CX thought-leadership corpus with no Virto Commerce product documentation in it at all**. Its silence about Missions carries **no signal** and never did. D4 stands on PlatformUserGuide + StorefrontUserGuide + PlatformDeveloperGuide + both source mirrors — five real sources, not four including a non-source |
-| **D8**: the `PlatformBackendSourceCode` mirror is stale by the `LoyaltyProgramOperationLog*` → `LoyaltyBalanceOperationLog*` rename | **PERSISTS, and is now precisely bounded — the nuance matters.** The mirror returns the old names as **C# declarations and as github file paths**, and an explicit `LoyaltyBalanceOperationLog*` query returns **zero chunks**. Separately, the deployed REST **route** `api/loyalty-program-operation-log` was **never renamed** and is correct in the mirror — so *the route is not evidence of staleness and must not be cited as such*. The mirror also already contains the `IDistributedLockService` balance lock, so it **straddles** the rename rather than being wholesale old |
-| §4: nine loyalty suites, **235** cases, `selections.loyalty` = 7 suites / 178 cases, 85 cases = **32%** never run under `loyalty` | **STALE in every number.** **Eleven** suites, **265** cases (re-derived by csv-parse; manifest `testCount` agrees exactly). `selections.loyalty` = **9 suites / 208 cases**. The missed set is unchanged in membership (`075d` 34 + `075e` 23 = 57, still in **no** selection group) but the percentage moved to **29%** because the denominator grew. See §4 |
-| §4: `083` Loyalty Catalog Browsing = Automated 16 · Draft 10 | **DRIFT — now Draft 24 · Automated 2.** Same 26 cases; 14 rows moved from `Automated` to `Draft` between 2026-09-11 and today (the file was touched by `9250a23d` and `4e258073`). A coverage *regression* in status terms that no gate reports |
-| §4: `envRiskGate` *"absent on all four `083*`"* | **DRIFT — four of FIVE.** `083e` is the first frontend loyalty suite to carry `envRiskGate: staging`, correctly, because every case in it requires the org-mode store setting |
-| §4: 18 `BL-LOY` invariants, sixteen cited | **19 now** (`001`–`010`, `012`–`020`; `011` still reserved). `BL-LOY-020` is new since rev 2 and governs exactly the owner-scope mechanism this rev enumerates. **It is cited by `083e` once and by `075f` — the 22-case suite authored FOR org balance — not at all.** See §4 |
-| G10: `LOYALTY_VIP_USER` carries a bare inline password literal | **STILL OPEN and now sharper.** Re-checked this pass: it is a 9-character bare literal (and carries a redundant `password_env` key beside it). The three *newer* org-loyalty fixtures — `ORG_LOY_A`, `ORG_LOY_B`, `LOY_PERSONAL_NOORG` — all correctly carry `{{DEFAULT_TEST_PASSWORD}}`. `LOYALTY_VIP_USER` is now the **only** loyalty alias with a literal |
-| — | **NEW, and the most valuable live observation of this pass: the three-account balance contrast.** See §2b — an org member sees `Balance: 0` / "No records found" on the storefront while that organization's ledger holds **34,516,797** points |
-| — | **NEW: a BREAKING REST route change shipped in a minor release.** `GET …/balance/{userId}` → `…/balance/user/{userId}`; the old path returns **404 live**. New **D14** |
-| — | **NEW: fixture accumulation has roughly doubled.** 67 missions on Env-A (65 `Published`, 1 `Draft`, 1 `Archived`; **15** with `public: false`), 1,674 mission-progress rows, 2,152 operation-log rows. Rev 2 saw 9 `TGT-*`; those 9 are still there, plus 3 `AGENT-TEST-MSN-ORGLOY-*` from 2026-09-14 |
+| **D10**: backend is a tagged release `3.1008.0` ≡ `ab0908a8`; theme `2.58.0-pr-2467-1f40-1f40b001` | **SUPERSEDED.** Backend `3.1009.0-pr-18-4411`; theme **`2.59.0-pr-2501-3a82-3a82025e`**; platform `3.1074.0-pr-3125-c3b8`; XCart `3.1037.0-pr-141-fb27` is also a PR preview. See rewritten **D10** |
+| §2b row 1: `LOYALTY_VIP_USER` storefront `Balance: 2804550892`, 23 pages, exact REST match | **DRIFT (D16).** Storefront `Balance: 0`, "No records found". `loyaltyBalance` returns `{currentBalance:0, resultBalance:0}` for the session. The alias's `securityAccountId` is stale: the platform user now has a different id, created 2026-09-19T08:32Z; the old id's ledger last moved 2026-09-18T17:40Z. KB-EDDBBE75 confirmed |
+| §2b row 2: `ORG_LOY_A` org member sees `Balance: 0` while the org ledger holds 34,516,797 | **Symptom unchanged, cause changed.** Ada still sees `Balance: 0` / "No records found", but she is **no longer an organization member**: the contact has `organizations: []`, `GET /api/members/{org_id}` is empty, and an organization search finds no `AGENT-TEST-Org-Loyalty*` among 217 organizations. The sibling org id still resolves to a live organization (re-checked by the orchestrator, 2026-10-01). The org balance route still returns **34,516,797** for the deleted org and **219,416** for the sibling. The "read-side half of the Critical bug" demonstration no longer exists as a live fixture |
+| §1 Actors / §2b: org-affiliated accounts get a **Company** sidebar group | **DRIFT in this map's own literal.** The group is **"Corporate"** (Company info, Company members, Sales reps), live on a TechFlow org admin. Docs say "Corporate"; rev 3 mis-transcribed it. See D15 |
+| G11: Admin org widget never rendered | **CLOSED (live).** Contacts → search → row's three-dots → **Manage** opens the organization detail blade; a **"Loyalty balance"** widget renders (last of the secondary widgets), value `0` on an org with no org-scope ledger |
+| §4: nine suites... 265 cases, 208 in `loyalty`, 153 Draft | **Counts identical** (re-parsed): same 11 suites, per-suite counts and per-status distributions. **Content moved** in four suites (§4) — Behavior/mind-map stamps, one reworded 083c title |
+| §4: "28 cross-domain loyalty rows in six non-loyalty suites" (estimate) | **Re-derived: 28 rows in NINE suites** (§4). The six rev-3 suites hold 24; `095`, `026`, `089` add 4 |
+| 67 missions (15 `public:false`), 1,674 progress rows, 2,152 ledger rows | **69 missions** (65 Published / 3 Draft / 1 Archived; **17** `public:false`), **2,833** progress rows, **2,830** ledger rows, 22 programs. The two new Drafts are human-named junk (`rgweg`, `rwqrQWR`), not seeder output |
+| D8: route `api/loyalty-program-operation-log` was never renamed ⇒ not evidence of mirror staleness | **Refined.** The base route is unrenamed, but the mirror's *sub-route* `balance/{userId}` ≠ deployed `balance/user/{userId}` (D14); the mirror's lock key `loyalty-balance:{userId}` has no org key. The mirror is stale per symbol, including this one |
+| G10: `LOYALTY_VIP_USER` inline password literal | **Still present** (see G10) |
+| Docs rows D1 / D3 / D4 | **Re-fetched; unchanged.** D1 guide still lists two queries; D3 page still empty; D4 no mission content in five real sources |
+| — | **NEW D15** (guide vs live on the program-authoring palette and one in-page menu-path contradiction), **NEW D16** (registry vs environment), new gaps **G13–G15** |
 
-**No `D*` or `G*` row was renumbered or deleted.** New rows this pass: **D12**, **D13**, **D14**,
-**G11**, **G12**. `G4` and `G10` remain **OPEN**; `G1`–`G3`, `G5`–`G9` stay **CLOSED**.
+**No `D*` / `G*` row renumbered or deleted.** `G1`–`G3`, `G5`–`G9` stay CLOSED; **G11 CLOSED this
+rev**; `G4`, `G10`, `G12` OPEN; `G13`–`G15` new.
 
 ---
 
 ## §1 — Purpose and value chain
 
-**Loyalty purpose** (`PlatformUserGuide` §Overview —
+**Loyalty purpose** (`PlatformUserGuide` Overview —
 [docs.virtocommerce.org/platform/user-guide/loyalty/overview](https://docs.virtocommerce.org/platform/user-guide/loyalty/overview),
-verbatim, **re-fetched first-hand this pass and byte-for-byte unchanged from rev 1 and rev 2**):
-*"The **Loyalty** module provides a flexible loyalty program management system for the Virto
-Commerce Platform. It enables store managers to define loyalty programs, reward customers with
-points, track transactions, and allow customers to pay for their orders using loyalty points."*
-`CONFIRMED (docs)`.
+re-fetched this pass, unchanged since rev 1): *"The **Loyalty** module provides a flexible loyalty
+program management system for the Virto Commerce Platform. It enables store managers to define
+loyalty programs, reward customers with points, track transactions, and allow customers to pay for
+their orders using loyalty points."* `CONFIRMED (docs)`. The same page's Key features adds, new to
+this map: *"Points can only be used if the balance fully covers the order amount."* and
+*"Conversion rate: **1 point = 1 unit of order currency**."* — both `UNVERIFIED` live (need a cart,
+G4).
 
-**Missions purpose: still `UNDECLARED`.** Re-checked first-hand this pass against
-`PlatformUserGuide`, `StorefrontUserGuide`, `PlatformDeveloperGuide`, `FrontendSourceCode` and
-`PlatformBackendSourceCode` — the query `"loyalty missions"` returns **zero** mission content in
-every one, including 12 storefront locale files and the module's own Localizations. See **D4**.
-(`B2BExperts` was also queried and returns zero, but it holds no Virto product documentation at
-all, so its silence is not evidence — see §0.)
+**Missions purpose: `UNDECLARED`.** Looked in PlatformUserGuide (a "missions and challenges Virto
+Rewards" query returns only the loyalty program pages and the glossary), StorefrontUserGuide
+(Points History, Company pages — no missions), PlatformDeveloperGuide (xAPI Loyalty lists two
+queries), FrontendSourceCode (en.json carries `points-history` keys only) and
+PlatformBackendSourceCode. See D4.
 
-**Organization-scope purpose: also `UNDECLARED` in every published guide**, which is *expected*
-for a 2026-09-17 merge and is recorded as a dated fact, not a defect — see **D11**. The nearest
-thing to a purpose statement is PR #17's own description, which is a changelog entry, not a
-guide: *"To enable calculating balance on the org level instead of an individual level select
-Organization mode in a store settings."* `CONFIRMED (source)`.
+**Organization-scope balance purpose: `UNDECLARED`** in every guide (PlatformUserGuide, StorefrontUserGuide
+Points History / Company Info / Company Members: no org-balance statement). The nearest statement
+is PR #17's description, carried from rev 3 (not re-fetched): *"To enable calculating balance on
+the org level instead of an individual level select Organization mode in a store settings."*
+`CONFIRMED (source)`.
 
-**The chain below is rev 2's, carried forward with the organization branch folded into each
-link it changes.** The mechanism DID change this rev — for the first time across three
-revisions.
+The chain is rev 3's, carried forward; only the rows marked changed moved this pass.
 
 | # | Link, in the customer's words | Mechanism |
 |---|---|---|
-| 1 | **A store turns Loyalty on** | `Loyalty.Enable` (Store setting, default `false`, group `Loyalty\|General`). Live on Env-A: store value `true`, `isPublic: true`. `CONFIRMED (live)` |
-| 1b | **A store turns Missions on — independently** | `Loyalty.Missions.Enable` (default `false`, group `Loyalty\|Missions`), read at the write path, the read path and **again** in the storefront route registration, with no shared helper — three independent gates for one conceptual switch. Live on Env-A: store value `true`. `CONFIRMED (source + live)` |
-| **1c** | **A store chooses WHOSE balance it is — NEW this rev** | `Loyalty.LoyaltyBalanceCalculationMode` (group `Loyalty\|Missions`, ShortText, allowed `["Customer","Organization"]`, default `Customer`, **`isPublic: false`**). Read through one extension method, `StoreExtensions.IsOrganizationBalanceCalculationMode()`, which every branch below calls. Live on Env-A: store value **`"Customer"`** — so the organization branch is **present in code but not the ambient runtime state**. `CONFIRMED (live + source)` |
-| 2a | **A loyalty PROGRAM is authored** | Admin **Loyalty** menu → Order-loyalty or Product-loyalty. Both menu entries confirmed live in the Admin SPA this pass. `CONFIRMED (live + docs)` |
-| 2b | **A MISSION is authored** | Admin **Loyalty missions** menu, one goal required (`OrderValueGoal`/`OrderCountGoal`/`PerSkuGoal`), conditions restricted to `AnyUserGroupCondition`/`UserGroupIsCondition`, reward `FixedAmountReward` only, one-way `Draft → Published → Archived`. Live on Env-A: **67 missions**, 65 `Published` / 1 `Draft` / 1 `Archived`. `CONFIRMED (live + source)` |
-| 3 | **A customer places a qualifying order** | `OrderChangedEvent`, `EntryState.Added` only. `CONFIRMED (source)`, unchanged |
-| 4 | **The async hop — two independent Hangfire jobs** | `CONFIRMED (source)`, unchanged. Not re-inspected in the Hangfire dashboard this pass — **carried forward from rev 2, not re-checked** |
-| 5a | **Program path: earn/redeem — now owner-scoped** | `LoyaltyProgramHandler` sets `loyaltyContext.OrganizationId = order.OrganizationId` **only when** `store.IsOrganizationBalanceCalculationMode()`, on all three earn/redeem branches; registration awards resolve the org from `contact.Organizations.FirstOrDefault()`. `LoyaltyLogicService.LogLoyaltyProgramOperationAsync` keys its distributed lock `org:{id}` or `user:{id}` accordingly, and *"organization takes priority"* in both the balance read and the running-total write. `CONFIRMED (source, at the exact deployed commit)` |
-| 5b | **Mission path: contribution, not currency-aware for two of three goal types** | `BL-LOY-017`, status VIOLATED. Not re-run live this pass (G4). **New this rev**: mission progress is scoped by a new `OwnerId` column (`= OrganizationId` in org mode, `= UserId` otherwise), *"a shared progress record per org per period"*, and the unique index moved from `(MissionId, UserId, PeriodStart)` to `(MissionId, OwnerId, PeriodStart)`. Live: `OwnerId` is populated on real rows and equals `UserId` under the store's current `Customer` mode. `CONFIRMED (source + live)` |
-| 6 | **Contribution and reward are persisted, deduped, granted at most once** | `BL-LOY-018` SATISFIED. `CONFIRMED (source)`. Live: 1,674 mission-progress rows, all sampled rows carrying `organizationId: null` and `ownerId == userId` — consistent with `Customer` mode |
-| 7 | **The customer sees it** | `CONFIRMED (live)` this pass on **three** accounts — see §2b. The mission-row label in points history is **"Mission reward"** (not rev 2's "Mission") |
-| 8 | **Points are spent** | Loyalty catalog live: **40** PTS-priced products. Cart validation now resolves the balance from `cart.OrganizationId` in org mode, else `cart.CustomerId`. Cart-side split UI and the checkout points tab remain **`UNVERIFIED`** (G4) |
-| 9 | **A daily sweep expires stale progress** | `Loyalty.ExpireMissions`, `Cron.Daily()`. `CONFIRMED (source)` + rev 2's live Hangfire confirmation — **carried forward, not re-checked this pass** |
-| 10 | **Reversal — the effect is NOT reversed, anywhere** | `BL-LOY-019`, status VIOLATED. `CONFIRMED (source)`, unchanged. PR #17 adds **no** reversal path; it adds a second *owner scope* for the same one-way effect. Not re-run live (G4) |
-| **11** | **The mode is flipped — and two disjoint ledgers become visible/invisible** | Nothing migrates. A row with `OrganizationId == null` and a row with `OrganizationId == <id>` are permanently separate ledgers (`BL-LOY-020`). **Live-observed read-side consequence this pass, with no mutation**: §2b's three-account table |
+| 1 | A store turns Loyalty on | `Loyalty.Enable`: store value `true`, `isPublic: true`. `CONFIRMED (live)` |
+| 1b | A store turns Missions on, independently | `Loyalty.Missions.Enable`: store value `true`. Three independent gates (write, read, storefront route) — carried, not re-checked in source. `CONFIRMED (live)` for the value |
+| 1c | A store chooses WHOSE balance it is | `Loyalty.LoyaltyBalanceCalculationMode`, allowed `["Customer","Organization"]`, default `Customer`, **`isPublic: false`**; store value **`Customer`**, re-read twice this pass (before and after the storefront walk). `CONFIRMED (live)` |
+| 2a | A PROGRAM is authored | Admin **Loyalty** main-menu item; templates `GET /api/loyalty-programs/new/{Default\|ProductPoints}` live: 22 programs (4 `Default`/order-type, 18 `ProductPoints`; 4 inactive). `CONFIRMED (live)` |
+| 2b | A MISSION is authored | Admin **Loyalty missions** menu (69 missions, badge `69` live). Template palette: conditions `UserGroupIsCondition`/`AnyUserGroupCondition`; goals `OrderValueGoal`/`OrderCountGoal`/`PerSkuGoal`; reward `FixedAmountReward` only. **New: the validator rejects a negative reward amount and a negative goal value** (PR #18, D10). `CONFIRMED (live + source)` |
+| 3 | A customer places a qualifying order | `OrderChangedEvent`, `EntryState.Added` only. `CONFIRMED (source)`, carried, unchanged at `4411e195` |
+| 4 | Async hop — two Hangfire jobs | carried from rev 2, **not re-checked** |
+| 5a | Program path: earn/redeem, owner-scoped | `CONFIRMED (source)`, unchanged at `4411e195` (D10 diff) |
+| 5b | Mission path: contribution, `OwnerId`-scoped progress | `BL-LOY-017` / `BL-LOY-016`. `OrganizationId` + `OwnerId` present on `POST /api/loyalty-mission-progress/search` rows. `CONFIRMED (live + source)` |
+| 6 | Contribution and reward persisted, granted at most once | `BL-LOY-018`. `CONFIRMED (source)`, carried |
+| 7 | The customer sees it | `CONFIRMED (live)` on five accounts (§2b). Mission-row label "Mission reward" **re-confirmed** |
+| 8 | Points are spent | Loyalty catalog **40 results** re-confirmed. Cart split + checkout points tab `UNVERIFIED` (G4) |
+| 9 | Daily sweep expires stale progress | carried, **not re-checked** |
+| 10 | Reversal — NOT reversed anywhere | `BL-LOY-019`. `CONFIRMED (source)`, carried; PR #18 adds no reversal path |
+| 11 | Mode flipped — two disjoint ledgers | `BL-LOY-020`. **New observed variant of the same mechanism**: the owning organization *disappears* and its ledger is orphaned (D16) — the route does not validate that the organization exists (KB-EC1EDCE2) |
 
 ```mermaid
 flowchart TD
-  A[Loyalty.Enable] -.independent gate.-> B[Loyalty.Missions.Enable]
-  B -.independent 3rd gate, storefront route/nav.-> B2["isEnabled(MISSIONS_ENABLED_KEY) in vc-frontend"]
-  A --> MODE{"Loyalty.LoyaltyBalanceCalculationMode<br/>Customer | Organization<br/>isPublic:false — storefront cannot read it"}
+  A[Loyalty.Enable] -.independent.-> B[Loyalty.Missions.Enable]
+  A --> MODE{"Loyalty.LoyaltyBalanceCalculationMode<br/>Customer | Organization<br/>isPublic:false"}
   C[Admin authors a PROGRAM] --> D[Admin authors a MISSION: Draft]
-  D -->|Publish, one-way| D2s[Published: immutable]
-  D2s -->|Archive, one-way, no reverse| D3s[Archived: immutable]
-  E[Customer places order] --> F["OrderChangedEvent, EntryState.Added ONLY"]
-  F --> G["Hangfire job A: LoyaltyProgramHandler"]
-  F --> H["Hangfire job B: LoyaltyMissionHandler"]
+  D -->|"validator: reward>=0, goal>=0 (NEW, PR #18)"| D1[Draft saved]
+  D1 -->|Publish one-way| D2s[Published: immutable]
+  D2s -->|Archive one-way| D3s[Archived]
+  E[Customer places order] --> F["OrderChangedEvent, Added ONLY"]
+  F --> G["Job A: LoyaltyProgramHandler"]
+  F --> H["Job B: LoyaltyMissionHandler"]
   MODE -->|Organization| G
   MODE -->|Organization| H
-  G --> I["Ledger row: LoyaltyBalanceOperationLog<br/>UserId ALWAYS + OrganizationId only in org mode<br/>lock key org:{id} or user:{id}"]
-  H --> J["Mission progress, scoped by OwnerId<br/>UNIQUE (MissionId, OwnerId, PeriodStart)"]
-  J -->|target reached, ONCE| K["Reward granted, progress becomes Completed"]
+  G --> I["Ledger row (UserId always, OrganizationId in org mode)"]
+  H --> J["Mission progress by OwnerId"]
+  J -->|target reached once| K[Reward granted]
   K --> I
-  I --> L["Customer: /account/points-history -- CONFIRMED LIVE, mission rows labelled 'Mission reward'"]
-  J --> M["Customer: /account/missions -- CONFIRMED LIVE, 12 cards/page"]
-  I --> AW["Admin: Organization blade loyalty widget (organizationDetail2)<br/>registration CONFIRMED source; RENDER UNVERIFIED (G11)"]
-  L --> N["Customer spends points: /loyalty-catalog CONFIRMED LIVE (40 products);<br/>cart split + checkout tab UNVERIFIED (G4)"]
-  E -.order cancelled or refunded.-> O{{"NO REVERSAL PATH EXISTS, in EITHER scope: BL-LOY-019 VIOLATED"}}
-  P["Daily Hangfire sweep: Loyalty.ExpireMissions"] -->|rev-2 live, carried forward| Q[Progress becomes Expired]
-  P -.never touches.-> K
-  I -.mode flipped, nothing migrates.-> R{{"Two PERMANENTLY DISJOINT ledgers: BL-LOY-020"}}
+  I --> L["/account/points-history CONFIRMED LIVE"]
+  J --> M["/account/missions CONFIRMED LIVE"]
+  I --> AW["Admin: org detail 'Loyalty balance' widget (organizationDetail2) CONFIRMED LIVE"]
+  L --> N["/loyalty-catalog CONFIRMED LIVE; cart split + checkout tab UNVERIFIED (G4)"]
+  E -.cancelled/refunded.-> O{{"NO REVERSAL PATH: BL-LOY-019"}}
+  I -.owner deleted / account recreated.-> R{{"Ledger orphaned, unreachable, no purge (D16)"}}
 ```
 
 ### Actors
 
 | Actor | Can do | Verdict |
 |---|---|---|
-| **Store manager / admin** | Authors programs and missions. Toggles `Loyalty.Enable`/`Mode`/`Currency` via this module's own 3-field blade. **Cannot** set `Missions.Enable`, `DefaultProductMultiplyFactor` or the new `LoyaltyBalanceCalculationMode` from that blade — all three live only on the platform's generic Store→Settings surface. **NEW: can read an organization's pooled balance** via `GET /api/loyalty-program-operation-log/balance/organization/{organizationId}` and, per source, via a loyalty widget on the Organization detail blade | `CONFIRMED (source + live REST)`; the widget's render `UNVERIFIED` (G11) |
-| **Customer**, `Customer` mode | Earns and spends points against their **own** ledger; browses the loyalty catalog; sees mission cards. Live end to end this pass for two accounts | `CONFIRMED (live)` |
-| **Customer**, `Organization` mode | Earns into, and spends from, the **organization's pooled** ledger; contributes to a **single shared** mission progress per org per period; **cannot address any other scope** — the contract exposes no argument for it | `CONFIRMED (source)`; runtime behaviour **`UNVERIFIED`** — needs the store-setting flip (G12) |
-| **Customer with NO organization, in an org-mode store** | `GetCurrentOrganizationId()` returns null ⇒ every read and write silently falls back to **user scope**. The drafted Critical bug says such a buyer is shown a balance they cannot spend | `UNVERIFIED` — the fallback is `CONFIRMED (source)`; the customer-visible consequence needs the store-setting flip (G12). Live baseline in `Customer` mode captured: `LOY_PERSONAL_NOORG` reads **38,916**, matching REST exactly |
-| **Customer**, a `Public=false` mission | **Sees it anyway.** `CONFIRMED (live)` twice this pass, on **two independent accounts in two different customer groups** — `AGENT-TEST-…-TGT-PRIVATE` rendered for both. Live Admin search: **15 of 67** missions carry `public: false` | `CONFIRMED (live)` — **D7 strengthened** |
-| **A "targeted" customer group** | Group conditions **do** filter, and this pass isolated it cleanly: the org-group account saw `TGT-PRIVATE` and `TGT-CONTROL` but **not** `TGT-GROUP` (whose condition is `UserGroupIsCondition, groups:["VIP"]`), while the VIP account saw all three. Public-flag filtering and group filtering are now demonstrated as **independent** mechanisms | `CONFIRMED (live)` — **G8 stays closed**, with better evidence |
-| **Guest / anonymous checkout** | Attributes no mission progress, per `VCST-5320` C24 | `CONFIRMED (prior-art)`, not re-derived |
+| **Store manager / admin** | Authors programs/missions; 3-field loyalty blade; reads a user's balance (`balance/user/{id}`) and an org's (`balance/organization/{id}`) — and, new live this pass, via the **"Loyalty balance" widget on the organization detail blade**. Cannot set `Missions.Enable`, `DefaultProductMultiplyFactor`, or the calculation mode from the module's blade | `CONFIRMED (live)` |
+| **Customer**, `Customer` mode | Earns/spends against their own ledger. Live: `LOY_PERSONAL_NOORG` 38,916 (= REST), a TechFlow org admin 8,961 (personal scope), VIP-recreated 0, ordinary account 0 | `CONFIRMED (live)` |
+| **Customer with NO loyalty history** (the negative case; an `.env` account, **not** an alias) | Sees `Balance: 0` and a table row "No records found" — **byte-identical to an org-less member of a deleted org and to a recreated account**; the page cannot tell "never earned" from "ledger orphaned" | `CONFIRMED (live)` |
+| **Customer**, `Organization` mode | Pooled ledger, shared progress | `CONFIRMED (source)`; runtime `UNVERIFIED` (G12) |
+| **Customer with no organization in an org-mode store** | Falls back to user scope silently | fallback `CONFIRMED (source)`; consequence `UNVERIFIED` (G12) |
+| **Customer**, `Public=false` mission | **Sees it anyway** — now on a **third independent account** (an ordinary no-group account sees `…TGT-PRIVATE`; the VIP-group and org-group accounts did too) | `CONFIRMED (live)` — D7 strengthened again |
+| **Targeted customer group** | Group conditions filter (VIP account sees `TGT-GROUP`; the org-group account does not) | `CONFIRMED (live)` — G8 stays closed |
+| **Guest** | Attributes no mission progress (`VCST-5320` C24) | `CONFIRMED (prior-art)`, not re-derived |
 
 ---
 
 ## §2 — Surface inventory
 
-### 2a. Back office — Admin AngularJS SPA (this module's own `Scripts/`)
+### 2a. Back office — Admin AngularJS SPA
 
-The deployed module is **exactly** PR #17's merge commit (`3.1008.0` ≡ `ab0908a8`), so every
-source row here describes deployed code with **no diff at all** — a stronger claim than either
-prior rev could make.
+Source rows describe deployed code at `4411e195` (D10). **Main menu**: `Loyalty` and `Loyalty
+missions` as two top-level items (both seen in the live sidebar this pass). `CONFIRMED (live)`.
 
-**Two separate top-level main-menu items**, `Loyalty` and `Loyalty missions`, one permission gate
-for both (`loyalty:access`). **Both confirmed rendering live in the Admin SPA this pass.**
-`CONFIRMED (live)`.
+**Widgets — five**, unchanged. New live fact: the organization widget is reachable and renders
+(titled **"Loyalty balance" — the same label as the Contact widget, for a different scope**; prior art
+`VCST-5024` C2 already flagged the contact widget reading `0` for a pooled-balance member).
+Path: Contacts → search the org → row's **three-dots menu → Manage** → organization detail blade →
+widget row at the bottom (after Dynamic properties, Index, Icon, Assets, White labeling).
+`CONFIRMED (live)`; the widget code path `CONFIRMED (prior-art)` from the VCST-5024 design report
+(success-only callback, no error branch — that report's C1).
 
-**Widgets — now FIVE, not four.** The four rev 2 listed (`customerLoyaltyWidget` on
-`customerDetail1`, `loyaltySettingWidget` on `storeDetail`, `loyaltyProductFactorsWidget`,
-`productDetailsLoyaltyFactorsWidget`) **plus a new one**:
+**REST routes** — live swagger inventory, **identical to rev 3**: 7 controllers, 25 verbs; balance
+reads are `GET …/balance/user/{userId}` and `GET …/balance/organization/{organizationId}`; the legacy
+`…/balance/{userId}` returns **404** (re-confirmed). `CONFIRMED (live)`.
 
-| New widget | Registration | Behaviour |
-|---|---|---|
-| `organizationLoyaltyWidget` | `widgetService.registerWidget(organizationLoyaltyWidget, 'organizationDetail2')`, `size: [2,1]`, `isVisible: !blade.isNew` | Calls `getOrganizationBalance({organizationId: blade.currentEntity.id})` and renders `$scope.balance`; clicking opens an `organizationLoyaltyBlade` reusing `loyaltyProgramOperationLogListController` filtered by `organizationId`. Localized title from the module's own `en.VirtoCommerce.Loyalty.json`. `CONFIRMED (source, at the deployed commit)`; **render `UNVERIFIED` (G11)** |
+**PR #18's new Admin behaviour (read-only observation only):** `loyalty-mission-details.js` now saves
+a *copy* of the entity (so a rejected save leaves the expression tree rendered) and routes both POST
+and PUT failures to `onSaveError`, which joins the response's `errorMessage` list. New validator
+rejections: *"Mission reward amount cannot be negative"*, *"Mission goal value cannot be negative"*.
+`CONFIRMED (source, 4411e195)`. **The messages' live rendering is `UNVERIFIED` — needs a `POST`/`PUT
+/api/loyalty-missions` with a negative value (G14).** `CONFIRMED (prior-art)`:
+`VCST-5855`/`VCST-6084` verification summaries record, at this exact build, 400 responses carrying
+both messages with nothing persisted (mission count unchanged), the Admin blade showing the message
+at `4411` where it showed bare "Error 400" at `e3e4`, and a pre-existing platform `httpError`
+`TypeError` on any list-shaped 400 body (not filed upstream).
 
-**REST controllers** — the same 7. `LoyaltyBalanceOperationLogController` changed shape: the full
-live route inventory from the deployed swagger is below. `CONFIRMED (live)`.
+**NOT manageable from the back office**
 
-```
-POST,PUT,DELETE /api/loyalty-mission-goal-items          PUT /api/loyalty-mission-goal-items/items
-POST            /api/loyalty-mission-goal-items/search   GET /api/loyalty-mission-goal-items/{id}
-POST            /api/loyalty-mission-progress/search     GET /api/loyalty-mission-progress/{id}
-POST,PUT,DELETE /api/loyalty-missions                    GET /api/loyalty-missions/new
-POST            /api/loyalty-missions/search             GET /api/loyalty-missions/{id}
-GET             /api/loyalty-program-operation-log/balance/organization/{organizationId}   <-- NEW
-GET             /api/loyalty-program-operation-log/balance/user/{userId}                   <-- RENAMED
-POST            /api/loyalty-program-operation-log/search
-POST,PUT,DELETE /api/loyalty-program-product-factors     PUT /api/loyalty-program-product-factors/factors
-POST            /api/loyalty-program-product-factors/search  GET /api/loyalty-program-product-factors/{id}
-POST,PUT,DELETE /api/loyalty-programs                    GET /api/loyalty-programs/new/{programType}
-POST            /api/loyalty-programs/search             GET /api/loyalty-programs/{id}
-PUT             /api/loyalty-setting                     GET /api/loyalty-setting/store/{storeId}
-```
-
-Live balance reads this pass, admin token: organization `AGENT-TEST-Org-LoyaltyOutlet` →
-**34,516,797**; its sibling org → **219,416**; `ORG_LOY_A` user → **0**; `ORG_LOY_B` user → **0**;
-`LOY_PERSONAL_NOORG` user → **38,916**; the VIP account's security-account id →
-**2,804,550,892**. The legacy `…/balance/{userId}` path → **404** (D14). `CONFIRMED (live)`.
-
-**NOT manageable from the back office** —
-
-| Not manageable here | Where it actually lives |
+| Not manageable here | Where it lives |
 |---|---|
-| `Loyalty.Missions.Enable` / `Loyalty.DefaultProductMultiplyFactor` / **`Loyalty.LoyaltyBalanceCalculationMode`** from the module's **own** store blade | `GET /api/loyalty-setting/store/{storeId}` returns exactly `{storeId, loyaltyEnabled, loyaltyMode, loyaltyCurrency}` — three fields, live-confirmed. All three settings above live only on the platform's **generic** Store→Settings surface. For the calculation mode this is the more surprising case, because PR #17's own description says to select it *"in a store settings"* — see **D13** |
-| A mission's `Public` flag | Still no Admin UI control (no `metaFormsService` field). It **is** a filterable criterion on `POST /api/loyalty-missions/search` — an API-only capability. Live: 15 of 67 missions carry `public: false` |
-| **An organization's balance as an editable value** | Read-only everywhere. There is **no** set/adjust/reset/debit API for a balance in either scope — the balance is derived as the `Balance` column of the most recent operation-log row. Correcting one is an order-shaped mutation, never an edit |
-| **Purging accumulated mission progress or ledger rows** | No purge or retention path exists in any blade or job. Live: 1,674 progress rows and 2,152 ledger rows have accumulated, including three undeleted `AGENT-TEST-MSN-E2E-*` batches and one `AGENT-TEST-MSN-ORGLOY-*` batch. Clearing them is a seeder teardown — a mutation — so whether the existing `:teardown` scripts fully reverse a mission seed stays `UNVERIFIED` |
+| `Loyalty.Missions.Enable` / `DefaultProductMultiplyFactor` / `LoyaltyBalanceCalculationMode` from the module's own blade | `GET /api/loyalty-setting/store/{storeId}` returns exactly `{storeId, loyaltyEnabled, loyaltyMode, loyaltyCurrency}` (re-confirmed); the three live only on the generic Store→Settings surface (D13) |
+| A mission's `Public` flag | No Admin control; filterable via `POST /api/loyalty-missions/search`. 17 of 69 carry `public:false` |
+| A balance as an editable value, either scope | Read-only everywhere; KB-EDDBBE75 re-confirmed |
+| Purging mission progress, ledger rows, or an orphaned ledger | No purge/retention path. 2,833 progress / 2,830 ledger rows accumulated; mutation needed to clear (teardown) |
 
-### 2b. Storefront (Vue) — `CONFIRMED (live)` this pass across three accounts
+### 2b. Storefront (Vue)
 
-**The three-account contrast is the highest-value observation of this rev, and it needed no
-mutation.** All three walked on Env-A in firefox, this pass, while the store reads `Customer`
-mode:
+Theme `2.59.0-pr-2501-3a82-3a82025e` (footer). Five accounts walked in firefox, Customer mode:
 
-| Account | Organization | Storefront `/account/points-history` | Admin REST `balance/user/{id}` | Admin REST `balance/organization/{id}` |
+| Account | Organization | `/account/points-history` | `GET balance/user/{id}` (alias id) | `GET balance/user/{id}` (platform's actual id) |
 |---|---|---|---|---|
-| `LOYALTY_VIP_USER` ("AGENT TEST", groups `[VIP]`) | none | `Balance: 2804550892`, 23 pages @ 10/page | **2,804,550,892** — exact match | n/a |
-| `ORG_LOY_A` ("Ada Outlet") | `AGENT-TEST-Org-LoyaltyOutlet` | **`Balance: 0`**, table renders **"No records found"** | **0** — exact match | **34,516,797** |
-| `LOY_PERSONAL_NOORG` ("Nina Solo") | none | `Balance: 38916` | **38,916** — exact match | n/a |
+| `LOYALTY_VIP_USER` ("AGENT TEST") | none | **`Balance: 0`**, "No records found" | 2,804,551,662 (**stale id**) | **0** |
+| `ORG_LOY_A` ("Ada Outlet") | **none (org deleted)** | `Balance: 0`, "No records found" | 0 | 0 |
+| `LOY_PERSONAL_NOORG` ("Nina Solo") | none | `Balance: 38916`; "Mission reward" and order rows | 38,916 | 38,916 |
+| TechFlow org admin (slot-2 pool account) | TechFlow | `Balance: 8961` | n/a (not resolved) | n/a |
+| ordinary account, no loyalty history (`.env` `USER2_*`) | none | `Balance: 0`, "No records found" | n/a | n/a |
 
-**Read the middle row carefully.** An organization whose ledger holds 34.5 million points shows
-its own member a zero balance and an empty table — because the store currently resolves the
-*Customer* scope and the org-scope rows are a disjoint ledger (`BL-LOY-020`). Nothing here is
-wrong on its own terms; the storefront, the user-balance route and the org-balance route each
-report exactly what they are asked. It is the **read-side half** of the drafted Critical bug
-`BUG-org-mode-contact-level-transactions-written-but-unreachable-VCST-5024.md`, observable from
-the customer surface with no mutation at all.
+`CONFIRMED (live)`. The first two rows no longer demonstrate what rev 3 said they did (§0, D16).
 
-| Surface | Route | Live observation this pass |
+| Surface | Route | Live observation |
 |---|---|---|
-| Loyalty catalog | `/loyalty-catalog` | **40 results**, PTS-priced (`PTS8`–`PTS245`), `Show in stock` pre-checked, quantity steppers. **The real ~5 s hydration delay persists** — an immediate snapshot returns a blank document; a single fast snapshot still reads as a broken route. `CONFIRMED (live)` |
-| Points history | `/account/points-history` | Heading + `Balance: <unformatted integer>`; table `Operation \| Type \| Date \| Amount`; order-earn rows show the order number (`CO260911-00012`), **mission-earn rows show the literal label "Mission reward"** (rev 2 recorded "Mission" — DRIFT). Empty state renders as a `No records found` row inside the table, not a separate empty card. `CONFIRMED (live)` |
-| Missions & challenges | `/account/missions` | Heading + *"Complete missions to earn bonus Virto Rewards points."*; **Virto Rewards balance** banner (same figure, **comma-formatted** here while the points-history heading is **unformatted** — same value, two renderings, one build); **Redeem your points** banner; **12 cards/page × 5 pages** for the VIP account and **12 cards** for the org account; types **Order value** / **Order count** / **Featured SKUs**; each card shows points, a `Completed` badge or a "N days left" indicator, a percentage, a progress line, and an "Open mission" button. `CONFIRMED (live)` |
-| Account sidebar, **Marketing** group | any `/account/*` page | **Missions & challenges**, **Coupons & promotions**, **Notifications**, **Points history** — re-confirmed live on all three accounts. The top header / main-menu nav never carries them. An org-affiliated account additionally gets a **Company** group (Company info, Company members) — which contains **no loyalty surface of any kind**. `CONFIRMED (live)` |
-| Mixed cart split UI, checkout "Pay with points" tab | `/cart`, `/checkout` | **Still `UNVERIFIED`** — both need a non-empty cart (a mutation). The `StorefrontUserGuide` describes both verbatim (§2e), so this is a documented surface the map has never observed. **G4** |
-| **Any organization-aware loyalty surface** | — | **MISSING.** A repo-scoped search for `organizationId` across the whole of `client-app/modules/loyalty/**` on `vc-frontend` `dev` returns **0 hits**; there is no org switcher, no pooled-balance label, no "your organization's points" string in any of the 12 locale files. `CONFIRMED (source)` — see **D13** |
+| Loyalty catalog | `/loyalty-catalog` | **40 results**, PTS-priced; ~5–10 s hydration delay persists (blank first snapshot). The main navigation also carries a **"Loyalty"** menu item. `CONFIRMED (live)` |
+| Points history | `/account/points-history` | `Balance: <unformatted integer>`; columns Operation / Type / Date / Amount; order rows show the order number; **mission rows "Mission reward"** (re-confirmed; no mission name or id — `BL-LOY-015`); empty state is a "No records found" row inside the table. xAPI `loyaltyBalance` returned `{currentBalance, resultBalance}` (matches the dev guide's `LoyaltyBalanceResult`). `CONFIRMED (live)` |
+| Missions & challenges | `/account/missions` | Heading + "Complete missions to earn bonus Virto Rewards points."; **Virto Rewards balance** banner, **Redeem your points** banner ("Trade points for products in the rewards catalog."), 12 cards/page, ≥4 page buttons, types Order value / Order count / Featured SKUs, "N days left", "Open mission". Same balance as points-history for the same account. `CONFIRMED (live)` |
+| Missions & challenges — **redesign** (VCST-5957, theme `2.59.0-pr-2524-3069`, PR preview) | `/account/missions` | Two white banners with a 4 px start-edge accent (primary / info), solid 56 px icon circle, uppercase title **"Virto Rewards balance"** + soft **"Points history"** button (119×38); **Redeem your points** banner has **no CTA**. Cards: 208 px banner, points chip (tonal warning) + type chip (tonal info, glyph per goal type) on top, body progress note → bar + % → title → footer (date badge + 38×38 outline CTA "Open mission"). **Completed** = `success-400 @ 0.75` overlay + 56 px `circle-check`, footer "Mission completed"; the "Completed" chip is gone. Bar info-500 / success-500. Date dot: `daysRemaining` ≤15 danger · 16–30 warning · ≥31 or none success · completed success. `CONFIRMED (live, VCST-5957, 2026-10-01)` |
+| SKU mission modal — redesign (same build) | `/account/missions` → PerSku card CTA | 960 px (60rem) `VcLineItems` table: Product / Properties (SKU) / Price per item / Quantity / Total; summary Total units / Targets met / Cart subtotal + a `subtotal_hint` estimate alert; Add to cart disabled at 0 units; after an add the modal closes and the row shows "in Cart N". Stepper disabled for flags-false and for `items[].product: null` (deleted target). `CONFIRMED (live, VCST-5957, 2026-10-01)` |
+| Account sidebar | any `/account/*` | Groups seen live: **Purchasing** (Dashboard, Orders, Lists, Quote requests, Saved for later, Back-in-stock list), **Marketing** (Missions & challenges, Coupons & promotions, Notifications, Points history), **User** (Profile, Addresses, Change password, Saved credit cards…). A genuine org member additionally gets **Corporate** (Company info, Company members, Sales reps) — no loyalty surface in it. Missions/Points links appear for an account with no loyalty history (store-gated, not user-gated). `CONFIRMED (live)` |
+| Mixed cart split UI, checkout "Pay with points" | `/cart`, `/checkout` | `UNVERIFIED` (G4) |
+| Any organization-aware loyalty surface | — | `MISSING` — rev 3's 0-hits search for `organizationId` under `client-app/modules/loyalty/**` is carried, **not re-run** (theme moved to 2.59.0) |
 
-**NOT manageable from the storefront** — unchanged and now stronger: the customer-facing surface
-is **read-only over every loyalty object except the cart**. No mission can be created, edited or
-published; the `Public` flag has no customer-side control; the balance cannot be adjusted, reset
-or forfeited; mission progress cannot be re-run or cleared; **and the customer cannot see, let
-alone choose, which owner scope their balance is being resolved at.** This follows from §2c, not
-from UI inspection: the contract exposes **3 queries and 0 loyalty-specific mutations**.
+**NOT manageable from the storefront**: read-only over every loyalty object except the cart; the
+customer cannot see which owner scope the balance is resolved at (D13), and cannot tell a
+never-earned balance from an orphaned one (D16).
 
-### 2c. API / contract — the query COUNT is unchanged; two of three query SHAPES are not
+### 2c. API / contract
 
-Live anonymous introspection, this pass, with argument nullability resolved:
+Live anonymous introspection, 2026-10-01 — **identical to rev 3**:
 
 ```
 loyaltyBalance(storeId: String!, userId: String, orderId: String)
@@ -321,213 +279,164 @@ loyaltyMissionProgress(after, first, keyword, sort, storeId: String!, statuses, 
                        completedEndDate, cultureName, currencyCode, isStarted, userId)
 ```
 
-`CONFIRMED (live)`. **3 queries, 0 loyalty-specific mutations** — count unchanged since rev 1.
-What changed: `storeId` is **`String!` (NON-NULL)** on all three, newly required on
-`loyaltyBalance` and `loyaltyPointsHistory`; and `loyaltyMissionProgress` gained **`currencyCode`**.
-The storefront's own three GraphQL documents on `vc-frontend` `dev` already declare
-`$storeId: String!` and pass `$currencyCode`, and the deployed theme renders all three pages, so
-the two tiers agree on Env-A. `CONFIRMED (source + live)`.
+`CONFIRMED (live)`. 3 queries, **0** loyalty/mission/points mutations. No `organizationId`
+argument (ambient-only, D12 — source rows unchanged at `4411e195`). `PlatformDeveloperGuide` still
+documents `loyaltyBalance` as *"the loyalty balance information for a specific user"* and
+`loyaltyPointsHistory` as *"the history of loyalty point transactions for a specific user"* — both
+with no mention of `storeId` or scope (D1).
 
-**There is NO `organizationId` argument on any loyalty query, and that is deliberate.** Each
-query's `Map()` sets `OrganizationId = context.GetCurrentOrganizationId()` — from the ambient
-session, never from an argument — and `GetLoyaltyBalanceQueryBuilderHandler.ResolveOrganizationIdAsync`
-returns the org id **only** when the named store is in organization mode, falling back to user
-scope otherwise. `LoyaltyMissionLogicService` states the intent in a source comment: *"The store
-mode - not the caller - decides, so a passed organizationId cannot redirect a user-scoped
-lookup."* Authorization was hardened to match: `CanAccessLoyaltyAuthorizationHandler` now injects
-`IMemberResolver`, implements a shared `ILoyaltyQuery` contract, and **checks both scopes**, with
-its own comment *"membership in the requested organization must not also hand over another
-member's personal data."* `CONFIRMED (source)`. What it costs is **D12**.
-
-**NOT manageable from the API layer** — no mission-granting-row id on the ledger type
-(`BL-LOY-015`); no mutation to spend, forfeit or adjust points directly; **no way to address an
-organization balance explicitly**, and **no way to request personal scope in an org-mode store**;
-and no way for a client to discover which scope it is being served, because the mode setting is
-`isPublic: false`.
+**NOT manageable from the API layer**: no mission-granting-row id on the ledger type
+(`BL-LOY-015`); no mutation to spend/forfeit/adjust points; no way to address an organization
+balance explicitly or to request personal scope in an org-mode store; no discovery of the active
+scope (the mode setting is non-public).
 
 ### 2d. Persistence / jobs
 
-Rev 2's source read plus its live Hangfire confirmation of `Loyalty.ExpireMissions` are **carried
-forward and were NOT re-checked this pass**. What is new and live-confirmed:
+Carried from rev 3 / rev 2 and **not re-checked in source or Hangfire**. Live this pass:
+`LoyaltyMissionProgress` rows expose `organizationId` and `ownerId` (field list of
+`POST /api/loyalty-mission-progress/search`). **New live fact:** ledger rows outlive their owner —
+the org-balance route answers 200 with the old total for an organization that no longer exists, and
+a recreated customer account does not inherit the old account's ledger (KB-EC1EDCE2, KB-EDDBBE75).
+**NOT manageable from this layer**: `Loyalty.ExpireMissions` trigger/schedule/disable (platform
+Hangfire dashboard only); whether `AddOrganizationId` backfilled `OwnerId` on all 2,833 rows
+(`UNVERIFIED`; sampled rows consistent).
 
-- `LoyaltyMissionProgress` carries **`OrganizationId`** and a `[Required]` **`OwnerId`**, both
-  returned by `POST /api/loyalty-mission-progress/search` on real rows. The unique index moved to
-  `(MissionId, OwnerId, PeriodStart)`; EF migrations `AddOrganizationId` ship for SqlServer,
-  PostgreSql and MySql. `CONFIRMED (live + source)`.
-- `LoyaltyBalanceOperationLog` and `LoyaltyMissionTransaction` carry `OrganizationId`. Live: of
-  the 50 newest ledger rows, **0** carry one — consistent with the store's current `Customer`
-  mode. Org-scope rows demonstrably exist (the org balance is non-zero) but are not the recent
-  traffic.
-- `LoyaltyBalanceOperationLogSearchService` gained a `BuildOwnerQuery`; the drafted Critical bug
-  quotes its `&& x.OrganizationId == null` conjunct as the reason org-scope rows are invisible to
-  every user-scoped read. **Recorded as a drafted-bug claim; not independently re-derived here.**
+### 2e. Published docs — queried first-hand this pass
 
-**NOT manageable from the persistence/jobs layer** — `Loyalty.ExpireMissions` cannot be
-triggered, rescheduled or disabled from any Loyalty blade; the platform-wide Hangfire dashboard
-is the only observed control. **A schema migration is the only way `OwnerId` gets populated for
-pre-existing rows** — whether the `AddOrganizationId` migration backfilled `OwnerId` correctly on
-Env-A's 1,674 rows is `UNVERIFIED` (the sampled rows are consistent, which is not the same as
-verified).
-
-### 2e. The published-doc surface — all six VirtoOZ topic tools queried first-hand this pass
-
-- **`PlatformUserGuide`** — six loyalty pages (`overview`, `enable-and-configure-loyalty-programs`,
-  `set-up-loyalty-catalog-browsing`, `configuring-loyalty-points-per-product`,
-  `loyalty-points-history`, `create-loyalty-program`). Documents exactly **three** store settings
-  (Enable / Loyalty mode / Loyalty currency) and documents the Loyalty-balance widget **only on a
-  Contact**. Verbatim, on the points formula:
-  *"Loyalty points = (Product price − Discount) × Multiply factor"*, with the note *"This feature
-  controls display only. The actual point accrual on order placement is configured separately
-  through loyalty programs."*
-  ([…/configuring-loyalty-points-per-product](https://docs.virtocommerce.org/platform/user-guide/loyalty/configuring-loyalty-points-per-product))
-- **`StorefrontUserGuide`** — verbatim, and directly relevant to the one surface this map has
-  never rendered: *"You can put them in the same cart as products you pay for with money. The cart
-  keeps these two apart, showing a separate total for your money items and your points items, so
-  it is always clear what each one costs."*
-  ([…/shopping/products-purchase-options](https://docs.virtocommerce.org/storefront/user-guide/shopping/products-purchase-options))
-  and *"**Pay with points** allows you to pay for the order with loyalty points earned from
-  previous activity."*
-  ([…/shopping/checkout-process](https://docs.virtocommerce.org/storefront/user-guide/shopping/checkout-process)).
-  Its `company-info` page lists exactly Company name / Company logo / Addresses — **no loyalty
-  widget**.
-- **`PlatformDeveloperGuide`** — the xAPI Loyalty reference still lists exactly **two** queries
-  (`loyaltyBalance`, `loyaltyPointsHistory`) and describes `loyaltyBalance` as *"the loyalty
-  balance information for a specific user"*. **D1 persists.**
-- **`FrontendSourceCode`** — settles the route from source, verbatim: `path: "points-history"`
-  registered by `router.addRoute("Account", route)` against a parent whose `path` is `/account`,
-  gated on `isAuthenticated && isEnabled("Loyalty.Enable")`. **`/account/loyalty` appears
-  nowhere.** **D9 stays resolved.** The mirror's `getLoyaltyBalance` document is the **pre-`storeId`**
-  version, so this mirror is also stale against the deployed contract.
-- **`PlatformBackendSourceCode`** — still the pre-rename mirror. **D8 persists, precisely bounded**
-  (§0).
-- **`B2BExperts`** — five queries, zero Virto product content. **This corpus holds no Virto
-  Commerce documentation at all** and must not be counted as a source for this domain (§0).
+- **`PlatformUserGuide`** — six loyalty pages. Verbatim, new this pass:
+  *"Loyalty points = (Product price − Discount) × Multiply factor"* (unchanged);
+  Order-loyalty conditions list: *"Order status is… Order total… Is first order… Is recurring
+  order… Is registration"* and rewards *"Fixed points… % of order value as points"*
+  ([…/enable-and-configure-loyalty-programs](https://docs.virtocommerce.org/platform/user-guide/loyalty/enable-and-configure-loyalty-programs)).
+  Points history: *"In the user details blade, click the **Loyalty balance** widget"* — Contacts
+  only ([…/loyalty-points-history](https://docs.virtocommerce.org/platform/user-guide/loyalty/loyalty-points-history)).
+- **`StorefrontUserGuide`** — *"This section shows the number of points earned and redeemed for each
+  order, as well as the total balance of points remaining"*
+  ([…/account/points-history](https://docs.virtocommerce.org/storefront/user-guide/account/points-history));
+  *"Open **Company members** from the **Corporate** group in your account menu."*
+  ([…/account/company-members](https://docs.virtocommerce.org/storefront/user-guide/account/company-members));
+  *"**Pay with points** allows you to pay for the order with loyalty points earned from previous activity."*
+  ([…/shopping/checkout-process](https://docs.virtocommerce.org/storefront/user-guide/shopping/checkout-process));
+  *"The **Corporate** section appears only in corporate accounts."*
+  ([…/account/overview](https://docs.virtocommerce.org/storefront/user-guide/account/overview)).
+- **`PlatformDeveloperGuide`** — xAPI Loyalty overview lists `loyaltyBalance` and
+  `loyaltyPointsHistory` only. **D1 persists.**
+- **`FrontendSourceCode`** — mirror's `GetLoyaltyPointsHistory` document is the **pre-`storeId`**
+  version (`query GetLoyaltyPointsHistory($sort, $after, $first, $operationType)`): stale against the
+  deployed contract. Locale keys are `points-history.*`; no mission keys.
+- **`PlatformBackendSourceCode`** — pre-org, pre-rename mirror: `LoyaltyProgramOperationLogController`
+  with `[HttpGet("balance/{userId}")]` and `LoyaltyLogicService` with lock key
+  `loyalty-balance:{userId}` and no organization key. **D8 refined.**
 
 ---
 
 ## §3 — Where the layers DISAGREE
 
-`D1`–`D9` carried forward from rev 1/2 **unchanged unless noted**; **D10** and **D11** rewritten;
-**D12**, **D13**, **D14** new. **Never renumbered.**
+`D1`–`D14` carried; **D10 rewritten, D8 refined**; **D15, D16 new.** Never renumbered.
 
 | # | Disagreement | Verdict |
 |---|---|---|
-| **D1** | The published xAPI reference undercounts the schema by one query — `loyaltyMissionProgress` is missing from `PlatformDeveloperGuide`'s Loyalty query table, which lists two. | `CONFIRMED (docs + live)` — **re-fetched this pass**; the guide still lists two, live introspection still returns three |
-| **D2** | Two `PlatformUserGuide` pages name the enabling step differently ("Settings" vs "Loyalty settings"). | **RESOLVED** (rev 2): one `loyaltySettingWidget`, described at two levels of specificity |
-| **D3** | "Create Loyalty Program" is a genuinely empty page that a sibling page links to as a step. | `CONFIRMED (docs)` — **re-fetched this pass on three independent queries**: the page returns exactly `# Create Loyalty Program` and nothing else, while `set-up-loyalty-catalog-browsing` links to it as step 3 |
-| **D4** | Missions ship a mature Admin + storefront + GraphQL surface and have **zero** surface across every official guide. | `CONFIRMED (docs)` — **re-confirmed across five real sources this pass**. Rev 2's "fourth source" was `B2BExperts`, which holds no Virto content; that strengthening is **withdrawn** and replaced by the two source mirrors, which also carry no mission entity, route or i18n key |
-| **D5** | `MissionTypes` declares 5 constants; only 3 are ever a stored goal's class. | `CONFIRMED (source)` — **carried forward, not re-checked this pass** |
-| **D6** | Reward vocabulary is asymmetric: a PROGRAM offers Fixed + Relative; a MISSION offers Fixed only, invisibly. | `CONFIRMED (source)` — **carried forward, not re-checked this pass** |
-| **D7** | A mission's `Public` flag is unreachable from Admin AND unread by the customer-facing query — net effect: every `Published` mission is shown to everyone. | `CONFIRMED (live)` — **strengthened this pass with a second, independent account in a different customer group**. `TGT-PRIVATE` (`public: false`) rendered for both `LOYALTY_VIP_USER` and `ORG_LOY_A`, while `TGT-GROUP` correctly rendered for the VIP account only — proving public-flag filtering and group filtering are independent, and that only the latter works |
-| **D8** | VirtoOZ's `PlatformBackendSourceCode` mirror is stale by one entity rename. | `CONFIRMED (docs-tool output vs source)` — **re-queried and now precisely bounded**. Stale **class/interface/file names** (`LoyaltyProgramOperationLogController`, `ILoyaltyProgramOperationLogService`, …), returned as C# declarations and github paths; an explicit `LoyaltyBalanceOperationLog*` query returns zero chunks. **The REST route `api/loyalty-program-operation-log` is NOT stale — it was never renamed — and must not be cited as evidence.** The mirror straddles the rename (it already holds the `IDistributedLockService` lock), so check per symbol, never blanket |
-| **D9** | The customer-facing points page had two names/routes across sources. | **RESOLVED** (rev 2), **re-confirmed from `FrontendSourceCode` this pass**: `/account/points-history` is correct; the 2026-06-24 prior-art guide's `/account/loyalty` is wrong |
-| **D10 — the two tiers are now on DIFFERENT release footings, and the backend's version number has a trap of its own** | Backend: `VirtoCommerce.Loyalty = 3.1008.0`, a **tagged release**, and the tag is **identical** to PR #17's merge commit `ab0908a8` — so every `CONFIRMED (source)` row here describes deployed code with zero diff. Storefront theme: **`Ver. 2.58.0-pr-2467-1f40-1f40b001`**, read live from the page footer — **still a PR-preview build**, and a *different* one from rev 2's `pr-2468-8e45`. **The trap**: commit `da284217` (2026-09-10) bumped the manifest to `3.1008.0` and was never released under that tag; the `3.1008.0` **tag** points at a commit a week later that contains the whole org-level feature. A reader who equates "manifest says 3.1008.0" with "the 3.1008.0 release" gets the wrong code. `dev` is now `3.1009.0` (version string only) | `CONFIRMED (live REST + live footer + GitHub tag/ancestry)`, all this pass |
-| **D11 — OVERTURNED BY EVENTS. Rev 2 said organization-level loyalty was unmerged and absent from Env-A. It is now MERGED, RELEASED and DEPLOYED.** | **Rev 2 was correct on 2026-09-11** — PR #17 was genuinely open, and `git merge-base --is-ancestor` genuinely returned false. **PR #17 merged 2026-09-17T14:29:27Z**; tag `3.1008.0` ≡ merge commit `ab0908a8`; Env-A runs `3.1008.0`. Live-confirmed present on Env-A, none of which existed at rev 2: the `Loyalty.LoyaltyBalanceCalculationMode` setting with allowed values `["Customer","Organization"]`; `GET …/balance/organization/{organizationId}` returning **34,516,797** for a real org; `OrganizationId` + `OwnerId` columns populated on real progress and ledger rows; `storeId: String!` on two GraphQL queries. **Anyone who cited D11 as "there is no org surface" must re-read this row.** The reason this is written loudly rather than quietly corrected: a deleted row leaves every citation of it silently wrong | `CONFIRMED (live REST + live GraphQL + GitHub merge/tag/ancestry)`, all this pass |
-| **D12 — the organization scope is AMBIENT-ONLY on the contract, and three layers resolve "which organization" from three different places** | No loyalty query accepts an `organizationId`; each sets it from `context.GetCurrentOrganizationId()`. **Consequences, all source-grounded**: (a) in org mode the accepted `userId` argument is **silently ignored** for balance and history — `GetLoyaltyBalanceQueryBuilderHandler` sets `OrganizationId` *or* `UserId`, never both, and *"organization takes priority"*; (b) a caller cannot request personal scope in an org-mode store, nor any other org's; (c) a user with no organization falls back to user scope with no signal; and (d) the three layers disagree on the **source** of the org id — **GraphQL** reads the session claim, **`LoyaltyCartValidator`** reads `cart.OrganizationId`, and the **Admin widget** reads `blade.currentEntity.id`. A cart whose `OrganizationId` differs from the session's is therefore validated against a different balance than the account page displays. Whether that can actually happen is `UNVERIFIED` | `CONFIRMED (source, at the deployed commit)` for the mechanism; the cart/session divergence `UNVERIFIED` (G12) |
-| **D13 — the setting that decides whose money it is, is the ONE Loyalty setting the storefront cannot read and the module's own blade cannot set** | `Loyalty.LoyaltyBalanceCalculationMode` is the **only** Loyalty setting with **`isPublic: false`** (the other five are all `true`), and it sits in group `Loyalty\|Missions` rather than `Loyalty\|General` with its siblings. Three layers disagree about where it lives: **source** puts it in `ModuleConstants.StoreSettings` and PR #17's description says to *"select Organization mode in a store settings"*; the **module's own settings contract** `GET /api/loyalty-setting/store/{storeId}` returns exactly three fields and not this one (live); and the **storefront** cannot read it at all — `vc-frontend`'s loyalty module has **0 occurrences of `organizationId`** and no mode-aware code, so it renders an org-pooled balance and a personal balance identically, with nothing to tell the customer which they are looking at | `CONFIRMED (live REST + live GraphQL + source, both repos)` |
-| **D14 — a BREAKING REST route change shipped inside a minor version bump** | `GET /api/loyalty-program-operation-log/balance/{userId}` became `…/balance/user/{userId}`. The old path returns **404 live** on Env-A. The module's own Admin resource file was updated in the same PR, so the Admin SPA is fine; **any external caller, Postman collection, monitoring probe or test fixture pinned to the old path breaks silently on upgrade**, and the version went `3.1007.0 → 3.1008.0` with no major/minor signal | `CONFIRMED (live 404 + source diff)` |
+| **D1** | The published xAPI reference undercounts the schema by one query (`loyaltyMissionProgress` absent; two listed) — and documents neither `storeId` nor scope on the two it lists | `CONFIRMED (docs + live)` — re-fetched and re-introspected this pass |
+| **D2** | Two `PlatformUserGuide` pages name the enabling step differently (one says the **Settings** widget / "Loyalty enabled", another the **Loyalty settings** widget / "Enable loyalty") | **RESOLVED** (rev 2); the two wordings are still both on the live docs this pass |
+| **D3** | "Create Loyalty Program" is an empty page that a sibling links to as a step | `CONFIRMED (docs)` — re-fetched this pass: the page returns exactly `# Create Loyalty Program` |
+| **D4** | Missions ship a mature Admin + storefront + GraphQL surface and have zero surface across every official guide | `CONFIRMED (docs)` — re-queried this pass across the same five real sources; nothing mission-shaped returned |
+| **D5** | `MissionTypes` declares 5 constants; only 3 are ever a stored goal's class | `CONFIRMED (source)` — carried, not re-checked. Live template offers exactly 3 goal types |
+| **D6** | Reward vocabulary asymmetric: a program offers Fixed + Relative; a mission Fixed only | `CONFIRMED (live)` this pass: `new/Default` palette `FixedAmountReward,RelativeAmountReward`; mission template `FixedAmountReward` only |
+| **D7** | `Public` flag unreachable from Admin and unread by the customer query — every Published mission is shown to everyone | `CONFIRMED (live)` — **third independent account** (ordinary, no group) rendered `TGT-PRIVATE`; 17 of 69 missions are `public:false` |
+| **D8** | VirtoOZ's source mirrors are stale against the deployed build | `CONFIRMED (docs-tool output vs live)`, **refined**: backend mirror still returns `LoyaltyProgramOperationLog*` names, sub-route `balance/{userId}` (deployed: `balance/user/{userId}`, D14) and an org-less lock key; frontend mirror's points-history document lacks `$storeId`. The base route `api/loyalty-program-operation-log` is unrenamed and correct. Check per symbol |
+| **D9** | Points page had two routes across sources | **RESOLVED** (rev 2); `/account/points-history` re-walked live |
+| **D10 — the backend is a PR preview again, and "3.1009.0" has a trap exactly like "3.1008.0" did** | Deployed: `VirtoCommerce.Loyalty 3.1009.0-pr-18-4411`. **`4411` = `4411e195`**, PR #18's third commit ("fix(VCST-5855): show mission validation errors in the admin blade", 2026-09-25T15:34:53Z); it is neither the PR's first commit (`baff9290`, reward), second (`e3e47e0f`, goal) nor head (`d1325e52`, a merge of `dev`, which differs from `4411e195` only in four CI workflow files). **Tag `3.1009.0` = `ebdd10f6`**, the squash-merge of PR #18 (2026-09-28T11:29:27Z); `compare 4411e195...ebdd10f6` touches only four `.github/workflows` files, so **deployed source ≡ tag `3.1009.0` source**. **The trap**: `dev` also carries `e95b9351` "3.1009.0" (2026-09-17) — a version-string-only bump that predates PR #18's content; "manifest says 3.1009.0" ≠ "the 3.1009.0 release". After the tag, `dev` has only `23c29e88` (3.1010.0 bump) and `81c7319a` (CI workflow sync): **no functional change since `ebdd10f6`**. **Rev-3 source rows**: `compare ab0908a8...4411e195` lists exactly six files — `Directory.Build.props`, `module.manifest`, `LoyaltyMissionValidator.cs` (+reward/goal checks), `loyalty-mission-details.js` (copy-on-save + `onSaveError`), and two new test files — so every rev-3 `CONFIRMED (source)` row **outside the validator and that Admin blade is still true at `4411e195`**. Other tiers: theme `2.59.0-pr-2501-3a82-3a82025e`, platform `3.1074.0-pr-3125-c3b8`, XCart `3.1037.0-pr-141-fb27` (PR preview), others tagged (Customer 3.1026.0, Orders 3.1016.0, Store 3.1007.0, Marketing 3.1007.0, Notifications 3.1014.0, Xapi 3.1023.0, XOrder 3.1013.0, ProfileExperienceApiModule 3.1019.0). A PR preview moves under the map without a tag | `CONFIRMED (live REST + live footer + GitHub compare/tag/ancestry)` |
+| **D11** | Org-level loyalty: merged, released, deployed (PR #17 `ab0908a8`, tag `3.1008.0`) | `CONFIRMED` as rewritten in rev 3 — **still true**; surfaces re-seen live (setting, split routes, `ownerId`). Rev 2's "absent" stays overturned by events |
+| **D12** | The organization scope is ambient-only; three layers resolve "which organization" from three places | `CONFIRMED (source, unchanged at 4411e195)`; cart/session divergence `UNVERIFIED` (G12) |
+| **D13** | The setting that decides whose money it is is the one Loyalty setting the storefront cannot read and the module's own blade cannot set | `CONFIRMED (live REST + live GraphQL + source)` — re-read: `isPublic:false`, 3-field `loyalty-setting` contract; the storefront rendered a personal balance and gave no scope signal on any of five accounts |
+| **D14** | BREAKING REST route change in a minor release: `balance/{userId}` → `balance/user/{userId}` | `CONFIRMED (live 404 + source diff)` — legacy path 404 re-confirmed this pass |
+| **D15 — the guides' program-authoring text vs the live palette, and one in-page path contradiction** | (a) *"Order status is… Order total… Is first order… Is recurring order… Is registration"* (5 conditions) vs live `GET /api/loyalty-programs/new/Default` palette of **7**: those five **plus `UserGroupsContainsCondition` and `UserGroupIsCondition`** — the guide never lists the two user-group conditions for an Order program (it lists them only for Product Points, whose live palette is exactly `UserGroupIsCondition`, `AnyUserGroupCondition`, matching the guide). (b) One `enable-and-configure-loyalty-programs` page says *"In the main menu, click **Loyalty**."* (order program) and *"click **More**, then click **Loyalty**."* (product points) a few lines apart; live, **Loyalty is a top-level main-menu item** (and the troubleshooting page says the blade can be "missing from the More menu"). Whether "More" is a narrow-viewport overflow is `UNVERIFIED`. (c) **Matches, recorded so it is not re-raised:** the storefront guide's "Corporate group" is correct live (§0 corrects this map, not the guide) | (a) `CONFIRMED (docs + live)` · (b) `CONFIRMED (docs)` + live main-menu item · (c) `CONFIRMED (docs + live)` |
+| **D16 — the fixture registry vs the environment: reserved loyalty fixtures no longer exist as the registry describes them** | `test-data/aliases.vcst.json` `LOYALTY_VIP_USER.securityAccountId` (and `memberId`) point at an account the platform no longer has; the platform user for that email was created **2026-09-19T08:32Z** with a different id and has **0** ledger rows. The old id keeps **223** rows (last 2026-09-18T17:40Z) and a balance of 2,804,551,662. `ORG_LOY_A/B/LOCKED`: `organizations: []`; `AGENT-TEST-Org-LoyaltyOutlet` (`ORG_LOY_A.org_id`) is absent (GET by id empty; absent from a 217-organization listing), while the **sibling org (`sibling_org_id`) still exists** — the analyzer's pass recorded it absent too; the orchestrator's re-check by id on 2026-10-01 contradicted that, and the sibling claim is corrected here. The org-balance route returns **34,516,797** for the deleted org and **219,416** for the sibling. Consequence for the corpus: any case that resolves the VIP id via `@td()` reads a 2.8-billion balance that the storefront account does not have, and `075f`/`083e` preconditions (a *non-zero pooled org balance*, members in the org) cannot hold until re-seeded. Who/what removed the organizations is not established here. **Correction (2026-10-01, §7):** `contact.organizations: []` is not on its own proof of "no membership": on this Customer module membership is the `OrganizationMembership` entity, and the contacts still held memberships to the deleted organization. What decided the storefront result is that xAPI resolves the session organization from `contact.organizations`, and that was empty | `CONFIRMED (live REST + live storefront + alias file read)`; cause `UNVERIFIED` |
+| **D17 — an ended mission: the API says in progress, the page invites action** | After a mission's `endDate` passes, `loyaltyMissionProgress` keeps returning it as `InProgress` with `daysRemaining: 0` (server `Math.Ceiling` floored at 0) until the expiry sweep runs (observed unswept more than 21 min after endDate). The storefront filters on status only, so the card and the order modal show "0 days left", a danger dot and a live "Open mission". Recorded as a Low draft (`reports/bugs/open/low/BUG-missions-ended-mission-zero-days-live-cta.md`); which layer owns the fix is undecided | `CONFIRMED (live API + live storefront, VCST-5957, 2026-10-01)` |
 
-**Where the layers were compared and agree** — the five permissions, the four `Loyalty.Mode`
-values (live-confirmed as the setting's `allowedValues`: `Loyalty Store`, `Mixed Cart`, `Coupon
-Redemption`, `Payment Method`) and the `LoyaltyPaymentMethod` gateway code still match
-one-for-one between `ModuleConstants`, the Admin blade and the published guides. **Newly checked
-and agreeing this pass**: every storefront balance figure matched its Admin REST counterpart
-exactly, on all three accounts (§2b) — the disagreement in that table is between *scopes*, never
-between *layers*.
+**Where the layers were compared and agree**: the five permissions, the four `Loyalty.Mode` allowed
+values (`Loyalty Store`, `Mixed Cart`, `Coupon Redemption`, `Payment Method`), swagger inventory vs
+rev 3, GraphQL signatures vs rev 3, and every storefront balance vs its REST counterpart **for the
+id the platform actually holds** (Nina 38,916; VIP-new 0).
 
 ---
 
 ## §4 — Coverage shape
 
-**Basis: fully re-derived, nothing carried forward except where labelled.** `config/test-suites.json`
-and **all eleven** loyalty suite CSVs were re-parsed from scratch by `csv-parse` on 2026-09-18.
-Manifest `testCount` and actual CSV row count agree exactly at 265 — no manifest/CSV drift.
+**Basis:** `config/test-suites.json` and all 11 loyalty CSVs re-parsed by `csv-parse` 2026-10-01;
+manifest `testCount` agrees with CSV rows (265). All other suite CSVs scanned (case-insensitive
+`loyalty|points-history|loyalty-catalog` over each row; BL citation scan separately).
 `CONFIRMED (corpus read)`.
 
-### The eleven loyalty suites — 265 cases (rev 2 said nine suites, 235 cases)
+**Counts identical to rev 3; content moved.** Commits since rev 3: `2fbb83ce` (2026-09-20) — manifest
++8 lines, `083c` 10 lines (one case, MSNF-031, **title reworded** — the clause "announced as such" was
+dropped from the title; the row's assertions were not diffed here); `eea50cbf` (2026-09-28) —
+`075d` 64 lines and `083d` 14 lines (mind-map `Behavior:` stamps) and creation of the mind map and
+data model; `3026fdb6` (2026-09-29) — `075d` 2, `075e` 4, `083c` 6, `083d` 2 lines and one line in
+each loyalty seeder. **No case was added or removed; no status changed.** `Behavior:` stamps now
+appear in `075d`, `075e`, `083c`, `083d` only (row counts 32/2/3/7).
 
-| Suite | Cases | In `loyalty` group | Automation status | `BL-LOY` cited |
+| Suite | Cases | In `loyalty` | Status | `BL-LOY` cited |
 |---|---|---|---|---|
-| `075` Loyalty (Backend) | 29 | yes | Draft 29 | **none** |
-| `075b` Loyalty Mixed Cart Order (Backend) | 13 | yes | Draft 10 · Manual 1 · Semi-Automated 1 · Automated 1 | 002,003,005,007,008,009,010,012,013 |
-| `075c` Loyalty Product Points Earning (Backend) | 10 | yes | Draft 10 | 001,007 |
-| `075d` Loyalty Missions (Backend) | 34 | **NO** | Automated 19 · Draft 9 · Manual 4 · Deprecated 2 | 007,009,010,015,016,017,019 |
-| `075e` Loyalty Missions Admin (Backend) | 23 | **NO** | Automated 14 · Draft 9 | 015,016 |
-| **`075f` Loyalty Organization Balance (Backend)** — NEW | 22 | yes | Draft 13 · Automated 9 | 007,008,015,018,019 |
-| `083` Loyalty Catalog Browsing (Frontend) | 26 | yes | **Draft 24 · Automated 2** (rev 2: Automated 16 · Draft 10 — DRIFT) | 003 |
-| `083b` Loyalty Mixed Cart Order (Frontend) | 8 | yes | Automated 6 · Draft 2 | 002,003,005,007,008,009,010,013 |
-| `083c` Loyalty Missions Storefront (Frontend) | 84 | yes | Automated 44 · Draft 36 · Manual 1 · Reviewed 3 | 002,003,015,016 |
-| `083d` Loyalty Missions E2E (Frontend) | 8 | yes | Automated 2 · Draft 5 · Deprecated 1 | 007,009,010,013,015,016,018,019 |
-| **`083e` Loyalty Organization Balance Storefront (Frontend)** — NEW | 8 | yes | Automated 2 · Draft 6 | 007,008,010,015,018,019,**020** |
-| **Total** | **265** | **208** in group | **Draft 153 · Automated 99 · Manual 6 · Reviewed 3 · Deprecated 3 · Semi-Automated 1** | 16 distinct ids |
-
-Both new suites landed in commit `9250a23d` (2026-09-15), *two days before* the feature they test
-merged upstream — authored against the PR, now testing released code.
+| `075` Loyalty (B) | 29 | yes | Draft 29 | none |
+| `075b` Mixed Cart Order (B) | 13 | yes | Draft 10 · Manual 1 · Semi 1 · Auto 1 | 002,003,005,007,008,009,010,012,013 |
+| `075c` Product Points Earning (B) | 10 | yes | Draft 10 | 001,007 |
+| `075d` Missions (B) | 34 | **NO** | Auto 19 · Draft 9 · Manual 4 · Deprecated 2 | 007,009,010,015,016,017,019 |
+| `075e` Missions Admin (B) | 23 | **NO** | Auto 14 · Draft 9 | 015,016 |
+| `075f` Organization Balance (B) | 22 | yes | Draft 13 · Auto 9 | 007,008,015,018,019 |
+| `083` Loyalty Catalog (F) | 26 | yes | Draft 24 · Auto 2 | 003 |
+| `083b` Mixed Cart Order (F) | 8 | yes | Auto 6 · Draft 2 | 002,003,005,007,008,009,010,013 |
+| `083c` Missions Storefront (F) | 84 | yes | Auto 44 · Draft 36 · Manual 1 · Reviewed 3 | 002,003,015,016 |
+| `083d` Missions E2E (F) | 8 | yes | Auto 2 · Draft 5 · Deprecated 1 | 007,009,010,013,015,016,018,019 |
+| `083e` Org Balance Storefront (F) | 8 | yes | Auto 2 · Draft 6 | 007,008,010,015,018,019,**020** |
+| **Total** | **265** | **208** | Draft 153 · Auto 99 · Manual 6 · Reviewed 3 · Deprecated 3 · Semi 1 | 16 distinct |
 
 ### Feature-relevant cases the obvious selection group MISSES
 
-`selections.loyalty.include` now resolves to `["075","075b","075c","083","083b","083c","083d","075f","083e"]`
-— **9 suites, 208 cases**. `CONFIRMED (corpus read)`.
+`selections.loyalty.include` = `["075","075b","075c","083","083b","083c","083d","075f","083e"]`
+(9 suites / 208 cases) — unchanged. `075d` and `075e` appear in **no explicit selection**; they are
+reached only through `where`/`all` groups (`backend`, `sprint`, `full`) or an explicit id list.
 
-| Missed | Cases | Why it belongs | Basis |
-|---|---|---|---|
-| `075d` Loyalty Missions | 34 | The entire **backend** mission surface — where points are actually granted. Tagged `loyalty,missions,graphql,api,sprint` and in **no selection group at all** | Re-derived this pass |
-| `075e` Loyalty Missions Admin | 23 | The entire **Admin** mission surface (§2a). Tagged `loyalty,missions,admin,admin-spa,sprint`, in **no group** | Re-derived this pass |
-| `050b4` · `050b1` · `028` · `010` · `050a` · `078c` | **28** across six suites | Cross-domain loyalty rows; `050b4` is the **only** corpus home of `BL-LOY-004` | **Carried forward from rev 2 — NOT re-derived this pass.** Treat as a labelled estimate |
-
-**The shape of the hole, restated with the new arithmetic.** The group carries missions on the
-**frontend** (`083c` 84 + `083d` 8) and **none** of missions on the **backend or Admin** (`075d` 34
-+ `075e` 23 = **57**). Feature-relevant corpus ≈ **293** (265 re-derived + 28 carried forward);
-the group resolves to **208**; so **85 cases — ≈29% of loyalty coverage — never run under
-`loyalty`**. The 85 is numerically identical to rev 2's, because it is the same 57 + 28; **the
-percentage fell from 32% to 29% only because the denominator grew by 30 new cases, not because
-anything was fixed.** `075d` and `075e` belong to no group whatsoever and reach a run only via
-`sprint`, `backend`, `full`, or an explicit id list. **This is a manifest defect; the fix is
-`config/test-suites.json` via `suites:sync`, never a hand edit** — routed, not filed from here.
+**Re-derived cross-domain loyalty rows — 28 rows in NINE non-loyalty suites** (rev 3: "28 in six",
+an estimate): `050b4` 10 · `028` 5 · `010` 5 · `050a` 2 · `026` 2 · `050b1` 1 · `078c` 1 · `095` 1 ·
+`089` 1 = 28. Rev 3's six suites hold 24; the other 4 are `026` (2), `095` (1), `089` (1). **Only two
+suites outside the loyalty folders cite any `BL-LOY-*` id: `050b1` (2 rows), `050b4` (10 rows)**.
+Feature-relevant corpus ≈ 293; group resolves to 208; **85 cases (≈29%) never run under `loyalty`**
+(the 57 in `075d`/`075e` plus 28 cross-domain). Fix is `suites:sync`, not a hand edit.
 
 ### Zero / near-zero coverage
 
 | Area | Count | Deliberate or hole |
 |---|---|---|
-| **`BL-LOY-020`** — the owner-scope invariant, `[P0-revenue]`, governing the entire mechanism this rev enumerates | **1** citing case corpus-wide (`083e`); **0** in `075f`, the 22-case suite authored *for* org balance | **HOLE, and the sharpest one in this domain.** The backend suite for the feature does not cite the invariant for the feature |
-| **`BL-LOY-006`** — currency switch converts primary lines, preserves loyalty lines `[P1-data]` | **0** citing cases corpus-wide | **HOLE** — unchanged from rev 2. The currency switcher is the very mechanism `083` exercises (`currency-override` tag) |
-| **`BL-LOY-014`** — Admin SPA Line items blade shows per-currency totals `[P2-ux]` | **0** citing cases corpus-wide | **HOLE**, low severity — unchanged from rev 2 |
-| `BL-LOY-011` | n/a | **Deliberate** — reserved/PROPOSED, never promoted; nothing to cite |
-| `075` Loyalty (29 cases) — the domain's headline backend suite | **0** `BL-LOY` citations in any row | **HOLE** — unchanged from rev 2, and now against a domain holding **19** invariants |
-| The **Admin Organization loyalty widget** (§2a) | **0** cases across all eleven suites | **HOLE** — a brand-new Admin surface with no coverage. `075e` covers *mission* Admin, `075f` covers the org balance via API |
-| Missions ↔ published docs | 0 doc-grounded cases | **Deliberate consequence** of D4 — no guide exists to ground a `{DOC}` assertion against |
-
-**Basis:** 19 `BL-LOY` invariants are defined (`001`–`010`, `012`–`020`; `011` reserved), enumerated
-from the oracle's own `### BL-LOY-` headers this pass. Sixteen are cited by at least one loyalty
-suite; `004` is cited only outside the loyalty suites (carried forward); `006` and `014` are
-uncited corpus-wide. `CONFIRMED (corpus read)`.
+| **PR #18's two rejection messages and the Admin blade's `onSaveError` display** | **0** cases (`cannot be negative` appears in no suite) | **HOLE, new** — both surfaces are deployed; coverage lives only in two ticket verification summaries |
+| `BL-LOY-020` (owner scope) | 1 citing case (`083e`); **0 in `075f`** | **HOLE**, unchanged |
+| `BL-LOY-006` | 0 | **HOLE**, unchanged |
+| `BL-LOY-014` | 0 | **HOLE**, low severity, unchanged |
+| `BL-LOY-011` | n/a | **Deliberate** (reserved) |
+| `075` Loyalty (29 cases) | 0 `BL-LOY` citations | **HOLE**, unchanged |
+| Admin organization loyalty widget | 0 cases | **HOLE** — now reachable (§2a); `075f` covers the org balance by API only |
+| **An organization-less / recreated-account balance** (D16) | 0 | **HOLE, new** — no case asserts the storefront's zero-vs-orphaned ambiguity |
+| Missions ↔ docs | 0 doc-grounded | **Deliberate consequence** of D4 |
 
 ### Over-covered relative to risk
 
-`083c` Loyalty Missions Storefront still holds **84 cases — 32% of all loyalty coverage** (was
-36%; the share fell only because 30 cases were added elsewhere) — and it is the *storefront read
-surface*: account page, modal, a11y. Set that against **`075d`'s 34 cases**, which is where points
-are actually granted and where `BL-LOY-016/017/019` measured the accrual defects — and which is in
-**no selection group**. **The layer that decides whether points leak carries 34 cases and never
-runs under `loyalty`; the layer that displays them carries 84 and always does.** That is the
-culling argument; making the decision belongs to `/qa-review-tests`, not here.
+`083c` still holds 84 cases (32% of loyalty coverage) on the storefront *read* surface, while the
+backend grant surface `075d` holds 34 and runs under no loyalty selection. Unchanged argument; the
+decision belongs to `/qa-review-tests`.
 
-### Selection-group and executability problems — re-derived this pass, including both new suites
+### Selection-group and executability problems
 
 | Property | Reading |
 |---|---|
-| `requiresModules` | `["loyalty"]` on all six `075*` and on `083c`/`083d`/`083e` — **still absent on `083` and `083b`**. `083` is the loyalty-*catalog* suite whose route the docs' own troubleshooting says 404s when the module or mode is wrong, so the gate that would skip it cleanly is exactly the one it does not declare. **HOLE, unchanged** |
-| `envRiskGate` | `staging` on all six `075*` **and now on `083e`** — the first frontend loyalty suite to carry it, correctly, because every case needs the org-mode store setting. Still absent on `083`, `083b`, `083c`, `083d`. **DRIFT vs rev 2's "absent on all four `083*`"** |
-| Browser lanes | `agent`: `075*` → `qa-backend-expert`, `083*` → `qa-frontend-expert`. `defaults.firefoxClickOk: true`, so **no lane denial applies** to any loyalty suite (`browserDenyListFor` is inert while that flag holds) |
-| Never-run share | **153 of 265 (58%) are `Draft`** — worse than rev 2's 51%, driven by `083`'s 14-case Automated→Draft move and by `075f`/`083e` arriving largely Draft. Still includes **all 29** of `075` and **all 10** of `075c` |
-| Deprecated | 3 (`075d` 2, `083d` 1), still counted in `testCount` — the manifest total overstates runnable cases by 3. Unchanged |
-| **Mutual exclusion — NEW and load-bearing** | `083e` carries a long `notes` field declaring that **every** case requires `Loyalty.LoyaltyBalanceCalculationMode = Organization`, that **no other loyalty suite may run on the same store inside that window**, that `LOYORG-E2E-001` is destructive and must run first, that `LOYORG-E2E-005` is the only mode-writer and must run last, and that a `carts:check` pre-flight is mandatory because balance **deltas** are the only reproducible assertion (there is no balance-reset API). **None of this is expressible in the manifest** — it lives in prose in a `notes` field, so `selections.loyalty` will happily schedule `083e` alongside the eight suites it excludes. This is the single biggest executability risk in the domain and it is invisible to every tool |
+| `requiresModules` | `["loyalty"]` on all `075*` and `083c/d/e`; **absent on `083`, `083b`** — unchanged |
+| `envRiskGate` | `staging` on all six `075*` and `083e`; absent on `083`, `083b`, `083c`, `083d` — unchanged |
+| Browser lanes | `firefoxClickOk: true`; no lane denial applies to any loyalty suite |
+| Never-run share | 153 of 265 (58%) Draft — unchanged |
+| **Mutual exclusion** | `083e` `notes` demand that no other loyalty suite share the store in its window. `selections.loyalty` still schedules `083e` and `075f` (also Organization-mode) alongside `075*`/`083*` — `regression:plan loyalty` lists both in one plan. Still invisible to the manifest |
+| **Fixture liveness (NEW, D16)** | `075f` and `083e` are executable in the manifest sense but their `@td(ORG_LOY_*)` preconditions are false on Env-A today (primary organization absent, members org-less) — a re-seed precedes any run. Nothing in the manifest or `suites:lint` can express "alias ids are live" |
 
-**Fixture accumulation, live this pass**: 67 missions (65 `Published`, 1 `Draft`, 1 `Archived`;
-**15** with `public: false`), 1,674 mission-progress rows, 2,152 ledger rows. The three
-`AGENT-TEST-MSN-E2E-*` batches rev 2 flagged are still undeleted, joined by an
-`AGENT-TEST-MSN-ORGLOY-*` batch from 2026-09-14. **The live mission list on Env-A is not a clean
-slate; it is an accumulation of prior runs' output**, and no job reaps it (§2a).
+**Fixture accumulation, live:** 69 missions (65 Published / 3 Draft / 1 Archived; 17 `public:false`),
+2,833 progress rows, 2,830 ledger rows, 22 programs. Still no reaping.
 
 ---
 
@@ -535,62 +444,62 @@ slate; it is an accumulation of prior runs' output**, and no job reaps it (§2a)
 
 | # | Gap | State |
 |---|---|---|
-| G1 | Storefront-rendered claims | **CLOSED** (rev 2) — and re-confirmed on three accounts this pass |
-| G2 | `Loyalty.Missions.Enable`/`DefaultProductMultiplyFactor` reachability | **CLOSED** (rev 2). Note the answer **extended** this pass: a fourth store setting exists and is the only non-public one (D13) |
-| G3 | D2's two guide pages, one surface or two | **CLOSED** (rev 2) |
-| **G4** | Every `BL-LOY-0xx` live measurement cited here is still inherited from the oracle's dated captures (2026-06-09 → 2026-09-01); **none was re-run this pass either**. Folds in the still-unexercised mixed-cart split UI and checkout "Pay with points" tab (both documented verbatim in `StorefrontUserGuide`, §2e, and never once observed by this map), and the `VCST-5346` bootstrap question, refined to the account **sidebar** | **OPEN** — needs: (a) `seed:missions-e2e` + an order placement + an order cancellation to re-confirm `BL-LOY-017`/`BL-LOY-019` live; (b) adding a loyalty-catalog product to a real cart to observe the split UI and the checkout points tab; (c) a sign-in performed WHILE already on an `/account/*` page to settle whether the sidebar's Marketing group is reactive to auth state. All are mutations or session-timing tests a read-only pass will not perform |
-| G5 | Has `Loyalty.ExpireMissions` ever fired? | **CLOSED** (rev 2, live Hangfire). **Carried forward, not re-checked this pass** |
-| G6 | Live route for the points page | **CLOSED** (rev 2) — re-confirmed from `FrontendSourceCode` this pass |
-| G7 | Is `.Public` read anywhere besides the customer query? | **CLOSED** (rev 2) |
-| G8 | Is `VCST-5320`'s "CustomerIDs" targeting real? | **CLOSED — it is not.** Strengthened this pass by the two-account group-filtering contrast (§1 Actors) |
-| G9 | Deployed module versions unknown | **CLOSED** (rev 2) — re-derived this pass; see the rewritten D10 |
-| **G10** | `test-data/aliases.json`'s `LOYALTY_VIP_USER` carries a bare inline password literal, uncovered by `td:reconcile`'s fixed 5-CSV hygiene scan (`aliases.json` is not among the scanned files) | **STILL OPEN — re-checked and deliberately not touched.** Re-verified this pass: a 9-character bare literal, with a redundant `password_env: LOYALTY_VIP_USER_PASSWORD` key beside it. **Newly sharpened**: the three org-loyalty fixtures added since (`ORG_LOY_A`, `ORG_LOY_B`, `LOY_PERSONAL_NOORG`) all correctly carry `{{DEFAULT_TEST_PASSWORD}}`, so this is now the **only** loyalty alias with a literal — a one-row fix, not a pattern. This map's own walk used `--secrets` with the bare key name and never reproduced the value. Routed, not filed: replace the literal with a `{{VAR}}` token and add `aliases.json` to the hygiene scan's file list |
-| **G11** | **The Admin Organization loyalty-balance widget has never been seen to render.** Its registration against blade `organizationDetail2`, its controller, its template and its localized title are `CONFIRMED (source)` at the exact deployed commit, and the REST endpoint it calls is live-confirmed returning 34,516,797 for a real org — but the widget itself was **not reached** | **OPEN, and it needs no mutation — only the right navigation.** Attempted live this pass: clicking the organization row in Contacts opens the organization's **member-list** blade, and neither its toolbar (`Refresh / Add / Delete / Invite customers / Import / Export / Lock in organization / More`) nor the `More` menu nor the breadcrumb reached an organization **detail** blade. Needs someone who knows the correct Admin path to `organizationDetail2` (or a `vc-platform` Customer-module read of how that blade is pushed). Until then the whole Admin org surface is source-only |
-| **G12** | **The entire organization-scope runtime is UNVERIFIED, because the store under test reads `Customer` mode.** Everything in §1 link 5a/5b/11, §2c and D12 is source-grounded and structurally corroborated (the setting's `allowedValues`, the split REST routes, the populated `OwnerId`, a non-zero org balance) — but **no org-mode read or write was observed happening**. Specifically unverified: that a member's order earns into the pooled ledger; that two members share one mission progress; that `userId` is genuinely ignored in org mode; that the cart validates against the pooled balance; that a no-org buyer in an org-mode store is shown a balance they cannot spend (the drafted Critical bug); and whether a cart whose `OrganizationId` differs from the session claim is validated against a different balance than the account page shows (D12d) | **OPEN.** The blocking mutation, named: **a store-setting write of `Loyalty.LoyaltyBalanceCalculationMode` from `Customer` to `Organization`** on the store under test — plus, for the earn half, an order placement. `083e`'s own `notes` field specifies the protocol (mode set before the suite, restored after; no other loyalty suite on the same store inside that window; relative-delta assertions only, because there is no balance-reset API). This pass would not perform that write |
+| G1 | Storefront-rendered claims | **CLOSED** (rev 2); re-walked on five accounts this pass |
+| G2 | `Missions.Enable`/`DefaultProductMultiplyFactor` reachability | **CLOSED** (rev 2); the fourth, non-public setting recorded (D13) |
+| G3 | D2's two guide pages | **CLOSED** (rev 2) |
+| **G4** | Every `BL-LOY-0xx` live measurement is still inherited from the oracle's dated captures; mixed-cart split UI, checkout "Pay with points" tab, the guide's "balance fully covers the order amount" and "1 point = 1 unit" claims, and the sidebar auth-reactivity question were not observed | **OPEN** — needs (a) `seed:missions-e2e` + an order placement + a cancellation; (b) a loyalty-catalog product in a real cart; (c) a sign-in performed while already on an `/account/*` page. All mutations or session-timing tests |
+| G5 | Has `Loyalty.ExpireMissions` ever fired? | **CLOSED** (rev 2), carried, not re-checked |
+| G6 | Live route for the points page | **CLOSED** (rev 2) |
+| G7 | Is `.Public` read elsewhere? | **CLOSED** (rev 2) |
+| G8 | `VCST-5320` "CustomerIDs" targeting | **CLOSED — not real**; group filter re-demonstrated |
+| G9 | Deployed module versions | **CLOSED** (rev 2); re-derived (D10) |
+| **G10** | `LOYALTY_VIP_USER` carries a bare inline password literal in `test-data/aliases.json` | **STILL OPEN — present** (a 9-character literal on `password`, plus a redundant `password_env`; value never reproduced). `ORG_LOY_A`, `ORG_LOY_B`, `ORG_LOY_LOCKED`, `LOY_PERSONAL_NOORG` carry `{{DEFAULT_TEST_PASSWORD}}`; `LOYALTY_NOBAL_USER`/`LOYALTY_WHOLESALE_USER` carry `password_env` only. Fix not applied from here |
+| **G11** | Admin organization loyalty-balance widget never seen to render | **CLOSED (live, rev 4)** — Contacts → search → three-dots → **Manage** → organization detail blade → **"Loyalty balance"** widget, value `0` on an organization with no org-scope ledger. Prior art `VCST-5024` (Sprint26-18) had already captured it rendering a non-zero pooled value under org mode. Rev 3's "member LIST blade" was the row click, not the Manage action |
+| **G12** | Entire organization-scope runtime `UNVERIFIED` (store reads `Customer`) | **OPEN.** Blocking mutation: store-setting write `Loyalty.LoyaltyBalanceCalculationMode: Customer → Organization` on the store under test, plus an order placement for the earn half. **Newly compounded by D16:** the pooled-balance fixtures needed to observe it are gone, so a re-seed of the organizations/members precedes even that |
+| **G13** | Reserved fixtures are stale (D16): who recreated the VIP account on 2026-09-19, removed the primary loyalty organization, and detached its members; whether the alias file or a teardown run is the source of truth | **OPEN** — needs: a `td:reconcile`/seeder re-run (mutation) and the seeders' teardown logs; neither is a read |
+| **G14** | PR #18's two rejection messages and the Admin blade's error display, observed live by this map | **OPEN (UNVERIFIED)** — mutation: `POST`/`PUT /api/loyalty-missions` with a negative reward amount / goal value (even though nothing persists, it is a write against a real endpoint). Cited as `CONFIRMED (prior-art)` from `VCST-5855`/`VCST-6084` at this build |
+| **G15** | Is the wrong-currency symptom in the drafted `loyaltyMissionProgress` bug gone now that the query accepts `currencyCode`? | **OPEN** — needs only a read: an authenticated xAPI `loyaltyMissionProgress` call with a non-session `currencyCode` against the named SKU. Not attempted (breadth-first); not a mutation |
 
-**Security-adjacent aside, carried forward from rev 2 and not re-checked**: the Hangfire dashboard
-accepted a plain platform bearer token with no Hangfire-specific claim observed. Platform-wide, not
-a Loyalty surface — out of scope for this map to adjudicate.
+**Aside, carried from rev 2 and not re-checked:** Hangfire dashboard accepts a plain platform bearer
+token — platform-wide, out of scope to adjudicate here.
 
 ---
 
 ## §6 — Prior-art verdicts
 
-Rev 1's and rev 2's tables are preserved in git history. This section adds only what rev 3 newly
-settles or overturns.
+Rev 1/2/3's tables are in git history. New this rev:
 
 | Claim | Verdict |
 |---|---|
-| **This map's own rev 2, D11**: organization-level loyalty is unmerged and absent from Env-A | **OVERTURNED BY EVENTS, not wrong when written.** See D11. The distinction matters: rev 2's method was sound and its evidence was correct on its date; the environment moved |
-| **This map's own rev 2, §0/§6**: points-history mission rows show the label **"Mission"** | **DRIFT — the literal is "Mission reward".** Live on two accounts this pass. The substance (coarse label, no mission name or id ⇒ `BL-LOY-015` unaffected) survives; the quoted string does not |
-| **This map's own rev 2, D4 strengthening**: `B2BExperts` zero-hits extends the finding to a fourth source | **WITHDRAWN.** `B2BExperts` holds no Virto Commerce product documentation at all; its silence about Missions is not evidence of anything. D4 itself is unaffected and now rests on five real sources |
-| `reports/tickets/Sprint26-18/VCST-5024/summary.json` — *"NOT REACHED — the 5b gate REJECTED on re-verification… No verdict may be published"* | **Correctly treated as UNRATIFIED throughout this map.** Nothing in this rev is sourced from that run's conclusions. Note for whoever resumes it: the premise has changed under it — the feature it could not ratify is now merged, released and deployed |
-| `BUG-org-mode-contact-level-transactions-written-but-unreachable-VCST-5024.md` (DRAFTED, not filed) — org-scope ledger rows are invisible to every user-scoped read | **Its read-side consequence is now visible from the CUSTOMER surface with no mutation**: §2b's middle row — a member of an org holding 34,516,797 points sees `Balance: 0` and "No records found". This map **records that the draft exists and what surface it names**; it does not file it, does not re-derive its `BuildOwnerQuery` root cause, and does not adjudicate it |
-| `BUG-loyalty-mission-progress-serves-non-session-currency-price.md` (DRAFTED, not filed) — *"The operation exposes no `currencyCode` argument at all, so the storefront cannot request the right one"* | **PARTIALLY OVERTAKEN BY EVENTS.** Live introspection this pass: `loyaltyMissionProgress` **does** now accept `currencyCode`, and `vc-frontend`'s own query document passes `$currencyCode`. The draft's central claim about the *fix shape* ("resolver-side, no client argument exists") no longer holds; **whether the wrong-currency symptom is actually gone is `UNVERIFIED`** — that needs a live re-check against the named SKU. Whoever picks this up should re-verify before filing, not file as drafted |
-| `ba-vcst-5104-customer-mixed-cart-loyalty-order-2026-06-24.md` — points page at `{{FRONT_URL}}/account/loyalty` | **DRIFT, resolved (rev 2), re-confirmed this pass from `FrontendSourceCode`.** Do not cite that guide's route again |
-| `missions-design-gaps-2026-08-28.md` / `BL-LOY-015` — a customer cannot see *which* mission granted a row | **Still true, bounded once more.** The row now says "Mission reward"; it still does not say which mission |
-| `VCST-5320-2026-08-27.md` C6/C7/C8 — a distinct "CustomerIDs" targeting dimension | **REFUTED** (rev 2), strengthened this pass. Recommend flagging C6–C8 stale in a `/qa-review-tests` pass |
-| `VCST-5320-2026-08-27.md` C17 (D7) — `Public=false` mission shown anyway | **CONFIRMED (live)**, now on two independent accounts in two customer groups |
+| **This map's rev 3 §2b rows 1–2** (VIP 2,804,550,892 with 23 pages; org member sees 0 against a 34.5M org ledger) | **DRIFT — fixtures moved (D16).** Rev 3 was correct on 2026-09-18; the account was recreated the next morning, the primary organization has since been removed and its members detached |
+| **This map's rev 3 "Company" sidebar group** | **DRIFT — my transcription was wrong.** The group is **"Corporate"**, live; the storefront guide already says so |
+| **This map's rev 3 D10** (backend `3.1008.0` ≡ `ab0908a8`; theme 2.58.0-pr-2467) | **SUPERSEDED** by D10 above (`3.1009.0-pr-18-4411`; theme 2.59.0-pr-2501) |
+| **BL-LOY-017's Source line**: *"re-derived 2026-09-28 at the release the environment runs (`ab0908a8`)"* | **DRIFT in naming only.** Env-A runs `4411e195` / tag `3.1009.0`, not `ab0908a8`. The cited accrual files are untouched between the two (compare above), so the content stands; the *revision label* is stale. Routed, not edited |
+| `reports/tickets/Sprint26-19/VCST-5855` + `VCST-6084` verification summaries | **Used as `CONFIRMED (prior-art)`** for PR #18's live behaviour at `4411` (G14). Notes recorded, not adjudicated: zero reward saves as a Draft; `httpError` `TypeError` on list-shaped 400 is a platform-side observation, unfiled |
+| `vc/shared/archive/sprints/Sprint26-18/VCST-5024/design-report.md` | **Used for G11** (widget rendered under org mode) and C1/C2 (success-only callback; contact widget reads 0 for a pooled member). Its "Ada's spendable balance 127,040" has since grown to 34,516,797 on the (now deleted) org |
+| `BUG-org-mode-contact-level-transactions-written-but-unreachable-VCST-5024.md` (drafted, unfiled) | Names the **user-scoped read** surface (storefront + Admin contact widget). Recorded; not filed, not adjudicated; its live demonstration fixture is gone (D16) |
+| `BUG-loyalty-mission-progress-serves-non-session-currency-price.md` | Names `loyaltyMissionProgress` price currency. Partly overtaken by `currencyCode` (rev 3); symptom state `UNVERIFIED` (G15) |
+| `BUG-loyalty-mission-public-flag-has-no-effect.md` | Names the `Public` flag — **D7 supports it** (third account). Recorded only |
+| `BUG-AI-loyalty-mission-localizedname-null-culturename.md` | Names `loyaltyMissionProgress` without `cultureName` — **KB-6A20B0AF covers the same fact**; not re-run here |
+| `BUG-loyalty-published-mission-edit-returns-500.md` | Names `PUT /api/loyalty-missions` on a Published mission (500). Not re-run (a write) |
+| `BUG-loyalty-missions-design-drift-three-surfaces.md`, `BUG-loyalty-mission-date-severity-ladder-collapses.md`, `BUG-missions-points-history-link-below-aa-touch-target.md` | Name storefront `/account/missions` visual surfaces (order modal banner, mobile grid, card banner, date badge, "Points history" link). **Not re-measured**; the surfaces exist live. Recorded only |
 
-**This map resolves, newly this pass:** the merge status and exact deployed revision of the
-org-level feature (D11, D10); where org-vs-customer resolution branches in source, and that it is
-ambient-only by design (D12); that mission progress genuinely contributes at org level via a shared
-`OwnerId`-scoped record (§1 link 5b); that the storefront has **no** org-aware loyalty code at all
-(D13); and the true shape of the corpus after it grew by two suites and 30 cases (§4).
-**It still does not resolve, and carries forward:** every live `BL-LOY` re-measurement and the
-mixed-cart/checkout render (G4), the Admin org widget's render (G11), and the whole org-mode
-runtime (G12).
+**Resolved by this map this pass**: G11; the true shape of the cross-domain row count (28 rows, nine
+suites); the exact commit behind `…-pr-18-4411` and its relation to tag `3.1009.0`; the sidebar group
+label. **Not resolved, carried**: G4, G12, G13, G14, G15, every live `BL-LOY` re-measurement, the
+Hangfire/ExpireMissions state.
 
 ---
 
 ## §7 — Amendments
 
-Written by `/qa-test` `5h-map`, one row per write-back, **append-only**. An amendment sets
-`amended:` and never `generated:` or `rev:`.
+Written by `/qa-test` `5h-map`, one row per write-back, append-only. An amendment sets `amended:` and
+never `generated:` or `rev:`.
 
-*(Empty — no `/qa-test` run has amended this map yet. Preserved unchanged from rev 1 and rev 2; a
-refresh is not itself an amendment and does not populate this table.)*
+*(Empty — no `/qa-test` run has amended this map yet. Preserved unchanged from rev 1–3; a refresh is
+not itself an amendment and does not populate this table.)*
 
 | Date | By | What moved |
 |---|---|---|
-| — | — | — |
+| 2026-10-01 | `/qa-seed-data` (after the rev-4 pass) | **D16 / G12 / G13 acted on, live.** `seed:org-loyalty` re-created `AGENT-TEST-Org-LoyaltyOutlet` (new id in `aliases.vcst.json`) with 3 org-scoped memberships (`ORG_LOY_LOCKED` `isLocked=true`) and minted fresh `ORG_LOY_MISSION*` (old generation swept); no order placed, store mode untouched (`Customer`). The seeder reuses existing contacts **without** adding the new org to `contact.organizations`, so xAPI `me.contact.organizationId` stayed `null`; fixed by a `PUT /api/members` relink, and the three dangling memberships to the deleted organization were removed. Verified: xAPI resolves the outlet for `ORG_LOY_A`/`B`; `ORG_LOY_LOCKED` lists it with `organizationId: null` (locked membership). `LOYALTY_VIP_USER`, `LOYALTY_NOBAL_USER`, `LOYALTY_WHOLESALE_USER` overlay ids refreshed to the accounts recreated together at 2026-09-19 08:32Z, which narrows G13 to a single company-users re-seed. G12 (the org-mode runtime) is still OPEN: it needs the mode flip, which only a run makes |
+| 2026-10-01 | `/qa-test VCST-5957` 5-docs-map | **§2b +2 rows** (Missions page redesign, SKU modal redesign — theme `2.59.0-pr-2524-3069`, PR preview, live). **New D17** (ended-unswept mission: API InProgress/0 vs live CTA). **D16 extended, live:** the **USER** account (`USER_EMAIL`) was also recreated at 2026-09-19 08:32Z (new id `cdfe0285…`); `MSN_PROGRESS_COMPLETED` stays Completed on the old id `f194c370…` (read via `POST /api/loyalty-mission-progress/search`), which is why 083c rows signing in as USER read it at 0 % — fixture drift, not a progress reversal. No row deleted or renumbered |

@@ -2,9 +2,9 @@
   "$schema": "../../templates/mind-map.schema.json",
   "schema_version": "1.0",
   "domain_slug": "loy",
-  "domain_map_rev": 3,
+  "domain_map_rev": 4,
   "generated": "2026-09-28",
-  "amended": "2026-09-28",
+  "amended": "2026-10-01",
   "metadata": {
     "scope": "Loyalty MISSIONS only — the program earn/redeem path and Mixed Cart (BL-LOY-001..014) are out of this pilot.",
     "built_from": "loyalty-missions.md rev 3 (§1 value chain, §1 actors, §3), business-logic.md Domain 17 (BL-LOY-015..020), suites 075d + 083d, kb KB-608F7C05 / KB-E84AAF1D, scripts/seed-data/loyalty/missions-e2e-specs.mjs header",
@@ -19,23 +19,46 @@
       "description": "Admin-authored goals (order value / order count / per-SKU) that grant a fixed points reward once a customer's qualifying orders meet the target.",
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "SPEC", "ref": "VCST-5319", "note": "missions feature ticket" },
-        { "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 link 2b", "note": "67 missions live on Env-A", "date": "2026-09-18" }
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "missions feature ticket"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §1 link 2b",
+          "note": "67 missions live on Env-A",
+          "date": "2026-09-18"
+        }
       ]
     },
-
     {
       "id": "loy.missions.gate",
       "type": "behavior",
       "name": "The missions switch gates reads and accrual",
       "chain_link": "1b",
       "description": "Loyalty.Missions.Enable is read independently at the write path, the read path and the storefront route registration.",
-      "interfaces": ["graphql", "job", "storefront"],
-      "requires": ["data.loy.store.missions-enabled"],
+      "interfaces": [
+        "graphql",
+        "job",
+        "storefront"
+      ],
+      "requires": [
+        "data.loy.store.missions-enabled"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 1b", "note": "source: three independent gates, no shared helper" },
-        { "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 link 1b", "note": "store value true on Env-A", "date": "2026-09-18" }
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 1b",
+          "note": "source: three independent gates, no shared helper"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §1 link 1b",
+          "note": "store value true on Env-A",
+          "date": "2026-09-18"
+        }
       ]
     },
     {
@@ -45,7 +68,21 @@
       "technique": "DT",
       "name": "Switch on — loyaltyMissionProgress returns the customer's missions",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §2b", "note": "storefront walk across three accounts", "date": "2026-09-18" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §2b",
+          "note": "storefront walk across three accounts",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev4 §2b",
+          "date": "2026-10-01",
+          "note": "Loyalty.Missions.Enable=true; /account/missions rendered on five accounts"
+        }
+      ],
+      "last_verified": "2026-10-01"
     },
     {
       "id": "loy.missions.gate.off-read",
@@ -53,9 +90,17 @@
       "branch_kind": "negative",
       "technique": "DT",
       "name": "Switch off — the read returns nothing and an in-progress summary is hidden",
-      "requires": ["data.loy.store.missions-disabled"],
+      "requires": [
+        "data.loy.store.missions-disabled"
+      ],
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C2, C25 — its cases (MSN-010, MSN-017) are Manual, never promoted" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C2, C25 — its cases (MSN-010, MSN-017) are Manual, never promoted"
+        }
+      ]
     },
     {
       "id": "loy.missions.gate.off-no-accrual",
@@ -63,24 +108,51 @@
       "branch_kind": "negative",
       "technique": "ST",
       "name": "Switch off — a qualifying order accrues nothing",
-      "requires": ["data.loy.store.missions-disabled"],
+      "requires": [
+        "data.loy.store.missions-disabled"
+      ],
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C1 — MSN-018 is Manual" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C1 — MSN-018 is Manual"
+        }
+      ]
     },
-
     {
       "id": "loy.mission.author",
       "type": "behavior",
       "name": "Admin authors a mission",
       "chain_link": "2b",
-      "actors": ["store manager"],
+      "actors": [
+        "store manager"
+      ],
       "description": "One goal (OrderValueGoal / OrderCountGoal / PerSkuGoal), conditions restricted to user-group conditions, a FixedAmountReward.",
-      "interfaces": ["admin-ui", "rest"],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b", "note": "source" },
-        { "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 link 2b", "date": "2026-09-18" }
-      ]
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 2b",
+          "note": "source"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §1 link 2b",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev4 §1 link 2b",
+          "date": "2026-10-01",
+          "note": "mission template palette re-read live"
+        }
+      ],
+      "last_verified": "2026-10-01"
     },
     {
       "id": "loy.mission.author.goal-types",
@@ -88,9 +160,24 @@
       "branch_kind": "happy",
       "technique": "EP",
       "name": "Three distinguishable goal types; a group-only condition palette",
-      "requires": ["data.loy.mission.stable-definition"],
+      "requires": [
+        "data.loy.mission.stable-definition"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-001 / MSN-002 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-001 / MSN-002 promoted"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev4 §1 link 2b",
+          "date": "2026-10-01",
+          "note": "template offers exactly OrderValueGoal/OrderCountGoal/PerSkuGoal, UserGroupIsCondition/AnyUserGroupCondition, FixedAmountReward only"
+        }
+      ],
+      "last_verified": "2026-10-01"
     },
     {
       "id": "loy.mission.author.currency-required",
@@ -100,8 +187,16 @@
       "name": "An OrderValueGoal without a currency code is rejected with a validation error",
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-004 promoted" },
-        { "class": "OBSERVED", "ref": "kb:KB-E84AAF1D", "note": "POST/PUT /api/loyalty-missions return 400 with the FluentValidation array" }
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-004 promoted"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-E84AAF1D",
+          "note": "POST/PUT /api/loyalty-missions return 400 with the FluentValidation array"
+        }
       ]
     },
     {
@@ -111,7 +206,13 @@
       "technique": "BVA",
       "name": "An invalid or wrong-case currency code is accepted — validation is asymmetric",
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C19 — MSN-005 still Draft" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C19 — MSN-005 still Draft"
+        }
+      ]
     },
     {
       "id": "loy.mission.author.dates-unvalidated",
@@ -120,7 +221,13 @@
       "technique": "BVA",
       "name": "StartDate after EndDate is saved without a validation error",
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C22 — MSN-007 still Draft" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C22 — MSN-007 still Draft"
+        }
+      ]
     },
     {
       "id": "loy.mission.author.periodicity-unvalidated",
@@ -129,7 +236,13 @@
       "technique": "EG",
       "name": "A non-None periodicity is accepted and never branched on",
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C4 — MSN-003 still Draft" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C4 — MSN-003 still Draft"
+        }
+      ]
     },
     {
       "id": "loy.mission.author.edit-published",
@@ -141,8 +254,16 @@
       "state_after": "loy.mission.state.published",
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "OBSERVED", "ref": "kb:KB-608F7C05", "note": "a Published mission is immutable" },
-        { "class": "SPEC", "ref": "VCST-5319", "note": "C20 — MSN-006 asserts the status code, still Draft" }
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-608F7C05",
+          "note": "a Published mission is immutable"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C20 — MSN-006 asserts the status code, still Draft"
+        }
       ]
     },
     {
@@ -152,23 +273,39 @@
       "technique": "EG",
       "name": "Deleting a mission that has accrued progress fails with a foreign-key 500",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "kb:KB-608F7C05", "note": "the bulk delete is atomic; nothing in the batch is removed" }],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-608F7C05",
+          "note": "the bulk delete is atomic; nothing in the batch is removed"
+        }
+      ],
       "notes": "No case covers this — the reason a mission with progress can be neither edited nor recreated, which is why 083d mints fresh missions per run."
     },
-
     {
       "id": "loy.mission.state.draft",
       "type": "state",
       "name": "Mission: Draft",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b", "note": "one-way Draft → Published → Archived" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 2b",
+          "note": "one-way Draft → Published → Archived"
+        }
+      ]
     },
     {
       "id": "loy.mission.state.published",
       "type": "state",
       "name": "Mission: Published",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 2b"
+        }
+      ]
     },
     {
       "id": "loy.mission.state.archived",
@@ -176,7 +313,13 @@
       "name": "Mission: Archived",
       "terminal": true,
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1", "note": "flowchart: Archive, one-way, no reverse" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1",
+          "note": "flowchart: Archive, one-way, no reverse"
+        }
+      ]
     },
     {
       "id": "loy.mission.publish",
@@ -185,10 +328,20 @@
       "technique": "ST",
       "state_before": "loy.mission.state.draft",
       "state_after": "loy.mission.state.published",
-      "requires": ["data.loy.mission.draft"],
-      "interfaces": ["admin-ui", "rest"],
+      "requires": [
+        "data.loy.mission.draft"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 2b"
+        }
+      ]
     },
     {
       "id": "loy.mission.archive",
@@ -197,21 +350,42 @@
       "technique": "ST",
       "state_before": "loy.mission.state.published",
       "state_after": "loy.mission.state.archived",
-      "interfaces": ["admin-ui", "rest"],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 2b" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 2b"
+        }
+      ]
     },
-
     {
       "id": "loy.mission.visibility",
       "type": "behavior",
       "name": "A customer sees the published, in-window missions their groups match",
       "chain_link": "7",
-      "actors": ["customer"],
-      "interfaces": ["graphql", "storefront"],
-      "requires": ["data.loy.store.missions-enabled"],
+      "actors": [
+        "customer"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.loy.store.missions-enabled"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 actors", "note": "group filtering and public-flag filtering shown to be independent", "date": "2026-09-18" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §1 actors",
+          "note": "group filtering and public-flag filtering shown to be independent",
+          "date": "2026-09-18"
+        }
+      ]
     },
     {
       "id": "loy.mission.visibility.group-match",
@@ -219,11 +393,24 @@
       "branch_kind": "permission",
       "technique": "DT",
       "name": "A group-targeted mission is visible to a member and absent for an outsider",
-      "requires": ["data.loy.mission.group-targeted", "data.loy.customer.group-member", "data.loy.customer.group-outsider"],
+      "requires": [
+        "data.loy.mission.group-targeted",
+        "data.loy.customer.group-member",
+        "data.loy.customer.group-outsider"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-011 promoted" },
-        { "class": "OBSERVED", "ref": "domain-map:loy@rev3 §1 actors", "note": "TGT-GROUP hidden from the org-group account", "date": "2026-09-18" }
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-011 promoted"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §1 actors",
+          "note": "TGT-GROUP hidden from the org-group account",
+          "date": "2026-09-18"
+        }
       ]
     },
     {
@@ -232,10 +419,26 @@
       "branch_kind": "state",
       "technique": "DT",
       "name": "A Published mission with public=false is returned exactly like a public one",
-      "requires": ["data.loy.mission.private"],
+      "requires": [
+        "data.loy.mission.private"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 D7", "note": "seen on two accounts in two customer groups", "date": "2026-09-18" }],
-      "notes": "The OBSERVED behaviour is confirmed; the INTENT behind the flag is undeclared (reports/bugs/open/low/BUG-loyalty-mission-public-flag-has-no-effect.md). Not DRIFT: there is no higher-precedence source to disagree with yet."
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 D7",
+          "note": "seen on two accounts in two customer groups",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev4 D7",
+          "date": "2026-10-01",
+          "note": "third independent account (ordinary, no customer group) also sees TGT-PRIVATE"
+        }
+      ],
+      "notes": "The OBSERVED behaviour is confirmed; the INTENT behind the flag is undeclared (reports/bugs/open/low/BUG-loyalty-mission-public-flag-has-no-effect.md). Not DRIFT: there is no higher-precedence source to disagree with yet.",
+      "last_verified": "2026-10-01"
     },
     {
       "id": "loy.mission.visibility.expired-excluded",
@@ -243,24 +446,43 @@
       "branch_kind": "state",
       "technique": "ST",
       "name": "An expired mission with no prior progress is excluded",
-      "requires": ["data.loy.mission.expired"],
+      "requires": [
+        "data.loy.mission.expired"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-008 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-008 promoted"
+        }
+      ]
     },
-
     {
       "id": "loy.progress.state.transient",
       "type": "state",
       "name": "Progress: not persisted (a fabricated 0% row)",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "VCST-5319", "note": "MSN-034 promoted 2026-09-01 — a new account sees only transient rows" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5319",
+          "note": "MSN-034 promoted 2026-09-01 — a new account sees only transient rows"
+        }
+      ]
     },
     {
       "id": "loy.progress.state.in-progress",
       "type": "state",
       "name": "Progress: InProgress",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-018", "note": "GetOrCreateProgressAsync creates the record at CurrentValue 0" }]
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018",
+          "note": "GetOrCreateProgressAsync creates the record at CurrentValue 0"
+        }
+      ]
     },
     {
       "id": "loy.progress.state.completed",
@@ -269,8 +491,16 @@
       "terminal": true,
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-018", "note": "ApplyMissionInternalAsync short-circuits on Completed" },
-        { "class": "DOC", "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs", "note": "header: progress is monotonic, frozen once Completed, and no reset exists" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018",
+          "note": "ApplyMissionInternalAsync short-circuits on Completed"
+        },
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/loyalty/missions-e2e-specs.mjs",
+          "note": "header: progress is monotonic, frozen once Completed, and no reset exists"
+        }
       ]
     },
     {
@@ -279,27 +509,56 @@
       "name": "Progress: Expired",
       "terminal": true,
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 9", "note": "Loyalty.ExpireMissions, Cron.Daily()" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 9",
+          "note": "Loyalty.ExpireMissions, Cron.Daily()"
+        }
+      ]
     },
-
     {
       "id": "loy.mission.progress.accrue",
       "type": "behavior",
       "name": "A qualifying order contributes to every matching mission's progress",
       "chain_link": "5b",
-      "actors": ["customer"],
+      "actors": [
+        "customer"
+      ],
       "description": "OrderChangedEvent (EntryState.Added only) → Hangfire job → progress keyed on (mission, owner, period).",
       "technique": "FLOW",
       "state_before": "loy.progress.state.transient",
       "state_after": "loy.progress.state.in-progress",
-      "interfaces": ["event", "job", "graphql"],
-      "requires": ["data.loy.store.missions-enabled", "data.loy.mission.fresh-per-run", "data.loy.customer.fresh-account", "data.loy.product.unit-cash"],
-      "produces": ["data.loy.order.contributing"],
-      "oracle_refs": ["BL-LOY-016", "BL-LOY-017", "BL-LOY-018"],
+      "interfaces": [
+        "event",
+        "job",
+        "graphql"
+      ],
+      "requires": [
+        "data.loy.store.missions-enabled",
+        "data.loy.mission.fresh-per-run",
+        "data.loy.customer.fresh-account",
+        "data.loy.product.unit-cash"
+      ],
+      "produces": [
+        "data.loy.order.contributing"
+      ],
+      "oracle_refs": [
+        "BL-LOY-016",
+        "BL-LOY-017",
+        "BL-LOY-018"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-018" },
-        { "class": "DOC", "ref": "domain-map:loy@rev3 §1 links 3–5b", "note": "source" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 links 3–5b",
+          "note": "source"
+        }
       ]
     },
     {
@@ -308,12 +567,24 @@
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "OrderValueGoal accrues the order TOTAL — shipping and tax included — capped at 100%",
-      "requires": ["data.loy.mission.ordervalue-between"],
-      "oracle_refs": ["BL-LOY-016"],
+      "requires": [
+        "data.loy.mission.ordervalue-between"
+      ],
+      "oracle_refs": [
+        "BL-LOY-016"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-016", "note": "SATISFIED; live re-measured 2026-09-14" },
-        { "class": "OBSERVED", "ref": "REG-2026-09-01-2316", "note": "MSN-028 promoted" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-016",
+          "note": "SATISFIED; live re-measured 2026-09-14"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-01-2316",
+          "note": "MSN-028 promoted"
+        }
       ]
     },
     {
@@ -322,10 +593,21 @@
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "A checkout discount reduces OrderValueGoal progress",
-      "requires": ["data.loy.mission.ordervalue-discount-boundary", "data.loy.coupon.percent"],
-      "oracle_refs": ["BL-LOY-016"],
+      "requires": [
+        "data.loy.mission.ordervalue-discount-boundary",
+        "data.loy.coupon.percent"
+      ],
+      "oracle_refs": [
+        "BL-LOY-016"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-016", "note": "an accepted consequence of `return order.Total`; its only live measurement is on re-seeded fixtures" }]
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-016",
+          "note": "an accepted consequence of `return order.Total`; its only live measurement is on re-seeded fixtures"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.currency-mismatch",
@@ -334,7 +616,13 @@
       "technique": "EP",
       "name": "An order in another currency silently fails an OrderValueGoal",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-023 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-023 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.persku-all-vs-any",
@@ -343,7 +631,13 @@
       "technique": "DT",
       "name": "PerSku ALL and ANY diverge on a partial basket",
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5319", "note": "C5 — MSN-026 promotion HELD 2026-09-01: green only after a forced reseed" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "C5 — MSN-026 promotion HELD 2026-09-01: green only after a forced reseed"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.loyalty-currency-lines",
@@ -352,13 +646,29 @@
       "technique": "EG",
       "name": "Loyalty-currency lines never advance an OrderValueGoal; PerSku counts them only on an unsupported configuration",
       "description": "order.Total excludes loyalty-currency lines by construction, so OrderValueGoal is safe; PerSkuGoal applies no currency filter, which is latent because a points-purchasable PerSku target is not a supported configuration.",
-      "oracle_refs": ["BL-LOY-017"],
+      "oracle_refs": [
+        "BL-LOY-017"
+      ],
       "status": "CONFIRMED",
       "last_verified": "2026-09-28",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-017", "note": "amended 2026-09-28 (BL-AUDIT-2026-09-28): SATISFIED for OrderValueGoal, VIOLATED-but-latent for PerSkuGoal", "date": "2026-09-28" },
-        { "class": "OBSERVED", "ref": "kb:KB-D842824E", "note": "a mixed order's top-level total equals its primary-currency orderTotals entry (queued, not yet pushed)", "date": "2026-09-28" },
-        { "class": "SPEC", "ref": "VCST-5319", "note": "product decision 2026-09-02: a PerSkuGoal target purchasable in the loyalty currency is NOT a supported configuration — MSN-029 and MSN-E2E-007 deprecated" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-017",
+          "note": "amended 2026-09-28 (BL-AUDIT-2026-09-28): SATISFIED for OrderValueGoal, VIOLATED-but-latent for PerSkuGoal",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-D842824E",
+          "note": "a mixed order's top-level total equals its primary-currency orderTotals entry (queued, not yet pushed)",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5319",
+          "note": "product decision 2026-09-02: a PerSkuGoal target purchasable in the loyalty currency is NOT a supported configuration — MSN-029 and MSN-E2E-007 deprecated"
+        }
       ],
       "notes": "Was DRIFT (oracle still read VIOLATED on the unsupported PerSku signal) until BL-AUDIT-2026-09-28 re-scoped BL-LOY-017 per goal type."
     },
@@ -369,7 +679,13 @@
       "technique": "EP",
       "name": "A guest order attributes no mission progress",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-024 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-024 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.zero-target",
@@ -378,7 +694,13 @@
       "technique": "BVA",
       "name": "A zero-target mission never auto-completes without an order against it",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-016 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-016 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.cart-add-no-accrual",
@@ -387,7 +709,13 @@
       "technique": "ST",
       "name": "Adding target SKUs to the cart (featured-SKU modal) moves no progress — only an order does",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "VCST-5319", "note": "MSN-E2E-002 promoted 2026-09-01" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5319",
+          "note": "MSN-E2E-002 promoted 2026-09-01"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.accrue.settlement-window",
@@ -395,11 +723,18 @@
       "branch_kind": "integration",
       "technique": "EG",
       "name": "Between order confirmation and Hangfire settlement the page never disagrees with the API",
-      "oracle_refs": ["ECL-14.7"],
+      "oracle_refs": [
+        "ECL-14.7"
+      ],
       "status": "UNVERIFIED",
-      "evidence": [{ "class": "SPEC", "ref": "VCST-5320", "note": "MSN-E2E-006 documents observed behaviour only; still Draft" }]
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5320",
+          "note": "MSN-E2E-006 documents observed behaviour only; still Draft"
+        }
+      ]
     },
-
     {
       "id": "loy.mission.reward.grant",
       "type": "behavior",
@@ -407,12 +742,33 @@
       "chain_link": "6",
       "state_before": "loy.progress.state.in-progress",
       "state_after": "loy.progress.state.completed",
-      "interfaces": ["job", "graphql", "storefront"],
-      "requires": ["data.loy.store.missions-enabled", "data.loy.mission.fresh-per-run", "data.loy.customer.fresh-account", "data.loy.product.unit-cash"],
-      "produces": ["data.loy.ledger.mission-reward"],
-      "oracle_refs": ["BL-LOY-007", "BL-LOY-015", "BL-LOY-018"],
+      "interfaces": [
+        "job",
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.loy.store.missions-enabled",
+        "data.loy.mission.fresh-per-run",
+        "data.loy.customer.fresh-account",
+        "data.loy.product.unit-cash"
+      ],
+      "produces": [
+        "data.loy.ledger.mission-reward"
+      ],
+      "oracle_refs": [
+        "BL-LOY-007",
+        "BL-LOY-015",
+        "BL-LOY-018"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-018", "note": "SATISFIED within an owner scope" }]
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018",
+          "note": "SATISFIED within an owner scope"
+        }
+      ]
     },
     {
       "id": "loy.mission.reward.grant.once-per-owner",
@@ -422,8 +778,15 @@
       "name": "Two qualifying orders against a target-2 goal complete it once and grant once",
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-018" },
-        { "class": "OBSERVED", "ref": "REG-2026-09-01-2316", "note": "MSN-027 promoted" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-09-01-2316",
+          "note": "MSN-027 promoted"
+        }
       ]
     },
     {
@@ -433,7 +796,13 @@
       "technique": "BVA",
       "name": "A zero-reward mission completes but grants nothing and writes no history row",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-020 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-020 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.reward.grant.multi-mission-one-order",
@@ -441,9 +810,16 @@
       "branch_kind": "boundary",
       "technique": "EG",
       "name": "One order completing several missions attributes each grant separately",
-      "oracle_refs": ["BL-LOY-015"],
+      "oracle_refs": [
+        "BL-LOY-015"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-015" }]
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-015"
+        }
+      ]
     },
     {
       "id": "loy.mission.reward.grant.per-organization",
@@ -451,28 +827,53 @@
       "branch_kind": "state",
       "technique": "DT",
       "name": "In Organization mode a multi-organization buyer earns the reward once per organization",
-      "oracle_refs": ["BL-LOY-018", "BL-LOY-020"],
+      "oracle_refs": [
+        "BL-LOY-018",
+        "BL-LOY-020"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-018", "note": "BY DESIGN (product decision 2026-09-14); live 2026-09-14" }],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-018",
+          "note": "BY DESIGN (product decision 2026-09-14); live 2026-09-14"
+        }
+      ],
       "notes": "No 075d/083d case exercises it — the owner-scope runtime needs the store-mode flip (domain map G12)."
     },
-
     {
       "id": "loy.mission.reward.spend",
       "type": "behavior",
       "name": "A mission-granted reward is spendable",
       "chain_link": "8",
-      "actors": ["customer"],
-      "interfaces": ["storefront", "graphql"],
-      "requires": ["data.loy.ledger.mission-reward", "data.loy.customer.zero-balance", "data.loy.product.pts-priced"],
-      "oracle_refs": ["BL-LOY-007"],
+      "actors": [
+        "customer"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "requires": [
+        "data.loy.ledger.mission-reward",
+        "data.loy.customer.zero-balance",
+        "data.loy.product.pts-priced"
+      ],
+      "oracle_refs": [
+        "BL-LOY-007"
+      ],
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "BL", "ref": "BL-LOY-007" },
-        { "class": "SPEC", "ref": "VCST-5320", "note": "MSN-E2E-004 chains the mission earn with the Mixed Cart redeem" }
+        {
+          "class": "BL",
+          "ref": "BL-LOY-007"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5320",
+          "note": "MSN-E2E-004 chains the mission earn with the Mixed Cart redeem"
+        }
       ]
     },
-
     {
       "id": "loy.mission.reversal",
       "type": "behavior",
@@ -481,10 +882,20 @@
       "technique": "ST",
       "state_before": "loy.progress.state.completed",
       "state_after": "loy.progress.state.completed",
-      "requires": ["data.loy.order.cancelled"],
-      "oracle_refs": ["BL-LOY-019"],
+      "requires": [
+        "data.loy.order.cancelled"
+      ],
+      "oracle_refs": [
+        "BL-LOY-019"
+      ],
       "status": "DRIFT",
-      "evidence": [{ "class": "BL", "ref": "BL-LOY-019", "note": "VIOLATED — no reversal path at any layer; live 2026-09-01" }],
+      "evidence": [
+        {
+          "class": "BL",
+          "ref": "BL-LOY-019",
+          "note": "VIOLATED — no reversal path at any layer; live 2026-09-01"
+        }
+      ],
       "drift": {
         "expected": "BL-LOY-019: the contribution and the granted reward MUST be reversed on cancellation",
         "observed": "nothing is reversed — balance, ledger and Completed status are unchanged (BL-LOY-019 Live)",
@@ -498,20 +909,46 @@
       "chain_link": "9",
       "state_before": "loy.progress.state.in-progress",
       "state_after": "loy.progress.state.expired",
-      "interfaces": ["job"],
+      "interfaces": [
+        "job"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "DOC", "ref": "domain-map:loy@rev3 §1 link 9", "note": "source; rev-2 live Hangfire confirmation carried forward" }]
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev3 §1 link 9",
+          "note": "source; rev-2 live Hangfire confirmation carried forward"
+        }
+      ]
     },
-
     {
       "id": "loy.mission.progress.read",
       "type": "behavior",
       "name": "loyaltyMissionProgress reports the current customer's progress",
       "chain_link": "7",
-      "interfaces": ["graphql", "storefront"],
-      "requires": ["data.loy.store.missions-enabled"],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "requires": [
+        "data.loy.store.missions-enabled"
+      ],
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "domain-map:loy@rev3 §2c", "note": "anonymous introspection with argument nullability", "date": "2026-09-18" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev3 §2c",
+          "note": "anonymous introspection with argument nullability",
+          "date": "2026-09-18"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:loy@rev4 §2c",
+          "date": "2026-10-01",
+          "note": "live introspection identical to rev 3"
+        }
+      ],
+      "last_verified": "2026-10-01"
     },
     {
       "id": "loy.mission.progress.read.shape",
@@ -520,7 +957,13 @@
       "technique": "EP",
       "name": "A status enum (not booleans) and a per-target items[] for PerSku",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-013 / MSN-014 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-013 / MSN-014 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.read.localized",
@@ -529,7 +972,13 @@
       "technique": "EP",
       "name": "Name and description resolve per culture, with a fallback",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "REG-2026-08-27-1846", "note": "MSN-012 promoted" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-08-27-1846",
+          "note": "MSN-012 promoted"
+        }
+      ]
     },
     {
       "id": "loy.mission.progress.read.currency-omitted",
@@ -539,8 +988,15 @@
       "name": "Omitting currencyCode does not crash the whole response",
       "status": "CONFIRMED",
       "evidence": [
-        { "class": "SPEC", "ref": "VCST-5842" },
-        { "class": "OBSERVED", "ref": "VCST-5319", "note": "MSN-031 promoted 2026-09-01" }
+        {
+          "class": "SPEC",
+          "ref": "VCST-5842"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5319",
+          "note": "MSN-031 promoted 2026-09-01"
+        }
       ]
     },
     {
@@ -550,70 +1006,410 @@
       "technique": "EP",
       "name": "A brand-new account sees only transient 0% rows",
       "status": "CONFIRMED",
-      "evidence": [{ "class": "OBSERVED", "ref": "VCST-5319", "note": "MSN-034 promoted 2026-09-01" }]
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5319",
+          "note": "MSN-034 promoted 2026-09-01"
+        }
+      ]
+    },
+    {
+      "id": "loy.mission.author.negative-reward-rejected",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A negative reward amount is rejected; zero is accepted",
+      "description": "The mission validator rejects a reward amount below 0 with \"Mission reward amount cannot be negative\" and persists nothing; 0 passes validation (a zero-reward mission stays legitimate). One check covers both the fixed and the relative reward type, the relative one reachable by API only.",
+      "interfaces": [
+        "rest"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "last_verified": "2026-09-25",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5855"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev4 D10",
+          "date": "2026-10-01",
+          "note": "source: LoyaltyMissionValidator / loyalty-mission-details.js at deployed 4411e195 (vc-module-loyalty#18, merged 2026-09-28 as tag 3.1009.0)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5855",
+          "date": "2026-09-25",
+          "note": "verification 16:20Z on 3.1009.0-pr-18-4411: PUT reward -1 → 400 with the message, 0 rows persisted; reward 0 → no reward error (reports/tickets/Sprint26-19/VCST-5855/verification-summary.json)"
+        }
+      ],
+      "notes": "Behaviour tightening: a mission already persisted with a negative reward fails validation on its next save. Not re-observed by the rev-4 map pass (domain map G14: needs a write)."
+    },
+    {
+      "id": "loy.mission.author.negative-goal-rejected",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A negative OrderCount or OrderValue goal is rejected; zero is accepted",
+      "description": "An OrderCountGoal count or OrderValueGoal value below 0 is rejected with \"Mission goal value cannot be negative\"; 0 stays valid. PerSkuGoal has no numeric threshold and is unaffected.",
+      "interfaces": [
+        "rest"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "last_verified": "2026-09-25",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6084"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev4 D10",
+          "date": "2026-10-01",
+          "note": "source: LoyaltyMissionValidator / loyalty-mission-details.js at deployed 4411e195 (vc-module-loyalty#18, merged 2026-09-28 as tag 3.1009.0)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-6084",
+          "date": "2026-09-25",
+          "note": "verification on 3.1009.0-pr-18-e3e4: count -1 and value -1 → 400 with the message, mission count unchanged; the validator is unchanged at the deployed 4411e195 (domain-map:loy@rev4 D10)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5855",
+          "date": "2026-09-25",
+          "note": "probe G on 3.1009.0-pr-18-4411: goal -1 → the same message"
+        }
+      ],
+      "notes": "Why it matters: a negative threshold is satisfied by definition, so before this check such a mission would complete and grant without an order (see loy.mission.progress.accrue.zero-target for the zero case). Zero-as-valid is left as a separate product decision on VCST-6084."
+    },
+    {
+      "id": "loy.mission.author.validation-message-shown",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A rejected save shows the server validation message in the mission blade and keeps the form",
+      "description": "On both the Add (POST) and edit (PUT) paths, a 400 from the validator surfaces each errorMessage in the blade banner and View details, instead of a bare \"Error 400\"; the expression tree stays rendered with the entered values.",
+      "requires": [
+        "data.loy.mission.draft"
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "last_verified": "2026-09-25",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5855"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:loy@rev4 D10",
+          "date": "2026-10-01",
+          "note": "source: LoyaltyMissionValidator / loyalty-mission-details.js at deployed 4411e195 (vc-module-loyalty#18, merged 2026-09-28 as tag 3.1009.0)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5855",
+          "date": "2026-09-25",
+          "note": "Admin blade at 4411 shows the message on create and edit, where e3e4 showed \"400: Bad request\" / \"Error 400\" and a blank tree"
+        }
+      ],
+      "notes": "requires covers the edit path only; the create path needs no state. integrates with: platform — the global httpError handler logs a TypeError on any list-shaped 400 body (prior-art observation in VCST-5855, not filed). Not re-observed by the rev-4 map pass (G14)."
     }
   ],
   "edges": [
-    { "from": "loy.missions", "to": "loy.missions.gate", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.author", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.publish", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.archive", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.visibility", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.progress.accrue", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.reward.grant", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.reward.spend", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.reversal", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.expire", "type": "contains" },
-    { "from": "loy.missions", "to": "loy.mission.progress.read", "type": "contains" },
-
-    { "from": "loy.missions.gate", "to": "loy.missions.gate.on", "type": "branches_to" },
-    { "from": "loy.missions.gate", "to": "loy.missions.gate.off-read", "type": "branches_to" },
-    { "from": "loy.missions.gate", "to": "loy.missions.gate.off-no-accrual", "type": "branches_to" },
-
-    { "from": "loy.mission.author", "to": "loy.mission.author.goal-types", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.currency-required", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.currency-case-accepted", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.dates-unvalidated", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.periodicity-unvalidated", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.edit-published", "type": "branches_to" },
-    { "from": "loy.mission.author", "to": "loy.mission.author.delete-with-progress", "type": "branches_to" },
-
-    { "from": "loy.mission.visibility", "to": "loy.mission.visibility.group-match", "type": "branches_to" },
-    { "from": "loy.mission.visibility", "to": "loy.mission.visibility.private-still-visible", "type": "branches_to" },
-    { "from": "loy.mission.visibility", "to": "loy.mission.visibility.expired-excluded", "type": "branches_to" },
-
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.order-total-basis", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.discount-reduces", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.currency-mismatch", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.persku-all-vs-any", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.loyalty-currency-lines", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.guest-no-attribution", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.zero-target", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.cart-add-no-accrual", "type": "branches_to" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.mission.progress.accrue.settlement-window", "type": "branches_to" },
-
-    { "from": "loy.mission.reward.grant", "to": "loy.mission.reward.grant.once-per-owner", "type": "branches_to" },
-    { "from": "loy.mission.reward.grant", "to": "loy.mission.reward.grant.zero-reward", "type": "branches_to" },
-    { "from": "loy.mission.reward.grant", "to": "loy.mission.reward.grant.multi-mission-one-order", "type": "branches_to" },
-    { "from": "loy.mission.reward.grant", "to": "loy.mission.reward.grant.per-organization", "type": "branches_to" },
-
-    { "from": "loy.mission.progress.read", "to": "loy.mission.progress.read.shape", "type": "branches_to" },
-    { "from": "loy.mission.progress.read", "to": "loy.mission.progress.read.localized", "type": "branches_to" },
-    { "from": "loy.mission.progress.read", "to": "loy.mission.progress.read.currency-omitted", "type": "branches_to" },
-    { "from": "loy.mission.progress.read", "to": "loy.mission.progress.read.new-account-transient", "type": "branches_to" },
-
-    { "from": "loy.mission.state.draft", "to": "loy.mission.state.published", "type": "transitions_to", "via": "loy.mission.publish" },
-    { "from": "loy.mission.state.published", "to": "loy.mission.state.archived", "type": "transitions_to", "via": "loy.mission.archive" },
-    { "from": "loy.progress.state.transient", "to": "loy.progress.state.in-progress", "type": "transitions_to", "via": "loy.mission.progress.accrue" },
-    { "from": "loy.progress.state.transient", "to": "loy.progress.state.completed", "type": "transitions_to", "via": "loy.mission.reward.grant", "note": "one order that clears the whole target" },
-    { "from": "loy.progress.state.in-progress", "to": "loy.progress.state.completed", "type": "transitions_to", "via": "loy.mission.reward.grant" },
-    { "from": "loy.progress.state.in-progress", "to": "loy.progress.state.expired", "type": "transitions_to", "via": "loy.mission.expire" },
-
-    { "from": "loy.mission.reward.grant", "to": "loy.mission.progress.accrue", "type": "depends_on" },
-    { "from": "loy.mission.reward.spend", "to": "loy.mission.reward.grant", "type": "depends_on" },
-    { "from": "loy.mission.reversal", "to": "loy.mission.reward.grant", "type": "depends_on" },
-    { "from": "loy.mission.expire", "to": "loy.mission.progress.accrue", "type": "depends_on" },
-    { "from": "loy.mission.progress.accrue", "to": "loy.missions.gate", "type": "affected_by" },
-    { "from": "loy.mission.reward.grant", "to": "loy.missions.gate", "type": "affected_by" }
+    {
+      "from": "loy.missions",
+      "to": "loy.missions.gate",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.author",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.publish",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.archive",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.visibility",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.progress.accrue",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.reward.grant",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.reward.spend",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.reversal",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.expire",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions",
+      "to": "loy.mission.progress.read",
+      "type": "contains"
+    },
+    {
+      "from": "loy.missions.gate",
+      "to": "loy.missions.gate.on",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.missions.gate",
+      "to": "loy.missions.gate.off-read",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.missions.gate",
+      "to": "loy.missions.gate.off-no-accrual",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.goal-types",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.currency-required",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.currency-case-accepted",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.dates-unvalidated",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.periodicity-unvalidated",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.edit-published",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.delete-with-progress",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.visibility",
+      "to": "loy.mission.visibility.group-match",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.visibility",
+      "to": "loy.mission.visibility.private-still-visible",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.visibility",
+      "to": "loy.mission.visibility.expired-excluded",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.order-total-basis",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.discount-reduces",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.currency-mismatch",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.persku-all-vs-any",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.loyalty-currency-lines",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.guest-no-attribution",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.zero-target",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.cart-add-no-accrual",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.mission.progress.accrue.settlement-window",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.mission.reward.grant.once-per-owner",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.mission.reward.grant.zero-reward",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.mission.reward.grant.multi-mission-one-order",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.mission.reward.grant.per-organization",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.read",
+      "to": "loy.mission.progress.read.shape",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.read",
+      "to": "loy.mission.progress.read.localized",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.read",
+      "to": "loy.mission.progress.read.currency-omitted",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.progress.read",
+      "to": "loy.mission.progress.read.new-account-transient",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.state.draft",
+      "to": "loy.mission.state.published",
+      "type": "transitions_to",
+      "via": "loy.mission.publish"
+    },
+    {
+      "from": "loy.mission.state.published",
+      "to": "loy.mission.state.archived",
+      "type": "transitions_to",
+      "via": "loy.mission.archive"
+    },
+    {
+      "from": "loy.progress.state.transient",
+      "to": "loy.progress.state.in-progress",
+      "type": "transitions_to",
+      "via": "loy.mission.progress.accrue"
+    },
+    {
+      "from": "loy.progress.state.transient",
+      "to": "loy.progress.state.completed",
+      "type": "transitions_to",
+      "via": "loy.mission.reward.grant",
+      "note": "one order that clears the whole target"
+    },
+    {
+      "from": "loy.progress.state.in-progress",
+      "to": "loy.progress.state.completed",
+      "type": "transitions_to",
+      "via": "loy.mission.reward.grant"
+    },
+    {
+      "from": "loy.progress.state.in-progress",
+      "to": "loy.progress.state.expired",
+      "type": "transitions_to",
+      "via": "loy.mission.expire"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.mission.progress.accrue",
+      "type": "depends_on"
+    },
+    {
+      "from": "loy.mission.reward.spend",
+      "to": "loy.mission.reward.grant",
+      "type": "depends_on"
+    },
+    {
+      "from": "loy.mission.reversal",
+      "to": "loy.mission.reward.grant",
+      "type": "depends_on"
+    },
+    {
+      "from": "loy.mission.expire",
+      "to": "loy.mission.progress.accrue",
+      "type": "depends_on"
+    },
+    {
+      "from": "loy.mission.progress.accrue",
+      "to": "loy.missions.gate",
+      "type": "affected_by"
+    },
+    {
+      "from": "loy.mission.reward.grant",
+      "to": "loy.missions.gate",
+      "type": "affected_by"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.negative-reward-rejected",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.negative-goal-rejected",
+      "type": "branches_to"
+    },
+    {
+      "from": "loy.mission.author",
+      "to": "loy.mission.author.validation-message-shown",
+      "type": "branches_to"
+    }
   ]
 }

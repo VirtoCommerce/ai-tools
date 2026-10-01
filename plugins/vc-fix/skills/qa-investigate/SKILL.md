@@ -1,8 +1,7 @@
 ---
 name: qa-investigate
-description: "[QA Method] Bug investigation: reproduce, isolate root cause, gather evidence, common VC patterns."
+description: "[QA Method] Use when a suspected or triaged bug needs a live reproduction, layer isolation and a root cause BEFORE it is filed — reproduce, isolate, gather evidence (an evidence package with evidence-index.md + root-cause.md), common VC patterns. The step between triage (/qa-triage-results Phase 4) and /vc-fix:qa-bug, which reuses its package."
 argument-hint: "bug description | <ticket-key>"
-disable-model-invocation: true
 ---
 
 # /qa-investigate — Bug Investigation Flow
@@ -66,6 +65,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 
 8. **Document and hand off:**
    - **Gate first:** self-verify against Part A's mandatory (**M**) rows in `evidence-and-root-cause.md` — every mandatory slot filled + alternatives ruled out is the bar before writing the report; anything missing means go back and capture (there's no `--check` script in `vc-fix`, per §0 above).
+   - **Run ahead of `/vc-fix:qa-bug`** (a brief says so — e.g. `/qa-triage-results` Phase 4): **stop after the gate.** Return the package path, `REPRODUCED` / `NOT_REPRODUCED`, the owning layer + repo + confidence, and nothing else — `qa-bug` writes the one report from that package. Two writers make two reports for one bug. The steps below apply only when you are the last step.
    - Write bug report using templates in `skills/qa-defect/defect-report-templates.md` — reference the package artifacts, don't inline them (`reports.md` §8)
    - Include the **env header** (§1) and the **Fix Routing block** (owning layer + repo + `repoKind`, per `qa-bug.md` Step 4) so `/qa-fix` Gate 1 can confirm rather than re-derive
    - For regressions, add the **Regression block** (§8C Step 4): introducing commit/PR, first-bad & last-good versions, why it broke, revert-safe vs. fix-forward
