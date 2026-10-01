@@ -208,3 +208,33 @@ npm run td:mutation-check -- <domain> --max 30
 - `NEITHER` → **the real finding.** Add the check to `validate-<domain>-data.mjs`, not to the unit test.
 
 Run it before and after: the `UNIT ONLY` count must not fall, and the `NEITHER` count should.
+
+## 2026-10-01 — unit tests become temporary
+
+**Why.** The 2026-09-15 cut slowed the growth but did not stop it: `npm test` went from 2,891 tests
+to 3,893 in two weeks, most of it from new `kb-*` and test-data spec files. A committed test pays its
+cost on every run and every refactor, but it pays back only if a later change breaks the code it
+covers. For most new scripts here, that later change is rare, and the drift guards, `context:check`
+and the other gates already run on every PR.
+
+**The rule now** (`.claude/knowledge/execution/when-to-write-a-test.md` RULE 2): write a unit test to
+check a script while you build it, run it until green, and delete it before you commit. No new
+`scripts/unit/` file is committed. The corpus that is already committed only shrinks. `/qa-fix` G2
+reproductions in product repos are unchanged.
+
+**What stays in the committed corpus, and how it was decided:**
+
+1. **Test-data spec tests:** `td:test-attribution` was run on all 24 measurable domains (`--max 24`).
+   A test with a KEEP verdict in any domain stays. Of the DELETE verdicts with no KEEP anywhere (64),
+   **30 were spared** under the synthetic-input safeguard above: they feed a validator deliberately
+   bad input (names such as *rejects*, *FIRES*, *VACUITY*, or an object spread in the body). **34
+   were deleted**, each file re-run to confirm its test count fell by exactly that number and stayed
+   green. `missions-e2e` was not measured, because its guard is red on a clean checkout.
+2. **Every other test:** the per-test form of IFDR. Each function a test file imports is gutted to
+   `return undefined` and the file re-run with the TAP reporter. A test that goes red for at least one
+   gutted function stays. A test that stays green for every gutting is deleted. Applied in a
+   follow-up commit of the same change.
+3. **Kept without measurement:** the security and containment tests (redaction, secret gates,
+   self-diagnostics delivery, MCP and credential hygiene, the tracker and label hooks), the
+   `playwright-lane-configs` guard that `.claude/rules/agents.md` names, and any file the tools cannot
+   measure (a subprocess-only subject, or a red baseline).

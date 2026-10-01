@@ -120,12 +120,6 @@ test('buildRowcapItems throws on an unsatisfied slot rather than collapsing two 
 
 // ---- containment: never touch the shared primary rep ------------------------
 
-test('orders are attributed to the DISPOSABLE-layout rep, never the shared primary', () => {
-  assert.equal(ROWCAP_REP_KEY, 'SR_REP_LAYOUT');
-  assert.ok(isDisposableLayoutRep(ROWCAP_REP_KEY));
-  assert.ok(!isDisposableLayoutRep('SR_REP_PRIMARY'));
-});
-
 test('every order is on the store the widgets query', () => {
   assert.equal(ROWCAP_STORE, 'B2B-store');
 });

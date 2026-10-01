@@ -192,7 +192,7 @@ fixes it. A new component is born compliant (§6) and never gets a row.
 it finds at least N live-observation calls (browser, GraphQL, REST) and zero `kb` calls, it blocks
 completion **once** with a reason. The precedent is `hooks/enforce-real-user.mjs`, and the cost
 argument is in the `kb-harvest.mjs` header: this hook blocks only when the step was skipped, never
-on every turn. It is code, so it ships with a unit test on the detection logic. It needs its own
+on every turn. It is code, so its detection logic gets a temporary unit test while it is built (deleted before commit, `knowledge/execution/when-to-write-a-test.md` RULE 2). It needs its own
 go-ahead.
 
 **Classified, deliberately not changed.** `qa-sitemap` is a Mechanic: `knowledge/domain/sitemap.md`
