@@ -76,7 +76,7 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
-      # BL 2.0: business-logic.md is generated whole from bl/*.yaml (no script reads it); this fails a hand edit
+      # BL 2.0: business-logic.md and its vc-fix plugin copy are generated from bl/*.yaml; this fails a hand edit
       # to it, a schema-invalid record, an unlisted domain file, a duplicate id or an agent not on the roster.
       - name: bl:convert:check — business-logic.md is the render of bl/*.yaml
         run: npm run bl:convert:check
