@@ -23,7 +23,8 @@ rules:
       kind: manual
       ref: Set stock to 0 in Admin → storefront shows "Sold out" label → "Add to Cart" disabled/hidden → attempt via xAPI `addToCart` → error response.
     violation_signal: '"Add to Cart" still active when stock=0; product purchasable via API despite zero stock; no visual indicator of out-of-stock.'
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] MSNF-035 failed in REG-2026-10-01-1243"
   - id: BL-CAT-002
     title: Virtual catalog inherits physical catalog changes
     rule: A virtual catalog is a view over physical catalog data — not a copy. Any change to a product in the physical catalog (price, description, stock, images) is immediately reflected in all virtual catalogs that include it. There is no manual sync or publish step for catalog data propagation. Deletion of a product from the physical catalog removes it from all linked virtual catalogs.

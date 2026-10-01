@@ -12,6 +12,7 @@
 | 2026-10-01 13:34 | 3x discovery ‖ 3a seeding | Context-wave observations F01–F14 |
 | 2026-10-01 14:18 | 4a (chrome) ‖ 4v (DevTools) running | 3x finished. F02/F04/F08/F13 confirmed live, F15–F27 added. **Still no Step 4 verdicts, no bugs filed** |
 | 2026-10-01 14:44 | 4v finished · 4a screenshots done, verdicts not yet in the checklist | 4v results F28–F37 added (`design-report.md`). New Draft cases MSNF-088..102 (083c) + MSN-E2E-009 (083d) authored. **No bugs filed yet** |
+| 2026-10-01 15:40 | 4c regression `REG-2026-10-01-1243` running (29 cases, serial, chrome) | 4a verdicts added (relayed by the run session; the checklist Verdict column is only filled at 5-report). The step-3 verifier rejected once, a fix round ran, and the re-verify approved. **No bugs filed or drafted yet** |
 
 Verdicts: `OBSERVATION` (context wave) · `CONFIRMED` (3x checked it live) · `PASS` / `FAIL` / `BLOCKED` / `NOT-RUN` / `SKIPPED` (Step 4 on).
 Kind: `defect?` (could become a bug at 5-triage) · `design-drift` (PO decision) · `scope-cut` · `prior-bug` (re-check of an earlier ticket) · `test-infra` (our fixtures and tooling, not the product).
@@ -74,16 +75,52 @@ Full report: `design-report.md`. Accessibility findings on a feature ticket are 
 
 **4v did not cover:** the token, icon and full-geometry comparison with the design (no local copy of project `518d0b90`), a screen-reader pass, 200% zoom / 320 px reflow, reduced motion, the Coffee preset, and the layout sweeps from 375 to 1920.
 
-## Still open (4a verdicts → Step 5)
+## Step 4a — storefront execution (qa-frontend-expert, playwright-chrome, 12:17–12:33Z)
 
-The 4a storefront run (chrome) captured its screenshots from 14:18 to 14:32: journey add-to-cart, OOS / no-availability / over-stock modal, ended mission DUE-00, order modal, 375/768, de/ja, dark theme, and the null-product 404 link. **Its PASS/FAIL verdicts aren't on the checklist yet.**
+The `C#` column is the row number in `testing-checklist.md`. Screenshots are `screenshots/4a-*`.
+
+**Totals for the 40 checklist rows:** 23 PASS · 8 FAIL · 4 NOT-RUN · 4 observed-only by 4v · 1 vs. DESIGN DRIFT.
+
+**PASS (23):** C1 the journey (status readable at a glance, then the no-availability SKU mission's Target A ×2 added → cart holds 1 line × 2 at $60.00; banner 40,939 = points-history 40939) · C2 chips + glyphs · C3 points chip on the card · C4 completed overlay · C5 completion exposed as text · C7 CTA 38×38 · C10 bar colour card = modal · **C11 deadline ladder** (31/60/159 success · 30/16 warning · 15/1/0 danger · null "No deadline") · C12 completed with 15 days left · C15 Points history 119×38 at 1920 **and 375**, so VCST-5834 looks fixed · C16 balance parity · C18 grid 12/page, 57 missions · C21 modal 960 px + columns · C22 OOS row · C23 null product can't be added · C28 auto-close + "in Cart 2" · C29 progress unchanged by add/remove (BL-LOY-016) · C30 keyboard/focus (4v) · C32 no overflow at 375/768 · C36 console clean, every GraphQL call 200 with no `errors[]` · C39 catalog reachable from the nav (spending not tested).
+
+| C# | FAIL | What we saw | Log ref | Evidence |
+|---|---|---|---|---|
+| C6 | Completed-check contrast | White check **2.56:1** where the ring crosses light artwork. Chip text 5.79/7.33:1 OK | F32/F33 · B6 | `4a-card-completed-placeholder.png` |
+| C13 | Ended, not-yet-swept mission | DUE-00 reads "0 days left" with a danger dot and a **live CTA**. The order modal also says "0 days left" | F15 · B5 | `4a-ended-mission-due00-modal.png` |
+| C17 | Redeem banner CTA | No "Rewards catalog" button (`VcButton v-if="linkTo"`, no `linkTo` passed) | F02 · B7 (PO) | `4a-banners-1920.png` |
+| C24 | Deleted target product | Raw GUID `05daed62-…` as title and alt; link `/product/<guid>` → **404** | F16 · B2 | `4a-null-product-link-404.png` |
+| C25 | Unbuyable target, in stock | Product 16785001: disabled stepper next to a green **"33" in-stock** badge, price $0.00 | F18 · B4 | `4a-sku-modal-overstock-150-of-99.png` |
+| C26 | Subtotal format | Line Total correct ($30 × 2 = $60.00), but Cart subtotal is a **bare "0"** at 0 units while lines show "$0.00". Same in de/fi/ja | F08 · B1 | `4a-sku-modal-noavail-qty0.png` |
+| C27 | Over-stock quantity | Qty 150 > stock 99: hint shown and Add disabled, but the summary counts it (150 units, 1/5 targets, **$18,450.00**) | F17 · B3 | `4a-sku-modal-overstock-150-of-99.png` |
+| C34 (Low) | Locales | No raw keys, but de/fi show percent as "3.6%" (not localised), ja has a katakana typo in "日残リ", and "N/A" is untranslated | F21 · B9 | `4a-missions-de.png`, `4a-sku-modal-ja.png` |
+
+**NOT-RUN (4):** C19 sort dropdown (scope cut) · C20 "Account setup" kind (no backend type) · C37 unknown type (unreachable) · C38 UIP-BACK (named only).
+**Observed by 4v only:** C8 banner 208 px · C9 body order · C14 banner styling · C31 identical CTA names + no progressbar role · C33 dark-theme check 2.56–2.79:1 · C35 banner crop (`4a-missions-page4-1920.png`). C40 vs. DESIGN: DRIFT (5/6 match), token/icon diff SKIPPED.
+
+## Still open
+
+4c regression `REG-2026-10-01-1243` (29 cases) → 5-triage (grading) → 5-file (Jira) → 5-report (checklist verdicts).
 
 ## Bugs filed
 
-None yet. Waiting for grading at 5-triage:
-- **Functional (6):** F08, F15, F16, F17, F18, F19.
-- **Accessibility, filed separately and non-blocking (4):** F30, F31, F32, F33.
-- **Existing defects in shared components (1):** F34.
+None yet: no Jira keys and no `reports/bugs/open/` drafts. Candidates the run session will grade at 5-triage:
+
+| ID | Candidate | Log ref | Note |
+|---|---|---|---|
+| B1 | SKU modal Cart subtotal shows a bare "0" | F08 · C26 | |
+| B2 | Deleted target: GUID title + 404 link | F16 · C24 | |
+| B3 | Over-stock quantity counted in the summary | F17 · C27 | |
+| B4 | Unbuyable row: green in-stock badge + $0.00 | F18 · C25 | |
+| B5 | Ended mission: "0 days left" + live CTA | F15 · C13 | |
+| B6 | Completed-check contrast | F32/F33 · C6 | |
+| B7 | No "Rewards catalog" CTA | F02 · C17 | PO decision |
+| B8 | Points chip colour differs between card and modal | — · C3 | new, incidental |
+| B9 | ja katakana typo | F21 · C34 | pre-existing |
+| B10 | en not pluralised: "1 of 1 orders" | — | new, pre-existing |
+| B11 | Sidebar word-break at 768 | — | new, pre-existing |
+| F19 | Banner crop cuts artwork text | C35 | 3x/4v. Not in the run's B-list |
+
+**Accessibility, filed separately and non-blocking at 5-file:** A1 identical "Open mission" names (F30, Med) · A2 no progressbar role (F31, Med) · A3 dark check 2.56–2.79:1 (F32, Med) · A4 light check 2.04:1 over white art (F33, Med, conditional). **Pre-existing components:** BL-UI-006 spacing at 375 in VcPagination / VcQuantityStepper (F34).
 
 ## Open questions for the PO
 

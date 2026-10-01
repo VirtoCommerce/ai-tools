@@ -1,6 +1,6 @@
 {
  "runId": "REG-2026-10-01-1243",
- "status": "in_progress",
+ "status": "completed",
  "startedAt": "2026-10-01T12:43:22.000Z",
  "windowStart": "2026-10-01T12:43:22.000Z",
  "selection": "083c,083d",
@@ -22,10 +22,11 @@
    "id": "083d",
    "name": "Loyalty Missions E2E",
    "file": "regression/suites/Frontend/loyalty/083d-loyalty-missions-e2e.csv",
-   "status": "running",
+   "status": "done",
    "lane": "browser",
    "ids": "MSN-E2E-009,MSN-E2E-001,MSN-E2E-002,MSN-E2E-003,MSN-E2E-006,MSN-E2E-008",
    "browser": "playwright-chrome"
   }
- ]
+ ],
+ "finishedAt": "2026-10-01T13:46:00.000Z"
 }

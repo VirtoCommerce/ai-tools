@@ -75,6 +75,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/pricing/overview.md — a price list stores prices in a single currency
 - **Docs:** platform/user-guide/docs/multiregional-ecommerce.md — multi-currency is handled with separate price lists per currency (e.g. USD, CAD, EUR)
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MSNF-093 failed in REG-2026-10-01-1243
 
 ### BL-PRICE-006: Price list deletion behavior `[P1-data]`
 - **Rule:** Deleting a price list in Admin removes all price entries it contained. Products that relied solely on that price list become unpurchasable on the storefront. No prices should fall back to $0 — they should show as "Unavailable" or hide the "Add to Cart" button. Already-placed orders retain their historical prices.
@@ -816,6 +817,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** vc-docs storefront/user-guide/docs/shopping/back-in-stock-notifications.md — an out-of-stock product cannot be added: Add to Cart is replaced by "Notify me when in stock"
 - **Source:** VCST-3926 (Done) — cart quantity could be raised for an out-of-stock product; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MSNF-035 failed in REG-2026-10-01-1243
 
 ### BL-CAT-002: Virtual catalog inherits physical catalog changes `[P1-data]`
 - **Rule:** A virtual catalog is a view over physical catalog data — not a copy. Any change to a product in the physical catalog (price, description, stock, images) is immediately reflected in all virtual catalogs that include it. There is no manual sync or publish step for catalog data propagation. Deletion of a product from the physical catalog removes it from all linked virtual catalogs.
@@ -1369,6 +1371,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Agents:** ui-ux-expert, qa-frontend-expert, qa-backend-expert
 - **Source:** VCST-2505 (Done) — footer jumped into the header area on page refresh (initial-render layout shift) and was fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MSNF-060 failed in REG-2026-10-01-1243
 
 ### BL-UI-002: Spacing grid compliance `[P2-ux]`
 - **Rule:** Every computed `padding`, `margin`, and `gap` SHOULD resolve to a value from the project spacing scale: the **Tailwind default scale** (0.25 rem / 4 px base unit, **including its half-steps** `0.5`=2 px, `1.5`=6 px, `2.5`=10 px, `3.5`=14 px) **plus** the vc-frontend `extend.spacing` additions in `tailwind.config.ts` (notably `4.5`=18 px, `17`=68 px, `18`=72 px, `19`=76 px). An arbitrary value that maps to no scale step (e.g. 13 px, 27 px, 41 px) is off-grid. The spacing scale is defined in `tailwind.config.ts` and is **theme-agnostic** — only COLORS are theme-driven CSS custom properties, so this is a design-system (not a per-theme "Coffee") contract. (Correcting the earlier claim of a strict 4 px multiple / a fixed allowed set: `vc-button.vue` uses `padding[2.5]`=10 px and `padding[3.5]`=14 px, and `extend.spacing` adds 18 px.)
@@ -1456,6 +1459,7 @@ Transport-layer invariants for the xAPI GraphQL endpoint at `{BACK_URL}/graphql`
 - **Violation signal:** `null` returned where schema declares `T!`; computed field `0` or missing after a recalc; stale cart state returned after `changeCartItemQuantity`; `data.entity.field` exists in projection but absent in response.
 - **Agents:** qa-backend-expert, test-runner-agent, regression-orchestrator, test-management-specialist, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] MSNF-027 failed in REG-2026-10-01-1243
 
 ### BL-GQL-004: GraphQL resolver auth gating `[P0-security]`
 - **Rule:** GraphQL resolvers enforce authentication and authorization at the resolver level, not the transport level. (a) **Public ops** (`categories(storeId:X)`, `__schema`, `slugInfo`): accessible without a Bearer token. (b) **Soft-gated ops** (`me`): callable anonymously but returns `{ memberId: null, contact: null }` for anonymous callers — no error, no leak. (c) **Hard-gated ops** (`orders`, profile reads, cart mutations): return `errors[].extensions.code = "Unauthorized"` for anonymous callers, `data: null`. (d) **Cross-user reads**: an authenticated user cannot read another user's `orders` / `cart` — resolver returns `Forbidden` or empty result.
@@ -2070,6 +2074,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** VCST-4993 (Done) — checkout address popup search input had a wrong aria-label; fixed
 - **Source:** VCST-5860 (Done) — icon toggle buttons had no accessible name; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MSNF-090 failed in REG-2026-10-01-1243
 
 ### BL-A11Y-003: Color contrast and non-color status differentiation `[P1-data]`
 - **Rule:** On the accessibility-gated storefront themes, body/paragraph text MUST meet contrast ≥ 4.5:1 against its background, and large text (≥18px, or ≥14px bold) ≥ 3:1 (WCAG 1.4.3). UI-component boundaries and meaning-bearing graphical/icon affordances MUST meet ≥ 3:1 against their adjacent background (WCAG 1.4.11). Status/meaning (error, success, warning) MUST NOT be conveyed by color alone (WCAG 1.4.1).
@@ -2080,6 +2085,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/wishlists/components/wishlist-card.vue` — the card's icon foreground is styled via a semantic design token rather than a raw hex value, routing contrast through the design-token system that governs compliance.
 - **Source:** VCST-5911 (Done) — storefront status dot below 3:1 and status conveyed by colour alone; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] MSNF-090 failed in REG-2026-10-01-1243
 
 ### BL-A11Y-004: Programmatic status, state, and role correctness (axe-clean) `[P1-data]`
 - **Rule:** Every ARIA role/state/property a component sets MUST be valid, complete, and reflect the control's actual state (WCAG 4.1.2). A message appearing asynchronously in response to a user action MUST be exposed to assistive technology at the moment it appears — via `role="alert"`/`aria-live`, or an explicit focus shift plus `aria-describedby` linkage to the field it concerns — not by visual styling alone (WCAG 4.1.3; WCAG 3.3.1 for field-level errors). A surface MUST be free of axe-core Critical/Serious violations.
@@ -2349,13 +2355,13 @@ ticket or a docs page disputes (`status`).
 
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
-| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 0 |
+| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 1 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 4 | 0 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 1 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 3 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 0 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
@@ -2364,17 +2370,17 @@ ticket or a docs page disputes (`status`).
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 0 |
-| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 1 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 1 |
+| GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 1 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 0 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 2 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **113** | **13** |
+| **Total** | | **223** | **60** | **125** | **38** | **113** | **19** |
