@@ -525,8 +525,11 @@ Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox
 ### ENV-008: Asserted behavior not implemented on live build `[Critical]`
 - **Detection:** `qa-testing-expert` reaches the asserted state and the **behavior the assertion claims does not occur** — the validation doesn't fire, the message/element the assertion expects never appears, the computed value differs, the state change the case asserts never happens. The step reaches the page fine (so it is not ENV-002/003); the *expectation itself* was invented, not implemented.
 - **Applies to:** any assertion tagged `{HYPOTHESIS}` or `{SPEC}` that could not be confirmed — this is the live grounding check for a new feature.
-- **Impact:** The assertion is a hallucination — it would either always FAIL (false bug) or trivially "PASS" against nothing. Left ungrounded, it corrupts regression signal.
-- **Action:** Do NOT upgrade the tag to `{OBSERVED}`. Under `--fix`, either (a) rewrite the assertion to match the observed real behavior and tag it `{OBSERVED}`, or (b) drop it and flag the gap. The case cannot promote while any assertion remains ungrounded (Dimension 10 / GRD-001).
+- **Impact:** Either the build is wrong (a bug the case just caught) or the expectation was invented. Which one is decided by the assertion's provenance, never by the wish for a green run.
+- **Action:** Do NOT upgrade the tag to `{OBSERVED}`. What `--fix` may do depends on where the expectation came from ([`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §2):
+  - **`{SPEC}`, `{DOC}`, `{BL}`, or a `Catches:` bug key** — the expectation has a human source, so the mismatch is a **bug candidate**. Keep the assertion, keep the case red, and route it down the defect path (`/qa-triage-results`, `/qa-defect`). **Never rewrite it to the observed behaviour.**
+  - **`{HYPOTHESIS}` only** (an agent's guess, no human source) — either rewrite it to the observed behaviour, tag it `{OBSERVED}` and record `Corrected: <date> hypothesis → observed` in `References`, or drop it and flag the gap.
+  The case cannot promote while any assertion remains ungrounded (Dimension 10 / GRD-001).
 - **Evidence:** Screenshot of the actual state + the assertion text that was refuted.
 
 ---

@@ -173,12 +173,21 @@ Steps/Assertions **as written** describe what the agreeing axes show.
 | ✓ | ✓ | ✓ | no (evidence agrees, case text stale) | **DRIFT** |
 | ✓ | ✓ | ✓ | (behavior is real but no case covers it) | **MISSING** |
 | N/A (§1a) | ✓ | ✓ | yes | **CONFIRMED** |
-| N/A (§1a) | ✓ | ✓ | no (evidence agrees, case text stale) | **DRIFT** |
+| N/A (§1a) | ✓ | ✓ | no (evidence agrees, case text stale), and the assertion is `{HYPOTHESIS}` / `{OBSERVED}` | **DRIFT** |
+| N/A (§1a) | ✓ | ✓ | no, and the assertion carries a human source (`{SPEC}`, `{BL}`, a `Catches:` bug key) | **CONTRADICTORY** — a bug candidate, never DRIFT (see below) |
 | N/A (§1a) | ✓ | ✓ | (behavior is real but no case covers it) | **MISSING** |
 | an applicable axis absent (incl. docs that *could* exist but wasn't found — not §1a) | — | — | — | **UNGROUNDED** |
 | fewer than two axes remain after waivers | — | — | — | **UNGROUNDED** |
 | present but conflicting (incl. deploy lag, §1e) | — | — | — | **CONTRADICTORY** |
 | all applicable axes say the behavior is gone | — | — | — | **RETIRE** |
+
+**Code and live agreeing is not a source.** Any bug is present in both the code and the stand, so those two
+axes always agree. When docs are N/A, the case's own human-sourced expectation — ticket AC (`{SPEC}`), a
+`DECLARED` rule (`{BL}`), a Fixed bug's resolution (`Catches:`) — **is** the docs axis, and source + live
+disagreeing with it is a conflict between a requirement and the build: **CONTRADICTORY**, reported as a bug
+candidate and routed down the defect path. Rewriting the case to the build would make it pass on the bug it
+exists to catch (`knowledge/execution/cases-that-catch-bugs.md` §2; BL 2.0 §7.3a in
+`docs/bug-detection-requirements.md`).
 
 **Roll-up:** a case's verdict is its **worst** assertion verdict, ordered
 `CONFIRMED < MISSING < DRIFT < UNGROUNDED < CONTRADICTORY < RETIRE`. A case with one DRIFT assertion

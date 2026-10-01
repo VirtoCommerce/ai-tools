@@ -580,3 +580,36 @@ Role_1 assigned to User_1",,"1. Login as User_1
 [ACT] close the blade without saving","[GRID] $GROUP_EMPTY renders the defined empty state confirmed in CUST-155 — no crash, no indefinite spinner {OBSERVED}
 [GRID] $GROUP_ONE renders exactly one row {OBSERVED}
 [GRID] $GROUP_MAX renders exactly min($COUNTS[$GROUP_MAX], $PAGE_SIZE) rows on the first page, and the pager reports $COUNTS[$GROUP_MAX] in total - $PAGE_SIZE is read from the grid's own pager in setup, so a group larger than one page does not read as a miscount {OBSERVED}","[NETWORK] no 4xx/5xx across the three opens","any of the three shapes crashes the grid or hangs, $GROUP_MAX's row count does not match its own /api/members/search totalCount","None — read-only. Close each blade without saving between iterations.",VCST-5547 · Archetype:BOUNDARY · Technique:EG | Promoted: REG-2026-09-17-2013 (2026-09-17),Automated
+CUST-172,Companies and contacts — A Chosen Sort Survives Entering A Search Keyword And Toggles asc → desc → asc Without Ever Going Empty (VCST-4884),Customer > Contact Management > Grid Sort x Search,High,,,"Admin logged in to Backend; Contacts > Companies and contacts has more than 10 members (the divergence below needs rows).
+Breaking condition (sort x search): after sorting by 'Modified Date', typing a keyword and pressing Enter sent the search request with an EMPTY sort, so rows came back in index/relevance order; the next header click sent desc, the one after that reset to empty again (asc → empty → desc → empty → asc).
+The case is vacuous if every visible row shares one Modified Date, or if the relevance order happens to equal the date order. Both are checked as preconditions and reported INCONCLUSIVE, never PASS.",back_url={{BACK_URL}}; admin_user={{ADMIN_EMAIL}}; admin_pass={{ADMIN_PASSWORD}}; keyword=MemberType:Contact,"[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] open the 'Companies and contacts' blade from the 'Contacts' menu
+[WAIT] the members grid renders
+[ACT] open the column chooser (hamburger) in the grid header
+[WAIT] the column list opens
+[ACT] enable the 'Modified Date' column
+[WAIT] the column appears in the grid
+[ACT] click the 'Modified Date' column header
+[WAIT] the grid reloads sorted ascending
+[CAPTURE] the sort indicator and the Modified Date of every visible row as ORDER_BEFORE
+[ACT] fill 'Search': MemberType:Contact
+[KEY] press [Enter]
+[WAIT] the grid reloads
+[CAPTURE] the sort field of the POST /api/members/search request issued by this search
+[CAPTURE] the sort indicator and the Modified Date of every visible row as ORDER_AFTER_SEARCH
+[ACT] click the 'Modified Date' column header
+[WAIT] the grid reloads
+[CAPTURE] the sort field of the next /api/members/search request
+[CAPTURE] the visible Modified Dates as ORDER_DESC
+[ACT] click the 'Modified Date' column header
+[WAIT] the grid reloads
+[CAPTURE] the sort field of the next /api/members/search request
+[CAPTURE] the visible Modified Dates as ORDER_ASC_AGAIN","[STATE] precondition: ORDER_AFTER_SEARCH holds at least two distinct Modified Date values, otherwise INCONCLUSIVE {SPEC} (VCST-4884)
+[NETWORK] the /api/members/search request issued by the keyword search carries sort = 'modifiedDate:asc', not an empty string {SPEC} (VCST-4884)
+[REL] the Modified Dates in ORDER_AFTER_SEARCH are in non-decreasing order, and the header still shows the ascending indicator {SPEC} (VCST-4884)
+[NETWORK] the next header click sends sort = 'modifiedDate:desc' and the one after sends 'modifiedDate:asc' — the sort field is never empty on any of the three requests {SPEC} (VCST-4884)
+[REL] ORDER_DESC is in non-increasing order and ORDER_ASC_AGAIN is in non-decreasing order {SPEC} (VCST-4884)",[CONSOLE] no error during the sort/search sequence; [NETWORK] no 4xx/5xx on /api/members/search,sort field empty on the search request; rows not ordered by Modified Date after the keyword; sort cycle asc → empty → desc → empty,Clear the search field and restore the default sort; hide the 'Modified Date' column if it was enabled by this case,VCST-4884 · Archetype:PARITY · Technique:ST · Catches:VCST-4884 · Admin SPA Contacts grid; POST /api/members/search; relates VP-9053,Draft

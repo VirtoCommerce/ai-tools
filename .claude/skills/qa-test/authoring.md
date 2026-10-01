@@ -245,8 +245,10 @@ Naming every target suite up front is also what makes the Step-3b fan-out safe, 
 Each authored case stamps its scenario row's archetype and technique into the free-text `References`
 column: `Archetype:<TOKEN> · Technique:<TOKEN>` (+ `Probe:VC-*-NNN` when the row came from a
 `vc-bug-catalog` Detection probe; + `Role:<role-id>` when it came from a Part 0r role scenario, so a later
-reader can tell whose refusal the case defends). The appender **rejects a row without the two mandatory
-stamps**; `Probe:` and `Role:` are provenance, optional and unvalidated. No new CSV column: these join the
+reader can tell whose refusal the case defends; + `Catches:<ISSUE-KEY>` or `Catches:mutant:<ID>` when it
+was written to catch a known bug or a response mutant — [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §3).
+The appender **rejects a row without the two mandatory stamps**; `Probe:`, `Role:` and `Catches:` are
+provenance, optional and unvalidated. No new CSV column: these join the
 `Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
 
 **When the domain has a mind map (`domain_map.mind_map`, axes.md §2g), each row also names its
