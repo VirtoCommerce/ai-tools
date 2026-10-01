@@ -1,0 +1,113 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 10a: BOPIS-Specific Rules (BL-BOPIS)"
+  prefixes:
+    - BL-BOPIS
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+    - ui-ux-expert
+  intro: These invariants are extracted from BOPIS suite assertions (suites 036–038). They complement the general Shipping & BOPIS rules in Domain 10 with BOPIS-specific behavioral contracts.
+rules:
+  - id: BL-BOPIS-001
+    title: Cart-level Pickup toggle assigns a single pickup shipment to all items
+    rule: The storefront exposes a cart-level Pickup/Shipping toggle (not per-line). When the customer selects Pickup, all items are assigned to a single pickup shipment. The cart xAPI must return exactly one shipment with `shipmentMethodCode = "BuyOnlinePickupInStore"`, `shipmentMethodOption = "Pickup"`, and **`pickupLocation.id` populated** (output field `pickupLocation { id }`; the write side is `InputShipmentType.pickupLocationId`). `fulfillmentCenterId` may legitimately be **null** on a pickup shipment and MUST NOT be treated as a violation. The shipment's `deliveryAddress` is **populated** with the pickup location's physical address — that is expected, not a violation. Switching back to Shipping must clear the pickup location and revert to a standard delivery shipment. (Live-verified 2026-07-15; corroborated by suite `050k` PCK-GQL-094.)
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: storefront/user-guide/docs/shopping/checkout-process.md (published) — for physical goods the customer chooses between pickup and shipping delivery options
+      - kind: resolution
+        ref: VCST-4092 (Done) — fixed pickup point address wrongly appearing in the Shipping address field after switching delivery options
+      - kind: resolution
+        ref: VCST-3025 (Done) — fixed addresses getting mixed when switching between Pickup and Shipping
+    check:
+      kind: manual
+      ref: Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `pickupLocation { id }` set (`fulfillmentCenterId` may be null; `deliveryAddress` carries the pickup location's address) → checkout shows pickup store, no shipping-address entry form → switch to Shipping → `pickupLocation` cleared, delivery-address form appears.
+    violation_signal: "Cart xAPI returns zero shipments or more than one shipment for a pure-BOPIS cart; `pickupLocation.id` is null after Pickup is confirmed; switching to Delivery does not clear the pickup location. (Note: a null `fulfillmentCenterId` or a populated `deliveryAddress` on a pickup shipment is EXPECTED, not a violation.)"
+    status: ACTIVE
+  - id: BL-BOPIS-002
+    title: BOPIS pickup always has $0 shipping cost
+    rule: Items selected for in-store pickup must have $0.00 shipping cost regardless of cart subtotal, applied promotions, or the presence of other delivery items in the same cart. The $0 pickup cost must not be inflated by any shipping fee calculation. The order confirmation and Admin order detail must also show $0 for the pickup shipment.
+    priority: P0-revenue
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Add BOPIS item → checkout → shipping section shows $0.00 → add a delivery item → delivery shipment shows a shipping rate, pickup section still shows $0 → place order → Admin order detail shows pickup shipment with $0 shipping.
+    violation_signal: Pickup item shows a non-zero shipping cost; free shipping promotion applied to pickup item (redundant but incorrect base); Admin order shows shipping fee on pickup shipment.
+    status: ACTIVE
+  - id: BL-BOPIS-003
+    title: FFC availability label matches actual stock level
+    rule: "The availability label shown for each fulfillment center in the BOPIS store-selector modal must accurately reflect the product's stock at that FFC. The backend `ProductPickupLocation.AvailabilityType` is one of **three** values: `Today` (in stock at the location's own FFC, default note \"Today\"), `Transfer` (available via the location's configured transfer FFCs) or `GlobalTransfer` (covered by store-wide global transfer); both transfer tiers default to the note \"Via transfer\". The displayed strings are theme-localizable settings (`TodayAvailabilityNote` / `TransferAvailabilityNote` / `GlobalTransferAvailabilityNote`), **not fixed literals**. A location where the product is wholly unavailable (no own stock, no transfer, global transfer off) is **EXCLUDED from the result entirely** (the service returns `null`) rather than shown with a \"Not Available\" label. Labels must update after stock changes within the 120s consistency window (BL-CROSS-009)."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-x-pickup `ProductPickupAvailability.cs` (Today / Transfer / GlobalTransfer constants) + `ProductPickupLocation.cs` (`AvailabilityType`, `AvailabilityNote`, nullable `AvailableQuantity`).
+      - kind: doc
+        ref: "platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/xPickup/objects/ProductPickupAvailabilityType.md (published) — availability has three tiers: Today, Transfer, GlobalTransfer"
+    check:
+      kind: manual
+      ref: FFC-A has qty=5 → location shows the "Today" note. Set FFC-A qty=0 → wait 120s → the location **disappears** from the selector (or, if global transfer is enabled, downgrades to the transfer note). Set qty at a transfer FFC → location shows the "Via transfer" note.
+    violation_signal: '"Today"/in-stock note shown when the FFC qty=0; transfer note shown for direct-availability stock; label stale beyond 120s; a wholly-unavailable location rendered with a visible "Not Available" row instead of being dropped.'
+    status: ACTIVE
+  - id: BL-BOPIS-004
+    title: BOPIS store-selector modal is view-only on PDP
+    rule: The "Check Availability" / "Pick Up In Store" modal on the Product Detail Page (PDP) is a read-only view. It shows which stores have the product available but does NOT add the product to cart or select a pickup location. Cart addition and pickup-store selection happen from the cart page, not the PDP modal. The modal must close cleanly without side effects.
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Open PDP → open BOPIS modal → verify no "Add to Cart" button inside modal → close modal → cart is empty (no items added) → no store selection persisted.
+    violation_signal: Modal adds item to cart on open or close; modal persists a store selection without user action; modal has a functional "Add to Cart" button; closing the modal triggers a navigation.
+    status: ACTIVE
+  - id: BL-BOPIS-005
+    title: Inactive or closed pickup locations excluded from selector
+    rule: The BOPIS store-selector must only show fulfillment centers that are active and configured for pickup (not delivery-only FFCs). FFCs marked inactive or disabled in Admin must never appear in the pickup selector, even if they have stock. This prevents customers from selecting a location that cannot fulfill pickup orders.
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Create an FFC → mark as inactive in Admin → open BOPIS modal → FFC does not appear in the list. Re-activate → appears in list. Create a delivery-only FFC → does not appear in pickup selector.
+    violation_signal: Inactive FFC shown in pickup selector; customer can select a disabled location; delivery-only FFC appears in pickup list; FFC reappears in list without admin re-activation.
+    status: ACTIVE
+  - id: BL-BOPIS-006
+    title: BOPIS checkout requires billing address, skips shipping address
+    rule: For a pure-BOPIS checkout (all items are pickup), the checkout form must NOT display a shipping address section. The billing address is still required (for payment processing). This is a strict fulfillment-type-driven form variant — the absence of the shipping address section is correct behavior, not a bug. For mixed carts (BOPIS + delivery), the shipping address section IS displayed (for the delivery items).
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Pure BOPIS cart → checkout → no shipping address form visible → billing address form IS visible → order placed successfully with billing address only → Admin order shows pickup location, no shipping address.
+    violation_signal: Shipping address form shown for pure-BOPIS checkout; billing address not required; order placed without any address; shipping address form missing for mixed-cart checkout (delivery items need it).
+    status: ACTIVE
+  - id: BL-BOPIS-007
+    title: BOPIS store-selector map does not collapse on no-results search
+    rule: "When the store-selector modal's search returns no results, the map panel must remain visible and must NOT collapse to zero width or a hidden state. Mechanism (vc-frontend source: `shared/checkout/components/select-address-map/select-address-map-desktop.vue`): the side-by-side layout renders whenever `(addresses.length || filterIsApplied)` is true, so a no-results **search** (filter applied, zero results) keeps both panels mounted — the list sidebar is a fixed width (Tailwind `w-60` / 240 px, `shrink-0`) and the map wrapper is `grow` with the map view inside it (`data-test-id=\"pickup-locations-map\"`, `h-full`) filling the remaining modal width and never shrinking on a no-results query. The no-results message + Reset-search button render inside the fixed-width list panel (`data-test-id=\"pickup-locations-not-found\"` / `\"reset-search-button\"`), not the map. The full map-replacing not-found placeholder appears only when there are genuinely NO locations AND no filter is applied — a different state. NOTE: the ≥40% / baseline ~50% figures are a conservative live-measured floor, not an enforced CSS token; with a fixed 240 px sidebar and a `grow` map, on desktop the map is in practice well over half the modal width."
+    priority: P2-ux
+    trust: INFERRED
+    source:
+      - kind: ac
+        ref: VCST-4518 (Done) — task to align desktop select-address-map modal layout with design; no description or AC text present
+    check:
+      kind: manual
+      ref: Open the BOPIS store-selector modal → measure the map panel (`data-test-id="pickup-locations-map"`) width via `browser_evaluate` + `getBoundingClientRect()` → search for a guaranteed no-match term → the no-results message (`data-test-id="pickup-locations-not-found"`) appears in the list panel → the map panel remains visible and does not shrink (≥40% of modal width as a conservative floor).
+    violation_signal: Map panel collapses to < 40% of modal width after no-results search; map panel hidden entirely; map width measured at 0px after search; map panel width decreases on no-results but not on results.
+    status: ACTIVE
+  - id: BL-BOPIS-008
+    title: Confirmed cart pickup location always returned at items[0] of cartPickupLocations
+    rule: Pickup locations referenced by any cart shipment (`cart.Shipments[].PickupLocationId`, distinct, non-null) must appear at `items[0]` of the `cartPickupLocations` xAPI response, regardless of paging (`first`), keyword search, facet, or filter. Backend resolves the missing IDs separately and prepends them to the result set, ordered by `PickupLocation.Name`. This guarantees the storefront BOPIS modal can pre-select the confirmed location on reopen even when it would otherwise be paged or filtered out.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: resolution
+        ref: VCST-4707 (Done) — fixed pre-selection failing for pickup locations beyond the first page; recommended fix always includes confirmed location in response
+    check:
+      kind: manual
+      ref: "Set `cart.Shipments.PickupLocationId` to a location alphabetically/positionally beyond the first paged batch (e.g., 51+ of 102) → query `cartPickupLocations(cartId, storeId, first: 1)` → assert `items[0].id` matches the confirmed location ID. Repeat with `keyword` that matches zero other locations → still returned at `items[0]`. Storefront: confirm a far-page location → close modal → reopen → radio is checked, location at top of list with no scrolling, map centered on location."
+    violation_signal: Confirmed pickup location absent from `cartPickupLocations` response; location returned but not at `items[0]`; modal reopen shows no checked radio; map zoomed out to default after reopen; location only appears after applying matching keyword/filter; multiple confirmed locations from same cart not all returned.
+    status: ACTIVE

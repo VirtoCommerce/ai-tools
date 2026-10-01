@@ -1,0 +1,128 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 11: Notifications (BL-NOTIF)"
+  prefixes:
+    - BL-NOTIF
+  agents:
+    - qa-backend-expert
+    - qa-testing-expert
+rules:
+  - id: BL-NOTIF-001
+    title: Order confirmation email sent exactly once
+    rule: When an order is successfully placed, exactly one order confirmation email is sent to the customer's email address. Duplicate emails (due to retries, webhooks, or event duplication) are a bug. If the email service is temporarily unavailable, the email must be queued for retry — not silently dropped. Failed notifications are visible in Admin → Notification activity feed.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: vc-module-order `SendNotificationsOrderChangedEventHandler.Handle(OrderChangedEvent)` — `SendOrderNotifications`-gated, `IsNewlyAdded` → one `OrderCreateEmailNotification` via `BackgroundJob.Enqueue` → `ScheduleSendNotificationAsync`; failures surface in the Admin Notification activity feed (attempt count / status).
+      - kind: doc
+        ref: platform/user-guide/docs/order-management/notifications.md (published) — customers receive automated email notifications on order creation and other lifecycle events
+      - kind: doc
+        ref: platform/user-guide/docs/notifications/notification-log.md (published) — sent notifications are recorded in the Notification activity feed
+    check:
+      kind: manual
+      ref: Place order → check email inbox → exactly 1 confirmation received. Check Admin → Notification feed → sent status shown. Simulate email service failure → retry mechanism sends email after service recovery → still only 1 email total.
+    violation_signal: 0 or 2+ confirmation emails; email silently dropped on service failure; no retry mechanism; notification feed shows no record.
+    status: ACTIVE
+  - id: BL-NOTIF-002
+    title: Email content matches order data
+    rule: "Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields."
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Place order → compare email content against Admin order detail → all values match. Check for unresolved tokens or placeholder text. Verify currency symbol matches order currency.
+    violation_signal: Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
+    status: ACTIVE
+  - id: BL-NOTIF-003
+    title: Notification failure does not block order
+    rule: If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/Operations/integration-failure-handling.md (published) — domain event handlers run once without retries; Hangfire jobs retry with backoff
+    check:
+      kind: manual
+      ref: Simulate email service outage → place order → order created successfully → confirmation page shown → order in Admin → email queued for retry (visible in notification feed as "Pending").
+    violation_signal: Order fails because email service is down; 500 error at checkout due to notification failure; order transaction rolled back; customer sees error but order was actually created (inconsistent state).
+    status: ACTIVE
+  - id: BL-NOTIF-004
+    title: An admin Save must be observable through the API
+    rule: A Save that reports success must have reached the server. No UI success signal — a success toast, an auto-closing blade, or a refreshed `Modified` column in the parent list — may be emitted for a change that exists only in client memory, and the signal must not depend on which entry path opened the editor. A surface that deliberately *stages* an edit for a parent blade to persist later must keep that staged state visible and recoverable (no auto-close that discards it) and must not advance a persisted-state indicator such as `Modified`.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: 'PlatformUserGuide → Notifications → Notification Templates, and Order Management → Notifications: "Click **Save** in the toolbar to save the changes… Your modifications have been applied." The documented contract is that toolbar Save persists the change.'
+      - kind: code
+        ref: vc-module-notification `Scripts/blades/notifications-edit-template.js` (editor-rework branch `feat/VCST-5557`) — `saveTemplate()` (:439-475) mutates only in-memory state and stamps `modifiedDateAsString` client-side (:450); `$scope.saveChanges()` (:537-547) calls `persistNotification()` **only** when `blade.isDeepLink`, otherwise `refreshParentBlade()` + `$scope.bladeClose()` with no request at all; `persistNotification()` (:517-535) is the sole caller of `updateNotification` → `Controllers/NotificationsController.cs` `UpdateNotification` (:90-99, `PUT api/notifications/{type}` → 204). Parent-grid dates are re-derived in `Scripts/blades/notification-details.js` (:61-64).
+      - kind: doc
+        ref: platform/user-guide/docs/notifications/notification-templates.md (published) — toolbar Save applies the template modifications
+      - kind: resolution
+        ref: VCST-5607 (Done) — fixed toolbar Save on the drill-down path not persisting while the grid showed a false Modified date
+    check:
+      kind: manual
+      ref: Edit a field in the editing surface → Save → re-read the entity through the platform REST API (for a notification, `GET api/notifications/{type}`) and assert both the changed value and an advanced `modifiedDate`. Assert a network request was actually issued on Save. Repeat for every entry path that can open the same editor — nested from a parent blade, and opened directly by deep link — the outcome must be identical.
+    violation_signal: The parent list shows a `Modified` date of today while a fresh `GET` returns the old value and the original `modifiedDate`; no `PUT`/`POST` is issued when Save is pressed; the edit is lost when the parent blade is closed or discarded; the same control persists on one entry path and only stages on another.
+    status: ACTIVE
+  - id: BL-NOTIF-005
+    title: Editing a shipped predefined template warns before it replaces the default, and stays restorable
+    rule: A template shipped out of the box (`predefined`) **is** editable; saving it converts it into an override that replaces the shipped version for that language. Before that conversion the authoring surface must display a note stating that saving replaces the predefined version, and a restore path back to the shipped default must remain available for as long as the template is both `predefined` and `edited`. Restore is destructive, so it must be confirm-gated, must issue no request until the confirmation is accepted, and cancelling it must leave the override unchanged.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: 'PlatformUserGuide → Notifications → Notification Templates: "The **predefined** label means that this notification template is supplied out of the box. If you make changes to it and then save it, it will be replaced with your modified version, but the system will warn you… The defaults can be restored any time by clicking **Restore** in the toolbar."'
+      - kind: code
+        ref: vc-module-notification `Scripts/blades/notifications-edit-template.tpl.html` — the `class="text __note"` paragraph gated on `isPredefined && isEdited` renders on `dev` (:7) but is HTML-commented-out on the editor-rework branch `feat/VCST-5557` (:5), while its localized strings (`…notifications-edit-template.labels.note-caption` / `note-text`) still ship in every locale. `Scripts/blades/notifications-edit-template.js` — `saveTemplate()` sets `isPredefined`/`isEdited` on an override save (:457-459); `persistNotification()` flips `isPredefined` to `false` so the override persists (:521-526); the `notifications.commands.restore` toolbar command is gated on `isPredefined && isEdited` (:701-711) and routes through a typed confirmation dialog (:477-488 → `notification-templates-list-reset-dialog.tpl.html`).
+      - kind: doc
+        ref: platform/user-guide/docs/notifications/notification-templates.md (published) — saving a modified predefined template replaces the default; system warns; Restore reverts to default
+      - kind: resolution
+        ref: VCST-5606 (Cancelled) — missing replace-the-default warning on predefined templates closed without fix
+    check:
+      kind: manual
+      ref: Open a template badged `predefined` → assert the replace-the-default note renders in the authoring surface. Save an edit → assert the template persists as an override (badged `predefined` + `edited`) and that Restore is enabled. Trigger Restore → assert a confirmation is required and that no request is issued before it is accepted; cancel it → re-read the template and assert subject and body are unchanged.
+    violation_signal: No note is shown on a predefined template, so an admin silently overwrites a shipped default; Restore is missing or disabled while the template is `predefined` + `edited`; Restore deletes without confirmation, or issues its request before the confirmation is accepted; cancelling Restore still mutates the override.
+    status: SUSPECT
+    suspect_reason: VCST-5606 (Cancelled) — the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored.
+  - id: BL-NOTIF-006
+    title: A code editor must not lose user content to a single undo
+    rule: "The document a code editor loads is the undo baseline, not an undoable edit. On a freshly opened editor where the user has typed nothing, undo is a no-op: it must never empty or truncate the buffer, and must not mark the surface as modified. Conversely, after an undo/redo round trip that restores content identical to the loaded document, the surface must report itself unmodified (Save disabled)."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-notification `Scripts/blades/notifications-edit-template.js` (branch `feat/VCST-5557`) — `jsonEditorOptions.onLoad` (:191-197) and `htmlEditorOptions.onLoad` (:269-276) set `readOnly`, inject the format button and refresh, but neither calls the editor's `clearHistory()` after the binding's initial `setValue`, so the initial load stays on the undo stack (no `clearHistory` call exists anywhere in the file). The dirty check itself is sound — `isDirty()` (:714-716) and the deep `$watch` (:728-730) compare `origEntity` to `currentEntity` by value, which is why a redo to identical content correctly re-disables Save.
+      - kind: resolution
+        ref: VCST-5604 (Done) — fixed a single undo on a freshly opened template wiping the entire body
+    check:
+      kind: manual
+      ref: Open the editing surface and, without typing, read the editor's undo depth — assert it is zero. Press the undo shortcut → assert document length and line count are unchanged and Save stays disabled. Then make a real edit → undo → redo → assert the buffer matches the originally loaded document and Save is disabled again.
+    violation_signal: A single undo on an untouched editor empties the document (length → 0) and enables Save, so the next Save would persist an empty template; undo depth is non-zero before the user types; a redo that restores identical content leaves the surface reporting itself dirty.
+    status: ACTIVE
+  - id: BL-NOTIF-007
+    title: A user-input error in a template must not surface as a server fault
+    rule: An unparseable template body or unparseable sample document is client input, not a server error. A render/preview request carrying such input must be answered with a client-error status and a parse diagnostic — never a 5xx — and the diagnostic must be reported inline in the authoring surface, next to the input that caused it. An **empty** optional sample document is valid input, not a parse error. Every such message, including format/validate failure dialogs, is localized like the rest of the surface.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: 'PlatformUserGuide → Notifications → Notification Templates (Preview step): "In case of errors, you will see a detailed report on them." — the inline detailed-report contract is documented; the HTTP status class itself is an implementation detail the guides do not narrate (bl-audit-criteria §1a class 1).'
+      - kind: code
+        ref: "vc-module-notification `Controllers/NotificationsController.cs` `RenderingTemplate` (:106-124, `POST api/notifications/{type}/templates/{language}/rendercontent`) calls `_notificationTemplateRender.RenderAsync` with no input validation and no `try`/`catch`, and the controller declares no `BadRequest`/validation-problem path at all — a parse exception raised by user-authored template text propagates out of the action and becomes a 500. Client side, `Scripts/blades/notifications-edit-template.js` `updatePreview()` (:136-164) does surface the failure inline via `blade.previewError` (rendered at `notifications-edit-template.tpl.html` :101-106), but `formatSampleJson()` (:244-251) and `formatHtml()` (:278-291) raise dialogs with hardcoded English `title: 'JSON Error'` / `'HTML Error'` / `'Cannot format: …'`; `blade.isSampleValidJson()` (:661-670) correctly treats an empty sample as valid, so an empty-document \"invalid\" report originates in the lint gutter enabled at (:198-201), not in the module's own validity check."
+      - kind: doc
+        ref: platform/user-guide/docs/notifications/notification-templates.md (published) — Preview reports errors in a detailed report
+      - kind: resolution
+        ref: VCST-5610 (Done) — fixed live preview returning HTTP 500 for in-progress template syntax shown as a generic toast
+      - kind: resolution
+        ref: VCST-5611 (Done) — fixed hardcoded English format-JSON/HTML error dialogs
+      - kind: resolution
+        ref: VCST-5612 (Cancelled) — full-screen hiding the invalid-JSON preview message kept without fix
+    check:
+      kind: manual
+      ref: Enter an unterminated template expression → trigger the preview/render request → assert the response status is a 4xx carrying a parse diagnostic (not a 5xx) and that the diagnostic renders inline in the preview pane. Clear the sample document entirely → assert no invalid-input indicator appears. Invoke the format action on malformed input → assert the dialog title and body resolve from the locale files, and repeat under a second UI language to confirm they change.
+    violation_signal: The render endpoint returns `500 Internal server error` for a template the user is part-way through typing; a parse failure is reported only as a generic server error with no indication of which token failed; an empty sample document is flagged as invalid JSON; a format-failure dialog shows a hardcoded English title or message under a non-English UI.
+    status: SUSPECT
+    suspect_reason: VCST-5612 (Cancelled, 'keep it without fix') — the invalid sample-JSON diagnostic being hidden in full-screen mode was accepted, disputing the inline-diagnostic clause for that view of the authoring surface.

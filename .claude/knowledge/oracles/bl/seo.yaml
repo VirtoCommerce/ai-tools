@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 13: SEO & URLs (BL-SEO)"
+  prefixes:
+    - BL-SEO
+  agents:
+    - qa-backend-expert
+    - qa-frontend-expert
+    - ui-ux-expert
+rules:
+  - id: BL-SEO-001
+    title: Slug uniqueness enforced
+    rule: Every product and category URL slug should be unique within a store and language. Virto Commerce does **NOT** auto-append a numeric suffix; instead the SEO module validates a duplicate on save ("Duplicate URL detected") and surfaces store-level conflicts ("conflicting semantic URLs" with a Resolve-conflicts flow), and the SEO resolver disambiguates any remaining conflicts at request time via its scoring/priority pipeline. Uniqueness is scoped per **store + language** (the same slug may legitimately exist in different stores/languages). Case sensitivity of resolution is DB-collation dependent (case-insensitive under default SQL Server collation).
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/seo/overview.md (docs) — SEO module provides ISeoDuplicatesDetector to identify and resolve conflicting SEO entries
+      - kind: doc
+        ref: platform/developer-guide/docs/Fundamentals/SEO/overview.md (docs) — SEO lookup by permalink, store and language, with logic to pick the most relevant entry among multiple matches
+      - kind: resolution
+        ref: VP-7983 (Done) — two products sharing a slug both returned 404; expected both to work or save to be refused
+      - kind: resolution
+        ref: VCST-1399 (Done) — incorrect redirect for same-named categories; resolver used only last slug segment
+    check:
+      kind: manual
+      ref: Create Product A with slug "my-product" → create Product B with the same slug in the same store+language → a "Duplicate URL detected" validation and/or a store "conflicting semantic URLs" warning appears (no "-1" suffix is auto-added). Use the store **Debug SEO Links** widget to see how a conflicting slug is scored and resolved.
+    violation_signal: Duplicate slug silently accepted with no validation and no conflict flag; two entities in the same store+language sharing a slug with no resolver disambiguation (one silently hides the other).
+    status: ACTIVE
+  - id: BL-SEO-002
+    title: Deleted product returns proper HTTP status
+    rule: When a product is deleted, its slug returns an empty `slugInfo` from xAPI and the Vue-SPA storefront renders its client-side NotFound page. Because VC Frontend is served via a catch-all route, the document HTTP status is **200 by default (a documented "soft 404")** — a real HTTP 404/410 is produced only via load-balancer/CDN rules. The missing slug is logged as a broken link where an admin can assign a 301 redirect (surfaced as `slugInfo.redirectUrl`). The page must never show the deleted product's old content, blank/broken content, or a 500.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — SPA serves index.html so missing pages return 200 (soft 404); true 404 via load-balancer rules or broken-link tooling
+      - kind: doc
+        ref: platform/user-guide/docs/seo/managing-broken-links.md (docs) — frontend-reported missing slugs are logged as broken links and admins can configure redirects
+    check:
+      kind: manual
+      ref: Note the product URL → delete the product in Admin (or use a never-existing slug) → navigate to the URL → xAPI `slugInfo` entityInfo is empty and the SPA shows the NotFound page (HTTP 200 soft 404 by default, or a configured 301 redirect / CDN-forced 404). Never the old product content, a blank page, or a 500.
+    violation_signal: Deleted product's old content still served; blank/broken content; 500 error; the product page still fully resolving after deletion. **NOTE:** HTTP 200 with the SPA NotFound page is the documented default and is **NOT** a violation.
+    status: ACTIVE
+  - id: BL-SEO-003
+    title: Canonical URL set on all pages
+    rule: "Every storefront page must expose its preferred URL to crawlers. Virto Commerce's storefront (vc-frontend, `@unhead/vue`) emits this as an Open Graph `<meta property=\"og:url\">` set to the page's own resolved SEO URL — it does **NOT** render a `<link rel=\"canonical\">` element (verified live 2026-07-15: zero canonical tags on PDP or category pages). A product resolves to one preferred URL (whatever format `seoLinkType` yields — see BL-SEO-004), so `og:url` points to that single URL regardless of the category path taken to reach it. (A true `rel=\"canonical\"` link would be a stronger de-dup signal than `og:url`; its absence is a documented SEO consideration, not a per-page bug — treat canonical-link emission as a separate feature-gap decision.)"
+    priority: P2-ux
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — default storefront renders no rel=canonical link; Open Graph tags are described for the home page
+    check:
+      kind: manual
+      ref: Open a PDP → inspect the rendered (post-hydration) DOM head → `<meta property="og:url">` present and equal to the product's own resolved URL; **no** `<link rel="canonical">` is expected. Open the same product via a different category → `og:url` still points to that same product URL. Repeat on a category listing page.
+    violation_signal: '`og:url` missing or pointing to the wrong URL; `og:url` differs for the same product across entry points (should be its single resolved URL). NOTE: the absence of a `<link rel="canonical">` tag is the documented default and is NOT a violation.'
+    status: ACTIVE
+  - id: BL-SEO-004
+    title: SEO link type controls URL format
+    rule: The store setting `seoLinkType` controls how product and category URLs are generated. When changed, all storefront URLs must update to the new format. Old-format URLs should either redirect (301) to the new format or return 404 — never serve content at both old and new URLs simultaneously (duplicate content penalty).
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Set `seoLinkType` to format A → note URLs. Change to format B → URLs update to new format. Navigate to old-format URL → 301 redirect to new format (or 404).
+    violation_signal: Old and new format URLs both serve content (duplicate); URL format doesn't change after setting update; old URLs return 200 instead of 301/404; broken links after format change.
+    status: ACTIVE
