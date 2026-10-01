@@ -91,10 +91,8 @@ any dependency type (search, SQL, cache, outbound HTTP). Methodology + the concr
 ---
 
 ## Rules
-- Measure-and-report only — no tracker writes, no PR, no code edits
-  (`feedback_subagent_external_writes`).
-- Never invent a threshold or baseline for a call count (`feedback_never_hardcode_in_scripts`).
+- Measure-and-report only — no tracker writes, no PR, no code edits.
+- Never invent a threshold or baseline for a call count.
 - Every figure re-traceable to its query, window and arm; state what was not measured.
-- Deliverables carry the finding, not the story of getting there
-  (`feedback_no_self_referential_commentary_in_deliverables`).
+- Deliverables carry the finding, not the story of getting there.
 - Reports follow `.claude/rules/reports.md`; long logs via SendMessage, not on disk.

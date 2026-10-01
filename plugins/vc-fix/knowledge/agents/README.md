@@ -36,8 +36,7 @@ orchestration, no BA team, no Storybook/a11y/design-system tooling. Those live o
 
 The **only write-capable team** (clone / branch / commit / push / open PR via local `git`/`gh`). QA
 agents stay read-only. Driven by `/qa-fix`; reuses the self-contained `skills/qa-fix-routing/`
-skill (an extract of `ci/lib/repo-router.ts` + `ci/lib/module-registry.ts` etc. from the full
-`vc-qa` plugin's `ci/` directory — not shipped here). **One developer + one reviewer per repo
+skill. **One developer + one reviewer per repo
 kind**, picked by the routed repo's `kind`. Gate ladder: `.claude/rules/quality-gates.md`. **Never
 auto-merges.** No browser.
 
@@ -58,7 +57,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 | Agent | Model | Purpose |
 |-------|-------|---------|
 | **self-check-diagnostician** | sonnet | Tier-2 diagnostician of the client→vendor feedback loop: given one session id, reads its telemetry jsonl + transcript + the `skill-expectations.md` oracle, and returns ONLY a validated finding STRUCT (verdict + severity + evidence + root-cause + proposed fix + vendor-provenance fields). Writes no files, sends nothing. |
-| **self-check-deliverer** | sonnet | Non-interactive deliverer: given the validated finding STRUCT and the operator's single consent, owns the whole delivery (dedup lookup, route selection, body composition, leak scan, sending, telemetry retention) by running `deliver.mjs`. Asks nothing further; the only thing it ever sends is a GitHub Issue/comment on `VirtoCommerce/vc-mcp-testing-module`. |
+| **self-check-deliverer** | sonnet | Non-interactive deliverer: given the validated finding STRUCT and the operator's single consent, owns the whole delivery (dedup lookup, route selection, body composition, leak scan, sending, telemetry retention) by running `deliver.mjs`. Asks nothing further; the only thing it ever sends is a GitHub Issue/comment on `VirtoCommerce/ai-tools`. |
 
 ---
 
@@ -68,8 +67,8 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 |---------|---------|
 | `/project-init` | Onboard this plugin: env name, bug tracker (Jira/Azure Boards), code host (GitHub/Azure Repos), auth, discover client/platform repo split, write `project-profile.json` + `.env.<env>` + `.mcp.json`, verify access. Day-2 modes (skip the interview): **`--add-env`** adds another environment (URLs + per-env access creds) to an onboarded project; **`--check`** reconciles the profile to the current schema after an upgrade, then verifies |
 | `/qa-bug [description]` | Reproduce, document, and optionally file a bug |
-| `/qa-fix VCST-XXXX` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
-| `/qa-verify-fix VCST-XXXX` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
+| `/qa-fix <ticket-key>` | Autonomous fix of an already-filed bug: triage → root-cause + single-repo route → reproduce-as-test → minimal fix → self code-review → branch + PR + CI/E2E → STOP for human review (never auto-merges) |
+| `/qa-verify-fix <ticket-key>` | Verify a bug fix: fetch ticket, reproduce STR, confirm fix, regression checks, transition the ticket |
 | `/qa-monitoring [layer]` | Online bug monitoring from App Insights: query → dedup (fingerprint) → triage → live repro → report. Detect-and-report only — never files a ticket or auto-fixes |
 | `/qa-env-check` | Validate env vars, endpoints, MCP servers |
 | `/vc-self-check` | Self-diagnostics (Tier B): read this session's passive telemetry (`hooks/session-telemetry.mjs` → `.vc-fix/diagnostics/`) + transcript + the `knowledge/diagnostics/skill-expectations.md` oracle → per-skill verdict + severity + proposed fix → LOCAL `DIAG-*.md`. `deliver` sub-step contributes a scrubbed, consent-gated PR/issue to VirtoCommerce. Never modifies the install; model-invocable (no `disable-model-invocation`) so the end-of-turn tail-trigger can auto-run it silently; recursion blocked by span-drop + `selfCheckSeen` + per-signature dedup |
@@ -87,7 +86,7 @@ top-level session performs it directly), `ui-ux-expert`, `regression-orchestrato
 ```
                         USER
               ┌──────────┼──────────┬──────────────┐
-       /project-init   /qa-bug   /qa-fix VCST-XXXX   /qa-verify-fix VCST-XXXX
+       /project-init   /qa-bug   /qa-fix <ticket-key>   /qa-verify-fix <ticket-key>
                           │           │                        │
                     qa-testing-  triage (G0/G1) via       qa-backend-expert /
                     expert /     skills/qa-fix-routing/    qa-frontend-expert

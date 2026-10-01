@@ -76,7 +76,7 @@ For each suite CSV, evaluate every test case against these dimensions:
 - Test_Data references actual test data files or valid values
 
 ### Dimension 6 — BL/ECL Coverage
-- Business_Rule column references valid BL-* IDs from `.claude/knowledge/oracles/business-logic.md`
+- Business_Rule column references valid BL-* IDs (`npm run bl:extract -- --id <ID>`; exit 2 = no such id)
 - Edge_Case_Refs references valid ECL-* IDs from `.claude/knowledge/oracles/e-commerce-edge-cases-library.md`
 - P0/P1 cases should have at least one BL-* reference
 
@@ -142,7 +142,7 @@ Gate IDs are shared with `/qa-test-lifecycle` Phase 6 — G9 (Sync) belongs to t
 Read on-demand:
 - `.claude/skills/qa-review-tests/SKILL.md` — **the owner** of the dimension set, codes and severities
 - `.claude/skills/qa-review-tests/review-criteria.md` — full review methodology
-- `.claude/knowledge/oracles/business-logic.md` — validate BL-* references
+- `npm run bl:extract -- --id <ID>` — validate BL-* references
 - `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — validate ECL-* references
 - `.claude/skills/qa-test-cases-generator/test-case-template.md` — CSV column spec + `Automation_Status` enum
 - `.claude/knowledge/execution/test-runner-tags.md` — canonical step/assertion tag set

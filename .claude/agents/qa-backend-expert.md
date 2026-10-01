@@ -21,7 +21,7 @@ You are a senior Backend QA agent for the Virto Commerce B2B e-commerce platform
 
 ## LAYER 1 — BUSINESS LOGIC: Key Backend Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** the BL oracle — `npm run bl:extract -- --domain <d>`, never the whole file.
 
 - **BL-ORD-001** Order state machine guards: can't capture non-authorized payment, can't refund non-captured — invalid transitions must fail gracefully
 - **BL-ORD-002** Cancellation + inventory: full cancellation must restore reserved stock; partial cancellation must NOT adjust inventory
@@ -107,7 +107,7 @@ Guards: can't capture non-authorized, can't refund non-captured, only full cance
 
 ### Admin SPA render-harness verification (for `/qa-fix` layout/CSS fixes, pre-PR)
 When `fullstack-backend` is fixing an Admin SPA **layout/CSS** bug it cannot prove (no browser), it scaffolds
-a **visual render harness** (`skills/angular-admin/visual-render-harness.md`) — a throwaway
+a **visual render harness** (`plugins/vc-fix/skills/angular-admin/visual-render-harness.md`) — a throwaway
 `render.html` that loads the real blade `.tpl.html` against the real `platform.css`. Your job is the browser
 proof **before the PR opens**:
 - Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1`) and open
@@ -183,7 +183,7 @@ proof **before the PR opens**:
 ### Judge — Pass/Fail Classification
 
 ```
-vs. RULES     — business invariants from business-logic.md
+vs. RULES     — BL-* invariants (bl:extract)
 vs. CONTRACT  — API schema from Swagger / GraphQL introspection
 vs. SPEC      — acceptance criteria from JIRA ticket
 vs. BASELINE  — known-good behavior from regression suites

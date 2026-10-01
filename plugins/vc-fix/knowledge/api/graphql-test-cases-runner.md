@@ -64,7 +64,7 @@ Same enriched agent-native format as every other suite. The runner reads exactly
 | `References` | informational | JIRA / sprint IDs |
 | `Automation_Status` | informational | `Automated` for runner-native |
 
-**Golden rule:** never hardcode IDs/SKUs/emails/prices/order-numbers. Resolve at runtime via `@td(ALIAS.field)` or capture from upstream responses via `[GQL-CAPTURE]`. (See feedback memory `feedback_flexible_test_cases.md` and `feedback_no_test_data.md`.)
+**Golden rule:** never hardcode IDs/SKUs/emails/prices/order-numbers. Resolve at runtime via `@td(ALIAS.field)` or capture from upstream responses via `[GQL-CAPTURE]`.
 
 ---
 
@@ -106,7 +106,7 @@ The alias is resolved through `test-data/aliases.json` (preferred) or the `<ROLE
 
 **No `[AUTH]` line ⇒ the request is sent without an `Authorization` header** (PUBLIC). Use this for `productConfiguration`, anonymous catalog, and any guest flow.
 
-**Never hardcode passwords** in the CSV — always go through `[AUTH role=…]` so credentials come from `.env` at runtime (feedback memory `feedback_agents_read_env_creds.md`).
+**Never hardcode passwords** in the CSV — always go through `[AUTH role=…]` so credentials come from `.env` at runtime.
 
 ### 3.2 `[GQL-OP <label>]` + body
 
@@ -130,9 +130,9 @@ The body is everything between `[GQL-OP <label>]` and the next recognized tag. C
 [GQL-EXEC get_config]"
 ```
 
-**Field-selection rule (feedback memory `feedback_graphql_full_field_selection.md`):** happy-path tests use **full** field selection so the test exercises real-world response shape. Minimal selection (e.g., only `id`) is allowed only for explicit counter probes, idempotency roundtrips, or schema-coverage cases that say so in the Title.
+**Field-selection rule:** happy-path tests use **full** field selection so the test exercises real-world response shape. Minimal selection (e.g., only `id`) is allowed only for explicit counter probes, idempotency roundtrips, or schema-coverage cases that say so in the Title.
 
-**Schema rule (feedback memory `feedback_graphql_schema_validation.md`):** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/api/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
+**Schema rule:** every query/mutation MUST be validated against the live schema before authoring. Either consult `knowledge/api/graphql-schema.md` (snapshot) or run `npx tsx scripts/graphql-runner.ts --query "<inline>"` (validate-only mode, no HTTP send). The runner will refuse to execute a query that doesn't validate (`schemaValid: false` recorded in evidence, `responses` populated with synthetic schema-error response so assertions fail loudly).
 
 ### 3.3 `[GQL-VARS <label>]`
 
@@ -576,8 +576,8 @@ Walks: AUTH → set up vars → declare op + vars + body → execute → capture
 | Order/checkout flow matrix | `knowledge/api/order-creation-matrix.md` |
 | Business invariants (BL-*) | `knowledge/oracles/business-logic.md` |
 | Edge case taxonomy (ECL-*) | `knowledge/oracles/e-commerce-edge-cases-library.md` |
-| Test-data resolver (`@td()`) | `scripts/lib/test-data-resolver.ts` + memory `reference_test_data_resolver.md` |
-| Runner CLI usage | memory `feedback_use_canonical_graphql_runner.md` |
+| Test-data resolver (`@td()`) | `scripts/lib/test-data-resolver.ts`; forms and precedence in §6.1 above |
+| Runner CLI usage | always the canonical runner `scripts/graphql-runner.ts` — never a bespoke script |
 | Gold-standard examples | `regression/suites/Backend/graphql/050i-graphql-configurations.csv` |
 
 When in doubt: read the source files in `scripts/` and `scripts/lib/` listed at the top of this doc — they are the actual runner contract; this doc is a guided summary.

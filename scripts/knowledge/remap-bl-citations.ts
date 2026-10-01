@@ -56,11 +56,12 @@
  *   npm run bl:remap -- --drop BL-FOO-001 --reason "domain retired" --apply
  *   npm run bl:remap -- --list                 # every dangling id + its citing cases
  */
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readDomains } from "./bl-yaml.ts";
 
-const ORACLE = ".claude/knowledge/oracles/business-logic.md";
 const SUITES = "regression/suites";
 
 const argv = process.argv.slice(2);
@@ -120,6 +121,20 @@ export const ser = (p: Parsed, nl: string) =>
  * every `header.indexOf(…)` on column 0 returns -1) and go back ON before writing (these
  * files carry it; this tool is not the place to decide they shouldn't).
  */
+/**
+ * Remove one id from a `Business_Rule` cell together with ONE adjacent separator. The corpus
+ * separates ids with `; ` (and occasionally `, `); the first version only knew `,`, so dropping
+ * the second id of `"BL-CHK-001; BL-SEC-001"` left `"BL-CHK-001;"` — a dangling separator the
+ * next reader parses as an empty citation (measured 2026-09-30, two cells).
+ */
+export function dropCitation(cell: string, target: string): string {
+  return cell
+    .replace(new RegExp(`\\s*[,;]?\\s*\\b${target}\\b`, "g"), "")
+    .replace(/^\s*[,;]\s*/, "")
+    .replace(/\s*[,;]\s*$/, "")
+    .trim();
+}
+
 export function readSuite(file: string): { text: string; bom: string } {
   const raw = fs.readFileSync(file, "utf8");
   return raw.charCodeAt(0) === 0xfeff ? { text: raw.slice(1), bom: "﻿" } : { text: raw, bom: "" };
@@ -166,12 +181,9 @@ function walkCsv(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Ids that actually exist as `### BL-…` headings in the oracle. */
+/** Ids the oracle's records hold (`bl/*.yaml`, BL 2.0 M4). */
 function oracleIds(): Set<string> {
-  const md = fs.readFileSync(ORACLE, "utf8");
-  const s = new Set<string>();
-  for (const m of md.matchAll(/^###\s+(BL-[A-Z0-9]+-\d+)\s*:/gm)) s.add(m[1]);
-  return s;
+  return new Set([...readDomains().values()].flatMap((f) => f.rules.map((r) => r.id)));
 }
 
 /** Cited ids per file/case, excluding PROPOSED- forward-references (same rule as lint-bl.ts). */
@@ -260,7 +272,7 @@ for (const file of files) {
     const cell = r[ci] ?? "";
     if (!citedIn(cell).includes(target)) continue;
     const next = replacement === null
-      ? cell.replace(new RegExp(`\\s*,?\\s*\\b${target}\\b`, "g"), "").replace(/^\s*,\s*/, "").trim()
+      ? dropCitation(cell, target)
       : cell.replace(new RegExp(`\\b${target}\\b`, "g"), replacement);
     r[ci] = next;
     hits.push(r[ii]);

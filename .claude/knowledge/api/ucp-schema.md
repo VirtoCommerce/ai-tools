@@ -437,7 +437,7 @@ required: `checkout_id`
 
 ## Error codes
 
-`invalid_request` · `identity_required` · `buyer_context_mismatch` · `missing_store_id` · `product_not_found` · `cart_not_found` · `order_not_found` · `xapi_invalid_response`
+`invalid_request` · `identity_required` · `buyer_context_mismatch` · `missing_store_id` · `product_not_found` · `cart_not_found` · `out_of_stock` · `insufficient_stock` · `inventory_unavailable` · `order_not_found` · `xapi_invalid_response`
 
 ## Advertised headers
 

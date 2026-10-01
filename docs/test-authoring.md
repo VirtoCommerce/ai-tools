@@ -250,7 +250,7 @@ The plugin ships a customer CI template at `.github/workflows/customer-template.
 
 | Step | Why |
 |------|-----|
-| Checks out the `vc-mcp-testing-module` repo as a subdir | You don't copy the plugin code into your repo — you pull the released version |
+| Checks out the `ai-tools` repo as a subdir | You don't copy the plugin code into your repo — you pull the released version |
 | Pins to `main` by default | **Change this to a release tag** (`ref: v1.0.0`) once we publish a v1.x release for stability |
 | Runs `npm run verify:multi-env` before any LLM spend | Confirms the filter pipeline works against this version of the manifest BEFORE you burn tokens |
 | Runs `npm run env:check` | Catches missing-secret problems before the regression starts |

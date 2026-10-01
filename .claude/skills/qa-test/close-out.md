@@ -146,10 +146,13 @@ the surface the story shipped, so it fails the ticket by the rules already here 
 ## 5-file. File bugs — with confirmation, and a severity floor
 
 File the confirmed, non-duplicate real bugs from 5-triage, each carrying a `## Fix Routing` hint. **Ask before
-filing.**
+filing.** Each filed bug carries `found-by-agent` + `found-in-testing` — or `reported-by-human` for a finding the
+user brought in (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files). Pass
+`found-by:agent-testing <ticket-key>` in every `/vc-fix:qa-bug` call below, except for a finding the user brought in —
+without it `qa-bug` records the bug as a human's.
 
 **`--iterate`: 5-file runs PER ROUND, for new findings only.** A round that files nothing cannot fix
-anything — `/qa-fix` needs a filed ticket — so skipping 5-file in round 2 dead-ends the loop at its own
+anything — `/vc-fix:qa-fix` needs a filed ticket — so skipping 5-file in round 2 dead-ends the loop at its own
 precondition. A **CARRIED** finding (5-triage item 4) files nothing and gets one comment on its existing
 Sub-task; a carried bug that went green this round is commented and recorded, and deliberately **not**
 transitioned (the fix is an unmerged prerelease). The floor is unchanged per round: 5-file still does not
@@ -189,8 +192,8 @@ Mechanics: `.claude/knowledge/execution/tracker-ops.md` §5b.
 
 | Provenance | Relationship |
 |---|---|
-| **IN-SCOPE** | **Sub-task of `<ticket-key>`** — `/qa-bug … sub-task-of:<ticket-key>` |
-| **PRE-EXISTING** | **Link only, no new ticket** — `/qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>` |
+| **IN-SCOPE** | **Sub-task of `<ticket-key>`** — `/vc-fix:qa-bug … sub-task-of:<ticket-key>` |
+| **PRE-EXISTING** | **Link only, no new ticket** — `/vc-fix:qa-bug … link-only:<existing-bug-key>`, linked to `<ticket-key>` |
 | **OUT-OF-SCOPE incidental** | Its **own standalone ticket** + a *related* link back to `<ticket-key>` |
 | **`BL-A11Y-*` on a functional / feature / E2E ticket** | Its **own standalone ticket** + a *related* link — the same shape as an OUT-OF-SCOPE incidental, and for the same reason. **Never a Sub-task**: a Sub-task asserts the parent caused it, and an inherited contrast or naming defect was not caused by this story. It keeps its **real severity** (never downgraded to look non-blocking) and does **not** fail 5-verdict ([`triage.md`](triage.md) §7a) |
 

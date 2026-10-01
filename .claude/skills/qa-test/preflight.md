@@ -75,16 +75,16 @@ Then branch on the resolved FLOW:
 - **`feature-test`** (Story / Task / Technical task / Review task / Epic, and a `not-fixed` Bug) → continue to `1b` and
   run the five-step pipeline at the resolved FAST/FULL effort. (A `not-fixed` Bug runs FAST to
   reproduce/characterize the defect live and attach fresh evidence — there is no fix to *verify* yet;
-  state the next step is `/qa-fix <ticket-key>`.) This is the rest of this document.
-- **`verify-fix`** (a `fix-ready` Bug) → **run `/qa-verify-fix` inline (see below)**; do not run Steps 2–5.
+  state the next step is `/vc-fix:qa-fix <ticket-key>`.) This is the rest of this document.
+- **`verify-fix`** (a `fix-ready` Bug) → **run `/vc-fix:qa-verify-fix` inline (see below)**; do not run Steps 2–5.
 - **`hotfix-verify`** (a `hotfix-ready` Bug) → **STOP** with a one-line pointer: `Run /qa-hotfix-check
   <ticket-key>` (hotfix delivery/verification is that command's job). File nothing; transition nothing.
 - **`Sub-task`** → resolve the parent work item and re-enter this classification as the **parent's**
   type × status; route on that.
 
-### Flow = `verify-fix` — run `/qa-verify-fix` inline
+### Flow = `verify-fix` — run `/vc-fix:qa-verify-fix` inline
 
-`/qa-test` **runs the `/qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
+`/qa-test` **runs the `/vc-fix:qa-verify-fix` pipeline inline** in this same session — **execute its Steps 0–7 as
 written** ([`qa-verify-fix.md`](../../../plugins/vc-fix/commands/qa-verify-fix.md)); do not duplicate or paraphrase them here. The
 feature-test authoring / AC-reconcile / promotion machinery is **not** run: a fix-ready Bug needs its fix
 verified, not new cases authored. The run ends at the verify-fix verdict.
@@ -116,9 +116,9 @@ row `FILTERED_OUT` — the exact failure the step exists to prevent. The run-fat
 inputs exist, at the **Step-3 gate re-run**. Items 3 → 4 stay ordered as written; both are millisecond globs, so splitting them buys
 nothing. Measured rationale and the list of things that must **not** be parallelised — the serial suite
 append, one `suites:sync`, no verifier beside its own doer, no two suites on one disposable fixture set:
-[`skills/qa-test/SKILL.md`](SKILL.md) §Concurrency.
+[`skills/qa-test/sequencing.md`](sequencing.md) §Concurrency.
 
-1. **Environment health** — `/qa-env-check endpoints`. If unhealthy, warn user.
+1. **Environment health** — `/vc-fix:qa-env-check endpoints`. If unhealthy, warn user.
 2. **Build & version** — GitHub MCP `get_file_contents` on `backend/packages.json` + `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa`, or the branch matching `TEST_ENV`). Record platform + theme + ticket-relevant module versions — this is the **`declared`** (git) state. Then probe `GET {{BACK_URL}}/api/platform/modules` for the **`deployed`** state, which is the ground truth and routinely differs (deploy in flight, failed, or partially applied). A failed probe records `deployed: UNKNOWN` — **never** fall back to `declared`. **PR testing:** confirm the PR's artifact version appears in `packages.json`/`artifact.json`; if not deployed → offer `/qa-deploy-pr <ticket-key>` (**ask first**) or warn and ask whether to wait.
 2-release. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1 + the newest §2 month(s) for the ticket's component(s), and record the Δ vs `deployed` in `summary.json` as `releasedThrough`. Full precedence rule: `agent-dispatch.md § Build Verification`. Three consequences, and they are the reason this step exists rather than being a header field:
    - **A ⚠ BREAKING change in the component under test forces FULL**, whatever `1a` scored. `ticket-routing.md` says *when in doubt → FULL*; a contract that moved last month is doubt with a date on it, and a FAST run would author no cases and write no Test Model against it.
@@ -165,7 +165,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     ```
 
 3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
-4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` (per `feedback_duplicate_check_across_all_sprints`) for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
+4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
 
 ---
 
@@ -194,6 +194,15 @@ release ledger it is a **pointer index that can never ground an assertion as `{D
 blocks — a FAST run, a single-layer chain or a failed build records `Domain map: ABSENT — chain position
 unverified` at `1e`. **`STALE` is never auto-refreshed.**
 
+**1a. Its mind map**, when 2g recorded `domain_map.mind_map` (`/qa-test-mind-map`). This is the behaviour
+graph beside the map. Read the nodes in the ticket's slice: they are what `1e` Part 0 cites and what the
+`1e-plan` rows name as `behavior`. Its `DRIFT` and `UNVERIFIED` nodes are open questions to hand to `1c`.
+Then read `npm run models:check -- --json` for the same slice and hand two lists to Artifact A's `2a`:
+nodes with no stamped case (`TM-014`) and integration points no case exercises (`TM-032`), which are
+the gaps the run authors when `2a` confirms them, and suspect cases (`TM-017`), which `2a` disposes
+like any other hit ([`coverage-triage.md`](coverage-triage.md) §3).
+Like the map, it is never an oracle. `null` ⇒ skip it; no run builds one inline ([`axes.md`](axes.md) §2g).
+
 **2. The per-ticket prior art**, read directly — `reports/ba/<domain folder>/` (prior BA analysis),
 `reports/ba/test-models/` (prior test models), and the tickets already tested here
 (`reports/tickets/**/summary.json`). (The generated index that used to front these sources was removed 2026-09-08 — read the sources directly, 
@@ -201,7 +210,7 @@ dated by their filenames or `git log`.)
 Two questions, and the second is the one that lets you design a test.
 
 **The bibliography** — carry four things forward: the prior BA analysis, the prior test model, the domain
-knowledge docs, and the tickets already tested here.
+knowledge docs (the mind map's path among them, when 2g found one), and the tickets already tested here.
 
 **The `Test object` block — what the thing IS.** Purpose (the value chain) · the **operations** you can
 perform on it · the **data** whose properties its assertions read · the **variants** that change its
@@ -230,5 +239,5 @@ worse than reading none, because it arrives with a written deliverable's authori
 SAME ticket amends that model in place; another ticket on this surface writes its own file and carries the
 predecessor's Part 0 forward, citing it** — what is forbidden either way is a second independently-derived
 model of one surface, and VCST-5346 already has two:
-[`test-model.md`](test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
+[`test-model.md`](../qa-test-model/test-model.md) §Why it is a durable file), and `5-docs` (an existing guide
 for this surface is amended, never forked).

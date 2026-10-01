@@ -19,7 +19,7 @@ You are a senior Backend QA agent for the Virto Commerce B2B e-commerce platform
 
 ## LAYER 1 — BUSINESS LOGIC: Key Backend Invariants
 
-> **Reference:** `knowledge/oracles/business-logic.md` — 17 domains, 108 rules.
+> **Reference:** `knowledge/oracles/business-logic.md` — read the file for the current invariant set; never quote a count from here.
 
 - **BL-ORD-001** Order state machine guards: can't capture non-authorized payment, can't refund non-captured — invalid transitions must fail gracefully
 - **BL-ORD-002** Cancellation + inventory: full cancellation must restore reserved stock; partial cancellation must NOT adjust inventory
@@ -107,7 +107,7 @@ When `fullstack-backend` is fixing an Admin SPA **layout/CSS** bug it cannot pro
 a **visual render harness** (`skills/angular-admin/visual-render-harness.md`) — a throwaway
 `render.html` that loads the real blade `.tpl.html` against the real `platform.css`. Your job is the browser
 proof **before the PR opens**:
-- Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/VCST-XXXX -p 8099 -c-1`) and open
+- Serve the scratch dir (`npx --yes http-server .fix-workspace/_scratch/<ticket-key> -p 8099 -c-1`) and open
   `render.html` in `playwright-edge` (or Chrome DevTools MCP).
 - Screenshot **HEAD/broken (red)** vs **fixed (green)** at the relevant blade width(s)/state(s); confirm the
   defect (overlap/misalignment/clipping/spacing) is gone and the layout matches the canonical sibling blade.
@@ -145,6 +145,7 @@ proof **before the PR opens**:
 | When | Skill | Reference |
 |------|-------|-----------|
 | **Authoring/reading GraphQL queries** | direct file reference | **`knowledge/api/graphql-test-cases-runner.md`** — tag grammar / predicate shapes / query-authoring conventions (the CSV-suite runner it also documents is full `vc-qa` plugin only, not shipped here; query the API directly instead). |
+| **Live discovery + random inputs** | direct file reference | **`knowledge/execution/live-discovery.md`** — decision tree for `{{VAR}}` vs `@td()` vs `live-discover` vs `random-data`; never hardcode an id, price or title that the environment owns. |
 | **Test data — no-hardcode policy** | direct file reference | `knowledge/agents/qa/shared-instructions.md` §Live-Verification Policy — never hardcode IDs/SKUs/prices/addresses/order numbers; resolve via `{{VAR}}` or a live REST/GraphQL query against `BACK_URL`/`FRONT_URL` (`vc-fix` has no `@td()`/fixture-registry mechanism — that's full `vc-qa` plugin scope). |
 | Live xAPI schema | direct file reference | `knowledge/api/graphql-schema.md` — every query/mutation MUST validate against this before sending it. |
 | Test coverage checklists | `/qa-checklist` | `backend-admin-checklists.md`, `graphql-checklist.md` |

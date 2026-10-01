@@ -89,10 +89,12 @@ export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the
   + 'Prefix the command with MSYS_NO_PATHCONV=1, or use the "VERB /route" form, which is not rewritten.';
 
 /**
- * Undo the MSYS rewrite on a QUESTION -- the one input where repairing beats refusing.
+ * Undo the MSYS rewrite on a QUESTION, and since VCST-6102 on a capture ANCHOR too.
  *
- * A capture refuses a mangled anchor (`anchorProblems`), because an entry is written once and read
- * by everyone. An ask is the opposite: nothing is stored but the log line, and refusing would send
+ * A capture used to refuse a mangled anchor (`anchorProblems`); on 2026-09-28 that was 16 of 28
+ * `capture-invalid`, all a shell's mistake, and the retries produced the day's genuine duplicates.
+ * The rewrite is exact, so undoing it restores what was typed; what still looks local after it is
+ * refused as before. An ask never stored anything but the log line, and refusing it would send
  * the agent away with no answer for a mistake its shell made. Measured 2026-09-25: four asks for
  * `/company/members …` arrived as `C:/Program Files/Git/company/members …`, ranked on the mangled
  * coordinate, and wrote the operator's install directory into the PUBLIC log, verbatim.
@@ -101,13 +103,19 @@ export const MSYS_REMEDY = 'Under Git Bash a leading "/" is rewritten before the
  * root is taken from the standard install locations and from EXEPATH (which Git Bash sets to its
  * `bin`), never guessed wider than that: a real Windows path in a question is left alone.
  */
-export function undoMsysRewrite(text, env = process.env) {
+export function undoMsysRewrite(text, env = process.env, { wholeArgument = false } = {}) {
   const s = String(text ?? '');
   const escape = (r) => r.replace(/[.*+?^${}()|[\]]/g, '\\$&');
-  const roots = ['Program Files/Git', 'Program Files (x86)/Git', 'Git'].map((r) => `[A-Za-z]:/${escape(r)}`);
+  // No bare `X:/Git`: that is also where people keep checkouts (`D:/git/client-portal/...`), and
+  // undoing it would turn a real local path into a fake route and publish the folder name
+  // (VCST-6102 review). A Git installed there is still found through EXEPATH below.
+  const roots = ['Program Files/Git', 'Program Files (x86)/Git'].map((r) => `[A-Za-z]:/${escape(r)}`);
   const exe = String(env?.EXEPATH ?? '').replace(/\\/g, '/').replace(/\/(?:usr\/)?bin\/?$/i, '');
   if (/^[A-Za-z]:\//.test(exe)) roots.unshift(escape(exe));
   // MSYS always emits forward slashes, and only rewrites an argument that STARTS with "/" -- but
-  // the CLI joins its words, so a rewritten word can also follow whitespace.
-  return s.replace(new RegExp(`(^|\\s)(?:${roots.join('|')})(?=/)`, 'gi'), '$1');
+  // `ask` joins its words, so there a rewritten word can also follow whitespace. A value that was
+  // ONE argument (`wholeArgument`: a capture field, a --saw, a --note) can only have been rewritten
+  // at its start; a root later in it is text the author wrote on purpose, and is left alone.
+  const lead = wholeArgument ? '^' : '(^|\\s)';
+  return s.replace(new RegExp(`${lead}(?:${roots.join('|')})(?=/)`, 'gi'), wholeArgument ? '' : '$1');
 }

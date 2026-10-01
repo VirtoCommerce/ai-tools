@@ -33,7 +33,7 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
    - Component name → delegate to `/qa-storybook` instead
    - Full audit → P0 routes: `/`, `/sign-in`, `/search`, PDP, `/cart`, `/checkout`, `/account/orders`. Skip-link and consent banner must be tested first (they affect every page).
 
-2. **Theme scope:** Run a11y assertions on the **Coffee** *and* **Red** presets — those are this project's two WCAG-gated themes (memory: `feedback_a11y_gated_themes`). Red joined the set with the Red Theme 4 release (VCST-4226) once VCST-5555 cleared the UI-kit violations; verify it under `themePreset:red`. Capture the remaining presets for visual diff only, not a11y gating — `purple-pink` and `watermelon` still fail AA on the solid-accent token and would produce known-unsupported failures.
+2. **Theme scope:** Run a11y assertions on the **Coffee** *and* **Red** presets — those are this project's two WCAG-gated themes. Red joined the set with the Red Theme 4 release (VCST-4226) once VCST-5555 cleared the UI-kit violations; verify it under `themePreset:red`. Capture the remaining presets for visual diff only, not a11y gating — `purple-pink` and `watermelon` still fail AA on the solid-accent token and would produce known-unsupported failures.
 
 3. **Delegate to ui-ux-expert** via Task tool (`subagent_type: ui-ux-expert`):
    - Pass scope, URL(s), and reference to `wcag-accessibility-checklist.md`
@@ -48,7 +48,7 @@ Run an accessibility audit against **WCAG 2.2 Level AA** (the 2026 practical bas
 
 5. **POUR checklist (per WCAG 2.2 AA)** — the 2.2 additions marked `[MANUAL]` cannot come from axe; verify them by hand in the keyboard pass:
    - **Perceivable:** Alt text, color contrast ≥ 4.5:1 / 3:1 (UI ≥ 3:1), text resizing to 200%, reflow at 320px, time-based media captions.
-   - **Operable:** Keyboard nav, focus indicators, no traps, skip links, **2.4.11 Focus Not Obscured `[MANUAL]` (sticky elements must not cover focused field)**, **2.5.7 alternative to drag `[MANUAL]`**, **2.5.8 target size ≥ 24×24 CSS px** (44×44 stays the mobile guidance). For composite widgets, exercise the widget-specific keys (arrows/Home/End/Escape) against the matching **ARIA APG** pattern.
+   - **Operable:** Keyboard nav, focus indicators, no traps, skip links, **2.4.11 Focus Not Obscured `[MANUAL]` (sticky elements must not cover focused field)**, **2.5.7 alternative to drag `[MANUAL]`**, **2.5.8 target size ≥ 24×24 CSS px, touch targets included** (44×44 is 2.5.5 AAA — advisory, never an AA FAIL). For composite widgets, exercise the widget-specific keys (arrows/Home/End/Escape) against the matching **ARIA APG** pattern.
    - **Understandable:** Lang attributes, consistent nav, error identification and helpful messages, **3.2.6 Consistent Help placement `[MANUAL]`**, **3.3.7 Redundant Entry `[MANUAL]` (don't re-ask for known data)**, **3.3.8 Accessible Authentication `[MANUAL]` (no cognitive-function tests without alternative; password managers must work)**.
    - **Robust:** ARIA name/role/value for custom controls, state changes announced (aria-live, aria-expanded). Note: 4.1.1 Parsing was removed in 2.2 — don't report duplicate-ID issues against it.
    - **EAA (public storefront):** confirm a **published, linked accessibility statement** exists (footer / T&Cs). Its absence is a **P1** compliance finding — flag it even when axe is clean (see Rules → EU exposure).

@@ -2,8 +2,7 @@
  * Scheduled test-case staleness audit — one suite per run, one PR per suite.
  *
  * Headless twin of `/qa-review-tests suite <ID> --triangulate --fix --ci`
- * (the same interactive↔CI twin relationship as /qa-regression ↔ run-regression.ts
- * and /qa-fix ↔ run-fix-cycle.ts).
+ * (the same interactive↔CI twin relationship as /qa-regression ↔ run-regression.ts).
  *
  * WHY THIS EXISTS. Regression suites go stale silently: `lint-test-cases.ts`
  * GRD-001 verifies an assertion CARRIES a grounded provenance tag, never that the
@@ -38,6 +37,7 @@
  *
  * Exit: 0 progress (incl. "nothing due"), 1 hard error, 2 nothing actionable.
  */
+import "../scripts/lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { execSync } from "child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "fs";
@@ -99,7 +99,7 @@ function sh(cmd: string, opts: { allowFail?: boolean } = {}): string {
   }
 }
 
-/** Last `^KEY: value$` line — the structured handoff idiom from run-fix-cycle.ts. */
+/** Last `^KEY: value$` line — the structured agent-handoff idiom. */
 function marker(text: string, key: string): string | null {
   const re = new RegExp(`^\\s*${key}:\\s*(.+)$`, "gim");
   let m: RegExpExecArray | null;
@@ -362,7 +362,7 @@ async function main(): Promise<void> {
   }
 
   // `claude/`-prefixed so a scheduled run can push it without "allow unrestricted
-  // branch pushes" (the convention ci/lib/repo-router.ts documents for autofix).
+  // branch pushes" (the convention plugins/vc-fix/skills/qa-fix-routing/repo-router.ts documents for autofix).
   const branch = `claude/qa-suite-audit/${suite.id}-${date}`;
   const baseBranch = process.env.BASE_BRANCH
     || sh("git symbolic-ref refs/remotes/origin/HEAD", { allowFail: true }).trim().split("/").pop()
@@ -428,7 +428,7 @@ async function main(): Promise<void> {
     ).trim();
     log(`PR opened: ${prUrl}`);
   } catch (e) {
-    // Same fallback shape as run-fix-cycle.ts: the work is pushed and recoverable.
+    // The work is pushed and recoverable.
     log(`PR creation failed — the audit is pushed to ${branch} and a PR can be opened by hand.`);
     log(String((e as Error).message).slice(0, 400));
   }

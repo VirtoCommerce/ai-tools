@@ -39,6 +39,7 @@
  * Safety: ENV_RISK gate (blocks ENV_RISK=production unless --allow-admin-writes-on-prod); idempotent by list name, org name, user email.
  * No _seed-results report is written (VCST-5406) — live platform ids go to aliases.{env}.json.
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, basename, extname, dirname } from 'node:path';
 import {

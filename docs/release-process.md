@@ -57,7 +57,7 @@ These are deterministic — no judgment calls. Anyone with maintainer rights can
 
 **`.claude-plugin/marketplace.json` `"version"` is the CATALOG's version, not a plugin's.** Bump it only when the listing itself changes — a plugin added or removed, a description, source path, or owner edited. It does **not** have to equal any plugin's version.
 
-> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. Current state: catalog `0.9.4`, `vc-fix` `0.9.0`, `vc-perf` `0.2.7`. **That is not drift; do not "fix" it by forcing them equal.**
+> **This rule changed when the catalog grew a second plugin.** It used to read "`plugin.json` and `marketplace.json` MUST match", which was true while `vc-fix` was the only listing and the repo *was* the plugin. With `vc-fix` and `vc-perf` versioning independently, one shared number cannot track both — the catalog now versions itself. The numbers differ by design — read each manifest for the current values, never a copy of them here. **That is not drift; do not "fix" it by forcing them equal.**
 
 **Also update the plugin's own component counts** in its `marketplace.json` description and `plugin.json`, if agents/skills/commands were added or removed — a stale count there is what customers read before installing.
 
@@ -195,8 +195,8 @@ tagged content snapshot instead of the version `plugin.json` now claims to be at
 `version` bump that *tightens* the range (e.g. to `>=0.9.0`) will hard-fail install with no matching
 tag until this step runs. This already happened once during `vc-perf`'s initial development (a
 same-content relabel to `0.2.0` wasn't re-tagged, so `claude plugin update` couldn't see the new
-content) — see PR [#136](https://github.com/VirtoCommerce/vc-mcp-testing-module/pull/136) and issue
-[#156](https://github.com/VirtoCommerce/vc-mcp-testing-module/issues/156).
+content) — see PR [#136](https://github.com/VirtoCommerce/ai-tools/pull/136) and issue
+[#156](https://github.com/VirtoCommerce/ai-tools/issues/156).
 
 A CI/release check that fails when a plugin's `plugin.json` version has no matching
 `{name}--v{version}` tag would close this gap for good (tracked separately in #156) — this step is

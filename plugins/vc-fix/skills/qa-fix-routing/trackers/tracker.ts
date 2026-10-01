@@ -1,16 +1,15 @@
 /**
  * Tracker — bug-tracker abstraction for the auto-fix pipeline.
  *
- * The pipeline reads a ticket, posts progress comments, and transitions status.
- * Historically these were inline JIRA REST calls in run-fix-cycle.ts; they now
- * sit behind this interface so a client deployment can swap in Azure Boards (or
+ * The pipeline reads a ticket, posts progress comments, and transitions status
+ * behind this interface, so a client deployment can swap in Azure Boards (or
  * any tracker) via the project profile WITHOUT touching the pipeline.
  *
  * Default resolution is "jira" (see ./index.ts) — an unconfigured /
  * VirtoCommerce-internal checkout behaves exactly as before.
  */
 
-/** Tracker-agnostic ticket shape (was JiraTicket inline in run-fix-cycle.ts). */
+/** Tracker-agnostic ticket shape. */
 export interface TrackerTicket {
   key: string;
   summary: string;

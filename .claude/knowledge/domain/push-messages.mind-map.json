@@ -1,0 +1,1732 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "push",
+  "domain_map_rev": 1,
+  "generated": "2026-09-29",
+  "nodes": [
+    {
+      "id": "push.push-messages",
+      "type": "feature",
+      "name": "Push Messages",
+      "status": "CONFIRMED",
+      "description": "A sender puts a short message into named customers' in-app inbox (storefront bell and Notifications page) and optionally into their browser through Firebase Cloud Messaging.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/overview",
+          "note": "purpose quoted verbatim in the domain map section 1"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1",
+          "note": "purpose CONFIRMED; module 3.1005.0 deployed on vcst-qa",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.compose",
+      "type": "behavior",
+      "name": "A marketer composes a push message in the back office",
+      "status": "CONFIRMED",
+      "chain_link": "1",
+      "actors": [
+        "marketer",
+        "platform admin"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 1",
+          "note": "New blade opened read-only; 96 admin-created rows in the list",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "create and schedule push message"
+        }
+      ]
+    },
+    {
+      "id": "push.compose.save-draft",
+      "type": "branch",
+      "name": "Save keeps the message as a Draft without sending it",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "Click Save in the toolbar to save the message as a draft"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D10",
+          "note": "4 Draft rows exist on the environment",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "push.compose.recipients-by-query",
+      "type": "branch",
+      "name": "Recipients are picked by name or defined by a search query expression",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "select recipients from the dropdown list, type their names, or define them dynamically using a search query expression"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Enter recipients query textbox + Count button present",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "push.compose.audience-builder",
+      "type": "branch",
+      "name": "A condition-based audience builder with an estimate panel replaces the query textbox",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C5B17CE2",
+          "note": "observed on a PushMessages PR build, not on the 3.1005.0 build this map describes",
+          "date": "2026-09-28"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "notes": "The kb entry also records a display-only defect: the audience caption drops the condition after Save/reopen. Not present on vcst-qa 3.1005.0 (recipients list + query textbox)."
+    },
+    {
+      "id": "push.compose.max-length",
+      "type": "branch",
+      "name": "The message length limit",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/overview",
+          "note": "Send short messages in HTML format. Max length: 1024."
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §3 D2",
+          "note": "module entity, validators and swagger schema carry no length constraint; no counter in the New blade",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "drift": {
+        "expected": "PlatformUserGuide overview: max length 1024",
+        "observed": "module source enforces no limit (domain-map:push@rev1 §3 D2); the rep producer caps at 1000 (kb:KB-A98E467C) and the rep dialog at 250",
+        "route": "VCST-6105"
+      },
+      "notes": "Enforcement on Save not observed live (mutation)."
+    },
+    {
+      "id": "push.compose.clone",
+      "type": "branch",
+      "name": "Clone opens an editable copy of an existing message",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "Clone message section"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Clone button present on a Sent message; effect not actuated",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "push.compose.permissions",
+      "type": "branch",
+      "name": "Which PushMessages permission gates which back-office control",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "five permissions PushMessages:access/create/read/update/delete enumerated; per-control gating not exercised",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "notes": "Domain map G5. 050l PUSH-026 covers only a customer token being refused a create."
+    },
+    {
+      "id": "push.send",
+      "type": "behavior",
+      "name": "Send delivers the message now or at its scheduled time",
+      "status": "CONFIRMED",
+      "chain_link": "2",
+      "actors": [
+        "marketer"
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest",
+        "job"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 2",
+          "note": "Scheduled-to-Sent recurring job read at source; cron settings read live",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "Click Send to send the messages. The scheduled messages will be sent according to the schedule."
+        }
+      ]
+    },
+    {
+      "id": "push.send.now",
+      "type": "branch",
+      "name": "Send without a date moves a Draft straight to Sent",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D10",
+          "note": "1058 Sent messages on the environment",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "push.message.state.draft",
+      "state_after": "push.message.state.sent"
+    },
+    {
+      "id": "push.send.schedule",
+      "type": "branch",
+      "name": "Send with a future date holds the message as Scheduled",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "scheduled messages are stored in the Scheduled messages item"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D10",
+          "note": "0 Scheduled messages have ever existed on the environment",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "state_before": "push.message.state.draft",
+      "state_after": "push.message.state.scheduled",
+      "notes": "How Scheduled is assigned on Send is unobserved (mutation). Domain map G2."
+    },
+    {
+      "id": "push.send.scheduled-release",
+      "type": "branch",
+      "name": "A recurring job sends a Scheduled message once its start date has passed",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 2",
+          "note": "SendScheduledMessagesRecurringJob flips Scheduled with StartDate in the past to Sent",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "job"
+      ],
+      "state_before": "push.message.state.scheduled",
+      "state_after": "push.message.state.sent",
+      "notes": "Live cron is overridden on vcst-qa (domain map D11), so timing here is not the shipped default."
+    },
+    {
+      "id": "push.send.zero-recipients",
+      "type": "branch",
+      "name": "A Send with no recipients is accepted and stays Sent with nobody to deliver to",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1E9580BB",
+          "note": "POST /api/push-message status Sent, memberIds [] and no memberQuery: 200, still Sent after the job window, search-recipients totalCount 0",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Nothing refuses an empty audience, and the result is an irrevocable Sent message. Whether it should be refused is a product question; no source says it should."
+    },
+    {
+      "id": "push.message.state.draft",
+      "type": "state",
+      "name": "Draft",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 2",
+          "note": "status vocabulary Draft/Scheduled/Sent read through REST",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.message.state.scheduled",
+      "type": "state",
+      "name": "Scheduled",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 2",
+          "note": "status value in the module source and the Scheduled filter",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.message.state.sent",
+      "type": "state",
+      "name": "Sent (immutable)",
+      "status": "CONFIRMED",
+      "terminal": true,
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 8",
+          "note": "the service throws InvalidOperationException on modify or delete of a Sent message",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Save disabled on an opened Sent message",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.recipients",
+      "type": "behavior",
+      "name": "Once Sent, the system works out who receives the message",
+      "status": "CONFIRMED",
+      "chain_link": "3",
+      "interfaces": [
+        "job",
+        "event"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 3",
+          "note": "PushMessageChangedEventHandler enqueues AddRecipientsJob only when status becomes Sent",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.recipients.per-user",
+      "type": "branch",
+      "name": "Picked members and query matches expand to one recipient row per user account",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 3",
+          "note": "memberIds and memberQuery expanded to the members' security accounts",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Recipients blade lists Name / Login / Read per account",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "job",
+        "admin-ui"
+      ]
+    },
+    {
+      "id": "push.recipients.async-window",
+      "type": "branch",
+      "name": "A Sent message is not in anyone's inbox until the recipients job has run",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 3",
+          "note": "Hangfire hop between status change and recipient rows",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-data/aliases.json PUSH_MSG_SEED",
+          "note": "note says poll before asserting"
+        }
+      ],
+      "interfaces": [
+        "job"
+      ],
+      "notes": "Window length unmeasured. Domain map G12."
+    },
+    {
+      "id": "push.recipients.inactive-accounts",
+      "type": "branch",
+      "name": "Members whose accounts are blocked or only invited still become recipients",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D9",
+          "note": "members named Blocked User / Invited User on a rep push's recipient list; account status not read",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "job",
+        "admin-ui"
+      ],
+      "notes": "integrates with: b2b — member and account status (b2b-organizations.md has no mind map yet). Domain map G8."
+    },
+    {
+      "id": "push.deliver",
+      "type": "behavior",
+      "name": "Each new recipient row is delivered to the storefront and, optionally, the browser",
+      "status": "CONFIRMED",
+      "chain_link": "4",
+      "interfaces": [
+        "event",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 4",
+          "note": "PushMessageRecipientChangedEvent publishes to the xAPI hub; FCM multicast only when UseFirebaseCloudMessaging is true",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/developer-guide/GraphQL-Storefront-API-Reference-xAPI/Push-messages/overview",
+          "note": "pushMessageCreated subscription"
+        }
+      ]
+    },
+    {
+      "id": "push.deliver.realtime",
+      "type": "branch",
+      "name": "A connected storefront receives the new message through the pushMessageCreated subscription",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 4",
+          "note": "graphql-transport-ws connection opened on /account/notifications; no event observed (needs a send)",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/developer-guide/GraphQL-Storefront-API-Reference-xAPI/Push-messages/overview"
+        }
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "068 PUSH-033 names this SignalR; the transport is the xAPI subscription (domain map §6).",
+      "requires": [
+        "data.push.recipient.reader"
+      ]
+    },
+    {
+      "id": "push.deliver.fcm",
+      "type": "branch",
+      "name": "A browser that granted permission gets an OS notification through FCM",
+      "branch_kind": "integration",
+      "technique": "FLOW",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/firebase-cloud-messaging",
+          "note": "Browser notifications appear in the lower right corner of your screen"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §3 D3",
+          "note": "payload is data-only {messageId, body}, no title",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "event",
+        "storefront"
+      ],
+      "notes": "Domain map G1. The service worker reads data.title, which the payload never carries, so the OS title is expected empty (HYPOTHESIS until observed)."
+    },
+    {
+      "id": "push.deliver.fcm-off",
+      "type": "branch",
+      "name": "With Firebase messaging switched off, in-app delivery continues and only browser push stops",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/developer-guide/Configuration-Reference/appsettingsjson",
+          "note": "UseFirebaseCloudMessaging enables/disables Firebase Cloud Messaging"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §3 D4",
+          "note": "flag false skips only the Firebase app, the FCM handler and the FCM settings registration",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "event",
+        "graphql"
+      ],
+      "notes": "Off branch observed at source only; no environment with the flag off (domain map G4). store-settings.md's 'disables all push functionality' is DRIFT in the domain map §6."
+    },
+    {
+      "id": "push.deliver.module-off",
+      "type": "branch",
+      "name": "With the module or the theme flag off, the storefront shows no bell and the Notifications route sends to sign-in",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §2 storefront",
+          "note": "bell and route gated on theme push_messages_enabled + PushMessages.Enable + authenticated user",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "notes": "Negative branch observed at source only (domain map G4)."
+    },
+    {
+      "id": "push.deliver.stale-token-prune",
+      "type": "branch",
+      "name": "A device token FCM reports as dead is removed; a transient FCM error keeps it",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §6",
+          "note": "terminal errors Unregistered / InvalidArgument prune the token at source",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "SPEC",
+          "ref": "reports/bugs/fixed/BUG-FCM-stale-token-not-pruned.md",
+          "note": "fixed in PR #24"
+        }
+      ],
+      "interfaces": [
+        "event"
+      ]
+    },
+    {
+      "id": "push.inbox",
+      "type": "behavior",
+      "name": "The customer sees their messages in the header bell and on the Notifications page",
+      "status": "CONFIRMED",
+      "chain_link": "5",
+      "actors": [
+        "recipient"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 5",
+          "note": "bell and /account/notifications walked with three accounts",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/account/notifications",
+          "note": "Users can view all notifications sent to them by sellers"
+        }
+      ]
+    },
+    {
+      "id": "push.inbox.own-only",
+      "type": "branch",
+      "name": "A customer reads only their own recipient rows",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "rows filtered to the caller's userId",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21BA7389",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed",
+        "data.push.recipient.bystander"
+      ]
+    },
+    {
+      "id": "push.inbox.anonymous-refused",
+      "type": "branch",
+      "name": "An anonymous visitor gets no bell, a refused query and a redirect to sign-in",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 actors",
+          "note": "HTTP 200 with Unauthorized and data null on pushMessages and fcmSettings; no header bell; /account/notifications redirects to /sign-in",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.inbox.footer-dead-end",
+      "type": "branch",
+      "name": "The footer Notifications link is shown to anonymous visitors and dead-ends at sign-in",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D8",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "push.inbox.body-only",
+      "type": "branch",
+      "name": "The customer sees the body and time only, never the topic or the sender",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D3",
+          "note": "PushMessageType has no topic or sender field; the card renders body + timestamp",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21BA7389",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
+    },
+    {
+      "id": "push.inbox.unread-filter",
+      "type": "branch",
+      "name": "Show unread only narrows the list to unread messages",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "unreadOnly and withHidden change the counts for the same caller",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
+    },
+    {
+      "id": "push.inbox.open-does-not-read",
+      "type": "branch",
+      "name": "Opening the bell or the page marks nothing read",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 storefront",
+          "note": "unread count identical before and after opening both surfaces",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ]
+    },
+    {
+      "id": "push.inbox.rendering",
+      "type": "branch",
+      "name": "The storefront renders the body sanitised; the OS notification strips it to plain text",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §3 D5",
+          "note": "sanitised markdown/HTML with auto-links on the card; htmlToText for the OS notification",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "admin-ui"
+      ],
+      "notes": "The admin editor accepts images, tables and raw source; rendering of those on the storefront was not re-observed this pass."
+    },
+    {
+      "id": "push.inbox.fcm-settings-any-user",
+      "type": "branch",
+      "name": "Any signed-in user can read the Firebase web configuration",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 actors",
+          "note": "an account with no messages and the admin token both received all seven fcmSettings fields",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.inbox.empty-state",
+      "type": "branch",
+      "name": "An account with no messages sees an empty state on the page and in the bell",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "interfaces": [
+        "storefront"
+      ],
+      "requires": [
+        "data.push.inbox.empty"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "/qa-review-tests 068 --verify S1",
+          "note": "an account with 0 messages including hidden ones: page and bell both render an empty-state text; the bell shows no Clear all",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Only an inbox that never received a message reaches this: clear-all hides from the bell but the page keeps listing (push.manage.clear-all)."
+    },
+    {
+      "id": "push.manage",
+      "type": "behavior",
+      "name": "The customer marks messages read or unread and clears them",
+      "status": "CONFIRMED",
+      "chain_link": "6",
+      "actors": [
+        "recipient"
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 6",
+          "note": "per-row Mark as read / Mark as unread present; read state differs between two org peers",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/storefront/user-guide/account/notifications",
+          "note": "mark notifications as read or unread"
+        }
+      ]
+    },
+    {
+      "id": "push.manage.per-recipient",
+      "type": "branch",
+      "name": "Read state belongs to each recipient, not to the message",
+      "branch_kind": "state",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "three accounts of one org hold the same messages with different read states",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.manage.mark-read",
+      "type": "branch",
+      "name": "Marking a message read clears it from the unread count",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "markPushMessageRead present in the schema; not actuated",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "state_before": "push.recipient.state.unread",
+      "state_after": "push.recipient.state.read",
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
+    },
+    {
+      "id": "push.manage.mark-unread",
+      "type": "branch",
+      "name": "Marking a message unread returns it to the unread count",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "markPushMessageUnread present in the schema; not actuated",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "state_before": "push.recipient.state.read",
+      "state_after": "push.recipient.state.unread",
+      "requires": [
+        "data.push.inbox.reader-mixed"
+      ]
+    },
+    {
+      "id": "push.manage.mark-all",
+      "type": "branch",
+      "name": "Mark all read or unread applies to every message of the caller",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "markAllPushMessagesRead / markAllPushMessagesUnread present; not actuated",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "requires": [
+        "data.push.inbox.bulk-fresh"
+      ]
+    },
+    {
+      "id": "push.manage.tap-entry",
+      "type": "branch",
+      "name": "Tapping an entry in the bell popup marks it read",
+      "branch_kind": "state",
+      "technique": "ST",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-048CB22A",
+          "note": "mobile header popup on a theme 2.59 PR build: tapping an entry marks it read and does not navigate",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront"
+      ],
+      "state_before": "push.recipient.state.unread",
+      "state_after": "push.recipient.state.read",
+      "notes": "Single observation on another deployment and viewport; not seen on vcst-qa."
+    },
+    {
+      "id": "push.manage.click-through",
+      "type": "branch",
+      "name": "Clicking the OS notification opens the message route, marks it read and redirects",
+      "branch_kind": "integration",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 5",
+          "note": "route /push-message/<id>?returnUrl marks read then redirects; needs PushMessages.FCM.Enable",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "state_before": "push.recipient.state.unread",
+      "state_after": "push.recipient.state.read"
+    },
+    {
+      "id": "push.manage.clear-all",
+      "type": "branch",
+      "name": "Clear all hides messages from the bell while the page still lists them",
+      "branch_kind": "state",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §3 D6",
+          "note": "clear-all sets a per-recipient hidden flag; the bell queries without hidden, the page with hidden",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "storefront",
+        "graphql"
+      ],
+      "notes": "No un-hide operation exists in the schema. Live divergence unobserved (domain map G9).",
+      "requires": [
+        "data.push.inbox.bulk-fresh"
+      ]
+    },
+    {
+      "id": "push.manage.sender-sees-read",
+      "type": "branch",
+      "name": "The sender sees per recipient whether the message was read",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Recipients blade Read column",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "you can see who of the recipients has read the message"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "push.manage.list-metrics",
+      "type": "branch",
+      "name": "The Sent and tracked list views report the number of recipients and the percent read",
+      "branch_kind": "happy",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "View message status, the number of recipients, and percent read"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §7 2026-09-29",
+          "note": "Sent and Track-new-recipients views show Recipients # / Read % by default with non-zero values",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "notes": "Was DRIFT at build (domain map D1 as first written); narrowed by the 2026-09-29 --verify pass on Platform 3.1074. The zero readings now live in push.manage.list-metrics-rest-zero."
+    },
+    {
+      "id": "push.manage.list-metrics-rest-zero",
+      "type": "branch",
+      "name": "The REST search and get fields report zero recipients and zero percent read",
+      "status": "CONFIRMED",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §3 D1",
+          "note": "recipientsTotalCount/ReadCount/ReadPercent = 0 for all 200 newest Sent messages on search and get; All-messages view shows 0 with the hidden columns enabled",
+          "date": "2026-09-29"
+        }
+      ],
+      "notes": "Suspected defect (not filed): the Sent view shows real values, so the zeros look like an unpopulated read path rather than missing data. Hand to /qa-bug."
+    },
+    {
+      "id": "push.recipient.state.unread",
+      "type": "state",
+      "name": "Unread",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "isRead false rows",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.recipient.state.read",
+      "type": "state",
+      "name": "Read",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 API",
+          "note": "isRead true row for one recipient",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.track-new",
+      "type": "behavior",
+      "name": "A tracked message reaches people who start matching its audience later",
+      "status": "CONFIRMED",
+      "chain_link": "7",
+      "interfaces": [
+        "job",
+        "event",
+        "admin-ui"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 7",
+          "note": "recurring job plus any member add/modify event enqueue a recipient top-up",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "https://docs.virtocommerce.org/platform/user-guide/push-messages/manage-push-messages",
+          "note": "Enable the Track new recipients switch to periodically check for new users"
+        }
+      ]
+    },
+    {
+      "id": "push.track-new.member-joins",
+      "type": "branch",
+      "name": "A member who newly matches receives the message",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 7",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-CB05268E",
+          "note": "on vcst a new member matching a tracked Sent message memberQuery (\"test\") became its recipient at creation; observed on 5 freshly seeded accounts",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "job",
+        "event"
+      ],
+      "notes": "Top-up fires on the member-created event, not only on the recurring job: the account was a recipient within seconds. Consequence: on an environment holding broad tracked queries no new account can start with an empty inbox (data.push.inbox.empty is DRIFT)."
+    },
+    {
+      "id": "push.track-new.add-only",
+      "type": "branch",
+      "name": "A member who stops matching keeps the message already delivered",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 7",
+          "note": "the top-up only adds recipient rows; nothing removes them",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "job"
+      ]
+    },
+    {
+      "id": "push.irrevocable",
+      "type": "behavior",
+      "name": "A sent message cannot be edited, deleted or recalled",
+      "status": "CONFIRMED",
+      "chain_link": "8",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 8",
+          "note": "modify/delete of Sent throws InvalidOperationException; recipients never removed",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Save disabled and fields read-only on a Sent message",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.irrevocable.edit-refused",
+      "type": "branch",
+      "name": "Editing a Sent message is blocked in the blade and refused by the service",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §2 back office",
+          "note": "Save disabled on a Sent message",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 8",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ]
+    },
+    {
+      "id": "push.irrevocable.delete-refused",
+      "type": "branch",
+      "name": "Deleting a Sent message is refused",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 8",
+          "note": "service throws on delete of a Sent message",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "notes": "HTTP status of the refusal unobserved live; 050l PUSH-034 records 500 (domain map G7)."
+    },
+    {
+      "id": "push.producer-sales-rep",
+      "type": "behavior",
+      "name": "A sales rep's customer message arrives as a push to the served organization's members",
+      "status": "CONFIRMED",
+      "chain_link": "1",
+      "actors": [
+        "sales rep"
+      ],
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:push@rev1 §1 link 1",
+          "note": "~99 rep-created rows in the list; SendCustomerCommunicationCommandHandler read at source",
+          "date": "2026-09-29"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A98E467C",
+          "note": "pushed verbatim; list shares arrive as message + shared-list link",
+          "date": "2026-09-29"
+        }
+      ]
+    },
+    {
+      "id": "push.producer-sales-rep.excludes-initiator",
+      "type": "branch",
+      "name": "Every member of the target organization except the sending rep becomes a recipient",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 link 1",
+          "note": "MemberIds = organization members minus the initiator",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.producer-sales-rep.no-module-permission",
+      "type": "branch",
+      "name": "The rep needs no PushMessages permission to cause a push",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:push@rev1 §1 actors",
+          "note": "the send goes through the sales-rep handler, not the module's permission-checked API",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.producer-sales-rep.message-cap",
+      "type": "branch",
+      "name": "A rep message over 1000 characters is refused and no push is created",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-A98E467C",
+          "note": "1001 characters: 'Message must not exceed 1000 characters.', data null, no push",
+          "date": "2026-09-29"
+        }
+      ],
+      "interfaces": [
+        "graphql"
+      ]
+    },
+    {
+      "id": "push.producer-returns",
+      "type": "behavior",
+      "name": "A return event arrives as a push to the buyer",
+      "status": "UNVERIFIED",
+      "chain_link": "1",
+      "interfaces": [
+        "event"
+      ],
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1564BA07",
+          "note": "submitReturn produced one Sent push with topic = return number and memberIds = the buyer contact; decisions push 'partly approved' / 'declined' texts",
+          "date": "2026-09-28"
+        }
+      ],
+      "notes": "integrates with: returns — submit and decision events (no domain map). Observed on a Return module PR build on another deployment; answers domain map G13 (a producer beyond sales-rep exists)."
+    }
+  ],
+  "edges": [
+    {
+      "from": "push.push-messages",
+      "to": "push.compose",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.save-draft",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.recipients-by-query",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.audience-builder",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.max-length",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.clone",
+      "type": "contains"
+    },
+    {
+      "from": "push.compose",
+      "to": "push.compose.permissions",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.send",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.send.now",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.send.schedule",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.send.scheduled-release",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.message.state.draft",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.message.state.scheduled",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.message.state.sent",
+      "type": "contains"
+    },
+    {
+      "from": "push.message.state.draft",
+      "to": "push.message.state.sent",
+      "type": "transitions_to",
+      "via": "push.send.now"
+    },
+    {
+      "from": "push.message.state.draft",
+      "to": "push.message.state.scheduled",
+      "type": "transitions_to",
+      "via": "push.send.schedule"
+    },
+    {
+      "from": "push.message.state.scheduled",
+      "to": "push.message.state.sent",
+      "type": "transitions_to",
+      "via": "push.send.scheduled-release"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.recipients",
+      "type": "contains"
+    },
+    {
+      "from": "push.recipients",
+      "to": "push.recipients.per-user",
+      "type": "contains"
+    },
+    {
+      "from": "push.recipients",
+      "to": "push.recipients.async-window",
+      "type": "contains"
+    },
+    {
+      "from": "push.recipients",
+      "to": "push.recipients.inactive-accounts",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.deliver",
+      "type": "contains"
+    },
+    {
+      "from": "push.deliver",
+      "to": "push.deliver.realtime",
+      "type": "contains"
+    },
+    {
+      "from": "push.deliver",
+      "to": "push.deliver.fcm",
+      "type": "contains"
+    },
+    {
+      "from": "push.deliver",
+      "to": "push.deliver.fcm-off",
+      "type": "contains"
+    },
+    {
+      "from": "push.deliver",
+      "to": "push.deliver.module-off",
+      "type": "contains"
+    },
+    {
+      "from": "push.deliver",
+      "to": "push.deliver.stale-token-prune",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.inbox",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.own-only",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.anonymous-refused",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.footer-dead-end",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.body-only",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.unread-filter",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.open-does-not-read",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.rendering",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.fcm-settings-any-user",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.manage",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.per-recipient",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.mark-read",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.mark-unread",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.mark-all",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.tap-entry",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.click-through",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.clear-all",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.sender-sees-read",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.list-metrics",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.recipient.state.unread",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.recipient.state.read",
+      "type": "contains"
+    },
+    {
+      "from": "push.recipient.state.unread",
+      "to": "push.recipient.state.read",
+      "type": "transitions_to",
+      "via": "push.manage.mark-read"
+    },
+    {
+      "from": "push.recipient.state.read",
+      "to": "push.recipient.state.unread",
+      "type": "transitions_to",
+      "via": "push.manage.mark-unread"
+    },
+    {
+      "from": "push.recipient.state.unread",
+      "to": "push.recipient.state.read",
+      "type": "transitions_to",
+      "via": "push.manage.click-through"
+    },
+    {
+      "from": "push.recipient.state.unread",
+      "to": "push.recipient.state.read",
+      "type": "transitions_to",
+      "via": "push.manage.tap-entry"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.track-new",
+      "type": "contains"
+    },
+    {
+      "from": "push.track-new",
+      "to": "push.track-new.member-joins",
+      "type": "contains"
+    },
+    {
+      "from": "push.track-new",
+      "to": "push.track-new.add-only",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.irrevocable",
+      "type": "contains"
+    },
+    {
+      "from": "push.irrevocable",
+      "to": "push.irrevocable.edit-refused",
+      "type": "contains"
+    },
+    {
+      "from": "push.irrevocable",
+      "to": "push.irrevocable.delete-refused",
+      "type": "contains"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.producer-sales-rep",
+      "type": "contains"
+    },
+    {
+      "from": "push.producer-sales-rep",
+      "to": "push.producer-sales-rep.excludes-initiator",
+      "type": "contains"
+    },
+    {
+      "from": "push.producer-sales-rep",
+      "to": "push.producer-sales-rep.no-module-permission",
+      "type": "contains"
+    },
+    {
+      "from": "push.producer-sales-rep",
+      "to": "push.producer-sales-rep.message-cap",
+      "type": "contains"
+    },
+    {
+      "from": "push.producer-sales-rep",
+      "to": "sr.comms",
+      "type": "depends_on",
+      "note": "the push is a side effect of sendCustomerCommunication"
+    },
+    {
+      "from": "push.producer-sales-rep",
+      "to": "sr.list-share.notify-separate",
+      "type": "affected_by",
+      "note": "a list share's notification is the separate send that produces the push"
+    },
+    {
+      "from": "push.push-messages",
+      "to": "push.producer-returns",
+      "type": "contains"
+    },
+    {
+      "from": "push.manage",
+      "to": "push.manage.list-metrics-rest-zero",
+      "type": "contains"
+    },
+    {
+      "from": "push.inbox",
+      "to": "push.inbox.empty-state",
+      "type": "contains"
+    },
+    {
+      "from": "push.send",
+      "to": "push.send.zero-recipients",
+      "type": "contains"
+    }
+  ],
+  "metadata": {
+    "scope": "Push Messages: back-office compose/send/schedule/track, recipient resolution, in-app and FCM delivery, storefront bell and Notifications page, recipient read/clear, irrevocability, and the sales-rep and returns producers. Email notification templates and platform SignalR toasts are out, as in the domain map.",
+    "built_from": "push-messages.md rev 1 (sections 1-6), business-logic.md Domain 27 (empty), suites 068/050l titles + References, kb KB-21BA7389 / KB-A98E467C / KB-1564BA07 / KB-C5B17CE2 / KB-048CB22A",
+    "kb_read": "2026-09-29 - 5 questions (pushMessages, fcmSettings, /api/push-message/search, /account/notifications, sendCustomerCommunication)"
+  },
+  "amended": "2026-09-29"
+}

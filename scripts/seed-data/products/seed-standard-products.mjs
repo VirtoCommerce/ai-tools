@@ -33,6 +33,7 @@
  * No _seed-results report (VCST-5406) — PROD_* resolve by SKU/business key from the committed CSV.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,7 +48,7 @@ import { ensureVirtualCatalog, ensureFulfillmentCenter, ensureCategoryPath, seed
 // Orchestration source (single source of truth) — side-effect-free, shared with the guard.
 import {
   CSV_SOURCE, SPEC_OVERLAYS, DISCOVERED_FIXTURES,
-  productSlug, buildCurrencyPriceSets, currenciesFor, priceListName,
+  productSlug, buildCurrencyPriceSets, currenciesFor, priceListName, STOCK_GATE_FIXTURES,
 } from './standard-specs.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -114,6 +115,9 @@ function loadRecords() {
       stock: num(r[m.stock]) ?? 0,
       description: (r[m.description] || '').trim(),
       seeded: truthy(r[m.seeded]),
+      // Seeded minQuantity from the min_quantity column (VCST-6054 stock-gate rows). A SPEC_OVERLAYS
+      // minQuantity (PROD-103) spreads over it; the guard fails a row that sets both.
+      minQuantity: num(r[m.minQuantity]),
       ...(SPEC_OVERLAYS[r[m.csvId]] || {}),
     }))
     .filter((rec) => rec.seeded && rec.code);
@@ -145,8 +149,11 @@ async function auth() {
   console.log(`  Auth: OK${DRY_RUN ? ' [DRY RUN — reads only]' : ''}`);
 }
 
+// POST /api/catalog/listentries is the catalog SEARCH (a read); only its /delete sub-route writes.
+// Treating it as a write made --dry-run stub every findProductByCode, so a dry-run teardown reported
+// "no seeded products found" against products that exist.
 const isReadCall = (method, path) =>
-  method === 'GET' || (method === 'POST' && path.includes('/search'));
+  method === 'GET' || (method === 'POST' && (path.includes('/search') || path === '/api/catalog/listentries'));
 
 async function api(method, path, body, { expectStatus = [200, 201, 204] } = {}) {
   if (DRY_RUN && !isReadCall(method, path)) {
@@ -386,6 +393,14 @@ async function main() {
   for (const c of currencies) await findOrCreatePriceList(c);
   const ffc = await ensureFulfillmentCenter(api);
   if (!ffc?.id && !DRY_RUN) throw new Error('No fulfillment center available');
+  // The stock of every seeded row lands on this FFC, and a case that mutates a fixture's stock
+  // (PROD-113) must PUT against the SAME record — so publish its runtime id as the FFC alias
+  // (FC_EAST ← fulfillment-centers.csv store_role=main). Only when ensureFulfillmentCenter actually
+  // resolved THAT row: on an ffcs[0] fallback the alias would name the wrong warehouse.
+  const mainFfcRow = parse(readFileSync(join(ROOT, 'test-data', 'inventory', 'fulfillment-centers.csv'), 'utf8'), { columns: true, skip_empty_lines: true })
+    .find((r) => (r.store_role || '').trim().toLowerCase() === 'main');
+  const ffcIsCsvMain = Boolean(mainFfcRow && ffc?.name && ffc.name.toLowerCase().endsWith(mainFfcRow.ffc_name.trim().toLowerCase()));
+  console.log(`  Fulfillment center: ${ffc?.name} (${ffc?.id})${ffcIsCsvMain ? ` [= ${mainFfcRow.ffc_id} store_role=main]` : ' [NOT the CSV main FFC — FFC alias not written]'}`);
 
   // SINGLE-PROCESS SEEDING: build the categories.csv tree HERE, in the same process that places
   // products, so seedCategoryTree and ensureCategoryPath share the in-process (catalogId, code)
@@ -410,16 +425,29 @@ async function main() {
   }
 
   if (!DRY_RUN) {
+    // Targeted by documentIds: a bare incremental over the whole Product type is not guaranteed to
+    // reach a just-created product (test-data-authoring.md §5a — `documentIds`, never `ids`).
+    const seededIds = seeded.filter((s) => !s.error && s.productId && !String(s.productId).startsWith('dry-')).map((s) => s.productId);
     try {
       await api('POST', '/api/search/indexes/index', [
-        { documentType: 'Product', rebuild: false },
+        seededIds.length ? { documentType: 'Product', rebuild: false, documentIds: seededIds } : { documentType: 'Product', rebuild: false },
       ], { expectStatus: [200, 204] });
-      console.log(`\n  ✓ reindex triggered`);
+      console.log(`\n  ✓ reindex triggered (${seededIds.length ? `${seededIds.length} documentIds` : 'incremental'})`);
     } catch (e) {
       console.log(`  ⚠ reindex: ${e.message.slice(0, 100)}`);
     }
 
-    // PROD_* resolve by SKU/business key from the committed CSV — no GUID to persist. The imported
+    // Runtime ids → aliases.<env>.json. The stock-gate rows (PROD-112/113) are driven through the
+    // Platform API by id (a case PUTs /api/inventory/plenty for PROD-113), so their alias `id` is the
+    // runtime product GUID; the FFC alias is the warehouse their stock sits on. Scoped to these rows on
+    // purpose — every other PROD_*.id keeps resolving to its CSV business key, as before.
+    const gateIds = Object.fromEntries(seeded
+      .filter((s) => !s.error && STOCK_GATE_FIXTURES[s.csvId] && s.productId && !String(s.productId).startsWith('dry-'))
+      .map((s) => [s.csvId, { product_id: s.productId }]));
+    if (Object.keys(gateIds).length) syncEnvAliases(CSV_SOURCE.key, gateIds);
+    if (ffcIsCsvMain) syncEnvAliases('inventory/fulfillment-centers', { [mainFfcRow.ffc_id]: { ffc_id: ffc.id } });
+    if (Object.keys(gateIds).length || ffcIsCsvMain) console.log(`  ✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: ${Object.keys(gateIds).join(', ') || '-'} product id(s)${ffcIsCsvMain ? ` + ${mainFfcRow.ffc_id} FFC id` : ''}`);
+    // Other PROD_* resolve by SKU/business key from the committed CSV — no GUID to persist. The imported
     // GUID fixtures (standard.csv STD-001/002) are captured to aliases.<env>.json by
     // captureDiscoveredFixtures() below (runtime ids, per env — never the committed CSV).
   }
@@ -465,7 +493,10 @@ async function teardown() {
   // Symmetric with findOrCreatePriceList: a multi-currency seed must not leave an orphan EUR pricelist
   // (a stale EUR price would keep pricing a deleted fixture's SKU if it were re-created by hand).
   // No catalog deletion (shared structure).
-  for (const currency of currenciesFor(records)) {
+  // NOT under --only: the pricelists are shared by EVERY seeded row, so a single-row teardown that
+  // deleted them would strip the price from all ~100 other standard fixtures while reporting success.
+  if (ONLY) console.log(`  – --only ${ONLY}: shared pricelist(s) ${currenciesFor(records).map((c) => priceListName(DATE, c)).join(', ')} kept (they price every seeded row)`);
+  for (const currency of (ONLY ? [] : currenciesFor(records))) {
     const plName = priceListName(DATE, currency);
     const s = await api('GET', `/api/pricing/pricelists?keyword=${encodeURIComponent(plName)}`, null, { expectStatus: [200, 404] });
     const pls = (s?.results || []).filter((p) => p?.name === plName).map((p) => p.id);

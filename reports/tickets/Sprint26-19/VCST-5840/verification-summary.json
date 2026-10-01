@@ -1,0 +1,65 @@
+{
+  "ticket": "VCST-5840",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-25",
+  "environment": "https://vcst-qa-storefront.govirto.com",
+  "build": {
+    "platform": "not read (admin signed out)",
+    "theme": "vc-theme-b2b-vue-2.59.0-pr-2513-5dd6-5dd6d29c",
+    "relevant_modules": {},
+    "pr_build": "vc-frontend#2513 @ 5dd6d29 via vc-deploy-dev#6623 (merged 2026-09-25T13:17:59Z)",
+    "running_evidence": "env branch pin + storefront bundle index-C8wQQB0O.js (was index-Dn9p34TO.js) + behaviour"
+  },
+  "agent_used": "inline (built-in browser, unattended)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) — reports/tickets/Sprint26-19/VCST-5840/baseline/baseline.json",
+  "checklist": [
+    {
+      "item": "STR: option flags alt empty, 3 consecutive loads",
+      "result": "PASS"
+    },
+    {
+      "item": "Accessible name = language only (a11y tree)",
+      "result": "PASS"
+    },
+    {
+      "item": "Trigger flag keeps informative alt tracking locale",
+      "result": "PASS"
+    },
+    {
+      "item": "Language switch EN->DE->EN works; DE options alt empty",
+      "result": "PASS"
+    },
+    {
+      "item": "Mobile 375px menu language list alt empty",
+      "result": "PASS"
+    },
+    {
+      "item": "Flags still render",
+      "result": "PASS"
+    },
+    {
+      "item": "No new console errors",
+      "result": "PASS"
+    }
+  ],
+  "checklist_total": 7,
+  "checklist_passed": 7,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "Pre-existing: two 'English' options (en-GB, en-US) share the accessible name 'English' — not a regression"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-A11Y-002"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "evidence": "non-visual (DOM attribute); this file + baseline/baseline.json",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5840/",
+  "next": "Merge vc-frontend#2513 (Elena); revert temporary theme pin on vc-deploy-dev@vcst-qa after merge"
+}

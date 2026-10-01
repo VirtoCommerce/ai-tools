@@ -26,6 +26,7 @@
  *   --dry-run               validate + parse but don't POST to /graphql
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from "fs";
 import { resolve, join, basename, dirname } from "path";
 import { fileURLToPath } from "url";

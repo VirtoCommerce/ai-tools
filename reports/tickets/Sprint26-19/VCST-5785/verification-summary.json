@@ -1,0 +1,34 @@
+{
+  "ticket": "VCST-5785",
+  "verdict": "VERIFIED",
+  "date": "2026-09-25",
+  "environment": "vcmp-dev Vendor Portal",
+  "build": {
+    "platform": null,
+    "theme": null,
+    "relevant_modules": { "@vc-shell/framework": "2.6.0-rc.1 (gitHead cd4eeb6)", "vendor-portal app": "2.2.0-rc.2, build 30207" },
+    "pr_build": "vc-shell #317 merge 1a1eecf, ancestor of cd4eeb6 (40 ahead / 0 behind)"
+  },
+  "agent_used": "qa-frontend-expert (playwright-chrome) + general-purpose (unit baseline)",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED via source revert: 7 #317 source files checked out at 1a1eecf^1 with cd4eeb6 tests -> 20/78 fail (URL-sink tests incl. 'Esc against the real blade stack closes the blade AND replaces the URL'); GREEN 78/78 x3",
+  "checklist_total": 8,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "incidental_low": [
+    "mobile a11y: unnamed back button nested in a button; status chip accessible name 'info-dark'",
+    "mobile: 'Development' env badge overlaps blade title (dev-only)"
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": ["both Low incidentals (below severity floor)"],
+  "related_existing": ["VCST-5816 (unreadcount 500; root cause + UI stack-trace disclosure added in comment 110452)"],
+  "business_rules_verified": [],
+  "business_rules_note": "BL-*/ECL-* are storefront-calibrated; none apply to vc-shell. VirtoOZ has no page on blade URL sync; ground truth = ticket AC + source + live.",
+  "tracker_transition": { "role": "tested", "state": "Tested" },
+  "tracker": { "comment_id": "110450" },
+  "evidence": "reports/tickets/Sprint26-19/VCST-5785/screenshots/",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5785/"
+}

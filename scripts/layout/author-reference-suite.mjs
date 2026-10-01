@@ -15,6 +15,7 @@
  * critical-ui-scope matrix can be re-pointed cell by cell.
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
 

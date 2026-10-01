@@ -90,7 +90,7 @@ Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 re
 Read these files to inform the review:
 1. **`review-criteria.md`** — detailed criteria for each dimension (this skill folder)
 2. **`test-case-template.md`** — the format contract (from `qa-test-cases-generator` skill)
-3. **`business-logic.md`** — BL-* invariants to check coverage against
+3. **`bl:extract -- --domain <d>`** — BL-* to check coverage against
 4. **`e-commerce-edge-cases-library.md`** — ECL-* patterns to check coverage against
 5. **`test-data/`** directory — to validate referenced products/orgs exist
 
@@ -177,7 +177,7 @@ For every test case row, evaluate:
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
-- [ ] `BL-*` IDs exist in `business-logic.md`
+- [ ] `BL-*` IDs exist (`bl:extract -- --id`)
 - [ ] `Edge_Case_Refs` populated for domains that have ECL patterns
 - [ ] For P0/Critical cases: at least one `BL-*` rule mapped
 - [ ] Cross-reference: are there BL-* invariants for this domain with no test cases covering them?
@@ -376,7 +376,7 @@ Output: Per-case verification result:
 - **CHANGED** → Critical (element renamed or moved — update selectors/labels)
 - **BLOCKED** → High (precondition issue — may be environment-specific, not a test case defect)
 - **VERIFIED** → No finding (test case is environment-compatible)
-- **REFUTED behavior** → Critical (ENV-008 — the asserted behavior isn't implemented; under `--fix`, rewrite to the observed behavior + tag `{OBSERVED}` or drop it)
+- **REFUTED behavior** → Critical (ENV-008: a human-sourced assertion = bug candidate, kept red; only a `{HYPOTHESIS}` may be rewritten)
 - **CONFIRMED behavior** → No finding; under `--fix`, upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001)
 
 ### Step 7: Auto-Fix Mode (`--fix` flag)
@@ -422,11 +422,11 @@ Non-fixable issues (flagged for manual review):
 
 Read **triangulation-criteria.md** (this folder) first — it holds the evidence bar, the `docs: N/A` waiver, the suite→repo resolution chain, the verdict table, and the auto-fix matrix. `--triangulate` implies `--verify` and reuses its budget caps.
 
-**8a. Resolve the source axis.** For the suite in scope, resolve the backing repo: `config/test-suites.json` `requiresModules` → `.claude/knowledge/execution/module-suite-map.md` Module Map → `ci/config/fix-repos.json` `routing[]` (or `npm run tc:audit:source -- <ID>`). **Unresolvable ⇒ the source axis is ABSENT ⇒ every assertion in the suite is UNGROUNDED. Never guess a repo** — a wrong repo yields a confident `file:line` for unrelated code, manufacturing a false CONFIRMED.
+**8a. Resolve the source axis.** For the suite in scope, resolve the backing repo via **triangulation-criteria.md §2** (or `npm run tc:audit:source -- <ID>`). **Unresolvable ⇒ the source axis is ABSENT ⇒ every assertion in the suite is UNGROUNDED. Never guess a repo** — a wrong repo yields a confident `file:line` for unrelated code, manufacturing a false CONFIRMED.
 
 > **One repo is the start of the source axis, not the whole of it.** Before treating the axis as satisfied, enumerate **every surface that can write the state you are asserting** and anchor each — storefront (`vc-frontend`), the module's **Admin SPA blade** (`…Web/Scripts/blades/*.js` — its toolbar commands and `canExecuteMethod`), the backend command handlers/constants, and any platform **setting** that constrains the value. A suite lives under `Frontend/`, but the state it asserts is usually cross-surface: auditing a frontend suite does **not** license a storefront-only model. See **triangulation-criteria.md §1c**, which carries the worked failure this rule came from, and **§1d** — a missing constant or key is a finding, never an explanation.
 
-**8b. Fan out — PARALLEL (ba-system-analyzer).** Triangulation is read-only and per-assertion, so run it in parallel. Split the suite's cases into disjoint batches and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool). Each gets its **own** browser slot (`playwright-firefox` / `playwright-chrome` / `playwright-edge`, never shared) and a **distinct test/org user** if the live axis needs auth (`feedback_concurrent_runners_distinct_org_users_taskstop`). Each agent captures all three axes with concrete evidence:
+**8b. Fan out — PARALLEL (ba-system-analyzer).** Triangulation is read-only and per-assertion, so run it in parallel. Split the suite's cases into disjoint batches and dispatch **up to 3 `ba-system-analyzer` agents concurrently** (one Agent-tool call per batch, all in a single message — matches the 3-slot browser pool). Each gets its **own** browser slot (`playwright-firefox` / `playwright-chrome` / `playwright-edge`, never shared) and a **distinct test/org user** if the live axis needs auth. Each agent captures all three axes with concrete evidence:
 
 - **Docs axis** — `/vc-docs` (VirtoOZ MCP), topic-scoped tool per the source map. Capture a **quote + doc reference**.
 - **Source axis** — GitHub MCP `search_code` / `get_file_contents` on the resolved repo (read-only; QA never clones). Capture a **`file:line` anchor**.
@@ -493,5 +493,5 @@ The `qa-testing-expert` uses `playwright-firefox` for browser verification. This
 | `/qa-env-check` | Run env check before `--verify` to ensure environment is healthy |
 | `test-case-template.md` | The format contract that review validates against |
 | `/qa-test-lifecycle` | The **pipeline that embeds this skill** — complementary, not overlapping. It owns *when* review runs (Phase 4a = dims 1–7, 9, 10 static; Phase 5 = dim 8 + the live half of dim 10) and its own G1–G12 gates; **this skill remains the single owner of the dimension set, check codes, severities, and evidence bars**, and that command must reference them rather than restate them. Its Phase 2 change signal is a *single-axis candidate*: a rewrite of what a case **asserts** must clear this skill's Dim-11 bar (`--triangulate`, its Phase 4a-bis), while a mechanical selector/URL update may be applied directly. **Review never promotes `Automation_Status` itself** — the promotion flip is owned by an orchestrator, never this skill: that pipeline's Phase 6P, which since 2026-09-10 is the **full** promoter — `/qa-test`'s own `5g` gate was removed, so its ticket cases are promoted by a later `/qa-test-lifecycle` pass like any other source (a **direct** `/qa-regression` run also flips already-grounded cases at its Step 6.5, via the same `tc:promote`, without any of this skill's assertion work). It *derives* eligibility from this skill's output (0 GRD-001 Blocker/High, 0 ENV-008, every assertion grounded) and needs explicit human/`qa-lead` approval before flipping `Draft → Reviewed` (or `Draft → Automated` when the case ran green under the automated regression runner). The promotion rule below is that shared gate |
-| `/qa-review-bl` | The **sibling triangulation mechanism** — same three axes, same evidence bar, applied to `BL-*` invariants instead of assertions. Its Step 4 reconciles coverage back into this skill; a `{BL}`-tagged assertion whose invariant it amended shows up here as a Dim 11 DRIFT |
+| `/qa-review-bl` | The **BL sync** — rewrites a `BL-*` rule only from a human source and marks a contradicted one `SUSPECT`. Its Step 4 reconciles coverage back into this skill; a `{BL}`-tagged assertion whose rule it changed shows up here as a Dim 11 DRIFT |
 | `ci/run-suite-audit.ts` | The **headless twin** — runs `--triangulate --fix --ci` on one suite per weekday and lands each audit as its own draft PR (`.github/workflows/suite-audit.yml`) |

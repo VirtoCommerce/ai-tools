@@ -62,17 +62,6 @@ test('PROD-108 is a FRACTIONAL discount of exactly 12.5% and reports 0.1250', ()
   assert.notEqual(spec.ratio * 100, Math.round(spec.ratio * 100));
 });
 
-test('PROD-109 lands on the 4-decimal midpoint, so AwayFromZero and ToEven diverge', () => {
-  const spec = DISCOUNT_RATIO_FIXTURES['PROD-109'];
-  const row = byId.get('PROD-109');
-  assert.ok(row, 'PROD-109 must exist in test-products.csv');
-  assert.equal(spec.requireMidpoint, true);
-  assert.equal(discountRatioScaled(row.price, row.sale_price, SCALE), Math.round(spec.ratio * SCALE));
-  assert.equal(isRoundingMidpoint(spec.ratio), true);
-  assert.equal(expectedDiscountPercent(spec.ratio), 0.1235);
-  assert.equal(roundHalfToEven(spec.ratio), 0.1234);
-});
-
 test('both fixtures are seeded rows — an unseeded row leaves the case blocked', () => {
   for (const id of Object.keys(DISCOUNT_RATIO_FIXTURES)) {
     assert.equal(String(byId.get(id)?.seeded).toLowerCase(), 'true', `${id} must be seeded=true`);

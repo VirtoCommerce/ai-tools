@@ -1,3 +1,4 @@
+import "../scripts/lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";

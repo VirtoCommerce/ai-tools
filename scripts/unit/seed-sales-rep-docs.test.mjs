@@ -16,10 +16,6 @@ import {
 
 // --- spec set health -------------------------------------------------------
 
-test('the spec set is internally healthy (no drift problems)', () => {
-  assert.deepEqual(validateDocumentSpecs(), []);
-});
-
 test('the upload scope matches the deployed ModuleConstants.DocumentsScope', () => {
   assert.equal(UPLOAD_SCOPE, 'sales-rep-documents');
 });

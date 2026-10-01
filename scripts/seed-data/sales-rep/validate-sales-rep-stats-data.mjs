@@ -14,6 +14,7 @@
  *  [7] every spec'd orgKey exists in test-data/b2b/organizations.csv WITH a pinned platform_id,
  *  [8] the window model is self-consistent (previous windows strictly precede their current window).
  */
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -75,7 +75,7 @@ A layer with no App ID/key is skipped with a clear message; some envs have none.
 
 Each query `summarize`s by a stable `signature` with `count_`, first/last seen, and a
 sample `operation_Id` for a portal deep-link. Signatures use route/path **templates**,
-not concrete URLs, so they don't drift with test data (`feedback_env_resilience`).
+not concrete URLs, so they don't drift with test data.
 
 ## Triage taxonomy (`agents/monitor-triage-agent.md`)
 `REAL_BUG` · `KNOWN_ISSUE` · `NOISE` · `CONFIG_GATED` · `THIRD_PARTY` · `TRANSIENT`.

@@ -77,7 +77,7 @@ These are the **client-side `$cfg.*` flags** consumed by Vue components and rout
 
 ## Status Vocabularies (not flags but config arrays)
 
-- `orders_statuses[]` — 7 entries: `New`, `Processing`, `Pending`, `Cancelled`, `Completed`, `Payment required`, `Ready for pickup` (with display color/variant/icon per status). Storefront uses these labels — assertions on order status text should match this list, NOT the platform `OrderStatusType` enum (see project memory `project_order_status_vocab.md`).
+- `orders_statuses[]` — 7 entries: `New`, `Processing`, `Pending`, `Cancelled`, `Completed`, `Payment required`, `Ready for pickup` (with display color/variant/icon per status). Storefront uses these labels — assertions on order status text should match this list, NOT the platform `OrderStatusType` enum.
 - `quote_statuses[]` — 8 entries: `New`, `Processing`, `Ordered`, `Proposal sent`, `On hold`, `Draft`, `Declined`, `Canceled`.
 
 ## Other config arrays

@@ -28,6 +28,7 @@
  *   npx tsx scripts/validate-graphql-fixtures.ts --json    # emit JSON instead of markdown
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { config as loadDotenv } from "dotenv";
 import { resolveTestEnv } from "../lib/resolve-test-env.js";
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";

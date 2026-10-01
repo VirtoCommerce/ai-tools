@@ -3,7 +3,7 @@
 Every fan-out in this pipeline hands N agents the same oracles. When the brief carries a *path*, each
 agent opens it and pays for the whole file in its own context — N times, for the same bytes, to use the
 same three or four rules. The 2026-09-07 audit measured this as the largest remaining runtime cost once
-the always-loaded tier was re-tiered (`docs/agentic-system-audit-2026-09-07.md` §6 items 7–8).
+the always-loaded tier was re-tiered (the 2026-09-07 agentic-system audit, §6 items 7–8; the file was removed 2026-10-01).
 
 [`authoring.md`](authoring.md) §3b already applies the fix at one fan-out and states the reason. This
 file is that reason generalised, so the other fan-outs stop re-deriving it — and, more importantly, so
@@ -47,7 +47,7 @@ ever a paraphrase: a summarised invariant is a second, drifting copy of a single
   reading. Rule text is not evidence and may be packed; **the evidence never is.**
 - **The observed-behaviour base.** Never packed as an answer — **the brief tells the agent to ask it
   itself**: `mcp__kb__kb_ask`, with the coordinate of *its own* surface in *its own* question
-  ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*). This is the first rule's
+  ([`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*). This is the first rule's
   second half, not an exception to it: the recipient is the one who knows what it is about to assert,
   and a packed answer to a question the dispatcher guessed pre-answers the step exactly as a digested
   prior report does. It also carries a **trust count and a deployment** that only mean anything beside

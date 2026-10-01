@@ -9,7 +9,7 @@ import {
   ANCHOR_BONUS, MIN_COVERAGE, NEIGHBOUR_TOP, admissible, anchorHit, rank, rankNeighbours, relatedEnough, relatedTo,
   scoreRows, tokenize,
 } from '../kb/core/rank.mjs';
-import { anchorProblems, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
+import { anchorProblems, anchorShape, coordinateIndex, isStructuredCoordinate, namespaceRoots, neighbours } from '../kb/core/coordinates.mjs';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { normalizeAnchor, undoMsysRewrite } from '../kb/core/anchors.mjs';
 import { join } from 'node:path';
@@ -193,15 +193,31 @@ test('undoMsysRewrite restores the route a Git Bash question arrived without', (
   // A non-standard install is found through EXEPATH, which Git Bash points at its `bin`.
   assert.equal(undoMsysRewrite('D:/tools/git/checkout/shipping', { EXEPATH: 'D:\\tools\\git\\bin' }), '/checkout/shipping');
   // Nothing else is touched: a real Windows path, a clean route, a VERB form.
-  for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x']) {
+  // `X:/git` is where people keep checkouts, so it is NOT a root without EXEPATH saying so (VCST-6102
+  // review): undoing it would publish `/client-portal/...` as a route.
+  for (const q of ['C:/Users/me/report.md', '/company/members', 'GET /api/cart', 'C:/Program Files/Gitlab/x', 'D:/git/client-portal/src/x']) {
     assert.equal(undoMsysRewrite(q, none), q);
   }
+  // A value that was ONE argument can only have been rewritten at its start (VCST-6102 review 2): a
+  // root later in it is prose the author wrote, e.g. a claim about Git Bash itself.
+  const one = { wholeArgument: true };
+  assert.equal(undoMsysRewrite('C:/Program Files/Git/cart totals lag', none, one), '/cart totals lag');
+  assert.equal(undoMsysRewrite('config lives at C:/Program Files/Git/etc/gitconfig', none, one),
+    'config lives at C:/Program Files/Git/etc/gitconfig');
 });
 
 test('anchorProblems catches a menu path and a namespace', () => {
   assert.equal(anchorProblems(['Admin SPA: Contacts > Member detail'])[0].kind, 'menu-path');
   assert.equal(anchorProblems(['/api'])[0].kind, 'unstructured');
   assert.deepEqual(anchorProblems(['/company/members', 'Query.organizationContacts']), []);
+});
+
+test('anchorShape says the type and segment count of an anchor, and nothing of its text (VCST-6102)', () => {
+  assert.deepEqual(anchorShape('/api'), { type: 'path', segments: 1 });
+  assert.deepEqual(anchorShape('POST /api/return/{id}'), { type: 'path', segments: 3 });
+  assert.deepEqual(anchorShape('Query.organizationContacts'), { type: 'dotted', segments: 2 });
+  assert.deepEqual(anchorShape('Add to cart'), { type: 'prose', segments: 3 });
+  assert.deepEqual(anchorShape('Stores'), { type: 'prose', segments: 1 });
 });
 
 // ─── the RELATED hint (PLAN §17.4(6), re-keyed on words) ──────────────────────────────────────

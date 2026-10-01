@@ -1,19 +1,19 @@
 ---
 applicability: reference
-applicability_rationale: "vc-frontend (Vue 3 / TS) storefront repo anatomy + vitest / @vue/test-utils / Storybook conventions. Universal across VC customers' storefront forks; repo list + routing are data (ci/config/fix-repos.json), not hardcoded here."
+applicability_rationale: "vc-frontend (Vue 3 / TS) storefront repo anatomy + vitest / @vue/test-utils / Storybook conventions. Universal across VC customers' storefront forks; repo list + routing are data (skills/qa-fix-routing/fix-repos.json), not hardcoded here."
 ---
 
 # Virto Commerce Storefront Architecture (vc-frontend) — for the auto-fix pipeline
 
-> LAYER 2 knowledge for the `developers/` team (`fullstack-frontend`, `frontend-reviewer`) and the CI
-> `ci/agents/fix-frontend-agent.md`. How the `vc-frontend` repo is laid out, how to find the failing
+> LAYER 2 knowledge for the `developers/` team (`fullstack-frontend`, `frontend-reviewer`). How the
+> `vc-frontend` repo is laid out, how to find the failing
 > code, how to write the red→green vitest test, and which commands prove the fix. **The repo list and
-> routing are NOT here** — they are live data in `ci/config/fix-repos.json` + `ci/lib/repo-router.ts`.
+> routing are NOT here** — they are live data in `skills/qa-fix-routing/fix-repos.json` + `skills/qa-fix-routing/repo-router.ts`.
 > Read those; don't duplicate them. This is the Vue/TS twin of `vc-module-architecture.md`.
 
-## 1. Repo kind & build/test profile (authoritative: `ci/lib/repo-router.ts`)
+## 1. Repo kind & build/test profile (authoritative: `skills/qa-fix-routing/repo-router.ts`)
 
-`REPO_PROFILES.frontend` in `ci/lib/repo-router.ts` is the single source for install/build/typecheck/
+`REPO_PROFILES.frontend` in `skills/qa-fix-routing/repo-router.ts` is the single source for install/build/typecheck/
 lint/test commands. Do not invent commands — read the profile for the routed repo's `kind`.
 
 | Kind | Repo | Lang | Install | Build | Test (red→green gate) | Typecheck | Lint |
@@ -83,7 +83,7 @@ route/page  →  component (.vue)  →  composable (use*)  →  store / provide-
 
 - **Component / UI logic:** `mount` / `shallowMount` from `@vue/test-utils` (or
   `@testing-library/vue`), asserting rendered output / emitted events / `data-test-id` state. Confirm
-  **red** filtered: `npx vitest run -t VCST-XXXX` (or by file path). See `/vue-unit-test`
+  **red** filtered: `npx vitest run -t <ticket-key>` (or by file path). See `/vue-unit-test`
   `vitest-patterns.md`.
 - **Composable / util (pure logic):** call the function directly; wrap reactive composables in
   `effectScope()` (as `useDateField.test.ts` does). Prefer this over a full mount when the bug is in
@@ -122,15 +122,14 @@ cause in a NuGet dependency".
 - **Reactivity**: a "value not updating" bug is usually a lost reactive reference (`computed` vs plain
   read, destructured prop, `.value` omitted) — not a data bug. See `/vue-fix` `vue-fix-patterns.md`.
 
-## 7. Branch / PR / verification conventions (shared with CI)
+## 7. Branch / PR / verification conventions
 
 - **Workspace:** `.fix-workspace/vc-frontend/` (gitignored). **One** repo per run.
-- **Branch:** `claude/qa-autofix/VCST-XXXX` (from `checkoutForFix`). **Commit:** Conventional Commits +
+- **Branch:** `claude/qa-autofix/<ticket-key>` (from `checkoutForFix`). **Commit:** Conventional Commits +
   JIRA key, e.g. `fix(cart): clamp quantity input to valid range (VCST-1234)`, **authored as the human
   token-owner with Claude as `Co-Authored-By:`** (CLA — see `knowledge/agents/developers/shared-instructions.md`).
-- **PR:** `gh pr create` (interactive `/qa-fix`: a normal PR for human review; CI `run-fix-cycle.ts`:
-  `--draft`), title `fix(VCST-XXXX): <imperative>`, body = RCA + JIRA link + red→green test +
-  verification checklist + "DO NOT MERGE until human review". Add a **"needs visual / E2E verification"**
+- **PR:** `gh pr create` (`/qa-fix`: a normal PR for human review), title `fix(<ticket-key>): <imperative>`, body from the one PR body template
+  (consumer sections, collapsed red→green evidence, "do not auto-merge" footer — `knowledge/agents/developers/pr-body-template.md`). Add a **"needs visual / E2E verification"**
   note when the bug has a visual aspect — Gate 6 re-confirms it directly: once the PR's artifact
   deploys, `qa-frontend-expert` re-verifies the original STR live on the deployed storefront (no
   `/qa-regression` dependency — full `vc-qa` plugin only, not shipped here), or `/qa-verify-fix`

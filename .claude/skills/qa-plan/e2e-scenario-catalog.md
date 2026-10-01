@@ -166,7 +166,7 @@ This catalog provides end-to-end test scenarios across the platform's business d
 | E2E-BOPIS-002 | Pickup location search → filter → select | P1 | Pickup modal → enter zip code or city → verify locations listed by distance → filter by features → select location → verify pin highlighted on map |
 | E2E-BOPIS-003 | Mixed cart → some pickup + some delivery | P1 | Add item A (pickup available) → add item B (delivery only) → checkout → verify item A shows pickup option → verify item B shows delivery only → select pickup for A, delivery for B → complete checkout |
 | E2E-BOPIS-004 | Change pickup location → update during checkout | P2 | Checkout with pickup selected → click "Change Location" → select different store → verify address updates → verify any location-specific pricing updates → complete checkout |
-| E2E-BOPIS-005 | Pickup map → resize modal → mobile responsive | P2 | Open pickup location selector → verify map renders → resize modal/viewport → verify map and list responsive → verify touch targets on mobile (44x44px min) → verify location cards readable |
+| E2E-BOPIS-005 | Pickup map → resize modal → mobile responsive | P2 | Open pickup location selector → verify map renders → resize modal/viewport → verify map and list responsive → verify touch targets on mobile (24x24px min) → verify location cards readable |
 
 **xAPI:** `fulfillmentCenters` query, `addOrUpdateCartShipment` with fulfillment center ID
 **Verify in Admin:** Order → Shipments → verify fulfillment center assignment, pickup status

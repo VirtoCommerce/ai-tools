@@ -9,7 +9,7 @@
     "comment_id": "<jira comment id>|null",
     "amended": "true when a later correction edited it in place rather than appending a second comment"
   },
-  "path": "FAST|FULL|null",
+  "path": "FAST|FULL|FAST_GROUNDED|null",
   "$comment_path": "The EFFORT axis's ANSWER (path_route below records how it was reached). null on verify-fix / hotfix-verify / technical-change, which ignore the effort axis. Added 2026-09-22: `path` has always been in validate-summary.mjs's REQUIRED list but was missing from this schema, so every conforming summary.json failed SUM-003 by exactly one finding — required and undeclared at the same time. Found by two independent runs (VCST-5378, VCST-5869) reporting the identical single finding.",
   "path_route": {
     "$comment": "HOW the EFFORT axis landed on `path`, which for one ticket type is a two-phase answer. Same shape and same reason as domain_map.all_layer_confirmed_at below: a Story's downgrade to FAST needs six narrowness tokens (ticket-routing.md §5b) and two of them (`layer`, the surface read) only resolve at 1b, after 1a has had to name a path. So 1a records a PROVISIONAL route and 1b confirms it — safe because 1b is identical on both paths and the fork is immediately after it. Movement is one-way, fast->full. Every other type decides at 1a and records decided_at=1a with provisional=null. narrow_story_tokens is null for every non-Story; per token: true (holds) | false (contradicted) | null (unestablished -> escalate, §5 doubt rule). escalated_reason is the one that moved it, and `purpose_undeclared` is the guard that outranks all six.",
@@ -37,7 +37,10 @@
     "amend_outcome": "AMENDED|NOTHING_TO_AMEND|FAILED|not-attempted|null",
     "amendments": [],
     "sources": [],
-    "unmapped_surfaces": []
+    "unmapped_surfaces": [],
+    "mind_map": ".claude/knowledge/domain/<name>.mind-map.json|null",
+    "mind_map_build": "BUILT|FAILED|not-triggered — set at 5-mind-map (FULL, post-verdict) when the map is PRESENT and mind_map was null; FAST never builds (reporting.md §5-mind-map)",
+    "mind_map_findings": []
   },
   "shape_class": {
     "$comment": "The THIRD classifier, derived at 1a on the feature-test branch beside `ticket_type` and `path` — never instead of either (ticket-routing.md §5c; methodology skills/qa-test/ui-kit-class.md). It answers whether the thing under test is a feature ON a surface or the surface ITSELF, and it changes only what the resolved path PRODUCES: on `ui-kit` Artifact A, the 3-cases gate and 4c/C1 do not run on either path, and the `visual` + `coverage` axes need no flag. It may never promote or demote FAST/FULL — same rule as an axis. IT IS THE ONE CLASSIFIER THAT FAILS CLOSED: every other asks 'should we also do X?' so doubt widens the run, but this one SUBTRACTS, so an unestablished class is `none` and the run authors cases as normal — a wrong `ui-kit` deletes durable coverage from a run that needed it (the axes.md §3 data_surface defect, read backwards). `null` means the class was never derived, which is a gap, NOT a `none`. surface_source[] is recorded even for `none`, following the axes' own rule that an omitted block reads as a clean one. `skipped[]` names what the class actually removed from THIS run, so the artifact says it rather than only this schema. Supersedes the ad-hoc `uikit_rule_applied` string one pre-schema run wrote; do not reintroduce that spelling.",
@@ -405,5 +408,11 @@
     "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
     "correlated_failures": []
   },
-  "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/screenshots/"
+  "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/screenshots/",
+  "report": {
+    "$comment": "/qa-test-fast only (path FAST_GROUNDED); null elsewhere. The human-readable deliverables and the run's kb ledger: page_url is the Artifact page, shared with Anyone at Virto Commerce, verdict_md the <=60-line verdict file. kb lists the entry ids the run read, confirmed, disputed and captured (authoring-standard section 5, item 6).",
+    "page_url": "https://claude.ai/... | null",
+    "verdict_md": "reports/tickets/{SPRINT}/<ticket-key>/verdict.md",
+    "kb": { "read": [], "confirmed": [], "disputed": [], "captured": [] }
+  }
 }

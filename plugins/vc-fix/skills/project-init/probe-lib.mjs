@@ -165,7 +165,7 @@ export function githubCanWrite(perm) {
  * contribution mode: push/maintain/admin ⇒ "direct", anything less ⇒ "fork" (you
  * PR from your own fork). `repo` defaults to `<upstreamOrg>/vc-platform` (the
  * project-init readiness/derive callers); the self-diagnostics deliver step passes
- * `repo: "<org>/vc-mcp-testing-module"` to probe the plugin's OWN repo. Pure network
+ * `repo: "<org>/ai-tools"` to probe the plugin's OWN repo. Pure network
  * probe; never throws.
  *
  * → { ok, login, perm, contributionMode, repo, status, tokenKind, tokenScopes, forkCapable, remedy }

@@ -371,7 +371,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Select store → verify address, hours, and pin highlighted on map
 - [ ] Mixed cart: pickup-eligible item shows pickup option, delivery-only item shows delivery only
 - [ ] Change pickup location during checkout → address and pricing update
-- [ ] Pickup map modal: resize, responsive layout, touch targets (44x44px min on mobile)
+- [ ] Pickup map modal: resize, responsive layout, touch targets (24x24px min on mobile, WCAG 2.5.8)
 - [ ] Order confirmation shows pickup location details and instructions
 - [ ] Inactive location hidden: locations with `isActive: false` do not appear in storefront selector
 - [ ] Working hours display: formatted hours (e.g., "Mon - Sun: 9 - 18") rendered correctly per location
@@ -512,7 +512,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 - [ ] Form labels: every input has an associated `<label>` or `aria-label`, error messages linked via `aria-describedby`
 - [ ] Screen reader announcements: dynamic content changes (toast notifications, cart updates, validation errors) announced via `aria-live` regions
 - [ ] Skip navigation: "Skip to main content" link present and functional as first focusable element
-- [ ] Touch targets: interactive elements meet minimum 44x44px touch target size on mobile viewports
+- [ ] Touch targets: interactive elements meet minimum 24x24px touch target size on mobile viewports (WCAG 2.5.8 AA)
 
 ## 30. Performance
 - [ ] Page load time: homepage, category page, PDP load within acceptable thresholds (LCP < 2.5s on 4G)
@@ -647,7 +647,7 @@ Configurable products use **sections** (customizable parts) with **options** (ch
 
 > Scope: the Universal Commerce Protocol adapter — an AI agent shopping over MCP at `/ucp/mcp`, then handing the buyer a `continue_url` that resumes in the ordinary storefront checkout. Three surfaces in ONE chain: the MCP/REST API (18 tools), the Platform OAuth leg, and the storefront restore leg. **Deliberately over the 6–15 band** for that reason — dropping a surface drops the link where the defects have actually been. Surface inventory: `knowledge/domain/ucp.md`. Labels and shapes observed live 2026-09-22 on the unmerged PR heads (vc-module-ucp#7 / vc-platform#3108 / vc-frontend#2467).
 >
-> **⚠ This domain has ZERO invariants of its own.** `business-logic.md` Domain 25 (`BL-UCP`) is declared and **deliberately empty**; no `ECL` section mentions UCP or MCP; `vc-bug-catalog` has 0 UCP entries; VirtoOZ carries no UCP page (`ucp.md` D8). Every citation below is therefore a **delegated** invariant from a neighbouring domain — none of which knows the handoff exists — or an `[OBSERVED]` ECL pattern whose shape transfers. Items with no honest citation carry none rather than a minted `BL-UCP-*`. Promotion candidates for `/qa-review-oracles`: handoff single-use + TTL · `organization_id` derives only from the Platform token · anonymous-plus-organization ⇒ 403.
+> **⚠ This domain has ZERO invariants of its own.** The BL oracle's Domain 25 (`BL-UCP`) is declared and **deliberately empty**; no `ECL` section mentions UCP or MCP; `vc-bug-catalog` has 0 UCP entries; VirtoOZ carries no UCP page (`ucp.md` D8). Every citation below is therefore a **delegated** invariant from a neighbouring domain — none of which knows the handoff exists — or an `[OBSERVED]` ECL pattern whose shape transfers. Items with no honest citation carry none rather than a minted `BL-UCP-*`. Promotion candidates for `/qa-review-oracles`: handoff single-use + TTL · `organization_id` derives only from the Platform token · anonymous-plus-organization ⇒ 403.
 
 **Discovery (L1):**
 - [ ] `GET /.well-known/ucp` and `get_store_capabilities` return the **same** MCP endpoint, and it is the host that can actually complete OAuth — check from **both** the Platform host and the storefront host, which answered differently until 2026-09-22

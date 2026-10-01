@@ -26,7 +26,7 @@ returned.
 **Load knowledge files** for the identified domains (from `.claude/knowledge/`) — fill the model's
 `Business Rules` / `Edge cases` with the actual rule **text** and patterns, not just IDs:
 
-- **business-logic.md** — the `BL-*` invariants for the domains (mandatory verification points).
+- **`npm run bl:extract -- --domain <d>`** — the `BL-*` invariants for the domains (mandatory verification points).
 - **e-commerce-edge-cases-library.md** — the `ECL-*` patterns.
 - **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via
   `/qa-checklist`) — checklist items for the domains.
@@ -39,7 +39,7 @@ returned.
   `CONVENTION` entries as scenario candidates: those are false-positive guards, and the right use is to
   *avoid filing* the behaviour they describe. Then fill `Archetype sweep`.
 - **When `1b` item 2c derived `visual_surface: true` — the oracles that make a UI assertion strong:**
-  `business-logic.md` **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify` recipes) **and
+  **`BL-UI-*`** (`--domain ui`; measurable invariants + their `Verify` recipes) **and
   `BL-A11Y-001..004`** (keyboard operability, accessible naming, contrast, axe-clean — all **P1**, and new
   to this load: the pipeline previously carried no accessibility oracle at any step),
   `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real selectors — a scope
@@ -149,6 +149,14 @@ specs/seeder/`@td()` aliases/drift-guard + its unit test, **and RUN the seed liv
 env, ending on a green `td:validate` (+ any `td:validate:<domain>` guard it added). The skip condition is
 now the derived `data_surface` above rather than a judgment made at dispatch time.
 
+**Profiles first, when the domain has a data model.** The `1e-plan` rows already name a `dataProfile`
+([§Carry the model's design decision into the row](#carry-the-models-design-decision-into-the-row)),
+and 3a runs after `1e-plan`, so the brief passes those profile ids. `test-data-engineer` seeds each with
+`/qa-seed-data --profile <id>` ([`../qa-seed-data/profile-seeding.md`](../qa-seed-data/profile-seeding.md)):
+the profile IS the designed combination, so `/qa-generate-data` runs only for the plan rows no profile
+covers. A state the plan needs that no profile declares is a data-model gap. Report it for
+`/qa-test-data-model update`; do not patch the model inside a run.
+
 A fixture that cannot be seeded is reported as such and its dependent cases are marked BLOCKED — never
 authored against data that does not exist. **Seeder files authored by any other agent are unvalidated
 drafts**: hand them to `test-data-engineer` to review and run, never treat them as done.
@@ -237,9 +245,28 @@ Naming every target suite up front is also what makes the Step-3b fan-out safe, 
 Each authored case stamps its scenario row's archetype and technique into the free-text `References`
 column: `Archetype:<TOKEN> · Technique:<TOKEN>` (+ `Probe:VC-*-NNN` when the row came from a
 `vc-bug-catalog` Detection probe; + `Role:<role-id>` when it came from a Part 0r role scenario, so a later
-reader can tell whose refusal the case defends). The appender **rejects a row without the two mandatory
-stamps**; `Probe:` and `Role:` are provenance, optional and unvalidated. No new CSV column: these join the
+reader can tell whose refusal the case defends; + `Catches:<ISSUE-KEY>` or `Catches:mutant:<ID>` when it
+was written to catch a known bug or a response mutant — [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §3).
+The appender **rejects a row without the two mandatory stamps**; `Probe:`, `Role:` and `Catches:` are
+provenance, optional and unvalidated. No new CSV column: these join the
 `Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
+
+**When the domain has a mind map (`domain_map.mind_map`, axes.md §2g), each row also names its
+node:**
+
+- Set the plan row's `behavior` to the node id its scenario decides.
+- When the data model has a matching profile, set `dataProfile` too.
+- `tc:scaffold` persists them as `Behavior:<node-id>` / `DataProfile:<profile-id>`.
+- A case written for an integration point carries a stamp for EACH side (the node and the other
+  domain's node). One stamp makes it that domain's test, and `TM-032` keeps listing the seam.
+- After the append, run `npm run models:check`. TM-015 / TM-016 fail a stamp that names nothing.
+  A `TM-019` legacy-header warning on the target suite means its stamps are never read, because the
+  parser maps that header by position. Author into an enriched suite, or migrate the suite first.
+
+A scenario that fits no node is a model gap. Record it for `/qa-test-mind-map update`; never invent a
+node id to satisfy the stamp. The `dataProfile` ids were already seeded at Step 3a, which reads them
+from the plan ([§3a When it runs](#when-it-runs)). A profile first named while authoring is a fixture
+need 3a missed, so it goes back to the orchestrator as a top-up re-dispatch, like any other.
 
 ### Scaffold before authoring — never hand-type the boilerplate
 
@@ -345,7 +372,7 @@ introduce:
 | 1 | `npm run tc:alloc` and hand each batch **only its own** `--id-block` | `--check-global-ids` reads the corpus at APPEND time, so two batches both pass and then both write. A cross-suite duplicate ID silently overwrites the other suite's per-case results and failure evidence at run time. `tc:scaffold` refuses to spill past its block. |
 | 2 | Author the **`[JOURNEY]` / `Technique:FLOW` case itself**, before fan-out, and put it in every batch brief as the baseline they refine | It traverses the whole chain by definition. Per-layer batches each writing their own produce N partial journeys and no owner of the chain — the failure the 71-case storefront suite that placed zero orders represents. |
 | 3 | Resolve **every blank cell** of the 1e variants × links matrix and assign each cell to exactly one batch | Cell ownership is what makes duplication structurally impossible. With it there is no cross-batch dedup pass to run; without it two batches both claim a cell, or both skip it. |
-| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, **the Part 0r role scenarios whose refusals this batch owns (rows, not a path — they are small, per-batch, and an agent handed only a path re-reads the whole model)**, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
+| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, **the Part 0r role scenarios whose refusals this batch owns (rows, not a path — they are small, per-batch, and an agent handed only a path re-reads the whole model)**, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading the BL oracle + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
 
 **Batch contract** (each batch is one `test-management-specialist`):
 
@@ -368,7 +395,7 @@ Because each batch self-lints, the Step-3 gate becomes confirmation rather than 
 authored from exactly the guesses that lane exists to replace. **This constraint is untouched by the
 2026-09-10 restructure** — what changed is that nothing waits for authoring to FINISH except `4c`. `3a` and `3x` are concurrent with each
 other; **A alone is downstream of all three**
-([`SKILL.md`](SKILL.md) §What must NOT be parallelised). The fan-out this section describes is *within*
+([`sequencing.md`](sequencing.md) §What must NOT be parallelised). The fan-out this section describes is *within*
 Artifact A — one batch per execution surface, once the wave has closed.
 
 ---

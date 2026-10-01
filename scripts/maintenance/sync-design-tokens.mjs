@@ -41,6 +41,7 @@
  *   2  could not reach a source (network/checkout) — advisory, never silently "passes"
  */
 
+import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

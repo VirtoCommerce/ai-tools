@@ -1,0 +1,81 @@
+{
+  "run_id": "FIX-2026-09-24-2021",
+  "ticket": "VCST-5855",
+  "tracker": "jira",
+  "repo": "VirtoCommerce/vc-module-loyalty",
+  "repo_kind": "module",
+  "ownership": "platform",
+  "developer_agent": "fullstack-backend",
+  "reviewer_agent": "backend-reviewer",
+  "branch": "claude/qa-autofix/VCST-5855",
+  "base": "dev",
+  "base_sha": "e95b935",
+  "pr_url": "https://github.com/VirtoCommerce/vc-module-loyalty/pull/18",
+  "merged": false,
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "PASS",
+    "G3": "PASS",
+    "G4": "APPROVE",
+    "G5": "PASS",
+    "G6": "NOT_RUN_BY_DESIGN",
+    "G7": "NOT_TAKEN"
+  },
+  "routing_confidence": "HIGH",
+  "proof_medium": "xunit",
+  "proof_provenance": "built-diff",
+  "proof_linkage": "direct",
+  "g2_proxy": false,
+  "tests": {
+    "total": 11,
+    "failed_post_fix": 0,
+    "new_cases": 4,
+    "existing_tests_modified": 0
+  },
+  "ticket_status_transitions": [
+    {
+      "from": "To do",
+      "to": "In progress",
+      "transition": "Take to development"
+    },
+    {
+      "from": "In progress",
+      "to": "In review",
+      "transition": "Go to review"
+    }
+  ],
+  "follow_up_filed": "VCST-6084",
+  "queue_hygiene": [
+    {
+      "ticket": "VCST-5855",
+      "action": "added qa-autofix label"
+    },
+    {
+      "ticket": "VCST-5839",
+      "action": "removed vc-fix label — Gate-0 BAIL, strings already correct at source"
+    }
+  ],
+  "ci": {
+    "conclusion": "success",
+    "checks_passed": [
+      "ci",
+      "swagger-validation",
+      "auto-tests/build-matrix",
+      "auto-tests/auto-autotests (sqlserver, elasticsearch8)",
+      "auto-tests/auto-autotests (mysql, elasticsearch8)",
+      "auto-tests/auto-autotests (postgres, elasticsearch8)",
+      "auto-tests/auto-tests-result",
+      "SonarCloud",
+      "SonarCloud Code Analysis",
+      "license/cla"
+    ],
+    "skipped": [
+      "detect-version-bump",
+      "deploy-cloud"
+    ],
+    "self_corrections": 0
+  },
+  "mergeable": "MERGEABLE",
+  "merge_state_status": "BLOCKED_ON_REQUIRED_REVIEW"
+}

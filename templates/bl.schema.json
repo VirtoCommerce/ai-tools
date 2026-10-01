@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bl.schema.json",
+  "title": "BL 2.0 — one domain's business-logic rules",
+  "description": "One file per domain at .claude/knowledge/oracles/bl/<domain>.yaml. Design: docs/bug-detection-requirements.md §7.2. Converter and generator: scripts/knowledge/bl-yaml.ts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["domain", "rules"],
+  "properties": {
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "prefixes", "agents"],
+      "properties": {
+        "heading": {
+          "description": "The `## Domain N: Name (BL-X)` heading text without the `## `.",
+          "type": "string",
+          "minLength": 1
+        },
+        "prefixes": {
+          "description": "The BL-* id prefixes the heading declares.",
+          "type": "array",
+          "items": { "type": "string", "pattern": "^BL-[A-Z0-9]+$" }
+        },
+        "agents": {
+          "description": "The agents that own this domain's rules. Stored per domain, not per rule (§7.2).",
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "intro": {
+          "description": "The domain's own prose above its first rule.",
+          "type": "string"
+        }
+      }
+    },
+    "rules": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/rule" }
+    }
+  },
+  "definitions": {
+    "humanSourceKind": { "enum": ["doc", "ac", "resolution"] },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "description": "doc, ac and resolution are human sources; code, live and other are not.",
+          "enum": ["doc", "ac", "resolution", "code", "live", "other"]
+        },
+        "ref": { "type": "string", "minLength": 1 }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "rule", "priority", "trust", "source", "check", "violation_signal", "status"],
+      "properties": {
+        "id": {
+          "description": "Never changes and is never reused: suites cite it.",
+          "type": "string",
+          "pattern": "^BL-[A-Z0-9]+-[0-9]+[A-Z]?$"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 },
+        "priority": { "enum": ["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"] },
+        "trust": {
+          "description": "UNREVIEWED exists only during the migration.",
+          "enum": ["DECLARED", "OBSERVED", "INFERRED", "UNREVIEWED"]
+        },
+        "source": { "type": "array", "items": { "$ref": "#/definitions/source" } },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "module": { "type": "string", "minLength": 1 },
+            "code_ref": { "type": "string", "minLength": 1 }
+          }
+        },
+        "check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": {
+            "kind": { "enum": ["executable", "manual", "none"] },
+            "ref": {
+              "description": "executable: the path of the check. manual: the steps.",
+              "type": "string",
+              "minLength": 1
+            },
+            "steps": {
+              "description": "executable only: the manual steps kept for a person or a browser agent verifying by hand.",
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "if": { "properties": { "kind": { "enum": ["executable", "manual"] } } },
+          "then": { "required": ["ref"] }
+        },
+        "violation_signal": { "type": "string", "minLength": 1 },
+        "verified": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["date", "by"],
+          "properties": {
+            "date": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$" },
+            "version": { "type": "string" },
+            "by": { "type": "string", "minLength": 1 }
+          }
+        },
+        "status": { "enum": ["ACTIVE", "SUSPECT", "RETIRED"] },
+        "suspect_reason": { "type": ["string", "null"] },
+        "owner": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "trust": { "const": "DECLARED" } } },
+          "then": {
+            "properties": {
+              "source": {
+                "contains": { "properties": { "kind": { "$ref": "#/definitions/humanSourceKind" } } }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "status": { "const": "SUSPECT" } } },
+          "then": {
+            "required": ["suspect_reason"],
+            "properties": { "suspect_reason": { "type": "string", "minLength": 1 } }
+          }
+        }
+      ]
+    }
+  }
+}

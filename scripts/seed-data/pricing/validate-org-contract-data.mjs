@@ -18,6 +18,7 @@
  *   5. Informational: whether this env's overlay carries the runtime ids and the read-back numbers.
  */
 
+import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

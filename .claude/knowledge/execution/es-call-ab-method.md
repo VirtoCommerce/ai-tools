@@ -14,7 +14,7 @@ Scope: **call counts**, which transfer across deployments. **Not latency** — s
 | AFTER | same file shows the prerelease/fixed version, and the live platform agrees |
 
 Live platform version: `curl -sk <BACK_URL>/ | grep -oE "Version ?= ?'[0-9.]+[^']*'"` — the login page
-carries it. `/health` lies during a restart (`reference_platform_live_version_from_login_page`).
+carries it. `/health` lies during a restart.
 
 ## 2. Drive identical work on both sides
 

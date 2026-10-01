@@ -50,7 +50,7 @@ goes to `qa-backend-expert` via `ci/agents/monitor-triage-agent.md` → `REAL_BU
 CONFIG_GATED | THIRD_PARTY | TRANSIENT` + severity + confidence (ambiguous → NEEDS_REVIEW).
 
 A HIGH-confidence `REAL_BUG` enters the finding list with evidence attached (signature + portal link); it
-gets **no separate `BUG-AI-*` draft** — 5-file's `/qa-bug` owns it.
+gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 
 ### 2. Validate evidence quality
 
@@ -96,8 +96,7 @@ never re-graded at 5-file to move a finding across the line.
 
 ### 6. Dedup — every finding, regardless of source
 
-Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker (per
-`feedback_duplicate_check_across_all_sprints`). A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
+Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
 still needs this tracker-wide check before 5-file can file it.
 
 **`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a

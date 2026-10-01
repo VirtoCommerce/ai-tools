@@ -1,4 +1,4 @@
-# vc-mcp-testing-module
+# ai-tools
 
 Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 
@@ -18,8 +18,8 @@ This repo hosts two things:
 ## Quick Start — Install `vc-fix`
 
 ```
-/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-fix@vc-tools
+/plugin marketplace add VirtoCommerce/ai-tools
+/plugin install vc-fix@ai-tools
 ```
 
 Then, in the plugin install directory (Claude Code shows the path after install), run:
@@ -68,14 +68,14 @@ inventory, self-containment rationale, gate ladder reference).
 ### Install (direct clone)
 
 ```bash
-git clone https://github.com/VirtoCommerce/vc-mcp-testing-module && cd vc-mcp-testing-module
+git clone https://github.com/VirtoCommerce/ai-tools && cd ai-tools
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
 /project-init                   # scaffolds .env.<env> + .env.local, then env:check
 # Create .mcp.json (see below) → restart IDE → type: /qa-env-check
 ```
 
-> Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
+> Prefer a manual clone? `git clone … && cd ai-tools && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
 
 Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
 
@@ -145,7 +145,7 @@ Then in Claude Code: `Navigate to the storefront URL and take a screenshot`. If 
 
 ### How Testing Works
 
-Five pipelines, each with an interactive + headless-CI twin:
+Five pipelines:
 
 1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
 2. **CI regression** — `ci/run-regression.ts` runs CSV suites headless in Docker (`npm run ci:*`).
@@ -153,7 +153,7 @@ Five pipelines, each with an interactive + headless-CI twin:
 4. **Full-cycle** — `ci/run-full-cycle.ts`: sync stale cases → review → regression (`npm run ci:cycle`).
 5. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
-> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, the module-registry cache, heavy run artifacts) are gitignored.
+> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, heavy run artifacts) are gitignored.
 
 ### Commands, Skills & Agents
 
@@ -186,7 +186,7 @@ manifest (the old `.claude-plugin/plugin.json` was deleted). `vc-fix`'s own copi
 `plugins/vc-fix/`.
 
 ```
-vc-mcp-testing-module/
+ai-tools/
 ├── CLAUDE.md             # Claude Code project instructions
 ├── .claude-plugin/       # marketplace.json ONLY (lists only vc-fix; the vc-qa plugin.json was deleted)
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
@@ -201,7 +201,7 @@ vc-mcp-testing-module/
 │   ├── architecture/     #   TIER.md classification
 │   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
-├── ci/                   # vc-qa: CI / full-cycle / auto-fix / monitoring pipelines (tracked)
+├── ci/                   # vc-qa: CI / full-cycle / monitoring pipelines (tracked)
 ├── vc/                   # vc-qa: VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
 ├── regression/suites/    # vc-qa: CSV suites under Frontend/ + Backend/, module-aligned dirs (`npm run suites:lint` prints the totals)
 ├── tests/                # vc-qa: Test cases by sprint/JIRA ticket

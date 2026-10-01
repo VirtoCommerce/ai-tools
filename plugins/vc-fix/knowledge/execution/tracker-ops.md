@@ -4,9 +4,8 @@ Single reference for the interactive bug-lifecycle commands (`/qa-bug`, `/qa-fix
 `/qa-verify-fix`) so none of them hardcode **Jira + GitHub + VirtoCommerce**. The
 deployment's `project-profile.json` (written by `/project-init`) decides which bug tracker
 and which code host every operation talks to. **With no profile ⇒ Jira / GitHub /
-VirtoCommerce — the original VC-internal behaviour, unchanged.** The headless twins
-(`ci/lib/trackers/*`, `ci/lib/vcs/*`) already do this in code; interactive commands must
-apply the same matrix by reading the profile.
+VirtoCommerce — the original VC-internal behaviour, unchanged.** Commands apply the matrix
+by reading the profile.
 
 > Read the profile once at the start of a run: `node -e "console.log(JSON.stringify(require('./scripts/lib/project-profile.mjs')))"`
 > is not exported that way — instead read `project-profile.json` directly (it's gitignored,
@@ -151,7 +150,7 @@ resolve/comment/transition ops and for commit/PR cross-links (Azure: `AB#12345`)
 > format) — a literal `**` / `| … |` wall means the wrong dialect was sent, so fix and re-post.
 Auth (never passwords): Jira via the Atlassian MCP OAuth (or `JIRA_API_TOKEN`+`JIRA_EMAIL`);
 Azure via `ADO_PAT` (Basic, empty user) or an `az login` session (`ADO_AUTH=az-login`) — same
-helpers as `ci/lib/ado-rest.ts`.
+helpers as `skills/qa-fix-routing/ado-rest.ts`.
 
 ### Live transition discovery — the load-bearing rule
 The former hardcoded Jira transition NAMES ("Take to development", "Go to review", "Ready to
@@ -186,9 +185,33 @@ them. Always resolve the *destination status* by role, then map it to the live w
      `qaRoleStatesComplete` is `true` — do not apply the fix-side policy to a QA-side transition without
      checking this flag first.
 
+## 2a. Labels on bugs Claude files
+
+Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+and, for an agent finding, during what.
+In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a valid set.
+
+| Who found it | Labels |
+|---|---|
+| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
+| A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
+
+The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else
+in `additional_fields.labels`; keep any labels already there.
+
+**Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
+screenshot, API response or trace from its own run. If a person described the bug — even when they
+ask Claude to file it, and even when Claude then reproduces it — the label is `reported-by-human`.
+If the origin is unclear, it is `reported-by-human` too. Undercounting agent findings is harmless;
+crediting agents with a person's finding corrupts the metric.
+
+A label that turns out wrong is corrected in Jira by hand. **These labels are VC-internal: apply them only on
+VC's own Jira, never on a client project's tracker.**
+
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 
-After Gate 1 resolves the one repo, read `contributionPlan(routeRepo)` (`ci/lib/repo-router.ts`)
+After Gate 1 resolves the one repo, read `contributionPlan(routeRepo)` (`skills/qa-fix-routing/repo-router.ts`)
 — it returns `{ ownership, host, mode, forkOwner, azure }`. That, not a hardcoded assumption,
 picks how you clone/push/PR:
 
@@ -200,8 +223,7 @@ picks how you clone/push/PR:
 | platform repo, `mode=fork` | fork → clone the fork, branch from `upstream/<base>` | `gh pr create --head <forkOwner>:<branch>` |
 
 `checkoutForFix(repo, key, ws)` already encodes all four — prefer calling it over doing this by
-hand. For opening the PR, the headless `getVcs(plan.host)` picks GitHub vs Azure Repos; interactive
-you run the matching command above.
+hand. For opening the PR, you run the matching command above.
 
 ### Write auth per host
 - **GitHub, PAT host:** all remote git/gh writes as `GH_TOKEN` ← `GITHUB_FIX_BUGS_TOKEN` (`.env.local`);
