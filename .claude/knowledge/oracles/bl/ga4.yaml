@@ -29,6 +29,8 @@ rules:
         ref: storefront/developer-guide/docs/integrations/google-analytics/ga-events.md (docs) — view_item_list, view_item, select_item, view_search_results, add_to_wishlist events and item-field payloads
       - kind: resolution
         ref: VCST-4801 (Done) — GA4 item affiliation showed a placeholder instead of the store name; fixed
+    scope:
+      code_ref: vc-frontend:client-app/modules/google-analytics/utils.ts#productToGtagItem
     check:
       kind: manual
       ref: Load a category/search/product page → inspect `window.dataLayer` for the matching event → `items` is a real array (not a string) with `item_id`, `item_name`, currency and category fields populated per visible product, and no top-level `items_skus` field.
@@ -52,6 +54,8 @@ rules:
         ref: VCST-4381 (Done) — remove_from_cart event lacked the removed product
       - kind: resolution
         ref: VCST-4856 (Done) — add_to_cart reported base price instead of configured total
+    scope:
+      code_ref: vc-frontend:client-app/modules/google-analytics/events.ts#clearCart
     check:
       kind: manual
       ref: Add/update/remove/clear a cart line → inspect the matching dataLayer event → `value` equals the cart's own total/subtotal for that action, `items[]` reflects the affected line(s); for `clear_cart`, the event carries the pre-clear total and contents, not zero/empty.
@@ -73,6 +77,8 @@ rules:
         ref: VCST-4800 (Done) — purchase event not capturable due to redirect off the completion page; fixed
       - kind: resolution
         ref: VCST-4307 (Done) — add_shipping_info value wrongly reflected shipping cost when switching methods
+    scope:
+      code_ref: vc-frontend:client-app/modules/google-analytics/events.ts#purchase
     check:
       kind: manual
       ref: Walk a checkout to completion → each funnel event fires once, in order → `purchase`/`place_order` fire exactly once in total → `transaction_id` is a non-empty identifier (assert non-empty/shape, not a specific order-number match) → `value` equals the order subtotal (compare against the event's own `shipping`/`tax` fields, not against the grand total) → re-paying an existing unpaid order fires no additional `purchase`.
@@ -88,6 +94,8 @@ rules:
         ref: 'vc-frontend `client-app/modules/google-analytics/index.ts` (`init()` — `window.gtag("config", trackId, { currency, user_id: isAuthenticated ? user.id : undefined, language })`).'
       - kind: resolution
         ref: VCST-3897 (Done) — GA event did not carry the correct language; fixed
+    scope:
+      code_ref: vc-frontend:client-app/modules/google-analytics/index.ts#init
     check:
       kind: manual
       ref: Load any page → inspect the `config` entry in `window.dataLayer` → `currency` matches the store's current currency, `language` matches the current locale → sign in → reload → `user_id` is now present and equals the authenticated user's own id → sign out → `user_id` absent again.
