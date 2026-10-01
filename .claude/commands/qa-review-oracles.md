@@ -1,12 +1,12 @@
 ---
-description: "Audit a shared QA oracle against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations. Two axes: bl (business-logic.md invariants) and ecl (e-commerce-edge-cases-library.md sections). Gated by a 3-source evidence bar; bl edits need a human source (M0) and no bl proposals file is written."
+description: "Keep a shared QA oracle true and reconcile test-case citations. bl: sync bl/<slug>.yaml rules from human sources (AC, docs, Jira resolutions) and re-run SUSPECT checks — code + live never edit a rule. ecl: triangulate e-commerce-edge-cases-library.md against docs + live + source and auto-apply confirmed changes."
 argument-hint: "[bl|ecl|all] <scope> [--dry-run]"
 
 ---
 
-# /qa-review-oracles — Oracle Triangulation Review & Auto-Apply
+# /qa-review-oracles — Oracle Review: BL sync, ECL triangulation
 
-Keep the QA pipeline's shared oracles grounded in reality. For each in-scope entry, gather evidence from three independent axes — **docs** (VirtoOZ), **live** (playwright), **source code** (GitHub MCP) — assign a verdict, and **auto-apply confirmed changes**. Then reconcile the test-case citations that point at whatever changed. Fans the triangulation out across **up to 3 parallel `ba-system-analyzer` agents** (one browser slot each, each doing its own live axis), then applies confirmed edits from a **single serialized writer** (`qa-testing-expert` is reserved for a sequential deep-dive on a hard live repro). The methodology lives in the [`/qa-review-oracles` skill](../skills/qa-review-oracles/SKILL.md) — this command is the terminal entry.
+Keep the QA pipeline's shared oracles true, then reconcile the test-case citations that point at whatever changed. **`bl`** syncs each rule in `bl/<slug>.yaml` from a **human source** (ticket AC, a docs page, a Jira bug resolution), marks a rule a run contradicted `SUSPECT` (and files the bug), and resolves `SUSPECT` rules from the Jira decision or a re-run of their check — code + live agreeing never edits a rule ([bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md)). **`ecl`** gathers evidence from three axes — **docs** (VirtoOZ), **live** (playwright), **source code** (GitHub MCP) — assigns a verdict, and **auto-applies confirmed changes**. Fans the evidence gathering out across **up to 3 parallel `ba-system-analyzer` agents** (one browser slot each, each doing its own live axis), then applies confirmed edits from a **single serialized writer** (`qa-testing-expert` is reserved for a sequential deep-dive on a hard live repro). The methodology lives in the [`/qa-review-oracles` skill](../skills/qa-review-oracles/SKILL.md) — this command is the terminal entry.
 
 **Before the live axis, ask what was already observed** — `mcp__kb__kb_ask`, with the coordinate in the question. The base is the banked result of a live check somebody already ran, on a named deployment, and it can hold the very divergence this triangulation exists to find. It does **not** substitute for the live axis: a matching entry is `kb_confirm`ed after you see it yourself, a contradicting one is `kb_dispute`d, and neither is a second capture ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
 
@@ -15,14 +15,16 @@ Keep the QA pipeline's shared oracles grounded in reality. For each in-scope ent
 ## Usage
 ```
 /qa-review-oracles all                      # Both oracles (large — batch internally)
-/qa-review-oracles bl domain cart           # BL-CART-* invariants
-/qa-review-oracles bl BL-CART-010           # A single invariant
-/qa-review-oracles bl diff                  # BLs whose Source anchor changed / promoted since last audit
+/qa-review-oracles bl domain cart           # BL-CART-* rules
+/qa-review-oracles bl BL-CART-010           # A single rule
+/qa-review-oracles bl suspect               # Every SUSPECT rule: resolve from Jira, re-run checks
+/qa-review-oracles bl inferred              # INFERRED rules: look for a human source
+/qa-review-oracles bl diff                  # Rules whose tickets got a resolution or whose code_ref changed
 /qa-review-oracles ecl all                  # Every ECL section
 /qa-review-oracles ecl chapter 14           # One chapter (§14.x — VC-specific patterns)
 /qa-review-oracles ecl ECL-13.3             # A single section
 /qa-review-oracles ecl diff                 # Sections touched since the last audit
-/qa-review-oracles bl domain cart --dry-run # Triangulate + verdict, write NOTHING
+/qa-review-oracles bl domain cart --dry-run # Compute operations, write NOTHING
 ```
 
 ---
@@ -31,19 +33,19 @@ Keep the QA pipeline's shared oracles grounded in reality. For each in-scope ent
 
 | Axis | Oracle | Deterministic core | Suite citation column | Criteria file |
 |---|---|---|---|---|
-| **`bl`** | `.claude/knowledge/oracles/business-logic.md` | `bl:audit:collect` / `bl:lint` | `Business_Rule` | [bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md) |
+| **`bl`** | `.claude/knowledge/oracles/bl/<slug>.yaml` (rendered to `business-logic.md` — never edit the md) | `bl:audit:collect` / `bl:lint` / `bl:convert:check` | `Business_Rule` | [bl-audit-criteria.md](../skills/qa-review-oracles/bl-audit-criteria.md) |
 | **`ecl`** | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | `ecl:audit:collect` / `ecl:lint` | `Edge_Case_Refs` | [ecl-audit-criteria.md](../skills/qa-review-oracles/ecl-audit-criteria.md) |
 
 Omitting the axis means `all` (run `bl` then `ecl`; they touch different files, so they do not race — but do not interleave their single-writer applies).
 
-## Pipeline: Collect → Triangulate → Verdict → Apply → Reconcile → Gate → Report
+## Pipeline: Collect → Evidence → Verdict/Operation → Apply → Reconcile → Gate → Report
 
 ### Step 1 — Parse axis + scope
 
-- **`bl`**: `all` · `domain <name>` (`cart` → `BL-CART`, `checkout` → `BL-CHK`, `b2b` → `BL-B2B`, `pricing` → `BL-PRICE`, …) · `BL-<ID>` · `diff` (Source anchor changed on GitHub, or a recent `Amended:`/`Promoted:` stamp with no audit trail).
+- **`bl`**: `all` · `domain <name>` (a `bl:extract --list` token) · `BL-<ID>` · `suspect` (every `status: SUSPECT` rule) · `inferred` (every `trust: INFERRED` rule) · `diff` (a ticket in a rule's `source`/`suspect_reason` got a resolution, or its `scope.code_ref` changed since `verified`).
 - **`ecl`**: `all` · `chapter <n>` (§`<n>`.x) · `ECL-<n>.<m>` · `diff` (sections touched since the last audit).
 
-`--dry-run` computes verdicts + the intended diff but writes nothing — no oracle edit, no report, no proposals.
+`--dry-run` computes verdicts/operations + the intended diff but writes nothing — no oracle edit, no report, no proposals.
 
 ### Step 2 — Collect the deterministic inventory
 
@@ -65,18 +67,20 @@ everything in it still has to clear the evidence bar.
 
 > **A dangling citation is a MISSING-or-REMAP candidate, and the cluster size decides which.** Many cases reaching for the same absent id usually means the *oracle* is missing content the authors expected — **ADD** at that exact id (which retroactively makes every existing citation true). A handful whose subject is already covered elsewhere is a mis-citation — **REMAP**, and hand the CSV write to `/qa-review-tests --fix`. Never invent an entry purely to turn the gate green.
 
-### Step 3 — Triangulate in parallel (fan-out), then apply single-writer (fan-in)
+### Step 3 — Gather evidence in parallel (fan-out), then apply single-writer (fan-in)
 
-The triangulation is read-only and per-entry, so **run it in parallel** — but the apply is a shared-file write, so it is **serialized to a single writer**.
+Evidence gathering is read-only and per-entry, so **run it in parallel** — but the apply is a shared-file write, so it is **serialized to a single writer**.
 
 **3a — Fan-out (parallel, read-only):** split the in-scope entries into disjoint batches (by domain/chapter, then chunk) and dispatch **up to 3 `ba-system-analyzer` agents concurrently** — one Agent-tool call per batch, all in a single message. This matches the 3-slot browser pool ([agents.md](../rules/agents.md): batch browser work in groups of 3). Each parallel agent:
 - gets its **own isolated browser slot** — distinct servers across the batch (`playwright-firefox` / `playwright-chrome` / `playwright-edge`); never share a session;
 - uses a **distinct test/org user** if the live axis needs auth (a shared org cart contaminates);
-- gathers all three axes (docs `/vc-docs` + source GitHub MCP — no browser; live observation on its assigned slot), assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE), and **returns the verdict + evidence tuple + the proposed edit** — it does **NOT** write the oracle itself.
+- **BL:** reads the human sources for each record (Jira AC and resolutions for the tickets in `source`/`suspect_reason`, the docs), re-runs its `check` on its slot, and returns **one operation** (SYNC / SYNC-UPDATE / NEW / MARK-SUSPECT / RESOLVE / RE-RUN / RETIRE-proposed / UNCHANGED, bl-audit-criteria §1) + the proposed YAML change;
+- **ECL:** gathers all three axes (docs `/vc-docs` + source GitHub MCP — no browser; live observation on its assigned slot) and assigns a verdict (CONFIRMED / DRIFT / MISSING / DUPLICATE / CONTRADICTORY / UNGROUNDED / STALE-RETIRE) with its evidence tuple and proposed edit;
+- it does **NOT** write the oracle itself.
 
-**3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. Auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert so parallel-discovered entries can't collide). Unconfirmed → the audit report (ECL: also its proposals file). **BL — M0 freeze:** DRIFT/MISSING need a human source (docs, AC, Jira resolution); code + live agreeing is not enough — `.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze.
+**3b — Fan-in (single writer, serialized):** the orchestrator collects all batches' verdicts, then applies edits **sequentially, one entry at a time, in one process** — concurrent writes to the same file race and corrupt it. **BL:** edit the YAML record (bl-audit-criteria §3 — one record per edit, NEW reads the max id fresh, no `Amended:` stamps), then `npm run bl:render` + `npm run bl:convert:check`; RETIRE is only proposed. **ECL:** auto-apply CONFIRMED/DRIFT/MISSING/DUPLICATE (body-only, `Amended:` + `Source:` stamp, env-agnostic; MISSING reads the current max id fresh before each insert). Unconfirmed → the audit report (ECL: also its proposals file).
 
-**3c — The value gate (growth only): valuable for the BUSINESS *and* for the PRODUCT.** A confirmed verdict is necessary, not sufficient. A **MISSING** entry — the only verdict that makes the oracle bigger — must clear both axes. Re-score it with the severity tag the triangulation just assigned (ECL: with the `BL-*` invariant the pattern endangers linked in its row) and read the gate verbatim:
+**3c — The value gate (growth only): valuable for the BUSINESS *and* for the PRODUCT.** Truth is necessary, not sufficient. A **new** entry (ECL MISSING, BL NEW) — the only change that makes an oracle bigger — must clear both axes. Re-score it with the severity tag the triangulation just assigned (ECL: with the `BL-*` invariant the pattern endangers linked in its row) and read the gate verbatim:
 ```
 npm run oracles:rank -- --explain=BL-L10N-001 --severity=P1-ux
 ```
@@ -88,7 +92,7 @@ npm run oracles:rank -- --explain=BL-L10N-001 --severity=P1-ux
 | `low` — `P2-ux` | **never** — demand cannot buy a cosmetic rule into a file whose purpose is judging PASS/FAIL | `low` |
 | `unknown` — no severity tag (BL) / no linked invariant (ECL) | **never** — declaring the cost is the price of entry | `undeclared` |
 
-`APPLY` ⇒ insert. `HOLD` ⇒ do not write it; record it in the audit report's **Held** section (id, both axes, citing cases, which half is missing). `EXCLUDED` ⇒ never promote — name the redirect and move the citations at Step 4. A **correction to an entry that already exists** (CONFIRMED / DRIFT / DUPLICATE) applies whatever its value: holding a known-false rule back is strictly worse than carrying a low-value true one.
+`APPLY` ⇒ insert. `HOLD` ⇒ do not write it; record it in the audit report's **Held** section (id, both axes, citing cases, which half is missing). `EXCLUDED` ⇒ never promote — name the redirect and move the citations at Step 4. A **correction to an entry that already exists** (ECL CONFIRMED / DRIFT / DUPLICATE; BL SYNC / SYNC-UPDATE / MARK-SUSPECT / RESOLVE) applies whatever its value: holding a known-false rule back is strictly worse than carrying a low-value true one.
 
 Full rules: [SKILL.md](../skills/qa-review-oracles/SKILL.md) + the axis's criteria file.
 
@@ -99,13 +103,14 @@ Full rules: [SKILL.md](../skills/qa-review-oracles/SKILL.md) + the axis's criter
 
 ### Step 5 — Re-run the gate, then report
 
-Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
+Re-run the axis's gates (`npm run bl:convert:check` + `npm run bl:lint` / `npm run ecl:lint`) — **it is the acceptance check for this run's own edits**; a run that raises the High count has broken something. Then write `reports/knowledge/BL-AUDIT-<date>.md` or `ECL-AUDIT-<date>.md` (verdict or operation table with a **Value** column — `business · product → label`, from `oracles:rank` — + Applied + **Held** (confirmed but not valuable enough, with which axis is missing) + **Excluded** (non-invariant class + redirect) + Not-applied + citation reconciliation + the gate's before/after counts), per [.claude/rules/reports.md](../rules/reports.md).
 
 ---
 
 ## Rules
 
-- **Auto-apply is gated by a 3-source evidence bar, never by silence.** A change lands only as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing docs + source + live evidence. Missing/conflicting applicable axis ⇒ not confirmed ⇒ not applied.
+- **BL: only a human source changes a rule.** AC, docs or a Jira resolution; code + live agreeing is one observation, never a source. A run that contradicts a rule makes it `SUSPECT` and files a bug — it never rewrites the rule. Behaviour no rule covers goes to the `kb`.
+- **ECL: auto-apply is gated by a 3-source evidence bar, never by silence.** A change lands only as CONFIRMED/DRIFT/MISSING/DUPLICATE with concrete, agreeing docs + source + live evidence.
 - **Truth and value are two gates, in that order.** Evidence decides whether an entry is real; value (`scripts/knowledge/oracle-significance.ts`, `npm run oracles:rank`) decides whether a real one is worth carrying — on **two axes it must satisfy together**, business and product. It never promotes an unconfirmed entry and never blocks a correction to an existing one — it bounds GROWTH only. **A `low` entry is not a delete list**: low value is not positive evidence the entry is dead.
 - **No entry enters an oracle without a declared business value** — a severity tag (BL) or the `BL-*` invariant the pattern endangers (ECL). An entry nobody can price is one no downstream skill can weigh.
 - **The Value column is derived at decision time, never stored in the oracle.** Product value moves with every suite edit, so a transcribed number would be wrong by the next commit and wrong silently (`.claude/rules/test-data.md` §GOLDEN RULE). It belongs in the audit report (and an ECL proposals file) — snapshots of one decision at one date.
@@ -115,8 +120,8 @@ Re-run the axis's lint (`npm run bl:lint` / `npm run ecl:lint`) — **it is the 
 - **Body-only edits.** Never rewrite a meta table as a side effect; ECL's Appendix D is updated deliberately, as its own edit.
 - **Env- and data-agnostic** entries — no env names/URLs/slugs/SKUs/prices.
 - **Never edit a CSV from this command** — citation remaps go through `/qa-review-tests --fix`.
-- **Retiring an entry is never auto-applied.**
+- **Retiring an entry is never auto-applied** (BL `RETIRED` needs the user's confirmation).
 - **REAL-USER rule** on the live axis — no `browser_evaluate`/`run_code_unsafe` bypass.
-- **Parallel fan-out, single-writer fan-in.** Up to 3 `ba-system-analyzer` agents concurrently (disjoint batches, one isolated browser slot + distinct test user each) for the read-only triangulation; then apply from **one serialized writer** (this command). Max 3 concurrent browser agents ([agents.md](../rules/agents.md)).
+- **Parallel fan-out, single-writer fan-in.** Up to 3 `ba-system-analyzer` agents concurrently (disjoint batches, one isolated browser slot + distinct test user each) for the read-only evidence gathering; then apply from **one serialized writer** (this command). Max 3 concurrent browser agents ([agents.md](../rules/agents.md)).
 - `--dry-run` writes nothing — use it to preview a domain or chapter before applying.
 - **The lints prove a citation EXISTS; they cannot prove it is RIGHT.** A ref resolving to a real-but-wrong entry passes every gate — that is `/qa-review-tests` **Dimension 6**'s judgment call. Never read a green lint as evidence the citations are correct.

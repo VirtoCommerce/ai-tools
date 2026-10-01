@@ -3,9 +3,9 @@
 Reference for **Dimension 11** of `/qa-review-tests` (the `--triangulate` flag). The skill's
 SKILL.md holds the flow; this file holds the judgment rules the triangulation runs against.
 
-Direct sibling of `.claude/skills/qa-review-oracles/bl-audit-criteria.md` and
-`ecl-audit-criteria.md` — same three axes, same evidence bar, same waiver logic. The difference is
-the **subject**: `/qa-review-oracles` triangulates an entry in an *oracle* (a `BL-*` invariant or an
+Direct sibling of `.claude/skills/qa-review-oracles/ecl-audit-criteria.md` — same three axes, same
+evidence bar, same waiver logic (the BL axis no longer triangulates: `bl-audit-criteria.md`). The
+difference is the **subject**: `/qa-review-oracles ecl` triangulates an entry in an *oracle* (an
 `ECL-<n>.<m>` section); this triangulates **an assertion in a regression test case**. That is why
 Dimension 11 was deliberately NOT folded into the merged oracles skill: its write target is a CSV,
 not an oracle, and the two write disciplines are opposites (this one edits suites and never touches
@@ -47,7 +47,7 @@ Neither is confirmed; both are reported as proposals and **never** write to the 
 ### 1a. `docs: N/A` allowance — behavior no documentation can cover
 
 Test cases assert far more undocumented behavior than BL invariants do, so this waiver carries more
-weight here than in `/qa-review-bl`. Three classes can **never** satisfy the Docs axis:
+weight here than in `/qa-review-oracles ecl`. Three classes can **never** satisfy the Docs axis:
 
 1. **Implementation / UX mechanics** — rounding, decimal-money arithmetic, GraphQL HTTP status codes,
    coupon-slot UX, quantity-reject-vs-auto-cap, facet-render mechanics, infinite-scroll batching,
