@@ -21,24 +21,32 @@ import { resolve } from "node:path";
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 const LEDGER = resolve(ROOT, ".tracker-comments.json");
 
+// Every Atlassian server id: a claude.ai connector registers as mcp__<uuid>__…, and
+// addOrEditJiraIssueComment / addCommentToJiraIssue{commentId} EDIT (issue #360).
+const TOOL = /^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$/;
+// Same default as scripts/tracker/round-guard.mjs ROUND_HOURS_DEFAULT — a plugin hook cannot import it.
+const ROUND_HOURS = Number(process.env.TRACKER_ROUND_HOURS) > 0 ? Number(process.env.TRACKER_ROUND_HOURS) : 12;
+const isStale = (iso) => { const t = Date.parse(iso ?? ""); return Number.isFinite(t) && (Date.now() - t) / 3_600_000 >= ROUND_HOURS; };
+
 /** The MCP result may arrive as an object or as a JSON string. */
 function commentIdFrom(response) {
   if (!response) return null;
   let r = response;
   if (typeof r === "string") { try { r = JSON.parse(r); } catch { return null; } }
-  if (r?.id) return String(r.id);
+  if (r?.id ?? r?.commentId) return String(r.id ?? r.commentId);
   // some harnesses wrap the payload in content[].text
   const text = Array.isArray(r?.content) ? r.content.map(c => c?.text).filter(Boolean).join("") : null;
-  if (text) { try { return String(JSON.parse(text).id ?? "") || null; } catch { return null; } }
+  if (text) { try { const p = JSON.parse(text); return String(p.id ?? p.commentId ?? "") || null; } catch { return null; } }
   return null;
 }
 
 try {
   const event = JSON.parse(readFileSync(0, "utf8"));
-  if ((event.tool_name ?? "") !== "mcp__atlassian__addCommentToJiraIssue") process.exit(0);
+  if (!TOOL.test(event.tool_name ?? "")) process.exit(0);
 
   const ticket = event.tool_input?.issueIdOrKey;
   if (!ticket) process.exit(0);
+  if (event.tool_input?.commentId) process.exit(0); // an edit is not a new comment
 
   const id = commentIdFrom(event.tool_response ?? event.tool_result);
   if (!id) process.exit(0);
@@ -48,8 +56,9 @@ try {
   let ledger = {};
   try { ledger = JSON.parse(readFileSync(LEDGER, "utf8")); } catch { /* first write */ }
 
-  // keep the FIRST comment of a run — that is the one everything else amends
-  if (ledger[ticket]?.run_id === run) process.exit(0);
+  // keep the FIRST comment of a round — that is the one everything else amends. A stale
+  // entry is a previous round, so the guard let this post through and it replaces the entry.
+  if (ledger[ticket]?.run_id === run && !isStale(ledger[ticket]?.posted_at)) process.exit(0);
 
   ledger[ticket] = { comment_id: id, run_id: run, posted_at: new Date().toISOString(), via: "mcp" };
   writeFileSync(LEDGER, JSON.stringify(ledger, null, 2) + "\n");
