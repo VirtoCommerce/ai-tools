@@ -1568,3 +1568,36 @@ The probe: GetOrganizations is failed at the network layer (HTTP 500, or a 200 c
 [NETWORK] no request other than the intercepted operation is affected","the whole mobile navigation panel or the hamburger becomes unresponsive when the org-list query fails (an unscoped crash), an infinite spinner in the 'My organizations' panel, a partially-populated or stale option list rendered in place of an explicit degraded state, an uncaught exception in the console, the panel does not recover to the healthy baseline after the interception is removed, the fault leaks into GetMe or another unrelated /graphql operation on the same page","Remove every network interception installed by Steps and confirm the surface is healthy again before finishing.
 Restore the viewport to 1280x900.
 Sign out via the storefront account-menu popup (click the user name in the top header -> Logout).","VCST-5317 · Archetype:FALLBACK · Technique:EG · Probe:UIP-NET · derived gap-AC-5 · cross-ref B2C-ORG-055 (desktop leg of this same probe, not repeated here)",Draft
+B2C-ORG-071,"Org Switcher — Typing In The Search Input Narrows The Organization List While Typing, Without Enter Or A Click, To Exactly The Matching Organizations (VCST-4815)",B2C Features > Organization > Switcher Search,Medium,,,"Read-only: nothing is switched, locked or edited. Frontend lane. The search input (data-test-id=""organizations-search"") is threshold-gated and does not render on a 2-org account, so the account is MULTI_ORG_USER ({{MULTI_ORG_USER_EMAIL}} / {{MULTI_ORG_USER_PASSWORD}}, 11 organizations). If the input is absent the case is BLOCKED:PRECONDITION_UNMET, never PASS.
+Breaking condition: onSearchInput issued the search only when the input was EMPTY, so typing 'cof' left all organizations visible until the user pressed Enter or clicked the search icon (reproduced with 30 organizations).
+The typed token is DERIVED from the account's own organization names: take the first 3 characters of one name that are NOT shared by every name, so the matching set is a strict, non-empty subset.",front_url={{FRONT_URL}}; user={{MULTI_ORG_USER_EMAIL}}; password={{MULTI_ORG_USER_PASSWORD}},"[PRE:CLEAR_SESSION]
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] fill 'Email': {{MULTI_ORG_USER_EMAIL}}
+[ACT] fill 'Password': {{MULTI_ORG_USER_PASSWORD}}
+[ACT] click 'Sign in'
+[WAIT] the authenticated storefront loads
+[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/account/dashboard
+[WAIT] the dashboard renders
+[ACT] click the account button in the top header (data-test-id=""account-button"")
+[WAIT] the Account-menu popover is open and listbox 'Organizations' is rendered
+[ASSERT] the element data-test-id=""organizations-search"" is present — if it is absent stop and report BLOCKED
+[CAPTURE] every option name in listbox 'Organizations' as NAMES_ALL
+[CAPTURE] the number of those options as N_ALL
+[CAPTURE] the 3-character token T derived as described in Preconditions
+[CAPTURE] EXPECTED = the names in NAMES_ALL that contain T, case-insensitive
+[ACT] focus 'organizations-search' (data-test-id=""organizations-search"")
+[ACT] type T into 'organizations-search' one character at a time
+[WAIT] 1 second, pressing no Enter key and clicking no search icon
+[WAIT] up to 3 seconds for the list to settle
+[CAPTURE] the visible option names as NAMES_TYPED
+[ACT] clear 'organizations-search' with select-all followed by Delete
+[WAIT] the list settles
+[CAPTURE] the visible option count as N_CLEARED
+[ACT] type T into 'organizations-search'
+[KEY] press [Enter]
+[WAIT] the list settles
+[CAPTURE] the visible option names as NAMES_ENTER","[COUNT] the number of options after typing T without Enter is smaller than N_ALL and at least 1 {SPEC} (VCST-4815)
+[REL] NAMES_TYPED equals EXPECTED as a set — every visible organization contains T and none containing T is missing {SPEC} (VCST-4815)
+[REL] NAMES_ENTER equals NAMES_TYPED — pressing Enter changes nothing the typing had not already done {SPEC} (VCST-4815)
+[COUNT] N_CLEARED equals N_ALL after the input is emptied {SPEC} (VCST-4815)","[CONSOLE] no error while typing; [NETWORK] at most one organizations request per settled keystroke burst (debounced), no 4xx/5xx",all organizations still listed after typing without Enter; the list changes only after Enter or a click; the list not restored after clearing,"Clear the search input; close the account menu; sign out through the account-menu popup (data-test-id=""sign-out-button"")",VCST-4815 · Archetype:SILENT · Technique:EP · Catches:VCST-4815 · top-header-organizations.vue onSearchInput; related B2C-ORG-042 B2C-ORG-056,Draft

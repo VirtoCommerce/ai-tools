@@ -676,3 +676,58 @@ Products in cart; pickup locations exceed one page (>@td(BOPIS.pageSize)); VCST-
 [STATE] shipping cost = $0.00 in the cart-page order summary
 [DOM] order confirmation pickup-detail element is visible and matches LOAD_MORE_LOCATION exactly (no fallback to a first-page location or blank field), evaluated only when an order is actually placed and paid; if the order is not placed in a given run, the cart-page order-summary assertion above is the terminal check","[API] xAPI order shipments[].fulfillmentCenterId / pickupLocation resolves to the LOAD_MORE_LOCATION id, not a first-page location
 [CONSOLE] no JS errors during the flow","Checkout/confirmation shows a different (e.g. first-page) location than the one actually selected; pickup location blank at checkout despite being set in cart; shipping cost non-zero","Cancel order via admin","VCST-4646; VCST-4707; Coverage Gap Analysis; Load-More pagination-contract candidate BL-BOPIS-009 — future /qa-test-lifecycle --update-bl","Draft"
+BOPIS-110,"BOPIS Cart Modal — Clearing The Search With The X Button Restores The Full Location List And All Map Markers, Not The Filtered Or Empty One (VCST-4578)",BOPIS > Cart > Pickup Location Search > [JOURNEY] Search Then Clear,Medium,,,"[PRE:SIGNIN_AS:USER_DEFAULT]. Cart holds one BOPIS-eligible item (@td(BOPIS.testSku)). Breaking condition (state after a reset gesture): the X button emptied the input text but left the filtered or empty result list in place; only the separate 'Reset search' button restored it.
+Divergent data: the search term (@td(BOPIS_MALL.name)) matches fewer locations than the stand holds in total, so 'restored' and 'still filtered' have different counts.",front_url={{FRONT_URL}}; sku=@td(BOPIS.testSku); term=@td(BOPIS_MALL.name),"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[NAV] the product page of @td(BOPIS.testSku)
+[WAIT] the product page renders
+[ACT] click 'Add to cart'
+[WAIT] the cart badge updates
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ACT] select the 'Pickup' delivery option
+[WAIT] the pickup section renders
+[ACT] click 'Select pickup location'
+[WAIT] the pickup modal opens
+[CAPTURE] the visible location count as COUNT_ALL
+[CAPTURE] the map marker count as MARKERS_ALL
+[ACT] fill 'Search': @td(BOPIS_MALL.name)
+[KEY] press [Enter]
+[WAIT] the list updates
+[CAPTURE] the visible location count as COUNT_FILTERED
+[ACT] click the clear 'X' in the search field
+[WAIT] the list settles
+[CAPTURE] the search field value as VALUE_AFTER_CLEAR
+[CAPTURE] the visible location count as COUNT_AFTER_CLEAR
+[CAPTURE] the map marker count as MARKERS_AFTER_CLEAR
+[CAPTURE] whether a 'Reset search' button is visible","[COUNT] COUNT_FILTERED is at least 1 and smaller than COUNT_ALL {SPEC} (VCST-4578)
+[STATE] the search field is empty after the X click {SPEC} (VCST-4578)
+[COUNT] COUNT_AFTER_CLEAR equals COUNT_ALL {SPEC} (VCST-4578)
+[COUNT] MARKERS_AFTER_CLEAR equals MARKERS_ALL {SPEC} (VCST-4578)
+[STATE] no 'Reset search' button was needed — it is not offered after the X click {SPEC} (VCST-4578)",[NETWORK] the pickup-locations request issued by the X click carries no keyword; no 4xx/5xx on /graphql,COUNT_AFTER_CLEAR equals COUNT_FILTERED or 0; markers not restored; a 'Reset search' button appears after the clear,[PRE:RESET_CART]; close the modal,VCST-4578 · Archetype:STALE · Technique:ST · Catches:VCST-4578 · BOPIS pickup modal; related BOPIS-064,Draft
+BOPIS-111,"BOPIS Cart Modal — Every Search Input Renders At 16px Or Larger On A 375px Viewport, So iOS Safari Does Not Auto-Zoom On Focus (VCST-4579)",BOPIS > Cart > Pickup Location Search > Mobile,Low,,,"[PRE:SIGNIN_AS:USER_DEFAULT]. Mobile viewport 375x667. Breaking condition (responsive re-mount / threshold): the main search input and the Country, State/Province and City filter search inputs were 14px; iOS Safari zooms on focus below 16px.
+The real iOS zoom cannot be reproduced on Chromium, so the case asserts its measurable cause — the computed font-size — at the 16px boundary. A computed size of exactly 16px passes; 14px fails.",front_url={{FRONT_URL}}; sku=@td(BOPIS.testSku); min_font_px=16,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+[VIEWPORT] 375x667
+[NAV] the product page of @td(BOPIS.testSku)
+[WAIT] the product page renders
+[ACT] click 'Add to cart'
+[WAIT] the cart badge updates
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[ACT] select the 'Pickup' delivery option
+[WAIT] the pickup section renders
+[ACT] click 'Select pickup location'
+[WAIT] the pickup modal opens
+[CAPTURE] getComputedStyle(fontSize) of the main search input as FS_MAIN
+[ACT] open the 'Country' filter
+[WAIT] its dropdown renders
+[CAPTURE] getComputedStyle(fontSize) of its search input as FS_COUNTRY, or absent if it has none
+[ACT] open the 'State/Province' filter
+[WAIT] its dropdown renders
+[CAPTURE] getComputedStyle(fontSize) of its search input as FS_STATE, or absent if it has none
+[ACT] open the 'City' filter
+[WAIT] its dropdown renders
+[CAPTURE] getComputedStyle(fontSize) of its search input as FS_CITY, or absent if it has none","[REL] FS_MAIN is greater than or equal to 16px {SPEC} (VCST-4579)
+[REL] each recorded filter-search font-size (FS_COUNTRY, FS_STATE, FS_CITY) is greater than or equal to 16px {SPEC} (VCST-4579)
+[COUNT] at least the main input and one filter input were measured — a run that measured only one element is INCONCLUSIVE {SPEC} (VCST-4579)","[CONSOLE] no error; the same inputs at 1280x900 keep their desktop font-size (the rule is a mobile breakpoint, not a global change)",any measured search input below 16px at 375px width; the main search input at 14px; a filter search input at 14px while the main one is 16px,[PRE:RESET_CART]; restore the viewport to 1280x900,VCST-4579 · Archetype:RENDER · Technique:BVA · Catches:VCST-4579 · BOPIS pickup modal; .vc-input__input,Draft

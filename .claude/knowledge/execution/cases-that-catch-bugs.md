@@ -35,6 +35,15 @@ decided by **where the expectation came from** — its provenance tag — never 
 | `{HYPOTHESIS}` — an agent's own guess, no human source behind it | may be corrected to what was observed and re-tagged `{OBSERVED}`, **with the correction recorded** in `References` (`Corrected: <date> hypothesis → observed`) — or dropped | silently overwrite |
 | `{OBSERVED}` only | a **change in behaviour**: re-observe, then report it; an unexplained change is a regression signal | silently update |
 
+Write the tag with its source in parentheses — `{SPEC} (VCST-1234)`, `{BL} (BL-SRCH-006)`: the GraphQL
+runner's evaluator strips `{TAG}` plus a parenthesised or dashed tail from an operand, and a bare
+`{SPEC} VCST-1234` stays inside the compared value.
+
+**A Cancelled, Won't-fix or "By design" ticket is not a resolution source.** Nothing shipped, so it cannot
+state the expected behaviour. A case may still target that bug class when another human source states the
+expectation (a `DECLARED` rule, AC, docs); cite the ticket in `Catches:` for traceability and take the
+provenance from that other source.
+
 Code and the live stand agreeing is **not** a source for an expectation: any bug is present in both, so the
 two always agree (BL 2.0 §7.3a, the oracle problem). Only AC, docs or a bug resolution can make an
 observed behaviour the expected one.
@@ -48,6 +57,9 @@ observed behaviour the expected one.
 - **`Catches:<ISSUE-KEY>`** — the closed bug this case would have caught. Its expectation is the fixed
   behaviour, so the case **must fail on the pre-fix behaviour**. This is also what makes the bug count as
   traced in `npm run gaps`.
+- Several bugs with one breaking condition may share one case: repeat the stamp, `Catches:VCST-1 Catches:VCST-2`.
+- When no archetype token fits the shape, use the nearest token and say why in the row, and raise the gap in
+  the run report. The vocabulary is extended deliberately in `vc-bug-catalog.md`, never per case.
 - **`Catches:mutant:<ID>`** — the response mutant (`scripts/detection/mutants.mjs`) the case is built to
   kill.
 
@@ -100,3 +112,11 @@ reason** at least once:
 
 A case that cannot be made to fail is either re-designed or re-labelled with an honest purpose; it is not
 promoted as `FUNC`.
+
+- **Fails only under its breaking condition.** Many real bugs need a state to appear (an index holding stale
+  documents, a race actually provoked, a scale the stand has). The case states that condition in its
+  Preconditions and, when the run could not create it, ends `BLOCKED:<CONDITION_NOT_MET>` — never `PASS`,
+  because a pass without the condition proves nothing.
+- **No route to a stand, no proof yet.** A case authored where nothing can run stays `Draft`, with the
+  missing proof stated in the row. It is promoted only after §6 is met on a stand; `Draft` without proof is a
+  normal waiting state, not a pass.
