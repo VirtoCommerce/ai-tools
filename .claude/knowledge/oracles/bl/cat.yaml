@@ -68,7 +68,8 @@ rules:
       kind: manual
       ref: Hide category in Admin → storefront menu no longer shows it → products still accessible via search or direct URL → subcategories also hidden from nav. Unhide → category and subcategories return to nav.
     violation_signal: Hidden category still in navigation menu; products in hidden category inaccessible via direct URL; subcategories still visible when parent is hidden.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check"
   - id: BL-CAT-005
     title: Product requires virtual catalog assignment for storefront
     rule: A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -148,7 +149,8 @@ rules:
       kind: manual
       ref: Create category → appears in tree + `GET /api/catalog/categories`. Edit name → persists. Delete-confirm removes it + subcategories (`GET …/{subId}` → 404) + descriptions; Delete-cancel leaves it intact.
     violation_signal: Required-field validation bypassed; category not in tree after save; subcategories/descriptions orphaned after delete; category deleted despite Cancel.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Repositories/CatalogRepositoryImpl.cs#RemoveCategoriesInternalAsync (:628-654) selects every item whose CategoryId is in the removed categories and calls RemoveItemsInternalAsync, so products are deleted with the category; this contradicts the clause 'unassigns (does not orphan) products'. No human source states the rule (VP-2628 only fixes a 500 in that product-removal path), re-run the check"
   - id: BL-CAT-010
     title: Catalog link-permission enforcement (RBAC)
     rule: Linking a whole **category** into another category/catalog requires the `catalog:categories:link` permission; linking a **product/variation** requires `catalog:products:link`. Enforcement is **server-side** on `POST /api/catalog/listentrylinks` (403 without the permission) **and** reflected in the Admin mapping picker (category rows non-selectable without `categories:link`; product/item rows follow `products:link`). With full permissions both remain selectable (backward-compatible default).

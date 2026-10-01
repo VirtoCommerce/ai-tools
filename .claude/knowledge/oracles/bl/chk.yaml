@@ -40,7 +40,8 @@ rules:
       kind: manual
       ref: Click "Place Order" → immediately click again → only 1 order created. Check Admin → Orders → verify single order. Check button state (disabled/loading after first click).
     violation_signal: Two orders with same items created; button remains clickable during processing; no loading indicator.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check"
   - id: BL-CHK-003
     title: Address validation by country
     rule: Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.

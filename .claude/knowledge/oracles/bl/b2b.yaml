@@ -165,7 +165,7 @@ rules:
     violation_signal: After registration the global `ApplicationUser.Roles` is non-empty with platform roles; or no membership/org role is created for the new organization.
     status: ACTIVE
   - id: BL-B2B-011
-    title: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate
+    title: Org role whitelist scopes assignable roles; changeOrganizationContactRole rejects roles outside it
     rule: |-
       Two dictionary platform settings — `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`
         (`ValueType=ShortText`, `IsDictionary=true`) — each hold a SELECTED subset of the live platform roles list
@@ -205,11 +205,7 @@ rules:
         edits the **GLOBAL** scope only; the store-scope override is API-only, and VirtoOZ's published guides (Platform
         Developer Guide's settings/v2 coverage, Platform User Guide's whitelist article) name no such override or its
         fallback — a released, in-use mechanism the docs do not cover (docs axis finding, not a defect in the mechanism
-        itself). **Server-side enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story
-        EPIC-5239-03): as of 2026-07, `PUT /api/organizations` and `changeOrganizationContactRole` accept a
-        non-whitelisted `roleId` with no rejection (backend finding F1 — zero whitelist references in
-        `profile-experience-api#137` or the REST organizations endpoint) — the whitelist today constrains only the Admin
-        UI picker's *offered* options, not what the API will *accept*.
+        itself). **Server-side enforcement is implemented** (VCST-5450 AC #4, Done: "Related XAPI should accept only these roles; other roles should be rejected"): `changeOrganizationContactRole` rejects a role outside the whitelist and accepts a whitelisted one. No source states enforcement on `PUT /api/organizations`.
     priority: P1-data
     trust: DECLARED
     source:
@@ -219,6 +215,8 @@ rules:
         ref: platform/user-guide/docs/contacts/settings.md (published) — role whitelists in Customer settings control which roles are eligible for organizations and memberships
       - kind: resolution
         ref: VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
+      - kind: ac
+        ref: "VCST-5450 (Done 2026-09-01; released customer 3.1023.0, profile-experience-api 3.1017.0, platform 3.1063.0) — AC #4: related XAPI should accept only whitelisted roles; other roles should be rejected"
     scope:
       code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Web/Scripts/services/rolesPickerService.js
     check:
@@ -233,9 +231,7 @@ rules:
           When asserting the legacy v1 surface, read `allowedValues`; when asserting the v2 tenant surface, read `value` —
           same content, inverted field name, not interchangeable across API versions. Add-direction persists round-trip
           after reload; clear-to-empty **persists** after reload as of Platform 3.1044.0 / vc-platform PR #3076 (VCST-5441
-          fixed 2026-07-15; previously silently reverted). Direct PUT/GraphQL bypass with a non-whitelisted role currently
-          succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the
-          same path.
+          fixed 2026-07-15; previously silently reverted). Direct GraphQL `changeOrganizationContactRole` with a non-whitelisted role is rejected (`errors[]` non-empty) without blocking a whitelisted role on the same path.
     violation_signal: |-
       With a NON-EMPTY GLOBAL whitelist, the picker offers a role outside it after a genuine
         cache-reset+reload, OR fails to narrow to the whitelist's entries; an EMPTY GLOBAL whitelist wrongly locks out /
@@ -246,8 +242,7 @@ rules:
         inversion — silently asserts against the wrong field and can pass vacuously); a write is attempted against the v2
         `schema` endpoint's `allowedValues` (the pool is a hardcoded module constant, not a writable per-tenant resource);
         one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently reverts (the pre-fix VCST-5441
-        signature — a re-appearance now means PR #3076 regressed); once server enforcement ships — a non-whitelisted role
-        is accepted by the API, OR a whitelisted role is rejected (over-blocking).
+        signature — a re-appearance now means PR #3076 regressed); a non-whitelisted role is accepted by `changeOrganizationContactRole`, OR a whitelisted role is rejected (over-blocking).
     status: ACTIVE
   - id: BL-B2B-012
     title: Declining or revoking an invite changes a status — it never deletes the membership row
