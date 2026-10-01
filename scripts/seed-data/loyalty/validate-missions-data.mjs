@@ -27,6 +27,9 @@
  *       storefront states (danger badge / partial / completed-PerSku) are still reachable
  *  [10] the targeting axis, across registries: the group the fixtures target is the group the intended
  *       member account really carries, and the negative control is declared OUTSIDE it
+ *  [3t] the tracked-stock target (MSNF-034/101) mirrors a FINITE tracked stock, and the seeded overlay
+ *       resolved it to the same currency as the other cash targets
+ *  [3l] the long-content mission (MSNF-097) still carries a long title and a 5-9 digit reward
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
@@ -34,6 +37,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   MISSIONS, PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT, TARGET_PRODUCTS,
+  TRACKED_STOCK_PRODUCT, TRACKED_STOCK_BOUNDS, LONG_CONTENT_BOUNDS,
   STORE_SETTING, RUNTIME_FIELDS_BY_KIND, NAME_PREFIX, overlayShadowProblems,
   BANNERS, bannerKeyFor, bannerSourceRel,
   missionName, validateSpecShape,
@@ -88,6 +92,8 @@ const RUNTIME_BY_ALIAS = {
   // The zero-stock product is CREATED by this seeder, so its sku/name are authored business keys and
   // only the server-assigned ids are runtime — see RUNTIME_FIELDS_BY_KIND.createdProduct.
   [ZERO_STOCK_PRODUCT.aliasName]: RUNTIME_FIELDS_BY_KIND.createdProduct,
+  // Same for the tracked-stock target: created by this seeder, so only ids/currency/path are runtime.
+  [TRACKED_STOCK_PRODUCT.aliasName]: RUNTIME_FIELDS_BY_KIND.createdProduct,
   // A currency-carrying mission has one MORE runtime field: the resolved code. The INTENT is authored
   // and committed; the code it resolves to is per-env store config.
   ...Object.fromEntries(MISSIONS.map((m) => [
@@ -298,6 +304,55 @@ for (const p of TARGET_PRODUCTS) {
     if (a.in_stock_quantity !== '0') {
       fail(`[3] ${ZERO_STOCK_PRODUCT.aliasName}.in_stock_quantity is ${JSON.stringify(a.in_stock_quantity)} — the whole fixture is the zero; at any other value the modal row renders like every other row and the out-of-stock assertion cannot fail`);
     }
+  }
+}
+
+/* [3t] MSNF-034 / MSNF-101 — the tracked-stock target ───────────────────────
+ * The whole fixture is a FINITE number a quantity can exceed. A registry saying "In stock" (no number),
+ * a stock of 0 (that is MSNF-035), or track_inventory "false" all seed cleanly and make "a quantity
+ * above the shown stock" undecidable again — the exact REG-2026-10-01-1243 defect.
+ */
+{
+  const t = TRACKED_STOCK_PRODUCT;
+  const a = aliases[t.aliasName];
+  if (a) {
+    const expect = {
+      sku: t.sku, name: t.productName, in_stock_quantity: String(t.inStockQuantity),
+      track_inventory: String(t.trackInventory), list_price: t.listPrice,
+    };
+    for (const [k, v] of Object.entries(expect)) {
+      if (a[k] !== v) fail(`[3t] ${t.aliasName}.${k} is ${JSON.stringify(a[k])} in aliases.json but ${JSON.stringify(v)} in missions-specs.mjs — a case would read a stock level the seeder never writes`);
+    }
+    const q = Number(a.in_stock_quantity);
+    if (!Number.isInteger(q) || q < TRACKED_STOCK_BOUNDS.min || q > TRACKED_STOCK_BOUNDS.max) {
+      fail(`[3t] ${t.aliasName}.in_stock_quantity is ${JSON.stringify(a.in_stock_quantity)} — it must be a finite integer in [${TRACKED_STOCK_BOUNDS.min}, ${TRACKED_STOCK_BOUNDS.max}], or there is no valid quantity below it and no short step above it`);
+    }
+  }
+  // Seeded state, per env: the tracked target must resolve to the SAME currency as the other cash
+  // targets the modal sums beside it (a one-row mission today, but the rule is the modal's, not ours).
+  for (const f of readdirSync(join(ROOT, 'test-data')).filter((n) => /^aliases\.[^.]+\.json$/.test(n))) {
+    let ov; try { ov = JSON.parse(readFileSync(join(ROOT, 'test-data', f), 'utf8')); } catch { continue; }
+    const tc = ov?.[t.aliasName]?.currency;
+    const zc = ov?.[ZERO_STOCK_PRODUCT.aliasName]?.currency;
+    if (tc && zc && tc !== zc) fail(`[3t] ${f}: ${t.aliasName} resolved to ${tc} but ${ZERO_STOCK_PRODUCT.aliasName} to ${zc} — the featured-SKU targets are no longer single-currency`);
+  }
+}
+
+/* [3l] MSNF-097 — the long-content mission ──────────────────────────────────
+ * The registry mirrors the two numbers the case's decidability gate reads (title length, reward digits),
+ * DERIVED from the spec here, so a "tidied" shorter title or rounder reward fails statically instead of
+ * turning MSNF-097 back into BLOCKED:PRECONDITION_UNMET at run time.
+ */
+{
+  const lc = MISSIONS.find((m) => m.aliasName === 'MSN_LONG_CONTENT');
+  const a = aliases.MSN_LONG_CONTENT;
+  if (lc && a) {
+    const title = missionName(lc);
+    const digits = String(Math.trunc(Math.abs(lc.reward))).length;
+    if (a.title_chars !== String(title.length)) fail(`[3l] MSN_LONG_CONTENT.title_chars is ${JSON.stringify(a.title_chars)} but the title is ${title.length} chars`);
+    if (a.reward_digits !== String(digits)) fail(`[3l] MSN_LONG_CONTENT.reward_digits is ${JSON.stringify(a.reward_digits)} but the reward has ${digits} digit(s)`);
+    if (title.length < LONG_CONTENT_BOUNDS.minTitleChars) fail(`[3l] MSN_LONG_CONTENT's title is ${title.length} chars, under ${LONG_CONTENT_BOUNDS.minTitleChars}`);
+    if (digits < LONG_CONTENT_BOUNDS.minRewardDigits) fail(`[3l] MSN_LONG_CONTENT's reward has ${digits} digit(s), under ${LONG_CONTENT_BOUNDS.minRewardDigits}`);
   }
 }
 

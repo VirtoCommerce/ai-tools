@@ -2,7 +2,10 @@
 
 ## Triage
 
-Merge the runner results and the exploratory findings, then dedupe them. **Dedupe by defect class,
+Merge the runner results, the exploratory findings and the visual lane's findings, then dedupe them.
+A visual finding's effect on the verdict (a `BL-UI` FAIL blocks; an a11y FAIL on a functional ticket
+files standalone; `vs. DESIGN` drift only advises) is
+[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §3. **Dedupe by defect class,
 not by surface** — two lanes seeing one defect is one finding with two pieces of evidence. Classify
 each finding:
 
@@ -48,6 +51,7 @@ functional ticket.
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
   - `path: "FAST_GROUNDED"`, `flow: "feature-test"`
   - `regression: null` (C1 never runs here)
+  - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)
   - `discovery` — the exploratory lane
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`

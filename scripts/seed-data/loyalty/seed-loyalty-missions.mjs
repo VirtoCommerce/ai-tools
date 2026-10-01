@@ -35,6 +35,9 @@
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --only MSN_PERSKU_ALL
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --dry-run --verbose
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --teardown
+ *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --teardown --only MSN_LONG_CONTENT --archive
+ *     (--archive: retire the scoped mission Published -> Archived instead of deleting it — the path for
+ *      a mission that has accrued progress, which DELETE refuses; see kb KB-608F7C05)
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --missions off   # toggle-test helper
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --missions on
  *   node scripts/seed-data/loyalty/seed-loyalty-missions.mjs --reupload-banners  # artwork edited
@@ -78,7 +81,7 @@ import {
   BANNERS, BANNER_FOLDER, BANNER_CONTENT_TYPE, bannerSourceRel, bannerAssetRel, bannerKeyFor,
   missionName, isSeededMissionName, needsGoalItems, resolveCurrencies, resolveLocales,
   buildMissionBody, buildGoalItems, reconcileGoalItems, localizedValues,
-  ZERO_STOCK_PRODUCT, TARGET_PRODUCTS, OWNED_PRODUCTS, goalSlotsFor, localeIntentsUsed, localeFieldFor,
+  ZERO_STOCK_PRODUCT, TARGET_PRODUCTS, OWNED_PRODUCTS, CASH_TARGET_PRODUCTS, goalSlotsFor, localeIntentsUsed, localeFieldFor,
   missionSignature, signaturesMatch, windowIsOpen, windowExpectsOpen, validateSpecShape,
   PROGRESS_ORDER, PROGRESS_ORDER_ALIAS, PROGRESS_USER_ROLE, progressOrderNumber,
   predictProgress, percentagesMatch, progressFixtures, DANGER_THRESHOLD_DAYS, WINDOWS,
@@ -112,6 +115,8 @@ const REUPLOAD_BANNERS = argv.includes('--reupload-banners');
  * combine with `--only <ALIAS>` to add a single new fixture and touch nothing else.
  */
 const NO_RECREATE = argv.includes('--no-recreate');
+/** Scoped teardown only: archive (Published -> Archived) instead of delete. */
+const ARCHIVE = argv.includes('--archive');
 
 /* ── Store settings ─────────────────────────────────────────────────────────── */
 
@@ -167,7 +172,10 @@ async function searchMissions() {
 async function ourMissionsByName() {
   const all = await searchMissions();
   const map = new Map();
-  for (const m of all) if (isSeededMissionName(m.name)) map.set(m.name, m);
+  // An Archived mission is retired, not a fixture: it is immutable, off the customer query, and a
+  // same-name live mission may sit beside it after a re-seed. Keying it in would let the reuse loop
+  // pick the dead one and try to DELETE it.
+  for (const m of all) if (isSeededMissionName(m.name) && String(m.status) !== 'Archived') map.set(m.name, m);
   return map;
 }
 
@@ -737,7 +745,7 @@ async function resolveTargetProducts(storeCurrency) {
   verbose(`reference product for catalog/category/pricelist: ${reference.sku} (${reference.id})`);
 
   const out = {};
-  for (const spec of [...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT]) {
+  for (const spec of CASH_TARGET_PRODUCTS) {
     out[spec.slot] = await ensureFixtureProduct(spec, reference, storeCurrency);
   }
   out[POINTS_PRODUCT.slot] = await resolvePointsProduct();
@@ -923,6 +931,14 @@ async function ensureFixtureProduct(spec, neighbour, storeCurrency) {
     log(`  ✓ created target ${spec.slot}: ${spec.sku} (${product.id}) in the catalog of ${neighbour.sku}`);
   } else {
     verbose(`target ${spec.slot} ${spec.sku} already exists (${product.id})`);
+    // trackInventory is set at CREATE only, so a reused product that has drifted (someone flipped it
+    // in the Admin SPA) is re-asserted here. For the tracked slots the flag IS the fixture.
+    const want = spec.trackInventory !== false;
+    const full = await api('GET', `/api/catalog/products/${product.id}`, null, { expectStatus: [200, 404] }).catch(() => null);
+    if (full?.id && Boolean(full.trackInventory) !== want) {
+      await api('POST', '/api/catalog/products', { ...full, trackInventory: want }, { expectStatus: [200, 201, 204] });
+      log(`  ↻ ${spec.sku}: trackInventory re-asserted ${full.trackInventory} → ${want}`);
+    }
   }
 
   // Price: into the SAME pricelist the neighbour is priced in, so it is visible wherever that is.
@@ -952,7 +968,8 @@ async function ensureFixtureProduct(spec, neighbour, storeCurrency) {
     prices: [{ pricelistId: ref.pricelistId, productId: product.id, list: spec.listPrice, currency: ref.currency, minQuantity: 1 }],
   }], { expectStatus: [200, 204] });
 
-  // Inventory. Only the ZERO-STOCK fixture has an inventory story: for it the zero IS the fixture, so
+  // Inventory. Only the TRACKED fixtures (zero-stock Z, tracked-stock T) have an inventory story: for
+  // each the stock level IS the fixture. Original note for Z: the zero IS the fixture, so
   // it is written at the store's MAIN fulfilment centre (not ffcs[0] — the storefront reads the
   // store's own centre), re-asserted every run, and read back. The buyable targets are
   // `trackInventory: false` and are deliberately given no stock record at all: a stock level is state
@@ -979,7 +996,9 @@ async function ensureFixtureProduct(spec, neighbour, storeCurrency) {
         + 'the out-of-stock row this fixture exists to render would appear as an ordinary in-stock row.',
       );
     }
-    const stocked = rows.filter((r) => Number(r.inStockQuantity) > 0);
+    // Stock ANYWHERE ELSE is the failure: the storefront may aggregate across centres, which would show
+    // Z as in stock and T above the stock level the case reads. The main centre's own row is checked above.
+    const stocked = rows.filter((r) => r.fulfillmentCenterId !== ffcId && Number(r.inStockQuantity) > 0);
     if (stocked.length) {
       throw new Error(
         `${spec.sku} carries stock at ${stocked.length} other fulfilment centre(s) (${stocked.map((r) => r.fulfillmentCenterId).join(', ')}) — `
@@ -1124,7 +1143,7 @@ async function seed() {
     // ONE currency across every row the featured-SKU modal renders. Asserted here, at seed time,
     // rather than left to a guard: the modal sums its rows, so a second currency makes the subtotal
     // it renders meaningless, and that was filed as a product bug once and rejected as our own data.
-    const cashCurrencies = new Set([...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT].map((p) => products[p.slot]?.currency).filter(Boolean));
+    const cashCurrencies = new Set(CASH_TARGET_PRODUCTS.map((p) => products[p.slot]?.currency).filter(Boolean));
     if (cashCurrencies.size !== 1) {
       throw new Error(
         `the featured-SKU target products resolved to ${cashCurrencies.size} currencies (${[...cashCurrencies].join(', ')}) — `
@@ -1419,7 +1438,7 @@ async function seed() {
   // put an env-invariant value in the per-env overlay and let the two silently disagree. The currency
   // is the opposite — it is what the pricelist actually gave us, and it is the field the drift guard
   // reads to prove the featured-SKU modal is still single-currency.
-  for (const p of [...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT]) {
+  for (const p of CASH_TARGET_PRODUCTS) {
     const r = products[p.slot];
     if (r) writeback[p.aliasName] = { productId: r.id, catalogId: r.catalogId || '', currency: r.currency || '' };
   }
@@ -1540,17 +1559,33 @@ async function teardown() {
   }
 
   // Bottom-up: the SKU targets are children of the mission and are NOT protected by the mission's
-  // immutability rules, so they are removed first and explicitly rather than trusted to cascade.
-  for (const m of targets) {
-    const items = await goalItemsFor(m.id);
-    if (items.length) {
-      const qs = items.map((i) => `ids=${encodeURIComponent(i.id)}`).join('&');
-      await api('DELETE', `/api/loyalty-mission-goal-items?${qs}`, null, { expectStatus: [200, 204] });
-      verbose(`removed ${items.length} goal item(s) from ${m.name}`);
+  // immutability rules, so (on the delete path below) they are removed first and explicitly rather
+  // than trusted to cascade.
+  if (ARCHIVE && ONLY) {
+    // Published -> Archived is the one legal transition on a Published mission, and the only way to
+    // retire one that has accrued progress (DELETE then 500s on a RESTRICT foreign key and the bulk
+    // call is atomic — kb KB-608F7C05). Its goal items are left: an Archived mission is immutable.
+    for (const m of targets) {
+      if (String(m.status) === 'Archived') continue;
+      if (String(m.status) !== 'Published') throw new Error(`${m.name} is ${m.status}; only a Published mission can be archived — use --teardown --only without --archive`);
+      if (DRY_RUN) { log(`  [DRY] would archive ${m.name}`); continue; }
+      const full = await api('GET', `/api/loyalty-missions/${m.id}`);
+      await api('PUT', '/api/loyalty-missions', { ...full, status: 'Archived' }, { expectStatus: [200, 204] });
+      log(`✓ archived ${m.name}`);
     }
+  } else {
+    if (ARCHIVE) throw new Error('--archive is a SCOPED teardown option: pass --only <ALIAS>');
+    for (const m of targets) {
+      const items = await goalItemsFor(m.id);
+      if (items.length) {
+        const qs = items.map((i) => `ids=${encodeURIComponent(i.id)}`).join('&');
+        await api('DELETE', `/api/loyalty-mission-goal-items?${qs}`, null, { expectStatus: [200, 204] });
+        verbose(`removed ${items.length} goal item(s) from ${m.name}`);
+      }
+    }
+    await deleteMissions(targets.map((m) => m.id));
+    log(`✓ deleted ${targets.length} mission(s)`);
   }
-  await deleteMissions(targets.map((m) => m.id));
-  log(`✓ deleted ${targets.length} mission(s)`);
 
   // The residue check is scoped to what this run actually claimed to delete. Unscoped, a `--teardown
   // --only X` run counted the ten fixtures it deliberately left alone as residue and threw — so the
@@ -1558,7 +1593,8 @@ async function teardown() {
   // other mission's GUID.
   const wanted = new Set(targets.map((m) => m.name));
   const residue = await verifyRemoved(async () => (
-    (await searchMissions()).filter((m) => isSeededMissionName(m.name) && (!ONLY || wanted.has(m.name)))
+    // Archived is retired, not residue (it is off the customer query and cannot be deleted once it has progress).
+    (await searchMissions()).filter((m) => isSeededMissionName(m.name) && String(m.status) !== 'Archived' && (!ONLY || wanted.has(m.name)))
   ));
   if (residue > 0) throw new Error(`teardown left ${residue} ${ONLY ? `${[...wanted][0]} ` : 'AGENT-TEST-MSN- '}mission(s) behind`);
 

@@ -1,6 +1,6 @@
 ---
-description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket, the domain map, a test model and the mind map feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly; the run ends in a short human-readable verdict. feature-test route only."
-argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--dry-run]"
+description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket, the domain map, a test model and the mind map feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
+argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ behind every step, the rationalization table and the red flags are in
 | | `/qa-test` FAST | **`/qa-test-fast`** | `/qa-test` FULL |
 |---|---|---|---|
 | Context | the ticket | ticket + PR diff + domain map + test model + mind map | the same + story review + reachability |
-| Execution | one agent | checklist lanes ‖ exploratory, ≤3 browser lanes | + suite authoring + C1 regression + visual lane |
+| Execution | one agent (+ visual lane under `--visual`) | checklist lanes ‖ exploratory ‖ visual lane when UI-visible, ≤3 browser lanes at once | + suite authoring + C1 regression + visual lane |
 | Gates | inline self-check | inline, per stage | independent verifier per step |
 | Suites | untouched | **untouched** | new `Draft` cases |
 
@@ -92,15 +92,22 @@ Briefs, the lane split, the data rules and teardown:
 2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
    The charter is the model's unresolved items. `--no-explore` drops the lane. That is recorded, never
    silent.
-3. **Join.** Every item has a Result. The created-entity ledger is complete. Teardown ran and was
-   re-read.
+3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
+   Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+   `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
+   brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
+   [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes
+   `design-report.md` + `summary.json.visual`.
+4. **Join.** Every item has a Result. The created-entity ledger is complete. Teardown ran and was
+   re-read. The visual lane returned with `qa-design skill: loaded`, or is recorded as not run.
 
 ## Stage 3 — Verdict
 
 Triage, the verdict rules, the report shapes and the tracker comment:
 [`../skills/qa-test-fast/verdict.md`](../skills/qa-test-fast/verdict.md).
 
-1. **Triage.** Merge the checklist and exploratory findings and classify each one.
+1. **Triage.** Merge the checklist, exploratory and visual findings and classify each one. Visual findings
+   block or advise per [`visual-axis.md`](../skills/qa-test/visual-axis.md) §3.
 2. **Bugs.** Call `/vc-fix:qa-bug` **once per product bug**, sequentially, passing the evidence. Its
    tracker-ticket step runs only after the user says yes.
 3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)

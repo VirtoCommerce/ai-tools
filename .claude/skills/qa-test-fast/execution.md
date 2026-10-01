@@ -8,6 +8,7 @@ Execution). Each lane is its own agent with its own browser session and its own 
 | Storefront | `qa-frontend-expert` | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.*)` | the checklist's storefront section |
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
 | Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>` |
+| Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when `visual_surface: true` |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 §Test isolation in parallel runs. A checklist with a cross-layer section gives it to the lane that
@@ -50,6 +51,19 @@ the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 
 - **No unresolved item anywhere** ⇒ the lane is recorded as `ran: false` with that reason. That is the
   one legitimate skip besides `--no-explore`.
 
+## Visual
+
+Dispatch `ui-ux-expert` — never run the `/qa-design` command. **The brief's first instruction: invoke
+the Skill tool with `skill: "qa-design"` before any browser call**, and open the return with
+`qa-design skill: loaded`. Everything else the brief carries (target, the design project from the
+ticket's Prototype link + the `design:extract` spec path, the invariant text, the auth path, no
+credential names), the lane-count rule and the verdict vocabulary are
+[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2–§4 — cited, not restated here.
+- **Writes** `reports/tickets/{SPRINT}/<TICKET>/design-report.md`; you write `summary.json.visual`.
+- **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
+  account (visual-axis §2).
+- **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.
+
 ## Data — made during the run
 
 The Data cell of each checklist item decides it, using the layers in
@@ -77,6 +91,8 @@ under the output `verdict.md`'s Data heading and in `summary.json.test_data`, ne
 - Every ledger id has a teardown outcome.
 - Every restored setting has been re-read.
 - The exploratory lane returned, or its box ran out; on overrun, proceed on what returned.
+- The visual lane returned with `qa-design skill: loaded` (else re-dispatched once), or is recorded as
+  not run with its reason.
 
 The orchestrator writes the Results into `testing-checklist.md`. Runners return them and never edit
 the file, so the checklist has a single writer.

@@ -28,7 +28,7 @@
 | 18 | 12 cards per page, pagination, 3 columns at desktop, grid gap 20 px — unchanged | C8, C18 | existing 083c | PASS (4a) |
 | 19 | Sort dropdown (Default/Newest/Ending soon/Progress) — **not built, declared PR scope cut** | C14, C15 | none — record as ABSENT | NOT-RUN |
 | 20 | "Account setup" mission kind — **not built, no backend type** | C17, A-image | none — record as ABSENT | NOT-RUN |
-| 21 | SKU modal: 60rem, VcLineItems columns Product / Properties (SKU) / Price per item / Quantity / Total, estimate hint | PR text (CONTRADICTS artifact scope) | MSNF-027/029/030 | PASS (4a) |
+| 21 | SKU modal: 60rem, VcLineItems columns Product / Properties (SKU) / Price per item / Quantity / Total, estimate hint | PR text (CONTRADICTS artifact scope) | MSNF-027/029/030 | PASS (4a) — hint present; its placement fails when the body overflows: the fold slices it (Low draft #4) |
 | 22 | OOS target (flags false): stepper disabled, stock badge agrees; the in-stock row is enabled; Add disabled at 0 | PR text, ECL-2.1 | MSNF-035 + MSNF-092; MSN-E2E-002 | PASS (4a; C1 MSNF-092 PASS) |
 | 23 | Target with null product (missing availability): stepper disabled, cannot be added | PR text | MSNF-092 (`MSN_DL_SKU_NOAVAIL`) | PASS (4a) |
 | 24 | Null-product row title/link: 3x saw a raw GUID title + a 404 link | 3x EXP-02 | MSNF-099 | FAIL — pre-existing, Low draft (C1 MSNF-099) |

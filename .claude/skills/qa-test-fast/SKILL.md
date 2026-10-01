@@ -21,6 +21,7 @@ Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── jo
         Wave 2  /qa-test-model ‖ /qa-test-mind-map (update|build, no stamps)
         Wave 3  /qa-checklist --from-model  ──  stage gate   [--dry-run stops here]
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── teardown
+                + visual(devtools, ui-ux-expert → Skill qa-design) when visual_surface; ≤3 at once
 Stage 3         triage → /vc-fix:qa-bug per bug → verdict → files → HTML page → ask → comment → kb
 ```
 
@@ -41,7 +42,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 | Stage | Writes | Never writes |
 |---|---|---|
 | 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
-| 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
+| 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
 | 3 | `summary.json`, `verdict.md`, bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
@@ -59,6 +60,8 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 | "FAST allows one agent, so ask whether to go FULL." | This command *is* the answer to that question. Do not re-route. |
 | "This morning's run already has results — reuse them." | On the same build, show that verdict and ask (Step 0.3). Never silently reuse another run's results, and never silently overwrite them. |
 | "Sweep leftovers with `seed:*:teardown`." | Persistent fixtures share the `AGENT-TEST-` prefix, and a sweep deletes them. Teardown is by ledger id only. |
+| "The checklist runner already looked at the page — skip the visual lane." | A functional runner cannot see a contrast failure, a token collision or design drift. `visual_surface: true` ⇒ the lane runs, or `--no-visual` is recorded ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §5). |
+| "I'll invoke `/qa-design` myself, inline." | The command is not model-invocable, and the skill is ~30K chars. The `ui-ux-expert` brief makes the **agent** invoke the `qa-design` skill ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2). |
 | "25 minutes is enough exploring." | The exploratory box floor is 30 minutes ([`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §5). |
 
 ## Red flags — stop and re-read the six rules

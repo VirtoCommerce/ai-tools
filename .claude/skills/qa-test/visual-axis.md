@@ -1,7 +1,8 @@
 # The visual axis — what runs for which surface, and what its verdict may do
 
-**This file is the only place the `/qa-test` visual axis is specified.** `commands/qa-test.md`,
-`skills/qa-test/SKILL.md`, `authoring.md` and `close-out.md` **cite it and never restate it** — the same
+**This file is the only place the visual axis is specified — for `/qa-test` and for `/qa-test-fast`.**
+`commands/qa-test.md`, `commands/qa-test-fast.md`, `skills/qa-test/SKILL.md`, `skills/qa-test-fast/`,
+`authoring.md` and `close-out.md` **cite it and never restate it** — the same
 single-source-of-truth discipline `ticket-routing.md` holds for flow routing.
 
 It exists because the axis had no owner. Before it, `/qa-test` carried five incidental UI lines across four
@@ -77,16 +78,24 @@ The three axes, and where each is specified:
 | **design-system** | live resolved custom properties vs the generated token set; no hardcoded colour/spacing literals; sized-control token + aspect equality | `skills/qa-design/design-system-consistency.md` |
 | **`vs. DESIGN`** | declared tokens · control geometry · icon name→glyph parity, diffed against the Claude Design project **named by the ticket's own Prototype link** (no global default — `DESIGN_SYSTEM_PROJECT_ID` was removed 2026-09-03; a ticket with no design link ⇒ `SKIPPED`) | `skills/qa-design/claude-design-verification.md` |
 
-### Dispatch the agent — do not invoke the command
+### Dispatch the agent — the agent invokes the `qa-design` skill
 
-`/qa-design` is `disable-model-invocation: true`, so `/qa-test` may **not** auto-trigger it — the same
-constraint that makes 5-status/5-docs *point* at `/ba-analyze` rather than run it. That costs nothing here:
-`/qa-design` is itself only an orchestration shell that delegates execution to `ui-ux-expert`. Step 4
-dispatches that agent directly, exactly as it dispatches `qa-frontend-expert` / `qa-backend-expert`, and the
-brief cites the `/qa-design` **skill** as the methodology. `/qa-accessibility` carries no
-`disable-model-invocation` flag and may be invoked directly.
+There are two `qa-design` files and they behave differently. The **command**
+([`commands/qa-design.md`](../../commands/qa-design.md)) is `disable-model-invocation: true`, so no pipeline
+may run it — the same constraint that makes 5-status/5-docs *point* at `/ba-analyze` rather than run it. That
+costs nothing: the command only parses a target and dispatches `ui-ux-expert`. The **skill**
+([`skills/qa-design/SKILL.md`](../qa-design/SKILL.md)) carries no such flag and **is** the methodology.
 
-The brief carries: the resolved target · **the design project id resolved from the ticket's Prototype link,
+So `/qa-test` Step 4v and `/qa-test-fast` Stage 2 dispatch `ui-ux-expert` directly, exactly as they dispatch
+`qa-frontend-expert` / `qa-backend-expert`, and **the brief's first instruction is: *invoke the Skill tool
+with `skill: "qa-design"` before any browser call*.** The agent loads it into **its own** context, never the
+orchestrator's — the skill is ~30K chars, and loaded inline it is re-paid by every later step of the run and
+used by none of them. The agent then reads the per-axis files in §2's table as each axis needs them, and
+**its return opens with `qa-design skill: loaded`** — a return without that line did not apply the
+methodology and is re-dispatched once. `/qa-accessibility` carries no `disable-model-invocation` flag
+either; the agent may invoke it the same way for the a11y axis.
+
+The brief carries: the `Skill qa-design` instruction above · the resolved target · **the design project id resolved from the ticket's Prototype link,
 plus the artboard its `file=` param names** (there is no `DESIGN_SYSTEM_PROJECT_ID` to inherit — removed
 2026-09-03; if the ticket carries no design link, the brief says so and the axis returns `SKIPPED`) · the
 `BL-A11Y-*` / `BL-UI-*` invariant **text** (not just the IDs) · the screenshot path · the verdict vocabulary
@@ -175,6 +184,11 @@ When the checklist agents + regression lanes + this lane exceed 3, run in this o
 chosen**: checklist track → visual lane → regression. The ticket verdict is the priority, and the visual
 lane feeds it (5-verdict) while regression feeds the release gate (5-report).
 
+**`/qa-test-fast` Stage 2** already holds up to three lanes (two checklist runners + exploratory). When
+fewer than three are dispatched (`--layer`, a lane with no items, `--no-explore`), the visual lane goes in
+the **same message**; otherwise it is dispatched **the moment the first lane returns**, and `verdict.md`
+states the order. Never a fourth concurrent browser agent.
+
 Never schedule the visual lane on `playwright-firefox`: this pass is click- and hover-driven, and
 any of the three lanes will do — firefox clicks here again since 2026-09-08 (`.claude/rules/agents.md`).
 
@@ -191,6 +205,12 @@ regression. Adding a second executor would put two owners on one invariant set w
 `visual_surface` still *derives* on FAST and is recorded with its sources; what the flag controls is
 whether the lane **runs**. It never re-routes the ticket: a FAST run with `--visual` still authors no
 cases, writes no Test Model and runs no verifier — it gains one agent and the checklist rows in §6.
+
+**On `/qa-test-fast` the lane is ON whenever `visual_surface: true`**, derived per §1 from Wave 1's PR diff
+(source B) and the checklist's lanes; `--no-visual` drops it. Either way the outcome is recorded in
+`summary.json.visual` with its `surface_source[]` — a dropped or `false` lane is listed in `verdict.md`
+under *Not tested, and why*, never silent. Unlike `/qa-test` FAST, this flow already pays for a model and
+a multi-lane Stage 2, so the one-agent argument above does not apply to it.
 
 **The argument for FAST-by-default is real, and it is why the flag exists.** A `.scss`-only PR, an icon
 migration or a P2 restyle is by construction *single-layer, single-domain, obvious surface, P2* — so **the
