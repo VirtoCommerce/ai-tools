@@ -73,6 +73,8 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
+  npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
+                                                    fit the verdict on dev, threshold it on calibration
   npm run kb -- push [--dry-run] [--no-sweep]       send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
@@ -164,6 +166,31 @@ async function main(argv) {
     if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
     else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
+  }
+
+  if (verb === 'calibrate') {
+    // OFFLINE AND OPERATOR-ONLY (VCST-6122 Decision 6). It reads the base and the labelled set and
+    // PRINTS the ranker; it writes `ranker.json` only where `--out` points, because ranker.json is
+    // base data and base data changes only with the operator's yes. The test split is never read.
+    const { readFile, writeFile } = await import('node:fs/promises');
+    const { loadIndex, retrievable } = await import('./core/index-load.mjs');
+    const { prepareVocabulary, readVocabulary } = await import('./core/query.mjs');
+    const { prepareRetrieval } = await import('./core/retrieve.mjs');
+    const { calibrate } = await import('./core/calibrate.mjs');
+    const { labelledRows } = await import('./bench/verdict-bench.mjs');
+    if (!opened.reader) { out(`kb calibrate: ${HEADLINE['no-base']}`); return EXIT.NO_BASE; }
+    const cat = await loadIndex(opened.reader);
+    if (cat.state !== 'ok') { out(`kb calibrate: ${HEADLINE[cat.state] ?? cat.state}`); if (cat.why) out(`  ${cat.why}`); return exitFor(cat.state); }
+    const setPath = typeof args.flags.set === 'string' ? args.flags.set : new URL('./bench/rank-labelled-set.v2.json', import.meta.url);
+    const set = JSON.parse(await readFile(setPath, 'utf8'));
+    const prep = prepareRetrieval(retrievable(cat.rows), prepareVocabulary(await readVocabulary(opened.reader)));
+    const ranker = calibrate(prep, labelledRows(set), { snapshot: set.snapshot ?? null });
+    const text = `${JSON.stringify(ranker, null, 2)}
+`;
+    if (typeof args.flags.out === 'string') { await writeFile(args.flags.out, text); out(`kb calibrate: wrote ${args.flags.out}`); }
+    else out(text.trimEnd());
+    out(`  ${ranker.rank}: answer threshold ${ranker.thresholds.answer ?? 'unreachable (the base never answers alone)'}; dev ${ranker.fit.dev.positives}/${ranker.fit.dev.rows} positive; calibration answers at threshold ${ranker.fit.calibration.answeredAtThreshold}/${ranker.fit.calibration.rows}`);
+    return EXIT.ANSWER;
   }
 
   if (verb === 'reindex') {

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { normalizeRow } from '../kb/core/index-load.mjs';
 import { parseQuestion, prepareVocabulary, stem } from '../kb/core/query.mjs';
 import { prepareRetrieval, retrieve } from '../kb/core/retrieve.mjs';
-import { answerThreshold, decide, fitLogistic, lowerThresholds, probability } from '../kb/core/verdict.mjs';
+import { answerThreshold, decide, fitLogistic, probability } from '../kb/core/verdict.mjs';
 
 const vocab = prepareVocabulary({
   concepts: [
@@ -75,21 +75,14 @@ test('the answer threshold is the lowest probability whose answers reach the pre
   assert.equal(answerThreshold([{ p: 0.9, correct: false }], { precision: 0.95 }), Infinity);
 });
 
-test('the lower thresholds keep controls in none at the target rate before buying ambiguous targets', () => {
-  const scored = [
-    { p: 0.6, kind: 'target', rightInTop: true, unmappedShare: 0 },
-    { p: 0.5, kind: 'control', rightInTop: false, unmappedShare: 0 },
-    { p: 0.4, kind: 'target', rightInTop: true, unmappedShare: 0 },
-  ];
-  const t = lowerThresholds(scored, { controlsNone: 1, unmappedGrid: [1] });
-  assert.ok(t.none > 0.5 && t.none <= 0.6);
-});
-
-test('a high unmapped share pushes to ambiguous, never to none', () => {
+test('below the answer threshold the verdict is ambiguous; none only when nothing was found (Decision 1a)', () => {
   const prep = prepareRetrieval(rows, vocab);
-  const ranker = { model: { features: [], mean: [], std: [], weights: [], bias: -10 }, thresholds: { answer: 0.99, none: 0.5, unmapped: 0.5 } };
-  assert.equal(decide(prep, ranker, 'xylophone quantum basket').verdict, 'ambiguous');
-  assert.equal(decide(prep, { ...ranker, thresholds: { ...ranker.thresholds, unmapped: 1.01 } }, 'xylophone quantum basket').verdict, 'none');
+  const sure = { model: { features: [], mean: [], std: [], weights: [], bias: 10 }, thresholds: { answer: 0.9 } };
+  const unsure = { ...sure, model: { ...sure.model, bias: -10 } };
+  assert.equal(decide(prep, sure, 'will my promo code work in lower case?').verdict, 'answer');
+  assert.equal(decide(prep, unsure, 'will my promo code work in lower case?').verdict, 'ambiguous');
+  assert.equal(decide(prep, sure, 'xylophone quantum').verdict, 'none');
+  assert.equal(decide(prep, { ...sure, thresholds: { answer: null } }, 'will my promo code work in lower case?').verdict, 'ambiguous');
 });
 
 test('the logistic fit separates a separable feature', () => {

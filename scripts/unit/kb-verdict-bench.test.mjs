@@ -3,6 +3,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { labelledRows, metrics, outcome } from '../kb/bench/verdict-bench.mjs';
+import { scoreRows } from '../kb/bench/judge-harness.mjs';
+import { excerpt } from '../kb/core/render.mjs';
 
 const target = (o = {}) => ({ id: 'T1', kind: 'target', split: 'dev', source: 'existing', expect: ['KB-A'], ...o });
 const control = (o = {}) => ({ id: 'C1', kind: 'control', split: 'dev', source: 'control', ...o });
@@ -40,4 +42,31 @@ test('an answer is judged on the handed-over entry; the rest of a returned list 
 test('contested rows never reach a metric', () => {
   const rows = labelledRows({ targets: [target()], controls: [control()], contested: [target({ id: 'X' })] });
   assert.deepEqual(rows.map((r) => r.id), ['T1', 'C1']);
+});
+
+// ── the end-to-end gate (judge-harness) ──────────────────────────────────────────────────────
+
+const krow = (o) => ({ code: o.id, kind: 'target', partial: false, source: 'existing', expect: ['KB-A'], verdict: 'ambiguous', base: null, shown: ['KB-A', 'KB-B'], recalled: true, tokens: 100, ...o });
+
+test('the gate counts what the agent RELIED on: a pick the body check rejects is not relied on', () => {
+  const rows = [krow({ id: 't1' }), krow({ id: 'c1', kind: 'control', expect: [] })];
+  const picks = new Map([['t1', 'KB-A'], ['c1', 'KB-B']]);
+  const s = scoreRows(rows, picks, new Map([['t1', 'yes'], ['c1', 'no']]));
+  assert.deepEqual(s.picksPrecision, [1, 1]);
+  assert.deepEqual(s.controlsNone, [1, 1]);
+  assert.deepEqual(scoreRows(rows, picks).controlsNone, [0, 1]);
+});
+
+test('a base answer counts toward precision and resolution with no agent involved; partial targets are apart', () => {
+  const rows = [krow({ id: 't1', verdict: 'answer', base: 'KB-A' }), krow({ id: 't2', partial: true }), krow({ id: 'c1', kind: 'control', expect: [], verdict: 'answer', base: 'KB-B' })];
+  const s = scoreRows(rows, new Map([['t2', 'KB-A']]));
+  assert.equal(s.controlsAnsweredByBase, 1);
+  assert.deepEqual(s.resolvedNonPartial, [1, 1]);
+  assert.deepEqual(s.resolvedPartial, [1, 1]);
+  assert.deepEqual(s.picksPrecision, [2, 3]);
+});
+
+test('an excerpt is one line, cut at a word boundary', () => {
+  assert.equal(excerpt('a  b\nc'), 'a b c');
+  assert.equal(excerpt('alpha beta gamma', 12), 'alpha beta …');
 });

@@ -1,4 +1,5 @@
-// The verdict (VCST-6122 Decisions 1 and 6): the base decides `answer`, `ambiguous` or `none` itself.
+// The verdict (VCST-6122 Decisions 1, 1a and 6): `answer` when the base is sure, `none` when it found
+// nothing, `ambiguous` -- the agent judges a compact list -- for everything between.
 //
 // floor-1 decided with one number -- the share of the question's words an entry shared -- and the
 // labelled set shows what that buys: on the migrated base, 18 targets whose right entry was ranked
@@ -21,9 +22,12 @@
 //                    this question -- question-to-question sufficiency, independent of length
 //   sentenceMargin   how far that best sentence is ahead of the runner-up entry's
 //
-// THE ASYMMETRY THAT IS NOT LEARNED: a question whose words the vocabulary mostly cannot map is a
-// vocabulary gap before it is a coverage gap, so it may end in `ambiguous` but never in `none` --
-// "the base holds nothing" must not be said about something the base could not read.
+// THERE IS NO `none` THRESHOLD (Decision 1a, 2026-10-01). M4 measured that no signal available here
+// separates a near-neighbour that does not answer from one that does (AUC ~0.73), so the base says
+// `none` on its own only when no channel found anything; every other non-answer is `ambiguous`. That
+// also settles the vocabulary-gap rule Decision 6 named -- a question the vocabulary cannot read can
+// never end in `none` while anything at all matched it -- so `unmappedShare` is computed and logged
+// but decides nothing.
 
 import { retrieve } from './retrieve.mjs';
 
@@ -130,7 +134,7 @@ function separating(cands, i, vocab) {
 /**
  * Decide one question.
  *
- * @param {object} ranker  `{rank, model, thresholds: {answer, none, unmapped}}` (ranker.json)
+ * @param {object} ranker  `{rank, fusion, model, thresholds: {answer}}` (ranker.json)
  * @returns {{verdict:'answer'|'ambiguous'|'none', p:number, features:object, entries:object[],
  *            candidates:object[], parsed:object, concepts:string[]}}
  *   `entries` is what the verdict hands over: one candidate for `answer`, the headlines for
@@ -141,13 +145,8 @@ export function decide(prep, ranker, question, { retrieval = null } = {}) {
   const f = featuresOf(prep, r);
   // ranker.json stores an unreachable answer threshold as null: JSON has no Infinity.
   const answer = ranker.thresholds.answer ?? Infinity;
-  const { none, unmapped } = ranker.thresholds;
   const p = r.candidates.length ? probability(ranker.model, f) : 0;
-  let verdict;
-  if (!r.candidates.length) verdict = 'none';
-  else if (p >= answer) verdict = 'answer';
-  else if (p >= none || f.unmappedShare >= unmapped) verdict = 'ambiguous';
-  else verdict = 'none';
+  const verdict = !r.candidates.length ? 'none' : p >= answer ? 'answer' : 'ambiguous';
   const listed = verdict === 'answer' ? r.candidates.slice(0, 1)
     : verdict === 'ambiguous' ? r.candidates.slice(0, AMBIGUOUS_TOP) : [];
   const entries = listed.map((c, i) => ({ ...c, separating: verdict === 'ambiguous' ? separating(listed, i, prep.vocab) : null }));
@@ -173,29 +172,3 @@ export function answerThreshold(scored, { precision = 0.95 } = {}) {
   }
   return Infinity;
 }
-
-/**
- * The `none` and `unmapped` thresholds, together, below the answer threshold: as many targets as
- * possible end in `ambiguous` WITH their right entry among the headlines, subject to controls ending
- * in `none` at the target rate; ties go to the higher `none` threshold (fewer tokens).
- *
- * @param {Array<{p:number, kind:'target'|'control', unmappedShare:number, rightInTop:boolean}>} scored
- *   rows below the answer threshold
- */
-export function lowerThresholds(scored, { controlsNone = 0.9, unmappedGrid = [0.5, 0.6, 0.7, 0.8, 0.9, 1] } = {}) {
-  const controls = scored.filter((s) => s.kind === 'control');
-  const ps = [0, ...new Set(scored.map((s) => s.p))].sort((a, b) => a - b);
-  let best = null;
-  for (const unmapped of unmappedGrid) {
-    for (const none of ps) {
-      const amb = (s) => s.p >= none || s.unmappedShare >= unmapped;
-      const cNone = controls.length ? controls.filter((s) => !amb(s)).length / controls.length : 1;
-      const useful = scored.filter((s) => s.kind === 'target' && s.rightInTop && amb(s)).length;
-      const key = [cNone >= controlsNone ? 1 : 0, cNone >= controlsNone ? useful : cNone, none, unmapped];
-      if (!best || cmp(key, best.key) > 0) best = { key, none, unmapped };
-    }
-  }
-  return { none: best?.none ?? 0, unmapped: best?.unmapped ?? 1 };
-}
-
-const cmp = (a, b) => { for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] - b[i]; return 0; };
