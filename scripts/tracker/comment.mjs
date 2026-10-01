@@ -10,11 +10,15 @@
 // Measured 2026-09-17 on VCST-5378: five comments in one hour, the last
 // superseding the first three. The tool made the wrong thing the easy thing.
 // This script gives `--amend` the same ergonomics as `--post`, and refuses a
-// second `--post` for a ticket in the same run unless the operator says why.
+// second `--post` for a ticket in the same round unless the operator says why — and,
+// since #360, refuses an `--amend` that would fold a NEW round (a new build, or a
+// comment older than TRACKER_ROUND_HOURS) into the old comment: an edit notifies nobody.
+// The decision itself lives in ./round-guard.mjs.
 //
 // Usage:
-//   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md
-//   npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file body.md
+//   npm run tracker:comment -- --ticket VCST-1234 --artifact "<build under test>" --body-file body.md
+//   npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --artifact "<build under test>" --body-file body.md
+//   npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --body-file body.md --same-round "<reason>"
 //   npm run tracker:comment -- --ticket VCST-1234 --get 109824
 //   npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "PO asked for a separate note"
@@ -30,6 +34,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
+import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
 // vars (ADMIN_PASSWORD, USER_PASSWORD, …) are missing. Only a real Jira call needs that
@@ -57,6 +62,8 @@ function parseArgs(argv) {
     else if (k === "--list") a.mode = "list";
     else if (k === "--force-new") { a.forceNew = next(); }
     else if (k === "--run-id") a.runId = next();
+    else if (k === "--artifact") a.artifact = next();
+    else if (k === "--same-round") a.sameRound = next();
     else if (k === "--attach") { (a.attach ??= []).push(next()); }
     else if (k === "--wiki") a.wiki = true;
     else if (k === "--dry-run") a.dryRun = true;
@@ -74,7 +81,7 @@ const readLedger = () => {
 const writeLedger = (l) => writeFileSync(LEDGER, JSON.stringify(l, null, 2) + "\n");
 
 /** A "run" is a Claude Code session when we have one, else an explicit --run-id. */
-const runId = (a) => a.runId ?? process.env.CLAUDE_SESSION_ID ?? "local";
+const runId = (a) => a.runId ?? sessionRunId();
 
 /** Mirror the id into the ticket's summary.json when one exists (best effort). */
 function mirrorToSummary(ticket, commentId) {
@@ -237,18 +244,55 @@ const API = useWiki ? "2" : "3";
 // broke the one path tracker-ops.md §0 routes every correction through.
 const wireBody = useWiki ? body : markdownToAdf(body);
 
-const existing = ledger[a.ticket];
 const thisRun = runId(a);
+// The ledger is per checkout: an amend of a comment it does not know (another worktree or clone
+// posted it), or one whose entry has no posted_at, takes its age from Jira itself. Skipped on
+// --dry-run, which must stay offline.
+const recorded = ledger[a.ticket];
+const needsRemote = a.mode === "amend" && !a.dryRun &&
+  !(recorded && String(recorded.comment_id) === String(a.id) && recorded.posted_at);
+const remote = needsRemote ? await jira("GET", `/rest/api/3/issue/${a.ticket}/comment/${a.id}`) : null;
+const existing = a.mode === "amend" ? effectiveEntry(recorded, a.id, remote) : recorded;
 
-if (a.mode === "post" && existing && existing.run_id === thisRun && !a.forceNew) {
-  die(`GOLDEN RULE (tracker-ops.md §0): ${a.ticket} already has a comment from this run.\n\n` +
-      `    comment_id : ${existing.comment_id}\n` +
-      `    posted_at  : ${existing.posted_at}\n\n` +
-      `    Amend it instead of appending:\n` +
-      `      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing.comment_id} --body-file <path>\n\n` +
-      `    A genuinely separate comment needs the operator to ask, and a stated reason:\n` +
-      `      … --force-new "<reason>"`);
-}
+// One decision for BOTH directions (round-guard.mjs) — the unguarded --amend is what let
+// VCST-5883's round 2 vanish into round 1's comment.
+const hours = roundHours();
+const verdict = decide({ mode: a.mode, entry: existing, commentId: a.id, run: thisRun, artifact: a.artifact, hours, forceNew: a.forceNew, sameRound: a.sameRound });
+const artifactArg = a.artifact ? `--artifact "${a.artifact.trim()}"` : `--artifact "<build under test>"`;
+const REFUSAL = {
+  SAME_ROUND: `GOLDEN RULE (tracker-ops.md §0): ${a.ticket} already has a comment for this build.\n\n` +
+    `    comment_id : ${existing?.comment_id}\n    artifact   : ${existing?.artifact}\n    posted_at  : ${existing?.posted_at}\n\n` +
+    `    Amend it instead of appending:\n      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing?.comment_id} ${artifactArg} --body-file <path>\n\n` +
+    `    A genuinely separate comment needs the operator to ask, and a stated reason:\n      … --force-new "<reason>"`,
+  SAME_RUN: `GOLDEN RULE (tracker-ops.md §0): ${a.ticket} already has a comment from this run.\n\n` +
+    `    comment_id : ${existing?.comment_id}\n    posted_at  : ${existing?.posted_at}\n\n` +
+    `    Same build (a correction)? Amend it:\n      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing?.comment_id} --artifact "<build under test>" --body-file <path>\n\n` +
+    `    NEW build (a retest — rule 5)? Name it, and the post is allowed as a new round:\n      … ${artifactArg}\n\n` +
+    `    Otherwise a separate comment needs the operator to ask:  … --force-new "<reason>"`,
+  NEW_ROUND_AMEND: `NEW ROUND (tracker-ops.md §0 rule 5): comment ${a.id} records build "${existing?.artifact}", you tested "${a.artifact?.trim()}".\n` +
+    `    An amend notifies nobody — the developer and PO would never learn this retest happened.\n\n` +
+    `    Post a new comment for the new round:\n      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>`,
+  OTHER_RUN_AMEND: `Comment ${a.id} was posted by another session (${existing?.posted_at}) — is this a new round?
+` +
+    `    An amend notifies nobody. A retest of a new build needs a NEW comment:
+` +
+    `      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>
+
+` +
+    `    Continuing the SAME round from a new session: … --same-round "<reason>"`,
+  NO_ARTIFACT_AMEND: `Comment ${a.id} records build "${existing?.artifact}" and this amend names no build.\n` +
+    `    Without one the round cannot be checked, and an amend notifies nobody.\n\n` +
+    `    Same build (a correction):  … --amend ${a.id} --artifact "${existing?.artifact}" --body-file <path>\n` +
+    `    A NEW build (a retest):     npm run tracker:comment -- --ticket ${a.ticket} --artifact "<build under test>" --body-file <path>\n` +
+    `    Same round, no build to name:  … --same-round "<reason>"`,
+  STALE_AMEND: `Comment ${a.id} is from ${existing?.posted_at} (older than ${hours} h) — is this a new round?\n` +
+    `    An amend notifies nobody. A retest of a new build needs a NEW comment:\n` +
+    `      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>\n\n` +
+    `    A correction of the SAME round: pass the build (${artifactArg}) or a reason:  … --same-round "<reason>"`,
+};
+if (!verdict.ok) die(REFUSAL[verdict.code]);
+if (verdict.code === "NEW_ROUND") console.log(`\n  ↻ new round: ${existing.artifact} → ${a.artifact.trim()}`);
+if (verdict.code === "STALE") console.log(`\n  ↻ new round by age: the last comment is from ${existing.posted_at} (older than ${hours} h). Pass --artifact next time.`);
 
 // ---- attachments first: a wiki reference only resolves once the file is on the issue
 let attached = [];
@@ -285,9 +329,10 @@ async function reportRender(id) {
 if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
-  ledger[a.ticket] = { ...(existing ?? {}), comment_id: String(a.id), run_id: thisRun, amended_at: new Date().toISOString() };
+  // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
+  ledger[a.ticket] = ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound });
   writeLedger(ledger);
-  console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — no new notification thread`);
+  console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);
   console.log("");
   process.exit(0);
@@ -298,6 +343,7 @@ if (a.dryRun) { console.log(`\n  [dry-run] POST (api v${API}) comment on ${a.tic
 const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body: wireBody });
 ledger[a.ticket] = {
   comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(),
+  ...(a.artifact ? { artifact: a.artifact.trim() } : {}),
   ...(a.forceNew ? { force_new_reason: a.forceNew } : {}),
 };
 writeLedger(ledger);
@@ -307,4 +353,4 @@ console.log(`    ledger   : .tracker-comments.json`);
 if (mirrored) console.log(`    summary  : ${mirrored.replace(ROOT + "\\", "").replace(ROOT + "/", "")}`);
 await reportRender(created.id);
 console.log(`\n    Any further change to this ticket in this run must AMEND:`);
-console.log(`      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} --body-file <path>\n`);
+console.log(`      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} --artifact "<build under test>" --body-file <path>\n`);

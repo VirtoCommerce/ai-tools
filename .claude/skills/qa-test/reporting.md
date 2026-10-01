@@ -85,7 +85,10 @@ rate via
 Markdown, never wiki markup; outcome-first, evidence referenced not inlined
 (`.claude/knowledge/execution/tracker-ops.md` §5a). **Post it with `npm run tracker:comment` and record the
 id in `summary.json.tracker.comment_id`; every later write this run makes to the ticket AMENDS that
-comment, never a second one** (`tracker-ops.md` §0):
+comment, never a second one** (`tracker-ops.md` §0). **Every post and amend passes
+`--artifact "<build.deployed of the component under test>"`** — the value `1b` probed this round, never
+`declared`. That is what lets a retest of a NEW build post a new comment instead of being folded into
+the old one (§0 rule 5):
 
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
