@@ -34,7 +34,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
-import { decide, roundHours, sessionRunId } from "./round-guard.mjs";
+import { decide, roundHours, sessionRunId, effectiveEntry, amendEntry } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
 // vars (ADMIN_PASSWORD, USER_PASSWORD, …) are missing. Only a real Jira call needs that
@@ -244,8 +244,15 @@ const API = useWiki ? "2" : "3";
 // broke the one path tracker-ops.md §0 routes every correction through.
 const wireBody = useWiki ? body : markdownToAdf(body);
 
-const existing = ledger[a.ticket];
 const thisRun = runId(a);
+// The ledger is per checkout: an amend of a comment it does not know (another worktree or clone
+// posted it), or one whose entry has no posted_at, takes its age from Jira itself. Skipped on
+// --dry-run, which must stay offline.
+const recorded = ledger[a.ticket];
+const needsRemote = a.mode === "amend" && !a.dryRun &&
+  !(recorded && String(recorded.comment_id) === String(a.id) && recorded.posted_at);
+const remote = needsRemote ? await jira("GET", `/rest/api/3/issue/${a.ticket}/comment/${a.id}`) : null;
+const existing = a.mode === "amend" ? effectiveEntry(recorded, a.id, remote) : recorded;
 
 // One decision for BOTH directions (round-guard.mjs) — the unguarded --amend is what let
 // VCST-5883's round 2 vanish into round 1's comment.
@@ -265,6 +272,14 @@ const REFUSAL = {
   NEW_ROUND_AMEND: `NEW ROUND (tracker-ops.md §0 rule 5): comment ${a.id} records build "${existing?.artifact}", you tested "${a.artifact?.trim()}".\n` +
     `    An amend notifies nobody — the developer and PO would never learn this retest happened.\n\n` +
     `    Post a new comment for the new round:\n      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>`,
+  OTHER_RUN_AMEND: `Comment ${a.id} was posted by another session (${existing?.posted_at}) — is this a new round?
+` +
+    `    An amend notifies nobody. A retest of a new build needs a NEW comment:
+` +
+    `      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>
+
+` +
+    `    Continuing the SAME round from a new session: … --same-round "<reason>"`,
   STALE_AMEND: `Comment ${a.id} is from ${existing?.posted_at} (older than ${hours} h) — is this a new round?\n` +
     `    An amend notifies nobody. A retest of a new build needs a NEW comment:\n` +
     `      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>\n\n` +
@@ -309,11 +324,7 @@ async function reportRender(id) {
 if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
-  ledger[a.ticket] = {
-    ...(existing ?? {}), comment_id: String(a.id), run_id: thisRun, amended_at: new Date().toISOString(),
-    ...(!existing?.artifact && a.artifact ? { artifact: a.artifact.trim() } : {}),
-    ...(a.sameRound ? { same_round_reason: a.sameRound } : {}),
-  };
+  ledger[a.ticket] = amendEntry(existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound });
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);

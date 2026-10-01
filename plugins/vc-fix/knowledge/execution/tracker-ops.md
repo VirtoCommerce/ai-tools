@@ -29,9 +29,10 @@ deliver one conclusion — and left them to reconcile which version is current.
    state. Learning something new about the same build is an amend — a run always learns something new.
 5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
    shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
-   earlier comment stays as that round's record. Name the build: `--artifact "<build under test>"`.
-   Without an artifact, a comment older than 12 h (`TRACKER_ROUND_HOURS`) is presumed to be another
-   round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
+   earlier comment stays as that round's record — post the new round as a new comment, never an edit
+   (`commentId`) of the old one. The plugin's hooks enforce this by age and session: editing a ledger
+   comment older than 12 h (`TRACKER_ROUND_HOURS`), or one another session posted, is blocked as a
+   probable new round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
    `--same-round "<reason>"`.
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
@@ -54,9 +55,9 @@ issue #360 — the round is now keyed on the build under test.
 
 ### 0a. How to amend (Jira)
 
-The local `atlassian` MCP exposes only `addCommentToJiraIssue` — **no edit or delete tool**, which is
-precisely why corrections turned into new comments. The claude.ai Atlassian connectors CAN edit
-(`commentId` on `addCommentToJiraIssue` / `addOrEditJiraIssueComment`); the plugin's hooks guard
+The Atlassian MCP was long used as if `addCommentToJiraIssue` could only post, which is precisely why
+corrections turned into new comments. It CAN edit: pass `commentId` (the local `atlassian` server and the
+claude.ai connectors alike; `addOrEditJiraIssueComment` on some connectors). There is still no delete tool; the plugin's hooks guard
 that edit path and treat a ledger comment older than 12 h as a previous round (rule 5). Otherwise use REST directly:
 
 ```bash

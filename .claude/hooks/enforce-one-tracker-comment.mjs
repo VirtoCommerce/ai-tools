@@ -53,9 +53,16 @@ try {
   // round folded into the old one — VCST-5883 — and an edit notifies nobody.
   const editId = event.tool_input?.commentId;
   if (editId) {
-    if (String(editId) !== String(entry.comment_id) || !isStale(entry.posted_at)) process.exit(0);
+    if (String(editId) !== String(entry.comment_id)) process.exit(0);
+    // Same over-block stance as a post: an edit from a provably different session is presumed
+    // to be a new round too (a same-day retest of a new build) — round-guard.mjs OTHER_RUN_AMEND.
+    const editRun = event.session_id ?? process.env.CLAUDE_SESSION_ID ?? null;
+    const otherRun = Boolean(editRun && entry.run_id && entry.run_id !== "local" && entry.run_id !== editRun);
+    if (!isStale(entry.posted_at) && !otherRun) process.exit(0);
     const why =
-      `Comment ${editId} on ${ticket} is from ${entry.posted_at} (older than ${ROUND_HOURS} h) — is this a new round? ` +
+      (otherRun && !isStale(entry.posted_at)
+        ? `Comment ${editId} on ${ticket} was posted by another session (${entry.posted_at}) — is this a new round? `
+        : `Comment ${editId} on ${ticket} is from ${entry.posted_at} (older than ${ROUND_HOURS} h) — is this a new round? `) +
       `An edit notifies nobody. A retest of a NEW build is a new comment (tracker-ops.md §0 rule 5). ` +
       `A correction of the same round: npm run tracker:comment -- --ticket ${ticket} --amend ${editId} --same-round "<reason>" --body-file <path>`;
     process.stdout.write(JSON.stringify({ decision: "block", reason: why }));

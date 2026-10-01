@@ -26,23 +26,17 @@ same transcript id the hooks receive.
 
 **Fixed: the MCP hooks covered one server name.** `enforce-one-tracker-comment` and `record-tracker-comment`
 (`.claude/` and `plugins/vc-fix/hooks/`, changed together) now match
-`^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)# Changelog
-
-All notable changes to the VC QA plugin are documented here.
-
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver per [`docs/versioning.md`](docs/versioning.md). **Breaking changes are flagged `**BREAKING:**`** and paired with a migration note.
-
-> **Tier-A changes are flagged `**Tier A:**`** so reviewers know to read carefully — those affect the standardization contract.
-
----
-
-, so the claude.ai Atlassian connectors no longer
+`^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$`, so the claude.ai Atlassian connectors no longer
 bypass them. A call with `commentId` is an edit, not a second comment: the guard blocks it only when the
-ledger comment is older than 12 h, and the recorder no longer logs it as a new post.
+ledger comment is older than 12 h or was posted by another session, and the recorder no longer logs it as a
+new post. An amend from a provably different session is refused the same way (`--same-round` overrides), an
+amend of a comment this checkout's ledger does not know takes its age from Jira's `created` time, and a
+successful amend records the build it now reports.
 
 **Changed: `tracker-ops.md` §0** gains rule 5 (a new build is a new round and a new comment) and rewords
-rule 4, in both copies. §0a no longer says the MCP has no edit tool. `/qa-test` 5-report, `/qa-test-fast`
-and `/qa-verify-fix` pass the probed build as `--artifact`.
+rule 4, in both copies. §0a no longer says the MCP has no edit tool. `/qa-test` 5-report and `/qa-test-fast`
+pass the probed build as `--artifact`; `/qa-verify-fix`, which posts through the MCP, is told that a
+verification of a newer build is a new comment.
 
 ---
 

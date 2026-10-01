@@ -55,9 +55,9 @@ issue #360 — the round is now keyed on the build under test.
 
 ### 0a. How to amend (Jira)
 
-The local `atlassian` MCP exposes only `addCommentToJiraIssue` — **no edit or delete tool**, which is
-precisely why corrections turned into new comments. The claude.ai Atlassian connectors CAN edit
-(`commentId` on `addCommentToJiraIssue` / `addOrEditJiraIssueComment`); the hooks below guard that
+The Atlassian MCP was long used as if `addCommentToJiraIssue` could only post, which is precisely why
+corrections turned into new comments. It CAN edit: pass `commentId` (the local `atlassian` server and the
+claude.ai connectors alike; `addOrEditJiraIssueComment` on some connectors). There is still no delete tool; the hooks below guard that
 edit path too.
 
 **Use the helper — it makes amending as cheap as posting, and keeps the ledger for you:**

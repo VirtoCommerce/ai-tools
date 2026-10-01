@@ -42,12 +42,41 @@ export function decide({ mode, entry, commentId, run, artifact, now = Date.now()
     if (known) return mine !== theirs ? { ok: true, code: "NEW_ROUND" } : { ok: false, code: "SAME_ROUND" };
     if (stale) return { ok: true, code: "STALE" };
     // "local" means "cannot prove it was a different run" — same stance as the MCP hook.
-    const provablyDifferent = run && run !== "local" && entry.run_id && entry.run_id !== "local" && entry.run_id !== run;
-    return provablyDifferent ? { ok: true, code: "DIFFERENT_RUN" } : { ok: false, code: "SAME_RUN" };
+    return provablyDifferentRun(run, entry) ? { ok: true, code: "DIFFERENT_RUN" } : { ok: false, code: "SAME_RUN" };
   }
 
   if (sameRound) return { ok: true, code: "SAME_ROUND_OVERRIDE" };
   if (!entry || String(entry.comment_id) !== String(commentId)) return { ok: true, code: "UNTRACKED" };
   if (known) return mine === theirs ? { ok: true, code: "WITHIN_ROUND" } : { ok: false, code: "NEW_ROUND_AMEND" };
-  return stale ? { ok: false, code: "STALE_AMEND" } : { ok: true, code: "FRESH" };
+  if (stale) return { ok: false, code: "STALE_AMEND" };
+  // A different session editing a fresh comment, with no build to compare, is the same-day
+  // shape of VCST-5883 — refuse it like a post would be, unless the caller names the round.
+  return provablyDifferentRun(run, entry) ? { ok: false, code: "OTHER_RUN_AMEND" } : { ok: true, code: "FRESH" };
+}
+
+function provablyDifferentRun(run, entry) {
+  return Boolean(run && run !== "local" && entry?.run_id && entry.run_id !== "local" && entry.run_id !== run);
+}
+
+/**
+ * The entry to judge an amend against. The ledger is per checkout, so a comment posted from
+ * another worktree or clone is missing here, and an entry written by an older amend may have
+ * no posted_at — both would read as FRESH forever. Jira's own `created` time fills the gap.
+ */
+export function effectiveEntry(existing, commentId, remote) {
+  const tracked = existing && String(existing.comment_id) === String(commentId);
+  if (tracked && existing.posted_at) return existing;
+  if (!remote?.created) return existing;
+  return tracked
+    ? { ...existing, posted_at: remote.created }
+    : { comment_id: String(commentId), run_id: "local", posted_at: remote.created };
+}
+
+/** The ledger entry after a successful amend: the build it now reports, never the first one. */
+export function amendEntry(entry, { id, run, artifact, sameRound, now = Date.now() }) {
+  return {
+    ...(entry ?? {}), comment_id: String(id), run_id: run, amended_at: new Date(now).toISOString(),
+    ...(norm(artifact) ? { artifact: norm(artifact) } : {}),
+    ...(sameRound ? { same_round_reason: sameRound } : {}),
+  };
 }
