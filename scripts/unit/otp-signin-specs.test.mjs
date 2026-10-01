@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  STORE_TOKEN, TRUSTED_TOKEN, accountBody, resolveStoreId, seededProblems,
+  STORE_TOKEN, TRUSTED_TOKEN, accountBody, resolveStoreId, seededProblems, planScope,
 } from '../seed-data/auth/otp-signin-specs.mjs';
 
 const cust = (o) => ({ alias: 'X', email: 'agent-test-otp-x@example.test', userType: 'Customer', isAdministrator: false, hasContact: true, ...o });
@@ -62,4 +62,15 @@ test('seededProblems: admin and manager branches', () => {
   assert.deepEqual(seededProblems(MGR, bo({ userType: 'Manager' }), ctx), []);
   assert.equal(seededProblems(MGR, bo({ userType: 'Manager', roles: [{ name: 'R' }] }), ctx).length, 1);
   assert.equal(seededProblems(MGR, null, ctx).length, 1);
+});
+
+test('planScope: seed and verify share one scope — opt-in only via --only, undecidable trusted skipped', () => {
+  const T = { ...TRUSTED, alias: 'T', key: 'TK' };
+  const OPT = { ...ADMIN, optIn: true };
+  const all = [LOCK, T, OPT];
+  const names = (r) => [r.active.map((s) => s.alias), r.skipped.map((s) => s.alias)];
+  assert.deepEqual(names(planScope(all, { envStoreId: 'S1', trustedGroups: ['Partner'] })), [['X', 'T'], []]);
+  assert.deepEqual(names(planScope(all, { envStoreId: 'S1', trustedGroups: ['S1'] })), [['X'], ['T']]);
+  assert.deepEqual(names(planScope(all, { only: 'A', envStoreId: 'S1' })), [['A'], []]);
+  assert.deepEqual(names(planScope(all, { only: 'TK', envStoreId: 'S1', trustedGroups: [] })), [[], ['T']]);
 });

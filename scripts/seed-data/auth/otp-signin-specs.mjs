@@ -23,6 +23,10 @@
  *                             shared env — teardown deletes it; do not leave it seeded longer than
  *                             the run needs.
  *   OTP_MANAGER_NON_CONTACT   back-office Manager, not admin, no member, NO roles.
+ *
+ * `optIn: true` (ADMIN, MANAGER): no case consumes the account yet, so a plain seed / bootstrap does
+ * NOT create it — only `--only <alias>` does. Teardown still sweeps it (it may exist from an earlier
+ * seed). Drop the flag in the same change that adds the first case that reads the alias.
  */
 
 export const SEED_PREFIX = 'AGENT-TEST-OTP';
@@ -41,25 +45,25 @@ const backOffice = (o) => ({ storeId: '', hasContact: false, ...o });
 export const SEEDED_ACCOUNTS = [
   customer({ key: 'LOCKOUT-1', alias: 'OTP_LOCKOUT_USER_1', kind: 'lockout', email: 'agent-test-otp-lockout-1@yopmail.com',
     lastName: 'Lockout One', storeId: STORE_TOKEN, expectOutcome: 'succeeded',
-    consumer: '104 — wrong codes lock the account at the platform threshold' }),
+    consumer: '105 OTP-019 — wrong codes lock the account at the platform threshold' }),
   customer({ key: 'LOCKOUT-2', alias: 'OTP_LOCKOUT_USER_2', kind: 'lockout', email: 'agent-test-otp-lockout-2@yopmail.com',
     lastName: 'Lockout Two', storeId: STORE_TOKEN, expectOutcome: 'succeeded',
-    consumer: '104 — OTP and password share one failed-attempt counter' }),
+    consumer: '105 OTP-020 — OTP and password share one failed-attempt counter' }),
   customer({ key: 'NO-STORE', alias: 'OTP_NO_STORE_CONTACT', kind: 'no-store', email: 'agent-test-otp-nostore@yopmail.com',
     lastName: 'No Store', storeId: '', expectOutcome: null,
-    consumer: '104 — a contact of another store is refused (email2)' }),
+    consumer: '105 OTP-024 — a contact of another store is refused (email2)' }),
   customer({ key: 'TRUSTED', alias: 'OTP_TRUSTED_STORE_CONTACT', kind: 'trusted-store', email: 'agent-test-otp-trusted@yopmail.com',
     lastName: 'Trusted Store', storeId: TRUSTED_TOKEN, expectOutcome: 'succeeded',
-    consumer: '104 — a contact of a trusted-group store signs in to STORE_ID' }),
+    consumer: '105 OTP-023 / OTP-028 — a contact of a trusted-group store signs in to STORE_ID' }),
   customer({ key: 'FOREIGN', alias: 'OTP_FOREIGN_STORE_CONTACT', kind: 'foreign-store', email: 'agent-test-otp-foreign@yopmail.com',
     lastName: 'Foreign Store', storeId: FOREIGN_STORE_ID, expectOutcome: 'user_cannot_login_in_store',
-    consumer: '104 — a contact of another store is refused and no code is sent' }),
+    consumer: '105 OTP-024 — a contact of another store is refused and no code is sent' }),
   backOffice({ key: 'ADMIN', alias: 'OTP_ADMIN_LOCKOUT_ON', kind: 'admin', email: 'agent-test-otp-admin@yopmail.com',
-    userType: 'Administrator', isAdministrator: true, expectOutcome: 'succeeded',
-    consumer: '104 — back-office administrator via the storefront grant (lockout ON twin of ADMIN_DEFAULT)' }),
+    userType: 'Administrator', isAdministrator: true, expectOutcome: 'succeeded', optIn: true,
+    consumer: 'none yet — back-office administrator via the storefront grant (lockout ON twin of ADMIN_DEFAULT)' }),
   backOffice({ key: 'MANAGER', alias: 'OTP_MANAGER_NON_CONTACT', kind: 'manager', email: 'agent-test-otp-manager@yopmail.com',
-    userType: 'Manager', isAdministrator: false, expectOutcome: 'succeeded',
-    consumer: '104 — back-office non-contact account via the storefront grant' }),
+    userType: 'Manager', isAdministrator: false, expectOutcome: 'succeeded', optIn: true,
+    consumer: 'none yet — back-office non-contact account via the storefront grant' }),
 ].map((s) => ({ firstName: SEED_PREFIX, lastName: s.key, ...s }));
 
 export const SEEDED_ALIASES = SEEDED_ACCOUNTS.map((a) => a.alias);
@@ -75,6 +79,18 @@ export function resolveStoreId(spec, envStoreId, trustedGroups = []) {
     return t ? String(t) : '';
   }
   return String(spec.storeId || '');
+}
+
+/**
+ * The accounts one seed / verify run covers — ONE answer for both, so `--verify` never checks an
+ * account the seed did not arm. `only` (alias or key) selects exactly that account, opt-in or not;
+ * without it opt-in accounts are left out. A trusted-store account is SKIPPED when STORE_ID trusts no
+ * other store (the case is not decidable there). Teardown does not use this: it sweeps opt-in too.
+ */
+export function planScope(accounts, { only = null, envStoreId, trustedGroups = [] } = {}) {
+  const selected = accounts.filter((s) => (only ? only === s.alias || only === s.key : !s.optIn));
+  const undecidable = (s) => s.kind === 'trusted-store' && !resolveStoreId(s, envStoreId, trustedGroups);
+  return { active: selected.filter((s) => !undecidable(s)), skipped: selected.filter(undecidable) };
 }
 
 /** POST /api/members body for a customer account's contact (no organization). */

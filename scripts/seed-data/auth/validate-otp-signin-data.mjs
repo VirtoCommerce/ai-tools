@@ -125,6 +125,18 @@ for (const [k, [missing, present]] of Object.entries(lacks)) {
   if (body.grant_type && body.grant_type !== 'otp_email') fail(`[5] missingParamBodies.${k}.grant_type must be otp_email`);
 }
 
+// [6a] seeded ⇔ consumed: a default-seeded account no case reads is a real account created for nothing
+// (the admin is a REAL administrator); an opt-in account a case DOES read would never be seeded for it.
+const suiteText = [];
+const walk = (d) => readdirSync(d, { withFileTypes: true }).forEach((e) => (e.isDirectory() ? walk(join(d, e.name))
+  : e.name.endsWith('.csv') && suiteText.push(readFileSync(join(d, e.name), 'utf8'))));
+walk(join(ROOT, 'regression/suites'));
+const consumed = (alias) => suiteText.some((t) => new RegExp(`\\b${alias}\\b`).test(t));
+for (const s of SEEDED_ACCOUNTS) {
+  if (!s.optIn && !consumed(s.alias)) fail(`[6a] ${s.alias} is seeded by default but no suite case reads it — mark it optIn or add the case`);
+  if (s.optIn && consumed(s.alias)) fail(`[6a] ${s.alias} is optIn but a suite case reads it — drop optIn so the seed creates it`);
+}
+
 // [6] no GUID / credential literal
 if (GUID_RE.test(fxText)) fail('[6] a GUID literal leaked into test-data/auth/otp-inputs.json');
 if (GUID_RE.test(specText)) fail('[6] a GUID literal leaked into otp-signin-specs.mjs');

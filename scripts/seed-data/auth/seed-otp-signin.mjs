@@ -7,9 +7,11 @@
  *   OTP_NO_STORE_CONTACT       Customer contact + account, no storeId
  *   OTP_TRUSTED_STORE_CONTACT  Customer contact + account on a store in STORE_ID.trustedGroups (live)
  *   OTP_FOREIGN_STORE_CONTACT  Customer contact + account on AGENT-TEST-OTP-FOREIGN-STORE (no such store)
- *   OTP_ADMIN_LOCKOUT_ON       Administrator, isAdministrator, no member — a REAL admin, torn down after
- *   OTP_MANAGER_NON_CONTACT    Manager, no member, no roles
+ *   OTP_ADMIN_LOCKOUT_ON       Administrator, isAdministrator, no member — a REAL admin, torn down after  [opt-in]
+ *   OTP_MANAGER_NON_CONTACT    Manager, no member, no roles                                            [opt-in]
  * All: lockoutEnabled, emailConfirmed, passwordExpired false, password {{DEFAULT_TEST_PASSWORD}}.
+ * [opt-in] = no case consumes it yet: created only with `--only <alias>`, never by a plain seed or the
+ * bootstrap; `--teardown` still removes it. Seed and `--verify` cover the SAME accounts (planScope).
  *
  * RE-ARM: re-running on an existing account unlocks it (POST /users/{id}/unlock keys on the GUID —
  * KB-B9D1132A), zeroes accessFailedCount, re-asserts every flag above and re-sets the password.
@@ -40,7 +42,7 @@ import {
 } from '../../lib/seed-common.mjs';
 import {
   SEED_PREFIX, PASSWORD_VAR, SEEDED_ACCOUNTS, FOREIGN_STORE_ID,
-  contactBody, accountBody, seededProblems, isSeededOuterId, resolveStoreId,
+  contactBody, accountBody, seededProblems, isSeededOuterId, planScope,
 } from './otp-signin-specs.mjs';
 
 const argv = process.argv.slice(2);
@@ -48,7 +50,11 @@ const VERIFY_ONLY = argv.includes('--verify-only');
 const VERIFY = argv.includes('--verify') || VERIFY_ONLY;
 const PROBE = argv.includes('--probe') ? String(argv[argv.indexOf('--probe') + 1] || '').split(',').filter(Boolean) : null;
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
+/** Teardown scope: every account (opt-in included — it may exist from an earlier seed), or `--only`. */
 const inScope = (s) => !ONLY || ONLY === s.alias || ONLY === s.key;
+/** Seed + verify scope — the same accounts for both (otp-signin-specs.mjs planScope). */
+const scopeOf = (ctx) => planScope(SEEDED_ACCOUNTS, { only: ONLY, envStoreId: STORE_ID, trustedGroups: ctx.trustedGroups });
+const logSkipped = (skipped) => skipped.forEach((s) => log(`  ! skip ${s.alias}: ${STORE_ID} has no trusted store on ${TEST_ENV} — the case is not decidable here`));
 
 /* ── lookups ─────────────────────────────────────────────────────────────────── */
 
@@ -99,6 +105,7 @@ async function ensureAccount(spec, password, overlay, ctx) {
     if (!contact) contact = await findContact(spec, overlay[spec.alias]?.id);
     if (!contact) {
       const created = await api('POST', '/api/members', contactBody(spec), { expectStatus: [200, 201] });
+      if (!created?.id && !DRY_RUN) throw new Error(`POST /api/members ${spec.email} returned no contact id — refusing to link the account to a placeholder`);
       contact = created?.id ? created : { id: `dry-contact-${spec.key}` };
       log(`  ✓ create contact ${contact.id} (${spec.email})`);
     } else verbose(`reuse contact ${contact.id} (${spec.email})`);
@@ -122,9 +129,12 @@ async function ensureAccount(spec, password, overlay, ctx) {
   if (end > Date.now()) {
     await api('POST', `/api/platform/security/users/${user.id}/unlock`, {}, { expectStatus: [200, 201, 204] });
     log(`  ↻ unlocked ${spec.email} (was locked until ${user.lockoutEnd})`);
+    user = (await findUser(spec.email)) || user; // the pre-unlock row still carries the stamps the unlock changed
   }
   const { password: _pw, ...flags } = body;
-  const full = { ...user, ...flags, accessFailedCount: 0 };
+  // lockoutEnd is cleared EXPLICITLY: ApplicationUser.Patch copies LockoutEnd + AccessFailedCount from
+  // the PUT body, so the pre-unlock value would re-lock the account the unlock just released.
+  const full = { ...user, ...flags, lockoutEnd: null, accessFailedCount: 0 };
   delete full.password;
   delete full.passwordHash;
   const put = await api('PUT', '/api/platform/security/users', full, { expectStatus: [200, 204] });
@@ -140,11 +150,9 @@ async function seed(ctx) {
   if (ctx.foreignExists) throw new Error(`${FOREIGN_STORE_ID} EXISTS on ${TEST_ENV} — the foreign-store fixture would no longer be foreign`);
   const overlay = readOverlay();
   const writeback = {};
-  for (const spec of SEEDED_ACCOUNTS.filter(inScope)) {
-    if (!resolveStoreId(spec, STORE_ID, ctx.trustedGroups) && spec.kind === 'trusted-store') {
-      log(`  ! skip ${spec.alias}: ${STORE_ID} has no trusted store on ${TEST_ENV} — the case is not decidable here`);
-      continue;
-    }
+  const { active, skipped } = scopeOf(ctx);
+  logSkipped(skipped);
+  for (const spec of active) {
     const { contactId, userId } = await ensureAccount(spec, password, overlay, ctx);
     writeback[spec.alias] = { id: DRY_RUN ? '' : (contactId || ''), user_id: DRY_RUN ? '' : userId };
   }
@@ -152,7 +160,7 @@ async function seed(ctx) {
   if (!DRY_RUN) {
     // Read back — the PUT envelope is not proof (lockoutEnd / accessFailedCount have lied before).
     let bad = 0;
-    for (const spec of SEEDED_ACCOUNTS.filter(inScope).filter((s) => writeback[s.alias])) {
+    for (const spec of active) {
       const p = await liveProblems(spec, ctx);
       p.forEach((x) => log(`  ✗ ${x}`)); bad += p.length;
       if (!p.length) log(`  ✓ armed ${spec.alias}`);
@@ -175,7 +183,9 @@ async function verify(ctx) {
   const problems = [];
   if (ctx.foreignExists) problems.push(`${FOREIGN_STORE_ID} exists — the foreign-store fixture is no longer foreign`);
 
-  for (const spec of SEEDED_ACCOUNTS) {
+  const { active, skipped } = scopeOf(ctx);
+  logSkipped(skipped);
+  for (const spec of active) {
     const user = await findUser(spec.email);
     const p = await liveProblems(spec, ctx);
     log(`${p.length ? '✗' : '✓'} ${spec.alias} = ${spec.email} {userType:${user?.userType}, admin:${user?.isAdministrator}, storeId:${user?.storeId || 'none'}, member:${user?.memberId ? 'yes' : 'none'}, roles:${(user?.roles || []).length}, lockoutEnabled:${user?.lockoutEnabled}, passwordExpired:${user?.passwordExpired}}`);
@@ -188,7 +198,7 @@ async function verify(ctx) {
   else log(`✓ OTP_INPUTS.unknownStoreId ${inputs.unknownStoreId} does not exist`);
 
   // ONE anonymous code request per probed account, as the storefront sends it. No grant call.
-  for (const spec of SEEDED_ACCOUNTS.filter((s) => s.expectOutcome && (!PROBE || PROBE.includes(s.alias)))) {
+  for (const spec of active.filter((s) => s.expectOutcome && (!PROBE || PROBE.includes(s.alias)))) {
     const res = await fetch(`${BACK_URL}/api/otp/request`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ storeId: STORE_ID, email: spec.email }), signal: AbortSignal.timeout(40000),
