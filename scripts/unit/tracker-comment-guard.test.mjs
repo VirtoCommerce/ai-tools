@@ -59,7 +59,7 @@ test("PreToolUse: the FIRST comment of a run is allowed", (t) => {
 
 test("PreToolUse: a SECOND comment for the same ticket in the same run is blocked", (t) => {
   const dir = tempProject(t);
-  seed(dir, { "VCST-1": { comment_id: "109824", run_id: "run-A", posted_at: "2026-09-17T13:00:00Z" } });
+  seed(dir, { "VCST-1": { comment_id: "109824", run_id: "run-A", posted_at: new Date(Date.now() - 3_600_000).toISOString() } }); // fresh: an old comment is a new round (#360)
   const out = JSON.parse(runHook(PRE, commentEvent("VCST-1", "run-A"), dir));
   assert.equal(out.decision, "block");
   // the block must be actionable: it names the exact amend invocation

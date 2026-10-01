@@ -525,7 +525,8 @@ rules:
       kind: manual
       ref: Hide a widget and save, then reload → none of that widget's own data queries appear in the reload's network trace (checked against a positive control with the widget visible); hide a stat card and save, then reload → the page-level statistics query still fires with an unchanged request shape. A tray-only restore without a reload is served from cache and does not exercise this — the check must cross a reload.
     violation_signal: A hidden widget's query still fires; a hidden stat card causes the page-level statistics query to change scope, drop a parameter, or stop firing.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-frontend@203908b:client-app/modules/sales-rep/composables/useStatDataNeeds.ts#useStatDataNeeds (:46-54) outside edit mode returns statDataNeeds(scope, current.visible), and layout/stat-data-needs.ts#orderStatisticsFlags turns those needs into @include flags on the statistics query, so hiding a stat card does shrink the query; this contradicts the clause 'hiding a card does not shrink that query's scope or omit it' (the queries are also held until the layout has settled). No human source decides it (the in-code comment cites VCST-5647, which only asks that unrendered fields not be requested), re-run the check"
   - id: BL-SR-032
     title: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty
     rule: The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.
