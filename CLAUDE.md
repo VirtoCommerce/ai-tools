@@ -112,6 +112,7 @@ Each row names THE file that is normative for its topic. Read it before acting o
 | Bug auto-fix gate ladder G0–G7, ownership routing, no-auto-merge, client-code containment | `.claude/knowledge/execution/quality-gates.md` |
 | Test data — `@td()` / `{{VAR}}`, GOLDEN RULE, SECOND RULE | `.claude/rules/test-data.md`; seeder authoring `.claude/knowledge/execution/test-data-authoring.md` |
 | **Whether a change needs a unit test at all** (NO CODE ⇒ NO TEST; derivation vs declaration; which gate already owns it) | `.claude/knowledge/execution/when-to-write-a-test.md` |
+| **Writing or reviewing a functional case or checklist item** — a case exists to fail on a bug: never rewrite an expectation to match the build, `Catches:` the bug it targets, learn from escaped bugs (`npm run gaps`), cover the breaking dimensions, prove it fails once | `.claude/knowledge/execution/cases-that-catch-bugs.md` |
 | Report policy — categories, caps, severity folders, inline screenshots | `.claude/rules/reports.md` (stub) → `.claude/knowledge/execution/reports-policy.md` |
 | Regression — modes, manifest, suite-authoring, selection groups | `.claude/rules/regression.md`; lanes / promotion / scaffold / selection / selectors / pipelines / suites under `.claude/knowledge/execution/regression-*.md` |
 | Agents — roster, browser lanes, delegation | `.claude/rules/agents.md`; knowledge-base read-before-write rules `.claude/ROUTING.md` |

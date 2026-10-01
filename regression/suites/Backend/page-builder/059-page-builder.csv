@@ -462,3 +462,35 @@ HTTP 200 for draft=true on same archive-only group","[AUTH] Token obtained succe
 [ACT] Navigate away from the blade
 [ASSERT] The blade closes immediately — no beforeunload confirmation dialog fires","[DOM] Banner clears when the edited value is reverted to baseline (isModified re-derives false)
 [NAV] Navigate-away no longer blocked after the revert","[CONSOLE] No JS errors during the revert","Banner stays after the field is reverted to its original value (dirty flag stuck true — the inverse staleness of VCST-5515); or the banner never showed to begin with (see CMS-137)","Archive the self-created AGENT-TEST page (Archived is terminal in the shell UI — no hard delete; AGENT-TEST- prefix lets a teardown sweep remove it)","VCST-5515; PR #156 (2026-07-21)",
+CMS-186,"Page Builder All Pages — Search Narrows The List To Exactly The Pages Whose Name Contains The Term, And Clearing It Restores The Full List (VCST-4502)",Search > All Pages Filter,Medium,,,"Admin logged in; the PageBuilder shell is reachable at {{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all and lists more than 3 pages.
+Breaking condition (success-shaped no-op): typing a term and pressing Enter / leaving the field left ALL pages listed (19 of 19) with the term sitting in the field. The existing CMS-052 only asserts that 'matching pages appear', which an unfiltered list also satisfies.
+The search word is DERIVED, not hardcoded: pick a word of at least 4 letters that occurs in at least one page name and is absent from at least one other, so the filtered set is a strict, non-empty subset. If no such word exists the case is INCONCLUSIVE.",shell_url={{BACK_URL}}/apps/page-builder-shell/?storeId=@td(STORE_PRIMARY.id)#/page-builder-all,"[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[NAV] shell_url from Test_Data
+[WAIT] the page list renders
+[ACT] select the 'All Pages' filter
+[WAIT] the list reloads
+[CAPTURE] the total page count as N_ALL
+[CAPTURE] every page name as NAMES_ALL
+[CAPTURE] the search word W derived from NAMES_ALL as described in Preconditions
+[CAPTURE] EXPECTED = the names in NAMES_ALL that contain W, case-insensitive
+[ACT] click 'Search'
+[WAIT] the field is focused
+[ACT] fill 'Search': <W>
+[KEY] press [Enter]
+[WAIT] the list settles
+[CAPTURE] the visible page count as N_FILTERED
+[CAPTURE] the visible page names as NAMES_FILTERED
+[ACT] clear 'Search'
+[WAIT] the list settles
+[CAPTURE] the visible page count as N_RESTORED
+[ACT] fill 'Search': <W reversed, followed by 987>
+[KEY] press [Enter]
+[WAIT] the list settles
+[CAPTURE] the visible page count as N_NONE","[COUNT] N_FILTERED is smaller than N_ALL and at least 1 {SPEC} (VCST-4502)
+[REL] NAMES_FILTERED equals EXPECTED as a set — every visible page contains W and no page containing W is missing {SPEC} (VCST-4502)
+[COUNT] N_RESTORED equals N_ALL after the field is cleared {SPEC} (VCST-4502)
+[COUNT] N_NONE equals 0 for a term that matches nothing {SPEC} (VCST-4502)",[CONSOLE] no error from the search; [NETWORK] the list request issued by the search carries the term and no 4xx/5xx,N_FILTERED equals N_ALL (no filtering); a page without W in its name listed; a page with W missing; list not restored after clearing,Clear the Search field,VCST-4502 · Archetype:SILENT · Technique:EP · Catches:VCST-4502 · Page Builder shell; related CMS-052; VCST-4256,Draft
