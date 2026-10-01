@@ -293,6 +293,34 @@ the agent's contract, which decides the strict-vs-safe balance above; the two pr
 whether a body re-rank of the top 10 (dev: right entry in the top 3 32 -> 35 of 37; calibration
 unchanged) is worth ten body reads per ask.
 
+## M4 gate result (2026-10-01) -- FAIL by one row on two lines; `floor-1` stays
+
+The frozen configuration (`scripts/kb/bench/ranker.m4-gate.json`: linear fusion, head re-rank by the
+bodies, threshold for precision 0.95; the one-line agent contract in `render.mjs`) was measured end to
+end on the test split, opened once (`.test-openings.jsonl`). Full record: `scripts/kb/bench/m4-gate-result.json`.
+
+| AC line | dev + calibration | **test** | gate |
+|---|---|---|---|
+| picks precision (relied on, after the body check) | 42/44 | **18/19 (94.7%)** | >= 95% -- **fail** |
+| a control answered by the base | 0 | 0 | 0 -- pass |
+| controls end in `none` / `kb_none` | 28/29 | 9/9 | >= 90% -- pass |
+| targets resolved, non-partial | 41/50 (82%) | **17/22 (77%)** | >= 80% -- **fail** |
+| paraphrase recall@10 | 37/38 | 15/16 | >= 90% -- pass |
+| mean `ask` payload, tokens | 380 | 387 | <= 400 -- pass |
+| every pre-migration id resolves through `show` | -- | 289/289 | pass |
+
+Read with the size of the split in mind: on test one row is 5 points of precision and 4.5 of
+resolution, so the gate missed by ONE row on each line. The single wrong reliance (`P-4B889114-1` on
+`KB-27B4CD10`, two entries about the storefront members list) may be a label gap; it is reported, not
+relabelled -- the split is opened once. The pick step alone resolves 18/22 at precision 19/21; the body
+check trades one resolution for one wrong pick. A Haiku-class agent on the same items (pick only): 14/17
+precision, controls 8/9, resolved 13/22 -- the contract is not safe for a weak agent without the body check.
+
+**What this means.** The base now finds what it holds (paraphrase recall 94-97% against floor-1's 57-83%)
+at a quarter of `two-stage-1`'s payload, and never answers a control alone. Whether that clears a
+precision bar of 0.95 cannot be settled on 33 rows; the next measurement needs a larger held-out set,
+which the logged `kb_show` / `kb_none` of a live wave provide for free (M6).
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
@@ -312,7 +340,7 @@ unchanged) is worth ten body reads per ask.
 | M1 | client: schema 2 read/write, derived anchor kinds, closed surface (no behaviour change) | released and pulled (Decision 8) |
 | M2 | migration of all entries: split, cards, concepts, surface; reviewed PR to `vc-knowledge` | PR merged; every old id resolves |
 | M3 | `vocabulary.json` seed | reviewed |
-| M4 | query pipeline + `kb calibrate` + three verdicts | as amended 2026-10-01, measured END TO END on the test split (the base's verdict, then a Sonnet-class agent's choice on `ambiguous`): picks precision ≥ 0.95; controls end in `none` / `kb_none` ≥ 0.90; no control gets `answer` from the base; targets resolved ≥ 0.80 of non-partial targets (partial reported); paraphrase recall@10 ≥ 0.90; `ask` payload ≤ 400 tokens mean. **Fail ⇒ keep what `main` runs (`floor-1`).** |
+| M4 | query pipeline + `kb calibrate` + three verdicts | **2026-10-01: failed by one row on picks precision (18/19) and on resolution (17/22); see §M4 gate result.** As amended 2026-10-01, measured END TO END on the test split (the base's verdict, then a Sonnet-class agent's choice on `ambiguous`): picks precision ≥ 0.95; controls end in `none` / `kb_none` ≥ 0.90; no control gets `answer` from the base; targets resolved ≥ 0.80 of non-partial targets (partial reported); paraphrase recall@10 ≥ 0.90; `ask` payload ≤ 400 tokens mean. **Fail ⇒ keep what `main` runs (`floor-1`).** |
 | M5 | capture v2: card mandatory, push-side filter | — |
 | M6 | `kb-report`: verdict panels, vocabulary and label queues | — |
 | M7 | dense channel | only if M4 misses paraphrase recall |
