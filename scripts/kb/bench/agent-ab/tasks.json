@@ -147,7 +147,8 @@
           "Wrong attempt count or duration",
           "Organization members said to get a permanent lock"
         ]
-      }
+      },
+      "beforeEach": "reset-lockout"
     },
     {
       "id": "T8-returns-colleague",

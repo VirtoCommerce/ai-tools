@@ -208,6 +208,31 @@ ${final.slice(-12000)}`;
   } catch { return { score: null, falseClaim: null, evidence: null, reason: 'judge output unreadable' }; }
 }
 
+// ── environment resets ───────────────────────────────────────────────────────────────────────
+async function resetLockout() {
+  const up = await import(pathToFileURL(join(REPO, 'scripts/lib/user-provision.mjs')).href);
+  await up.authenticate();
+  const email = process.env.LOCKOUT_TEST_EMAIL;
+  const user = await up.findUserByEmail(email);
+  if (!user?.id) fail('reset-lockout: no account for LOCKOUT_TEST_EMAIL');
+  // POST /unlock clears lockoutEnd. It is not known to clear accessFailedCount, and a run that
+  // starts at 4 failures would lock on its first wrong password -- so one successful sign-in
+  // follows, which resets the count, and both fields are read back from search (getUserById
+  // addresses users by name and returns null for a GUID).
+  await up.getApi()('POST', `/api/platform/security/users/${user.id}/unlock`, {}, { expectStatus: [200, 201, 204] });
+  const token = await fetch(`${vars.BACK_URL.replace(/\/+$/, '')}/connect/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ grant_type: 'password', scope: 'offline_access', storeId: vars.STORE_ID,
+      username: email, password: process.env.LOCKOUT_TEST_PASSWORD ?? '' }),
+  });
+  const after = await up.findUserByEmail(email);
+  const end = after?.lockoutEnd ? new Date(after.lockoutEnd).getTime() : 0;
+  const clean = end <= Date.now() && (after?.accessFailedCount ?? 0) === 0;
+  console.log(`  reset-lockout: sign-in ${token.status}, lockoutEnd=${after?.lockoutEnd ?? 'null'}, accessFailedCount=${after?.accessFailedCount ?? '?'}`);
+  if (!clean) fail("reset-lockout: the account is not clean; the run would start from the previous run's state");
+}
+
 // ── one cell: task × arm × run ────────────────────────────────────────────────────────────────
 async function cell(task, arm, n) {
   const name = `${task.id}.${arm}.${n}`;
@@ -232,6 +257,10 @@ async function cell(task, arm, n) {
   mkdirSync(join(OUT, 'prompts'), { recursive: true });
   writeFileSync(join(OUT, 'prompts', `${name}.md`), prompt);
   const promptSha = createHash('sha256').update(prompt).digest('hex').slice(0, 12);
+  // A task that leaves environment state behind (T7 locks LOCKOUT_TEST_EMAIL for 15 minutes) would
+  // hand the next run a pre-locked account -- the previous run's finding, delivered through the
+  // environment. So the state is reset before EVERY run of such a task, and the reset is verified.
+  if (task.beforeEach === 'reset-lockout') await resetLockout();
   const t0 = Date.now();
   const r = await claude(args, prompt, dir, env, TIMEOUT_MS);
   writeFileSync(join(OUT, `${name}.jsonl`), r.out);
