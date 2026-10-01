@@ -23,7 +23,7 @@
         ]
       },
       {
-        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "matcher": "^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$",
         "hooks": [
           {
             "type": "command",
@@ -56,7 +56,7 @@
         ]
       },
       {
-        "matcher": "mcp__atlassian__addCommentToJiraIssue",
+        "matcher": "^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$",
         "hooks": [
           {
             "type": "command",
