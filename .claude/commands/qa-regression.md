@@ -290,8 +290,7 @@ npm run tc:promote -- {RUN_ID}      # dry: the per-case decision + a PR-* reason
 
 **Append a `## Promotion` section to the Step 6 markdown report**: each eligible case (id → target
 status) and each hold with its `PR-*` code. **An empty eligible set is one line, never a silence** — a
-report that omits promotion reads exactly like one where nothing was promotable. (The HTML report is
-generated from `suite-*-results.json` and does not carry this section; the markdown is where it lives.)
+report that omits promotion reads exactly like one where nothing was promotable.
 
 | Invocation | Step 6.5 does |
 |---|---|
@@ -300,9 +299,8 @@ generated from `suite-*-results.json` and does not carry this section; the markd
 | `--no-promote` | nothing, said in one line |
 
 **Promotion out of `Draft` is never automatic**, and this step does not change that
-([`regression-promotion.md`](../knowledge/execution/regression-promotion.md) §Post-Run Promotion). What
-it adds is that the decision is **always surfaced**: before it existed, a green run left its promotable
-cases invisible until somebody thought to go looking for them.
+([`regression-promotion.md`](../knowledge/execution/regression-promotion.md) §Post-Run Promotion); it
+only makes the decision always visible.
 
 **This step does NOT harvest assertions.** A case still carrying `{HYPOTHESIS}` is held at `PR-007` —
 the row is linted at its **target** status — and that hold is the correct answer here. Resolving it needs
@@ -310,9 +308,7 @@ the row is linted at its **target** status — and that hold is the correct answ
 Phase 6P's job. **6.5 is the mechanical flip for cases already grounded; 6P is the full promoter.**
 
 **No verifier dispatch.** 6.5's only write is `tc:promote:apply`'s — deterministic, re-derivable from
-the run, field-compared before it lands, and revertible with `git checkout` of the target CSV. The
-`verify:gate --gate 5g` ratification belongs to **6P**, where assertions were rewritten and a human
-judgement was made.
+the run, field-compared before it lands. The `verify:gate --gate 5g` ratification belongs to **6P**.
 
 **A DELEGATED run never promotes.** When another command invoked this one — `/qa-test` `4c` (the C1
 exact set) or `5-loop` — the caller passes `--no-promote` and this step is skipped. `/qa-test`'s own
@@ -320,6 +316,13 @@ promotion step (`5g`) was removed on 2026-09-10 for a **placement** reason that 
 run would re-create exactly: the cases are minutes old, their assertions unharvested, and the run's
 close-out not yet delivered. **The flag is passed by the caller, never inferred here** — a step that
 decides for itself whether it is "really" delegated is one that will eventually decide wrong.
+
+
+### Step 6.6 — BL freshness (always, delegated too)
+
+`npm run bl:fresh -- --results reports/regression/{RUN_ID} --rerun --write` marks a `BL-*` whose citing case
+failed `SUSPECT`, clears one whose cases all passed, never rewrites a rule. One report line; the YAML
+rides the run's PR. [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audit-criteria.md) §1b.
 
 ### Step 7 — Teardown (only if `--teardown` provided)
 

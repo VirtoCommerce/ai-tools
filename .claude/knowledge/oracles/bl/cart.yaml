@@ -20,6 +20,8 @@ rules:
         ref: VCST-5234 (Done) — an over-stock quantity was persisted on the line but the per-line validation error disappeared; fixed so the line keeps PRODUCT_QTY_INSUFFICIENT
       - kind: resolution
         ref: VCST-3926 (Done) — storefront let a user increase cart quantity for out-of-stock or unavailable products; fixed
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Validators/CartLineItemValidator.cs#ValidateMinMaxQuantity
     check:
       kind: manual
       ref: "PDP: for a product not yet in cart, enter a quantity above available stock → assert the inline range message, Increase disabled, and cart item count unchanged (no line committed). Cart page: for an existing line, enter a quantity above available stock into the line's quantity input and submit → assert the persisted quantity equals the entered value (not capped), line total = qty × unit price, cart subtotal reflects it, an inline validation message renders, and \"Place order\" stays disabled; reload the page → assert the same out-of-range quantity, total, and message persist."
@@ -37,6 +39,8 @@ rules:
         ref: platform/user-guide/docs/cart/overview.md — the cart module reserves stock for cart products until checkout completes
       - kind: resolution
         ref: VP-2862 (Done) — a product with zero stock and zero preorder quantity could still be added and bought; fixed
+    scope:
+      code_ref: vc-module-x-order:src/VirtoCommerce.XOrder.Data/Commands/CreateOrderFromCartCommandHandler.cs#ValidateCart
     check:
       kind: manual
       ref: Add item (stock=2) → in another session/admin, reduce stock to 0 → attempt checkout → error message, order NOT created. Cart should flag the item.
@@ -52,6 +56,8 @@ rules:
         ref: "VCST-4896 (Done) — Coupons sidebar AC: main rule is one coupon at a time; a new code replaces the previous one"
       - kind: doc
         ref: platform/user-guide/docs/marketing/combining-active-promotions.md — Best Reward (default) applies one best promotion; Stackable combines them and skips rewards that would go negative
+    scope:
+      code_ref: vc-module-marketing:src/VirtoCommerce.MarketingModule.Data/Services/EvaluationPolicies/BestRewardPromotionPolicy.cs#EvaluatePromotionWithoutCache
     check:
       kind: manual
       ref: Item at $100 list, $80 sale → apply 10% coupon → discount = $8 (10% of $80), not $10. Apply second coupon → rejected with "Only one coupon allowed" message.
@@ -69,6 +75,8 @@ rules:
         ref: VCST-2961 (Done) — cart became empty after a merge followed by a cart currency change; fixed
       - kind: resolution
         ref: VCST-2778 (Done) — cart emptied after changing currency in the user profile; fixed
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Commands/ChangeCartCurrencyCommandHandler.cs#ResolveTargetCurrency
     check:
       kind: manual
       ref: "Single-currency cart: add items → switch currency → all prices, subtotal, shipping, tax use the new currency; products without a new-currency price are flagged/removed. Mixed cart: with a PTS loyalty line present, switch the base currency USD→EUR → USD lines convert to EUR, the PTS line stays PTS, item count unchanged."
@@ -80,6 +88,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartAggregateRepository.cs#GetCartAsync
     check:
       kind: manual
       ref: "As Org A, add items → switch to Org B → cart is empty (or Org B's separate cart). Switch back to Org A → original items restored. Check xAPI: `cart` query with different org context returns different carts."
@@ -97,6 +107,8 @@ rules:
         ref: "platform/user-guide/docs/glossary.md — MOQ entry: pack size requirements round quantities to fixed steps"
       - kind: doc
         ref: platform/user-guide/docs/catalog/managing-products.md — pack size ensures orders are placed in predefined quantities
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Specifications/PackSizeLimitSpecification.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: "Product with pack size 6 → add to cart → qty = 6. Try to change qty to 7 → rejected or auto-rounded to 12. Stepper increments: 6 → 12 → 18."
@@ -114,6 +126,8 @@ rules:
         ref: KB-734A0813 (single observation) — same-product adds merge into one line with summed quantity; configured items always stay separate lines
       - kind: resolution
         ref: VCST-4205 (Done) — different configurations of one configurable product merged into a single Saved-for-Later item; fixed to keep them separate
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#FindExistingLineItemBeforeAdd
     check:
       kind: manual
       ref: Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
@@ -133,6 +147,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/merge-cart.md — mergeCart merges an anonymous cart into the user cart after authentication
       - kind: resolution
         ref: VCST-5801 (Done) — guest→account merge folded a free gift line into a paid line; fixed (merge must preserve line semantics)
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#MergeWithCartAsync
     check:
       kind: manual
       ref: 'Add items → sign out → sign in → cart restored. Separately: browse as guest, add items → sign in (existing account with different cart items) → carts merge without duplicates. Coupon case: apply a coupon to one side of the merge → sign in to trigger the merge → assert the coupon is still applied ("Remove coupon" shown, not silently cleared) and the discount amount reflects the merged (larger) subtotal, not the pre-merge amount.'
@@ -150,6 +166,8 @@ rules:
         ref: "VCST-4896 (Done) — Coupons sidebar AC: one coupon at a time; applying another code deactivates the first (radio-button behaviour)"
       - kind: resolution
         ref: VCST-5518 (Done) — an invalid replacement coupon silently dropped the valid applied one (remove-then-validate); fixed to validate before removing
+    scope:
+      code_ref: vc-frontend:client-app/shared/cart/composables/useCoupon.ts#applyCoupon
     check:
       kind: manual
       ref: "Apply coupon A → exactly one card/input shows \"applied\"/\"Remove coupon\"; `cart.coupons[]` contains one successfully-applied entry (code A). Apply a different preset B → network shows `removeCoupon`(A) 200 → `validateCoupon`(B) → `addCoupon`(B) 200, in order; final applied slot = B only; discount reflects only B's reward (assert against the `AddCoupon` response `discountTotal`, not a computed %, per BL-CHK-006). Via the custom input: if A was applied through a VISIBLE preset card, the custom input resets to empty and remains editable (typing accepted, Apply button enables) — by design, not a violation; if A was applied through the custom input itself, or A is not among the visible presets, the custom input mirrors A and is read-only, offering only \"Remove coupon\". Anonymous carts render only the custom-code input (no preset cards; `promotionCoupons` not queried)."
@@ -168,6 +186,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/changeCartConfigurationItemSelected.md — toggles selectedForCheckout on one configuration item of a configured line
       - kind: resolution
         ref: VCST-4961 (Done) — selectedForCheckout on configuration items had no write path; resolved
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/ConfiguredLineItemContainer.cs#UpdatePrice
     check:
       kind: manual
       ref: Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
@@ -181,6 +201,8 @@ rules:
     source:
       - kind: code
         ref: 'vc-module-x-cart PR #114 §Validation errors; `CartAggregateTests` "unmatched section no-op" unit test.'
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#ChangeConfigurationItemsSelectedAsync
     check:
       kind: manual
       ref: "Obtain a configurable lineItem with 2 known section keys (A and B). Call `selectCartConfigurationItems` with `configurationSections: [keyA, {sectionId: 'does-not-exist', type: 'Product'}]`. Assert HTTP 200 and `errors[]` is empty. Assert `configurationItems[keyA].selectedForCheckout = true` (matched item flipped). Assert no error entry or warning appears for the unmatched key."
@@ -198,6 +220,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/selectAllCartConfigurationItems.md — selects all configuration items within a single configured line item (lineItemId required)
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/selectCartConfigurationItems.md — command takes one lineItemId plus configurationSections
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#ChangeAllConfigurationItemsSelectedAsync
     check:
       kind: manual
       ref: Build a cart with two configurable lineItems (L1 and L2), each with at least one config item. Call `unSelectAllCartConfigurationItems` with `lineItemId = L1.id`. Assert all config items on L1 have `selectedForCheckout = false`. Assert all config items on L2 retain their original state and `L2.listPrice` is unchanged.
@@ -211,6 +235,8 @@ rules:
     source:
       - kind: code
         ref: 'vc-module-x-cart PR #114 §Key business behavior; `CartAggregateTests` "no-change short-circuit" and "idempotency" unit tests.'
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#ChangeConfigurationItemsSelectedAsync
     check:
       kind: manual
       ref: Obtain a cart with a configurable lineItem where all config items have `selectedForCheckout = true`. Call `selectAllCartConfigurationItems` for that lineItem. Assert cart totals are unchanged. Confirm `UpdateConfiguredLineItemPrice` was not triggered (via platform logs or unit test coverage). Repeat with `changeCartConfigurationItemSelected` sending the same value already set.
@@ -226,6 +252,8 @@ rules:
         ref: "vc-module-x-cart PR #114 — `ConfigurationSectionKeyInput.cs` and `ConfigurableProductOptionKeyInput.cs`."
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/mutations/changeCartConfigurationItemSelected.md — a section is identified by sectionId, type and an optional option
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#FindConfigurationItem
     check:
       kind: manual
       ref: "For a Variation section: call `changeCartConfigurationItemSelected` with `{sectionId, type: 'Variation'}` and no `option` field → assert silent no-op (flag does not flip). Repeat with `{sectionId, type: 'Variation', option: {productId: <valid-id>}}` → assert flag flips. For a Text section: call with `{sectionId, type: 'Text'}` and no `option` → assert flag flips (lookup succeeds). For a File section: same as Text."
@@ -241,6 +269,8 @@ rules:
         ref: vc-frontend `client-app/core/api/graphql/cart/fragments/fullLineItem.graphql` (`configurationItems` block on `LineItemType`); `.../mutations/moveToSavedForLater/moveToSavedForLaterMutation.graphql` and `.../moveFromSavedForLater/moveFromSavedForLaterMutation.graphql` (both return `cart { ...fullCart }`).
       - kind: resolution
         ref: VCST-4205 (Done) — a configurable item moved back from Saved for Later lost its selected configuration; fixed
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/SavedForLaterListService.cs#CreateConfiguredLineItemContainerAsync
     check:
       kind: manual
       ref: Add a configurable product with a Text-section custom value to cart; confirm via the cart's line-item configuration view. Move it to Saved for Later. Move it back to cart. Confirm the configuration view shows the identical custom value on the new lineItem.

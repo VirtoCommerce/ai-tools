@@ -457,7 +457,7 @@ Run **`/qa-review-bl`** on exactly the `BL-*` this run surfaced — the Phase 2 
 Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/qa-review-bl domain
 <name>`. Operations (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §1):
 
-- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = the bug key (filed via the defect path). The rule's text is never rewritten from what the run saw.
+- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = `[bug] <KEY>` (filed via the defect path; `bl:fresh --resolve` clears it on Fixed). The rule's text is never rewritten from what the run saw.
 - **A candidate a human source states → NEW / SYNC** in `bl/<slug>.yaml` (value gate for NEW), then `npm run bl:render` + `bl:convert:check`.
 - **A `SUSPECT` rule in scope whose bug now has a Jira decision → RESOLVE** (Fixed → `ACTIVE`; By design / Won't fix → rule rewritten from the resolution).
 - Behaviour no rule covers → `kb_capture`. No proposals file, no review queue; RETIRE is only proposed.
