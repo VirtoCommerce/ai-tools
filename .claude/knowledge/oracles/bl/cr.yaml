@@ -26,7 +26,6 @@ rules:
       ref: As an eligible buyer, submit a review for a purchased product → mutation returns a non-empty id with no validation errors → in Admin, the new review appears in the review list with Status = New → the review is absent from the public storefront review list until approved.
     violation_signal: A submitted review appears already Approved in Admin without any moderation action; the review is immediately visible on the storefront before approval; the create call returns a null id with no validation errors on a genuinely eligible purchase.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-001
   - id: BL-CR-008
     title: Anonymous visitors cannot access the review-submission control
     rule: "The storefront never offers the \"leave feedback\" control (button or inline form) to an unauthenticated visitor — feedback eligibility is computed only after authentication, so it defaults to unavailable for anonymous sessions. This is reinforced server-side: a review requires a completed order tied to the requesting user's id, which an anonymous session structurally cannot have."
@@ -40,7 +39,6 @@ rules:
       ref: As an anonymous visitor, open a product page that has approved reviews → the reviews are readable, but no "leave feedback" button or review form is present anywhere in the widget.
     violation_signal: An anonymous visitor sees a "leave feedback" button or an open review form; a review is created client-side without the user ever authenticating.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-008
   - id: BL-CR-009
     title: Leave-feedback eligibility is a three-part AND
     rule: "The `canLeaveFeedback` query — and therefore the storefront's decision to show the leave-feedback control — is true only when ALL of: the target is a Product entity, the requesting user has a completed order for it, and the user has not already reviewed it. Any single failing condition suppresses the control."
@@ -56,7 +54,6 @@ rules:
       ref: As a logged-in user with a completed order and no prior review for a product, open its page → the leave-feedback control is shown. As a logged-in user with no completed order for a different product, open that page → the control is hidden. After leaving a review, reload → the control is hidden for that product.
     violation_signal: The leave-feedback control appears for a user who never purchased the product, or reappears after the user has already reviewed it, allowing a second review attempt.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-009
   - id: BL-CR-010
     title: The storefront review surface exposes only Approved reviews
     rule: Every storefront-facing review read (the reviews list and its total count) is scoped server-side to `ReviewStatus = Approved` — New and Rejected reviews are never included, regardless of any client-supplied filter. The surface supports pagination and sorting by creation date.
@@ -76,7 +73,6 @@ rules:
       ref: Seed a product with a mix of Approved, New, and Rejected reviews → the public query's total count and item list equal the Approved subset only. With more reviews than one page, navigate pages → each page returns the expected slice, total count stable across pages. Switch sort direction → item order reverses.
     violation_signal: A New or Rejected review appears in the public review list or inflates its total count; pagination returns duplicate or missing items across pages; sort direction has no effect.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-010
   - id: BL-CR-012
     title: Admin review search filters by status, entity type, rating range, and keyword
     rule: The admin review search accepts an array of review statuses, an entity type, a rating range (start/end), and a keyword, narrowing the result set to exactly the matching rows; every visible column (Title, Rating, Created date, Status, Created by) is independently sortable.
@@ -92,7 +88,6 @@ rules:
       ref: In Admin, filter by Status = Approved → only Approved rows shown; filter by Status = New → only New rows shown. Filter by a rating window → each window returns only in-range rows. Sort by Created date or Rating → the list reorders accordingly.
     violation_signal: A status/rating-range filter leaves out-of-scope rows in the result; sorting a column has no effect; the entity-type filter has no effect.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-012
   - id: BL-CR-013
     title: Moderation actions transition review status and take effect immediately
     rule: Admin moderation exposes three status-transition actions on a review — Approve (→ Approved), Reject (→ Rejected), Reset (→ New) — each of which updates the review's status and is reflected on the storefront within the same request cycle (approve makes it visible per BL-CR-010; reject/reset make it invisible).
@@ -110,7 +105,6 @@ rules:
       ref: Open a New review in Admin → Approve → status becomes Approved and the review appears in the storefront's public list. Reject an Approved review → status becomes Rejected and it disappears from the storefront. Reset an Approved/Rejected review → status returns to New and it is absent from the storefront.
     violation_signal: A moderation action returns success but the status field is unchanged; the storefront still shows a rejected/reset review; approving does not make a review visible.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-013
   - id: BL-CR-016
     title: Product rating aggregates only Approved reviews and recomputes on status change
     rule: The entity rating (value + review count) exposed on the storefront and via the rating API is computed exclusively from Approved reviews — New and Rejected reviews never contribute to either the average value or the count. The aggregate is recomputed whenever a review transitions status, not only on create.
@@ -128,7 +122,6 @@ rules:
       ref: Read a product's rating → review count equals its Approved-review count, value is their average, both within the valid rating scale. Approve a New review for that product → rating recomputes to include it. Reject an Approved review → rating recomputes to exclude it.
     violation_signal: The review count includes New/Rejected reviews; the rating value falls outside the valid scale; the rating does not change after a moderation action that should affect it.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-016
   - id: BL-CR-017
     title: Product reviews are a store-scoped, toggleable feature
     rule: Whether the review widget (display + submission) appears on a store's storefront is controlled by a single store-level setting. Enabling it exposes the review widget inline in the product page body; disabling it removes the widget and its submission form entirely for that store, without affecting other stores.
@@ -146,7 +139,6 @@ rules:
       ref: On a store with the setting enabled, open any product page → the review widget renders. On a store with the setting disabled, open a product page → no review widget or form renders anywhere on the page.
     violation_signal: The widget renders on a store where the setting is disabled; toggling the setting off leaves the widget visible until a full redeploy; enabling it on one store leaks the widget onto a different store.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-017
   - id: BL-CR-018
     title: Every admin review-moderation action is gated by its own named permission
     rule: "Each admin review-management REST action requires a distinct permission from the CustomerReviews permission group: search/list requires read; approve/reject/reset/create-or-update require update; delete requires delete; reading the aggregate rating requires the rating-read permission; triggering a store-wide rating recalculation requires the rating-recalculate permission. A caller lacking the specific permission for an action receives HTTP 403, regardless of whether they hold other CustomerReviews permissions."
@@ -160,4 +152,3 @@ rules:
       ref: With a token holding only the read permission, call search → succeeds; call approve/reject/reset/delete/recalculate → each returns 403. With a token holding no CustomerReviews permissions, every one of these endpoints returns 403.
     violation_signal: An action succeeds for a caller who holds only a different CustomerReviews permission (e.g. a read-only token can approve); any of these endpoints is reachable with no permission at all.
     status: ACTIVE
-    history: docs/decisions/bl/cr.md#bl-cr-018

@@ -29,7 +29,6 @@ rules:
       ref: Query for an org+store with no enabled WL setting → null; storefront renders default logo/theme.
     violation_signal: Error, blank header, or stale branding when no WL config exists.
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-001
   - id: BL-WL-002
     title: Org & store settings merge per-field, org-preferred (NOT whole-object override)
     rule: Org and store WL settings are merged **field by field**. For each of `logoUrl`, `secondaryLogoUrl`, `faviconUrl`, `themePresetName`, `footerLinkListName`, `mainMenuLinkListName`, the org value is used when non-empty, otherwise the store value. An org that sets only some fields inherits the store's remaining fields — it is not a whole-object override.
@@ -45,7 +44,6 @@ rules:
       ref: "Org sets logo only; store sets theme + footer → merged result = org logo + store theme + store footer. (Live-verified 2026-07-02: Electronics org @ B2B-store → org's Watermelon theme replaces store Coffee while other fields merge.)"
     violation_signal: Setting one org field blanks out store-provided fields; or org fields ignored entirely.
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-002
   - id: BL-WL-003
     title: Two enable layers — store master switch (storefront) vs per-record IsEnabled (xAPI)
     rule: |-
@@ -66,7 +64,6 @@ rules:
       ref: (1) Store setting `WhiteLabeling.WhiteLabelingEnabled=false` → org user sees theme defaults (no org logo/theme); set `true` → branding returns. (2) With the master switch ON, query an enabled org against a store that has no enabled store-WL record → org logo+theme still resolve (live-verified 2026-07-02, non-destructive).
     violation_signal: Master switch OFF but WL still applied; OR an enabled org's branding suppressed merely because the store *record* is disabled/absent (confusing the two layers).
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-003
   - id: BL-WL-004
     title: Link lists resolve by name; missing → empty array, no error; footer legacy fallback
     rule: "`mainMenuLinks` resolves the link list named in `MainMenuLinkListName`; `footerLinks` resolves `FooterLinkListName`. A NULL/empty/non-existent name yields an **empty array**, HTTP 200, no `errors[]`. Footer (only) additionally falls back to a `footer-{organizationName}` list when `FooterLinkListName` is empty (backward compat); main menu has no such fallback. Querying without `mainMenuLinks` in the selection set stays valid (optional field)."
@@ -82,7 +79,6 @@ rules:
       ref: "Org with NULL MainMenuLinkListName → `mainMenuLinks: []`, no error; org with empty FooterLinkListName but a `footer-<orgname>` list present → footer resolves."
     violation_signal: Error/500 on missing list; main-menu resolving a `main-menu-{org}` fallback that does not exist in code.
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-004
   - id: BL-WL-005
     title: A WL setting binds to exactly one of Store XOR Organization
     rule: Each `WhiteLabelingSetting` references exactly one of Store or Organization — never both, never neither. The Admin blade rejects both-set and neither-set, and blocks duplicate store/org bindings.
@@ -98,7 +94,6 @@ rules:
       ref: Admin WL blade with both Store & Org set → "Both Store and Organization set" error; neither → "Store or Organization must be set"; a duplicate store/org → "Duplicate Store or Organization".
     violation_signal: A setting saved with both or neither binding; duplicate bindings persisted.
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-005
   - id: BL-WL-006
     title: Distinct allowed upload types — logo vs favicon
     rule: The **Logo** widget accepts **PNG / GIF / SVG**; the **Favicon** widget accepts **PNG / JPG / WEBP**. Other extensions are rejected with a "Filetype error" dialog. The sets are distinct — JPG/WEBP are favicon-only, GIF/SVG are logo-only.
@@ -116,4 +111,3 @@ rules:
       ref: Upload `.gif` logo → accepted; `.jpg` logo → rejected ("Only PNG, GIF or SVG files are allowed"); `.webp` favicon → accepted; `.svg` favicon → rejected ("Only PNG, JPG, or WEBP files are allowed").
     violation_signal: Logo widget accepts JPG/WEBP; favicon widget accepts GIF/SVG; no filetype-error dialog on a disallowed extension.
     status: ACTIVE
-    history: docs/decisions/bl/wl.md#bl-wl-006

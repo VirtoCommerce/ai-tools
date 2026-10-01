@@ -25,7 +25,6 @@ rules:
       ref: "PDP: for a product not yet in cart, enter a quantity above available stock → assert the inline range message, Increase disabled, and cart item count unchanged (no line committed). Cart page: for an existing line, enter a quantity above available stock into the line's quantity input and submit → assert the persisted quantity equals the entered value (not capped), line total = qty × unit price, cart subtotal reflects it, an inline validation message renders, and \"Place order\" stays disabled; reload the page → assert the same out-of-range quantity, total, and message persist."
     violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-001
   - id: BL-CART-002
     title: Out-of-stock mid-session
     rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -43,7 +42,6 @@ rules:
       ref: Add item (stock=2) → in another session/admin, reduce stock to 0 → attempt checkout → error message, order NOT created. Cart should flag the item.
     violation_signal: Order placed successfully for an out-of-stock item; no error shown at checkout; oversold inventory.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-002
   - id: BL-CART-003
     title: Coupon + sale interaction
     rule: A percentage coupon applies to the already-discounted (sale) price, not the original list price. A fixed-amount coupon subtracts from the cart total after all line-level discounts. If a coupon's minimum order amount is not met after sale discounts, the coupon must be rejected. Only one coupon per cart unless multi-coupon is explicitly enabled.
@@ -59,7 +57,6 @@ rules:
       ref: Item at $100 list, $80 sale → apply 10% coupon → discount = $8 (10% of $80), not $10. Apply second coupon → rejected with "Only one coupon allowed" message.
     violation_signal: Coupon discount calculated on list price; coupon accepted when min-order threshold not met; multiple coupons applied when multi-coupon is disabled.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-003
   - id: BL-CART-004
     title: Currency switching recalculates primary-currency lines
     rule: When the user switches the cart currency, every line item **denominated in the previous cart currency** must recalculate using the new currency's price list. If such a product has no price in the new currency, that line item must be flagged or removed. Shipping and tax recalculate. **Mixed Cart exception (Loyalty mode "Mixed Cart"):** line items denominated in a non-primary currency (e.g. a PTS loyalty line) are NOT converted — they are preserved at their original currency, so a cart MAY legitimately hold multiple currencies simultaneously. See BL-LOY-006 for the switch contract and BL-LOY-003 for the per-currency totals split.
@@ -77,7 +74,6 @@ rules:
       ref: "Single-currency cart: add items → switch currency → all prices, subtotal, shipping, tax use the new currency; products without a new-currency price are flagged/removed. Mixed cart: with a PTS loyalty line present, switch the base currency USD→EUR → USD lines convert to EUR, the PTS line stays PTS, item count unchanged."
     violation_signal: A previous-currency line still uses the old price; subtotal/shipping not recalculated; **OR** (Mixed Cart) a non-primary-currency loyalty line is wrongly converted, dropped, or duplicated on currency switch.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-004
   - id: BL-CART-005
     title: Cart isolation per organization
     rule: In B2B mode, each organization has its own cart. When a user switches organizations, the previous org's cart is preserved server-side but not visible. The active cart reflects only the current organization's items, prices, and shipping context. Cart items from Org A must never appear in Org B's cart.
@@ -89,7 +85,6 @@ rules:
       ref: "As Org A, add items → switch to Org B → cart is empty (or Org B's separate cart). Switch back to Org A → original items restored. Check xAPI: `cart` query with different org context returns different carts."
     violation_signal: Items from Org A visible in Org B's cart; switching back loses Org A's cart; xAPI returns same cart regardless of org context.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-005
   - id: BL-CART-006
     title: Pack size enforcement
     rule: When a product has a minimum order quantity (MOQ) or pack size (e.g., sold in packs of 6), the cart must enforce that quantity is a multiple of the pack size. The quantity stepper should increment by pack size, and manual entry of non-multiple quantities must be rejected or rounded up.
@@ -107,7 +102,6 @@ rules:
       ref: "Product with pack size 6 → add to cart → qty = 6. Try to change qty to 7 → rejected or auto-rounded to 12. Stepper increments: 6 → 12 → 18."
     violation_signal: Quantity 7 accepted for a pack-size-6 product; stepper increments by 1 instead of pack size; order placed with non-multiple quantity.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-006
   - id: BL-CART-007
     title: Same product adds quantity, not duplicate line
     rule: "Adding the same SKU to the cart a second time increments the existing line item's quantity — it does not create a duplicate line. This applies regardless of whether the add came from PDP, quick-add, or xAPI. Exception: different product configurations (variants) create separate lines."
@@ -125,7 +119,6 @@ rules:
       ref: Add Product A (qty 1) → go back to listing → add Product A again → cart shows 1 line with qty 2, not 2 lines with qty 1.
     violation_signal: Duplicate line items for the same SKU; quantity not incremented on re-add; line count increases on every add.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-007
   - id: BL-CART-008
     title: Cart persistence across sign-out / sign-in
     rule: "A registered user's cart is persisted server-side. If the user signs out and signs back in, the cart must be restored with the same items and quantities. If the user had items as a guest (anonymous cart), upon sign-in those items should merge into the registered user's existing cart (merge strategy: add quantities, no duplicates). A coupon applied before the merge (on either side) persists through the merge — it is not silently dropped — and its discount **re-prices against the post-merge subtotal** rather than staying frozen at the pre-merge discount amount, because a merge always runs a full cart recalculation before saving."
@@ -145,7 +138,6 @@ rules:
       ref: 'Add items → sign out → sign in → cart restored. Separately: browse as guest, add items → sign in (existing account with different cart items) → carts merge without duplicates. Coupon case: apply a coupon to one side of the merge → sign in to trigger the merge → assert the coupon is still applied ("Remove coupon" shown, not silently cleared) and the discount amount reflects the merged (larger) subtotal, not the pre-merge amount.'
     violation_signal: Cart empty after sign-in; guest cart items lost on authentication; duplicate lines after merge; quantities not combined; a previously-applied coupon disappears after merge; OR a surviving coupon's discount stays frozen at its pre-merge value instead of re-evaluating against the merged subtotal.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-008
   - id: BL-CART-009
     title: Storefront cart enforces a single active coupon slot
     rule: "The storefront cart \"Discount & coupons\" section applies at most ONE coupon at a time across BOTH facets — the preset promotion cards (up to 4, authenticated + marketing-experience module only) and the single \"Custom code\" input. The applied-coupon slot is shared: exactly one card/input is ever in the \"applied\" state (button \"Remove coupon\"), never two simultaneously. Two transition paths exist: (a) clicking \"Apply\" on a DIFFERENT preset card auto-replaces the current coupon — `applyCoupon(new)` first awaits `removeCoupon(current)`, then `validateCoupon(new)`, then `addCoupon(new)`, in that order; (b) the custom-code input becomes read-only **only when its own bound value equals the currently-applied coupon's code** — i.e. when the applied coupon was entered through that input itself, or the applied coupon is not among the up-to-4 visible preset cards (the input then mirrors the code and locks). When the applied coupon IS one of the visible preset cards, the custom input is reset to empty and stays fully editable: a user can type and submit a different code through it without first clicking \"Remove coupon\" on the preset card, and the single-slot guarantee still holds because that submission goes through the same `applyCoupon` replacement logic. NOTE: this single-slot guarantee is enforced by the storefront UI only — the platform cart (`CartAggregate.AddCouponAsync`) appends coupons (case-insensitive dedupe) and does not auto-replace, so a non-UI/API caller can hold multiple coupons."
@@ -163,7 +155,6 @@ rules:
       ref: "Apply coupon A → exactly one card/input shows \"applied\"/\"Remove coupon\"; `cart.coupons[]` contains one successfully-applied entry (code A). Apply a different preset B → network shows `removeCoupon`(A) 200 → `validateCoupon`(B) → `addCoupon`(B) 200, in order; final applied slot = B only; discount reflects only B's reward (assert against the `AddCoupon` response `discountTotal`, not a computed %, per BL-CHK-006). Via the custom input: if A was applied through a VISIBLE preset card, the custom input resets to empty and remains editable (typing accepted, Apply button enables) — by design, not a violation; if A was applied through the custom input itself, or A is not among the visible presets, the custom input mirrors A and is read-only, offering only \"Remove coupon\". Anonymous carts render only the custom-code input (no preset cards; `promotionCoupons` not queried)."
     violation_signal: "two cards/inputs simultaneously in the applied state via the storefront UI; a preset \"Apply\" that adds B without first removing A (cart briefly/permanently holds 2 coupons through the UI); the PRESET card's own input (unconditionally read-only by binding) becoming editable — a binding regression; the custom input showing a stale/mismatched code, or failing to reset to empty+editable once the applied coupon is one of the visible presets; a replacement coupon's discount stacking on top of the prior one. (Separately tracked, not this invariant: an INVALID replacement code silently dropping the prior valid coupon because remove precedes validate — see VCST-5518 / `BUG-invalid-coupon-removes-valid-coupon`; a fix is in flight on `VirtoCommerce/vc-frontend#2422`, not yet merged to `dev` — see the open build-skew item in `reports/ba/bl-proposals-2026-08-05.md`.)"
     status: SUSPECT
-    history: docs/decisions/bl/cart.md#bl-cart-009
     suspect_reason: "VCST-5518 (Done) required the storefront to validate a replacement coupon BEFORE removing the applied one. That contradicts clause (a)'s stated order: removeCoupon → validateCoupon → addCoupon."
   - id: BL-CART-010
     title: Configuration-item selection reprices the parent configurable lineItem
@@ -182,7 +173,6 @@ rules:
       ref: Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
     violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-010
   - id: BL-CART-011
     title: Unmatched section key in batch selection is a silent no-op
     rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
@@ -196,7 +186,6 @@ rules:
       ref: "Obtain a configurable lineItem with 2 known section keys (A and B). Call `selectCartConfigurationItems` with `configurationSections: [keyA, {sectionId: 'does-not-exist', type: 'Product'}]`. Assert HTTP 200 and `errors[]` is empty. Assert `configurationItems[keyA].selectedForCheckout = true` (matched item flipped). Assert no error entry or warning appears for the unmatched key."
     violation_signal: HTTP 4xx or `errors[]` non-empty due to unmatched section key; entire batch aborted and no items flipped.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-011
   - id: BL-CART-012
     title: Configuration-item selection mutations are scoped to one `lineItemId`; "all" never crosses lineItem boundaries
     rule: All five configuration-item selection mutations (`changeCartConfigurationItemSelected`, `selectCartConfigurationItems`, `unSelectCartConfigurationItems`, `selectAllCartConfigurationItems`, `unSelectAllCartConfigurationItems`) accept exactly one `lineItemId`. The "all" variants operate only on configuration items belonging to that specified lineItem. No mutation may flip `selectedForCheckout` on configuration items belonging to other lineItems in the same cart.
@@ -214,7 +203,6 @@ rules:
       ref: Build a cart with two configurable lineItems (L1 and L2), each with at least one config item. Call `unSelectAllCartConfigurationItems` with `lineItemId = L1.id`. Assert all config items on L1 have `selectedForCheckout = false`. Assert all config items on L2 retain their original state and `L2.listPrice` is unchanged.
     violation_signal: Config items on L2 are toggled when only L1's `lineItemId` was specified; `listPrice` of L2 changes after a mutation scoped to L1.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-012
   - id: BL-CART-013
     title: No-change short-circuit on configuration-item selection mutations
     rule: When a configuration-item selection mutation is called but the resulting `selectedForCheckout` state for every affected configuration item is identical to the pre-mutation state, `UpdateConfiguredLineItemPrice` MUST NOT be executed. The cart aggregate detects the no-change condition before invoking the reprice path and short-circuits. Applies to idempotent re-sends, to `selectAll` when all already selected, and to `unSelectAll` when all already unselected.
@@ -228,7 +216,6 @@ rules:
       ref: Obtain a cart with a configurable lineItem where all config items have `selectedForCheckout = true`. Call `selectAllCartConfigurationItems` for that lineItem. Assert cart totals are unchanged. Confirm `UpdateConfiguredLineItemPrice` was not triggered (via platform logs or unit test coverage). Repeat with `changeCartConfigurationItemSelected` sending the same value already set.
     violation_signal: Repricing executes on a no-change call; unnecessary `RecalculateAsync` invocation observable in platform logs; performance regression in batch UIs that resend full selection state on every interaction.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-013
   - id: BL-CART-014
     title: Configuration-section identification — `(sectionId, type)` for Text/File; `option.productId` required for Variation
     rule: "When identifying a `ConfigurationItem` for selection mutations: for `Text` and `File` sections, `(sectionId, type)` alone is sufficient for unique lookup. For `Variation` sections, `option.productId` is mandatory because multiple variations of the same configurable section can coexist on a lineItem. Omitting `option` for a `Variation`-type section results in a no-op (item not found, per BL-CART-011). For `Product` sections, `option.productId` resolves the option but is not required for uniqueness when only one product placement per section is allowed."
@@ -244,7 +231,6 @@ rules:
       ref: "For a Variation section: call `changeCartConfigurationItemSelected` with `{sectionId, type: 'Variation'}` and no `option` field → assert silent no-op (flag does not flip). Repeat with `{sectionId, type: 'Variation', option: {productId: <valid-id>}}` → assert flag flips. For a Text section: call with `{sectionId, type: 'Text'}` and no `option` → assert flag flips (lookup succeeds). For a File section: same as Text."
     violation_signal: Text/File section fails without `option` field (overly strict); Variation section succeeds with missing `option` (ambiguous lookup); wrong config item toggled.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-014
   - id: BL-CART-015
     title: Configuration items survive a Saved-for-Later round trip
     rule: Moving a configurable lineItem to Saved for Later (`moveToSavedForLater`) and back into the cart (`moveFromSavedForLater`) MUST preserve its `configurationItems` (customText, selected option/productId, files, section) unchanged. The lineItem is re-created with a new `lineItemId` on each leg, but its configuration payload is not lost, truncated, or reset to defaults.
@@ -260,4 +246,3 @@ rules:
       ref: Add a configurable product with a Text-section custom value to cart; confirm via the cart's line-item configuration view. Move it to Saved for Later. Move it back to cart. Confirm the configuration view shows the identical custom value on the new lineItem.
     violation_signal: The custom text/option/file is blank, reset to a default, or the section is missing entirely after the item returns to cart.
     status: ACTIVE
-    history: docs/decisions/bl/cart.md#bl-cart-015

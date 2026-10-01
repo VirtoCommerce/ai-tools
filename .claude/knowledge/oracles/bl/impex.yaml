@@ -21,7 +21,6 @@ rules:
       ref: Import CSV with 50 products → 50 products created. Re-import same CSV → still 50 products (updated, not 100). Modify one row → re-import → only that product updated, others unchanged.
     violation_signal: Re-import doubles the record count; duplicate products with same code; import succeeds without unique identifier; modified records not updated on re-import.
     status: ACTIVE
-    history: docs/decisions/bl/impex.md#bl-impex-001
   - id: BL-IMPEX-002
     title: Export matches admin grid filters
     rule: When exporting data from Admin (products, orders, customers), the exported file must contain exactly the records matching the current grid filter/search. Exporting without a filter exports all records. The export format (CSV columns, date format, encoding) must be consistent and documented. Export must handle large datasets without timeout — catalog CSV export always runs as a Hangfire background job (regardless of record count), returning an `ExportNotification` for progress and a blob download URL on completion.
@@ -35,7 +34,6 @@ rules:
       ref: Filter products by category X (showing 30) → export → CSV contains exactly 30 rows. Clear filter → export → CSV contains all products. Check CSV encoding (UTF-8 BOM for Excel compatibility).
     violation_signal: Export includes records outside current filter; export count doesn't match grid count; large export times out with no error; encoding issues (garbled characters).
     status: ACTIVE
-    history: docs/decisions/bl/impex.md#bl-impex-002
   - id: BL-IMPEX-003
     title: Large import does not timeout silently
     rule: CSV catalog imports always run as a Hangfire background job (regardless of row count); the import API returns immediately with an `ImportNotification` for progress reporting via push notifications. The user must see a progress indicator or notification when the job completes. If the import fails mid-way (e.g., row 500 of 1000 has invalid data), already-processed rows must be committed (partial success), and the error must be reported with the failing row number and reason.
@@ -47,7 +45,6 @@ rules:
       ref: 'Import 2000-row CSV → job starts in background → progress visible → completion notification. Import CSV with bad row 500 → rows 1-499 imported → error report shows "Row 500: invalid price format" → rows 501+ skipped or continued (based on config).'
     violation_signal: Large import runs synchronously (browser hangs); silent timeout with no error; no progress indication; partial failure rolls back all rows; error message doesn't identify failing row.
     status: ACTIVE
-    history: docs/decisions/bl/impex.md#bl-impex-003
   - id: BL-IMPEX-004
     title: Import validates data integrity before commit
     rule: Import must validate data types, required fields, foreign key references (e.g., category exists, currency valid), and business rules (e.g., price > 0) before committing. Validation errors must be collected and reported as a batch — not one-at-a-time. A "dry run" or validation-only mode should be available for large imports.
@@ -59,4 +56,3 @@ rules:
       ref: "Import CSV with: missing required field → error \"Row 3: Name is required.\" Invalid category reference → error \"Row 7: Category 'XYZ' not found.\" Negative price → error \"Row 12: Price must be > 0.\" All errors reported in one batch."
     violation_signal: Invalid data imported without error; errors reported one at a time (requiring multiple re-imports); foreign key violations cause 500 error instead of validation message; no dry-run option.
     status: ACTIVE
-    history: docs/decisions/bl/impex.md#bl-impex-004

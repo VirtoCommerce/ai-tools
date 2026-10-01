@@ -20,7 +20,6 @@ rules:
       ref: Org A has items in cart → switch to Org B → cart is empty (or shows Org B's cart). Org A's addresses not visible under Org B. Switch back → Org A's cart restored.
     violation_signal: Org A's cart items visible under Org B; addresses from wrong org shown; prices from wrong org applied.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-001
   - id: BL-B2B-002
     title: Organization-specific pricing overrides store default
     rule: "When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → \"Unavailable.\" If the org price list doesn't cover a product, the store default applies as fallback."
@@ -34,7 +33,6 @@ rules:
       ref: Org A has custom price list (Product X = $50). Store default has Product X = $75. Sign in as Org A member → Product X shows $50. Sign in as non-org user → Product X shows $75. Check a product NOT in org's price list → should show store default price.
     violation_signal: Org member sees store default price instead of org price; non-org user sees org prices; product without org price shows "Unavailable" instead of falling back to store default.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-002
   - id: BL-B2B-003
     title: Quote expiry makes quote non-convertible
     rule: Quotes (RFQ) have an expiration date set by the seller. After expiry, the buyer cannot convert the quote to an order — the "Convert to Order" action must be disabled or show an "Expired" message. Expired quotes remain visible in history but are not actionable. The seller can extend or reissue an expired quote.
@@ -48,7 +46,6 @@ rules:
       ref: Create quote with expiry in 1 hour → wait for expiry → buyer attempts to convert → blocked with "Quote expired" message. Seller re-opens and extends → buyer can now convert.
     violation_signal: Expired quote converted to order; no expiry indication shown; "Convert" button active on expired quote; order placed at expired quote prices.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-003
   - id: BL-B2B-004
     title: Pre-purchase approval is quote-based; no native per-order spending limit
     rule: 'Virto Commerce has **no** native per-order spending-limit / budget-threshold gate, and **no** auto-approval order status (live-verified 2026-07-15: the settable `Order.Status` set is an admin-editable dictionary (e.g. New, Pending, Payment required, Ready for pickup, Completed, Cancelled, Custom, and Processing — all settable, not a fixed enum; see BL-ORD-009) — there is **no** "Pending approval"). Pre-purchase approval is **quote-based**: a buyer submits a Purchase Request / Quote (`submitQuoteRequest`), which an organization approver accepts or declines (`approveQuoteRequest` / `declineQuoteRequest`) before it can become an order. The `CustomerOrderType.isApproved` boolean is a passive data flag with no workflow or mutation behind it — not a spending-limit gate. Any budget-threshold / delegated-limit enforcement is a **custom or roadmap** capability, not stock platform behavior.'
@@ -62,7 +59,6 @@ rules:
       ref: "As an org member, create a Purchase Request / Quote → `submitQuoteRequest` → an org approver `approveQuoteRequest` / `declineQuoteRequest` before it is ordered. Introspect xAPI: order-status enum has **no** `PendingApproval`; there is **no** `approveOrder`/`rejectOrder` mutation and no org/member `limit`/`budget` field."
     violation_signal: A test asserts a stock budget-limit order-approval workflow ("Pending approval" order status, per-order spending cap, self-approval block) — this feature does not exist in the base platform and must not be asserted as native. (A custom deployment MAY add one; scope such tests to that deployment.)
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-004
   - id: BL-B2B-005
     title: Member role determines feature visibility
     rule: "Organization features visible on the storefront depend on the member's role. Org Admins see: member management, quotes, order approval, lists. Buyers see: order placement (within limits), lists, own orders. Members without purchasing role see: catalog browsing only. Feature visibility is controlled by both role permissions and the store's feature flags (`quotesEnabled`, etc.)."
@@ -80,7 +76,6 @@ rules:
       ref: Sign in as Org Admin → see "Members", "Quotes", "Approval" menu items. Sign in as Buyer → see "Orders", "Lists" but NOT "Members." Sign in as view-only member → no cart, no checkout access.
     violation_signal: Buyer sees member management; non-purchasing member can add to cart; features visible when feature flag is OFF; role change not reflected until re-login.
     status: SUSPECT
-    history: docs/decisions/bl/b2b.md#bl-b2b-005
     suspect_reason: Docs (storefront/user-guide/docs/account/company-members.md; platform/user-guide/docs/security/roles-and-permissions.md) state role changes take effect at the member's next sign-in / permissions are re-evaluated on each sign-in, while the rule's Violation signal lists 'role change not reflected until re-login' as a violation.
   - id: BL-B2B-006
     title: White labeling resolution order
@@ -97,7 +92,6 @@ rules:
       ref: See BL-WL-002 (per-field merge) and BL-WL-003 (store master switch + record-level gating).
     violation_signal: Master switch OFF but WL still applied; whole-object override instead of per-field merge; an enabled org's branding suppressed merely by a disabled/absent store *record* (confusing the record flag with the master switch).
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-006
   - id: BL-B2B-007
     title: Per-org JWT permission set is org-scoped; pageContext must match it
     rule: A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)
@@ -115,7 +109,6 @@ rules:
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
     violation_signal: JWT carries another org's permissions; `pageContext.user.permissions` diverges from the JWT (BUG-A condition — pageContext returned `[]` while the JWT held 8 maintainer perms).
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-007
   - id: BL-B2B-008
     title: Org-scoped role change mutates only the target org's membership
     rule: Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -131,7 +124,6 @@ rules:
       ref: Member is employee in X, manager in Y. Change X → manager. `POST /api/customer/organization-memberships/search {userId}` → X role = manager, Y role still manager. `GET /api/platform/security/users/{userId}` → global `roles[]` unchanged.
     violation_signal: Role change in X also alters Y's membership or the global account roles.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-008
   - id: BL-B2B-009
     title: Inviting a member creates a per-org membership, not a global role
     rule: Inviting a user into org X with a role MUST create an `OrganizationMembership` for (newUserId, orgX) with that role; the global `ApplicationUser.Roles` MUST NOT be modified. After acceptance, `GET /api/customer/organization-memberships/user/{userId}/count` ≥ 1. (VCST-5028.)
@@ -149,7 +141,6 @@ rules:
       ref: Invite a new user into X as employee; after acceptance, `POST /search {userId}` → contains org X with role employee. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / no org-specific role.
     violation_signal: No membership record after invite acceptance; the invite writes a global role instead.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-009
   - id: BL-B2B-010
     title: Self-service company registration grants org-membership roles only, never global roles
     rule: Self-service company registration (storefront `/sign-up`, "Organization" account type) MUST create the `Organization`, the registrant `Contact`, and an `OrganizationMembership` for (newUserId, newOrg) carrying the registrant's org role(s) (e.g. org-maintainer); the registration flow MUST NOT write any platform security role to the global `ApplicationUser.Roles`. This is the registration-time counterpart of BL-B2B-009 (which covers the invite path). (VCST-5028.)
@@ -165,7 +156,6 @@ rules:
       ref: Register a new company with a fresh `AGENT-TEST-` user. `POST /api/customer/organization-memberships/search {userEmail}` → membership exists with non-empty org role(s) and `isActive=true`. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / contains no platform admin role. The two assertions together prove roles live in the membership record, not on the global account.
     violation_signal: After registration the global `ApplicationUser.Roles` is non-empty with platform roles; or no membership/org role is created for the new organization.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-010
   - id: BL-B2B-011
     title: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate
     rule: |-
@@ -249,7 +239,6 @@ rules:
         signature — a re-appearance now means PR #3076 regressed); once server enforcement ships — a non-whitelisted role
         is accepted by the API, OR a whitelisted role is rejected (over-blocking).
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-011
   - id: BL-B2B-012
     title: Declining or revoking an invite changes a status — it never deletes the membership row
     rule: |-
@@ -273,7 +262,6 @@ rules:
       ref: Decline an invitation → membership search still returns the row with `Status = "Rejected"`; the contact's organization list still contains that organization; the member is still listed in the organization's member list (surfaced under an inactive-style label, not removed). Re-invite the same user into the same organization → succeeds. Repeat against a membership at `Invited` → rejected as already-a-member. A test asserting a member is *gone* must check the **row's absence**, not a `Deleted` status; teardown must delete the row.
     violation_signal: Declining removes the membership row or strips the contact's organization association (a later re-invite then has nothing to reactivate, and a "still a member?" assertion silently inverts); a `Deleted` status is treated as row removal by a search consumer; re-invite succeeds against an `Invited` membership (duplicating the pending invite) or fails against a `Rejected`/`Deleted` one (declining becomes irreversible).
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-012
   - id: BL-B2B-013
     title: Membership status resolves per-org-first, then contact, then `Approved`
     rule: |-
@@ -296,4 +284,3 @@ rules:
       ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.
     violation_signal: A contact-level status overrides an explicit membership status (tiers inverted — a per-org block silently ignored, or a healthy org blocked by an unrelated contact status); a null membership status is treated as blocking (or as a fifth state) instead of inheriting; a lock is written into the `Status` field, or a status value is used to express a lock, collapsing the two axes so one cannot be cleared without the other.
     status: ACTIVE
-    history: docs/decisions/bl/b2b.md#bl-b2b-013

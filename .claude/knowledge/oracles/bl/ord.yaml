@@ -26,7 +26,6 @@ rules:
       ref: In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
     violation_signal: Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-001
   - id: BL-ORD-002
     title: Cancellation restores inventory conditionally
     rule: When an order is cancelled, inventory is restored ONLY if the "Adjust inventory on order cancellation" flag is enabled in store settings. Without the flag, cancellation does NOT restore stock — manual inventory adjustment required.
@@ -38,7 +37,6 @@ rules:
       ref: Enable flag → cancel order → check FFC inventory (should increase). Disable flag → cancel order → inventory unchanged.
     violation_signal: Inventory restored when flag is OFF; inventory NOT restored when flag is ON; stock count mismatch after cancellation.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-002
   - id: BL-ORD-003
     title: Partial fulfillment rules
     rule: An order with multiple line items can be partially fulfilled — some items shipped while others remain pending. Each shipment tracks its own items and state independently (`New → Pick & Pack → Ready to Send → Send`, per BL-ORD-007). Virto does **NOT** auto-assign a "Partially shipped" order status — that value is not in the platform status vocabulary (BL-ORD-009). Partial-fulfillment progress is observed via per-shipment statuses; order-level completion is set at ORDER level as `OrderStatus = Completed` (a settable status), never derived from an aggregate "all shipments Delivered" (there is no `Delivered` shipment state — BL-ORD-007).
@@ -52,7 +50,6 @@ rules:
       ref: Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → advance shipment 1 to `Send` → shipment 1 shows `Send`, shipment 2 still `New` (per-shipment states independent) → advance shipment 2 to `Send` → set the order's `OrderStatus = Completed`. Assert there is no "Partially shipped" order status and no "Delivered" shipment state.
     violation_signal: Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-003
   - id: BL-ORD-004
     title: Refund conditions
     rule: Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -66,7 +63,6 @@ rules:
       ref: Attempt refund on "Authorized" (not captured) payment → rejected. Capture $100 → refund $30 → remaining refundable = $70. Refund another $80 → rejected (exceeds remaining). Void a payment → refund button absent.
     violation_signal: Refund allowed on uncaptured payment; partial refund exceeds captured amount; refund succeeds on voided payment; inventory auto-restored on refund without cancellation.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-004
   - id: BL-ORD-005
     title: Order number format and uniqueness
     rule: Every order receives a unique order number upon creation from the store-configurable `Order.CustomerOrderNewNumberTemplate` (default format `CO{date:yyMMdd}-{counter:D5}`, counter reset type `Daily` by default — configurable to `None`/`Weekly`/`Monthly`/`Yearly`). Because the counter resets each period, sequential numbering is only guaranteed **within the active reset period**, not globally — uniqueness across periods comes from the date component, not the counter alone. Order numbers must never be reused within the same reset period, even after cancellation. The order number is immutable after creation.
@@ -84,7 +80,6 @@ rules:
       ref: Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
     violation_signal: Duplicate order numbers *within the same reset period*; counter fails to reset at the configured boundary; order number changes after creation.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-005
   - id: BL-ORD-006
     title: Payment state machine (detailed)
     rule: |-
@@ -107,7 +102,6 @@ rules:
       ref: For each illegal transition, attempt via API → expect 400/422 error. In Admin, verify buttons only show valid next states.
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-006
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-
@@ -126,7 +120,6 @@ rules:
       ref: For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
     violation_signal: State skipped; shipment marked `Send` without tracking number; API allows illegal jump.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-007
   - id: BL-ORD-009
     title: Order status vocabulary
     rule: |-
@@ -146,7 +139,6 @@ rules:
       ref: Open Admin → Orders → any order → the Status dropdown lists the deployment's configured `Order.Status` dictionary values, with `Processing` among the selectable options. Set an `AGENT-TEST-` order to `Processing` → Save → reopen → status persists as `Processing` in the editable Status control. Confirm the settable set matches Settings → Orders → General settings → order status dictionary.
     violation_signal: Status dropdown does not reflect the `Order.Status` dictionary; a configured dictionary value is missing from the dropdown; a saved value does not persist; storefront shows the raw system value (`ReadyForPickup`) instead of the localized label.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-009
   - id: BL-ORD-008
     title: Audit trail completeness
     rule: "Every order state change (status, payment, shipment) must be recorded in the order's change log with: actor (user/system), timestamp, previous state, and new state. The audit trail is append-only — entries cannot be edited or deleted. Admin users can view the full change log from the order detail blade."
@@ -164,7 +156,6 @@ rules:
       ref: "Place order → authorize → capture → ship → deliver. Open order change log in Admin → every transition recorded with correct actor and timestamps. Verify via API: `GET /api/order/customerOrders/{id}/changes` returns full history."
     violation_signal: Missing entries in change log; actor shows "system" for manual actions; timestamps out of order; change log entries editable.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-008
   - id: BL-ORD-010
     title: Order totals — one entry per distinct line currency, unique default-currency flag
     rule: "`CustomerOrder.OrderTotals[]` MUST contain exactly one entry per distinct currency present across `Items[].Currency`, `Shipments[].Currency`, and `InPayments[].Currency`. The entry whose `CurrencyCode == CustomerOrder.Currency` MUST have `isDefaultTotalCurrency = true`; no other entry may. Each entry's `total/subTotal/taxTotal/discountTotal` reflect only that currency's entities. A single-currency order → exactly 1 entry. The REST `WithOrderTotals` response group (bit 9 = 512) must be requested; without it `OrderTotals` is null (not empty)."
@@ -178,4 +169,3 @@ rules:
       ref: Single-currency USD order → `order { orderTotals { isDefaultTotalCurrency total{currency{code}} } }` → exactly 1 entry, USD, `isDefaultTotalCurrency=true`. Mixed (USD + PTS) order → exactly 2 entries, exactly one `isDefaultTotalCurrency=true`, each subTotal = sum of its-currency lines. REST GET without `WithOrderTotals` → `orderTotals` null.
     violation_signal: Duplicate currency entries; zero or two `isDefaultTotalCurrency=true`; an entry's subtotal mixes currencies; `OrderTotals` populated without the flag requested.
     status: ACTIVE
-    history: docs/decisions/bl/ord.md#bl-ord-010

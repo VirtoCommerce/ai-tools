@@ -24,7 +24,6 @@ rules:
       ref: Place order → check email inbox → exactly 1 confirmation received. Check Admin → Notification feed → sent status shown. Simulate email service failure → retry mechanism sends email after service recovery → still only 1 email total.
     violation_signal: 0 or 2+ confirmation emails; email silently dropped on service failure; no retry mechanism; notification feed shows no record.
     status: ACTIVE
-    history: docs/decisions/bl/notif.md#bl-notif-001
   - id: BL-NOTIF-002
     title: Email content matches order data
     rule: "Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields."
@@ -36,7 +35,6 @@ rules:
       ref: Place order → compare email content against Admin order detail → all values match. Check for unresolved tokens or placeholder text. Verify currency symbol matches order currency.
     violation_signal: Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
     status: ACTIVE
-    history: docs/decisions/bl/notif.md#bl-notif-002
   - id: BL-NOTIF-003
     title: Notification failure does not block order
     rule: If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
@@ -50,7 +48,6 @@ rules:
       ref: Simulate email service outage → place order → order created successfully → confirmation page shown → order in Admin → email queued for retry (visible in notification feed as "Pending").
     violation_signal: Order fails because email service is down; 500 error at checkout due to notification failure; order transaction rolled back; customer sees error but order was actually created (inconsistent state).
     status: ACTIVE
-    history: docs/decisions/bl/notif.md#bl-notif-003
   - id: BL-NOTIF-004
     title: An admin Save must be observable through the API
     rule: A Save that reports success must have reached the server. No UI success signal — a success toast, an auto-closing blade, or a refreshed `Modified` column in the parent list — may be emitted for a change that exists only in client memory, and the signal must not depend on which entry path opened the editor. A surface that deliberately *stages* an edit for a parent blade to persist later must keep that staged state visible and recoverable (no auto-close that discards it) and must not advance a persisted-state indicator such as `Modified`.
@@ -70,7 +67,6 @@ rules:
       ref: Edit a field in the editing surface → Save → re-read the entity through the platform REST API (for a notification, `GET api/notifications/{type}`) and assert both the changed value and an advanced `modifiedDate`. Assert a network request was actually issued on Save. Repeat for every entry path that can open the same editor — nested from a parent blade, and opened directly by deep link — the outcome must be identical.
     violation_signal: The parent list shows a `Modified` date of today while a fresh `GET` returns the old value and the original `modifiedDate`; no `PUT`/`POST` is issued when Save is pressed; the edit is lost when the parent blade is closed or discarded; the same control persists on one entry path and only stages on another.
     status: ACTIVE
-    history: docs/decisions/bl/notif.md#bl-notif-004
   - id: BL-NOTIF-005
     title: Editing a shipped predefined template warns before it replaces the default, and stays restorable
     rule: A template shipped out of the box (`predefined`) **is** editable; saving it converts it into an override that replaces the shipped version for that language. Before that conversion the authoring surface must display a note stating that saving replaces the predefined version, and a restore path back to the shipped default must remain available for as long as the template is both `predefined` and `edited`. Restore is destructive, so it must be confirm-gated, must issue no request until the confirmation is accepted, and cancelling it must leave the override unchanged.
@@ -90,7 +86,6 @@ rules:
       ref: Open a template badged `predefined` → assert the replace-the-default note renders in the authoring surface. Save an edit → assert the template persists as an override (badged `predefined` + `edited`) and that Restore is enabled. Trigger Restore → assert a confirmation is required and that no request is issued before it is accepted; cancel it → re-read the template and assert subject and body are unchanged.
     violation_signal: No note is shown on a predefined template, so an admin silently overwrites a shipped default; Restore is missing or disabled while the template is `predefined` + `edited`; Restore deletes without confirmation, or issues its request before the confirmation is accepted; cancelling Restore still mutates the override.
     status: SUSPECT
-    history: docs/decisions/bl/notif.md#bl-notif-005
     suspect_reason: VCST-5606 (Cancelled) — the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored.
   - id: BL-NOTIF-006
     title: A code editor must not lose user content to a single undo
@@ -107,7 +102,6 @@ rules:
       ref: Open the editing surface and, without typing, read the editor's undo depth — assert it is zero. Press the undo shortcut → assert document length and line count are unchanged and Save stays disabled. Then make a real edit → undo → redo → assert the buffer matches the originally loaded document and Save is disabled again.
     violation_signal: A single undo on an untouched editor empties the document (length → 0) and enables Save, so the next Save would persist an empty template; undo depth is non-zero before the user types; a redo that restores identical content leaves the surface reporting itself dirty.
     status: ACTIVE
-    history: docs/decisions/bl/notif.md#bl-notif-006
   - id: BL-NOTIF-007
     title: A user-input error in a template must not surface as a server fault
     rule: An unparseable template body or unparseable sample document is client input, not a server error. A render/preview request carrying such input must be answered with a client-error status and a parse diagnostic — never a 5xx — and the diagnostic must be reported inline in the authoring surface, next to the input that caused it. An **empty** optional sample document is valid input, not a parse error. Every such message, including format/validate failure dialogs, is localized like the rest of the surface.
@@ -131,5 +125,4 @@ rules:
       ref: Enter an unterminated template expression → trigger the preview/render request → assert the response status is a 4xx carrying a parse diagnostic (not a 5xx) and that the diagnostic renders inline in the preview pane. Clear the sample document entirely → assert no invalid-input indicator appears. Invoke the format action on malformed input → assert the dialog title and body resolve from the locale files, and repeat under a second UI language to confirm they change.
     violation_signal: The render endpoint returns `500 Internal server error` for a template the user is part-way through typing; a parse failure is reported only as a generic server error with no indication of which token failed; an empty sample document is flagged as invalid JSON; a format-failure dialog shows a hardcoded English title or message under a non-English UI.
     status: SUSPECT
-    history: docs/decisions/bl/notif.md#bl-notif-007
     suspect_reason: VCST-5612 (Cancelled, 'keep it without fix') — the invalid sample-JSON diagnostic being hidden in full-screen mode was accepted, disputing the inline-diagnostic clause for that view of the authoring surface.

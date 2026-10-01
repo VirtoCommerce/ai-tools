@@ -25,7 +25,6 @@ rules:
       ref: "As an administrator, add or remove a permission on a role (or delete a role) → confirm the effect is visible on the very next request without requiring re-authentication. Separately: create a role, assign it to a user, then delete the role → deletion succeeds (no 5xx or constraint error), the user's detail view opens normally afterward, and the deleted role no longer appears in that user's role list while other assigned roles are unaffected."
     violation_signal: A removed permission or a deleted role's effect is visible only after the affected user signs out and back in (stale cache); deleting a role currently assigned to a user returns a server error, or the user's role list is corrupted or blanked afterward.
     status: ACTIVE
-    history: docs/decisions/bl/plat.md#bl-plat-001
   - id: BL-PLAT-002
     title: Account lock or deletion is authoritative over every credential and session tied to it
     rule: A user's Locked or Deleted account state overrides every authentication surface bound to that account, regardless of that credential's own individual flag. An API key's own active flag is not sufficient to authenticate — the owning account must also exist, be allowed to sign in, and not be locked out; a locked or deleted owning account causes API-key authentication to fail even though the key itself is active. Locking (setting a non-empty lockout end) or deleting a user account immediately terminates every active session and token issued to that account — a currently-signed-in session does not survive an administrator locking or deleting the account.
@@ -47,7 +46,6 @@ rules:
       ref: "Generate an active API key for a test user → confirm it authenticates. Lock the user's account → the same active key now fails authentication. Delete the account → the key fails authentication. Separately: sign in as a test user in one session, then as an administrator lock (or delete) that account from a second session → the first session's tokens are revoked and further requests are rejected."
     violation_signal: An active API key still authenticates after its owning account is locked or deleted; a signed-in user's session or token remains valid after an administrator locks or deletes their account.
     status: ACTIVE
-    history: docs/decisions/bl/plat.md#bl-plat-002
   - id: BL-PLAT-004
     title: A dynamic property's value type governs which capabilities it may declare
     rule: "A dynamic property is defined against exactly one object type and becomes available, by that definition alone, on every entity instance of that type that implements the dynamic-properties contract — no separate per-instance registration step is required. Each property's declared value type (short text, long text, HTML, decimal, integer, boolean, date-time, measure, …) determines which structural capabilities it may legally combine: only value types whose registered capability allows it may be flagged as an array, a dictionary, or multilingual — boolean and date-time support none of the three, while short text supports all three."
@@ -65,4 +63,3 @@ rules:
       ref: Define a new dynamic property against a given entity type with a chosen value type → open any existing entity of that type → the property is present and editable without further setup. Attempt to combine an unsupported capability with a value type not registered to support it (e.g. mark a boolean property as a dictionary or multilingual) → the option is unavailable or rejected. Enter a value matching the declared value type → persists and round-trips; enter a value of the wrong shape → rejected.
     violation_signal: A property defined for one object type fails to appear on an entity of that type without extra steps; an unsupported value-type/capability combination is accepted by the UI or the API; a value that does not match the declared value type is silently accepted.
     status: ACTIVE
-    history: docs/decisions/bl/plat.md#bl-plat-004
