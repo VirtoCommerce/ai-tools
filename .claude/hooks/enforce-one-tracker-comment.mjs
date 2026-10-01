@@ -93,7 +93,7 @@ try {
     `AMEND that comment instead — new evidence, a retraction, a severity change and a formatting ` +
     `fix are all edits:\n` +
     `(A retest of a NEW build is not an edit — it is a new round and gets a new comment, rule 5.)\n` +
-    `  npm run tracker:comment -- --ticket ${ticket} --amend ${entry.comment_id} --body-file <path>\n\n` +
+    `  npm run tracker:comment -- --ticket ${ticket} --amend ${entry.comment_id} --artifact "<build under test>" --body-file <path>\n\n` +
     `If the operator has asked for a genuinely separate comment, say so and pass a reason:\n` +
     `  npm run tracker:comment -- --ticket ${ticket} --body-file <path> --force-new "<reason>"`;
 

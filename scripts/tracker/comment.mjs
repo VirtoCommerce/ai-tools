@@ -34,7 +34,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
-import { decide, roundHours, sessionRunId, effectiveEntry, amendEntry } from "./round-guard.mjs";
+import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
 // vars (ADMIN_PASSWORD, USER_PASSWORD, …) are missing. Only a real Jira call needs that
@@ -266,7 +266,7 @@ const REFUSAL = {
     `    A genuinely separate comment needs the operator to ask, and a stated reason:\n      … --force-new "<reason>"`,
   SAME_RUN: `GOLDEN RULE (tracker-ops.md §0): ${a.ticket} already has a comment from this run.\n\n` +
     `    comment_id : ${existing?.comment_id}\n    posted_at  : ${existing?.posted_at}\n\n` +
-    `    Same build (a correction)? Amend it:\n      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing?.comment_id} --body-file <path>\n\n` +
+    `    Same build (a correction)? Amend it:\n      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing?.comment_id} --artifact "<build under test>" --body-file <path>\n\n` +
     `    NEW build (a retest — rule 5)? Name it, and the post is allowed as a new round:\n      … ${artifactArg}\n\n` +
     `    Otherwise a separate comment needs the operator to ask:  … --force-new "<reason>"`,
   NEW_ROUND_AMEND: `NEW ROUND (tracker-ops.md §0 rule 5): comment ${a.id} records build "${existing?.artifact}", you tested "${a.artifact?.trim()}".\n` +
@@ -280,6 +280,11 @@ const REFUSAL = {
 
 ` +
     `    Continuing the SAME round from a new session: … --same-round "<reason>"`,
+  NO_ARTIFACT_AMEND: `Comment ${a.id} records build "${existing?.artifact}" and this amend names no build.\n` +
+    `    Without one the round cannot be checked, and an amend notifies nobody.\n\n` +
+    `    Same build (a correction):  … --amend ${a.id} --artifact "${existing?.artifact}" --body-file <path>\n` +
+    `    A NEW build (a retest):     npm run tracker:comment -- --ticket ${a.ticket} --artifact "<build under test>" --body-file <path>\n` +
+    `    Same round, no build to name:  … --same-round "<reason>"`,
   STALE_AMEND: `Comment ${a.id} is from ${existing?.posted_at} (older than ${hours} h) — is this a new round?\n` +
     `    An amend notifies nobody. A retest of a new build needs a NEW comment:\n` +
     `      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>\n\n` +
@@ -324,7 +329,8 @@ async function reportRender(id) {
 if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
-  ledger[a.ticket] = amendEntry(existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound });
+  // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
+  ledger[a.ticket] = ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound });
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);
@@ -347,4 +353,4 @@ console.log(`    ledger   : .tracker-comments.json`);
 if (mirrored) console.log(`    summary  : ${mirrored.replace(ROOT + "\\", "").replace(ROOT + "/", "")}`);
 await reportRender(created.id);
 console.log(`\n    Any further change to this ticket in this run must AMEND:`);
-console.log(`      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} ${artifactArg} --body-file <path>\n`);
+console.log(`      npm run tracker:comment -- --ticket ${a.ticket} --amend ${created.id} --artifact "<build under test>" --body-file <path>\n`);

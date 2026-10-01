@@ -29,7 +29,9 @@ same transcript id the hooks receive.
 `^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$`, so the claude.ai Atlassian connectors no longer
 bypass them. A call with `commentId` is an edit, not a second comment: the guard blocks it only when the
 ledger comment is older than 12 h or was posted by another session, and the recorder no longer logs it as a
-new post. An amend from a provably different session is refused the same way (`--same-round` overrides), an
+new post. An amend from a provably different session is refused the same way (`--same-round` overrides), as
+is an amend that names no `--artifact` when the comment records one; amending an older comment no longer
+replaces the ledger entry for the current round. An
 amend of a comment this checkout's ledger does not know takes its age from Jira's `created` time, and a
 successful amend records the build it now reports.
 

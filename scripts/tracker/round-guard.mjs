@@ -47,6 +47,9 @@ export function decide({ mode, entry, commentId, run, artifact, now = Date.now()
 
   if (sameRound) return { ok: true, code: "SAME_ROUND_OVERRIDE" };
   if (!entry || String(entry.comment_id) !== String(commentId)) return { ok: true, code: "UNTRACKED" };
+  // The comment records a build and this amend names none: comparing is impossible, and the
+  // same-day retest of a new build is exactly what slips through an unchecked amend.
+  if (theirs && !mine) return { ok: false, code: "NO_ARTIFACT_AMEND" };
   if (known) return mine === theirs ? { ok: true, code: "WITHIN_ROUND" } : { ok: false, code: "NEW_ROUND_AMEND" };
   if (stale) return { ok: false, code: "STALE_AMEND" };
   // A different session editing a fresh comment, with no build to compare, is the same-day
@@ -70,6 +73,18 @@ export function effectiveEntry(existing, commentId, remote) {
   return tracked
     ? { ...existing, posted_at: remote.created }
     : { comment_id: String(commentId), run_id: "local", posted_at: remote.created };
+}
+
+/**
+ * What the ledger holds for the ticket after a successful amend. The ledger tracks the CURRENT
+ * round's comment, so amending an older one (a typo in round 1) must not replace it — that would
+ * make the next same-round post look like a new round. Only the tracked comment, or one newer
+ * than it (this checkout's ledger is stale), takes the entry.
+ */
+export function ledgerAfterAmend(recorded, judged, opts) {
+  const tracked = recorded && String(recorded.comment_id) === String(opts.id);
+  const newer = (Date.parse(judged?.posted_at ?? "") || 0) > (Date.parse(recorded?.posted_at ?? "") || 0);
+  return !recorded || tracked || newer ? amendEntry(judged, opts) : recorded;
 }
 
 /** The ledger entry after a successful amend: the build it now reports, never the first one. */
