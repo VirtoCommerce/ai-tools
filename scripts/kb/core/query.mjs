@@ -75,6 +75,12 @@ export function prepareVocabulary(json) {
   return { concepts, phrases, ancestors, anchors };
 }
 
+/** Read `vocabulary.json` from a base; absent is an empty vocabulary, never an error. */
+export async function readVocabulary(reader) {
+  const r = await reader.readIndex('vocabulary.json');
+  return r.ok ? JSON.parse(r.text) : { concepts: [] };
+}
+
 /** A concept and every ancestor of it. */
 export const withAncestors = (vocab, ids) => [...new Set(ids.flatMap((id) => [id, ...(vocab.ancestors.get(id) ?? [])]))];
 

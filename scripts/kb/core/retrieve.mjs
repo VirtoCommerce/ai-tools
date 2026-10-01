@@ -21,6 +21,21 @@ import { anchorHit } from './rank.mjs';
 import { parseQuestion, terms, withAncestors } from './query.mjs';
 
 export const RRF_K = 60;
+
+/**
+ * How the channels are combined, unless ranker.json says otherwise. RRF was the starting point
+ * Decision 6 names "until labels exist"; on the dev split it put the right entry first for 17 of 37
+ * targets, while the words channel ALONE managed 24 -- equal votes let the coarse concept channel
+ * outvote the precise one. So, labels now existing, a weighted sum of max-normalised channel scores
+ * (Bruch et al., arXiv 2210.11934), with weights chosen on dev:
+ *
+ *   sentence  BM25 of the question against each card question / subject / question SEPARATELY, the
+ *             entry scoring its best sentence -- question-to-question similarity, the strongest single
+ *             FAQ signal (arXiv 1905.02851), and immune to an entry winning by sheer card length
+ *   document  BM25 over all of them concatenated (weight 0 by default, kept for calibration)
+ *   concepts, anchors   as described above, as tie-breaking evidence rather than equal votes
+ */
+export const DEFAULT_FUSION = Object.freeze({ method: 'linear', weights: Object.freeze({ sentence: 1, document: 0, concepts: 0.25, anchors: 0.5 }) });
 const BM25_K1 = 1.2;
 const BM25_B = 0.75;
 
@@ -63,7 +78,21 @@ export function prepareRetrieval(rows, vocab) {
   }));
   const conceptDf = new Map();
   for (const s of conceptSets) for (const id of s.own) conceptDf.set(id, (conceptDf.get(id) ?? 0) + 1);
-  return { rows, vocab, docs, df, avgLen, anchorDf, conceptSets, conceptDf, namespaces: namespaceRoots(rows), n: rows.length };
+  // One BM25 document per sentence: subject, question, each card question. `question` is the card
+  // index (-1 for subject/question), so one card question can be left out.
+  const sentences = [];
+  rows.forEach((row, index) => {
+    for (const text of [row.subject, row.question]) if (text) sentences.push({ index, question: -1, tf: counts(terms(text)) });
+    (row.questions ?? []).forEach((text, question) => sentences.push({ index, question, tf: counts(terms(text)) }));
+  });
+  for (const s of sentences) s.len = [...s.tf.values()].reduce((a, b) => a + b, 0);
+  const sdf = new Map();
+  for (const s of sentences) for (const t of s.tf.keys()) sdf.set(t, (sdf.get(t) ?? 0) + 1);
+  const savg = sentences.reduce((a, s) => a + s.len, 0) / Math.max(1, sentences.length);
+  return {
+    rows, vocab, docs, df, avgLen, anchorDf, conceptSets, conceptDf, namespaces: namespaceRoots(rows), n: rows.length,
+    sentences, sdf, savg,
+  };
 }
 
 const idf = (n, df) => Math.log(1 + (n - df + 0.5) / (df + 0.5));
@@ -97,6 +126,29 @@ function bm25(prep, qTerms, leaveOut) {
   });
 }
 
+/** The best sentence of every entry against one question (see DEFAULT_FUSION). */
+function bestSentence(prep, qTerms, leaveOut) {
+  const best = new Array(prep.n).fill(0);
+  const q = [...new Set(qTerms)];
+  const N = prep.sentences.length;
+  for (const s of prep.sentences) {
+    if (leaveOut && s.index === leaveOut.index && s.question === leaveOut.question) continue;
+    let score = 0;
+    for (const t of q) {
+      const f = s.tf.get(t);
+      if (!f) continue;
+      score += idf(N, prep.sdf.get(t) ?? 0) * (f * (BM25_K1 + 1)) / (f + BM25_K1 * (1 - BM25_B + BM25_B * s.len / prep.savg));
+    }
+    if (score > best[s.index]) best[s.index] = score;
+  }
+  return best;
+}
+
+const maxNorm = (a) => {
+  const m = Math.max(0, ...a);
+  return m ? a.map((v) => v / m) : a.map(() => 0);
+};
+
 /** Competition ranks (1, 2, 2, 4) over positive scores; 0 means "not in this channel". */
 function ranksOf(scores) {
   const order = scores.map((s, i) => [s, i]).filter(([s]) => s > 0).sort((a, b) => b[0] - a[0]);
@@ -111,10 +163,11 @@ function ranksOf(scores) {
  * @returns {{parsed: object, candidates: Array<{row, fused:number, words:{score,rank}, anchors:{score,rank,hits:string[]}, concepts:{score,rank,own:string[]}}>}}
  *   candidates sorted by fused score, best first; only entries found by at least one channel.
  */
-export function retrieve(prep, question, { leaveOut = null, parsed = null } = {}) {
+export function retrieve(prep, question, { leaveOut = null, parsed = null, fusion = DEFAULT_FUSION } = {}) {
   const p = parsed ?? parseQuestion(question, prep.vocab, { namespaces: prep.namespaces });
   const conceptTerms = p.concepts.flatMap((id) => terms(`${id.replace(/-/g, ' ')} ${prep.vocab?.concepts.get(id)?.label ?? ''}`));
   const words = bm25(prep, [...p.terms, ...conceptTerms], leaveOut);
+  const sentence = bestSentence(prep, [...p.terms, ...conceptTerms], leaveOut);
 
   const qLower = String(question ?? '').toLowerCase();
   const anchorHits = prep.rows.map((row) => (row.anchorKeys ?? []).filter((k) => anchorHit(qLower, k, { namespaces: prep.namespaces })));
@@ -135,15 +188,20 @@ export function retrieve(prep, question, { leaveOut = null, parsed = null } = {}
     return conceptOwn[i].length || score ? score : 0;
   });
 
-  const [rw, ra, rc] = [ranksOf(words), ranksOf(anchors), ranksOf(concepts)];
+  const [rw, rs, ra, rc] = [ranksOf(words), ranksOf(sentence), ranksOf(anchors), ranksOf(concepts)];
+  const w = fusion.weights ?? DEFAULT_FUSION.weights;
+  const [nw, ns, na, nc] = [maxNorm(words), maxNorm(sentence), maxNorm(anchors), maxNorm(concepts)];
   const candidates = [];
   prep.rows.forEach((row, i) => {
     if (!rw[i] && !ra[i] && !rc[i]) return;
-    const fused = [rw[i], ra[i], rc[i]].reduce((s, r) => s + (r ? 1 / (RRF_K + r) : 0), 0);
+    const fused = fusion.method === 'rrf'
+      ? [rw[i], ra[i], rc[i]].reduce((s, r) => s + (r ? 1 / (RRF_K + r) : 0), 0)
+      : (w.sentence ?? 0) * ns[i] + (w.document ?? 0) * nw[i] + (w.concepts ?? 0) * nc[i] + (w.anchors ?? 0) * na[i];
     candidates.push({
       row,
       fused,
       words: { score: words[i], rank: rw[i] },
+      sentence: { score: sentence[i], rank: rs[i] },
       anchors: { score: anchors[i], rank: ra[i], hits: anchorHits[i] },
       concepts: { score: concepts[i], rank: rc[i], own: conceptOwn[i] },
     });

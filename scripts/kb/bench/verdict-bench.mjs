@@ -36,8 +36,12 @@ import { openBase } from '../core/base.mjs';
 import { parseEntry } from '../core/frontmatter.mjs';
 import { loadIndex, retrievable } from '../core/index-load.mjs';
 import { rank, RANKER, scoreRows, TOP_N } from '../core/rank.mjs';
-import { askLines } from '../core/render.mjs';
+import { askLines, verdictLines } from '../core/render.mjs';
 import { describeHit } from '../core/verbs.mjs';
+import { calibrate } from '../core/calibrate.mjs';
+import { prepareVocabulary, readVocabulary } from '../core/query.mjs';
+import { prepareRetrieval } from '../core/retrieve.mjs';
+import { decide } from '../core/verdict.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SET = resolve(HERE, 'rank-labelled-set.v2.json');
@@ -99,7 +103,35 @@ function floor1({ rows, body }) {
   };
 }
 
-export const DECIDERS = { [RANKER]: floor1 };
+/**
+ * The calibrated verdict (core/verdict.mjs). Its ranker is `--ranker <file>` when given, otherwise it
+ * is fitted here and now by `calibrate` -- on dev and calibration only, so a tuning loop never needs
+ * a file and never sees test.
+ */
+async function verdict({ rows, reader, body, set, rankerPath }) {
+  const prep = prepareRetrieval(rows, prepareVocabulary(await readVocabulary(reader)));
+  const ranker = rankerPath ? JSON.parse(await readFile(rankerPath, 'utf8')) : calibrate(prep, labelledRows(set), { snapshot: set.snapshot });
+  const fn = async (question) => {
+    const d = decide(prep, ranker, question);
+    const candidates = d.candidates.slice(0, RECALL_K).map((c) => c.row.id);
+    let lines;
+    if (d.verdict === 'answer') {
+      const c = d.entries[0];
+      const hit = { row: c.row, score: Math.round(d.p * 100) / 100, overlap: [], anchors: c.anchors.hits };
+      const parsed = await body(c.row);
+      lines = verdictLines({ verdict: 'answer', hit: parsed ? describeHit(hit, parsed) : describeHit(hit, null, { unavailable: 'body unavailable' }) });
+    } else if (d.verdict === 'ambiguous') {
+      lines = verdictLines({ verdict: 'ambiguous', headlines: d.entries.map((c) => ({ id: c.row.id, subject: c.row.subject, separating: c.separating })) });
+    } else {
+      lines = verdictLines({ verdict: 'none', concepts: d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id) });
+    }
+    return { verdict: d.verdict, entries: d.entries.map((c) => c.row.id), candidates, tokens: tokensOf(lines), p: d.p, features: d.features };
+  };
+  fn.ranker = ranker;
+  return fn;
+}
+
+export const DECIDERS = { [RANKER]: floor1, verdict };
 
 // ── scoring ───────────────────────────────────────────────────────────────────────────────────
 
@@ -159,7 +191,7 @@ export function labelledRows(set) {
 // ── the CLI ───────────────────────────────────────────────────────────────────────────────────
 
 function parseArgs(argv) {
-  const args = { decider: RANKER, splits: ['dev', 'calibration'], openTest: false, set: DEFAULT_SET, base: null, rows: false, json: false };
+  const args = { ranker: null, decider: RANKER, splits: ['dev', 'calibration'], openTest: false, set: DEFAULT_SET, base: null, rows: false, json: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--decider') args.decider = argv[++i];
@@ -167,6 +199,7 @@ function parseArgs(argv) {
     else if (a === '--open-test') args.openTest = true;
     else if (a === '--set') args.set = resolve(argv[++i]);
     else if (a === '--base') args.base = argv[++i];
+    else if (a === '--ranker') args.ranker = resolve(argv[++i]);
     else if (a === '--rows') args.rows = true;
     else if (a === '--json') args.json = true;
     else throw new Error(`unknown argument ${a}`);
@@ -199,7 +232,7 @@ async function main() {
   const cat = await loadIndex(reader);
   if (cat.state !== 'ok') throw new Error(`${cat.state}: ${cat.why}`);
   const rows = retrievable(cat.rows);
-  const decide = DECIDERS[args.decider]({ rows, reader, body: bodyCache(reader), manifest: cat.manifest });
+  const decide = await DECIDERS[args.decider]({ rows, reader, body: bodyCache(reader), manifest: cat.manifest, set, rankerPath: args.ranker });
 
   if (args.openTest && args.splits.includes('test')) {
     await appendFile(OPENINGS, `${JSON.stringify({ at: new Date().toISOString(), decider: args.decider, base: locator, set: set.snapshot ?? null })}\n`);
@@ -215,6 +248,7 @@ async function main() {
 
   if (args.json) { console.log(JSON.stringify(args.rows ? { ...report, outcomes: outs } : report, null, 2)); return; }
   console.log(`decider ${args.decider}   base ${locator}   ${rows.length} retrievable rows`);
+  if (decide.ranker) console.log(`ranker ${decide.ranker.rank}   thresholds ${JSON.stringify(decide.ranker.thresholds)}   weights ${decide.ranker.model.features.map((f, i) => `${f}=${decide.ranker.model.weights[i].toFixed(2)}`).join(' ')}`);
   for (const [s, m] of Object.entries(bySplit)) printSplit(s, m);
   if (misses.length) {
     console.log('\nwave-1 misses (dev)');

@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 import { openBase } from '../core/base.mjs';
 import { loadIndex, retrievable } from '../core/index-load.mjs';
-import { prepareVocabulary } from '../core/query.mjs';
+import { prepareVocabulary, readVocabulary } from '../core/query.mjs';
 import { prepareRetrieval, retrieve } from '../core/retrieve.mjs';
 
 /**
@@ -64,12 +64,6 @@ export function summarise(verdicts, { minQuestions = 3 } = {}) {
     entriesBelowMin: [...byEntry].filter(([, e]) => e.kept && e.kept < minQuestions).map(([id]) => id),
     topCollisions: [...collisions].sort((a, b) => b[1] - a[1]).slice(0, 15),
   };
-}
-
-/** Read `vocabulary.json` from a base; absent is an empty vocabulary, never an error. */
-export async function readVocabulary(reader) {
-  const r = await reader.readIndex('vocabulary.json');
-  return r.ok ? JSON.parse(r.text) : { concepts: [] };
 }
 
 async function main() {
