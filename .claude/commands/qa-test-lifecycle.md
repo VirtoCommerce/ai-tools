@@ -496,7 +496,7 @@ No human review queue: the only human input is the source itself (docs, AC, Jira
 | BROKEN | Blocker | Page error or flow blocked → investigate |
 | BLOCKED | High | Precondition can't be met → may be env issue |
 | **Behavior CONFIRMED** | — | Upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001) |
-| **Behavior REFUTED** | Critical | **ENV-008** — the asserted behavior isn't implemented. Rewrite to the observed behavior + `{OBSERVED}`, or drop the assertion. **Never** upgrade the tag. |
+| **Behavior REFUTED** | Critical | **ENV-008**. A `{SPEC}`/`{DOC}`/`{BL}`/`Catches:` assertion is a **bug candidate**: keep it red, file it. Only a `{HYPOTHESIS}` may be rewritten to the observed behaviour (recorded) or dropped. **Never** upgrade the tag. |
 
 Screenshots captured for every CHANGED/BROKEN/BLOCKED finding.
 

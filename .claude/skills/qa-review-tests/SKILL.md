@@ -376,7 +376,7 @@ Output: Per-case verification result:
 - **CHANGED** → Critical (element renamed or moved — update selectors/labels)
 - **BLOCKED** → High (precondition issue — may be environment-specific, not a test case defect)
 - **VERIFIED** → No finding (test case is environment-compatible)
-- **REFUTED behavior** → Critical (ENV-008 — the asserted behavior isn't implemented; under `--fix`, rewrite to the observed behavior + tag `{OBSERVED}` or drop it)
+- **REFUTED behavior** → Critical (ENV-008: a human-sourced assertion = bug candidate, kept red; only a `{HYPOTHESIS}` may be rewritten)
 - **CONFIRMED behavior** → No finding; under `--fix`, upgrade that assertion's provenance tag to `{OBSERVED}` (clears GRD-001)
 
 ### Step 7: Auto-Fix Mode (`--fix` flag)

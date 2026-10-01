@@ -60,8 +60,8 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readDomains } from "./bl-yaml.ts";
 
-const ORACLE = ".claude/knowledge/oracles/business-logic.md";
 const SUITES = "regression/suites";
 
 const argv = process.argv.slice(2);
@@ -181,12 +181,9 @@ function walkCsv(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-/** Ids that actually exist as `### BL-…` headings in the oracle. */
+/** Ids the oracle's records hold (`bl/*.yaml`, BL 2.0 M4). */
 function oracleIds(): Set<string> {
-  const md = fs.readFileSync(ORACLE, "utf8");
-  const s = new Set<string>();
-  for (const m of md.matchAll(/^###\s+(BL-[A-Z0-9]+-\d+)\s*:/gm)) s.add(m[1]);
-  return s;
+  return new Set([...readDomains().values()].flatMap((f) => f.rules.map((r) => r.id)));
 }
 
 /** Cited ids per file/case, excluding PROPOSED- forward-references (same rule as lint-bl.ts). */

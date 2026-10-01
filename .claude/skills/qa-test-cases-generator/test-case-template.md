@@ -378,6 +378,14 @@ Examples:
 
 Examples: `VCST-4499`, `VCST-3387 VCST-4499`, `REQ-PAY-007`, `smoke-baseline`
 
+**`Catches:` — the bug a functional case exists to catch.** A `FUNC` case written from a closed bug carries
+`Catches:<ISSUE-KEY>` (its expectation is the fixed behaviour, so it must fail on the pre-fix behaviour); one
+built against a response mutant carries `Catches:mutant:<ID>`. It sits with the other `References` stamps
+(`Archetype:` · `Technique:`), and it is what makes an escaped bug count as traced in `npm run gaps`. Rules
+and the fail-once proof: [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md).
+
+Examples: `VCST-4499 Archetype:BOUNDARY Technique:BVA Catches:VCST-1825`, `Catches:mutant:TRUNCATE_PAGE`
+
 ### Automation_Status
 Dual-purpose field: **review state** + **execution mode**.
 

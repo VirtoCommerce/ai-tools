@@ -145,6 +145,10 @@ Apply these Virto Commerce patterns where relevant:
 - [ ] Every outcome-asserting item cites a `BL-*` that resolves in the oracle (`bl:lint` / `ecl:lint` green)
 - [ ] Uncovered `[OBSERVED]` ECL sections / applicable `BL-*` listed with a reason
 - [ ] Related checklists identified
+- [ ] Each breaking dimension is covered by an item or waived with a reason: non-default culture / currency,
+      timezone and date boundaries, sort × search × filter, more than one page, concurrency, a second login
+      path, a swallowed upstream error, a dependency upgrade ([`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §5)
+- [ ] The domain's closed bugs no case cites (`npm run gaps -- --domain <token>`) are each an item, or listed with a reason
 
 ## Quality Criteria for Checklist Items
 
@@ -152,12 +156,14 @@ Apply these Virto Commerce patterns where relevant:
 - `- [ ] Variation swatches: color, size selectors displayed on PDP` — specific element + location
 - `- [ ] Declined card: error message, retry with different card, success` — complete scenario chain
 - `- [ ] Cart isolation: Org A cart ≠ Org B cart, switching preserves each` — verifiable assertion
+- `- [ ] Search "bolt" sorted by price, walked to the last page: same products as unsorted, none twice` — names the bug it would catch (sort changing the set)
 
 ### Bad Items
 - `- [ ] Test the product page` — too vague, no specific checks
 - `- [ ] Verify everything works` — not actionable
 - `- [ ] Check the API` — no specific endpoint, method, or data to verify
 - `- [ ] Styling looks correct` — no acceptance criteria
+- `- [ ] Search results page loads` — passes on every bug a search can have; presence is not a check
 
 ### Item Granularity Guide
 
