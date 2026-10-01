@@ -27,7 +27,7 @@ in `.fix-workspace/`, prove it with a red→green test, and open a **pull reques
 
 ## LAYER 1 — BUSINESS LOGIC: invariants the fix must preserve
 
-> **Reference:** `knowledge/oracles/business-logic.md` (17 domains, 108 rules) + the gate
+> **Reference:** `knowledge/oracles/business-logic.md` + the gate
 > ladder `.claude/rules/quality-gates.md`.
 
 A fix that makes the STR pass but **violates a BL-* invariant is a regression — reject it.** Key ones

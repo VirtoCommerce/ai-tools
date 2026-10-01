@@ -48,7 +48,7 @@ already answer, and it must read them rather than re-derive them from the UI:
 
 | Oracle | Answers | How it lands in a checklist |
 |---|---|---|
-| [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) (204 `BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
+| [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) (`BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
 | [`knowledge/oracles/e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) (54 `ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
 
 **Why this is mandatory and not advisory.** An item written only from UI exploration encodes what the

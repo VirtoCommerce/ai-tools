@@ -18,7 +18,7 @@
  *
  * Usage:
  *   npm run bl:convert:check                         # schema, index and agents; business-logic.md = its render
- *   npm run bl:render                                # regenerate business-logic.md from the YAML
+ *   npm run bl:render                                # regenerate business-logic.md (+ the vc-fix plugin copy) from the YAML
  *   npm run bl:convert -- --render <file.yaml>       # one domain's markdown section, to stdout
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -34,6 +34,12 @@ const SCHEMA_PATH = "templates/bl.schema.json";
 export const BL_DIR = join(".claude", "knowledge", "oracles", "bl");
 /** The generated view. Written by `bl:render`, compared by `--check`, read by no script. */
 export const BL_PATH = join(".claude", "knowledge", "oracles", "business-logic.md");
+/**
+ * The same render, shipped inside a plugin. A plugin is self-contained (plugins/CLAUDE.md): it cannot read this
+ * repo's YAML at install time, so it carries the generated markdown, and `--check` keeps it equal to the render.
+ */
+export const PLUGIN_COPIES = [join("plugins", "vc-fix", "knowledge", "oracles", "business-logic.md")];
+const VIEWS = [BL_PATH, ...PLUGIN_COPIES];
 /** `_`-prefixed files in BL_DIR are not domains. */
 const INDEX_FILE = "_oracle.yaml";
 
@@ -215,9 +221,14 @@ export function checkBl(oracle: BlOracle, view: string | null, roster: readonly 
       seen.set(r.id, slug);
     }
   }
-  if (view === null) problems.push(`${BL_PATH} is missing — npm run bl:render`);
-  else if (view.replace(/\r\n/g, "\n") !== renderBl(oracle)) problems.push(`${BL_PATH} is not the render of bl/*.yaml — edit the YAML, then npm run bl:render (never the markdown)`);
-  return problems;
+  return [...problems, ...checkView(oracle, view, BL_PATH)];
+}
+
+/** One generated file against the render. CRLF from a Windows checkout is not an edit. Empty = clean. */
+export function checkView(oracle: Pick<BlOracle, "preamble" | "domains">, view: string | null, path: string): string[] {
+  if (view === null) return [`${path} is missing — npm run bl:render`];
+  if (view.replace(/\r\n/g, "\n") !== renderBl(oracle)) return [`${path} is not the render of bl/*.yaml — edit the YAML, then npm run bl:render (never the markdown)`];
+  return [];
 }
 
 function main(argv: string[]) {
@@ -236,9 +247,11 @@ function main(argv: string[]) {
       return 1;
     }
     const text = renderBl(oracle);
-    const before = existsSync(BL_PATH) ? readFileSync(BL_PATH, "utf-8") : null;
-    if (before !== text) writeFileSync(BL_PATH, text);
-    console.log(`bl:render: ${oracle.domains.length} domains ${before === text ? "already current" : "regenerated"} in ${BL_PATH}`);
+    for (const path of VIEWS) {
+      const before = existsSync(path) ? readFileSync(path, "utf-8") : null;
+      if (before !== text) writeFileSync(path, text);
+      console.log(`bl:render: ${oracle.domains.length} domains ${before === text ? "already current" : "regenerated"} in ${path}`);
+    }
     return 0;
   }
 
@@ -246,8 +259,8 @@ function main(argv: string[]) {
     console.error("bl:convert: pass --check, --render-oracle or --render <file.yaml>");
     return 2;
   }
-  const view = existsSync(BL_PATH) ? readFileSync(BL_PATH, "utf-8") : null;
-  const problems = checkBl(oracle, view, readAgentRoster());
+  const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf-8") : null);
+  const problems = [...checkBl(oracle, read(BL_PATH), readAgentRoster()), ...PLUGIN_COPIES.flatMap((p) => checkView(oracle, read(p), p))];
   const rules = oracle.domains.reduce((n, d) => n + d.file.rules.length, 0);
   console.log(`bl:convert --check: ${oracle.domains.length} domains, ${rules} rules, all owned by YAML`);
   for (const { slug, file: f } of oracle.domains) {
@@ -256,7 +269,7 @@ function main(argv: string[]) {
     console.log(`  ${slug}: ${f.rules.length} rules, ${unreviewed} UNREVIEWED, ${executable} with an executable check`);
   }
   for (const p of problems) console.log(`  ✗ ${p}`);
-  console.log(problems.length ? `FAIL: ${problems.length} problem(s)` : `OK: the YAML is valid and ${BL_PATH} is its render`);
+  console.log(problems.length ? `FAIL: ${problems.length} problem(s)` : `OK: the YAML is valid and ${VIEWS.join(", ")} are its render`);
   return problems.length ? 1 : 0;
 }
 
