@@ -206,6 +206,7 @@
     "inv:run": "npx tsx scripts/invariants/run.ts",
     "detect:mutate": "npx tsx scripts/detection/mutation-trial.ts",
     "gaps": "npx tsx scripts/detection/gaps.ts",
+    "assert:strength": "npx tsx scripts/detection/assertion-strength.ts",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:extract": "npx tsx scripts/knowledge/extract-ecl.ts",
     "ecl:extract:list": "npx tsx scripts/knowledge/extract-ecl.ts --list",
