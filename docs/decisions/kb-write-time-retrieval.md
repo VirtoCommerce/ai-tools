@@ -342,6 +342,25 @@ which the logged `kb_show` / `kb_none` of a live wave provide for free (M6).
   only a `problems` count on the flush line. The order is therefore not a preference: the client PR
   merges and the team pulls it before the data PR reaches main.
 
+## Live wave VCST-6122-wave2 (2026-10-01)
+
+`ranker.json` (= `ranker.m4-gate.json`) was published on `vcst-6122-schema2` (`ca6af2d`), and six
+Sonnet-class agents, one per area, each asked seven questions they needed before writing test cases,
+through the CLI with `KB_BASE` on the branch, `KB_SYNTHETIC=1`, `KB_RUN=VCST-6122-wave2`. The queue was
+pushed once, to the branch only (`52b3683`, 95 lines; none reached main).
+
+- 43 asks, **all `ambiguous`** -- the base never answered alone (mean p 0.36, max 0.91, threshold 0.957).
+- Every ask was closed BY HANDLE: 20 ended in a pick that was kept, 14 in `kb_none` without opening,
+  9 in a `kb_show` followed by `kb_none`. No dangling pointer; the pairing works.
+- Two agents opened an entry that was not among that ask's headlines (protocol slips, visible in the
+  log because `show` carries `after`).
+- **A `kb_show` not followed by `kb_none` is not a reliance.** One agent opened an entry, judged it
+  insufficient in its report, and never called `kb_none` -- three times. Read from the log, those
+  are picks. M6 must not label from `show` alone: either a reliance gets its own explicit signal, or
+  a show is a label only when a later `confirm`/citation follows it.
+- The rows are drafted for labelling in `scripts/kb/bench/wave2-to-label.json`; no row joins a
+  labelled set before the operator fills `expect`.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
