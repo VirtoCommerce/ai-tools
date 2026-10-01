@@ -64,6 +64,8 @@ Rules:
   orders, carts, returns, settings), unless the task itself names an exception.
 - Stop as soon as you can back the answer. Effort beyond that is waste.
 - Work alone; nobody will answer questions. Do not start sub-agents.
+- Never run a command in the background or end your turn to wait for one: this session ends when
+  you stop. If you must wait, wait in the foreground (e.g. sleep), then continue.
 - If something cannot be established without changing the environment, say so and give your best
   answer with its basis. "Not established" is a legitimate answer; a confident guess is not.
 
