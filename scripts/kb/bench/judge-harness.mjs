@@ -21,6 +21,7 @@
 //   node scripts/kb/bench/judge-harness.mjs bodies --base <dir> --out <dir> --picks <file>
 //   node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <file> [--confirm <file>]
 
+import '../../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
 import { createHash } from 'node:crypto';
 import { appendFile, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
