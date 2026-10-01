@@ -30,7 +30,7 @@ import { openBase } from '../core/base.mjs';
 import { parseEntry } from '../core/frontmatter.mjs';
 import { loadIndex, retrievable } from '../core/index-load.mjs';
 import { prepareVocabulary, readVocabulary } from '../core/query.mjs';
-import { prepareRetrieval } from '../core/retrieve.mjs';
+import { prepareRetrieval, retrieve } from '../core/retrieve.mjs';
 import { verdictLines } from '../core/render.mjs';
 import { decide } from '../core/verdict.mjs';
 import { RECALL_K, WAVE1_MISSES, labelledRows, tokensOf } from './verdict-bench.mjs';
@@ -70,7 +70,11 @@ async function items({ base, ranker: rankerFile, splits, out, set: setFile, open
   const blocks = [];
   const key = [];
   for (const row of labelledRows(set).filter((r) => splits.includes(r.split))) {
-    const d = decide(prep, ranker, row.q);
+    // What ask will do: retrieve, read the bodies of the head, then decide (the re-rank reads them).
+    const found = retrieve(prep, row.q, { fusion: ranker.fusion });
+    const head = found.candidates.slice(0, ranker.rerank?.k ?? 3);
+    const bodies = new Map(await Promise.all(head.map(async (c) => [c.row.id, await bodyOf(reader, c.row)])));
+    const d = decide(prep, ranker, row.q, { retrieval: found, bodies });
     const code = codeOf(row.id, salt);
     let lines;
     if (d.verdict === 'ambiguous') {

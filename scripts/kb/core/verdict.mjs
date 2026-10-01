@@ -29,6 +29,7 @@
 // never end in `none` while anything at all matched it -- so `unmappedShare` is computed and logged
 // but decides nothing.
 
+import { terms, withAncestors } from './query.mjs';
 import { retrieve } from './retrieve.mjs';
 
 export const FEATURES = [
@@ -52,6 +53,50 @@ const BM25_CEILING = 2.2; // k1 + 1: the most one matching word can contribute t
 
 /** How many headlines an `ambiguous` verdict carries. */
 export const AMBIGUOUS_TOP = 3;
+
+// ── re-ranking the head by the bodies ─────────────────────────────────────────────────────────
+//
+// The index carries what an entry is FOUND by (subject, question, card); its body says what it STATES.
+// The bodies of the first few candidates are read anyway (an `ambiguous` headline shows the opening of
+// each), so the head of the list is re-ordered by how much of the question the entry's whole text
+// accounts for: on dev, the right entry in the top 3 went from 32 to 35 of 37 targets (M4, 2026-10-01).
+
+/** Default head re-rank; ranker.json's `rerank` overrides it, `null` there turns it off. */
+export const DEFAULT_RERANK = Object.freeze({ k: 10, lambda: 0.5 });
+
+/**
+ * The share of the question's idf mass an entry's WHOLE text accounts for: subject, question, card and
+ * body, a word also counting as present when it is an alias of a concept the entry (or its ancestor)
+ * carries. idf is the card sentences', the statistics the client already holds.
+ */
+export function textCoverage(prep, row, body, qTerms) {
+  const own = new Set(terms([row.subject, row.question, ...(row.questions ?? []), body ?? ''].join(' ')));
+  const concepts = prep.vocab ? withAncestors(prep.vocab, row.concepts ?? []) : row.concepts ?? [];
+  const alias = new Set(concepts.flatMap((id) => {
+    const c = prep.vocab?.concepts.get(id);
+    return c ? terms([...(c.aliases ?? []), c.label ?? ''].join(' ')) : [];
+  }));
+  const N = prep.sentences?.length ?? 1;
+  const idfOf = (t) => Math.log(1 + (N - (prep.sdf?.get(t) ?? 0) + 0.5) / ((prep.sdf?.get(t) ?? 0) + 0.5));
+  const q = [...new Set(qTerms)];
+  const mass = q.reduce((s, t) => s + idfOf(t), 0);
+  return mass ? q.filter((t) => own.has(t) || alias.has(t)).reduce((s, t) => s + idfOf(t), 0) / mass : 0;
+}
+
+/**
+ * Re-order the first `k` candidates by `fused + lambda * textCoverage`. The fused score itself moves,
+ * so the margin feature reads the order the agent will see. Candidates past `k` keep their place: a
+ * positive boost to the head cannot drop it below them.
+ *
+ * @param {Map<string,string|null>} bodies  entry id -> body, for at least the first `k` candidates
+ */
+export function rerankByBodies(prep, retrieval, bodies, { k = DEFAULT_RERANK.k, lambda = DEFAULT_RERANK.lambda } = {}) {
+  const head = retrieval.candidates.slice(0, k).map((c) => ({
+    ...c, fused: c.fused + lambda * textCoverage(prep, c.row, bodies.get(c.row.id), retrieval.parsed.terms),
+  }));
+  head.sort((a, b) => b.fused - a.fused || a.row.id.localeCompare(b.row.id));
+  return { ...retrieval, candidates: [...head, ...retrieval.candidates.slice(k)] };
+}
 
 /** The feature vector of one retrieval, as a name -> value object. */
 export function featuresOf(prep, { parsed, candidates }) {
@@ -140,8 +185,10 @@ function separating(cands, i, vocab) {
  *   `entries` is what the verdict hands over: one candidate for `answer`, the headlines for
  *   `ambiguous`, none for `none`. `concepts` are, for `none`, the nearest concepts the base holds.
  */
-export function decide(prep, ranker, question, { retrieval = null } = {}) {
-  const r = retrieval ?? retrieve(prep, question, { fusion: ranker.fusion });
+export function decide(prep, ranker, question, { retrieval = null, bodies = null } = {}) {
+  const found = retrieval ?? retrieve(prep, question, { fusion: ranker.fusion });
+  // A ranker re-ranks only when it says so (`rerank`), and only when the caller brought the bodies.
+  const r = ranker.rerank && bodies ? rerankByBodies(prep, found, bodies, ranker.rerank) : found;
   const f = featuresOf(prep, r);
   // ranker.json stores an unreachable answer threshold as null: JSON has no Infinity.
   const answer = ranker.thresholds.answer ?? Infinity;
