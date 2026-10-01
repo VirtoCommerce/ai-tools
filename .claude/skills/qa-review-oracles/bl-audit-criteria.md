@@ -55,8 +55,10 @@ a note in the run report, never a bug report (§7.3).
 
 ### 1b. What runs without anyone — `npm run bl:fresh` (M5)
 
-`scripts/knowledge/bl-fresh.ts` applies part of §1 by itself. The `full-cycle` pipeline runs it before Phase 1
-and after the regression; you can run it by hand (dry run by default, `--write` to apply). Its settings — age
+`scripts/knowledge/bl-fresh.ts` applies part of §1 by itself. **Every `/qa-regression` run calls it at Step 6.6**
+(delegated `/qa-test` runs included) with the run's results; you can run it by hand (dry run by default,
+`--write` to apply). The `full-cycle` pipeline also calls it, but that pipeline needs an Anthropic key the repo
+does not have, so today the local runs are what keep the oracle fresh. Its settings — age
 threshold, closed-bug JQL, which Jira resolutions decide what — are in `bl/_oracle.yaml` `freshness`.
 
 A reason it writes starts with a tag, and the tag decides what may clear it:
