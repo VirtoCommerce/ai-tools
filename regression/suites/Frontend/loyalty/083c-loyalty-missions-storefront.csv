@@ -223,26 +223,21 @@ The ending-soon fixture is seeded with a short remaining window — @td(MSN_ENDI
 [DOM] the date badge on this card carries the danger severity styling, and the default warning styling is absent {SPEC}
 [DOM] the severity is not conveyed by colour alone — the 'N days left' label text on this same card already carries the differentiator, satisfying BL-A11Y-003 / WCAG 1.4.1 without requiring a separate icon or shape {BL}","[API] daysRemaining for this mission is 5 in the response, and errors[] is empty
 [CONSOLE] no unhandled JS errors",Days-left label absent; the label shows a raw date instead of a countdown; the badge renders warning severity at 5 days; severity conveyed by colour alone,None — read-only,VCST-5346,Draft
-MSNF-019,"Completed mission card shows the success chip, the completion label and success severity",Loyalty > Missions > Mission Card,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
-IDENTITY, REPOINTED 2026-09-08 - MISSION-PROGRESS OWNER. Mission progress is PER USER and this case reads progress, so it must run as the account the progress was provisioned for. The missions seeder provisions it under PROGRESS_USER_ROLE='USER' (scripts/seed-data/loyalty/missions-specs.mjs), which scripts/lib/user-roles.mjs resolves through USER_EMAIL - the same account @td(MSN_PROGRESS_ORDER.user_email) records as owning the provisioning order @td(MSN_PROGRESS_ORDER.number). The former [PRE:SIGNIN_AS:USER_DEFAULT] was the WRONG identity: USER_DEFAULT is test-data/users/test-users.csv USER-001, a different account, for which loyaltyMissionProgress returns totalCount=0 with every mission at 0 percent and isStarted=false - that zero is CORRECT for that account, and it makes every progress assertion below vacuously satisfiable. USER_DEFAULT is deliberately NOT redefined (it is referenced far beyond missions), and there is no @td alias for the USER role today, so [PRE:SIGNIN_AS:USER] does not resolve either; the sign-in therefore moved into Steps against {{USER_EMAIL}} / {{USER_PASSWORD}}, the env binding that resolves to the progress owner on every environment because the seeder resolves the same role the same way. PROVENANCE CONSEQUENCE: any {OBSERVED} tag on this case predates the repoint and was recorded against ZERO progress, so it does not carry over to the progress-bearing state this case now runs in; the tags are left in place rather than silently rewritten, and re-grounding them is Dimension 10 work for /qa-review-tests --verify.
+MSNF-019,"Completed mission card shows the completed overlay, the completion label and success severity",Loyalty > Missions > Mission Card,High,BL-GQL-003,,"[PRE:CLEAR_SESSION]
+IDENTITY RE-POINTED 2026-10-01 (REG-2026-10-01-1243): the USER account was recreated on 2026-09-19 with a new id and its completed progress stayed on the old id, so the old fixtures read 0 percent. The case now signs in as @td(LOY_PERSONAL_NOORG.email), for whom @td(MSN_ORDERVALUE.name) is Completed (terminal, read-only here); progress is per user, so it must be this account.
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
-The completed fixture is seeded and its live progress status is @td(MSN_PROGRESS_COMPLETED.progress_status) at @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent, with a completion date recorded.",front_url={{FRONT_URL}}; completed=@td(MSN_PROGRESS_COMPLETED.name); completed_pct=@td(MSN_PROGRESS_COMPLETED.progress_percentage); completed_reward=@td(MSN_PROGRESS_COMPLETED.reward),"[PRE:CLEAR_SESSION]
-[NAV] {{FRONT_URL}}/sign-in
-[WAIT] the sign-in form has rendered its email input
-[ACT] type {{USER_EMAIL}} into the sign-in email input
-[ACT] type {{USER_PASSWORD}} into the sign-in password input
-[ACT] click the sign-in submit control
-[WAIT] authentication completes, the browser settles on its post-login route
+The completed fixture is seeded and its live progress status is @td(MSN_ORDERVALUE.progress_status_at_seed) at @td(MSN_ORDERVALUE.progress_percent_at_seed) percent, with a completion date recorded.",front_url={{FRONT_URL}}; completed=@td(MSN_ORDERVALUE.name); completed_pct=@td(MSN_ORDERVALUE.progress_percent_at_seed); completed_reward=@td(MSN_ORDERVALUE.reward),"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
 [NAV] {{FRONT_URL}}/account/missions
 [WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
-[ACT] read every chip on the card for @td(MSN_PROGRESS_COMPLETED.name)
+[ACT] read every chip on the card for @td(MSN_ORDERVALUE.name)
 [ACT] read the date label on that same card
-[ACT] read the date-badge severity on that same card","[DOM] a 'Completed' success chip is visible on the card {OBSERVED}
+[ACT] read the date-badge severity on that same card","[DOM] the completed overlay with the 'circle-check' glyph is visible on the card {SPEC} (VCST-5957 annotation A4: completed is a check on green; the 'Completed' chip was removed by PR #2524, confirmed by REG-2026-10-01-1243)
 [DOM] the date label 'Mission completed' is visible, and a days-left countdown is absent {OBSERVED}
 [DOM] the date badge carries the success severity, and warning and danger styling are absent {OBSERVED}
-[MATH] the progress bar renders at @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent = 100 {OBSERVED}
-[MATH] the points chip is still visible and = @td(MSN_PROGRESS_COMPLETED.reward), so the customer can see what the completion was worth {OBSERVED}","[API] the mission's status in the response is Completed with a non-null completedDate, and errors[] is empty
-[CONSOLE] no unhandled JS errors",The completed card still counts down days; the success chip is absent; the badge renders danger because the countdown branch was taken,None — read-only,"VCST-5346 | Promoted: VCST-5346 (2026-08-27) | Repointed: 2026-09-08 — identity moved from USER_DEFAULT to the MISSION-PROGRESS OWNER ({{USER_EMAIL}}, the seeder PROGRESS_USER_ROLE=USER account). Reason: this case reads the Completed success chip, the completion label, the success date severity and a 100-percent bar, and mission progress is per-user - as USER_DEFAULT loyaltyMissionProgress returns totalCount=0 and every such assertion is vacuous. USER_DEFAULT itself is unchanged; no @td alias exists for the USER role, so the sign-in moved into Steps against the {{USER_EMAIL}}/{{USER_PASSWORD}} env binding",Automated
+[MATH] the progress bar renders at @td(MSN_ORDERVALUE.progress_percent_at_seed) percent = 100 {OBSERVED}
+[MATH] the points chip is still visible and = @td(MSN_ORDERVALUE.reward), so the customer can see what the completion was worth {OBSERVED}","[API] the mission's status in the response is Completed with a non-null completedDate, and errors[] is empty
+[CONSOLE] no unhandled JS errors",The completed card still counts down days; the completed overlay is absent; the badge renders danger because the countdown branch was taken,None — read-only,"VCST-5346 | Promoted: VCST-5346 (2026-08-27) | re-based after PR #2524 (REG-2026-10-01-1243) | Repointed: 2026-09-08 — identity moved from USER_DEFAULT to the MISSION-PROGRESS OWNER ({{USER_EMAIL}}, the seeder PROGRESS_USER_ROLE=USER account). Reason: this case reads the Completed success chip, the completion label, the success date severity and a 100-percent bar, and mission progress is per-user - as USER_DEFAULT loyaltyMissionProgress returns totalCount=0 and every such assertion is vacuous. USER_DEFAULT itself is unchanged; no @td alias exists for the USER role, so the sign-in moved into Steps against the {{USER_EMAIL}}/{{USER_PASSWORD}} env binding",Automated
 MSNF-020,Mission with no end date renders no countdown and no empty badge shell,Loyalty > Missions > Mission Card,Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
@@ -318,13 +313,22 @@ OVERLAY RESIDUE — RESOLVED 2026-09-08, historical note only, there is no live 
 [NAV] {{FRONT_URL}}/account/missions
 [WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
 [ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
-[WAIT] the modal has rendered its product rows and its summary block","[MATH] the number of product rows in the modal = the number of featured SKUs on the mission {OBSERVED}
-[DOM] on each row a product image, a product title, the SKU code, a price, a 'Buy at least' target chip, a quantity stepper, an in-stock indicator and a count-in-cart indicator are all visible {OBSERVED}
+[WAIT] the modal has rendered its product rows and its summary block
+[ACT] record the loyaltyMissionProgress response body for this page load as PROGRESS
+[ACT] set the stepper of the @td(MSN_PERSKU_PRODUCT_A.sku) row to 2
+[WAIT] the summary block has recomputed
+[ACT] click 'Add to cart'
+[WAIT] the result notification is visible, the modal has closed
+[ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
+[WAIT] the modal has rendered its product rows
+[ACT] read the count-in-cart indicator of the @td(MSN_PERSKU_PRODUCT_A.sku) row as IN_CART_A","[MATH] the number of product rows in the modal = the number of featured SKUs on the mission {OBSERVED}
+[DOM] on each row a product image, a product title, the SKU code, a price, a 'Buy at least' target chip, a quantity stepper and an in-stock indicator are all visible {OBSERVED}
 [MATH] the 'Buy at least' chip on the row for @td(MSN_PERSKU_PRODUCT_A.sku) = @td(MSN_PERSKU_PRODUCT_A.quantity) {OBSERVED}
-[MATH] the 'Buy at least' chip on the row for @td(MSN_PERSKU_PRODUCT_B.sku) = @td(MSN_PERSKU_PRODUCT_B.quantity) {OBSERVED}
-[MATH] with an empty cart every row's count-in-cart indicator = 0 {OBSERVED}
-[DOM] a summary block with total units, a targets-met counter and a cart subtotal is visible, together with a reward line, a Close control and an 'Add to cart' control {OBSERVED}","[API] opening the modal issues no cart mutation, and the mission query's errors[] is empty
-[CONSOLE] no unhandled JS errors on open",The modal opens empty because the mission's SKU rows were not fetched; a row is missing its stepper or its target chip; the SKU code is rendered as an internal product id,Close the modal,"VCST-5346 | Promoted: VCST-5346 (2026-08-27) | Synced: PR #2471 (2026-09-08) — fixture-drift note only: the vcst overlay shadows the MSN_PERSKU_PRODUCT_A/B aliases with stale live-discovered catalog products, so this case currently addresses modal rows by a SKU that is not in the modal. No step and no assertion changed; the @td indirection is deliberately kept and the overlay is what needs reconciling | Resolved: 2026-09-08 — the overlay sku/name residue was deleted and MSN_PERSKU_PRODUCT_A/B resolve their base AGENT-TEST identities again, so the fixture-drift stamp above is HISTORICAL; the overlay productIds were never stale",Automated
+[MATH] the 'Buy at least' chip on the row for @td(MSN_PERSKU_PRODUCT_B.sku) = the targetQuantity that item carries in PROGRESS (read live, 2 on this build; the seeded intent @td(MSN_PERSKU_PRODUCT_B.quantity) has drifted, so the live value is read, never hard-coded) {OBSERVED}
+[DOM] with an empty cart the count-in-cart indicator is absent on every row: it renders only when the count is above 0 (v-if countInCart > 0, on main and in PR #2524) {OBSERVED}
+[DOM] a summary block with total units, a targets-met counter and a cart subtotal is visible, together with a reward line, a Close control and an 'Add to cart' control {OBSERVED}
+[MATH] in-cart arm: after adding 2 of @td(MSN_PERSKU_PRODUCT_A.sku), IN_CART_A = 2 {OBSERVED}","[API] opening the modal issues no cart mutation, and the mission query's errors[] is empty
+[CONSOLE] no unhandled JS errors on open",The modal opens empty because the mission's SKU rows were not fetched; a row is missing its stepper or its target chip; the SKU code is rendered as an internal product id,"Empty the cart from /cart (remove the line the in-cart arm added), close the modal.","VCST-5346 | Promoted: VCST-5346 (2026-08-27) | Synced: PR #2471 (2026-09-08) — fixture-drift note only: the vcst overlay shadows the MSN_PERSKU_PRODUCT_A/B aliases with stale live-discovered catalog products, so this case currently addresses modal rows by a SKU that is not in the modal. No step and no assertion changed; the @td indirection is deliberately kept and the overlay is what needs reconciling | Resolved: 2026-09-08 — the overlay sku/name residue was deleted and MSN_PERSKU_PRODUCT_A/B resolve their base AGENT-TEST identities again, so the fixture-drift stamp above is HISTORICAL; the overlay productIds were never stale",Automated
 MSNF-028,Every price in the featured-SKU modal is in the session currency and equals the product detail page price,Loyalty > Missions > Featured SKU Modal,Critical,BL-PRICE-005,ECL-14.4,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
@@ -496,11 +500,11 @@ The out-of-stock featured-SKU fixture @td(MSN_PERSKU_OOS.name) is seeded: it tar
 [ACT] read the in-stock indicator, the stepper state, the row styling for the out-of-stock product
 [ACT] raise the out-of-stock row's stepper above zero
 [WAIT] the summary block has settled
-[ACT] click 'Add to cart'
-[WAIT] the operation completes, then capture the notification region as the very first observation, before any other read or navigation — this notification now self-dismisses unaided (PR #2471 passes it a duration), so a later read can find nothing without that being evidence of a missing notification","[DOM] an out-of-stock indicator is visible on that row and a stock count is absent {BL}
+[ACT] click 'Add to cart' only if it is enabled, otherwise record it as disabled, mark the add arm N/A
+[WAIT] the operation completes, then capture the notification region as the very first observation, before any other read or navigation — this notification now self-dismisses unaided (PR #2471 passes it a duration), so a later read can find nothing without that being evidence of a missing notification","[DOM] on the out-of-stock row the danger-coloured stock chip is visible with the accessible name 'No longer available' (or 'Out of stock'), shown instead of the green in-stock chip, and no in-stock quantity is shown {BL}
 [DOM] that row's stepper is disabled or capped at zero, so an unavailable unit cannot be requested {BL}
-[DOM] a success notification naming the out-of-stock product is absent {BL}
-[STATE] the cart holds no line for the out-of-stock product afterwards {BL}
+[DOM] a success notification naming the out-of-stock product is absent {BL} - N/A when 'Add to cart' is unreachable (disabled at 0): record N/A, not PASS
+[STATE] the cart holds no line for the out-of-stock product afterwards {BL} - N/A when 'Add to cart' is unreachable (disabled at 0): record N/A, not PASS
 [DOM] the other in-stock rows in the same modal remain enabled, so one unavailable SKU does not disable the whole modal {SPEC}","[API] no cart mutation is issued for the out-of-stock product, or the one issued returns a validation entry in errors[]
 [CONSOLE] no unhandled JS errors",The stepper accepts a quantity for a zero-stock product and the add reports success; the whole modal's add control is disabled because one row is unavailable,Empty the cart,"VCST-5346 | Promoted: REG-2026-09-07-1342 (2026-09-07) | Synced: PR #2471 (2026-09-08) — driving-only guard: the add-to-cart notification now self-dismisses (VCST-5909 fix), so the absence-of-success-notification assertion must be read immediately after the click or it passes vacuously. No assertion changed",Automated
 MSNF-036,"Double-clicking Add to cart issues one write, not two",Loyalty > Missions > Featured SKU Modal,High,BL-CART-001; BL-CROSS-010,ECL-7.3,"[PRE:CLEAR_SESSION]
@@ -908,7 +912,7 @@ The expired, draft and non-public fixtures are seeded. The storefront requests o
 MSNF-060,Banner geometry matches the design spec on the card and in the modal,Loyalty > Missions > Design Verification,Low,BL-UI-001,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
-Advisory design check. Precedence is invariant first, then design spec, then heuristic — a design match never rescues an invariant failure, and a design mismatch alone is a drift report rather than a defect. The design specifies a mission banner of 150 CSS pixels on the card and 170 CSS pixels in the modal, while the implementation applies a fixed utility height of 144 CSS pixels.",front_url={{FRONT_URL}}; design_card_banner_px=150; design_modal_banner_px=170; impl_banner_px=144; persku_all=@td(MSN_PERSKU_ALL.name),"[PRE:CLEAR_SESSION]
+Advisory design check. Precedence is invariant first, then design spec, then heuristic — a design match never rescues an invariant failure, and a design mismatch alone is a drift report rather than a defect. The design specifies a mission banner of 150 CSS pixels on the card and 170 CSS pixels in the modal, while the implementation applies a fixed utility height of 144 CSS pixels.",front_url={{FRONT_URL}}; design_card_banner_px=210; impl_card_banner_px=208; design_modal_banner_px=170; impl_modal_banner=absent; persku_all=@td(MSN_PERSKU_ALL.name),"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 [ACT] set the viewport to 1440 by 900
 [NAV] {{FRONT_URL}}/account/missions
@@ -916,10 +920,10 @@ Advisory design check. Precedence is invariant first, then design spec, then heu
 [ACT] measure the rendered height of a card's banner region in CSS pixels
 [ACT] click the open-mission control on the card for @td(MSN_PERSKU_ALL.name)
 [WAIT] the modal has rendered
-[ACT] measure the rendered height of the modal's banner region in CSS pixels","[MATH] the card banner rendered height = 150 CSS pixels, within a 2 pixel tolerance {OBSERVED}
-[MATH] the modal banner rendered height = 170 CSS pixels, within a 2 pixel tolerance {OBSERVED}
+[ACT] record whether the modal has a banner region, measure its height in CSS pixels if present","[MATH] the card banner rendered height = 210 CSS pixels (design), within a 2 pixel tolerance {SPEC} (Changes artifact: design 210; the build renders 208, h-52, so the 2 px gap is a PO call)
+[DOM] the modal banner region is absent: known drift, VCST-5833 (the design specifies 170 px) {OBSERVED}
 [DOM] the banner region is visible at a stable reserved height, so the grid does not reflow as banner images load {BL}","[API] no additional query is issued by measurement, and the mission query's errors[] is empty
-[CONSOLE] no unhandled JS errors","A height mismatch against the design spec is DRIFT and is reported as drift, never filed as a defect — the implementation's fixed utility height is the recorded authoring-time value in Test_Data; the banner height varies between cards in the same row; the grid reflows as images load; the measured height differs from the spec by more than the recorded drift",Close the modal and restore the viewport to 1920 by 1080,VCST-5346 | Promoted: VCST-5346 (2026-08-27),Automated
+[CONSOLE] no unhandled JS errors","A height mismatch against the design spec is DRIFT and is reported as drift, never filed as a defect — the implementation's fixed utility height is the recorded authoring-time value in Test_Data; the banner height varies between cards in the same row; the grid reflows as images load; the measured height differs from the spec by more than the recorded drift",Close the modal and restore the viewport to 1920 by 1080,VCST-5346 | Promoted: VCST-5346 (2026-08-27) | re-based after PR #2524 (REG-2026-10-01-1243),Automated
 MSNF-061,Mobile presentation and card-footer count differ from the design — record the drift,Loyalty > Missions > Design Verification,Low,BL-UI-004,ECL-7.4,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:USER_DEFAULT]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true. The loyalty missions fixture set is seeded, so this account resolves roughly 14 published public missions through loyaltyMissionProgress.
@@ -1204,7 +1208,7 @@ MSNF-078,Featured-SKU modal cart subtotal sums one currency and labels itself wi
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
 The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
 The cart of @td(MSN_E2E_USER_003.email) is empty at the start; empty it from the cart page before running if it is not. This case touches steppers only and issues no cart write.
-The featured-SKU mission @td(MSN_E2E_PERSKU.name) carries two targets priced in the store default currency, while @td(MSN_E2E_PERSKU_PTS.name) carries a single target @td(MSN_E2E_PRODUCT_PTS.sku) priced in the points currency @td(MSN_E2E_PRODUCT_PTS.currency). That second modal is the POSITIVE CONTROL: the subtotal currency is claimed to be row-derived, and only a modal whose rows carry a different currency can tell a row-derived label from a constant.
+The featured-SKU mission @td(MSN_E2E_PERSKU.name) carries two targets, @td(MSN_E2E_PRODUCT_A.sku) and @td(MSN_E2E_PRODUCT_B.sku), priced in the store default currency and, for A, also in @td(MSN_E2E_PRODUCT_A.currency_secondary). The POSITIVE CONTROL is a session-currency switch to that secondary currency: the subtotal currency is claimed to be row-derived, and only a modal whose rows change currency can tell a row-derived label from a constant. The points-priced control arm was retired: after PR #2524 the PTS row is priced $0.00 USD and unbuyable.
 The modal computes its subtotal by summing the row amounts and takes the currency label from the first item it collects, so a row set that is not already normalised to one currency yields a cross-currency sum wearing one currency label.
 DISPOSABLE FIXTURE, TERMINAL ONCE COMPLETED: mission progress is monotonic with no reset path, and a sibling suite placing real orders on these accounts can consume them between seed and execution. Read the mission status chip as the FIRST observation; if the mission under test already reads as completed, stop and record BLOCKED:PRECONDITION_UNMET — never a PASS and never a FAIL.
 A completed featured-SKU mission opens a read-only modal with no steppers, so neither reading can be taken from it.
@@ -1230,21 +1234,32 @@ Build under test: vc-frontend PR #2396 (the loyalty routes are registered at boo
 [ACT] record the total-units figure in the summary block
 [ACT] click the modal's Close control
 [WAIT] the modal has been dismissed
-[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU_PTS.name)
-[WAIT] the featured-SKU modal has rendered its product row, its summary block
-[ACT] record the unit price with its currency code on the row for @td(MSN_E2E_PRODUCT_PTS.sku)
+[ACT] record the active currency code of the header currency selector as CURRENCY_DEFAULT
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] click the currency option whose code is @td(MSN_E2E_PRODUCT_A.currency_secondary)
+[WAIT] the storefront has re-rendered under the newly selected currency
+[NAV] {{FRONT_URL}}/account/missions
+[WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
+[ACT] click the open-mission control on the card for @td(MSN_E2E_PERSKU.name)
+[WAIT] the featured-SKU modal has rendered its product rows, its summary block
+[ACT] record the unit price with its currency code on the row for @td(MSN_E2E_PRODUCT_A.sku) as ROW_A_SECONDARY
 [ACT] set the stepper on that row to 1
 [WAIT] the summary block cart subtotal has recomputed
-[ACT] record the cart subtotal amount with its currency code in this second modal
+[ACT] record the cart subtotal amount with its currency code as SUBTOTAL_SECONDARY
 [ACT] click the modal's Close control
-[WAIT] the modal has been dismissed","[MATH] with only the row for @td(MSN_E2E_PRODUCT_B.sku) at a non-zero quantity, the cart subtotal = that row unit price × its stepper quantity, to two decimal places {BL}
+[WAIT] the modal has been dismissed
+[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[WAIT] the currency list has rendered its options
+[ACT] click the currency option whose code is CURRENCY_DEFAULT
+[WAIT] the storefront has re-rendered under the restored currency","[MATH] with only the row for @td(MSN_E2E_PRODUCT_B.sku) at a non-zero quantity, the cart subtotal = that row unit price × its stepper quantity, to two decimal places {BL}
 [MATH] with both rows at a non-zero quantity, the cart subtotal = the sum over rows of unit price × stepper quantity, to two decimal places {BL}
 [REL] in each of those two readings, the currency code on the subtotal == the currency code every contributing row carries, so the label does not follow whichever row happens to be collected first {BL}
-[REL] POSITIVE CONTROL — in the modal for @td(MSN_E2E_PERSKU_PTS.name), whose single row is priced in a different currency from the rows of @td(MSN_E2E_PERSKU.name), the subtotal currency code == that row own currency code; two modals reporting the same subtotal currency code over rows that carry different ones show the label is fixed rather than row-derived {OBSERVED}
+[REL] POSITIVE CONTROL - after the session-currency switch to @td(MSN_E2E_PRODUCT_A.currency_secondary), the currency code on SUBTOTAL_SECONDARY equals the currency code on ROW_A_SECONDARY and differs from the default-session subtotal code, so the label follows the rows rather than being a constant {OBSERVED}
 [REL] the total-units figure == the sum of the stepper values across the rows {SPEC}
 [FORMAT] exactly one currency code appears across the rows and the subtotal of a single modal, so no modal renders a sum of amounts denominated differently {BL}
-[REL] DECIDABILITY GATE — if both modals resolve to the same currency code because the environment prices every fixture alike, the control arm is BLOCKED:PRECONDITION_UNMET and never PASS: a single-currency row set cannot distinguish a row-derived label from a constant {DOC}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:MONEY · Technique:BVA | Promoted: REG-2026-09-07-1342 (2026-09-07),Automated
+[REL] DECIDABILITY GATE - if @td(MSN_E2E_PRODUCT_A.currency) equals @td(MSN_E2E_PRODUCT_A.currency_secondary), or the selector does not offer the secondary currency, or the active code did not change after the switch, the control arm is BLOCKED:PRECONDITION_UNMET and never PASS: a single-currency session cannot distinguish a row-derived label from a constant {DOC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5346 · Archetype:MONEY · Technique:BVA | Promoted: REG-2026-09-07-1342 (2026-09-07) | re-based after PR #2524 (REG-2026-10-01-1243) to the redesigned SKU modal,Automated
 MSNF-079,Mission card and its featured-SKU modal report the same targets-met count on an unchanged cart,Loyalty > Missions > Display Link (L6),Medium,,,"[PRE:CLEAR_SESSION]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
 The missions-e2e fixture set minted for run @td(MSN_E2E_RUN.run_id) is seeded and its drift guard is green, so the account @td(MSN_E2E_USER_003.email) resolves the public missions @td(MSN_E2E_ORDERVALUE.name), @td(MSN_E2E_PERSKU.name) and @td(MSN_E2E_PERSKU_PTS.name) through loyaltyMissionProgress — all three are Published, public and carry AnyUserGroupCondition, so they are visible to any signed-in account.
@@ -1649,36 +1664,31 @@ The mission list spans several pages on the seeded store, so page to a named car
 [CONSOLE] no uncaught JS errors
 [NETWORK] no 4xx/5xx on /graphql","The card shows the raw accrued figure rather than the target as its current value, i.e. Math.min(currentValue, target) is gone; a percent above 100 renders; the bar fill extends past its track; the modal clamps while the card does not, or the reverse; 'NaN' or 'Infinity' appears where a ratio above 1 is formatted. A mission whose raw currentValue no longer exceeds its target is the decidability gate above — BLOCKED, not a FAIL.",none — read-only,"VCST-5346; vc-frontend PR #2471 — the three display clamps Math.min(currentValue, target), Math.min(percent, 100) and percentage >= 100 ? target : current; authored 2026-09-08, having been correctly deferred earlier as VACUOUS: the identity the suite ran as carried no progress, so no value overshot its target and every clamp was unobservable. Decidable now that the case runs as the mission-progress owner, whose provisioning order takes both order-value missions past their targets; the accrual reading itself is MSNF-085's subject and is deliberately not re-asserted here; Archetype:RENDER Technique:BVA",Draft
 MSNF-087,"A completed mission's progress bar carries the completed variant, whose fill is the success token and not the in-progress fill",Loyalty > Missions > Mission Card,Medium,BL-A11Y-003,ECL-15.1,"[PRE:CLEAR_SESSION]
-IDENTITY — MISSION-PROGRESS OWNER. Mission progress is PER USER and this case reads progress, so it runs as the account the progress was provisioned for. The missions seeder provisions it under PROGRESS_USER_ROLE='USER' (scripts/seed-data/loyalty/missions-specs.mjs), which scripts/lib/user-roles.mjs resolves through USER_EMAIL — the same account @td(MSN_PROGRESS_ORDER.user_email) records as owning the provisioning order @td(MSN_PROGRESS_ORDER.number). [PRE:SIGNIN_AS:USER_DEFAULT] must NOT be used here: USER_DEFAULT is test-data/users/test-users.csv USER-001, a different account, for which loyaltyMissionProgress returns totalCount=0 with every mission at 0 percent — correct for that account, and fatal to this case, which would then pass vacuously. There is no @td alias for the USER role today, so [PRE:SIGNIN_AS:USER] does not resolve either; the sign-in is therefore in Steps against {{USER_EMAIL}} / {{USER_PASSWORD}}, the env binding that resolves to the progress owner on every environment because the seeder resolves the same role the same way.
+IDENTITY RE-POINTED 2026-10-01 (REG-2026-10-01-1243): the USER account was recreated on 2026-09-19 with a new id and its completed progress stayed on the old id, so the old fixtures read 0 percent. The case now signs in as @td(LOY_PERSONAL_NOORG.email), for whom @td(MSN_ORDERVALUE.name) is Completed (terminal, read-only here); progress is per user, so it must be this account.
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true, and the loyalty missions fixture set is seeded.
-DECIDABILITY, why this case is not vacuous — the completed bar variant renders only for a mission whose backend status is Completed, and on this identity the grid carries ONE OF EACH in a single pass: @td(MSN_PROGRESS_COMPLETED.name) is Completed at @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent, and @td(MSN_PROGRESS_PARTIAL.name) is InProgress at @td(MSN_PROGRESS_PARTIAL.progress_percentage) percent. On an identity with no completed mission the variant never renders at all and the case is unfalsifiable, which is why it was deferred.
+DECIDABILITY, why this case is not vacuous — the completed bar variant renders only for a mission whose backend status is Completed, and on this identity the grid carries ONE OF EACH in a single pass: @td(MSN_ORDERVALUE.name) is Completed at @td(MSN_ORDERVALUE.progress_percent_at_seed) percent, and @td(MSN_ORDERVALUE_POINTS.name) is InProgress at its live percentage percent. On an identity with no completed mission the variant never renders at all and the case is unfalsifiable, which is why it was deferred.
 NO-HARDCODE, stated because it shapes the assertions: the success token's VALUE is deliberately never transcribed into this case (.claude/rules/test-data.md GOLDEN RULE — a transcribed colour is correct exactly once and then manufactures phantom failures, as the 14-value spacing grid did in REG-2026-07-24-2121). It is derived IN THE SAME PASS from another element on the SAME card that carries the same token: the success dot of the date badge (the 'Completed' chip this was first derived from was removed by VCST-5957 / vc-frontend PR #2524, and the dot carries the same success token). scripts/lib/design-tokens.generated.ts carries spacing, breakpoints, control sizes and viewports but NO colour export, so a same-page derivation is the only hardcode-free oracle available today; adding a colour-token generator plus its tokens:check drift guard is recorded as a candidate rather than worked around with a literal.
-The mission list spans several pages on the seeded store, so page to a named card rather than assuming page 1.",front_url={{FRONT_URL}}; completed=@td(MSN_PROGRESS_COMPLETED.name); completed_pct=@td(MSN_PROGRESS_COMPLETED.progress_percentage); completed_status=@td(MSN_PROGRESS_COMPLETED.progress_status); partial=@td(MSN_PROGRESS_PARTIAL.name); partial_pct=@td(MSN_PROGRESS_PARTIAL.progress_percentage),"[NAV] {{FRONT_URL}}/sign-in
-[WAIT] the sign-in form has rendered its email input
-[ACT] type {{USER_EMAIL}} into the sign-in email input
-[ACT] type {{USER_PASSWORD}} into the sign-in password input
-[ACT] click the sign-in submit control
-[WAIT] authentication completes, the browser settles on its post-login route
+The mission list spans several pages on the seeded store, so page to a named card rather than assuming page 1.",front_url={{FRONT_URL}}; completed=@td(MSN_ORDERVALUE.name); completed_pct=@td(MSN_ORDERVALUE.progress_percent_at_seed); completed_status=@td(MSN_ORDERVALUE.progress_status_at_seed); partial=@td(MSN_ORDERVALUE_POINTS.name); partial_pct=read live: any InProgress item with 0 < percentage < 100 in the same response,"[PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
 [NAV] {{FRONT_URL}}/account/missions
 [WAIT] the mission card grid has rendered at least one card and no loading skeleton is visible
 [ACT] record the loyaltyMissionProgress response body for this page load
-[ACT] page through the mission list until the card for @td(MSN_PROGRESS_COMPLETED.name) is rendered
+[ACT] page through the mission list until the card for @td(MSN_ORDERVALUE.name) is rendered
 [ACT] record the class list on that card's progress-bar fill element
 [ACT] record the computed fill colour of that bar
 [ACT] record the computed background colour of the success dot in the date badge on the same card
 [ACT] measure that bar's fill box
 [ACT] measure that bar's track box
 [ACT] record whether a completion date label is visible as text on that card
-[ACT] page through the mission list until the card for @td(MSN_PROGRESS_PARTIAL.name) is rendered
+[ACT] page through the mission list until the card for @td(MSN_ORDERVALUE_POINTS.name) is rendered
 [ACT] record the class list on that card's progress-bar fill element
-[ACT] record the computed fill colour of that card's progress-bar fill element","[DOM] the progress-bar fill element on the card for @td(MSN_PROGRESS_COMPLETED.name) carries the completed modifier, and the default in-progress fill class is absent from it {SPEC} source: the &__bar--completed modifier in the mission-card style block, applied on the completed branch
+[ACT] record the computed fill colour of that card's progress-bar fill element","[DOM] the progress-bar fill element on the card for @td(MSN_ORDERVALUE.name) carries the completed modifier, and the default in-progress fill class is absent from it {SPEC} source: the &__bar--completed modifier in the mission-card style block, applied on the completed branch
 [REL] the computed fill colour of that completed bar == the computed background colour of the success dot in the date badge on the SAME card, so the bar is painted from the same success token rather than from a second colour that merely resembles it — no colour literal is transcribed into this case {SPEC} same source
-[REL] DISCRIMINATOR — that completed fill colour != the computed fill colour of the progress bar on the card for @td(MSN_PROGRESS_PARTIAL.name), which is InProgress. Without this arm, a build that dropped the modifier and painted every bar one colour would still satisfy the assertion above whenever that one colour happened to match the chip {SPEC} same source
-[MATH] the completed bar's fill width divided by its track width = 1.0 within 1 percentage point, consistent with the @td(MSN_PROGRESS_COMPLETED.progress_percentage) percent the response returns {BL}
-[NEG] the completed state is not conveyed by the bar colour alone: on that same card the 'Completed' chip and the completion date label are both visible as TEXT, which is the differentiator BL-A11Y-003 and WCAG 1.4.1 require {BL}
-[REL] DECIDABILITY GATE, evaluated from the response before any colour is compared — if no mission in the list reads as Completed on this run, the completed variant never renders and every arm above is BLOCKED:PRECONDITION_UNMET rather than PASS {BL}","[GQL] the Completed and InProgress statuses are taken from the loyaltyMissionProgress response for the same page load the colours were measured on, so a colour is never attributed to a status the run did not observe
+[REL] DISCRIMINATOR — that completed fill colour != the computed fill colour of the progress bar on the card for @td(MSN_ORDERVALUE_POINTS.name), which is InProgress. Without this arm, a build that dropped the modifier and painted every bar one colour would still satisfy the assertion above whenever that one colour happened to match the chip {SPEC} same source
+[MATH] the completed bar's fill width divided by its track width = 1.0 within 1 percentage point, consistent with the @td(MSN_ORDERVALUE.progress_percent_at_seed) percent the response returns {BL}
+[NEG] the completed state is not conveyed by the bar colour alone: on that same card the 'Mission completed' footer text is visible as TEXT and the success date-badge dot or the 'circle-check' overlay is visible, which is the differentiator BL-A11Y-003 and WCAG 1.4.1 require; the 'Completed' chip no longer exists after PR #2524 (confirmed by REG-2026-10-01-1243) {BL}
+[REL] DECIDABILITY GATE, evaluated from the response before any colour is compared — if no mission in the list reads as Completed on this run, the completed variant never renders and every arm above is BLOCKED:PRECONDITION_UNMET rather than PASS; likewise if the response carries no InProgress item with 0 < percentage < 100 (prefer @td(MSN_ORDERVALUE_POINTS.name), else the first such item), the discriminator arm is BLOCKED:PRECONDITION_UNMET {BL}","[GQL] the Completed and InProgress statuses are taken from the loyaltyMissionProgress response for the same page load the colours were measured on, so a colour is never attributed to a status the run did not observe
 [CONSOLE] no uncaught JS errors
-[NETWORK] no 4xx/5xx on /graphql","Every progress bar in the grid renders one colour regardless of status, meaning the completed modifier is not applied; the completed bar's fill differs from the success dot of the date badge on its own card, meaning the bar is painted from a second colour; the completed bar renders short of full width; the completion is signalled by bar colour only, with no chip and no completion label as text.",none — read-only,"VCST-5346; the &__bar--completed modifier and its success-token fill in the mission-card style block; authored 2026-09-08, having been correctly deferred earlier as VACUOUS — no mission was Completed on the identity the suite ran as, so the variant never rendered and no assertion about it could fail. No BL-* invariant covers the application of a design token to a state VARIANT (the BL-A11Y-003 citation covers only the not-by-colour-alone half), recorded as a candidate for /qa-review-oracles rather than cited loosely; the token value is deliberately derived same-page instead of transcribed, per .claude/rules/test-data.md GOLDEN RULE; Archetype:RENDER Technique:DT",Draft
+[NETWORK] no 4xx/5xx on /graphql","Every progress bar in the grid renders one colour regardless of status, meaning the completed modifier is not applied; the completed bar's fill differs from the success dot of the date badge on its own card, meaning the bar is painted from a second colour; the completed bar renders short of full width; the completion is signalled by bar colour only, with no 'Mission completed' text.",none — read-only,"VCST-5346; the &__bar--completed modifier and its success-token fill in the mission-card style block; authored 2026-09-08 | re-based after PR #2524 (REG-2026-10-01-1243), having been correctly deferred earlier as VACUOUS — no mission was Completed on the identity the suite ran as, so the variant never rendered and no assertion about it could fail. No BL-* invariant covers the application of a design token to a state VARIANT (the BL-A11Y-003 citation covers only the not-by-colour-alone half), recorded as a candidate for /qa-review-oracles rather than cited loosely; the token value is deliberately derived same-page instead of transcribed, per .claude/rules/test-data.md GOLDEN RULE; Archetype:RENDER Technique:DT",Draft
 MSNF-088,"Mission date badge — dot severity at daysRemaining null, 0, 1, 15, 16, 30, 31",Loyalty > Missions > Redesign (VCST-5957),High,BL-A11Y-003,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
@@ -1879,20 +1889,24 @@ The account is @td(LOY_PERSONAL_NOORG.email); progress is per user, so it must b
 [NAV] {{FRONT_URL}}/account/missions
 [WAIT] the mission card grid has rendered at least one card, no loading skeleton is visible
 [ACT] page through the grid to the card for @td(MSN_ORDERVALUE.name)
-[ACT] read its type chip label, the name of its glyph (the icon name in the DOM), its points chip number as ORDERVALUE_CHIPS
+[ACT] read its type chip label, its points chip number as ORDERVALUE_CHIPS
+[ACT] take a screenshot of its type chip, read the glyph shape from the image (banknote, bag, barcode) or from the accessibility tree
 [ACT] page through the grid to the card for @td(MSN_ORDERCOUNT.name)
-[ACT] read its type chip label, the name of its glyph (the icon name in the DOM), its points chip number as ORDERCOUNT_CHIPS
+[ACT] read its type chip label, its points chip number as ORDERCOUNT_CHIPS
+[ACT] take a screenshot of its type chip, read the glyph shape from the image (banknote, bag, barcode) or from the accessibility tree
 [ACT] page through the grid to the card for @td(MSN_PERSKU_ALL.name)
-[ACT] read its type chip label, the name of its glyph (the icon name in the DOM), its points chip number as PERSKU_ALL_CHIPS
+[ACT] read its type chip label, its points chip number as PERSKU_ALL_CHIPS
+[ACT] take a screenshot of its type chip, read the glyph shape from the image (banknote, bag, barcode) or from the accessibility tree
 [ACT] page through the grid to the card for @td(MSN_PERSKU_ANY.name)
-[ACT] read its type chip label, the name of its glyph (the icon name in the DOM), its points chip number as PERSKU_ANY_CHIPS","[DOM] the Order value card's type chip glyph is 'cash', the Order count card's is 'shopping-bag', and both Featured SKUs cards' is 'barcode' {SPEC} (VCST-5957 annotation A1 and PR #2524 type icon map)
-[COUNT] the three goal-type families show three distinct glyph names, and the two Featured SKUs variants share one {SPEC} (VCST-5957 PR #2524)
+[ACT] read its type chip label, its points chip number as PERSKU_ANY_CHIPS
+[ACT] take a screenshot of its type chip, read the glyph shape from the image (banknote, bag, barcode) or from the accessibility tree","[DOM] observed from the screenshot or the accessibility tree (no DOM icon-name read needed; visual-lane evidence is acceptable), the Order value card's type chip glyph is the cash (banknote) shape, the Order count card's is the shopping-bag shape, and both Featured SKUs cards' is the barcode shape {SPEC} (VCST-5957 annotation A1 and PR #2524 type icon map)
+[COUNT] the three goal-type families show three distinct glyph shapes, and the two Featured SKUs variants share one {SPEC} (VCST-5957 PR #2524)
 [MATH] on each card the points chip number = that mission's reward: @td(MSN_ORDERVALUE.reward), @td(MSN_ORDERCOUNT.reward), @td(MSN_PERSKU_ALL.reward) and @td(MSN_PERSKU_ANY.reward) respectively {SPEC} (VCST-5957 annotation A2)
 [REL] the two chips on one card are filled from different fields: no card shows its own reward as its type label or another card's reward {SPEC} (VCST-5957 annotation A1/A2)
 [NEG] no chip text matches a raw enum (OrderValueGoal, OrderCountGoal, PerSkuAll, PerSkuAny) {BL} (as MSNF-013)","[API] loyaltyMissionProgress.items[].rewardPoints.amount and missionType equal the chip values
 [CONSOLE] no unknown-icon warning for cash, shopping-bag or barcode
 [NETWORK] no 4xx/5xx on /graphql","an Order count card showing the cash glyph, a points chip carrying another mission's reward, an unknown-icon console warning, a raw enum in a chip",none,VCST-5957 · Archetype:RENDER · Technique:EP · Purpose:FUNC,Draft
-MSNF-096,"Card vs modal parity — bar colour, percent and label agree for 0 percent, partial and completed missions",Loyalty > Missions > Redesign (VCST-5957),Medium,,,"[PRE:CLEAR_SESSION]
+MSNF-096,"Card vs order-modal parity - bar colour, percent and label agree for partial and completed missions; the SKU modal Targets met agrees with its 0 percent card",Loyalty > Missions > Redesign (VCST-5957),Medium,,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:LOY_PERSONAL_NOORG]
 Store @td(MSN_STORE_SETTINGS.store_id) has @td(MSN_STORE_SETTINGS.setting_name)=true and @td(MSN_STORE_SETTINGS.base_setting_name)=true.
 The account is @td(LOY_PERSONAL_NOORG.email); progress is per user, so it must be this account. Three states on one account: @td(MSN_PERSKU_ALL.name) at 0 percent InProgress, @td(MSN_ORDERVALUE_POINTS.name) partially complete (InProgress, non-zero), @td(MSN_ORDERVALUE.name) Completed. FIXTURE LIMIT: no partially complete or completed PerSku mission exists for this account, so the SKU-modal arm covers the 0 percent state only and the completed arm covers the order modal only.","account=@td(LOY_PERSONAL_NOORG.email), zero=@td(MSN_PERSKU_ALL.name), partial=@td(MSN_ORDERVALUE_POINTS.name), completed=@td(MSN_ORDERVALUE.name)","[PRE:CLEAR_SESSION]
@@ -1903,7 +1917,7 @@ The account is @td(LOY_PERSONAL_NOORG.email); progress is per user, so it must b
 [ACT] record its progress bar colour token, percent text, progress note as CARD_COLOUR, CARD_PCT, CARD_NOTE for MSN_PERSKU_ALL
 [ACT] click 'Open mission' on the card for @td(MSN_PERSKU_ALL.name)
 [WAIT] the modal has rendered its rows, its summary block
-[ACT] record the modal progress bar colour token, percent text, progress label as MODAL_COLOUR, MODAL_PCT, MODAL_NOTE for MSN_PERSKU_ALL
+[ACT] record the modal summary 'Targets met' counter as MODAL_TARGETS for MSN_PERSKU_ALL (the SKU modal has no progress bar)
 [ACT] record every control in the modal footer, every quantity stepper in the modal
 [ACT] click 'Close'
 [WAIT] the modal has been dismissed
@@ -1922,10 +1936,11 @@ The account is @td(LOY_PERSONAL_NOORG.email); progress is per user, so it must b
 [ACT] record the modal progress bar colour token, percent text, progress label as MODAL_COLOUR, MODAL_PCT, MODAL_NOTE for MSN_ORDERVALUE
 [ACT] record every control in the modal footer, every quantity stepper in the modal
 [ACT] click 'Close'
-[WAIT] the modal has been dismissed","[REL] for each of the three missions CARD_COLOUR = MODAL_COLOUR, CARD_PCT = MODAL_PCT and CARD_NOTE = MODAL_NOTE {SPEC} (VCST-5957 PR #2524: card and order modal restyled together)
-[DOM] the in-progress bars (0 percent SKU, partial order) use the 'info' colour token and the completed bar uses the 'success' token {SPEC} (VCST-5957 PR #2524: bar info-500 in progress, success-500 completed)
+[WAIT] the modal has been dismissed","[REL] for each of the two order-modal missions (@td(MSN_ORDERVALUE_POINTS.name), @td(MSN_ORDERVALUE.name)) CARD_COLOUR = MODAL_COLOUR, CARD_PCT = MODAL_PCT and CARD_NOTE = MODAL_NOTE {SPEC} (VCST-5957 PR #2524: card and order modal restyled together)
+[DOM] the in-progress bars (0 percent SKU card, partial order card and modal) use the 'info' colour token and the completed bar uses the 'success' token {SPEC} (VCST-5957 PR #2524: bar info-500 in progress, success-500 completed)
 [REL] the in-progress colour token differs from the completed one, so a build that painted every bar one colour cannot pass {SPEC} (VCST-5957 PR #2524)
 [DOM] the completed order modal shows only a 'Close' control, with no stepper and no 'Add to cart' present {OBSERVED} (SBTM-VCST-5957 reverse edges)
+[REL] for the SKU mission MODAL_TARGETS reads 'Targets met N / M', equal to the card note 'N of M SKUs', and CARD_PCT is 0% {OBSERVED} (REG-2026-10-01-1243 triage: the SKU modal never had a progress bar)
 [DOM] the 0 percent SKU modal shows steppers and an 'Add to cart' control, visible {OBSERVED} (SBTM-VCST-5957 F09)","[API] percentage and status in loyaltyMissionProgress equal CARD_PCT and the state
 [CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","a card bar in the info colour with a modal bar in warning, a completed modal bar not success, percent differing between card and modal",none,VCST-5957 · Archetype:PARITY · Technique:ST · Purpose:FUNC,Draft

@@ -1,6 +1,7 @@
 # "Points history" link is an **18 px-tall** touch target at every viewport — below the WCAG 2.2 AA minimum — **P3**
 
 ## Status: CONFIRMED
+**Verified fixed 2026-10-01** — `/qa-test VCST-5957` on theme `2.59.0-pr-2524-3069` (vc-frontend PR #2524, unmerged): see `reports/tickets/Sprint26-19/VCST-5957/testing-checklist.md`.
 **Found by:** `/qa-design VCST-5346` (2026-08-28)
 **Tracker:** VCST-5834 (Subtask of VCST-5346)
 **Archetype:** `RENDER`
