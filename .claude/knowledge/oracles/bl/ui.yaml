@@ -28,6 +28,8 @@ rules:
     priority: P2-ux
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-frontend:tailwind.config.ts
     check:
       kind: manual
       ref: For each container and its key children, read `getComputedStyle(el).paddingTop|Right|Bottom|Left`, `marginTop|…`, and `gap` via `spacingAuditSnippet(selector)`, then `classifySpacing()`. **Never hand-list the allowed values** — the snippet embeds `SPACING_GRID`, which is derived by `npm run tokens:sync` from Tailwind's default scale (at the version vc-frontend pins) unioned with that repo's `theme.extend.spacing`; `npm run tokens:check` fails when the design system drifts. Run at the derived `AUDIT_VIEWPORTS_PX` sweep — some breakpoints introduce token overrides.
@@ -90,6 +92,8 @@ rules:
         ref: w3.org/TR/WCAG22#target-size-enhanced (SC 2.5.5, AAA) — targets at least 44x44 CSS px
       - kind: resolution
         ref: VCST-5019 (Cancelled) — 26x26 coupon buttons reported against a 44px bar were not fixed; consistent with the rule treating 24-43px as WARN, not FAIL
+    scope:
+      code_ref: vc-frontend:client-app/ui-kit/components/molecules/button/vc-button.vue
     check:
       kind: manual
       ref: Set viewport to 375 px. Run `LAYOUT_SNIPPETS.touchTargetAudit` → `classifyTouchTargets()`, which tags each undersized element with `belowAA` and returns FAIL / WARN / PASS accordingly; for pairwise spacing, checks closest-edge distance ≥ 8 px. Thresholds live in `TOUCH_TARGET_AA_MIN_PX` / `TOUCH_TARGET_AAA_MIN_PX` — don't re-hardcode 44.

@@ -51,6 +51,8 @@ rules:
         ref: VCST-5374 (Done) — fixed org members getting a permanent-lockout code for a temporary failed-attempt lockout.
       - kind: live
         ref: KB-8646A9CB (corroborated) — five failed storefront sign-ins return user_is_temporary_locked_out with about 15-minute lockoutEnd.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Web/Controllers/Api/AuthorizationController.cs#Exchange
     check:
       kind: manual
       ref: Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 success → counter resets (next failure starts from 1).
@@ -66,6 +68,8 @@ rules:
         ref: "`vc-module-x-order` `src/VirtoCommerce.XOrder.Core/ModuleConstants.cs` (`ShippingAddressPolicy` descriptor — two allowed values, default = the disabled one) + `src/VirtoCommerce.XOrder.Data/Middlewares/ShipmentContextMiddleware.cs` (`GetShippingPolicy` plus the early return unless the policy is the previous-order value, the `shipment?.DeliveryAddress != null` short-circuit, and the single-result last-order lookup taking the billing-and-shipping/shipping address). Docs: storefront user guide, Checkout → Shipping — \"If Shipping address policy is enabled in the Platform, the shipping address on the Shipping page will be prefilled with the most recently used address.\" Live-confirmed on the environment: the policy read back as its disabled value, and a signed-in customer's checkout showed no pre-filled shipping address while a customer with no order history saw an empty form. The previous-order branch is source+docs-grounded only — it was not exercised live (it requires the store setting to be changed)."
       - kind: doc
         ref: storefront/user-guide/docs/shopping/checkout-process.md (published) — if a shipping address policy is enabled, the shipping address may be prefilled with the most recently used address.
+    scope:
+      code_ref: vc-module-x-order:src/VirtoCommerce.XOrder.Data/Middlewares/ShipmentContextMiddleware.cs#RunInternal
     check:
       kind: manual
       ref: Read the store's shipping-address policy setting first — the expected result depends on it. Disabled value (default) → sign in as a customer **with** prior orders → checkout → the shipping section prompts for an address selection and nothing is pre-filled. Previous-order value → same customer → checkout → the shipping address matches the most recent order's shipping address; then set a delivery address on the shipment first and re-enter checkout → the existing address is **not** overwritten. Any value → brand-new account with no orders → empty address form, no saved cards. Sign in as a different user → no cross-contamination of addresses.
@@ -81,6 +85,8 @@ rules:
         ref: 'Platform docs "Global permissions" (the module permission template is `access/read/create/update/delete`; Orders extends it with `read_prices`) + `vc-platform` `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` = reserved-administrator short-circuit, else the permission claim must be held) + `vc-module-customer` `ModuleConstants.cs:14-34` (base 5 plus a module-specific `invite`, and a separate organization-membership permission group) with `OrganizationMembershipController.cs:22,34,80,92,119,129,137` gating each action by permission. Live-confirmed on the environment: the registered permission catalog is dominated by the base-5 verbs across every module group, `export` appears only on the few modules that support data export, and a storefront-scoped token carrying no platform permission claims received 403 from three permission-gated admin endpoints. The Admin-SPA button-visibility half of `Verify` was not re-observed this run (docs + source cover the UI-gating mechanism).'
       - kind: doc
         ref: platform/developer-guide/docs/Fundamentals/Security/authorization/global-permissions.md (published) — modules declare access/read/create/update/delete (+extensions) permissions; [Authorize] enforces them on API methods.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Security/Authorization/PermissionAuthorizationHandlerBase.cs#HandleRequirementAsync
     check:
       kind: manual
       ref: Create a role with only `read` on Catalog → assign to user → sign in as that user → "Create" and "Delete" buttons absent in Catalog blade. Attempt `POST /api/catalog/products` → 403. Add `create` permission → button appears.
@@ -96,6 +102,8 @@ rules:
         ref: 'Platform docs "Authorization in Virto Commerce" (authorization is by permission claim; a role is a collection of permissions grouped for assignment — no inheritance described) + `vc-platform` `PlatformConstants.cs:46-51` (the three reserved system roles) and `ClaimsPrincipalExtensions.cs:61-71` (`HasGlobalPermission` short-circuits for the administrator system role, else requires the claim). Live-confirmed on the environment: the role search returns role objects with no parent/base/extends/child field, and of the five names previously listed as tiers only the store-manager role existed as a data role.'
       - kind: doc
         ref: platform/user-guide/docs/security/roles-and-permissions.md (published) — effective permissions are the union of global, organization and membership roles, re-evaluated at sign-in.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Core/Security/ClaimsPrincipalExtensions.cs#HasGlobalPermission
     check:
       kind: manual
       ref: Read the environment's role list first and pick roles that actually exist there rather than assuming a role by name. Assert no role exposes a parent/inheritance field, and that a role's effective permissions equal exactly what was assigned to it. Store Manager → can manage products, orders for assigned store → cannot access Platform Settings blade. Customer → can view own orders → cannot access Admin SPA. Anonymous → can browse catalog (if flag ON) → cannot access cart/checkout (if guest checkout OFF). Confirm an account in the reserved administrator system role passes a permission check for a permission no role grants it.
@@ -109,6 +117,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-frontend` `client-app/shared/layout/components/header/_internal/top-header.vue` — `account-button` → `account-menu` popup → `sign-out-button` (an icon-only button titled with the localized logout label) wired to `signMeOut` from `useSignMeOut`; `client-app/router/routes/main.ts` declares only a sign-in page and a repo-wide search of the router directory finds no sign-out/logout route. Live-confirmed on the environment: both URLs render the 404 catch-all, the authenticated header carries no logout control, and the popup control signs the user out through the auth guard. Docs axis: N/A — the storefront user guide has no sign-out topic, and the invariant's substance is the route-absence + selector contract (QA methodology)."
+    scope:
+      code_ref: vc-frontend:client-app/shared/layout/components/header/_internal/top-header.vue
     check:
       kind: manual
       ref: Navigating to `/sign-out` and `/logout` must not resolve to a logout page (they fall through to the catch-all 404). Header nav must not contain a top-level logout button. Clicking `data-test-id="account-button"` opens the popup; clicking `data-test-id="sign-out-button"` inside it signs the user out, and the auth guard redirects to the sign-in route carrying a `returnUrl` for the page that was open. The popup control is an **icon-only** button — its visible content is a logout glyph and its accessible name/title is the localized "Logout" label — so locate it by `data-test-id="sign-out-button"`, never by visible text.
@@ -138,6 +148,8 @@ rules:
         ref: VCST-5174 (Cancelled, by design) — chained impersonate grant from an impersonated token ruled intended operator behaviour, not escalation.
       - kind: doc
         ref: platform/user-guide/docs/security/login-on-behalf.md (published) — login on behalf requires the operator's role to hold the Login on behalf permission.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Web/Controllers/Api/AuthorizationController.cs#Exchange
     check:
       kind: manual
       ref: From a session already impersonating User-A, navigate to the impersonate route for User-B → the silent path fires (**no form is expected**). At the network layer, `/connect/token grant_type=impersonate` on the impersonated token **currently returns HTTP 200** (a chained token) — the expected-post-fix behavior is a rejection (4xx, no token issued).
@@ -152,6 +164,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-frontend` `client-app/shared/layout/components/header/_internal/top-header.vue` — the `v-if=\"operator\"` block renders `operator-name-label` plus the localized logged-in-as label, with the target's name on `account-button`; all inside the persistent `top-header` element, so a route change cannot unmount it. `operator` is supplied by `useUser()`. Live-confirmed on the environment: across four click-driven route transitions (home, catalog, cart, account dashboard) the banner stayed rendered with stable DOM node identity. A mobile-menu counterpart exists in the header's mobile menu component but was **not** verified live — this invariant is asserted for the desktop top header. Docs axis: N/A — the published login-on-behalf guide covers only the Admin-side entry point, not the storefront banner."
+    scope:
+      code_ref: vc-frontend:client-app/shared/layout/components/header/_internal/top-header.vue
     check:
       kind: manual
       ref: "Start impersonation → verify the banner on home → navigate by **clicking internal links** (not reloading) to the catalog, cart, checkout, and account pages → the banner is present at each, and its DOM element is the *same* node throughout (accessibility-tree references are stable across the transitions, not re-created). The banner is not a page-level bar: it is three top-header elements — `data-test-id=\"operator-name-label\"` (the operator), the localized \"logged in as\" label, and `data-test-id=\"account-button\"` carrying the target's name — rendered inside the persistent `data-test-id=\"top-header\"` layout component, outside the router view."
@@ -165,6 +179,8 @@ rules:
     source:
       - kind: code
         ref: '`vc-frontend` `client-app/shared/account/composables/useImpersonate.ts` — `backToOperator()` → `revertImpersonate(<company-members landing route>)` → `requestImpersonateToken("")`, which POSTs the token endpoint with `grant_type=impersonate`, `scope=offline_access` and an **empty** `user_id`, writes all four token values to storage, and only **then** broadcasts and performs the full-page navigation (the ordering is called out as an invariant in the source comment). Control row `back-to-operator-row` in `client-app/shared/layout/components/header/_internal/top-header.vue`. Live-confirmed on the environment: the captured request body was exactly `grant_type=impersonate&scope=offline_access&user_id=` → HTTP 200, no password grant occurred, the tab landed on the company-members route rather than sign-in, and the account menu showed the operator with no impersonation banner and no re-authentication prompt. Docs axis: N/A — the token-grant and reload mechanics have no published guide coverage.'
+    scope:
+      code_ref: vc-frontend:client-app/shared/account/composables/useImpersonate.ts#backToOperator
     check:
       kind: manual
       ref: Operator starts impersonating target → confirms banner → clicks the "Back to operator" row (`data-test-id="back-to-operator-row"`) → the `/connect/token grant_type=impersonate` call carries an **empty `user_id`** (no `grant_type=password`); the URL does **NOT** go to the sign-in route; after the navigation the account menu shows the operator name (not target).
@@ -184,6 +200,8 @@ rules:
         ref: "VCST-5028 (Done) — story: access blocks scoped to one organization must not lock the user globally (old handler set the global lockout)."
       - kind: resolution
         ref: VCST-5496 (Done) — fixed a contact with one locked org membership being unable to obtain a token for any org.
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/Services/OrganizationMembershipService.cs#SetLockState
     check:
       kind: manual
       ref: "Lock membership in org X via `POST /api/customer/organization-memberships/{id}/lock` → `GET /api/platform/security/users/{userId}/locked` returns `locked: false` → `/connect/token` with `organization_id=X` → HTTP 400 `code: user_is_locked_in_organization` → `/connect/token` with `organization_id=Y` (same user, unlocked) → HTTP 200. **The 400 requires X to be the user's ONLY accessible organization** (or a non-`password` grant): on a `password` grant, a user who also has an accessible org Y is **silently fallen back to Y and gets HTTP 200 with no error** — see BL-AUTH-016. Use a single-org fixture, or assert the refusal on a non-`password` grant, or the step reads as a false PASS/FAIL depending on the fixture's org count. Two further traps: the **no-`organization_id`** variant of the same call returns **HTTP 200 with no organization context** rather than any refusal (the chain resolves nothing — BL-AUTH-015), so a refusal must be asserted on the explicit-org form; and the global-lock state must be read from the `/locked` endpoint, because the by-id platform-user payload can come back successful but **empty**, in which case a test reading `isLockedOut` off it sees `undefined` and passes without proving anything."
@@ -207,6 +225,8 @@ rules:
         ref: "`vc-module-customer` `ErrorDescriber.cs` (all five describers; `Code = nameof(...).ToSnakeCase()`) + `OrganizationIdRequestValidator.cs` `GetStatusError` (the status→code switch) and `HandleUnavailableOrganizationAsync` (the `invalid_organization_id` path). Live: the `Invited` → `user_invitation_pending_in_organization` mapping was observed on the environment; the `Rejected` / `Deleted` codes are **source-only this run** (their live probe needs a single-org fixture at that status driven through an explicit-`organization_id` grant). Docs axis: N/A — no published guide covers the token endpoint's org error codes (waived)."
       - kind: resolution
         ref: VCST-5374 (Done) — fix kept the org-block path (user_is_locked_in_organization) distinct from global lockout codes.
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationIdRequestValidator.cs#GetStatusError
     check:
       kind: manual
       ref: For each cause, put a **single-accessible-org** user into that state, then `/connect/token` (`grant_type=password`, a store identifier, and `organization_id` naming that org) → assert `error == "invalid_grant"` and the exact `code` from the table above; assert `errors[]` carries **exactly one** entry whose `code` matches (BL-AUTH-016). Do **not** assert on the response's `count` field — it is the token response's parameter count, not an error count, and reads greater than one on a single-error refusal. Storefront `/sign-in` or an org-switch into the refused org → assert org-specific copy, distinct from the global-lockout copy.
@@ -222,6 +242,8 @@ rules:
         ref: '`ApiCookieRedirectHandler.cs` `IsApiRequest()` (`Path.StartsWithSegments("/api", OrdinalIgnoreCase)` OR `X-Requested-With: XMLHttpRequest`) + `Startup.cs` `OnRedirectToLogin` → 401 / `OnRedirectToAccessDenied` → 403 wiring; xUnit `ApiCookieRedirectHandlerTests.cs` (VCST-5618). **The fix is merged — the handler, its wiring and its tests are all on the platform default branch as of 2026-08-05.** Live-re-confirmed on the environment: unauthenticated calls to two distinct `/api/platform/**` endpoints each returned 401 with an empty body and no `Location` header, and `/apiary/...` returned 404 rather than 401/302. The "other cookie challenges still redirect (302)" clause remains **source-only** — a live probe of the authorization endpoint returned a 400 from request validation before any cookie challenge fired, so the redirect branch was not exercised. Docs axis: N/A — no PlatformDeveloperGuide coverage of this status-code contract (waived).'
       - kind: resolution
         ref: VCST-5618 (Done) — fixed unauthenticated /api/** calls returning 302 to the login page instead of 401.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Web/Security/Authentication/ApiCookieRedirectHandler.cs#IsApiRequest
     check:
       kind: manual
       ref: "Unauthenticated `GET` to an `/api/platform/**` endpoint → 401, no `Location` header, body is not login-page HTML. Authenticated-but-forbidden call to an `/api/**` endpoint → direct 403 (not the old 302→AccessDenied→404 chain). A path that merely starts with the string \"api\" but isn't the `/api` segment (e.g. `/apiary/...`) is NOT treated as an API path. An AJAX/XHR request outside `/api` (e.g. SignalR hub negotiation) carrying `X-Requested-With: XMLHttpRequest` also gets a direct status code. Unauthenticated navigation to `/connect/authorize` still redirects (302) to the login page."
@@ -248,6 +270,8 @@ rules:
         ref: "`vc-module-customer` `OrganizationAccessResolver.cs:14-40` (steps 3–5) and `:42-79` (the two-axis predicate; the skip at `:48-51` is keyed on an absent userId or empty organization list, and the per-org branch at `:64-77` evaluates a null membership through the contact-status fallthrough) + `OrganizationIdRequestValidator.cs:136-151` (steps 1–2) + `OrganizationMembership.cs:22,26-34` (`IsCurrentlyLocked`, `ResolveEffectiveStatus`) + `ModuleConstants.cs:51-54` (blocking statuses) + `CurrentOrganizationIdTokenRequestHandler.cs:16-43` (the write-back, and its impersonation skip). Live-confirmed on the environment: step-1 precedence over the stored org; a stored current org honoured over the first-listed org; a zero-membership-row contact resolving and accepting an explicit org; all three blocking-status single-org fixtures signing in with no explicit org and receiving no organization claim; and the write-back observed moving a contact's stored org, after which the next no-org grant resolved the new value. The ordering **between** steps 3 and 4 remains source-only — no fixture carries a default organization, so it was not isolated live. Docs axis: N/A — the published guides describe multi-organization switching as a feature but no resolution order, accessibility predicate, or persistence; the behaviour shipped in the change under audit (waived)."
       - kind: resolution
         ref: VCST-5496 (Done) — fixed org auto-resolution (Current, then Default, then first org) ignoring the user's other active orgs when the resolved one was locked.
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationAccessResolver.cs
     check:
       kind: manual
       ref: Multi-org user, `password` grant naming org Y explicitly → active org is Y even when the contact's `CurrentOrganizationId` is X (step 1 beats step 3). Re-read the contact after that grant → `CurrentOrganizationId` is now Y (the write-back), so re-read stored state between steps instead of assuming the seeded value. Switch orgs through the real UI, then sign out and sign in again → the resend/persisted org is honoured, not the previous first-accessible one. Put a single-org user's only membership at a blocking status → sign in with **no** explicit `organization_id` → the org is absent from the resolved context (org switcher and org-scoped navigation are gone), not merely refused. A contact with organization associations but no membership rows → accessible per the contact's own status. Confirm the switcher lists only accessible orgs.
@@ -271,6 +295,8 @@ rules:
         ref: "`vc-module-customer` `OrganizationIdRequestValidator.cs` `ValidateOrganizationAccessAsync` — `isLocked` and `statusError` are computed independently, the `allowFallback` branch returns `null` (no error) whenever a fallback org resolves, and the terminal `return isLocked ? UserIsLockedInOrganization(...) : statusError` yields a single response; `allowFallback` is set from `GrantType == password` only. Live-confirmed on the environment: the three-state lock/status probe returned exactly one code with the lock code winning and the status code restored on unlock; separately, a blocking-status single-org user with no explicit org signed in successfully with no organization context. Docs axis: N/A — no published guide covers the token endpoint's org fallback or error precedence (waived)."
       - kind: resolution
         ref: VCST-5496 (Done) — fixed one locked org membership blocking sign-in entirely despite other active orgs (restores fallback).
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationIdRequestValidator.cs#ValidateOrganizationAccessAsync
     check:
       kind: manual
       ref: Single-accessible-org user, membership both locked and at a blocking status → `password` grant naming that org → exactly one error, code `user_is_locked_in_organization`; unlock → the same call returns the status code instead; re-lock → back to the lock code. Multi-org user with one blocked org → `password` grant naming the blocked org → **HTTP 200**, active org is the accessible one (no error). Same request as a non-`password` grant → refused with the lock code; take the refresh token **fresh** for that assertion, since a consumed one fails with a code-less `invalid_grant` that is easily mistaken for the org refusal. Single-org user at a blocking status signing in with **no** explicit org → HTTP 200, session has no organization. Count errors from the `errors[]` array, never from the response's `count` field (that is the parameter count).
@@ -288,6 +314,8 @@ rules:
         ref: vc-platform `src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs` — `Login([FromBody] LoginRequest request)` guards `if (request?.UserName == null || request.Password == null) { return BadRequest(); }` before any user lookup. The source evidence is this one endpoint; the Rule generalizes it on the strength of the documented platform-wide convention.
       - kind: resolution
         ref: VCST-5623 (Done) — fixed POST /api/platform/security/login returning 500 instead of 400 on null/empty credential fields or body.
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Web/Controllers/Api/SecurityController.cs#Login
     check:
       kind: manual
       ref: '`POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.'
