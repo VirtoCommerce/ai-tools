@@ -383,7 +383,8 @@
       "id": "W-L4",
       "q": "If two price lists are assigned to the same store, which one wins in the GraphQL product price.actual for an anonymous shopper, and what decides it?",
       "expect": [
-        "KB-6D5E2CD1"
+        "KB-6D5E2CD1",
+        "KB-3FCB032F"
       ],
       "source": "wave1",
       "cite": "log 2026-09-30T08:32:21.400Z session 44d4e1d7, run VCST-6087-wave1 row L4; agent verdict show KB-6D5E2CD1",
@@ -391,7 +392,8 @@
       "split": "calibration",
       "expectPre": [
         "KB-6D5E2CD1"
-      ]
+      ],
+      "relabelled": "2026-10-01, operator-approved, before the M4 gate (no test row touched): KB-3FCB032F: raising an assignment's priority makes its list win over another unconditional list at the same scope"
     },
     {
       "id": "W-L5",
@@ -1022,7 +1024,8 @@
       "id": "P-6D5E2CD1-1",
       "q": "Why am I still seeing the regular price when my company was supposed to get a special price list?",
       "expect": [
-        "KB-6D5E2CD1"
+        "KB-6D5E2CD1",
+        "KB-ADFD93AB"
       ],
       "source": "paraphrase",
       "cite": "KB-6D5E2CD1, written from its claim only (sonnet, customer voice)",
@@ -1030,13 +1033,15 @@
       "split": "calibration",
       "expectPre": [
         "KB-6D5E2CD1"
-      ]
+      ],
+      "relabelled": "2026-10-01, operator-approved, before the M4 gate (no test row touched): KB-ADFD93AB: org-specific pricing runs through the organization's user groups, so a missing group explains a missing special price"
     },
     {
       "id": "P-6D5E2CD1-2",
       "q": "Two price lists both match a product for the same shopper; which one wins, and where is that ranking set?",
       "expect": [
-        "KB-6D5E2CD1"
+        "KB-6D5E2CD1",
+        "KB-3FCB032F"
       ],
       "source": "paraphrase",
       "cite": "KB-6D5E2CD1, written from its claim only (sonnet, practitioner voice)",
@@ -1044,7 +1049,8 @@
       "split": "calibration",
       "expectPre": [
         "KB-6D5E2CD1"
-      ]
+      ],
+      "relabelled": "2026-10-01, operator-approved, before the M4 gate (no test row touched): KB-3FCB032F: raising an assignment's priority makes its list win over another unconditional list at the same scope"
     },
     {
       "id": "P-8264632C-1",
