@@ -450,7 +450,7 @@ Generated test cases route to the correct executing agent by layer:
   red.** If you discover that a field you were pinning on does not exist, is always null, or means
   something else, re-audit every assertion that leaned on it: they will keep passing, which is why
   nobody notices. Re-check the whole file, not the one case that prompted the discovery.
-- **No case may certify a defect** — the expected result comes from the specification, never from the current build (Step 3 §6). A suite tuned to the implementation is unfalsifiable by construction and inverts the day the bug is fixed.
+- **No case may certify a defect** — the expected result comes from the specification, never from the current build (Step 3 §6). A `FUNC` case names the bug it catches, seen to fail once: `knowledge/execution/cases-that-catch-bugs.md`.
 - **Minimum effective set** — a smaller suite of targeted cases is better than a large suite of shallow ones. Prefer 5 focused cases over 20 that repeat the same failure mode.
 - **Suite sizing & packing (one suite = one runnable unit)** — pack cases so each CSV is a single feature/module area that **one isolated agent reads and runs in one session** (`/qa-regression` dispatches exactly one QA-expert agent per CSV, batched 3 at a time — the browser pool):
   - **Target ~20–40 cases per CSV** (repo median is 28). ≤20 is fine for a small feature; treat **>40 as a signal to split**, not a target to fill.
