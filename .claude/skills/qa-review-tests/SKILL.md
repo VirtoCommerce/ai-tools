@@ -90,7 +90,7 @@ Dimensions 1-7 and 9 are **static analysis** (no browser needed). Dimension 8 re
 Read these files to inform the review:
 1. **`review-criteria.md`** — detailed criteria for each dimension (this skill folder)
 2. **`test-case-template.md`** — the format contract (from `qa-test-cases-generator` skill)
-3. **`business-logic.md`** — BL-* invariants to check coverage against
+3. **`bl:extract -- --domain <d>`** — BL-* to check coverage against
 4. **`e-commerce-edge-cases-library.md`** — ECL-* patterns to check coverage against
 5. **`test-data/`** directory — to validate referenced products/orgs exist
 
@@ -177,7 +177,7 @@ For every test case row, evaluate:
 
 #### BL/ECL Coverage + Requirement Traceability (Dimension 6)
 - [ ] `Business_Rule` column populated with valid `BL-*` IDs (unless pure UI test)
-- [ ] `BL-*` IDs exist in `business-logic.md`
+- [ ] `BL-*` IDs exist (`bl:extract -- --id`)
 - [ ] `Edge_Case_Refs` populated for domains that have ECL patterns
 - [ ] For P0/Critical cases: at least one `BL-*` rule mapped
 - [ ] Cross-reference: are there BL-* invariants for this domain with no test cases covering them?
