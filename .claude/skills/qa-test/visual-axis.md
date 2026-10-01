@@ -94,19 +94,15 @@ below.
 
 **Two things the brief MUST also carry, each of which cost a real run when it did not.**
 
-1. **The `vs. DESIGN` expectations, and how the dispatched agent gets at them.** Two prerequisites, both
-   on the orchestrator: it must have signed in to the owning Claude Design account and run
-   **`/design-consent`** in its own session — at the top of Step 4, never after the dispatch, since a
-   subagent cannot run a slash command
-   (`.claude/skills/qa-design/claude-design-verification.md` §Availability). The grant is then inherited,
-   but `DesignSync` is a **deferred** tool: an agent that does not first call
-   **`ToolSearch select:DesignSync`** sees no callable tool and returns a **false `SKIPPED`** — which,
-   read as normal, is how an axis reports clean forever while never running once
-   (`.claude/knowledge/execution/browser-lanes.md` — *"A subagent CAN read `DesignSync`, but only after `ToolSearch select:DesignSync`"*). So the brief
-   picks one and says so: **name the `ToolSearch` step** and let the agent read the project, or have the
-   **orchestrator read it and pass the declared tokens / control geometry / icon mapping in as data** —
-   the default, because `unresolved` stays countable. Relayed by hand, `unresolved` is *unknown*, never
-   zero.
+1. **The `vs. DESIGN` expectations, as a spec JSON path.** At the top of Step 4, before the dispatch,
+   the orchestrator resolves the source from the ticket's Prototype link — the local copy at
+   `.design-source/<uuid>/`, else an artifact link via `Artifact` `read` — runs
+   **`npm run design:extract`** (`--only icons,geometry,stroke,changes` for an artifact page, whose `:root` is its
+   own chrome), and passes the output path in the brief. **Neither the orchestrator nor the agent calls
+   `DesignSync`**: its own description restricts it to the user-started `/design-sync` skill, and on
+   VCST-5957 (2026-10-01) that left the axis to an eyeballed screenshot comparison. A run's own extract
+   makes `unresolved` machine-counted; relayed by hand it is *unknown*, never zero. Ladder and the
+   artifact-chrome trap: `.claude/skills/qa-design/claude-design-verification.md` §1.
 2. **No credential variable NAMES on this lane — and the brief must NAME the auth path.** `--secrets` is a
    `@playwright/mcp` flag; Chrome DevTools MCP has no equivalent, so typing `TEST_USER_PASSWORD` submits
    that literal string and the sign-in is refused. Measured: VCST-5733's visual axis was briefed exactly
@@ -152,9 +148,9 @@ severity: [`triage.md`](triage.md) §7a.
 Two arrays rather than one severity field, because that is what makes the blocking rule auditable from the
 artifact instead of only from this prose.
 
-**`SKIPPED` is the common case, not an error.** `DesignSync` needs `/design-consent`, which requires an
-interactive terminal — so the `vs. DESIGN` axis is unavailable in Claude Code on the web and in CI. It
-records `SKIPPED` + the reason there and the other two axes carry on. Same discipline as `tokens:check`
+**`SKIPPED` is a legitimate outcome, not an error.** No local copy of the ticket's project and no usable
+artifact (`design:extract` exit `2`) ⇒ the `vs. DESIGN` axis records `SKIPPED` + the reason — naming the
+folder to fill, `.design-source/<uuid>/` — and the other two axes carry on. Same discipline as `tokens:check`
 exiting `2` on an unreachable source rather than passing. A non-zero `unresolved` count from the extractor
 **downgrades an otherwise-clean design axis to WARN**, and the count is printed — a guessed expectation
 fails every correct implementation.
