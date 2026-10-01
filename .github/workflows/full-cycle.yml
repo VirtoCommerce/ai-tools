@@ -125,6 +125,12 @@ jobs:
           MODEL: ${{ inputs.model || 'claude-sonnet-4-5-20250929' }}
           FRONT_URL: ${{ secrets.FRONT_URL }}
           BACK_URL: ${{ secrets.BACK_URL }}
+          # Phase 0 BL freshness reads closed bugs from Jira; config.js wants the core credentials to start.
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           # Run phases 1+2 only (regression skipped — it needs Docker).
           # Keep the exit code: `|| true` here meant even a manual run could never report red
@@ -151,8 +157,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if ! git diff --quiet regression/suites/ config/test-suites.json 2>/dev/null; then
-            git add regression/suites/ config/test-suites.json
+          # The BL oracle paths carry Phase 0's freshness marks (bl/*.yaml and the two generated views).
+          if ! git diff --quiet regression/suites/ config/test-suites.json .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/ 2>/dev/null; then
+            git add regression/suites/ config/test-suites.json .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/
             git commit -m "ci: sync test cases — ${{ steps.source.outputs.value }}
 
           Affected suites: ${{ steps.run.outputs.affected_suites || 'none' }}
@@ -271,6 +278,35 @@ jobs:
             echo "::warning::Some suites hit budget/turn limits"
           elif [ $EXIT_CODE -eq 1 ]; then
             echo "::error::Regression has real test failures"
+          fi
+
+      # BL 2.0 M5: what this run observed clears or marks the rules its cases cite, then the executable checks of
+      # what is still SUSPECT re-run (scripts/knowledge/bl-fresh.ts). Never fails the job; a pass that could not
+      # read its input writes nothing.
+      - name: BL freshness from this run
+        if: always()
+        env:
+          FRONT_URL: ${{ secrets.FRONT_URL }}
+          BACK_URL: ${{ secrets.BACK_URL }}
+          STORE_ID: ${{ secrets.STORE_ID }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          USER_PASSWORD: ${{ secrets.USER_PASSWORD }}
+        run: |
+          RUN_DIR=$(ls -td reports/regression/CI-* 2>/dev/null | head -1)
+          if [ -z "$RUN_DIR" ]; then echo "No regression run dir — BL freshness not updated"; exit 0; fi
+          npx tsx scripts/knowledge/bl-fresh.ts --results "$RUN_DIR" --rerun --write || echo "::warning::bl:fresh exited $? — no rule changed"
+
+      - name: Commit BL freshness
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/ 2>/dev/null; then
+            git add .claude/knowledge/oracles/ plugins/vc-fix/knowledge/oracles/
+            git commit -m "ci: BL freshness from regression — ${{ env.SUITE_SELECTION }}"
+            git pull --rebase origin ${{ github.ref_name }} && git push
+          else
+            echo "No BL freshness changes to commit"
           fi
 
       - name: Write step summary

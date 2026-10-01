@@ -57,6 +57,8 @@ rules:
     check:
       kind: executable
       ref: scripts/invariants/layer-parity.ts (npm run inv:run -- layer-parity)
+      run:
+        - layer-parity
       steps: Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
     violation_signal: New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
     status: ACTIVE
@@ -105,6 +107,8 @@ rules:
     check:
       kind: executable
       ref: scripts/invariants/page-walk.ts (npm run inv:run -- page-walk)
+      run:
+        - page-walk
       steps: Page through a listing longer than one page to its end; count the items and compare with the total shown; no product appears twice.
     violation_signal: A product appears on two pages; the last page is empty or missing; the total shown differs from the items the pages return; a middle page is short.
     status: ACTIVE
@@ -123,6 +127,10 @@ rules:
     check:
       kind: executable
       ref: scripts/invariants/sort-set.ts (npm run inv:run -- sort-set) with --sort "price:asc"
+      run:
+        - sort-set
+        - --sort
+        - price:asc
       steps: Walk a keyword or filtered listing unsorted and again sorted by price; the same products appear, in ascending displayed price.
     violation_signal: A product disappears or appears twice after changing the sort; prices in a price-sorted listing are out of order; the order follows a price that is not the one shown.
     status: ACTIVE

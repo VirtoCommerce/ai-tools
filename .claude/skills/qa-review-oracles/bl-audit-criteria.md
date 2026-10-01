@@ -33,7 +33,7 @@ MISSING verdicts for `bl`.
 | A human source states the rule as written | **SYNC** | add the source to `source`; `trust: DECLARED` |
 | A human source states the rule differently | **SYNC-UPDATE** | `rule` (and `check` / `violation_signal` where they follow from it) rewritten to the source; source added; `trust: DECLARED`. If the build disagrees with the source, that is a bug candidate, never a reason to keep the old text |
 | A human source states a rule no record holds | **NEW** | a record at the next free id in the domain, `trust: DECLARED`, `status: ACTIVE`, severity assigned — and only if it clears the value gate (§5) |
-| A citing case failed, or a run observed behaviour ≠ the rule | **MARK-SUSPECT** | `status: SUSPECT`, `suspect_reason`: the bug key (or the failing case id + run id until the bug is filed). Text untouched |
+| A citing case failed, or a run observed behaviour ≠ the rule | **MARK-SUSPECT** | `status: SUSPECT`, `suspect_reason`: `[bug] <KEY> …` once the bug is filed (until then `[case] <case ids> failed in <run id>`, §1b). Text untouched |
 | `suspect_reason` names a bug that now has a Jira decision | **RESOLVE** | Fixed → `status: ACTIVE`, `suspect_reason` removed, the resolution added to `source`. By design / Won't fix → `rule` rewritten from the resolution, then the same. Still open → stays `SUSPECT` |
 | The record has a `check` | **RE-RUN** | pass on the current build → `verified: {date, version, by}` (by = run id). Fail → MARK-SUSPECT and a bug. Could not run → nothing changes; say so |
 | A human source says the behaviour was removed | **RETIRE (proposed)** | nothing applied: list it in the report. `status: RETIRED` is set only on the user's confirmation, because citing cases then fail `bl:lint` |
@@ -52,6 +52,26 @@ a note in the run report, never a bug report (§7.3).
   fixture) is not a pass. Check the instrument against a known-good control before doubting the data.
 - **Ask the observed-behaviour base first, never instead.** `mcp__kb__kb_ask` with the coordinate in the
   question; confirm a matching entry only after you saw it yourself, dispute a contradicting one.
+
+### 1b. What runs without anyone — `npm run bl:fresh` (M5)
+
+`scripts/knowledge/bl-fresh.ts` applies part of §1 by itself. The `full-cycle` pipeline runs it before Phase 1
+and after the regression; you can run it by hand (dry run by default, `--write` to apply). Its settings — age
+threshold, closed-bug JQL, which Jira resolutions decide what — are in `bl/_oracle.yaml` `freshness`.
+
+A reason it writes starts with a tag, and the tag decides what may clear it:
+
+| Tag | Set when | Cleared by |
+|---|---|---|
+| `[code]` | a change touches the rule's `scope.code_ref` (`<repo>:<path>[#symbol]`; a path ending in `/` is a directory) | a pass: every citing case in a run passed, or `check.run` passed |
+| `[closed]` | a recently closed bug names the rule's id | a pass, as above |
+| `[age]` | `verified.date` is older than the threshold, for the `age_trust` levels | a pass, as above |
+| `[case]` / `[check]` | a citing case failed / the executable check found a violation | nothing automatic: file the bug, then write `[bug] <KEY>` |
+| `[bug]` | the bug path (`/qa-test-lifecycle` 4c), not the script | `--resolve`: a `holds` resolution → `ACTIVE` with the resolution in `source`. A `rewrite` resolution is listed for you to rewrite the rule (RESOLVE), anything else changes nothing |
+
+A reason with no tag was written by a person, and only a person or this skill clears it. A pass is stamped
+into `verified` (`by` = the run id). An executable check re-runs unattended only when its record carries
+`check.run` (the `inv:run` arguments); a check that needs an argument only a person can choose has none.
 
 ## 2. Where to find the human source, per domain
 

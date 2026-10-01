@@ -30,6 +30,21 @@ preamble: |
   | `[P1-ux]` | UX rule with stakeholder or legal weight (e.g., golden-rule UI sequence, WCAG-overlapping) | Must pass before sprint release |
   | `[P2-ux]` | User experience, display, non-blocking | Should pass; acceptable to defer with ticket |
 
+# Freshness (BL 2.0 M5): what `npm run bl:fresh` reads. Settings, not rules — change them here, never in the script.
+freshness:
+  # A `verified` date older than this makes a rule of one of these trust levels SUSPECT (design §8 question 5:
+  # 90 days proposed, not yet decided by the owner).
+  verified_max_age_days: 90
+  age_trust: [OBSERVED, INFERRED]
+  # Closed bugs that name a BL id make that rule SUSPECT until a check or a citing case passes again.
+  closed_bugs_jql: "project in (VCST, VP) AND issuetype = Bug AND resolution is not EMPTY AND resolved >= -7d"
+  # Jira resolutions of the bug a SUSPECT rule is waiting on. `holds`: the violation was fixed, so the rule stands.
+  # `rewrite`: the behaviour was kept, so the rule is rewritten from the resolution (an agent's step, not this
+  # script's). Anything else (Duplicate, an unresolved bug) is no decision: the rule stays SUSPECT.
+  resolutions:
+    holds: [Fixed, Done]
+    rewrite: ["Won't Fix", "Won't Do", Declined]
+
 domains:
   - price
   - cart
