@@ -1,0 +1,61 @@
+{
+  "_notes": "VCST-5748 OTP email sign-in — env-INDEPENDENT request inputs (no entity, nothing seeded). Consumed as @td(OTP_INPUTS.<field>) by suites 103 (storefront) and 104 (API). Drift guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs. {{VAR}} tokens resolve from the layered .env at run time. LIMITS: the long-address pair is valid in every respect except LENGTH (64-char local part, 63-char labels), so a 254 accept / 255 reject split can only be caused by the MaxLength(254) rule — never by EmailAddress syntax; the 255 value also exceeds RFC 5321 so a client-side validator may reject it first (that is a legitimate outcome, record which layer refused it).",
+  "unknownEmail": "random-data(uniqueEmail(\"agent-test-otp-unknown\"))",
+  "unknownEmail_note": "NOT a literal address: generate a fresh one per run with scripts/lib/random-data.ts uniqueEmail(\"agent-test-otp-unknown\") -> agent-test-otp-unknown-<ts>-<id>@qa.test. A fixed address could be registered by someone later and silently turn the masking case into a real-account case.",
+  "invalidEmails": [
+    "",
+    "john@",
+    "john mitchell@x.com",
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.com"
+  ],
+  "invalid": {
+    "empty": "",
+    "noDomain": "john@",
+    "innerSpace": "john mitchell@x.com",
+    "tooLong255": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.dddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.com"
+  },
+  "boundary": {
+    "maxLength254": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.ddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.com",
+    "maxLength254_note": "CONTROL for tooLong255 — identical shape, one character shorter. Must NOT be refused for length; it is an unregistered address, so the API answer is the unknown-email outcome, not a validation error."
+  },
+  "malformedCodes": [
+    " 123 456 ",
+    "12a456",
+    "12345",
+    "1234567"
+  ],
+  "codes": {
+    "spacedPaste": " 123 456 ",
+    "withLetter": "12a456",
+    "fiveDigits": "12345",
+    "sevenDigits": "1234567"
+  },
+  "unknownStoreId": "AGENT-TEST-OTP-NO-SUCH-STORE",
+  "missingParamBodies": {
+    "request_no_storeId": {
+      "email": "{{USER_EMAIL}}"
+    },
+    "request_no_email": {
+      "storeId": "{{STORE_ID}}"
+    },
+    "grant_no_code": {
+      "grant_type": "otp_email",
+      "scope": "offline_access",
+      "storeId": "{{STORE_ID}}",
+      "email": "{{USER_EMAIL}}"
+    },
+    "grant_no_storeId": {
+      "grant_type": "otp_email",
+      "scope": "offline_access",
+      "email": "{{USER_EMAIL}}",
+      "code": "000000"
+    },
+    "grant_no_email": {
+      "grant_type": "otp_email",
+      "scope": "offline_access",
+      "storeId": "{{STORE_ID}}",
+      "code": "000000"
+    },
+    "_notes": "request_* go to POST {{BACK_URL}}/api/otp/request as JSON; grant_* go to POST {{BACK_URL}}/connect/token as application/x-www-form-urlencoded. grant_no_storeId / grant_no_email carry a deliberately WRONG code 000000 against {{USER_EMAIL}}: if the handler ever verified the code before rejecting the missing parameter it would register a failed attempt on a SHARED persona — run these only after the handler is confirmed to refuse on the missing parameter first."
+  }
+}
