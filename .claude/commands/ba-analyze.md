@@ -119,11 +119,11 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
 ### Step 4 — Synthesize & Deliver Report
 Combine all subagent outputs into the final structured report (see Output Format below).
 
-### Step 4.5 — Route business-rule candidates (BL M0 freeze)
+### Step 4.5 — Route business-rule candidates (BL sync)
 
 After synthesis and before writing the final report. **No `bl-proposals-*` file is written**, and
-`/ba-analyze` never edits `knowledge/oracles/business-logic.md` — the rules are
-`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze.
+`/ba-analyze` never edits the oracle (`knowledge/oracles/bl/*.yaml`) — the rules are
+`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §0.
 
 1. Collect `bl_proposals.new[]` and `bl_proposals.stale[]` from `ba-system-analyzer`'s output, and drop any `new` candidate substantively identical to an existing invariant.
 2. **Grounded in a human source** — a documentation page, the ticket's AC, or a Jira bug resolution, cited → list it in report §8 with that source and its value (`npm run oracles:rank -- --explain=<ID> --severity=<tag>`). It is input for `/qa-review-bl`, which applies it.
@@ -203,7 +203,7 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 |-----------|--------|----------|-------|--------------|-------|
 | PROPOSED-BL-CHK-014 | CHK | P1-data | Facet labels must be human-readable | VC docs §X / AC / Jira key | `/qa-review-bl` · kb · finding |
 
-> `knowledge/oracles/business-logic.md` has not been modified.
+> The BL oracle (`knowledge/oracles/bl/*.yaml`) has not been modified.
 ```
 
 ---

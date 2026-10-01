@@ -212,8 +212,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 |---|---|---|---|
 | `[THEORETICAL]` → `[OBSERVED]` | ECL-<n>.<m> | [what reproduced it here] | `/qa-review-oracles ecl` |
 | Candidate new pattern | (none — `Oracle ref: NONE` above) | [scenario + evidence] | `/qa-review-oracles ecl` |
-| Candidate new invariant | (behaviour no `BL-*` covers) | [observation] | `/qa-review-oracles bl` |
-| Contradicted | BL-XXX-NNN / ECL-<n>.<m> | [live behaviour disagrees with the entry] | `/qa-review-oracles` — **never** edit the oracle from a session |
+| Candidate new invariant | (behaviour no `BL-*` covers) | [observation] | `kb_capture`; a rule needs a human source |
+| Contradicted | BL-XXX-NNN / ECL-<n>.<m> | [live behaviour disagrees with the entry] | a bug; `/qa-review-oracles` — **never** edit an oracle from a session |
 
 > If this table is empty, the session is `[VAL]` not `[EXP]`. Update the Session type field.
 > **Every row needs a `Fate`.** `PROMOTE` = author it as a `Draft` case via `/qa-test-cases-generator`
