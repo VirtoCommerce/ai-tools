@@ -41,7 +41,7 @@ import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  assertSafeTarget, auth, api, log, verbose, ensureMemberIndex, verifyRemoved,
+  assertSafeTarget, auth, api, log, verbose, ensureMemberIndex,
   writeEnvAliasOverride, DRY_RUN, TEARDOWN, STORE_ID, ROOT,
 } from '../../lib/seed-common.mjs';
 import { resolvePassword, passwordSource } from '../../lib/user-provision.mjs';
@@ -98,21 +98,34 @@ async function preview({ memberIds = [], memberQuery = '', take = 0 } = {}) {
   return api('POST', '/api/push-message/preview-recipients', { memberQuery, memberIds, skip: 0, take }, { expectStatus: [200, 201] });
 }
 
-/** Targeted Member reindex + poll until the preview can actually see `probeMemberId`. */
-async function indexMembers(ids, probeMemberId, { tries = 20, delayMs = 5000 } = {}) {
-  if (DRY_RUN || !ids.length) return true;
+/**
+ * Targeted Member reindex, then poll until EVERY seeded member is visible to the index-backed
+ * keyword search — not just the first one.
+ *
+ * The probe deliberately does NOT use the feature's own preview endpoint: (a) a seed must work
+ * where PushMessages is not deployed (seed-bootstrap runs this step as optional), and (b) "the
+ * parent previews > 0" is true as soon as the parent's OWN contact is indexed, while the child
+ * company and its contacts may still be missing — so --verify would read the non-recursive
+ * answer (1) and report a product defect that is really index lag.
+ */
+async function indexMembers(ids, { tries = 20, delayMs = 5000 } = {}) {
+  const memberIds = Object.values(ids);
+  if (DRY_RUN || !memberIds.length) return true;
   // documentType MUST be a registered type and the field is `documentIds`, not `ids`
   // (test-data-authoring.md §5a — `ids:` silently degrades to a global incremental).
-  await api('POST', '/api/search/indexes/index', [{ documentType: 'Member', documentIds: ids, rebuild: false }], { expectStatus: [200, 201, 204] });
+  await api('POST', '/api/search/indexes/index', [{ documentType: 'Member', documentIds: memberIds, rebuild: false }], { expectStatus: [200, 201, 204] });
+  const specs = [...ORGS, ...PEOPLE].filter((s) => ids[s.alias]);
+  let missing = specs;
   for (let i = 0; i < tries; i++) {
-    const r = await preview({ memberIds: [probeMemberId] });
-    if ((r?.membersMatched || 0) > 0 || (r?.totalCount || 0) > 0) {
-      log(`  member index caught up after ${((i + 1) * delayMs) / 1000}s`);
+    const seen = await Promise.all(missing.map(async (s) => (await (s.memberType ? findPerson(s) : findOrg(s)))?.id === ids[s.alias]));
+    missing = missing.filter((_, k) => !seen[k]);
+    if (!missing.length) {
+      log(`  member index caught up after ${(i * delayMs) / 1000}s (${specs.length}/${specs.length} members visible)`);
       return true;
     }
-    await sleep(delayMs);
+    if (i < tries - 1) await sleep(delayMs);
   }
-  log('  WARN: member index did not visibly catch up — treat a low --verify count as UNKNOWN, not as absence');
+  log(`  WARN: member index did not catch up — still invisible: ${missing.map((s) => s.alias).join(', ')}. Treat a low --verify count as UNKNOWN, not as absence.`);
   return false;
 }
 
@@ -164,26 +177,48 @@ async function teardown() {
   }
 
   // 4) zero-residue assert — by OBJECT ID (what the search missed above) AND by keyword sweep.
-  const residue = await verifyRemoved(async () => {
-    const byId = snapshot.length
-      ? (await searchMembers({ objectIds: snapshot.map((s) => s.id), take: 100 })).map((m) => `${m.memberType}:${m.name}`)
+  //    Computed here, not through seed-common's verifyRemoved(): that helper reads a THROWN probe
+  //    as zero residue, and a check that could not run must never report clean.
+  if (DRY_RUN) { log('DRY RUN teardown complete (no writes).'); return; }
+  let survivorByAlias;
+  let residue;
+  try {
+    survivorByAlias = {};
+    const survivors = snapshot.length
+      ? await searchMembers({ objectIds: snapshot.map((s) => s.id), take: 100 })
       : [];
-    if (byId.length) log(`  residual member(s) by id: ${byId.join(', ')}`);
-    const swept = (await searchMembers({ keyword: SEED_PREFIX, take: 100 }))
-      .filter((m) => String(m.name || '').startsWith(SEED_PREFIX) || isSeededOuterId(m.outerId))
-      .map((m) => `${m.memberType}:${m.name}`);
-    const strays = swept.filter((s) => !byId.includes(s));
-    if (strays.length) log(`  residual member(s) by name sweep: ${strays.join(', ')}`);
+    for (const m of survivors) {
+      const s = snapshot.find((x) => x.id === m.id);
+      if (s) survivorByAlias[s.spec.alias] = m.id;
+    }
+    if (survivors.length) log(`  residual member(s) by id: ${survivors.map((m) => `${m.memberType}:${m.name}`).join(', ')}`);
+    const survivorIds = new Set(survivors.map((m) => m.id));
+    const strays = (await searchMembers({ keyword: SEED_PREFIX, take: 100 }))
+      .filter((m) => (String(m.name || '').startsWith(SEED_PREFIX) || isSeededOuterId(m.outerId)) && !survivorIds.has(m.id));
+    for (const m of strays) {
+      // A stray the snapshot never saw: keep a handle on it for the next teardown.
+      const spec = [...ORGS, ...PEOPLE].find((s) => m.outerId === seedOuterId(s.key) || (!s.memberType && m.name === s.name));
+      if (spec && !survivorByAlias[spec.alias]) survivorByAlias[spec.alias] = m.id;
+    }
+    if (strays.length) log(`  residual member(s) by name sweep: ${strays.map((m) => `${m.memberType}:${m.name}`).join(', ')}`);
     const logins = [];
     for (const p of PEOPLE) if (await findUser(p.email)) logins.push(p.email);
     if (logins.length) log(`  residual login(s): ${logins.join(', ')}`);
-    return [...byId, ...strays, ...logins];
-  });
-  // Blank the overlay ids so @td() reports a clear miss instead of pointing at a deleted entity.
+    residue = survivors.length + strays.length + logins.length;
+  } catch (e) {
+    log(`WARN: the residue check could not run (${String(e.message).slice(0, 200)}) — teardown is UNVERIFIED; overlay ids KEPT so the next teardown can still find any survivor.`);
+    return;
+  }
+  // Blank ONLY the aliases whose entity is confirmed gone, so @td() reports a clear miss instead of
+  // pointing at a deleted entity. A survivor keeps (or gains) its id: the overlay is the fallback
+  // handle the next teardown needs for a member the keyword search cannot see.
   writeEnvAliasOverride(Object.fromEntries(
-    [...ORGS, ...PEOPLE].map((s) => [s.alias, { id: '', platform_id: '' }]),
+    [...ORGS, ...PEOPLE].map((s) => {
+      const id = survivorByAlias[s.alias] || '';
+      return [s.alias, { id, platform_id: id }];
+    }),
   ));
-  log(residue === 0 ? 'Teardown complete — zero residue.' : `WARN: ${residue} residual entity/entities remain.`);
+  log(residue === 0 ? 'Teardown complete — zero residue.' : `WARN: ${residue} residual entity/entities remain — their overlay ids were kept; re-run the teardown.`);
 }
 
 /* ── verify: prove the fixture DISCRIMINATES, using the feature's own endpoint ── */
@@ -273,7 +308,6 @@ async function main() {
   await ensureMemberIndex(api);
 
   const ids = {};
-  const createdMemberIds = [];
 
   // 1) orgs, top-down (the parent must exist before the child can point at it)
   log('\nOrganizations (top-down):');
@@ -297,7 +331,6 @@ async function main() {
     }
     orgIdByKey[o.key] = live.id;
     ids[o.alias] = live.id;
-    if (!String(live.id).startsWith('dry-')) createdMemberIds.push(live.id);
   }
 
   // 2) people
@@ -320,7 +353,6 @@ async function main() {
       log(`  ✓ create ${p.memberType} ${p.email} (${live.id})`);
     }
     ids[p.alias] = live.id;
-    if (!String(live.id).startsWith('dry-')) createdMemberIds.push(live.id);
   }
 
   // 3) logins — the login gate is the discriminating axis, so it is seeded explicitly,
@@ -364,10 +396,23 @@ async function main() {
     log(`  ✓ create login ${p.email} (${fresh.id})`);
   }
 
-  // 4) the preview reads the Member INDEX — a fresh member is invisible until indexed.
+  // 4) writeback — runtime GUIDs to aliases.<env>.json ONLY. Written BEFORE indexing: everything
+  //    above already exists on the platform, and the overlay is teardown's fallback handle for a
+  //    member the index cannot see — a failure in a later step must not strand them without one.
+  const liveIds = Object.fromEntries(
+    [...ORGS, ...PEOPLE]
+      .filter((s) => ids[s.alias] && !String(ids[s.alias]).startsWith('dry-'))
+      .map((s) => [s.alias, ids[s.alias]]),
+  );
+  writeEnvAliasOverride(Object.fromEntries(
+    Object.entries(liveIds).map(([alias, id]) => [alias, { id, platform_id: id }]),
+  ));
+
+  // 5) the preview reads the Member INDEX — a fresh member is invisible until indexed.
+  let indexReady = true;
   if (!DRY_RUN) {
     log('\nIndexing:');
-    await indexMembers(createdMemberIds, ids[ORGS[0].alias]);
+    indexReady = await indexMembers(liveIds);
     // Read back through a DEEP search: a child org carries a parentId, and the members search
     // without `deepSearch` only returns root-level members — `verifyCreated`'s generic probe
     // would report a perfectly good child org as missing.
@@ -377,16 +422,10 @@ async function main() {
     }
   }
 
-  // 5) writeback — runtime GUIDs to aliases.<env>.json ONLY
-  writeEnvAliasOverride(Object.fromEntries(
-    [...ORGS, ...PEOPLE]
-      .filter((s) => ids[s.alias] && !String(ids[s.alias]).startsWith('dry-'))
-      .map((s) => [s.alias, { id: ids[s.alias], platform_id: ids[s.alias] }]),
-  ));
-
   log(DRY_RUN ? '\nDRY RUN complete (no writes).' : `\nSeed complete. ${[...ORGS, ...PEOPLE].length} alias(es) -> aliases.<env>.json.`);
 
   if (VERIFY && !DRY_RUN) {
+    if (!indexReady) log('WARN: the member index had not caught up — any count below that is LOWER than expected is UNKNOWN (index lag), not a product finding. Re-run npm run seed:push-audience:verify.');
     const problems = await verifyLive(ids);
     if (problems.length) process.exitCode = 3;
   } else if (!DRY_RUN) {

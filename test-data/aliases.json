@@ -2445,7 +2445,7 @@
       "org_id": "org_id",
       "roles": "roles"
     },
-    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Matches .env ORG_USER_EMAIL / ORG_USER_PASSWORD. Added 2026-04-24 as part of preflight-tag rollout."
+    "notes": "Default B2B org user for bucket-D preflight `[PRE:SIGNIN_AS:ORG_USER_DEFAULT]`. Resolves to USR-015 (acme_store_maintainer_1@acme.com / {{DEFAULT_TEST_PASSWORD}}) seeded in QA env. Resolve the password ONLY through @td(ORG_USER_DEFAULT.password) (the users.csv {{DEFAULT_TEST_PASSWORD}} token) — this alias has no password_env, and .env ORG_USER_EMAIL / ORG_USER_PASSWORD belong to a DIFFERENT account on vcst (pairing this email with ORG_USER_PASSWORD returns 400; measured 2026-09-30, REG-2026-09-30-1536 SRCH-021). Added 2026-04-24 as part of preflight-tag rollout."
   },
   "ORG_XSS": {
     "file": "security/xss-payloads",
