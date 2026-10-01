@@ -53,7 +53,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | `--run-id <RUN_ID\|latest>` | Ground Phase 6P in a **completed regression run**, so it can reach `Draft → Automated` via `tc:promote` instead of stopping at `Reviewed`. Without it there is no runner verdict to cite and 6P promotes to `Reviewed` only. Combines with `--promote-only` (the usual pairing after a `/qa-test` run: `--promote-only --run-id latest`) |
 | `--ci` | CI mode: skip browser verification, apply all updates without confirmation, output machine-readable JSON. **Never promotes** (6P requires human/`qa-lead` approval) |
 
-> **BL audit is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (stale refs + new-rule candidates); **Phase 4c always runs, scoped to exactly those candidates** — triangulating each via `/qa-review-bl` and auto-applying only what a human source grounds (M0 freeze, Phase 4c). No candidates ⇒ 4c is a no-op. For a broader sweep (a whole domain, not just what this run touched), use standalone `/qa-review-bl domain <name>`. (The former `--update-bl` opt-in flag is retired — a code + live agreement never edits a rule, so there is nothing to opt into.)
+> **BL sync is automatic, not a flag.** Phases 2–3 always collect the `BL-*` a run touches (rules a case contradicted + rules a human source states); **Phase 4c always runs on exactly those** via `/qa-review-bl` — a contradicted rule goes `SUSPECT` with its bug, a rule is written only from a human source (AC, docs, Jira resolution). No candidates ⇒ no-op. For a whole domain use `/qa-review-bl domain <name>`; for every `SUSPECT` rule, `/qa-review-bl suspect`. (The former `--update-bl` flag is retired — code + live never edits a rule.)
 
 ---
 
@@ -295,8 +295,8 @@ Reclassify each case:
 - Update `config/test-suites.json` testCount if cases were added/removed
 
 **BL staleness detection (always):**
-- For each BL-* referenced by a STALE/BROKEN case, note it as a candidate for the **BL-audit phase** (Phase 4c) — record `{id, currentRule, observedBehavior, sourceOfChange, affectedCases}` so `/qa-review-bl` triangulates it against docs + live + source before any edit.
-- Phase 2 itself never edits `business-logic.md`; it only feeds the audit phase. A single-signal staleness note is not confirmation.
+- For each BL-* whose expectation a STALE/BROKEN case contradicts, record `{id, observedBehavior, affectedCases, bug}` for Phase 4c: a mismatch with a `DECLARED` rule is a **bug candidate** (`knowledge/execution/cases-that-catch-bugs.md` §2), and 4c marks the rule `SUSPECT` until the Jira decision.
+- Phase 2 never edits a rule or its YAML; the behaviour it saw is not a source.
 
 **Phase 2 output:**
 ```
@@ -370,8 +370,8 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
    - Validate every query/mutation: name exists, args match, `command` wrapper on mutations, response fields match return types
    - If query/mutation doesn't exist in schema → do NOT generate a case for it
 7. **BL candidate collection (always):**
-   - For each generated case whose gap maps to a testable business rule not already in `business-logic.md`, record a BL **candidate** (`BL-<DOMAIN>-<NNN>` shape, severity, **Rule**/**Verify**/**Violation signal**/**Agents**, `PROPOSED-` prefix, mandatory source).
-   - Add to `blProposals.new[]` in the delegation output. Phase 3 does NOT edit `business-logic.md` — candidates are handed to the **BL-audit phase (4c)**, which triangulates each and auto-applies only what a human source (docs, AC, Jira resolution) grounds (M0).
+   - For each generated case whose gap maps to a rule no record holds (`bl:extract -- --domain <d>`): **a human source states it** (the ticket's AC, a docs page, a Jira resolution) → record a candidate (`PROPOSED-BL-<DOMAIN>-<NNN>`, severity, rule, check, violation signal, that source) in `blProposals.new[]`; **only code or live shows it** → `kb_capture`, not a candidate.
+   - Phase 3 never edits a rule; 4c writes the candidates (`/qa-review-bl`, value gate applies).
 8. **Present to user** as Feature Test Matrix for approval before proceeding
 
 ---
@@ -451,21 +451,17 @@ Blocker/Critical is reverted, not shipped.**
 | `Automation_Status` promotion out of `Draft` | **never** automatic | **never** automatic | **never** automatic |
 | Deprecating / authoring a case | user confirmation required | user confirmation required | **never** — proposal only |
 
-#### 4c. BL Audit (always — scoped to the run's BL candidates)
+#### 4c. BL Sync (always — scoped to the run's BL candidates)
 
-Run the **BL-audit phase** automatically. Its scope is exactly the `BL-*` this run
-surfaced — the `blProposals.new[]` new-rule candidates (Phase 3) + the staleness
-candidates (Phase 2). **If neither produced any candidates, 4c is a no-op** (nothing to
-audit). It does NOT audit a whole domain — for that, run standalone `/qa-review-bl
-domain <name>`. Invoke **`/qa-review-bl`** on the surfaced candidates, delegating to
-`ba-system-analyzer` (parallel fan-out, single-writer apply):
+Run **`/qa-review-bl`** on exactly the `BL-*` this run surfaced — the Phase 2 contradictions + the
+Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/qa-review-bl domain
+<name>`. Operations (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §1):
 
-- Each candidate `BL-*` is triangulated against the three axes — **docs + live + source code**.
-- **M0 freeze** (`.claude/skills/qa-review-oracles/bl-audit-criteria.md` §M0 freeze): **DRIFT / MISSING** are auto-applied (body-only, `Amended:`/`Promoted:`+`Source:` stamp, env-agnostic) **only with a human source** — docs, the ticket's AC, or a Jira resolution — and agreeing axes. The docs/AC axis is never waived; code + live agreeing is one observation, not a confirmation.
-- **Otherwise nothing is written to the oracle and no proposals file is created.** Live contradicting an entry → a **finding** in this run's report (bug path); behaviour no entry covers → `kb_capture`; contradictions, gaps and retirements → the audit report only. Retiring is never auto-applied.
-- The run's `reports/knowledge/BL-AUDIT-<date>.md` is the audit trail; its outcome feeds the Phase 6 **G6** gate.
-
-No human review queue: the only human input is the source itself (docs, AC, Jira resolution). See the `/qa-review-bl` skill + `.claude/knowledge/execution/quality-gates.md`.
+- **A rule a case contradicted → MARK-SUSPECT**: `status: SUSPECT`, `suspect_reason` = the bug key (filed via the defect path). The rule's text is never rewritten from what the run saw.
+- **A candidate a human source states → NEW / SYNC** in `bl/<slug>.yaml` (value gate for NEW), then `npm run bl:render` + `bl:convert:check`.
+- **A `SUSPECT` rule in scope whose bug now has a Jira decision → RESOLVE** (Fixed → `ACTIVE`; By design / Won't fix → rule rewritten from the resolution).
+- Behaviour no rule covers → `kb_capture`. No proposals file, no review queue; RETIRE is only proposed.
+- `reports/knowledge/BL-AUDIT-<date>.md` is the receipt; it feeds the Phase 6 **G6** gate.
 
 ---
 
@@ -515,7 +511,7 @@ The orchestrator (you) evaluates all phases:
 | G3: Completeness | <=3 High findings | Yes |
 | G4: Testability | 0 Critical findings | Yes |
 | G5: Data Validity | 0 Critical/Blocker findings | Yes |
-| G6: Coverage | BL-* mapping >= 80% for P0/P1 cases; **and (if 4c surfaced candidates) the BL-audit left 0 CONTRADICTORY invariants unresolved** | Recommended |
+| G6: Coverage | BL-* mapping >= 80% for P0/P1 cases; **and every rule the run contradicted is `SUSPECT` with a bug key (4c)** | Recommended |
 | G7: Duplication | No same-layer duplicates | Recommended |
 | G8: Environment | 0 BROKEN findings | Yes (if verified) |
 | G9: Sync | All STALE cases updated, all BROKEN addressed | Yes (if synced) |
@@ -744,7 +740,7 @@ Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:l
 - [list of CSV files with change summary]
 
 ## BL Audit (when the run surfaced BL candidates)
-- Triangulated K invariants — X **auto-applied** to `business-logic.md` (human source cited); Y findings for the bug path; Z observations sent to the `kb`. Audit trail: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit this section if 4c had no candidates.)
+- K rules: X marked `SUSPECT` (bug keys); Y written from a human source (`bl/<slug>.yaml`); Z resolved; W observations sent to the `kb`. Receipt: `reports/knowledge/BL-AUDIT-<date>.md`. (Omit if 4c had no candidates.)
 
 ## Next Steps
 - [ ] Address "Must Fix" items
@@ -881,7 +877,7 @@ Output: structured JSON with:
   - reviewFindings: [{caseId, dimension, severity, issue, suggestedFix}]
   - fixesApplied: [{caseId, issue, fixAction}]
   - manualItems: [{caseId, issue, dimension}]
-  - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, currentRule, observedBehavior, source, affectedCases, suggestedAction}]}
+  - blProposals (candidates surfaced this run, fed to Phase 4c): {new: [{proposedId, severity, rule, verify, violationSignal, agents, source, triggeredByCases}], stale: [{id, observedBehavior, affectedCases, bug}]}
   - statistics: {totalCases, synced, generated, findings, autoFixed, manualRemaining}
   - filesModified: [paths]
 ```
@@ -979,4 +975,4 @@ Output: per-case verification:
 - **Report always written** — even with `--report-only`, produce the full report
 - **Build verification before pipeline** — always run pre-flight build verification and include version info in report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
-- **BL updates run through the audit (Phase 4c → `/qa-review-bl`), automatically.** Phase 4c always runs, scoped to the `BL-*` this run surfaced (no candidates ⇒ no-op); there is no opt-in flag. Under the **M0 freeze** a candidate is auto-applied only with a **human source** (docs, AC, Jira resolution) and agreeing axes; code + live alone never changes a rule, and **no proposals file is written** — see Phase 4c. Every applied entry cites its sources; env-agnostic, no env names/URLs/slugs.
+- **BL updates run through Phase 4c (`/qa-review-bl`), automatically**, scoped to the `BL-*` this run surfaced (none ⇒ no-op). Only a **human source** (AC, docs, Jira resolution) writes a rule; a contradicted rule goes `SUSPECT` with its bug; code + live never changes a rule; no proposals file — see Phase 4c. Records are env-agnostic.

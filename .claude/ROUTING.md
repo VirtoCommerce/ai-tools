@@ -41,7 +41,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
 | **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
 | **Seed / teardown test data** | `/qa-seed-data [bootstrap\|minimal\|catalog\|b2b\|pricing\|inventory\|loyalty\|promotions\|bopis\|configurable\|users\|full\|teardown]` | Command |
-| **Audit an oracle (BL / ECL) against docs+live+source** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
+| **Review an oracle (BL: sync from human sources · ECL: docs+live+source)** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
@@ -106,7 +106,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-defect` — Defect lifecycle, Bug workflow
 - `/qa-evidence` — Evidence capture & report formatting, output paths
 - `/qa-metrics` — Quality metrics & gate enforcement
-- `/qa-review-oracles` — Two-axis oracle audit (`bl` → `business-logic.md`, `ecl` → `e-commerce-edge-cases-library.md`): triangulate against docs + live + source, auto-apply confirmed, route the rest to proposals. **Value gates GROWTH only**, never a correction
+- `/qa-review-oracles` — Two-axis oracle review: `bl` syncs `bl/<slug>.yaml` from human sources (AC, docs, Jira) and re-checks `SUSPECT` rules; `ecl` triangulates `e-commerce-edge-cases-library.md` against docs + live + source and auto-applies confirmed changes. **Value gates GROWTH only**, never a correction
 
 ### Specialized Testing (Skills — domain expertise)
 - `/qa-storybook` — Visual regression, responsive breakpoints, state variations

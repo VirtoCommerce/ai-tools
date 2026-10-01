@@ -49,7 +49,7 @@ skills/
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
 ├── qa-deploy-pr/                    # [QA Methodology]  Deploy a change's CI prerelease artifacts to the test env
-├── qa-review-oracles/               # [QA Methodology]  Two-axis oracle triangulation (BL + ECL) & auto-apply
+├── qa-review-oracles/               # [QA Methodology]  Oracle review: BL sync from human sources, ECL triangulation
 ├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
 │   (the six [Development] skills are NOT here — see the note under "Development Skills" below)
@@ -141,7 +141,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-review-oracles` | Triangulate an oracle (BL invariants or ECL edge-case sections) against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
+| `/qa-review-oracles` | Keep the oracles true: sync BL rules (`bl/<slug>.yaml`) from human sources and re-check `SUSPECT` ones; triangulate ECL sections against docs + live + source and auto-apply confirmed changes; reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
 | `/qa-review-bl` | Alias of `/qa-review-oracles bl` — kept working because `/qa-test-lifecycle` Phase 4c auto-runs it by this name | alias stub → `qa-review-oracles/` |
 
 ## Development (6)
