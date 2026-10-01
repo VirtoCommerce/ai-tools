@@ -522,7 +522,7 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 | `vc-secrets trust requires an interactive terminal` | Run it yourself in a terminal. A pipe, a script and an agent's plain shell tool are refused; a process that allocates its own pseudo-terminal is not, so this is a confirmation of intent — see [Scope of the protection](#scope-of-the-protection) |
 | `schemaVersion N needs a newer vc-secrets` | The declaration is ahead of the installed plugin — update the plugin |
 | `Missing environment variables: VC_SECRETS` | The variable was never set on this machine — run the `install` skill |
-| A wrapped server shows failed in `/mcp` | `doctor` first (secret?), then the probe for the binary: take the `installPath` of `vc-secrets@vc-tools` from `~/.claude/plugins/installed_plugins.json`, then `node <installPath>/vc-secrets-probe.mjs <server>` |
+| A wrapped server shows failed in `/mcp` | `doctor` first (secret?), then the probe for the binary: take the `installPath` of `vc-secrets@ai-tools` from `~/.claude/plugins/installed_plugins.json`, then `node <installPath>/vc-secrets-probe.mjs <server>` |
 
 The probe completes a real `initialize` handshake through `run`. When nothing answers it names which
 of three things happened instead of printing one message for all: the launcher could not obtain a

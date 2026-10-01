@@ -4814,7 +4814,7 @@ function runShim(args, { registry, cwd, caches = [] } = {}) {
         fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
         fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify(registry));
     }
-    for (const { client = "claude", marketplace = "vc-tools", version, label, launcher = true } of caches) {
+    for (const { client = "claude", marketplace = "ai-tools", version, label, launcher = true } of caches) {
         const dir = path.join(home, `.${client}`, "plugins", "cache", marketplace, "vc-secrets", version);
         fs.mkdirSync(dir, { recursive: true });
         if (launcher) {
@@ -4843,7 +4843,7 @@ test("shim: a corrupt registry is named as corrupt, without any of its bytes", (
     // V8 then answers with the positional shape, which carries nothing -- the assertion would hold
     // with the fix reverted. The control below is what keeps that shut.
     const canary = "LEAKCANARY0123456789";
-    const corrupt = `{"plugins":{"vc-tools":${canary}}}`;
+    const corrupt = `{"plugins":{"ai-tools":${canary}}}`;
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-corrupt-"));
     tmpDirs.push(home);
     fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
@@ -4892,14 +4892,14 @@ test("shim: a cache root that exists but cannot be read is named, not counted as
 test("shim: registry present but the plugin has no records → not installed, exit 1", () => {
     const r = runShim(["doctor"], { registry: { version: 2, plugins: {} } });
     assert.equal(r.status, 1);
-    assert.match(r.stderr, /vc-secrets@vc-tools.*is not installed/);
+    assert.match(r.stderr, /vc-secrets@ai-tools.*is not installed/);
 });
 
 test("shim: a registry schema version mismatch warns but still runs the resolved install", () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-proj-"));
     tmpDirs.push(projectDir);
     const stub = writeStubInstall("proceed");
-    const registry = { version: 999, plugins: { "vc-secrets@vc-tools": [
+    const registry = { version: 999, plugins: { "vc-secrets@ai-tools": [
         { projectPath: projectDir, version: "1.0.0", lastUpdated: "2024-01-01", installPath: stub },
     ] } };
     const r = runShim(["doctor"], { registry, cwd: projectDir });
@@ -4919,7 +4919,7 @@ test("shim: a registry field of the wrong type is described, never printed", () 
     tmpDirs.push(outsideDir);
     const hostile = (installPath, lastUpdated) => ({ projectPath: ["LEAKCANARY-PATH"],
         version: ["LEAKCANARY-VERSION"], lastUpdated, installPath });
-    const registry = { version: ["LEAKCANARY-SCHEMA", "second"], plugins: { "vc-secrets@vc-tools": [
+    const registry = { version: ["LEAKCANARY-SCHEMA", "second"], plugins: { "vc-secrets@ai-tools": [
         hostile(stubA, "2030-01-01"), hostile(stubB, "2010-01-01"),
     ] } };
     const r = runShim(["doctor"], { registry, cwd: outsideDir });
@@ -4944,7 +4944,7 @@ test("shim: a ranking field whose toString is not a function ranks as absent ins
         lastUpdated: (stub, n) => ({ version: "1.0.0", lastUpdated: n === 1 ? { toString: 1 } : "2020-01-01", installPath: stub }),
     };
     for (const [field, make] of Object.entries(cases)) {
-        const registry = { version: 2, plugins: { "vc-secrets@vc-tools": [
+        const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
             make(writeStubInstall(`${field}-1`), 1), make(writeStubInstall(`${field}-2`), 2),
         ] } };
         const r = runShim(["doctor"], { registry, cwd: outsideDir });
@@ -4960,7 +4960,7 @@ test("shim: cwd matching none of the installs picks the higher VERSION, not the 
     const stubB = writeStubInstall("b");
     const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-outside-"));
     tmpDirs.push(outsideDir);
-    const registry = { version: 2, plugins: { "vc-secrets@vc-tools": [
+    const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
         { projectPath: "/some/other/path/a", version: "1.2.0", lastUpdated: "2030-01-01", installPath: stubA },
         { projectPath: "/some/other/path/b", version: "1.10.0", lastUpdated: "2010-01-01", installPath: stubB },
     ] } };
@@ -5530,7 +5530,7 @@ test("install-shim: copies the shim, is idempotent, and prints the settings entr
 
     const first = spawnSync(process.execPath, [script], { encoding: "utf8", env });
     assert.equal(first.status, 0, first.stderr);
-    const shim = path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools", "vc-secrets-shim.mjs");
+    const shim = path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools", "vc-secrets-shim.mjs");
     assert.ok(fs.existsSync(shim), `expected the shim at ${shim}\n${first.stdout}${first.stderr}`);
     assert.match(first.stdout, /installed/);
     assert.match(first.stdout, /"VC_SECRETS"/);
@@ -5566,7 +5566,7 @@ test("install-shim: the shim it copies comes from its own location, not from CLA
         env: { ...process.env, HOME: home, CLAUDE_PLUGIN_ROOT: foreign } });
 
     assert.equal(r.status, 0, r.stderr);
-    const installed = path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools", "vc-secrets-shim.mjs");
+    const installed = path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools", "vc-secrets-shim.mjs");
     const own = fileURLToPath(new URL("./vc-secrets-shim.mjs", import.meta.url));
     assert.equal(fs.readFileSync(installed, "utf8"), fs.readFileSync(own, "utf8"),
         "the installed bytes must be this package's own shim");
@@ -5578,7 +5578,7 @@ test("install-shim: a destination whose bytes differ is called different, not ol
     const script = fileURLToPath(new URL("./scripts/install-shim.mjs", import.meta.url));
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-inst-diff-"));
     tmpDirs.push(home);
-    const dest = path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools", "vc-secrets-shim.mjs");
+    const dest = path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools", "vc-secrets-shim.mjs");
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.writeFileSync(dest, "// not the shim\n");
     const r = spawnSync(process.execPath, [script], { encoding: "utf8", env: { ...process.env, HOME: home } });
@@ -5593,8 +5593,8 @@ test("install-shim: --data-dir decides the location, in both spellings", () => {
     const script = fileURLToPath(new URL("./scripts/install-shim.mjs", import.meta.url));
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-inst2-"));
     tmpDirs.push(home);
-    const assigned = path.join(home, "elsewhere", "vc-secrets-vc-tools");
-    const computed = path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools");
+    const assigned = path.join(home, "elsewhere", "vc-secrets-ai-tools");
+    const computed = path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools");
 
     for (const argv of [["--data-dir", assigned], [`--data-dir=${assigned}`]]) {
         fs.rmSync(assigned, { recursive: true, force: true });
@@ -5632,7 +5632,7 @@ test("install-shim: a --data-dir naming another plugin is ignored, with a warnin
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stderr, /ignoring --data-dir/);
     assert.equal(fs.existsSync(path.join(foreign, "vc-secrets-shim.mjs")), false, "must not write into another plugin's directory");
-    assert.ok(fs.existsSync(path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools", "vc-secrets-shim.mjs")));
+    assert.ok(fs.existsSync(path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools", "vc-secrets-shim.mjs")));
     assert.match(r.stdout, /some-other-plugin/);
 });
 
@@ -5663,7 +5663,7 @@ test("install-shim: an empty --data-dir falls back to the computed default and s
         encoding: "utf8", env: { ...process.env, HOME: home },
     });
     assert.equal(r.status, 0, r.stderr);
-    assert.ok(fs.existsSync(path.join(home, ".claude", "plugins", "data", "vc-secrets-vc-tools", "vc-secrets-shim.mjs")));
+    assert.ok(fs.existsSync(path.join(home, ".claude", "plugins", "data", "vc-secrets-ai-tools", "vc-secrets-shim.mjs")));
     assert.match(r.stdout, /arrived empty/);
 });
 
@@ -6094,7 +6094,7 @@ test("shim: caches are searched across clients, and the newest version wins wher
 
 test("shim: the registry still wins over the caches, because only it knows per-project installs", () => {
     const stub = writeStubInstall("registry");
-    const registry = { version: 2, plugins: { "vc-secrets@vc-tools": [
+    const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
         { projectPath: "/nowhere", version: "0.0.1", lastUpdated: "2024-01-01", installPath: stub },
     ] } };
     const r = runShim(["doctor"], { registry, caches: [{ client: "codex", version: "9.9.9", label: "cache" }] });
@@ -6114,7 +6114,7 @@ test("shim: when nothing resolves anywhere, the failure names every root it look
 test("shim-path: the three levels are three exports, so no caller does dirname arithmetic", () => {
     const env = { HOME: "/home/x" };
     assert.equal(m.defaultDataHome(env), path.join("/home/x", ".claude", "plugins", "data"));
-    assert.equal(m.defaultShimDir(env), path.join(m.defaultDataHome(env), "vc-secrets-vc-tools"));
+    assert.equal(m.defaultShimDir(env), path.join(m.defaultDataHome(env), "vc-secrets-ai-tools"));
     assert.equal(m.defaultShimPath(env), path.join(m.defaultShimDir(env), "vc-secrets-shim.mjs"));
 });
 
@@ -6324,7 +6324,7 @@ test("guard: every vc-secrets module that can reach a token is blocked, in every
     // is not one, so the module added next year arrives outside every test's subject.
     for (const module of GUARDED_ANYWHERE) {
         for (const [label, payload] of [
-            ["absolute", { tool_name: "Write", tool_input: { file_path: `/home/dev/vc-tools/plugins/vc-secrets/${module}` } }],
+            ["absolute", { tool_name: "Write", tool_input: { file_path: `/home/dev/ai-tools/plugins/vc-secrets/${module}` } }],
             ["relative", { tool_name: "Edit", tool_input: { file_path: `plugins/vc-secrets/${module}` } }],
             ["dot-slash", { tool_name: "Write", tool_input: { file_path: `./${module}` } }],
             // The module's own separators are converted too, or the three entries carrying a directory
@@ -6335,7 +6335,7 @@ test("guard: every vc-secrets module that can reach a token is blocked, in every
             // and would pass without it: a fixture labelled "plugin-cache" that does not carry the
             // installed layout documents a path that does not exist, and would keep passing if this
             // pattern were ever scoped the way the other one is.
-            ["plugin-cache", { tool_name: "Edit", tool_input: { file_path: `/home/dev/.claude/plugins/cache/vc-tools/vc-secrets/0.1.0/${module}` } }],
+            ["plugin-cache", { tool_name: "Edit", tool_input: { file_path: `/home/dev/.claude/plugins/cache/ai-tools/vc-secrets/0.1.0/${module}` } }],
             ["apply_patch", { tool_name: "apply_patch", tool_input: { command: `*** Begin Patch\n*** Update File: plugins/vc-secrets/${module}\n*** End Patch` } }],
             // The two shapes a workspace rooted AT the package produces, which is the ordinary way to
             // work on it. They are also the only ones that exercise the `^` half of the anchor:
@@ -6384,7 +6384,7 @@ test("guard: the package's own test files stay writable", () => {
     for (const testFile of [
         "plugins/vc-secrets/vc-secrets.test.mjs",
         "plugins/vc-secrets/vc-secrets-oauth.test.mjs",
-        "/home/dev/vc-tools/plugins/vc-secrets/vc-secrets.test.mjs",
+        "/home/dev/ai-tools/plugins/vc-secrets/vc-secrets.test.mjs",
     ]) {
         assert.equal(runGuardOn(testFile, "Edit").status, 0, `${testFile}: tests are how this package is worked on`);
     }
@@ -6408,9 +6408,9 @@ test("guard: a name this package does not own is guarded inside the package and 
         // like one. This fixture used to omit the version segment, so it asserted coverage of a shape
         // that never occurs while every real installed copy went unguarded, and no mutation could find
         // it: mutations perturb the pattern, never the fixture.
-        assert.equal(runGuardOn(`/home/dev/.claude/plugins/cache/vc-tools/vc-secrets/0.1.0/${scoped}`).status, 2,
+        assert.equal(runGuardOn(`/home/dev/.claude/plugins/cache/ai-tools/vc-secrets/0.1.0/${scoped}`).status, 2,
             `${scoped}: the installed copy, under its version directory`);
-        assert.equal(runGuardOn(`/home/dev/.claude/plugins/cache/vc-tools/vc-secrets/34040c9c5685/${scoped}`).status, 2,
+        assert.equal(runGuardOn(`/home/dev/.claude/plugins/cache/ai-tools/vc-secrets/34040c9c5685/${scoped}`).status, 2,
             `${scoped}: the installed copy, where the version directory is a hash`);
         assert.equal(runGuardOn(scoped).status, 0, `${scoped}: bare -- the stated gap, not an oversight`);
         assert.equal(runGuardOn(`some-other-project/${scoped}`).status, 0, `${scoped}: somebody else's`);
@@ -6445,7 +6445,7 @@ test("guard: the installed shim keeps its reinstall remedy, and the source copy 
     // Order-dependent, and nothing else notices if the order is undone: the module pattern also matches
     // the installed path, so checking it first would answer an installed-copy edit with "open a PR",
     // where the fix is a reinstall. Both remedies are correct and each is useless in the other place.
-    const installed = runGuardOn("plugins/data/vc-secrets-vc-tools/vc-secrets-shim.mjs");
+    const installed = runGuardOn("plugins/data/vc-secrets-ai-tools/vc-secrets-shim.mjs");
     assert.equal(installed.status, 2);
     assert.match(installed.stderr, /reinstall it with the vc-secrets install skill/);
 
@@ -6569,7 +6569,7 @@ test("shim: a symlinked version directory is a candidate, because a linked insta
     tmpDirs.push(real);
     fs.writeFileSync(path.join(real, "vc-secrets.mjs"),
         'export async function runCli() { process.stderr.write("STUB-RAN:linked\\n"); }\n');
-    const pluginDir = path.join(home, ".codex", "plugins", "cache", "vc-tools", "vc-secrets");
+    const pluginDir = path.join(home, ".codex", "plugins", "cache", "ai-tools", "vc-secrets");
     fs.mkdirSync(pluginDir, { recursive: true });
     fs.symlinkSync(real, path.join(pluginDir, "2.0.0"), LINK_TYPE);
 
@@ -6587,9 +6587,9 @@ test("shim: a registry record pointing at a vanished install falls back to a hea
     fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
     fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({
         version: 2,
-        plugins: { "vc-secrets@vc-tools": [{ version: "1.0.0", installPath: path.join(home, "gone") }] },
+        plugins: { "vc-secrets@ai-tools": [{ version: "1.0.0", installPath: path.join(home, "gone") }] },
     }));
-    const cacheDir = path.join(home, ".codex", "plugins", "cache", "vc-tools", "vc-secrets", "1.0.0");
+    const cacheDir = path.join(home, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "1.0.0");
     fs.mkdirSync(cacheDir, { recursive: true });
     fs.writeFileSync(path.join(cacheDir, "vc-secrets.mjs"),
         'export async function runCli() { process.stderr.write("STUB-RAN:cache-fallback\\n"); }\n');
@@ -6646,7 +6646,7 @@ test("readWiredElsewhere: a declared name that merely appears in the file is not
     fs.writeFileSync(toml, [
         '[mcp_servers.github]',
         'command = "node"',
-        'args = ["/home/u/.claude/plugins/data/vc-secrets-vc-tools/vc-secrets-shim.mjs","run","github"]',
+        'args = ["/home/u/.claude/plugins/data/vc-secrets-ai-tools/vc-secrets-shim.mjs","run","github"]',
         '',
         '[mcp_servers.jira]',
         'command = "npx"',
@@ -6715,7 +6715,7 @@ test("shim: a stale registry record falls back to a HEALTHY REGISTRY record befo
     fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
     fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({
         version: 2,
-        plugins: { "vc-secrets@vc-tools": [
+        plugins: { "vc-secrets@ai-tools": [
             { version: "1.0.0", lastUpdated: "2024-01-01", installPath: good },
             { version: "2.0.0", lastUpdated: "2024-02-01", installPath: path.join(home, "gone") },
         ] },
@@ -8349,7 +8349,7 @@ test("guard-declarations: a guarded file is blocked under the dot, separator, tr
         ["plugins/vc-secrets/./vc-secrets.mjs", /own code/],
         ["plugins/vc-secrets/vc-secrets-oauth.mjs::$DATA", /own code/],
         ["plugins/vc-secrets/skills/doctor/./SKILL.md", /own code/],
-        ["/home/dev/.claude/plugins/data/vc-secrets-vc-tools/./vc-secrets-shim.mjs", /shim/],
+        ["/home/dev/.claude/plugins/data/vc-secrets-ai-tools/./vc-secrets-shim.mjs", /shim/],
     ];
     for (const [spelling, reason] of spellings) {
         const r = runGuardOn(spelling);

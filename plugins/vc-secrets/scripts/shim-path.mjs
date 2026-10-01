@@ -4,7 +4,7 @@ import path from "node:path";
 // This module only DEFINES. It is imported by install-shim.mjs, which has side effects, and by the
 // launcher's emit-config, which must have none — so the shared values cannot live in the installer.
 const SHIM = "vc-secrets-shim.mjs";
-const CANONICAL_DATA_ID = "vc-secrets-vc-tools";
+const CANONICAL_DATA_ID = "vc-secrets-ai-tools";
 
 // The documented default, and only the default. Where --data-dir was honoured the installed path
 // differs, and nothing outside the installer can know that it was.
