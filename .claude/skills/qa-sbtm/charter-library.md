@@ -422,6 +422,6 @@ pattern cites it, an idea the library does not cover is marked `[new]` and is th
 - [modern-web-attack-surface.md](modern-web-attack-surface.md) — Probe library used by Charters F, G, K
 - [../../../agents/knowledge/oracles/vc-bug-catalog.md](../../knowledge/oracles/vc-bug-catalog.md) — VC historical bugs; many charters reference specific entries
 - [../../../agents/knowledge/oracles/e-commerce-edge-cases-library.md](../../knowledge/oracles/e-commerce-edge-cases-library.md) — the `ECL-<n>.<m>` sections every charter's `Edge-Case Refs` line points at (§Edge-Case Refs above)
-- [../../../agents/knowledge/oracles/business-logic.md](../../knowledge/oracles/business-logic.md) — the `BL-*` invariants a session judges its observations against; loaded per-domain at `/qa-exploratory` pre-flight Step 5a, not pinned per charter
+- `npm run bl:extract -- --domain <d>` — the `BL-*` invariants a session judges its observations against; loaded per-domain at `/qa-exploratory` pre-flight Step 5a, not pinned per charter
 - [../../../rules/test-data.md](../../rules/test-data.md) — `@td()` resolver policy; charters must resolve test data, not hardcode
 - [../../../agents/knowledge/execution/live-discovery.md](../../knowledge/execution/live-discovery.md) — Decision tree + JS recipes for `live-discover` / `random-data` / `@td()`; required reading when a charter needs runtime data resolution

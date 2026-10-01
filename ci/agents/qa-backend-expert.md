@@ -56,7 +56,7 @@ You can read project files for context. Key knowledge files:
 
 | File | Use when |
 |------|----------|
-| `.claude/knowledge/oracles/business-logic.md` | Ambiguous test result — check BL-* rules (76 invariants, 13 domains) |
+| `npm run bl:extract -- --domain <d>` | Ambiguous test result — check BL-* rules |
 | `.claude/knowledge/api/api-auth.md` | OAuth2 token endpoint, credentials, headers |
 | `.claude/knowledge/api/platform-patterns.md` | Module lifecycle, blade system, Admin SPA patterns |
 | `.claude/knowledge/execution/module-suite-map.md` | Module dependencies, impact analysis |

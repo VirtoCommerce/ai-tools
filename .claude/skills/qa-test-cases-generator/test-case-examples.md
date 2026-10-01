@@ -225,7 +225,7 @@ E2E-042,"Apply Coupon — Full Flow: Storefront → GraphQL → Admin","E2E > Co
 | `Preconditions` | `Preconditions` + `Test_Data` | Split: prose → Preconditions; `{{VAR}}` bindings → Test_Data |
 | `Steps` | `Steps` + `Assertions` | Split: actions → Steps (with type tags); expected outcomes → Assertions |
 | `Expected Result` | `Assertions` + `Cross_Layer_Checks` | UI assertions → Assertions; API/console → Cross_Layer_Checks |
-| — | `Business_Rule` | New — map to BL-* from `business-logic.md` |
+| — | `Business_Rule` | New — map to BL-* (`npm run bl:extract -- --domain <d>`) |
 | — | `Edge_Case_Refs` | New — map to ECL sections |
 | — | `Failure_Signals` | New — early warning patterns |
 | — | `Cleanup` | New — state restoration |

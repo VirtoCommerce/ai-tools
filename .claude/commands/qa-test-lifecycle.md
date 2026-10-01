@@ -321,7 +321,7 @@ Dispatch `test-management-specialist` (continuing from Phase 2 delegation).
 1. Read target suite CSV(s) — parse all existing test cases
 2. Load domain context:
    - Domain checklist(s) from `domain-checklists.md` / `graphql-checklist.md`
-   - BL-* invariants from `business-logic.md`
+   - BL-*: `npm run bl:extract -- --domain <d>`
    - ECL-* patterns from `e-commerce-edge-cases-library.md`
    - Expected coverage from `feature-domain-map.md`
    - Product types and test data from `products.md`
@@ -862,7 +862,7 @@ Input:
     - skills/qa-review-tests/review-criteria.md
     - skills/qa-review-tests/triangulation-criteria.md (only when 4a-bis triangulates a behavior rewrite)
     - skills/qa-test-cases-generator/test-case-template.md (column contract + Automation_Status enum)
-    - knowledge/oracles/business-logic.md
+    - npm run bl:extract (BL-*)
     - knowledge/oracles/e-commerce-edge-cases-library.md
     - knowledge/domain/products.md
     - knowledge/execution/module-suite-map.md

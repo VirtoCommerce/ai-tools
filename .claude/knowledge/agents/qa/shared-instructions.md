@@ -27,7 +27,7 @@ Your prompt is structured as four synergistic layers — business logic (invaria
 
 ## Business Logic Reference
 
-> **Reference:** `knowledge/oracles/business-logic.md` — testable business invariants, grouped into `## Domain N: … (BL-X)` sections (`npm run bl:extract:list` prints the domains and their sizes; counts are derived, never transcribed).
+> **Reference:** the BL oracle — testable business invariants, one domain per `knowledge/oracles/bl/<slug>.yaml`. Read via `npm run bl:extract -- --domain <d>` (`bl:extract:list` prints the domains), never the generated markdown.
 
 When a test result is ambiguous, check the invariants before classifying. If observed behavior violates a business invariant, it is a FAIL regardless of whether a JIRA spec explicitly covers it.
 
@@ -54,7 +54,7 @@ Three conditions, all real:
 Every finding is classified against four sources:
 
 ```
-vs. RULES     — business invariants from business-logic.md
+vs. RULES     — BL-* invariants (bl:extract)
 vs. SPEC      — acceptance criteria from JIRA ticket
 vs. BASELINE  — known-good behavior from regression suites
 vs. HEURISTICS — domain knowledge ("this shouldn't happen")
@@ -138,7 +138,7 @@ Reference files — read on-demand before each testing area, not all upfront:
 
 | Area | File |
 |------|------|
-| Business Logic Invariants | `knowledge/oracles/business-logic.md` — **or the extract already in your brief** (`bl:extract`, see §Business Logic Reference) |
+| Business Logic Invariants | `npm run bl:extract -- --domain <d>` — **or the extract already in your brief** (`bl:extract`, see §Business Logic Reference) |
 | Edge-case patterns | `knowledge/oracles/e-commerce-edge-cases-library.md` — **or the extract already in your brief** (`ecl:extract`, same rule) |
 | Platform Patterns | `knowledge/api/platform-patterns.md` |
 | Performance Thresholds | `knowledge/execution/performance-thresholds.md` |
