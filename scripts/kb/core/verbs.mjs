@@ -23,6 +23,9 @@ import {
 } from './queue.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { prepareVocabulary, readVocabulary } from './query.mjs';
+import { prepareRetrieval, retrieve } from './retrieve.mjs';
+import { AMBIGUOUS_TOP, MODEL_FEATURES, decide } from './verdict.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -429,6 +432,95 @@ async function queuedHere(question, { env }) {
   }));
 }
 
+// ── the calibrated verdict (VCST-6122 M4, Decision 1a) ────────────────────────────────────────
+//
+// SWITCHED BY THE BASE, NOT BY THE CLIENT. A base that carries `ranker.json` gets the verdict; one
+// that does not -- every base before this change, and `main` today -- gets floor-1, byte for byte as
+// before. So this code can ship to every machine while the decision to turn it on stays a reviewed
+// data change in one place, and turning it off again is deleting one file. A ranker.json that cannot
+// be read or does not have the shape `decide` needs is treated as absent: the fallback is the ranker
+// that was running yesterday, never a half-configured one.
+
+/** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). */
+export async function loadVerdictRanker(reader) {
+  let read;
+  try { read = await reader.readIndex('ranker.json'); } catch { return null; }
+  if (!read?.ok) return null;
+  try {
+    const r = JSON.parse(read.text);
+    const m = r?.model;
+    const n = Array.isArray(m?.features) ? m.features.length : -1;
+    const shaped = typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
+      && [m.mean, m.std, m.weights].every((a) => Array.isArray(a) && a.length === n && a.every(Number.isFinite))
+      && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer));
+    return shaped ? r : null;
+  } catch { return null; }
+}
+
+/** The model's own inputs, rounded, for the log line: what the verdict was decided ON. */
+const featureLine = (f) => Object.fromEntries(MODEL_FEATURES.map((k) => [k, round2(f[k] ?? 0)]));
+
+/**
+ * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
+ * excerpts need them), decide, log the verdict with what it was decided on, render.
+ */
+async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
+  const rows = retrievable(cat.rows);
+  const prep = prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader)));
+  const found = retrieve(prep, question, { fusion: ranker.fusion });
+  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
+  const parsed = new Map(await Promise.all(head.map(async (c) => {
+    const r = await opened.reader.readEntry(c.row.path);
+    if (!r.ok) return [c.row.id, null];
+    try { return [c.row.id, parseEntry(r.text, c.row.path)]; } catch { return [c.row.id, null]; }
+  })));
+  const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
+  const d = decide(prep, ranker, question, { retrieval: found, bodies });
+  const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
+  const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features) };
+
+  if (d.verdict === 'answer') {
+    const c = d.entries[0];
+    const hit = { row: c.row, score: round2(d.p), overlap: [], anchors: c.anchors.hits };
+    const p = parsed.get(c.row.id);
+    const described = p ? describeHit(hit, p) : { ...describeHit(hit, null, { unavailable: 'body unavailable' }), unavailable: 'body unavailable' };
+    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: p ? [c.row.id] : [], state: 'answer', ms: Date.now() - started, ...stamp }, { env });
+    return { state: 'answer', verdict: 'answer', hits: [described], rows: cat.rows.length, ...repair };
+  }
+  if (d.verdict === 'ambiguous') {
+    const headlines = d.entries.map((c) => ({
+      id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
+    }));
+    const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp }, { env });
+    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], rows: cat.rows.length, ...repair };
+  }
+  const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
+  const queued = await queuedHere(question, { env });
+  await log({ ...common, matched: [], state: 'miss', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+  return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
+}
+
+/**
+ * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
+ * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
+ * on the other side -- so it names its ask by HANDLE, the ask's own `at`, rather than "the session's
+ * latest ask": in a batched wave the latest ask is somebody else's, which is how S4's verdict once
+ * carried S5's timestamp.
+ */
+export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
+  const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
+  const target = named ?? (handle ? null : asks.at(-1) ?? null);
+  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  if (!written.ok) return { state: 'unreachable', why: written.why };
+  return {
+    state: 'recorded',
+    ...(target ? { after: target.at, q: target.q } : {}),
+    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+  };
+}
+
 export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
@@ -440,6 +532,11 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
   if (cat.state !== 'ok') {
     await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
     return { state: cat.state, why: cat.why, hits: [], ...repair };
+  }
+
+  const verdictRanker = await loadVerdictRanker(opened.reader);
+  if (verdictRanker) {
+    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -533,34 +630,37 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+  // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
+  // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss', ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
+  await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 

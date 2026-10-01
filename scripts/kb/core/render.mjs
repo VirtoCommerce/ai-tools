@@ -58,7 +58,17 @@ export function hitLines(hit) {
 const MSYS_NOTE = `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`;
 
 export function askLines(r, { prefix = 'kb ask' } = {}) {
+  // A verdict ranker's `ambiguous` (VCST-6122 Decision 1a): the headlines, then the handle the pick
+  // or the `none` must carry so the log can pair them with THIS ask.
+  if (r.verdict === 'ambiguous') {
+    return [
+      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
+      ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show or kb_none)`] : []),
+    ];
+  }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
+  if (r.verdict === 'none' && r.concepts?.length) lines.push(`  nearest concepts the base does hold: ${r.concepts.join(', ')}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -265,5 +275,15 @@ function evidenceBody(verb, r) {
     `kb ${verb}: queued on ${r.id} (${r.row.subject})`,
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
+  ];
+}
+
+/** `kb none` / `kb_none`: what was recorded, and against which ask. */
+export function noneLines(r, { prefix = 'kb none' } = {}) {
+  if (r.state !== 'recorded') return [`${prefix}: ${HEADLINE[r.state] ?? r.state}`, ...(r.why ? [`  ${r.why}`] : [])];
+  return [
+    `${prefix}: recorded — none of the entries answers${r.q ? ` "${r.q}"` : ''}.`,
+    ...(r.why ? [`  ${r.why}`] : []),
+    '  Now go find out, and record what you find with kb_capture (or `npm run kb -- capture`).',
   ];
 }
