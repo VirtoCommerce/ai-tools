@@ -104,6 +104,8 @@ rules:
         ref: VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles apply to an individual within a particular organization
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationIdClaimProvider.cs#AddOrgScopedPermissionsAsync
     check:
       kind: manual
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
@@ -119,6 +121,8 @@ rules:
         ref: VCST-5028 (Done) — roles scoped to one organization, governing an org without affecting the user's access elsewhere
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles are assigned per individual per organization via the memberships widget
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/ChangeOrganizationContactRoleCommandHandler.cs#ApplyRoles
     check:
       kind: manual
       ref: Member is employee in X, manager in Y. Change X → manager. `POST /api/customer/organization-memberships/search {userId}` → X role = manager, Y role still manager. `GET /api/platform/security/users/{userId}` → global `roles[]` unchanged.
@@ -136,6 +140,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/inviteUser.md (published) — invite takes organizationId and roleIds to assign
       - kind: ac
         ref: VCST-5028 (Done) — roles scoped per organization rather than on the global account
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/Services/InviteCustomerService.cs#CreateUser
     check:
       kind: manual
       ref: Invite a new user into X as employee; after acceptance, `POST /search {userId}` → contains org X with role employee. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / no org-specific role.
@@ -151,6 +157,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/requestRegistration.md (published) — company registration makes the registrant a member/owner with the Organization maintainer role
       - kind: resolution
         ref: "VCST-5401 (Done) — expected: a B2B customer's global account roles stay empty; permissions come only from membership roles"
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#CreateOrganizationMembershipAsync
     check:
       kind: manual
       ref: Register a new company with a fresh `AGENT-TEST-` user. `POST /api/customer/organization-memberships/search {userEmail}` → membership exists with non-empty org role(s) and `isActive=true`. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / contains no platform admin role. The two assertions together prove roles live in the membership record, not on the global account.
@@ -211,6 +219,8 @@ rules:
         ref: platform/user-guide/docs/contacts/settings.md (published) — role whitelists in Customer settings control which roles are eligible for organizations and memberships
       - kind: resolution
         ref: VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Web/Scripts/services/rolesPickerService.js
     check:
       kind: manual
       ref: |-
@@ -257,6 +267,8 @@ rules:
         ref: storefront/user-guide/docs/account/company-members.md (published) — deleting a member sets status Inactive; the record remains in the list
       - kind: ac
         ref: VCST-5281 (Done) — invite existing customers to multiple organizations with membership-based statuses
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/Services/InviteCustomerService.cs
     check:
       kind: manual
       ref: Decline an invitation → membership search still returns the row with `Status = "Rejected"`; the contact's organization list still contains that organization; the member is still listed in the organization's member list (surfaced under an inactive-style label, not removed). Re-invite the same user into the same organization → succeeds. Repeat against a membership at `Invited` → rejected as already-a-member. A test asserting a member is *gone* must check the **row's absence**, not a `Deleted` status; teardown must delete the row.
@@ -279,6 +291,8 @@ rules:
         ref: "`vc-module-customer` `OrganizationMembership.ResolveEffectiveStatus` (the three tiers) and `IsCurrentlyLocked` (the separate lock axis) + `ModuleConstants.MembershipStatuses` (`ManuallySelectableStatuses` / `BlockingStatuses` / `ReinvitableStatuses`) and the `OrganizationMembershipStatuses` setting descriptor (`IsDictionary = true`, `DefaultValue = Approved`, `AllowedValues = ManuallySelectableStatuses`). Live-confirmed on the environment: a membership at `Rejected` whose contact was `Approved` resolved to the membership's value (the org was excluded from access), i.e. tier 1 beats tier 2; and the member list rendered the lock axis as its own label distinct from every status label. Tiers 2 and 3 (inherit-from-contact, and the terminal `Approved`) are **source-only this run**. Docs axis: N/A — the published guide documents that Customer statuses are configurable dictionaries but names no membership-status value, default, or resolution order (waived)."
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — values Approved/Invited/Rejected/Deleted; 'Inherit from member' sentinel; Approved full access, others block
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Core/Model/OrganizationMembership.cs#ResolveEffectiveStatus
     check:
       kind: manual
       ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.

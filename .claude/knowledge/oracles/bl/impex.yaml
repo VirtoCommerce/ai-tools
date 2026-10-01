@@ -16,6 +16,8 @@ rules:
         ref: platform/user-guide/docs/catalog/import-products-to-catalog.md (docs) — CSV must carry Id or SKU; a match updates the existing product, only unmatched rows create new ones
       - kind: resolution
         ref: VP-2258 (Done) — CSV re-import created duplicate parent categories; fixed so re-import updates in the correct category path
+    scope:
+      code_ref: vc-module-catalog-export-import:src/VirtoCommerce.CatalogExportImportModule.Data/Services/CsvPagedPhysicalProductDataImporter.cs#ProcessChunkAsync
     check:
       kind: manual
       ref: Import CSV with 50 products → 50 products created. Re-import same CSV → still 50 products (updated, not 100). Modify one row → re-import → only that product updated, others unchanged.
@@ -40,6 +42,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-catalog-export-import:src/VirtoCommerce.CatalogExportImportModule.Web/Controllers/Api/ImportController.cs#RunImport
     check:
       kind: manual
       ref: 'Import 2000-row CSV → job starts in background → progress visible → completion notification. Import CSV with bad row 500 → rows 1-499 imported → error report shows "Row 500: invalid price format" → rows 501+ skipped or continued (based on config).'
@@ -51,6 +55,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-catalog-export-import:src/VirtoCommerce.CatalogExportImportModule.Data/Validation/ImportPhysicalProductsValidator.cs#ImportPhysicalProductsValidator
     check:
       kind: manual
       ref: "Import CSV with: missing required field → error \"Row 3: Name is required.\" Invalid category reference → error \"Row 7: Category 'XYZ' not found.\" Negative price → error \"Row 12: Price must be > 0.\" All errors reported in one batch."

@@ -21,6 +21,8 @@ rules:
         ref: vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/examples/facets.md — terms.count is the number of products the term applies to
       - kind: resolution
         ref: VCST-1926 (Done) — a facet said 21 and 16 products came back; fixed. Also VCST-5324, VCST-3993 (Done)
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/AggregationConverter.cs#GetAggregationRequestsAsync
     check:
       kind: executable
       ref: scripts/invariants/page-walk.ts (npm run inv:run -- page-walk) with --filter <the facet term> --expected <its count>
@@ -39,6 +41,8 @@ rules:
         ref: VCST-4121 (Done) — the Reset search button was missing when filters returned no products; fixed
       - kind: live
         ref: kb KB-71011C1F (well attested) — zero hits show an empty state with Reset search (barcode route)
+    scope:
+      code_ref: vc-frontend:client-app/shared/catalog/components/category/category-products.vue
     check:
       kind: manual
       ref: Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
@@ -72,6 +76,8 @@ rules:
         ref: vc-docs platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Catalog/queries/products.md — storeId is a required argument
       - kind: resolution
         ref: VCST-3003 / VP-8726 (Done) — a bulk add resolved an item code from another catalog; indirect
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Data/Queries/SearchProductQueryHandler.cs#GetIndexedSearchRequestBuilder
     check:
       kind: manual
       ref: Search on Store A → only products from Store A's virtual catalog appear. Product in Store B's catalog → not in Store A's search. xAPI query without `storeId` → error, not unscoped results.
@@ -87,6 +93,8 @@ rules:
         ref: "VP-2180 (Done) — search did not filter cross-site-scripting characters; fixed. Also VCST-3851 (Done): filtering failed on a facet value with * or ?"
       - kind: doc
         ref: vc-docs platform/developer-guide/docs/Fundamentals/Indexed-Search/search-query-syntax-reference.md — unsafe characters are allowed inside a double-quoted block
+    scope:
+      code_ref: vc-module-elastic-search-8:src/VirtoCommerce.ElasticSearch8.Data/Services/ElasticSearchRequestBuilder.cs#GetMultimatchKeywordSearchQuery
     check:
       kind: manual
       ref: Search for `<script>alert(1)</script>` → no XSS, shows "No results." Search for `'; DROP TABLE--` → no error, shows "No results." Search for product with `&` in name → found correctly.
@@ -124,6 +132,8 @@ rules:
         ref: VP-7840 (Done) — price sort used every assigned price list even when the request named one
       - kind: resolution
         ref: VCST-3595 / VP-8806 (Done) — an unstable order under paging duplicated or skipped rows
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Data/Index/IndexSearchRequestBuilder.cs#MapSortingField
     check:
       kind: executable
       ref: scripts/invariants/sort-set.ts (npm run inv:run -- sort-set) with --sort "price:asc"

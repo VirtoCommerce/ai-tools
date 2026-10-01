@@ -22,6 +22,8 @@ rules:
         ref: w3.org/TR/WCAG22#no-keyboard-trap (SC 2.1.2) — focus can leave any component
       - kind: resolution
         ref: VCST-5671 (Done) — overflow popover was not keyboard reachable and focus did not move into it; fixed
+    scope:
+      code_ref: vc-frontend:client-app/ui-kit/composables/useFocusManagement.ts#useFocusManagement
     check:
       kind: manual
       ref: From a neutral starting point, Tab through the surface and confirm every interactive element receives focus in DOM order with a visible focus ring. Open a modal, Tab to its last focusable element and confirm wrap to the first (Shift+Tab from the first wraps to the last). Close it and confirm focus returns to the trigger and Tab no longer reaches the closed modal's contents.

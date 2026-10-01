@@ -17,6 +17,8 @@ rules:
     source:
       - kind: doc
         ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — default buyability price policy rejects zero-price products; allowing them needs a code override
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Core/Specifications/CatalogProductIsBuyableSpecification.cs#CheckPricePolicy
     check:
       kind: manual
       ref: 'Delete price list in Admin → storefront product shows "Unavailable" or equivalent, not "$0.00" → "Add to Cart" disabled → xAPI `products` query returns `price: null` or empty price object.'
@@ -30,6 +32,8 @@ rules:
     source:
       - kind: doc
         ref: platform/user-guide/docs/pricing/troubleshooting-guide.md (published) — rebuild the product index for price changes to reflect in the frontend
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartProductService.cs#ApplyPricesToCartProductAsync
     check:
       kind: manual
       ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
@@ -158,6 +162,8 @@ rules:
     source:
       - kind: doc
         ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Specifications/ProductIsBuyableSpecification.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.

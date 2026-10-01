@@ -17,6 +17,8 @@ rules:
         ref: 'vc-docs storefront/user-guide/docs/shopping/back-in-stock-notifications.md — an out-of-stock product cannot be added: Add to Cart is replaced by "Notify me when in stock"'
       - kind: resolution
         ref: VCST-3926 (Done) — cart quantity could be raised for an out-of-stock product; fixed
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Core/Specifications/CatalogProductIsInStockSpecification.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: Set stock to 0 in Admin → storefront shows "Sold out" label → "Add to Cart" disabled/hidden → attempt via xAPI `addToCart` → error response.
@@ -60,6 +62,8 @@ rules:
     source:
       - kind: resolution
         ref: "VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden"
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/CategoryDocumentBuilder.cs#IsActiveInTotal
     check:
       kind: manual
       ref: Hide category in Admin → storefront menu no longer shows it → products still accessible via search or direct URL → subcategories also hidden from nav. Unhide → category and subcategories return to nav.
@@ -75,6 +79,8 @@ rules:
         ref: vc-docs platform/user-guide/docs/catalog/import-products-to-catalog.md — to make products visible on the storefront, the catalog must be linked to the store's catalog
       - kind: live
         ref: kb KB-2D446A42 (single observation) — a store exposes a physical catalog's products through its virtual catalog
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Data/Queries/SearchProductQueryHandler.cs#AddDefaultTerms
     check:
       kind: manual
       ref: Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
@@ -90,6 +96,8 @@ rules:
         ref: vc-docs platform/user-guide/docs/catalog/managing-product-configurations.md — required sections force a selection; optional sections get a "None" choice
       - kind: resolution
         ref: VCST-4829 (Cancelled) — asked for Add to Cart to be disabled until required sections are filled; cancelled because server-side validation already blocks the add
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Validators/ConfigurationItemValidator.cs#ConfigurationItemValidator
     check:
       kind: manual
       ref: Open configurable product → "Add to Cart" disabled → fill first required section → still disabled (more sections required) → fill all required sections → "Add to Cart" enabled. Leave an optional section empty → still enabled.
@@ -104,6 +112,8 @@ rules:
     source:
       - kind: resolution
         ref: VP-2011, VP-7769 (Done) — fulfillment-center stock edge cases; neither confirms that storefront stock is the sum across centers
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Core/Models/ExpProduct.cs#ApplyStoreInventories
     check:
       kind: manual
       ref: 'Set FFC-A = 10, FFC-B = 5 → storefront shows "In stock" with effective availability of 15. Place order for 12 → FFC-A decremented first (allocation logic). Check remaining: FFC-A + FFC-B totals correct.'
@@ -117,6 +127,8 @@ rules:
     source:
       - kind: doc
         ref: vc-docs platform/user-guide/docs/catalog/managing-units-of-measure.md — dimensions and units can be created and deleted (integrity is not stated)
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Repositories/CatalogDbContext.cs#OnModelCreating
     check:
       kind: manual
       ref: "Create UoM group → appears in list (`POST /api/catalog/measures/search`); rename → list reflects new name; delete group → group and its units absent (`DELETE /api/catalog/measures?ids=…`; verify via `GET /api/catalog/measures/{id}`). Create unit in group → appears with name/short-name/conversion-factor; edit → persists; delete unit → removed, group intact (`GET /api/catalog/measures/{id}`). Note: units are **nested inside** the Measure (group) entity and saved via the group (`POST`/`PUT /api/catalog/measures`, partial `PATCH /api/catalog/measures/{id}`) — there is no separate unit endpoint."
@@ -130,6 +142,8 @@ rules:
     source:
       - kind: resolution
         ref: VP-2628 (Done) — deleting a category with more than 2100 products returned 500 from the product-removal cascade; fixed
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Repositories/CatalogRepositoryImpl.cs#RemoveCategoriesInternalAsync
     check:
       kind: manual
       ref: Create category → appears in tree + `GET /api/catalog/categories`. Edit name → persists. Delete-confirm removes it + subcategories (`GET …/{subId}` → 404) + descriptions; Delete-cancel leaves it intact.
@@ -145,6 +159,8 @@ rules:
         ref: "VCST-5318 (Story, Done) — AC: categories not selectable without the permission, the API rejects category links, products stay linkable"
       - kind: doc
         ref: vc-docs platform/user-guide/docs/security/roles-and-permissions.md — catalog:categories:link and catalog:products:link control linking in virtual catalog mapping
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Web/Controllers/Api/CatalogModuleListEntryController.cs#CreateLinks
     check:
       kind: manual
       ref: Full-perm user → mapping picker shows category + item checkboxes. Role minus `categories:link` → category rows non-selectable, product rows still selectable; `POST /api/catalog/listentrylinks` with a category entry → 403, with a product entry → 2xx. Both permissions registered with human-readable descriptions (`GET /api/platform/security/permissions`).
@@ -158,6 +174,8 @@ rules:
     source:
       - kind: ac
         ref: VCST-5082 (Done) — cascade CatalogId to descendants and products on a cross-catalog category move
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Services/CategoryMover.cs
     check:
       kind: manual
       ref: Cross-catalog move → parent + child + owned products report the destination `CatalogId` (`GET …/categories|products/{id}`; `POST /api/catalog/listentries/move`). Intra-catalog move → `CatalogId` unchanged. Linked foreign-catalog product → `CatalogId` stays its owner catalog.

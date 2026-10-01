@@ -24,6 +24,8 @@ rules:
         ref: platform/user-guide/docs/white-labeling/overview.md (published) — branding customized per logged-in organization, shown after signing in
       - kind: ac
         ref: VCST-899 (Done) — org employees see their branding after sign-in; other organizations' users get default branding
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#Handle
     check:
       kind: manual
       ref: Query for an org+store with no enabled WL setting → null; storefront renders default logo/theme.
@@ -39,6 +41,8 @@ rules:
         ref: '`GetCombinedWhiteLabelingSetting()` — per-field ternaries `!IsNullOrEmpty(org.X) ? org.X : store.X` + `WhiteLabelingFlags` (HasLogo/HasSecondaryLogo/HasFavicon) picks. Refines the old BL-B2B-006 "override" wording.'
       - kind: resolution
         ref: VCST-4644 (Done) — fixed store-level WL not applying as fallback for organizations without their own WL config
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#GetCombinedWhiteLabelingSetting
     check:
       kind: manual
       ref: "Org sets logo only; store sets theme + footer → merged result = org logo + store theme + store footer. (Live-verified 2026-07-02: Electronics org @ B2B-store → org's Watermelon theme replaces store Coffee while other fields merge.)"
@@ -59,6 +63,8 @@ rules:
         ref: platform/user-guide/docs/white-labeling/settings.md (published) — store-specific setting enables/disables white labeling per store
       - kind: doc
         ref: platform/user-guide/docs/white-labeling/customizing-brand-elements.md (published) — WL toggled on per store or per company in the White labeling widget
+    scope:
+      code_ref: vc-frontend:client-app/core/composables/useWhiteLabeling.ts#fetchWhiteLabelingSettings
     check:
       kind: manual
       ref: (1) Store setting `WhiteLabeling.WhiteLabelingEnabled=false` → org user sees theme defaults (no org logo/theme); set `true` → branding returns. (2) With the master switch ON, query an enabled org against a store that has no enabled store-WL record → org logo+theme still resolve (live-verified 2026-07-02, non-destructive).
@@ -74,6 +80,8 @@ rules:
         ref: "`AddMainMenuLinksAsync()` / `AddFooterLinksAsync()` (footer `footer-{organization.Name}` branch); `ExpWhiteLabelingSetting` lists default to `[]`."
       - kind: resolution
         ref: VCST-4645 (Done) — fixed org-level main-menu/footer link lists not applied for existing organizations
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#AddFooterLinksAsync
     check:
       kind: manual
       ref: "Org with NULL MainMenuLinkListName → `mainMenuLinks: []`, no error; org with empty FooterLinkListName but a `footer-<orgname>` list present → footer resolves."
@@ -89,6 +97,8 @@ rules:
         ref: "`en.WhiteLabeling.json` errors `store-and-organization-set` / `store-or-organization-must-be-set` / `duplicate-store-or-organization`."
       - kind: ac
         ref: "VCST-4657 (Done) — WL save validation: exactly one of StoreId/OrganizationId, no binding change on update, duplicates rejected (400)"
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.Data/Validation/WhiteLabelingSettingValidator.cs
     check:
       kind: manual
       ref: Admin WL blade with both Store & Org set → "Both Store and Organization set" error; neither → "Store or Organization must be set"; a duplicate store/org → "Duplicate Store or Organization".
@@ -106,6 +116,8 @@ rules:
         ref: platform/deployment-on-cloud/docs/store-branding.md (published) — logos may be PNG, GIF or SVG; favicons PNG, JPEG or WEBP
       - kind: resolution
         ref: VCST-2840 (Done) — fixed non-localizable error message shown for incorrect WL file format
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.Web/Scripts/blades/white-labeling-logo.js
     check:
       kind: manual
       ref: Upload `.gif` logo → accepted; `.jpg` logo → rejected ("Only PNG, GIF or SVG files are allowed"); `.webp` favicon → accepted; `.svg` favicon → rejected ("Only PNG, JPG, or WEBP files are allowed").

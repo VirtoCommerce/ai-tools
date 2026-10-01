@@ -22,6 +22,8 @@ rules:
         ref: VP-7983 (Done) — two products sharing a slug both returned 404; expected both to work or save to be refused
       - kind: resolution
         ref: VCST-1399 (Done) — incorrect redirect for same-named categories; resolver used only last slug segment
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Data/Services/CatalogSeoDuplicatesDetector.cs#DetectSeoDuplicatesAsync
     check:
       kind: manual
       ref: Create Product A with slug "my-product" → create Product B with the same slug in the same store+language → a "Duplicate URL detected" validation and/or a store "conflicting semantic URLs" warning appears (no "-1" suffix is auto-added). Use the store **Debug SEO Links** widget to see how a conflicting slug is scored and resolved.
@@ -37,6 +39,8 @@ rules:
         ref: storefront/developer-guide/docs/spa-architecture-for-seo-and-404-handling.md (docs) — SPA serves index.html so missing pages return 200 (soft 404); true 404 via load-balancer rules or broken-link tooling
       - kind: doc
         ref: platform/user-guide/docs/seo/managing-broken-links.md (docs) — frontend-reported missing slugs are logged as broken links and admins can configure redirects
+    scope:
+      code_ref: vc-frontend:client-app/pages/matcher/matcher.vue
     check:
       kind: manual
       ref: Note the product URL → delete the product in Admin (or use a never-existing slug) → navigate to the URL → xAPI `slugInfo` entityInfo is empty and the SPA shows the NotFound page (HTTP 200 soft 404 by default, or a configured 301 redirect / CDN-forced 404). Never the old product content, a blank page, or a 500.
@@ -61,6 +65,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-catalog:src/VirtoCommerce.CatalogModule.Core/Extensions/OutlineExtensions.cs#GetSeoPath
     check:
       kind: manual
       ref: Set `seoLinkType` to format A → note URLs. Change to format B → URLs update to new format. Navigate to old-format URL → 301 redirect to new format (or 404).

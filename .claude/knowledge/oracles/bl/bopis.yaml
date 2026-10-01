@@ -21,6 +21,8 @@ rules:
         ref: VCST-4092 (Done) — fixed pickup point address wrongly appearing in the Shipping address field after switching delivery options
       - kind: resolution
         ref: VCST-3025 (Done) — fixed addresses getting mixed when switching between Pickup and Shipping
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/components/shipping-details-section.vue
     check:
       kind: manual
       ref: Select cart-level Pickup → choose a store → inspect cart xAPI `shipments[]` → exactly one shipment with `pickupLocation { id }` set (`fulfillmentCenterId` may be null; `deliveryAddress` carries the pickup location's address) → checkout shows pickup store, no shipping-address entry form → switch to Shipping → `pickupLocation` cleared, delivery-address form appears.
@@ -32,6 +34,8 @@ rules:
     priority: P0-revenue
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-shipping:src/VirtoCommerce.ShippingModule.Data/BuyOnlinePickupInStoreShippingMethod.cs#CalculateRates
     check:
       kind: manual
       ref: Add BOPIS item → checkout → shipping section shows $0.00 → add a delivery item → delivery shipment shows a shipping rate, pickup section still shows $0 → place order → Admin order detail shows pickup shipment with $0 shipping.
@@ -47,6 +51,8 @@ rules:
         ref: vc-module-x-pickup `ProductPickupAvailability.cs` (Today / Transfer / GlobalTransfer constants) + `ProductPickupLocation.cs` (`AvailabilityType`, `AvailabilityNote`, nullable `AvailableQuantity`).
       - kind: doc
         ref: "platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/xPickup/objects/ProductPickupAvailabilityType.md (published) — availability has three tiers: Today, Transfer, GlobalTransfer"
+    scope:
+      code_ref: vc-module-x-pickup:src/VirtoCommerce.XPickup.Data/Services/ProductPickupLocationService.cs#GetProductPickupLocationAsync
     check:
       kind: manual
       ref: FFC-A has qty=5 → location shows the "Today" note. Set FFC-A qty=0 → wait 120s → the location **disappears** from the selector (or, if global transfer is enabled, downgrades to the transfer note). Set qty at a transfer FFC → location shows the "Via transfer" note.
@@ -58,6 +64,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-frontend:client-app/shared/catalog/components/product-pickup-locations.vue#openMapModal
     check:
       kind: manual
       ref: Open PDP → open BOPIS modal → verify no "Add to Cart" button inside modal → close modal → cart is empty (no items added) → no store selection persisted.
@@ -69,6 +77,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-x-pickup:src/VirtoCommerce.XPickup.Data/Services/ProductPickupLocationService.cs#SearchProductPickupLocationsIndexedAsync
     check:
       kind: manual
       ref: Create an FFC → mark as inactive in Admin → open BOPIS modal → FFC does not appear in the list. Re-activate → appears in list. Create a delivery-only FFC → does not appear in pickup selector.
@@ -80,6 +90,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/components/shipping-details-section.vue
     check:
       kind: manual
       ref: Pure BOPIS cart → checkout → no shipping address form visible → billing address form IS visible → order placed successfully with billing address only → Admin order shows pickup location, no shipping address.
@@ -93,6 +105,8 @@ rules:
     source:
       - kind: ac
         ref: VCST-4518 (Done) — task to align desktop select-address-map modal layout with design; no description or AC text present
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/components/select-address-map/select-address-map-desktop.vue
     check:
       kind: manual
       ref: Open the BOPIS store-selector modal → measure the map panel (`data-test-id="pickup-locations-map"`) width via `browser_evaluate` + `getBoundingClientRect()` → search for a guaranteed no-match term → the no-results message (`data-test-id="pickup-locations-not-found"`) appears in the list panel → the map panel remains visible and does not shrink (≥40% of modal width as a conservative floor).
@@ -106,6 +120,8 @@ rules:
     source:
       - kind: resolution
         ref: VCST-4707 (Done) — fixed pre-selection failing for pickup locations beyond the first page; recommended fix always includes confirmed location in response
+    scope:
+      code_ref: vc-module-x-pickup:src/VirtoCommerce.XPickup.Data/Services/ProductPickupLocationService.cs#SearchPickupLocationsAsync
     check:
       kind: manual
       ref: "Set `cart.Shipments.PickupLocationId` to a location alphabetically/positionally beyond the first paged batch (e.g., 51+ of 102) → query `cartPickupLocations(cartId, storeId, first: 1)` → assert `items[0].id` matches the confirmed location ID. Repeat with `keyword` that matches zero other locations → still returned at `items[0]`. Storefront: confirm a far-page location → close modal → reopen → radio is checked, location at top of list with no scrolling, map centered on location."

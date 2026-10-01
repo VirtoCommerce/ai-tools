@@ -21,6 +21,8 @@ rules:
         ref: platform/user-guide/docs/cart/overview.md — the cart module supports anonymous carts and submitting orders without creating an account
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/update-xapi-modules.md — the anonymous order creation setting moved to its functional X-module
+    scope:
+      code_ref: vc-module-x-order:src/VirtoCommerce.XOrder.Data/Schemas/OrderSchema.cs#Build
     check:
       kind: manual
       ref: With flag OFF → "Add to cart" → "Checkout" → redirect to sign-in. With flag ON → anonymous user can complete full checkout without account.
@@ -32,6 +34,8 @@ rules:
     priority: P0-revenue
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/components/proceed-to.vue
     check:
       kind: manual
       ref: Click "Place Order" → immediately click again → only 1 order created. Check Admin → Orders → verify single order. Check button state (disabled/loading after first click).
@@ -45,6 +49,8 @@ rules:
     source:
       - kind: code
         ref: 'vc-frontend `address-form.vue` — `postalCode: yup.string().trim().max(32).required()` (no country branch); `regionRules: .when("countryCode", { is: () => !!country.regions.length, then: required, otherwise: nullable })`.'
+    scope:
+      code_ref: vc-frontend:client-app/shared/common/components/address-form.vue#regionRules
     check:
       kind: manual
       ref: Select US → State and ZIP required. Select a country with no regions → State/Province hidden/optional, but ZIP/Postal code **still required**. Attempt to submit without ZIP → blocked before the payment step regardless of country.
@@ -69,6 +75,8 @@ rules:
     source:
       - kind: code
         ref: vc-frontend `shipping-details-section.vue` — binds `availableShippingMethods` (server-computed per cart/address); `onShipmentMethodChange` → `updateShipment`.
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartAvailMethodsService.cs#GetAvailableShippingRatesAsync
     check:
       kind: manual
       ref: Enter domestic address → see standard/express options. Change to international address → shipping methods update → rates change. Select BOPIS → change to address far from any store → BOPIS option disappears.
@@ -84,6 +92,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Cart/objects/CartTotalType.md — per-currency bucket with total, subTotal, taxTotal, discountTotal
       - kind: resolution
         ref: VCST-661 (Done) — a '% off cart subtotal' reward ignored which items were selected in the cart; fixed
+    scope:
+      code_ref: vc-module-cart:src/VirtoCommerce.CartModule.Data/Services/DefaultShoppingCartTotalsCalculator.cs#CalculateTotals
     check:
       kind: manual
       ref: "Manually calculate: add all line totals + shipping + tax - discounts. Compare to displayed total. After placing order → check order confirmation → check Admin order detail → all three must match."
@@ -110,6 +120,8 @@ rules:
     source:
       - kind: ac
         ref: "VCST-4710 (Done) — address selection popup story: sorting, full-text search, and faceted filtering by Country, City and State"
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/composables/usePickupFilterContext.ts#createAddressFilterContext
     check:
       kind: manual
       ref: Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
