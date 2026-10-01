@@ -31,6 +31,7 @@
 //   KB_SYNTHETIC=1 node scripts/kb/bench/verdict-bench.mjs --base <dir> [--decider floor-1]
 //                  [--split dev,calibration] [--open-test] [--set <file>] [--rows] [--json]
 
+import '../../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
 import { appendFile, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

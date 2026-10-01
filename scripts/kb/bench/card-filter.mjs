@@ -14,6 +14,7 @@
 //
 //   KB_SYNTHETIC=1 node scripts/kb/bench/card-filter.mjs --base <dir> [--list] [--json]
 
+import '../../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
