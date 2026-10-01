@@ -36,29 +36,32 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parse as parseYaml } from "yaml";
 
 // fileURLToPath, not .pathname — a space in the repo path URL-encodes to %20 and existsSync fails SILENTLY,
 // which reads as "no maps to check" and passes. Measured on this repo (".../My Projects/...").
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DOMAIN_DIR = join(ROOT, ".claude", "knowledge", "domain");
-const BL_ORACLE = join(ROOT, ".claude", "knowledge", "oracles", "business-logic.md");
+const BL_DIR = join(ROOT, ".claude", "knowledge", "oracles", "bl");
 const REQUIRED = ["domain_slug", "generated", "rev", "stale_after_days", "sources"];
 const json = process.argv.includes("--json");
 
 /**
- * Valid slugs come from the oracle itself, never a transcribed list (GOLDEN RULE).
+ * Valid slugs come from the oracle itself, never a transcribed list (GOLDEN RULE): the `prefixes` of every
+ * `bl/<slug>.yaml` domain record (BL 2.0 M4 — no script reads the generated business-logic.md).
  *
- * This reads the DOMAIN HEADINGS, so a domain declared with zero invariants is valid here — which
- * is correct and is the behaviour `bl:extract --has-domain` was changed to match on 2026-09-23
- * (`--list` had been built from invariants instead, so an empty domain was invisible to it and read
- * as an unknown slug; it STOPped a legitimate `/qa-domain-map ucp --refresh`). Two copies of "what
- * is a domain heading" now exist — this regex and `DOMAIN_RE` in `scripts/knowledge/lint-bl.ts` —
- * because this gate runs under plain node and cannot import the `.ts`. Change both together.
+ * A domain declared with zero rules is valid here — the behaviour `bl:extract --has-domain` was changed to
+ * match on 2026-09-23 (`--list` had been built from invariants instead, so an empty domain was invisible to
+ * it and read as an unknown slug; it STOPped a legitimate `/qa-domain-map ucp --refresh`). This gate runs
+ * under plain node and cannot import `scripts/knowledge/bl-yaml.ts`, so it reads the records itself.
  */
 function validSlugs() {
-  if (!existsSync(BL_ORACLE)) return null; // unreadable source ⇒ skip DOMAIN-005 rather than guess
-  const text = readFileSync(BL_ORACLE, "utf8");
-  return new Set([...text.matchAll(/^#+\s*Domain\s+\d+[a-z]?:.*\(BL-([A-Z0-9]+)\)/gim)].map((m) => m[1].toLowerCase()));
+  if (!existsSync(BL_DIR)) return null; // unreadable source ⇒ skip DOMAIN-005 rather than guess
+  const out = new Set();
+  for (const f of readdirSync(BL_DIR).filter((x) => x.endsWith(".yaml") && !x.startsWith("_"))) {
+    for (const p of parseYaml(readFileSync(join(BL_DIR, f), "utf8"))?.domain?.prefixes ?? []) out.add(p.replace(/^BL-/, "").toLowerCase());
+  }
+  return out;
 }
 
 function frontmatter(text) {
