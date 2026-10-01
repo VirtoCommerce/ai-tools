@@ -10,12 +10,12 @@ Hardcoded values rot. Catalogs get re-seeded, orgs get re-created, prices change
 
 The project ships a centralized fixture system at [`test-data/`](../../../test-data) with a registry of named aliases. Collections should source values from this registry — directly when seeding via the Postman MCP, indirectly via env vars or pre-request scripts otherwise.
 
-**Memory entries to consult:**
-- `feedback_no_test_data.md` — Use `test-data/` for test data; avoid hardcoding in CSV `Test_Data` columns
-- `feedback_flexible_test_cases.md` — No hardcoded IDs/SKUs/emails/prices/order-numbers/paths; resolve at runtime
-- `feedback_env_resilience.md` — Never assert exact prices, section titles, or URL path segments tied to catalog data
-- `reference_test_data_resolver.md` — `@td(ALIAS.field)` resolver is real: `scripts/lib/test-data-resolver.ts` + registry `test-data/aliases.json`
-- `reference_address_data_conventions.md` — Address data conventions (ISO-3 country codes, region rules)
+**Rules that apply:**
+- Use `test-data/` for test data; avoid hardcoding in CSV `Test_Data` columns
+- No hardcoded IDs/SKUs/emails/prices/order-numbers/paths; resolve at runtime
+- Never assert exact prices, section titles, or URL path segments tied to catalog data
+- `@td(ALIAS.field)` resolver is real: `scripts/lib/test-data-resolver.ts` + registry `test-data/aliases.json`
+- Address data conventions (ISO-3 country codes, region rules)
 
 ---
 
@@ -129,12 +129,9 @@ Most resilient — use the seeding helpers (e.g., `/qa-seed-data` skill) to crea
 
 Two facts about VC catalog data that bite collection authors:
 
-1. **Storefront search/PDP requires the B2B virtual catalog root.** Direct GraphQL `products` queries must filter by `category.subtree:<B2B_VIRTUAL_CATALOG_ID>`. The active root ID **moves over time** — re-verify before hardcoding.
-   - As of 2026-04-30 the active ID is `9238c387-d779-40cb-b27d-5496a670a924`.
-   - Cross-check via `test-data/aliases.json` BOPIS entry's `testProductCatalogId` field, or live `categories(storeId:"B2B-store", first:1)` query.
+1. **Storefront search/PDP requires the B2B virtual catalog root.** Direct GraphQL `products` queries must filter by `category.subtree:@td(VIRTUAL_CATALOG_B2B.id)`. The root **moves over time** and differs per environment, so never write the ID itself — the alias resolves it (`test-data/aliases.json`, overridden per env by `aliases.<TEST_ENV>.json`). Recipe: `.claude/knowledge/execution/live-discovery.md` §Recipe 1 — pin the virtual-catalog root, then query products under it.
 2. **Products seeded into the physical catalog return 404 on storefront** until linked into the B2B virtual catalog. Symptom looks like an indexer issue but it isn't — the product just hasn't been linked yet.
 
-Memory: `feedback_storefront_virtual_catalog_link.md`, `feedback_graphql_products_filter.md`.
 
 ---
 
@@ -161,4 +158,3 @@ Use [`test-data/addresses/`](../../../test-data/addresses) fixtures rather than 
 | Main storefront user | `.env` `USER_EMAIL` / `USER_PASSWORD` | `Password1!` |
 | Per-agent slot 1/2/3 | [`test-data/users/agent-user-pool.csv`](../../../test-data/users/agent-user-pool.csv) | `{{AGENT_SLOT1_PASSWORD}}` / `{{AGENT_SLOT2_PASSWORD}}` / `{{AGENT_SLOT3_PASSWORD}}` (from `.env.local`) |
 
-Memory: `user_test_accounts.md`, `feedback_agents_read_env_creds.md`.

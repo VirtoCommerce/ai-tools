@@ -325,7 +325,7 @@ Ensures all referenced data is valid and resolvable.
 
 ### DV-013: Hardcoded entity ID / GUID `[High]`
 - **Detection:** Steps, Assertions, Preconditions, or Test_Data contain a UUID/GUID literal (`[0-9a-f]{8}-[0-9a-f]{4}-...`) or numeric entity ID that refers to a product, catalog, category, user, organization, or order. Exception: documented **environment constants** in `knowledge/domain/catalog.md` or `knowledge/domain/store-settings.md` (e.g., virtual-catalog root `fc596540...`, store ID `B2B-store`) are allowed because they are stable across deploys.
-- **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Root cause from the Golden Rule memory: #1 source of false failures.
+- **Impact:** QA environment is re-seeded frequently; hardcoded GUIDs become "not found" → false BLOCKED/FAIL. Per the GOLDEN RULE (`.claude/rules/test-data.md`): #1 source of false failures.
 - **Bad:** `productId: 58b856c7-da60-460f-afe0-3b2e7a03a2d6`
 - **Good:** "any in-stock product from B2B virtual catalog (`category.subtree:fc596540...`) — resolve first card on category page at runtime" OR `@td(PRODUCT_BIKE.id)` via the `@td()` resolver.
 - **Enforced by:** `npx tsx scripts/test-data/validate-td-refs.ts` **fails the build** on any bare UUID/32-hex literal not wrapped in `@td()`/`{{VAR}}` (sentinel `00000000-…` and documented env constants allowlisted; `--warn-only` downgrades to a warning for WIP). The same GUID arriving one indirection away — via a fixture column — is **DV-020**.
@@ -429,7 +429,7 @@ Validates business logic traceability and edge case coverage.
 - **Impact:** No traceability to why this test exists — harder to assess regression impact.
 
 ### BL-002: Invalid BL-* reference `[Medium]`
-- **Detection:** `Business_Rule` contains a BL-* ID that doesn't exist in `business-logic.md`.
+- **Detection:** `Business_Rule` contains a BL-* ID that doesn't exist (`npm run bl:extract -- --id <ID>` exits 2).
 - **Impact:** False traceability — the test claims to cover a rule that doesn't exist.
 
 ### BL-003: Missing ECL-* for high-risk domain `[Medium]`
@@ -437,7 +437,7 @@ Validates business logic traceability and edge case coverage.
 - **Impact:** Edge cases are most valuable in high-risk areas.
 
 ### BL-004: Uncovered BL-* invariant `[Medium]`
-- **Detection:** A BL-* invariant exists for this domain in `business-logic.md` but no test case in the suite references it.
+- **Detection:** A BL-* invariant exists for this domain (`bl:extract -- --domain <d>`) but no test case in the suite references it.
 - **Output:** List as coverage gap in the report.
 
 ### BL-005: Uncovered ECL-* pattern `[Medium]`
@@ -525,8 +525,11 @@ Requires browser. Delegated to `qa-testing-expert` agent via `playwright-firefox
 ### ENV-008: Asserted behavior not implemented on live build `[Critical]`
 - **Detection:** `qa-testing-expert` reaches the asserted state and the **behavior the assertion claims does not occur** — the validation doesn't fire, the message/element the assertion expects never appears, the computed value differs, the state change the case asserts never happens. The step reaches the page fine (so it is not ENV-002/003); the *expectation itself* was invented, not implemented.
 - **Applies to:** any assertion tagged `{HYPOTHESIS}` or `{SPEC}` that could not be confirmed — this is the live grounding check for a new feature.
-- **Impact:** The assertion is a hallucination — it would either always FAIL (false bug) or trivially "PASS" against nothing. Left ungrounded, it corrupts regression signal.
-- **Action:** Do NOT upgrade the tag to `{OBSERVED}`. Under `--fix`, either (a) rewrite the assertion to match the observed real behavior and tag it `{OBSERVED}`, or (b) drop it and flag the gap. The case cannot promote while any assertion remains ungrounded (Dimension 10 / GRD-001).
+- **Impact:** Either the build is wrong (a bug the case just caught) or the expectation was invented. Which one is decided by the assertion's provenance, never by the wish for a green run.
+- **Action:** Do NOT upgrade the tag to `{OBSERVED}`. What `--fix` may do depends on where the expectation came from ([`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §2):
+  - **`{SPEC}`, `{DOC}`, `{BL}`, or a `Catches:` bug key** — the expectation has a human source, so the mismatch is a **bug candidate**. Keep the assertion, keep the case red, and route it down the defect path (`/qa-triage-results`, `/qa-defect`). **Never rewrite it to the observed behaviour.**
+  - **`{HYPOTHESIS}` only** (an agent's guess, no human source) — either rewrite it to the observed behaviour, tag it `{OBSERVED}` and record `Corrected: <date> hypothesis → observed` in `References`, or drop it and flag the gap.
+  The case cannot promote while any assertion remains ungrounded (Dimension 10 / GRD-001).
 - **Evidence:** Screenshot of the actual state + the assertion text that was refuted.
 
 ---

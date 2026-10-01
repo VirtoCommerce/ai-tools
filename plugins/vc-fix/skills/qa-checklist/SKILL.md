@@ -1,7 +1,7 @@
 ---
 name: qa-checklist
 description: "[Testing] Generate test case writing checklists for any domain, feature, or regression area. Uses 63 built-in domain checklists (33 storefront + 29 backend/admin + 1 GraphQL) + custom creation."
-argument-hint: "domain name | feature | VCST-XXXX | new <domain> | admin <module>"
+argument-hint: "domain name | feature | <ticket-key> | new <domain> | admin <module>"
 disable-model-invocation: true
 
 ---
@@ -48,7 +48,7 @@ already answer, and it must read them rather than re-derive them from the UI:
 
 | Oracle | Answers | How it lands in a checklist |
 |---|---|---|
-| [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) (204 `BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
+| [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) (`BL-*`) | *what the correct outcome IS* | Any item asserting an outcome cites the invariant it restates: `- [ ] … (BL-PRICE-001)` |
 | [`knowledge/oracles/e-commerce-edge-cases-library.md`](../../knowledge/oracles/e-commerce-edge-cases-library.md) (54 `ECL-<n>.<m>`) | *which boundary/failure shapes exist for this domain* | Edge-case and error-path items are derived FROM a section and cite it: `- [ ] … (ECL-1.3)` |
 
 **Why this is mandatory and not advisory.** An item written only from UI exploration encodes what the

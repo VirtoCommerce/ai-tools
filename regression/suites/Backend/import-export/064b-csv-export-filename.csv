@@ -50,3 +50,49 @@ CSVIO-027,A format specifier on the random parameter still renders exactly six d
 [API] reuse the auth, catalog-discovery, mapping-configuration, export and polling sequence unchanged (state from CSVIO-019); capture downloadUrl","[FORMAT] the file name matches ^products_\d{6}\.csv$ — the specifier is ignored rather than fatal, because the token is passed to string.Format pre-formatted as a string {SPEC}
 [API] the notification reports errorCount=0, so a specifier on a non-IFormattable argument did not throw {SPEC}",[NETWORK] GET the downloadUrl returns HTTP 200 and a non-empty CSV {SPEC},"A FormatException means the token stopped being passed as a padded string — the design note in the ticket calls this out as the reason for the string, so a regression here reintroduces the 1-to-6-digit variability the padding removes.
 A name carrying the literal D6 means the parameter was rendered without being formatted at all.",Restore CatalogCsvImport.ExportFileNameTemplate to unset by saving a whitespace-only value — the platform normalises it to null and itHasValues returns to false.,VCST-5745; spec source: ExportFileNameHelperTests.GetFileName_RandomNumberWithFormatSpecifier_StillRendersSixDigits (deleted in PR #145 commit 5581fd1),"Automated"
+CSVIO-028,"CSV Import — Two Overlapping Product Imports Submitted Seconds Apart: The Later-Submitted File's Value Wins, Not The Later-Finishing One's (VCST-5189)",CSV Import > Concurrency,High,,,"Admin logged in; a catalog exists; the inventory module and one fulfillment center are present. Two files are prepared in a temporary folder (never committed): FILE_A — the 'All Data' product format with at least 90 rows (an export of an existing category, re-imported unchanged) PLUS the target SKU as its LAST row with Quantity 0; FILE_B — one row, the same SKU, Quantity 100.
+Breaking condition (concurrency): the catalog import jobs run in parallel with no per-product synchronization, so the final inventory is decided by which job FINISHES last rather than which was SUBMITTED last — the larger file submitted first overwrote the smaller one submitted 1.2 s later (both reported success, 2 of 2 runs).
+The race must actually be provoked. The target product is created by this case with a baseline stock of 50, distinct from both file values, so each write is observable. If FILE_B does not finish before FILE_A (the overwrite order was not reproduced), the case is BLOCKED:RACE_NOT_PROVOKED — never PASS.",admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}}; target_code=AGENT-TEST-5189-<random-data>; baseline_qty=50; file_a_qty=0; file_b_qty=100,"[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] via REST create the standalone product target_code with TrackInventory on
+[SETUP] set its inventory in one fulfillment center to 50 with PUT /api/inventory/plenty
+[SETUP] build FILE_A and FILE_B as described in Preconditions
+[NAV] open 'Import' in the 'Catalog' menu
+[ACT] choose 'VirtoCommerce CSV import'
+[WAIT] the import wizard renders
+[ACT] upload FILE_A
+[ACT] click 'Import'
+[WAIT] the import notification appears
+[CAPTURE] the submit time as T_A
+[ACT] upload FILE_B in a second import run, 1 to 2 seconds after FILE_A
+[ACT] click 'Import'
+[WAIT] the second import notification appears
+[CAPTURE] the submit time as T_B
+[WAIT] both import notifications reach a final state
+[CAPTURE] each completion time as DONE_A and DONE_B
+[HTTP] POST {{BACK_URL}}/api/inventory/search with body {""productIds"":[""<target id>""],""take"":10}
+[CAPTURE] the in-stock quantity of the target product in that response, and in the product's Fulfillment Centers widget","[REL] T_B is later than T_A and DONE_B is earlier than DONE_A, otherwise BLOCKED:RACE_NOT_PROVOKED {SPEC} (VCST-5189)
+[STATE] the final in-stock quantity of the target product equals 100 — the value of the file submitted LAST {SPEC} (VCST-5189)
+[STATE] the final quantity is neither 0 (FILE_A's value, the later-finishing file) nor the baseline 50 {SPEC} (VCST-5189)
+[STATE] both imports report a final state, and neither import's completion hides the other's write silently {SPEC} (VCST-5189)",[API] the Inventory REST read agrees with the product's Fulfillment Centers widget; [STOREFRONT] after reindex the product shows In stock,final quantity 0 (the later-finishing import won); both imports 'completed' yet the stored value is the earlier submission's,Delete the AGENT-TEST target product (DELETE /api/catalog/products?ids=<id>) and remove its inventory row; delete the temporary files,VCST-5189 · Archetype:RACE · Technique:ST · Catches:VCST-5189 · Catalog CSV import; Hangfire parallel jobs; relates VP-9179,Draft
+CSVIO-029,CSV Export — A Selected Product Whose Image Url Is An Absolute External URL Does Not Crash The Whole Export (VCST-5278),CSV Export > Image Url Variants,Medium,BL-IMPEX-002,,"Admin logged in. Breaking condition (entity state): the export's LoadImages skip-guard tested RelativeUrl but streamed image.Url, so an ABSOLUTE foreign Url was not skipped, the file-system provider prefixed the local assets root and threw FileNotFound, and the whole export ended with HTTP 500 — for every product in the selection, not only the offending one.
+Two products are created by this case so the verdicts can be compared: IMG_PRODUCT carries an image whose Url is absolute and external (https://example.test/AGENT-TEST-5278.png — a reserved host that no provider serves), CTRL_PRODUCT carries no image. Both are exported in ONE run, because the defect is that one bad row spoils the rest.",img_code=AGENT-TEST-5278-<random-data>; ctrl_code=AGENT-TEST-5278C-<random-data>; image_url=https://example.test/AGENT-TEST-5278.png (DV-002-OK: deliberate reserved-TLD origin that no provider serves),"[NAV] {{BACK_URL}}
+[ACT] fill 'User name': {{ADMIN_EMAIL}}
+[ACT] fill 'Password': {{ADMIN_PASSWORD}}
+[ACT] click 'Login'
+[WAIT] Admin SPA main menu loads
+[SETUP] via REST POST /api/catalog/products create IMG_PRODUCT with code img_code and images:[{url:<image_url>}]
+[SETUP] via REST POST /api/catalog/products create CTRL_PRODUCT with code ctrl_code and no images, in the same category
+[NAV] open the category in the 'Catalog' menu
+[WAIT] the product list renders
+[ACT] select both products in the grid
+[ACT] click 'Export'
+[WAIT] the export notification reaches a final state
+[CAPTURE] the notification state, any error text and the produced file
+[ACT] open the produced CSV
+[CAPTURE] the product codes found in its rows","[STATE] the export notification ends Completed, with no 500 and no 'Could not find a part of the path' text {SPEC} (VCST-5278)
+[REL] the CSV contains exactly one row for img_code and exactly one row for ctrl_code — the offending image does not drop its own row or its neighbour's {SPEC} (VCST-5278)
+[STATE] the exported file is non-empty {SPEC} (VCST-5278)",[API] GET /api/catalog/products/<IMG_PRODUCT id> still returns the image Url unchanged — the export neither rewrote nor lost it,HTTP 500 or a failed export notification; FileNotFound path containing 'https:/' in the error; either product missing from the CSV,Delete both AGENT-TEST products (DELETE /api/catalog/products?ids=...) and the downloaded file,VCST-5278 · Archetype:SILENT · Technique:EG · Catches:VCST-5278 · vc-module-catalog ProductExportPagedDataSource.LoadImages,Draft

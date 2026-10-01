@@ -27,7 +27,7 @@ Three agent teams for the Virto Commerce platform: **QA** (quality assurance), *
 | **qa-testing-expert** | opus | green | Interactive testing, Figma comparison, debugging |
 | **ui-ux-expert** | sonnet | pink | Storybook, WCAG 2.1 AA, design system |
 | **test-management-specialist** | sonnet | purple | Test planning, case writing, coverage tracking |
-| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators + unit tests (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
+| **test-data-engineer** | opus | teal | Authors seeders / fixtures / `@td()` aliases / validators — unit tests only temporary (`/qa-generate-data` + `/qa-seed-data`); write-capable in this repo only, no browser |
 | **regression-orchestrator** | sonnet | orange | Parallel regression + smoke mode, retries, reports |
 | **test-runner-agent** | sonnet | orange | Parameterized suite runner (used by regression orchestrator) |
 
@@ -201,12 +201,12 @@ Runs all 4 agents in pipeline: analyzer+api in parallel, then story-writer, then
 
 QA agents use a **four-layer prompt architecture**:
 
-1. **Business Logic** (invariants) — what the correct business outcome is → `knowledge/oracles/business-logic.md`
+1. **Business Logic** (invariants) — what the correct business outcome is → `npm run bl:extract -- --domain <d>`
 2. **Domain Knowledge** (judgment) — what good implementation looks like
 3. **Skill Set** (technique) — how to find what's broken
 4. **Design Decisions** (constraints) — tools and boundaries
 
-Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes `business-logic.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
+Shared knowledge files in `knowledge/` (28 files) — full annotated list in `.claude/rules/agents.md`. Includes the BL oracle (`oracles/bl/`), `graphql-schema.md`, `graphql-test-cases-runner.md`, `live-discovery.md`, `vc-module-architecture.md`, and the BA documentation style guide `virto-doc-style.md` (four audience skeletons: Customer / Admin / Developer / Sales).
 
 ---
 

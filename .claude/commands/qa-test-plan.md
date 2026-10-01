@@ -205,7 +205,7 @@ Input:
 
 References (read these):
   - config/test-suites.json (suite definitions + selection groups)
-  - knowledge/oracles/business-logic.md (BL-* invariants per domain)
+  - npm run bl:extract -- --domain <d> (BL-* invariants per domain)
   - knowledge/oracles/e-commerce-edge-cases-library.md (ECL-* patterns)
   - knowledge/execution/module-suite-map.md (module → suite mapping)
   - skills/qa-coverage-gap/feature-domain-map.md
@@ -360,7 +360,7 @@ Next: review the plan, then either:
 - The sprint window for PRs is the **JIRA sprint dates**, not arbitrary dates. Honor `--from` / `--to` only when explicitly given.
 - **Bugs and Stories only** drive scope (Section 2.1 / 2.2). Tasks/TechDebt go to Section 2.3 only if they touch UI selectors or data-test-ids (test-impact). Otherwise → Section 2.4 Out of Scope.
 - **Group risk by domain**, not by ticket. The plan stays readable.
-- **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver per `feedback_flexible_test_cases.md`.
+- **Never assert exact prices, IDs, SKUs, order numbers** in the plan — refer to test data files / `@td(ALIAS.field)` resolver.
 - **Read URLs from `config.js` / `.env`** — never hardcode `vcst-qa.virtocommerce.com` in the plan body; use `{FRONT_URL}` / `{BACK_URL}`.
 - **No fabricated suite IDs.** Every suite in Section 5.1 must exist in `config/test-suites.json`. If a domain has no existing suite, list it in 5.2 (Coverage Gap) and propose a target suite.
 - **Charters are DERIVED, never invented.** Section 5.3 is a filter over Sections 3 + 5.2 per `.claude/skills/qa-sbtm/sprint-charter-selection.md` — never a domain absent from §3, never a suite absent from §5.1. Same discipline as the no-fabricated-suite-IDs rule above.
@@ -368,7 +368,7 @@ Next: review the plan, then either:
 - **Cap Section 5.3 at 5 charters** and always write the "Not chartered (and why)" line. A charter nobody runs makes the plan look covered; a silently dropped Critical domain is indistinguishable from one correctly ruled out.
 - **A charter may run on any of the three lanes**, firefox included since 2026-09-08 (`.claude/rules/agents.md`, confirmed 6×). chrome or edge only.
 - **Split Section 5.1 by layer.** Section 5.1 (Suites Activated) is written as two sub-tables — `5.1.1 Frontend Suites` (`regression/suites/Frontend/`) and `5.1.2 Backend Suites` (`regression/suites/Backend/`) — classifying each suite by the layer directory its CSV lives under in `config/test-suites.json`, not by JIRA component. Watch the loyalty split (083/083b storefront → Frontend; 075/075b/075c → Backend) and any admin/GraphQL suites (050*, 0XX admin) → Backend. Preserve suite order within each sub-table and keep the module/sprint-trigger/priority columns unchanged.
-- **Honor the BL knowledge file** — when describing test approach for a ticket, reference applicable `BL-*` IDs from `business-logic.md` (read; do not edit). If a ticket implies a new invariant, note it as a candidate for the Phase 4c BL audit in a follow-up `/qa-test-lifecycle` run (or a standalone `/qa-review-bl`), not in this plan.
+- **Honor the BL knowledge file** — when describing test approach for a ticket, reference applicable `BL-*` IDs (`bl:extract -- --domain <d>`; do not edit). If a ticket implies a new invariant, note it as a candidate for the Phase 4c BL audit in a follow-up `/qa-test-lifecycle` run (or a standalone `/qa-review-bl`), not in this plan.
 - **Document status defaults to Draft.** Promote to "Approved" only after user review (manual edit).
 - **Companion summary.json must validate** — keys exactly as specified, no trailing commas.
 - Follow `.claude/templates/agent-dispatch.md` for the test-management-specialist delegation.

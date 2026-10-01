@@ -1,0 +1,125 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 19: White Labeling (BL-WL)"
+  prefixes:
+    - BL-WL
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+  intro: |-
+    Per-org / per-store branding resolved after sign-in by the White Labeling module's xAPI query
+    (`GetWhiteLabelingSettingsQueryHandler`). These supersede the WL-specific detail formerly carried by
+    `BL-B2B-006` (see the cross-reference there). Grounded in `vc-module-white-labeling` source + live
+    the environment verification (TLC-2026-07-02-2043).
+rules:
+  - id: BL-WL-001
+    title: Branding is org-context & post-auth; no enabled config → platform defaults
+    rule: White Labeling branding resolves from the signed-in user's organization context after authentication. `whiteLabelingSettings(organizationId, storeId)` returns `null` when neither an enabled org setting nor an enabled store setting exists; the storefront then shows platform/theme defaults — no crash, no partial branding.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: other
+        ref: PlatformUserGuide White Labeling overview; `GetWhiteLabelingSettingsQueryHandler.Handle` → `return null` when `OrganizationSetting == null && StoreSetting == null`.
+      - kind: doc
+        ref: platform/user-guide/docs/white-labeling/overview.md (published) — branding customized per logged-in organization, shown after signing in
+      - kind: ac
+        ref: VCST-899 (Done) — org employees see their branding after sign-in; other organizations' users get default branding
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#Handle
+    check:
+      kind: manual
+      ref: Query for an org+store with no enabled WL setting → null; storefront renders default logo/theme.
+    violation_signal: Error, blank header, or stale branding when no WL config exists.
+    status: ACTIVE
+  - id: BL-WL-002
+    title: Org & store settings merge per-field, org-preferred (NOT whole-object override)
+    rule: Org and store WL settings are merged **field by field**. For each of `logoUrl`, `secondaryLogoUrl`, `faviconUrl`, `themePresetName`, `footerLinkListName`, `mainMenuLinkListName`, the org value is used when non-empty, otherwise the store value. An org that sets only some fields inherits the store's remaining fields — it is not a whole-object override.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: other
+        ref: '`GetCombinedWhiteLabelingSetting()` — per-field ternaries `!IsNullOrEmpty(org.X) ? org.X : store.X` + `WhiteLabelingFlags` (HasLogo/HasSecondaryLogo/HasFavicon) picks. Refines the old BL-B2B-006 "override" wording.'
+      - kind: resolution
+        ref: VCST-4644 (Done) — fixed store-level WL not applying as fallback for organizations without their own WL config
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#GetCombinedWhiteLabelingSetting
+    check:
+      kind: manual
+      ref: "Org sets logo only; store sets theme + footer → merged result = org logo + store theme + store footer. (Live-verified 2026-07-02: Electronics org @ B2B-store → org's Watermelon theme replaces store Coffee while other fields merge.)"
+    violation_signal: Setting one org field blanks out store-provided fields; or org fields ignored entirely.
+    status: ACTIVE
+  - id: BL-WL-003
+    title: Two enable layers — store master switch (storefront) vs per-record IsEnabled (xAPI)
+    rule: |-
+      White Labeling has **two independent enable mechanisms** at different layers:
+        1. **Store master switch** — the store-level public setting `WhiteLabeling.WhiteLabelingEnabled` (Boolean, default `true`). The storefront (`useWhiteLabeling.ts`) reads it from the current store's module settings; when `false`, `fetchWhiteLabelingSettings()` returns early and **no** white labeling is fetched or applied — logo/favicon/footer/mainMenu/theme all fall back to theme (`settings_data.json`) defaults. Because it gates the whole store context, it **suppresses org branding too** (defaults shown regardless of org settings). This is the true master switch.
+        2. **Per-record `WhiteLabelingSetting.IsEnabled`** — the enabled flag on each org/store WL *record*, applied only when the master switch is ON. It controls only whether that record joins the xAPI per-field merge (`GetWhiteLabelingSettingsQueryHandler`, `IsEnabled=true` filter). A disabled/absent **store record** removes only the store's contribution; an enabled **org record** still resolves. This is NOT a master switch.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "`WhiteLabeling.WhiteLabelingEnabled` in `ModuleConstants.Settings.General` (`StoreLevelSettings`, `IsPublic`, default true) + storefront `useWhiteLabeling.ts` (`moduleEnabled` guard in `fetchWhiteLabelingSettings`/`setWhiteLabelingSettings`); record-level filter in `GetWhiteLabelingSettingsQueryHandler` (`IsEnabled=true`) with independent org/store per-field merge."
+      - kind: doc
+        ref: platform/user-guide/docs/white-labeling/settings.md (published) — store-specific setting enables/disables white labeling per store
+      - kind: doc
+        ref: platform/user-guide/docs/white-labeling/customizing-brand-elements.md (published) — WL toggled on per store or per company in the White labeling widget
+    scope:
+      code_ref: vc-frontend:client-app/core/composables/useWhiteLabeling.ts#fetchWhiteLabelingSettings
+    check:
+      kind: manual
+      ref: (1) Store setting `WhiteLabeling.WhiteLabelingEnabled=false` → org user sees theme defaults (no org logo/theme); set `true` → branding returns. (2) With the master switch ON, query an enabled org against a store that has no enabled store-WL record → org logo+theme still resolve (live-verified 2026-07-02, non-destructive).
+    violation_signal: Master switch OFF but WL still applied; OR an enabled org's branding suppressed merely because the store *record* is disabled/absent (confusing the two layers).
+    status: ACTIVE
+  - id: BL-WL-004
+    title: Link lists resolve by name; missing → empty array, no error; footer legacy fallback
+    rule: "`mainMenuLinks` resolves the link list named in `MainMenuLinkListName`; `footerLinks` resolves `FooterLinkListName`. A NULL/empty/non-existent name yields an **empty array**, HTTP 200, no `errors[]`. Footer (only) additionally falls back to a `footer-{organizationName}` list when `FooterLinkListName` is empty (backward compat); main menu has no such fallback. Querying without `mainMenuLinks` in the selection set stays valid (optional field)."
+    priority: P2-ux
+    trust: INFERRED
+    source:
+      - kind: other
+        ref: "`AddMainMenuLinksAsync()` / `AddFooterLinksAsync()` (footer `footer-{organization.Name}` branch); `ExpWhiteLabelingSetting` lists default to `[]`."
+      - kind: resolution
+        ref: VCST-4645 (Done) — fixed org-level main-menu/footer link lists not applied for existing organizations
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.ExperienceApi/Queries/GetWhiteLabelingSettingsQueryHandler.cs#AddFooterLinksAsync
+    check:
+      kind: manual
+      ref: "Org with NULL MainMenuLinkListName → `mainMenuLinks: []`, no error; org with empty FooterLinkListName but a `footer-<orgname>` list present → footer resolves."
+    violation_signal: Error/500 on missing list; main-menu resolving a `main-menu-{org}` fallback that does not exist in code.
+    status: ACTIVE
+  - id: BL-WL-005
+    title: A WL setting binds to exactly one of Store XOR Organization
+    rule: Each `WhiteLabelingSetting` references exactly one of Store or Organization — never both, never neither. The Admin blade rejects both-set and neither-set, and blocks duplicate store/org bindings.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "`en.WhiteLabeling.json` errors `store-and-organization-set` / `store-or-organization-must-be-set` / `duplicate-store-or-organization`."
+      - kind: ac
+        ref: "VCST-4657 (Done) — WL save validation: exactly one of StoreId/OrganizationId, no binding change on update, duplicates rejected (400)"
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.Data/Validation/WhiteLabelingSettingValidator.cs
+    check:
+      kind: manual
+      ref: Admin WL blade with both Store & Org set → "Both Store and Organization set" error; neither → "Store or Organization must be set"; a duplicate store/org → "Duplicate Store or Organization".
+    violation_signal: A setting saved with both or neither binding; duplicate bindings persisted.
+    status: ACTIVE
+  - id: BL-WL-006
+    title: Distinct allowed upload types — logo vs favicon
+    rule: The **Logo** widget accepts **PNG / GIF / SVG**; the **Favicon** widget accepts **PNG / JPG / WEBP**. Other extensions are rejected with a "Filetype error" dialog. The sets are distinct — JPG/WEBP are favicon-only, GIF/SVG are logo-only.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "`en.WhiteLabeling.json` — logo hint/filter (PNG/GIF/SVG) + favicon hint/filter (PNG/JPG/WEBP). Suite 067 WL-003/004/005."
+      - kind: doc
+        ref: platform/deployment-on-cloud/docs/store-branding.md (published) — logos may be PNG, GIF or SVG; favicons PNG, JPEG or WEBP
+      - kind: resolution
+        ref: VCST-2840 (Done) — fixed non-localizable error message shown for incorrect WL file format
+    scope:
+      code_ref: vc-module-white-labeling:src/VirtoCommerce.WhiteLabeling.Web/Scripts/blades/white-labeling-logo.js
+    check:
+      kind: manual
+      ref: Upload `.gif` logo → accepted; `.jpg` logo → rejected ("Only PNG, GIF or SVG files are allowed"); `.webp` favicon → accepted; `.svg` favicon → rejected ("Only PNG, JPG, or WEBP files are allowed").
+    violation_signal: Logo widget accepts JPG/WEBP; favicon widget accepts GIF/SVG; no filetype-error dialog on a disallowed extension.
+    status: ACTIVE

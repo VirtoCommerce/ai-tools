@@ -76,6 +76,10 @@ jobs:
         run: npm run test:roi-check -- --base "origin/${{ github.base_ref }}"
       - name: bl:lint / ecl:lint — oracle citation integrity
         run: npm run bl:lint && npm run ecl:lint
+      # BL 2.0: business-logic.md and its vc-fix plugin copy are generated from bl/*.yaml; this fails a hand edit
+      # to it, a schema-invalid record, an unlisted domain file, a duplicate id or an agent not on the roster.
+      - name: bl:convert:check — business-logic.md is the render of bl/*.yaml
+        run: npm run bl:convert:check
       # Test Mind Map + Test Data Model (docs/decisions/test-mind-map-and-data-model.md): schema, graph,
       # reference and Behavior:/DataProfile: stamp integrity. On a PR the stable-id check (TM-030 — a
       # node or requirement id may never disappear) diffs against the base fetched above; on push it

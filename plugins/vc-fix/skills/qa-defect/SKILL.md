@@ -1,7 +1,7 @@
 ---
 name: qa-defect
 description: "[QA Method] Defect management lifecycle: JIRA Bug Workflow, triage, classification, report validation, verification protocol, defect metrics."
-argument-hint: "triage VCST-XXXX | verify VCST-XXXX | classify | workflow | metrics"
+argument-hint: "triage <ticket-key> | verify <ticket-key> | classify | workflow | metrics"
 disable-model-invocation: true
 ---
 
@@ -25,8 +25,8 @@ Manages the full defect lifecycle from detection through triage, classification,
 1. Load `defect-lifecycle-workflow.md` from this skill folder.
 2. Determine context from argument:
    - No argument → full lifecycle overview with JIRA workflow diagram
-   - `triage VCST-XXXX` → triage workflow
-   - `verify VCST-XXXX` → fix verification protocol
+   - `triage <ticket-key>` → triage workflow
+   - `verify <ticket-key>` → fix verification protocol
    - `classify` → defect type taxonomy + root cause categories
    - `workflow` → JIRA Bug Workflow diagram + transition table
    - `metrics` → defect process health indicators

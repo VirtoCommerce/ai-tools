@@ -24,6 +24,8 @@ Call `/vc-fix:qa-bug "<one-line defect>"` once per product bug. Give it, **as fi
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
+- `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
+  records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
 `qa-bug` then does what this flow must not do by hand: duplicate check, 4-layer validation, source and
 log research, owning-repo resolution (the `/qa-fix` handoff block), and the report file. **Cite the
@@ -31,7 +33,7 @@ path `qa-bug` returns.** Never move or rewrite its report. **Its tracker-ticket 
 bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 **`vc-fix` not installed** (`/vc-fix:qa-bug` unavailable) ⇒ STOP at this step. Tell the user to run
-`/plugin install vc-fix@vc-tools` and keep the drafts in chat. Never fall back to a hand-written report.
+`/plugin install vc-fix@ai-tools` and keep the drafts in chat. Never fall back to a hand-written report.
 
 ## Verdict
 
@@ -112,7 +114,8 @@ private page reaches no one. Never describe the page as private in the comment o
 
 Ask once: *"Post the verdict comment to <TICKET>?"* On yes:
 - post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`),
-  then write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends it
+  with `--artifact "<build.deployed>"`, then write the returned id into `summary.json.tracker.comment_id` —
+  a same-build re-run amends it; a re-run on a NEW build posts a new comment (`tracker-ops.md` §0 rule 5)
 - it is **one** comment, amended and never appended to, per
   [`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0
 - screenshots go **inline**, verified from `renderedBody` ([`../../rules/reports.md`](../../rules/reports.md) §5.0)

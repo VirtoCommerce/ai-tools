@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (2026-07-22)
 - **Scope:** the vc-fix self-diagnostics *upstream contribution* path only
-  (`/vc-self-check deliver` → the PUBLIC `VirtoCommerce/vc-mcp-testing-module`). Local
+  (`/vc-self-check deliver` → the PUBLIC `VirtoCommerce/ai-tools`). Local
   capture (`hooks/session-telemetry.mjs`) and the local `DIAG-*.md` are unaffected.
 
 ## Context

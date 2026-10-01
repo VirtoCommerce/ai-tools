@@ -17,7 +17,7 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
 > human reviewer's time at G7; a REQUEST_CHANGES just costs one revise loop. **When in doubt, REQUEST_CHANGES.**
 
 ## Inputs
-- The checkout path (`.fix-workspace/vc-frontend/`) on branch `claude/qa-autofix/VCST-XXXX`. Read the
+- The checkout path (`.fix-workspace/vc-frontend/`) on branch `claude/qa-autofix/<ticket-key>`. Read the
   diff with `git diff <base>...HEAD` (Bash) and inspect changed files.
 - The ticket + `/qa-bug` report (STR, RCA, owning layer) and the agent's `ROOT_CAUSE`/`CONFIDENCE`.
 
@@ -53,7 +53,7 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    REQUEST_CHANGES.
 4a. **Comment discipline** — comments explain non-obvious *why*, never *what*. REQUEST_CHANGES on: a
    comment that restates the code beside it; a multi-line block narrating the investigation, the root
-   cause, or a source path/line that belongs in the PR body or commit message; `// added for VCST-XXXX`
+   cause, or a source path/line that belongs in the PR body or commit message; `// added for <ticket-key>`
    / changelog-style notes; re-commented untouched code; JSDoc/TSDoc on private test helpers that adds
    nothing over the member name. **Rule of thumb: a one-line production change carries at most a
    one-line comment.** Judge density against the surrounding file, not in the abstract — if the diff is

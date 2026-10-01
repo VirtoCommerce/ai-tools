@@ -31,7 +31,7 @@ excludes: >
 # Push Messages — domain map
 
 > Refresh with `/qa-domain-map push`. This file answers **what the feature is and where its surfaces are**. It does **not** carry
-> behavioural rules — those are `BL-*` in `oracles/business-logic.md` (Domain 27, deliberately empty) — and it can **never ground an
+> behavioural rules — those are `BL-*` in the BL oracle (domain `push`, deliberately empty) — and it can **never ground an
 > assertion as `{DOC}`**. Pointer index plus surface inventory.
 
 **Every claim carries a verdict.** `CONFIRMED` = observed live or read at source this pass · `DRIFT` = prior art says otherwise and prior art

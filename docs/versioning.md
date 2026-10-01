@@ -80,7 +80,7 @@ The plugin auto-updates through the Claude Code plugin manager. To bound upgrade
 
 ## Pre-v1.0 Status
 
-**Currently:** developed on `main` and distributed via the `vc-tools` marketplace; which plugins it lists, and at which versions, is [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) and each plugin's own `plugin.json`. `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
+**Currently:** developed on `main` and distributed via the `ai-tools` marketplace (formerly `vc-tools`); which plugins it lists, and at which versions, is [`.claude-plugin/marketplace.json`](../.claude-plugin/marketplace.json) and each plugin's own `plugin.json`. `vc-qa`'s fuller content lives in this repo under `.claude/` as project-scoped components and isn't marketplace-listed. Nothing is frozen yet. Tier A artifacts are still being finalized — they get the v1.0 freeze stamp once the standardization contract is locked.
 
 Until then: any consumer of this repo should expect frequent changes and pin to a specific commit, not a branch tip.
 

@@ -73,7 +73,7 @@ excludes: |
 
 > Refresh with `/qa-domain-map loy`. This file answers **what the feature is and where its
 > surfaces are**. It does **not** carry behavioural rules — those are `BL-LOY-*` in
-> `oracles/business-logic.md` (19 invariants, cited by id below, never restated) — and it can
+> the BL oracle (`npm run bl:extract -- --domain loy`; cited by id below, never restated) — and it can
 > **never ground an assertion as `{DOC}`**. It is a pointer index plus a surface inventory: it
 > tells you *where to look* and *what exists*, never *what correct looks like*.
 

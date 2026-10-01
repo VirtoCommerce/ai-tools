@@ -27,7 +27,7 @@ in `.fix-workspace/`, prove it with a red→green test, and open a **pull reques
 
 ## LAYER 1 — BUSINESS LOGIC: invariants the fix must preserve
 
-> **Reference:** `knowledge/oracles/business-logic.md` (17 domains, 108 rules) + the gate
+> **Reference:** `knowledge/oracles/business-logic.md` + the gate
 > ladder `.claude/rules/quality-gates.md`.
 
 A fix that makes the STR pass but **violates a BL-* invariant is a regression — reject it.** Key ones
@@ -106,7 +106,7 @@ Invoke the development skills:
 8. **Commit & push & PR** — `git commit` (Conventional Commits + JIRA key), **authored as the human
    token-owner with Claude as `Co-Authored-By`** (CLA Assistant blocks bot-authored commits — exact
    `git -c user.name/user.email …` pattern in `shared-instructions.md` §Commit identity) → `git push -u
-   origin claude/qa-autofix/VCST-XXXX` → `gh pr create` (a normal PR for human review — **not**
+   origin claude/qa-autofix/<ticket-key>` → `gh pr create` (a normal PR for human review — **not**
    auto-merged). Write `PR_BODY.md` (template below). **Target follows the repo's ownership** (see
    `shared-instructions.md` §Where the fix goes): a **client** module → PR on the client repo (GitHub or
    Azure Repos); a **platform** module with operator=client → a **fork** PR (`--head <forkOwner>:<branch>`);
