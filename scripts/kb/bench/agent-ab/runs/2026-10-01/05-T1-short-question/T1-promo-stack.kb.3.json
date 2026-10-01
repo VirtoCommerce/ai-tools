@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 3,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\2107ac42",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 2,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 1,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 3,
+  "durationSec": 30,
+  "costUsd": 0.099219,
+  "tokens": {
+    "input": 6,
+    "output": 2216,
+    "cacheWrite": 11022,
+    "cacheRead": 164795
+  },
+  "wallSec": 33,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly states only the 15% reward (241.9455) applies while the $50 reward is discarded, correctly identifies Marketing.Promotion.CombinePolicy (default BestReward) as the deciding setting, explicitly denies isExclusive/priority as deciding factors, and notes CombineStackable would be needed for both to apply, with claims attributed to a specific well-attested KB record and the default setting value."
+  },
+  "final": "Проверил через kb_ask — нашлась запись, напрямую описывающая этот же сценарий (та же сумма подытога 1612.97, та же пара промо «15%» / «$50»), с «well attested» статусом (6 подтверждений, 3 независимых сессии, 2026-09-15/16/25), поэтому по правилу перепроверять живьём не требуется.\n\n## FINAL ANSWER\n\n**Корзина получит только одну строку скидки — 15% off the cart subtotal.** Промо «$50 off the cart subtotal» не применится вообще (не частично, а полностью отброшена).\n\n- Сумма скидки: 15% × $1,612.97 = **$241.9455** (≈ $241.95 в итоге корзины).\n- Промо «$50» теряет сравнение (50.00 < 241.9455) и в `result.Rewards` не попадает.\n\n**Какая настройка это решает:** `Marketing.Promotion.CombinePolicy` (Settings → Marketing → General, «Selected policy of using multiple active promotions»). На этом стенде значение — **BestReward** (это же дефолт платформы). При `BestReward` модуль маркетинга использует `BestRewardPromotionPolicy`, которая оставляет **не более одной** `CartSubtotalReward` на всю корзину: сортирует валидные промо по `GetTotalAmount()` (денежная величина, а не «сырое» поле `Amount`) и берёт либо первую с купоном, либо просто первую по этому порядку. Для relative-скидки (15%) `GetTotalAmount` = Amount × subtotal, поэтому сравниваются именно $241.9455 против $50.00, а не «15» против «50».\n\nВажные нюансы:\n- **`isExclusive` тут ни при чём** — обе промо неэксклюзивные, но это не имеет значения: отбор по размеру происходит в самой `BestRewardPromotionPolicy`, независимо от `IsExclusive`.\n- **Priority тоже не участвует** в этой ветке логики.\n- Чтобы обе скидки суммировались, `CombinePolicy` нужно переключить на **CombineStackable** — но даже тогда, по той же записи, в рамках одной priority-группы применяется только одна `CartSubtotalReward`; для одновременного стекинга двух cart-subtotal наград им нужны разные приоритеты.\n\n**Источники:**\n- kb_ask (deployment vcst_qa / vcptcore_stable), запись KB-5ADBFB34, well attested, 6 подтверждений — прямое наблюдение с теми же цифрами (1612.97 → 241.9455 vs 50.00, платформа 3.1007.27, Marketing 3.1000.1).\n- Настройка `Marketing.Promotion.CombinePolicy` = BestReward зафиксирована как значение по умолчанию и как подтверждённое значение на стенде в той же записи (путь в Admin: Settings → Marketing → General)."
+}

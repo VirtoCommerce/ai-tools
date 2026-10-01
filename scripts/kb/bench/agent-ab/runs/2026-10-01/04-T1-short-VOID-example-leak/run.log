@@ -1,0 +1,19 @@
+[config] TEST_ENV=vcst ENV_RISK=test
+[config] FEATURE-GATED skipped: /qa-design Figma comparison — set FIGMA_API_KEY to enable
+[config] FEATURE-GATED skipped: /qa-postman, /qa-api test — set POSTMAN_API_KEY to enable
+agent-ab: 3 runs (1 tasks × 1 arms × 3), model sonnet, out ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T1v3
+T1-promo-stack.kb.1                success  calls=2 errs=0 0.10 27s writes=0 score=2
+T1-promo-stack.kb.2                success  calls=2 errs=0 0.11 35s writes=0 score=2
+T1-promo-stack.kb.3                success  calls=2 errs=0 0.10 31s writes=0 score=2
+
+# KB A/B — 2026-10-01T10-30-39, model sonnet, 3 run(s) per cell
+
+| cell | correctness | falseClaims | evidence | passAll | costPerCorrect | toolCalls | deadEnds | envWrites | tokens | costUsd | costSpread | timeSec | timeSpread | kbAsks | contaminated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **real.kb** | 1 | 0 | 0.83 | true | 0.11 | 2 | 0 | 0 | 179648 | 0.1 | 0.01 | 31 | 8 | 1 | 0 |
+| **control.kb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| T1-promo-stack · kb | 1 | 0 | 0.83 | true | 0.11 | 2 | 0 | 0 | 179648 | 0.1 | 0.01 | 31 | 8 | 1 | 0 |
+
+Medians per cell, except correctness (mean score / 2) and falseClaims (count).
+
+raw transcripts and per-run JSON: ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T1v3

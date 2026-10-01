@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 1,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\80a46c3f",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 2,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 1,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 3,
+  "durationSec": 27,
+  "costUsd": 0.10151279999999999,
+  "tokens": {
+    "input": 6,
+    "output": 2133,
+    "cacheWrite": 11768,
+    "cacheRead": 165494
+  },
+  "wallSec": 31,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly states only the 15% reward (~$241.95) applies, explains CombinePolicy/BestReward as the deciding setting, and explicitly rules out isExclusive/priority while noting CombineStackable would be needed for both to apply, all attributed to a named KB entry with its trust level and specific observation evidence."
+  },
+  "final": "Нашёл ответ в базе знаний — вопрос хорошо подтверждён (well attested, 6 подтверждений, 3 сессии, включая наблюдение именно на vcst_qa), поэтому живая перепроверка не требуется согласно правилу проекта.\n\n## FINAL ANSWER\n\n**Какие строки скидок попадут в корзину:** только одна — **\"15% off the cart subtotal\"**, на сумму **$241.9455** (≈ $241.95). Промо \"$50 off the cart subtotal\" применено **не будет**, хотя обе активны, не эксклюзивны и обе удовлетворяют порогу >$1000.\n\n**Итоговая скидка:** $241.9455 (одна строка скидки, не сумма двух).\n\n**Что это решает:** настройка магазина **Marketing.Promotion.CombinePolicy** (Settings → Marketing → General, \"Selected policy of using multiple active promotions\"). На B2B-store (и по умолчанию платформы) значение — **BestReward**.\n\nМеханизм:\n- `MarketingModule` выбирает `CombineStackablePromotionPolicy` только если `CombinePolicy = CombineStackable`; иначе используется `BestRewardPromotionPolicy`.\n- `BestRewardPromotionPolicy` оставляет **максимум одну** `CartSubtotalReward` на всю корзину: сортирует валидные награды по `GetTotalAmount()` (по реальной денежной величине, а не по сырому полю `Amount`), и берёт первую (приоритет отдаётся купонной, если есть, иначе — просто первую по величине).\n- Относительная награда 15% конвертируется в деньги через `AmountBasedReward.GetTotalAmount()`: 15% × $1612.97 = **$241.9455**, что больше фиксированных $50 → побеждает 15%-я, $50-я отбрасывается и не попадает в `result.Rewards`.\n- `isExclusive` на этот исход не влияет — обе промо не эксклюзивны, подавления по эксклюзивности не происходит, \"проигравшая\" промо просто проигрывает по размеру скидки. Приоритет (`Priority`) в этой ветке логики роли не играет.\n- Чтобы обе скидки применялись одновременно, `CombinePolicy` должен быть **CombineStackable** (и даже тогда стэкинг двух `CartSubtotalReward` с одинаковым priority-группой не сработает — нужны разные приоритеты).\n\n**Источник:** KB-5ADBFB34 (статус well attested, подтверждено независимо тремя прогонами 2026-09-15, в т.ч. наблюдение конкретно на деплойменте vcst_qa от 2026-09-25; платформа 3.1007.27, Marketing-модуль 3.1000.1). Дополнительная живая проверка не выполнялась — согласно правилу проекта для well-attested записей это не требуется."
+}

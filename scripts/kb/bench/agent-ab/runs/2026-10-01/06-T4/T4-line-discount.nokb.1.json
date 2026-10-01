@@ -1,0 +1,43 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "nokb",
+  "run": 1,
+  "kbRule": null,
+  "workDir": "~\\agent-work\\f24644bc",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 7,
+  "byTool": {
+    "Bash": 6,
+    "Read": 1
+  },
+  "toolErrors": 2,
+  "httpFailures": 0,
+  "envCalls": 4,
+  "envWrites": 1,
+  "kbAsks": 0,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 8,
+  "durationSec": 148,
+  "costUsd": 0.3177274,
+  "tokens": {
+    "input": 16,
+    "output": 10219,
+    "cacheWrite": 30019,
+    "cacheRead": 477147
+  },
+  "wallSec": 149,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly concludes not-a-bug, explains the order-level vs line-item discount model with the exact mechanism (pre-discount line-items sum vs order header), proposes assertions on order.discounts/discountTotal plus an explicit arithmetic check instead of line-item summing, and backs every claim with a cited order id and API endpoint."
+  },
+  "final": "Я нашёл в тестовом окружении реальный заказ с таким же паттерном (order-level промо), что подтверждает вывод без необходимости подбирать точно такие же суммы, как в баг-репорте.\n\n## Что показали данные\n\nЗаказ `CO260924-00001` (id `86fa5fbe-d516-4a43-b363-da748dcbc411`), промо \"Cart more than $1000\" / \"Take 10% off for cart subtotal no more than $1000\":\n\n- Корень заказа: `\"discounts\":[{\"promotionId\":\"...\",\"discountAmount\":166.50,\"name\":\"Cart more than $1000\"}]`, `\"discountAmount\":166.50`, `\"discountTotal\":166.50`, `\"subTotalDiscount\":0.00`, `\"total\":1978.20`.\n- Каждый line item: `\"discountAmount\":0.0000`, `\"discounts\":[]` — то есть скидка на уровне позиций действительно нулевая.\n- Итоговая сумма заказа (`total`) уже посчитана с учётом вычета 166.50 и пересчитанного налога на уменьшенную базу — то есть скидка не потеряна, а корректно учтена один раз, в заголовке заказа.\n\nЭто ровно тот же механизм, что в репорте: 1,612.97 − 241.95 = 1,371.02 — арифметика сходится идеально, что ожидаемо, если \"Line items\"-блейд считает Total как сумму позиций без учёта order-level скидки, а заголовок заказа — уже после её вычитания.\n\n## Почему так происходит\n\nВ модели заказа VC скидки бывают двух уровней:\n- **line-item-level** — хранятся в `lineItem.discounts` / `lineItem.discountAmount`, когда промо применяется к конкретной позиции (например, % на конкретный SKU);\n- **order-level (cart-level)** — хранятся только в корневом `order.discounts` / `order.discountAmount` / `order.discountTotal`, когда условие промо завязано на весь корзину (как здесь — \"cart subtotal no more than $1000\"). Такая скидка никогда не распределяется по позициям.\n\nБлейд \"Line items\" в Admin UI суммирует именно поле `discountAmount` отдельных позиций — для order-level промо оно равно 0.00 по дизайну, это не баг и не потеря данных. Заголовок заказа при этом показывает истинную скидку и уже дисконтированный `Total`.\n\n## Вердикт\n\n**Не баг.** Скидка не потеряна — она корректно отражена в данных заказа (`order.discounts`, `order.discountAmount`, `order.discountTotal`) и корректно вычтена один раз в итоговом `Total` заказа. Несоответствие — следствие того, что \"Line items\" блейд в Admin показывает сумму/скидку только по полям отдельных позиций, а order-level промо на них не проецируется. Это максимум вопрос UX-ясности (блейду не хватает подписи вида \"не включает order-level скидки\"), но не дефект расчёта.\n\n## Какую проверку должен делать регрессионный тест вместо текущей\n\nНе проверять, что в Line items blade \"Discount\" ≠ 0 для order-level промо (это ожидаемо 0). Вместо этого:\n\n1. `order.discounts` (корень) содержит запись применённого промо с ожидаемым `discountAmount`.\n2. `order.discountAmount` / `order.discountTotal` в заголовке заказа равны этому же значению.\n3. Арифметика итогов: `order.total == sum(lineItems.extendedPrice) + shippingTotal + taxTotal − order.discountTotal` (то есть Line-items-Total минус Discount из заголовка заказа равно Total заголовка — проверка того, что скидка вычтена ровно один раз, а не потеряна и не задвоена).\n4. `lineItem.discountAmount == 0` для каждой позиции — ожидаемое состояние, когда промо order-level, а не line-item-level (assert \"== 0\", а не \"> 0\").\n\n## FINAL ANSWER\n\n**Вердикт: не баг.** Это ожидаемое поведение модели заказа Virto Commerce: order-level (cart-level) промо хранит скидку только в корневых полях заказа (`discounts[]`, `discountAmount`, `discountTotal`), не распределяя её по line items, поэтому у позиций `discountAmount = 0`, а \"Line items\" blade (который суммирует именно поля позиций) показывает `Discount 0.00` и до-скидочный `Total`. Заголовок заказа показывает корректно вычтенную скидку и уже дисконтированный `Total`. Проверка арифметики (Total блейда минус Discount заголовка = Total заголовка) подтверждает, что скидка применена один раз и нигде не потеряна.\n\n- Источник: `GET /api/order/customerOrders/{id}` для заказа `CO260924-00001` на `https://vcst-qa.govirto.com` (платформенный REST API, {{ADMIN}}-токен через `/connect/token`) — поля `discounts[]`, `discountAmount`, `discountTotal`, `subTotalDiscount`, `total` на корне заказа против `discountAmount`/`discounts` на каждом элементе `items[]`.\n- Регрессионный тест должен проверять согласованность между `order.discountTotal`, `order.total` и суммой line items, а не ожидать ненулевой `discountAmount` на отдельных позициях при order-level промо."
+}

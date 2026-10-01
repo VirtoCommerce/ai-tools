@@ -1,0 +1,25 @@
+[config] TEST_ENV=vcst ENV_RISK=test
+[config] FEATURE-GATED skipped: /qa-design Figma comparison — set FIGMA_API_KEY to enable
+[config] FEATURE-GATED skipped: /qa-postman, /qa-api test — set POSTMAN_API_KEY to enable
+agent-ab: 6 runs (1 tasks × 2 arms × 3), model sonnet, out ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T4
+T4-line-discount.kb.1              success  calls=3 errs=0 0.14 44s writes=0 score=2
+T4-line-discount.nokb.1            success  calls=7 errs=2 0.32 148s writes=1 score=2
+T4-line-discount.nokb.2            success  calls=42 errs=3 1.15 447s writes=0 score=2
+T4-line-discount.kb.2              success  calls=2 errs=0 0.10 29s writes=0 score=2
+T4-line-discount.kb.3              success  calls=2 errs=0 0.11 40s writes=0 score=2
+T4-line-discount.nokb.3            success  calls=11 errs=0 0.39 286s writes=3 score=2
+
+# KB A/B — 2026-10-01T10-47-51, model sonnet, 3 run(s) per cell
+
+| cell | correctness | falseClaims | evidence | passAll | costPerCorrect | toolCalls | deadEnds | envWrites | tokens | costUsd | costSpread | timeSec | timeSpread | kbAsks | contaminated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **real.kb** | 1 | 0 | 1 | true | 0.12 | 2 | 0 | 0 | 180809 | 0.11 | 0.04 | 40 | 15 | 1 | 0 |
+| **real.nokb** | 1 | 0 | 1 | true | 0.62 | 11 | 2 | 1 | 777078 | 0.39 | 0.83 | 286 | 299 | 0 | 0 |
+| **control.kb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| **control.nokb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| T4-line-discount · kb | 1 | 0 | 1 | true | 0.12 | 2 | 0 | 0 | 180809 | 0.11 | 0.04 | 40 | 15 | 1 | 0 |
+| T4-line-discount · nokb | 1 | 0 | 1 | true | 0.62 | 11 | 2 | 1 | 777078 | 0.39 | 0.83 | 286 | 299 | 0 | 0 |
+
+Medians per cell, except correctness (mean score / 2) and falseClaims (count).
+
+raw transcripts and per-run JSON: ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T4

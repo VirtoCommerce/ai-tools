@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 3,
+  "workDir": "~\\agent-work\\05076c00",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 34,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1,
+    "Bash": 32
+  },
+  "toolErrors": 2,
+  "httpFailures": 0,
+  "envCalls": 16,
+  "envWrites": 8,
+  "kbAsks": 1,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 35,
+  "durationSec": 465,
+  "costUsd": 1.1485374000000002,
+  "tokens": {
+    "input": 70,
+    "output": 32965,
+    "cacheWrite": 62053,
+    "cacheRead": 2852677
+  },
+  "wallSec": 467,
+  "grade": {
+    "score": 0,
+    "falseClaim": true,
+    "evidence": 1,
+    "reason": "The answer claims both promotions stack for a $291.95 total and names isExclusive as the deciding factor, which are exactly the two rubric 'wrong' items, while never identifying or checking the actual Marketing.Promotion.CombinePolicy setting."
+  },
+  "final": "## Итог исследования\n\nКоротко: буквально таких промо-акций — «15% off the cart subtotal» и «$50 off the cart subtotal» с условием subtotal > $1000 — в конфигурации store **B2B-store** сейчас не существует. Я выгрузил все 25 активных промо-акций через `POST /api/marketing/promotions/search` (store `B2B-store`) и проверил каждую по полям reward (`RewardCartGetOfRelSubtotal`, `RewardCartGetOfAbsSubtotal`) и условию `ConditionCartSubtotalLeast` — совпадения по сумме (15%, $50, порог $1000) нет ни у одной акции. Значит, напрямую \"прогнать\" именно эту пару акций через реальный движок нельзя — их просто нет.\n\nПоэтому ответ построен на (а) поле, которое архитектурно решает вопрос комбинирования, и (б) прямой эмпирической проверке этого механизма на существующих в этом же стенде акциях через read-only endpoint `POST /api/marketing/promotions/evaluate` (это предпросмотр/вычисление, ничего не создаёт — ни корзины, ни заказа).\n\n**Что проверено эмпирически (vcst-qa, store B2B-store):**\n\n1. Поле `isExclusive` у промо-акции — это и есть настройка, которая решает вопрос совместимости. Проверил акцией \"QA Exclusivity Test - Globally Exclusive\" (`isExclusive: true`) с купоном `EXCLUSIVE10`: когда она подходит по условиям, `evaluate` возвращает **только** её reward — автоматические акции \"Auto Gift (no coupon)\" и \"Netflix gift card\" (обе `isExclusive: false`, без купона, обычно всегда срабатывают) в этом случае пропадают из ответа.\n2. Когда ни одна из подходящих акций не `isExclusive`, все они остаются в ответе одновременно. Это стабильно воспроизвелось на паре \"Auto Gift (no coupon)\" + \"Netflix gift card\" (обе `isExclusive: false`, без купона) — обе валидны одновременно во всех прогонах.\n3. Отдельно заметил нюанс именно для **купонных** промо (`hasCoupons: true`): если передать в `coupons` сразу два разных кода от двух разных non-exclusive промо (\"QA Fixed Dollar Off\" / `FIXED5` и \"Register and get 15% for all\" / `FREE`), в ответе остаётся только одна — с большей выгодой для покупателя (\"Register and get 15% for all\"), независимо от порядка купонов в списке. Это особенность конкуренции именно купонов за единственный \"купон-слот\" в корзине, а не следствие `isExclusive` (у обеих `isExclusive: false`). В задаче про купоны речи нет — акции описаны как общие cart-promotions, что по терминологии платформы соответствует автоматическим (без купона) промо, для которых (см. п.2) суммирование подтверждено напрямую.\n\n**Как это применить к сценарию из задачи:**\nОбе акции — активные, non-exclusive (`isExclusive: false` у обеих по условию задачи), субтотал $1,612.97 > $1,000 — условие выполнено у обеих. Поскольку ни одна из них не exclusive, по проверенному механизму (п.1–2) они не блокируют друг друга → корзина получит **обе discount-строки**.\n\nСумма: 15% от $1,612.97 = $241.9455 ≈ $241.95; плюс $50.00 → итоговая скидка ≈ **$291.95** ($291.9455 без округления). Оба reward вычисляются независимо от общего субтотала $1,612.97 (а не каскадно друг от друга) — так работает сам endpoint `evaluate`: он принимает один общий `cartTotal` в `PromotionEvaluationContext` и считает по нему reward каждой подходящей акции за один проход, а не применяет одну скидку поверх уже уменьшённой другой скидкой суммы. Для этой конкретной пары (один % + один фиксированный $) порядок в любом случае не повлиял бы на итог только если бы расчёт был параллельным — что и наблюдается.\n\n---\n\n## FINAL ANSWER\n\n**Discount rows the cart will carry:** both — a 15%-off-subtotal row and a $50-off-subtotal row. Neither promotion is `isExclusive`, so neither suppresses the other (confirmed on this store: a promotion with `isExclusive: true` suppresses all other matching rewards when it qualifies — `QA Exclusivity Test - Globally Exclusive` + coupon `EXCLUSIVE10` suppressed the otherwise-always-valid automatic promos \"Auto Gift (no coupon)\" and \"Netflix gift card\"; with no exclusive promo qualifying, two non-exclusive automatic promos stayed valid together — \"Auto Gift (no coupon)\" + \"Netflix gift card\", confirmed across multiple `evaluate` calls).\n\n**Total discount:** ≈ $291.95 ($241.9455 + $50.00), each reward computed against the $1,612.97 subtotal independently (not cascaded one on top of the other), per the `PromotionEvaluationContext` model where all qualifying rewards are computed from one shared `cartTotal` in a single evaluation pass.\n\n**Deciding setting:** the `isExclusive` flag on each `Promotion` record (`VirtoCommerce.Marketing`, field `isExclusive` in `/api/marketing/promotions/search` and `/evaluate` responses). `priority` only orders/breaks ties when an exclusive promotion is in play or for coupon-vs-coupon \"best offer\" selection; it does not by itself block a non-exclusive promotion from stacking.\n\n**Basis / provenance:**\n- Non-existence of the literal \"15% / $50 / >$1000\" promotions on B2B-store: `POST https://vcst-qa.govirto.com/api/marketing/promotions/search` with `{\"storeIds\":[\"B2B-store\"],\"onlyActive\":true,\"take\":50}` → 25 results, none matching those reward amounts + threshold combination. (Direct observation, this session.)\n- `isExclusive` suppresses all other rewards when it qualifies: `POST https://vcst-qa.govirto.com/api/marketing/promotions/evaluate`, coupon `EXCLUSIVE10` → only \"QA Exclusivity Test - Globally Exclusive\" returned, the normally-present automatic gift rewards disappeared. (Direct observation, this session.)\n- Non-exclusive automatic promotions stack: same endpoint, no coupon — \"Auto Gift (no coupon)\" and \"Netflix gift card\" (both `isExclusive:false`, `hasCoupons:false`) both returned as `isValid:true` in every call. (Direct observation, this session.)\n- Reward computation uses one shared `cartTotal` value for all rewards in a pass: `PromotionEvaluationContext` schema (`cartTotal` field, single value, no per-promotion sequential cart mutation) from `GET /docs/VirtoCommerce.Marketing/swagger.json`. (Schema inspection + consistent with observed evaluate behavior, this session.)\n- The KB (`mcp__kb__kb_ask`) held nothing on this question before this session — confirmed via `kb_ask`, which returned \"the base was read and holds nothing on this.\" No KB capture was made, per the project rule for this measurement run.\n\n**Not established / residual uncertainty:** since the exact named promotions from the task don't exist on this stand, I could not run the literal scenario end-to-end through `evaluate` or an actual cart; the answer rests on the `isExclusive`/automatic-stacking mechanism verified with analogous live promotions on the same store, not on the two specific acts named in the task."
+}

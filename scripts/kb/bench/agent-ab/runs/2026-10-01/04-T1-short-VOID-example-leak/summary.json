@@ -1,0 +1,79 @@
+{
+  "model": "sonnet",
+  "runs": 3,
+  "overall": {
+    "real.kb": {
+      "runs": 3,
+      "correctness": 1,
+      "ungraded": 0,
+      "passAll": true,
+      "falseClaims": 0,
+      "toolCalls": 2,
+      "deadEnds": 0,
+      "envCalls": 0,
+      "envWrites": 0,
+      "toolSearches": 1,
+      "tokens": 179648,
+      "outputTokens": 2339,
+      "costUsd": 0.1,
+      "timeSec": 31,
+      "kbAsks": 1,
+      "evidence": 0.83,
+      "costSpread": 0.01,
+      "timeSpread": 8,
+      "costPerCorrect": 0.11,
+      "contaminated": 0,
+      "void": 0
+    },
+    "control.kb": {
+      "runs": 0,
+      "correctness": null,
+      "ungraded": 0,
+      "passAll": false,
+      "falseClaims": 0,
+      "toolCalls": null,
+      "deadEnds": null,
+      "envCalls": null,
+      "envWrites": null,
+      "toolSearches": null,
+      "tokens": null,
+      "outputTokens": null,
+      "costUsd": null,
+      "timeSec": null,
+      "kbAsks": null,
+      "evidence": null,
+      "costSpread": null,
+      "timeSpread": null,
+      "costPerCorrect": null,
+      "contaminated": 0,
+      "void": 0
+    }
+  },
+  "byTask": {
+    "T1-promo-stack": {
+      "kb": {
+        "runs": 3,
+        "correctness": 1,
+        "ungraded": 0,
+        "passAll": true,
+        "falseClaims": 0,
+        "toolCalls": 2,
+        "deadEnds": 0,
+        "envCalls": 0,
+        "envWrites": 0,
+        "toolSearches": 1,
+        "tokens": 179648,
+        "outputTokens": 2339,
+        "costUsd": 0.1,
+        "timeSec": 31,
+        "kbAsks": 1,
+        "evidence": 0.83,
+        "costSpread": 0.01,
+        "timeSpread": 8,
+        "costPerCorrect": 0.11,
+        "contaminated": 0,
+        "void": 0
+      }
+    }
+  }
+}

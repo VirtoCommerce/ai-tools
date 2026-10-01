@@ -1,0 +1,45 @@
+{
+  "task": "T7-lockout",
+  "kind": "expensive",
+  "arm": "kb",
+  "run": 1,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\fc41f7b6",
+  "promptSha": "27c3008bec46",
+  "toolCalls": 5,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 2,
+    "mcp__kb__kb_show": 1,
+    "mcp__kb__kb_none": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 6,
+  "durationSec": 72,
+  "costUsd": 0.3409796,
+  "tokens": {
+    "input": 12,
+    "output": 6758,
+    "cacheWrite": 55797,
+    "cacheRead": 250938
+  },
+  "wallSec": 74,
+  "grade": {
+    "score": 1,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "Answer correctly covers attempts/duration, org-member parity, and {{ADMIN}}-block code but omits the required detail that pre-lockout failures return invalid_grant/login_failed with a running count, while every claim is clearly sourced to the KB entry with explicit provenance caveats."
+  },
+  "final": "Ответ найден в базе знаний (запись корроборирована, две независимые сессии), поэтому по правилу \"measurement run\" — строю ответ на этом, без живого тестирования lockout-аккаунта {{LOCKOUT_TEST_EMAIL}}: дальнейшая проверка была бы избыточным усилием.\n\n## Политика lockout при входе на storefront (vcst_qa / vcst)\n\n- **Порог блокировки:** 5 неудачных попыток входа подряд.\n- **Длительность блокировки:** 15 минут (временная блокировка).\n- **Что возвращает `POST /connect/token` во время блокировки:** код ошибки `user_is_temporary_locked_out`, вместе с `lockoutEnd` ~15 минут вперёд (при включённых \"detailed errors\" на этом деплойменте). При этом страница входа на storefront UI продолжает показывать обобщённый текст `\"Login attempt failed. Check your credentials\"`, отдельного сообщения про lockout UI не показывает.\n- **Отличие для участника организации (org member):** раньше был баг — org member за ту же временную блокировку получал код `user_is_locked_out` (\"contact your {{ADMIN}}istrator\", постоянная блокировка), т.к. валидатор на стороне организации трактовал любой будущий `lockoutEnd` как перманентный. Баг исправлен: сейчас org member получает тот же временный код `user_is_temporary_locked_out`, что и обычный пользователь.\n- **Отличие для аккаунта, заблокированного администратором ({{ADMIN}} block):** это отдельный путь, не связанный с неудачными попытками входа — возвращает код `user_is_locked_in_organization`. Блокировка за неудачные попытки НЕ меняет статус контакта в организации (это разные механизмы).\n\n## FINAL ANSWER\n\n- Порог блокировки: **5 неудачных попыток входа**.\n- Длительность блокировки: **15 минут** (temporary lockout).\n- Ответ `POST /connect/token` во время блокировки: код ошибки **`user_is_temporary_locked_out`**, с полем **`lockoutEnd`** ≈ +15 минут от текущего момента (при включённых detailed errors на деплойменте). UI storefront при этом показывает обычное \"Login attempt failed. Check your credentials\", не специфичное сообщение о блокировке.\n- Для участника организации (org member): сейчас **не отличается** — тот же `user_is_temporary_locked_out`. Исторически (до фикса) отличался — org member получал постоянный код `user_is_locked_out` (\"contact your {{ADMIN}}istrator\") из-за бага в org-валидаторе; это исправлено.\n- Для аккаунта, заблокированного администратором: **отличается принципиально** — это отдельный механизм, возвращающий код **`user_is_locked_in_organization`**, а не `user_is_temporary_locked_out`. Блокировка за failed attempts не трогает organization-статус контакта.\n\n**Источник:** KB-8646A9CB (статус `corroborated`, 2 подтверждения, 2 сессии):\n- session:memimpor, deployment=vcst_qa, 2026-09-25T11:15:41Z — наблюдение по этому же деплойменту, на котором идёт текущая задача.\n- session:p40448, deployment=**vcst** (другой стенд, не vcst_qa), 2026-09-29T09:39:04Z — прямое наблюдение: `POST /connect/token` вернул `user_is_temporary_locked_out` для заблокированного org member; текст на странице входа остался generic.\n\nОговорка по провенансу: детальное наблюдение про \"сейчас уже исправлено для org member\" зафиксировано напрямую на стенде `vcst`, а не на `vcst_qa` — запись помечена как corroborated в целом (по общей claim про 5 попыток/15 минут), но именно org-member-фикс подтверждён одним наблюдением на соседнем стенде. Поскольку политика lockout (ASP.NET Identity) обычно общая для кода платформы независимо от стенда, и проверка этого требовала бы блокировки реального org-member аккаунта (USER_EMAIL), что не входит в разрешённое read-only исключение (разрешён только тестовый email {{LOCKOUT_TEST_EMAIL}}, который не является org member), живую перепроверку этого пункта на vcst_qa не делал."
+}

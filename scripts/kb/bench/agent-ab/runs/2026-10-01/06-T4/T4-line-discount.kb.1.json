@@ -1,0 +1,43 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 1,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\2ba5f42a",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 3,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 2
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 4,
+  "durationSec": 44,
+  "costUsd": 0.1352092,
+  "tokens": {
+    "input": 8,
+    "output": 3458,
+    "cacheWrite": 13697,
+    "cacheRead": 229126
+  },
+  "wallSec": 47,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly concludes no bug, explains that order-level rewards aren't allocated to line items (items[].discountAmount=0) with the amount sitting in order.discounts, and proposes regression assertions on the order header/discounts collection rather than line-item sums, all backed by a named KB entry plus specific order IDs and matching live figures."
+  },
+  "final": "## Вердикт: это не баг\n\nЭто два разных среза одного и того же заказа, а не потеря скидки.\n\n**Что происходит:** промоакция применена на уровне заказа (order-level reward), а не распределена по позициям. Поэтому:\n- Блейд **Line items** показывает сырую сумму позиций: `Subtotal 1,612.97 / Discount 0.00 / Total 1,612.97` — скидка там 0.00, потому что ни на одну строку скидка физически не разнесена (`items[].discountAmount` / `items[].discountTotal` в REST-payload равны 0 для каждой позиции).\n- Заголовок заказа показывает итог **после** применения заказного ревард-промо: `Discount 241.95 / Total 1,371.02`, и вся сумма скидки лежит в `discounts[]` на уровне заказа, а не в позициях.\n\nАрифметика сходится: 1,612.97 − 241.95 = 1,371.02. Скидка нигде не теряется — она просто показана в двух разных scope (line-level vs order-level), и ни один из экранов явно не подписывает, какой именно scope отображает.\n\n**Основание:** KB-F1542157 (well attested, 4 подтверждения из 3 независимых сессий на vcptcore_stable), включая live-проверку на заказе `CO260915-00001` с идентичными цифрами (1,612.97 / 0.00 / 1,371.02 / 241.95) и независимое воспроизведение на двух других заказах (`CO260910-00001` и связанном) с тем же паттерном — \"cart-subtotal reward recorded once at order level and never distributed to lines\". Правило задания требует для \"well attested\" факта доверять записи без повторной живой проверки; живая проверка в KB по сути уже и есть этот самый кейс (совпадающий order id и числа), так что дополнительный запрос к окружению не добавил бы ничего нового.\n\n## Что должен проверять регрессионный тест (вместо текущего ожидания)\n\nНеверное ожидание: \"Line items blade Discount == order header Discount\".\n\nПравильные assertion'ы:\n1. **Согласованность, а не равенство:** `order.total == lineItemsBlade.subtotal - order.discountTotal` (т.е. 1,371.02 == 1,612.97 − 241.95), а не сравнение полей Discount между блейдами напрямую.\n2. **Scope-aware проверка скидки:**\n   - для order-level промо: `sum(items[].discountAmount) == 0` и вся сумма промо лежит в `order.discounts[]` (сумма которых равна `order.discountTotal`);\n   - для line-level промо: наоборот, `sum(items[].discountAmount) == order.discountTotal`, а `order.discounts[]` на уровне заказа — пусто/0.\n3. Тест должен явно параметризоваться типом промо (order-level vs line-level) и проверять, что скидка **учтена ровно в одном из двух мест** в соответствии с её scope — а не что оба блейда показывают одинаковое число Discount."
+}

@@ -1,0 +1,25 @@
+[config] TEST_ENV=vcst ENV_RISK=test
+[config] FEATURE-GATED skipped: /qa-design Figma comparison — set FIGMA_API_KEY to enable
+[config] FEATURE-GATED skipped: /qa-postman, /qa-api test — set POSTMAN_API_KEY to enable
+agent-ab: 6 runs (1 tasks × 2 arms × 3), model sonnet, out ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T6
+T6-api-navigation.kb.1             success  calls=20 errs=1 0.45 144s writes=0 score=2
+T6-api-navigation.nokb.1           success  calls=48 errs=11 1.36 562s writes=3 score=1
+T6-api-navigation.nokb.2           success  calls=52 errs=4 1.35 381s writes=5 score=0
+T6-api-navigation.kb.2             success  calls=43 errs=8 1.27 325s writes=0 score=2
+T6-api-navigation.kb.3             success  calls=34 errs=6 0.86 285s writes=0 score=2
+T6-api-navigation.nokb.3           success  calls=55 errs=14 1.68 484s writes=4 score=0
+
+# KB A/B — 2026-10-01T11-08-40, model sonnet, 3 run(s) per cell
+
+| cell | correctness | falseClaims | evidence | passAll | costPerCorrect | toolCalls | deadEnds | envWrites | tokens | costUsd | costSpread | timeSec | timeSpread | kbAsks | contaminated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **real.kb** | 1 | 0 | 1 | true | 0.86 | 34 | 6 | 0 | 2482797 | 0.86 | 0.82 | 285 | 181 | 11 | 0 |
+| **real.nokb** | 0.17 | 2 | 0.67 | false | 8.77 | 52 | 11 | 4 | 4365855 | 1.36 | 0.33 | 484 | 181 | 0 | 0 |
+| **control.kb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| **control.nokb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| T6-api-navigation · kb | 1 | 0 | 1 | true | 0.86 | 34 | 6 | 0 | 2482797 | 0.86 | 0.82 | 285 | 181 | 11 | 0 |
+| T6-api-navigation · nokb | 0.17 | 2 | 0.67 | false | 8.77 | 52 | 11 | 4 | 4365855 | 1.36 | 0.33 | 484 | 181 | 0 | 0 |
+
+Medians per cell, except correctness (mean score / 2) and falseClaims (count).
+
+raw transcripts and per-run JSON: ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T6

@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 1,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\d6c05e04",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 3,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 2
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 4,
+  "durationSec": 41,
+  "costUsd": 0.1339718,
+  "tokens": {
+    "input": 8,
+    "output": 3496,
+    "cacheWrite": 13451,
+    "cacheRead": 225959
+  },
+  "wallSec": 43,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 1,
+    "reason": "The answer correctly identifies only the 15% reward applies (~$241.95), names Marketing.Promotion.CombinePolicy/BestReward as the deciding setting, and correctly dismisses isExclusive/priority, but most detailed implementation claims (GetTotalAmount logic, coupon tie-break) are backed only by a single blanket KB citation rather than per-claim sourcing."
+  },
+  "final": "## Ответ\n\n**Какие строки скидок попадут в корзину:** только одна — скидка **15%** («15% off the cart subtotal»). Скидка «$50 off the cart subtotal» в корзину **не попадёт**, несмотря на то что обе акции активны, не эксклюзивны и обе удовлетворяют порогу >$1000.\n\n**Итоговая скидка:** 15% от $1,612.97 = **$241.9455 (~$241.95)**.\n\n**Что это решает:** настройка магазина **Marketing → General → \"Selected policy of using multiple active promotions\"** (внутренне `Marketing.Promotion.CombinePolicy`). На данном стенде её значение — **BestReward**. При этом значении MarketingModule использует `BestRewardPromotionPolicy`, которая оставляет в корзине **максимум одну** `CartSubtotalReward` на всю корзину: валидные скидки сортируются по `GetTotalAmount` (это денежная величина — для relative-скидки это `Amount × price`, а не «сырое» поле Amount), и побеждает та, что даёт больше денег (при равенстве — та, что привязана к купону). Для суммы $1,612.97: 15% → $241.9455, а флэт $50 → $50.00, поэтому $50-скидка проигрывает по размеру и полностью отбрасывается ещё до попадания в `result.Rewards`.\n\n`isExclusive` тут ни при чём в обе стороны: ни одна из акций не эксклюзивна, значит никто не подавлялся флагом эксклюзивности — проигравшая акция проиграла именно по размеру. Приоритет (`Priority`) в этой ветке логики вообще не участвует.\n\nЧтобы обе скидки суммировались одновременно, политику нужно переключить на **CombineStackable** (и тогда понадобятся разные приоритетные группы, т.к. в рамках одной группы `CombineStackable` тоже применяет только одну `CartSubtotalReward`).\n\n---\n\n### FINAL ANSWER\n\n- **Discount rows the cart carries:** exactly one — the **15% off cart subtotal** reward. The **$50 off cart subtotal** reward does NOT apply, even though both promotions are active and non-exclusive and both meet the >$1,000 threshold.\n- **Total discount:** **$241.9455 (≈$241.95)** — i.e. 15% × $1,612.97. ($50 flat is discarded entirely, never reaching `result.Rewards`.)\n- **Deciding setting/rule:** Store setting **Marketing → General → \"Selected policy of using multiple active promotions\"** (`Marketing.Promotion.CombinePolicy`), whose value on this deployment is **BestReward** (also the platform default). With this value, MarketingModule applies `BestRewardPromotionPolicy`, which keeps at most one `CartSubtotalReward` per cart — the one with the highest value by `GetTotalAmount` (money, not the raw relative `Amount`), preferring a coupon-bearing reward on ties. `isExclusive` plays no role here (neither promotion is exclusive); priority is also irrelevant in this branch. Switching the setting to `CombineStackable` is what would let both discounts apply together (with different priority groups, since within one priority group `CombineStackable` also caps `CartSubtotalReward` at one).\n- **Source:** KB-5ADBFB34 — \"well attested\", 6 confirmations across 3 sessions, independently reproduced 3 times, confirmed specifically on this deployment (vcst_qa, platform 3.1007.27 / Marketing 3.1000.1) with the exact same numbers as this task (subtotal $1,612.97, 15% vs. flat $50). Per the rule for well-attested entries, this was used directly without a live re-check."
+}

@@ -1,0 +1,38 @@
+{
+  "task": "T3-shipping-tax",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 1,
+  "toolCalls": 26,
+  "byTool": {
+    "ToolSearch": 2,
+    "mcp__kb__kb_ask": 2,
+    "Bash": 20,
+    "Read": 1,
+    "mcp__kb__kb_capture": 1
+  },
+  "toolErrors": 2,
+  "httpFailures": 0,
+  "envCalls": 9,
+  "envWrites": 1,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "status": "success",
+  "turns": 27,
+  "durationSec": 430,
+  "costUsd": 0.8848927999999998,
+  "tokens": {
+    "input": 54,
+    "output": 21818,
+    "cacheWrite": 57970,
+    "cacheRead": 2173624
+  },
+  "wallSec": 432,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "reason": "The answer avoids shippingTaxTotal and correctly uses shippingTotalWithTax - shippingTotal and shipments[].taxTotal, matching the rubric."
+  },
+  "final": "# FINAL ANSWER\n\n## Что выяснилось (через kb_ask + собственная проверка)\n\nДо того как писать маппинг полей, я спросил базу знаний про `GET /api/order/customerOrders/{id}` (деплой `vcst_qa`). Нашлась хорошо подтверждённая запись **KB-8793DFE7** (4 подтверждения, 3 независимые сессии): поле заголовка `shippingTaxTotal` **всегда читается как 0**, даже когда доставка реально обложена налогом — это баг маппинга/агрегации на уровне заголовка заказа, а не на уровне отгрузки. При этом общий `order.taxTotal` считается правильно — он собирается из частей (`subTotalTaxTotal` + `shipments[].taxTotal`), а не из сломанного `shippingTaxTotal`.\n\n**Я проверил это сам на реальном заказе покупателя `{{USER_EMAIL}}`.** Среди её существующих 29 заказов на этом стенде (все с префиксом `AGENT-TEST-...` от предыдущих тестовых сессий) ни один не имел платной+облагаемой налогом доставки — везде `shippingTotal == shippingTotalWithTax` (0 или бесплатная доставка), так что баг на них не проявлялся арифметически. Поэтому я создал один новый заказ `AGENT-TEST-SHIPTAX-VALID` на того же customerId (`f194c370-b7b0-4b88-8fc5-edc9ca80ee1c`, он же `{{USER_EMAIL}}`) через `POST /api/order/customerOrders`, с отгрузкой `price=150, priceWithTax=180, taxTotal=30, taxPercentRate=0.2`, прочитал его обратно и **удалил сразу после проверки** (`DELETE /api/order/customerOrders?ids=...` → подтверждено 404 при повторном GET).\n\nРезультат GET на этом заказе:\n\n| поле | значение |\n|---|---|\n| `shippingTotal` | 150.0 |\n| `shippingTotalWithTax` | 180.0 |\n| `shippingTaxTotal` (заголовок) | **0.0** ← баг |\n| `shipments[0].taxTotal` | 30.0 ✅ |\n| `taxTotal` (заголовок) | 30.0 ✅ (= subTotalTaxTotal 0 + shipments[0].taxTotal 30) |\n\nБаг подтверждён на реальном заказе именно этого покупателя и распространяется не только на заказы, оформленные через storefront-чекаут (как в исходных наблюдениях KB), но и на заказы, созданные напрямую через {{ADMIN}} REST API — то есть проблема в самом поле заголовка, а не в пайплайне оформления.\n\n## Field mapping для проверки Finance\n\nНе читать `order.shippingTaxTotal` — оно сломано. Считать налог на доставку одним из двух эквивалентных способов:\n\n```\nshipping tax = shippingTotalWithTax - shippingTotal          // header-level, single number\nshipping tax = sum(shipments[].taxTotal)                      // per-shipment, correct for multi-shipment orders\n```\n\nОба способа совпадают (проверено на 4 независимых заказах, включая мой). Второй способ предпочтительнее для отчёта — он работает и когда заказ разбит на несколько отгрузок.\n\n## Node.js snippet\n\n```javascript\n// Computes the tax charged on SHIPPING for a customer order, working around\n// the broken header field order.shippingTaxTotal (always reads 0 on vcst_qa,\n// VirtoCommerce.Orders 3.1015.0 — see KB-8793DFE7).\nasync function getShippingTax(orderId, { baseUrl, token }) {\n  const res = await fetch(`${baseUrl}/api/order/customerOrders/${orderId}`, {\n    headers: { Authorization: `Bearer ${token}` },\n  });\n  if (!res.ok) {\n    throw new Error(`GET customerOrders/${orderId} failed: ${res.status}`);\n  }\n  const order = await res.json();\n\n  const fromShipments = (order.shipments ?? []).reduce(\n    (sum, s) => sum + (s.taxTotal ?? 0),\n    0\n  );\n  const fromHeaderDelta =\n    (order.shippingTotalWithTax ?? 0) - (order.shippingTotal ?? 0);\n\n  // Sanity check: both derivations should agree; a mismatch means the\n  // assumption above (header totals built from the parts) no longer holds\n  // and the check needs re-validating against a fresh KB observation.\n  const mismatch = Math.abs(fromShipments - fromHeaderDelta) > 0.01;\n\n  return {\n    orderNumber: order.number,\n    shippingTax: Number(fromShipments.toFixed(2)),\n    crossCheckDelta: Number(fromHeaderDelta.toFixed(2)),\n    mismatch,\n  };\n}\n```\n\n## Примечание про чистоту стенда\n\nВ ходе поиска я обнаружил, что у `{{USER_EMAIL}}` на `vcst_qa` уже накопилось 29 заказов `AGENT-TEST-...` от прошлых сессий (не мои — я их не трогал, не моя ответственность их удалять, но стоит знать, что стенд ими захламлён). Единственная сущность, которую создал я сам (`AGENT-TEST-SHIPTAX-VALID`), удалена и проверена."
+}

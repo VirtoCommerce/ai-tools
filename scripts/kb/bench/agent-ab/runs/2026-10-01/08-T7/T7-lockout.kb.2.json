@@ -1,0 +1,44 @@
+{
+  "task": "T7-lockout",
+  "kind": "expensive",
+  "arm": "kb",
+  "run": 2,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\aae77fe0",
+  "promptSha": "27c3008bec46",
+  "toolCalls": 4,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 2,
+    "mcp__kb__kb_show": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 5,
+  "durationSec": 56,
+  "costUsd": 0.16869220000000001,
+  "tokens": {
+    "input": 10,
+    "output": 4988,
+    "cacheWrite": 15308,
+    "cacheRead": 287801
+  },
+  "wallSec": 58,
+  "grade": {
+    "score": 1,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "Covers the 5/15-minute policy, the corrected org-member behavior, and the separate {{ADMIN}}-block code, but omits that pre-lockout failures return invalid_grant/login_failed with a running count."
+  },
+  "final": "## Политика блокировки входа в сторфронт\n\nНа основе базы знаний (запись KB-8646A9CB, статус **corroborated**, 2 подтверждения из 2 независимых сессий — на stand'ах `vcst_qa` и `vcst`), повторную живую проверку не делал: по правилу проекта corroborated-запись — это уже достаточное основание, перепроверка вживую нужна только для записи с одним наблюдением или спорной.\n\n**FINAL ANSWER**\n\n- **Порог блокировки:** 5 неудачных попыток входа.\n- **Длительность:** временная блокировка на 15 минут.\n- **Что возвращает `POST /connect/token` во время блокировки:** код ошибки `user_is_temporary_locked_out`, с полем `lockoutEnd` примерно на 15 минут вперёд (при включённых detailed errors на данном деплойменте). При этом сама страница входа в сторфронте показывает обычный общий текст `\"Login attempt failed. Check your credentials\"`, а не специфическое сообщение о блокировке.\n- **Отличие для участника организации (organization member):** раньше был баг — такие аккаунты вместо временного кода получали постоянный код `user_is_locked_out` (\"contact your {{ADMIN}}istrator\"), потому что валидатор организации трактовал любой будущий `lockoutEnd` как постоянную блокировку. Баг исправлен — сейчас участники организации получают тот же временный код `user_is_temporary_locked_out`, что и обычные пользователи. То есть на сегодняшний день разницы по коду ошибки между обычным пользователем и участником организации нет.\n- **Отличие для аккаунта, заблокированного администратором:** это принципиально другой путь — организационная блокировка (`organization block`) администратором даёт отдельный код `user_is_locked_in_organization`, не связанный с кодами временной блокировки по неудачным попыткам. Блокировка по неудачным попыткам, в свою очередь, не меняет статус контакта (contact status).\n\n**Источники (провенанс):**\n- KB-8646A9CB, наблюдение сессии `memimpor` на `vcst_qa`, 2026-09-25 — зафиксировало саму политику (5 попыток / 15 минут) и сопутствующий контекст про коды ошибок.\n- KB-8646A9CB, наблюдение сессии `p40448` на `vcst`, 2026-09-29 — непосредственно зафиксировало ответ `POST /connect/token` с кодом `user_is_temporary_locked_out` для заблокированного участника организации и то, что UI показывает общий текст ошибки, а не сообщение о блокировке.\n- Якоря записи: `POST /connect/token`, `POST /api/platform/security/users/{id}/unlock`.\n\nОтдельно отмечу нюанс провенанса: одно из двух подтверждающих наблюдений получено на stand'е `vcst` (не `vcst_qa`, на котором выполняется этот прогон), но запись всё равно помечена системой как corroborated, то есть поведение признано совпадающим между этими двумя деплойментами. Живые неудачные попытки входа на `{{LOCKOUT_TEST_EMAIL}}` я не делал — сочтено избыточным, раз ответ уже хорошо подтверждён и правило \"measurement run\" прямо запрещает что-либо captur'ить/confirm'ить/dispute'ить в этом прогоне."
+}

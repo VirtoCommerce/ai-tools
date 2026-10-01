@@ -1,0 +1,39 @@
+{
+  "task": "C1-punchout",
+  "kind": "control",
+  "arm": "kb",
+  "run": 1,
+  "toolCalls": 22,
+  "byTool": {
+    "ToolSearch": 3,
+    "mcp__kb__kb_ask": 2,
+    "Bash": 9,
+    "WebSearch": 3,
+    "WebFetch": 4,
+    "mcp__kb__kb_capture": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 1,
+  "envCalls": 7,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "status": "success",
+  "turns": 23,
+  "durationSec": 178,
+  "costUsd": 0.6206408,
+  "tokens": {
+    "input": 42,
+    "output": 10376,
+    "cacheWrite": 40177,
+    "cacheRead": 1269209
+  },
+  "wallSec": 180,
+  "grade": {
+    "score": null,
+    "falseClaim": null,
+    "reason": "judge output unreadable"
+  },
+  "final": "Собрал достаточно доказательств напрямую с целевого окружения и из исходников модуля, подвожу итог.\n\n## Ход проверки\n\n1. KB не содержала записей по этому вопросу — пришлось выяснять самостоятельно.\n2. Проверил целевой стенд: `GET https://vcst-qa.govirto.com/api/punchout` → **HTTP 404** (не 401), то есть маршрут вообще не зарегистрирован — модуль на этом окружении не установлен.\n3. Нашёл сам модуль — `VirtoCommerce/vc-module-punchout` (id `VirtoCommerce.Punchout`), ветка `dev`, всего 3 коммита. Его единственный контроллер (`PunchoutController.cs`, `[Route(\"api/punchout\")]`) — это шаблонная заглушка с одним `[HttpGet]`, возвращающим `{\"result\":\"Hello world!\"}`. Логики разбора cXML `PunchOutSetupRequest`/формирования `PunchOutSetupResponse` там нет.\n4. На стороне `vc-frontend` есть PR #2506 (VCST-5886) — он добавляет сторефронтовый маршрут `/punchout/:sessionToken` и метод `authorizeWithGrant()` (кастомный grant на `/connect/token`). Но это только \"приземление\" уже готовой сессии (session token из localStorage) — сам этот код не принимает и не парсит входящий cXML POST.\n5. Официальный блог Virto (virtocommerce.com/blog/punchout-catalog-integration-with-b2b-portal) прямо говорит, что реальная обработка cXML для порталов на Virto Commerce выполняется сторонним шлюзом **Greenwing Technology** (120+ готовых коннекторов к Ariba/Coupa/Oracle/Jaggaer), который и терминирует cXML-сообщения, передавая Virto уже готовый токен сессии.\n\nСущностей `AGENT-TEST-...` для этой проверки не создавалось (только GET-запросы и работа с публичными GitHub-источниками) — удалять нечего.\n\n## FINAL ANSWER\n\nНет, «из коробки» Virto Commerce storefront **не поддерживает** полноценную настройку cXML PunchOut-сессии (приём `PunchOutSetupRequest` / формирование `PunchOutSetupResponse`).\n\n- Существует модуль **`VirtoCommerce.Punchout`** (репозиторий `vc-module-punchout`), но на текущий момент это ранний скелет: единственный backend-эндпоинт — `GET /api/punchout`, возвращающий заглушку `\"Hello world!\"`, без какой-либо cXML-логики. На проверяемом стенде (vcst-qa.govirto.com) этот модуль вообще не установлен — `GET /api/punchout` возвращает 404.\n- На стороне vc-frontend есть сопутствующий маршрут `/punchout/:sessionToken`, но он лишь активирует уже выданную сессию (обмен готового session-токена через кастомный OAuth grant на `/connect/token`) — это не точка приёма входящего cXML-запроса.\n- Сам приём/разбор cXML и выдача `PunchOutSetupResponse` с стартовой ссылкой выполняется не Virto Commerce, а сторонним шлюзом-интегратором (например, Greenwing Technology), который транслирует cXML в понятный Virto токен сессии.\n\nИтог: нативного cXML-эндпоинта для PunchOut setup в платформе/сторефронте нет; для такой интеграции нужен либо сторонний gateway, либо доработка модуля `VirtoCommerce.Punchout` силами разработчиков."
+}
