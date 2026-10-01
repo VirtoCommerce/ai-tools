@@ -117,15 +117,16 @@
       "rubric": {
         "correct": [
           "Token from POST /connect/token (password grant).",
-          "Product search via POST /api/catalog/listentries (or another WORKING search route) - not a search under /api/catalog/products.",
+          "Product search through a route that EXISTS and worked in the run: POST /api/catalog/listentries and POST /api/catalog/search/products are both correct. Only a route that does not exist (e.g. GET/POST /api/catalog/products/search) is wrong.",
           "GraphQL at POST /graphql (not /xapi/graphql), with storeId/currency/culture context supplied.",
           "The script ran successfully."
         ],
         "wrong": [
           "Script never ran successfully",
-          "Final script still calls /xapi/graphql or a non-existent search route"
+          "The final script still calls /xapi/graphql or a search route that does not exist"
         ]
-      }
+      },
+      "rubricNote": "2026-10-01: the first rubric read \"not a search under /api/catalog/products\" and the judge marked the working POST /api/catalog/search/products as wrong. Clarified and all T6 runs rejudged."
     },
     {
       "id": "T7-lockout",
