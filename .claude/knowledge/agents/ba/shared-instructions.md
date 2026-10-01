@@ -129,10 +129,10 @@ Never hardcode GUIDs, SKUs, prices, emails, coupon codes, or URL hosts. Full rul
 
 ## Business-invariant candidates are routed, never staged
 
-`ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never modify
-`.claude/knowledge/oracles/business-logic.md`, and write no proposals file** (BL M0 freeze). A candidate
-with a human source (docs, AC, Jira resolution) goes to `/qa-review-bl`; one grounded only in code or
-live goes to the `kb`; a contradiction is a finding. Every candidate cites a source; drop unsourced
+`ba-system-analyzer` may surface `PROPOSED-BL-*` candidates. **Never edit the oracle
+(`knowledge/oracles/bl/*.yaml`, nor the generated `business-logic.md`) outside `/qa-review-bl`, and write
+no proposals file.** A candidate with a human source (docs, AC, Jira resolution) goes to `/qa-review-bl`;
+one grounded only in code or live goes to the `kb`; a contradiction is a finding. Every candidate cites a source; drop unsourced
 ones. See `/ba-analyze` Step 4.5.
 
 ## External-write discipline (hard rule)
@@ -191,7 +191,7 @@ orchestrator owns index generation across runs — do not write your own `README
 |------|------|
 | `reports/ba/` · `reports/ba/test-models/` · `.claude/knowledge/domain/` | **Step 0 — before anything else, every mode.** What already exists on this surface: suites, oracle citations, prior BA analysis, prior test models, tickets already tested. Generated; never hand-edit |
 | `.claude/knowledge/ba/virto-doc-style.md` | **Before authoring any documentation** — the four audience skeletons, plus §9 for release notes (where the layer picks the audience) |
-| `.claude/knowledge/oracles/business-logic.md` | Before drafting BL proposals or story `Business_Rule` mappings |
+| `npm run bl:extract -- --domain <d>` | Before drafting BL proposals or story `Business_Rule` mappings |
 | `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` | Negative ACs / pain-point risk cross-refs (ECL-*) |
 | `.claude/knowledge/domain/sitemap.md`, `products.md`, `catalog.md`, `store-settings.md` | Storefront/catalog/admin doc references |
 | `.claude/knowledge/api/graphql-schema.md` | Authoritative xAPI field/type names for developer docs & story tech notes |

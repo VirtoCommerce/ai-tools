@@ -159,7 +159,7 @@ time and erodes trust in the pipeline; a BAIL just leaves the bug for a human. E
 | PR/issue delivery by ownership (`getVcs` / `getUpstreamVcs`; GitHub fork-PR + issue dedup; Azure Repos PR) | `plugins/vc-fix/skills/qa-fix-routing/vcs/` |
 | Deployment profile (client vs platform, tracker, VCS host, upstream) — written by `/project-init` | `project-profile.json` (gitignored) · `scripts/lib/project-profile.mjs` · `project-profile.example.json` |
 | Live module dependency graph (Platform API) | `plugins/vc-fix/skills/qa-fix-routing/module-registry.ts` |
-| BL-* invariants the fix must preserve | `knowledge/oracles/business-logic.md` (cite the ID) |
+| BL-* invariants the fix must preserve | `npm run bl:extract -- --domain <d>` (source: `knowledge/oracles/bl/<slug>.yaml`; cite the ID) |
 | Historical VC failure patterns | `knowledge/oracles/vc-bug-catalog.md` |
 | VC module repo anatomy + .NET 10 / xUnit / Angular conventions | `knowledge/architecture/vc-module-architecture.md` |
 | vc-frontend storefront anatomy + Vue 3 / TS / vitest / Storybook conventions | `knowledge/architecture/vc-frontend-architecture.md` |

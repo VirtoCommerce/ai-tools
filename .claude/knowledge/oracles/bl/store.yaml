@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 24: Store Management (BL-STORE)"
+  prefixes:
+    - BL-STORE
+  agents:
+    - qa-backend-expert
+    - qa-frontend-expert
+  intro: "> Added 2026-08-24 (BL-AUDIT-2026-08-24). 69 test cases across suites `034`/`035` were citing `BL-STORE-*` ids that did not exist (BLC-002). Only `BL-STORE-001` cleared the evidence bar. **`BL-STORE-002` was declined outright** — its sole citing case asserts plain CRUD, and the one plausible invariant behind it (a default language must remain within the store's available-languages list) is *refuted* by source: the store validator constrains only the store id and declares no cross-field rule. `BL-STORE-003` and `BL-STORE-004` are evidenced on docs alone and are staged in `reports/ba/bl-proposals-2026-08-24.md`."
+rules:
+  - id: BL-STORE-001
+    title: Store configuration is independent per store, keyed by store id
+    rule: The platform supports any number of stores, and each store's configuration — languages, currencies, default language and currency, catalog assignment, storefront URLs, SEO link type, tax/rounding/anonymous-access/email-verification policy, feature toggles, aggregation properties and module settings — is stored against that store's own id and resolved independently of every other store. Changing a setting on one store does not alter another store's configuration or storefront behaviour, even when both stores share the same platform instance, module set, or catalog.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: PlatformUserGuide "Getting Started" — the platform "is multi-language, multi-currency, multi-theme, and multi-store… allows users to operate multiple stores seamlessly"; "General Guidelines" — store-specific (tenant) settings "must be configured within the settings of the corresponding store".
+      - kind: code
+        ref: vc-module-store `src/VirtoCommerce.StoreModule.Core/Model/Store.cs` — every store-level field (`Languages`, `Currencies`, `DefaultLanguage`, `DefaultCurrency`, `Catalog`, `Url`, `SecureUrl`, `Settings` via `IHasSettings`, `DynamicProperties`) is a property on the per-instance `Store` entity, not a shared or global record.
+      - kind: doc
+        ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/feature-flags.md (published) — the xAPI store query returns a settings block for the given storeId.
+    check:
+      kind: manual
+      ref: Open two different stores in the Admin store list → confirm each shows its own independent value for a shared-shape field (default language, SEO link type, or a feature toggle). Change a setting on the first store and save → reopen the second → its value for the same setting is unchanged. Query the storefront xAPI store query for two different store ids → each returns its own settings block.
+    violation_signal: A setting change on one store is visible on another store's storefront or Admin blade; the store query returns identical settings for two differently-configured store ids; a newly created store inherits a setting value from another store rather than a documented default.
+    status: ACTIVE

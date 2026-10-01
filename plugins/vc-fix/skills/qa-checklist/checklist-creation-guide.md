@@ -87,7 +87,7 @@ knows the domain's invariants and its `[OBSERVED]` failure patterns is a check a
 that doesn't is a transcript of whatever the build happens to do today. (`/qa-checklist` Mode 3 orders
 it that way — oracles, then the walk.)
 
-1. **`knowledge/oracles/business-logic.md`** (204 `BL-*`) — pull every invariant whose surface this
+1. **`knowledge/oracles/business-logic.md`** (`BL-*`) — pull every invariant whose surface this
    domain touches. Each becomes (or is folded into) an outcome item citing its ID. A rule you inferred
    from the UI and cannot tie to a `BL-*` is **feedback for VirtoCommerce** (`/vc-feedback`), not a
    checklist item asserted as fact.

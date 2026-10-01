@@ -209,7 +209,8 @@ interface SignalOutcome {
 const ORACLES = [
   ".claude/knowledge/oracles/vc-bug-catalog.md",
   ".claude/knowledge/execution/debugging-signals.md",
-  ".claude/knowledge/oracles/business-logic.md",
+  // The BL oracle by domain (BL 2.0): this phase has no Bash for `bl:extract`, so it Greps a rule id or reads one domain file.
+  ".claude/knowledge/oracles/bl/<domain>.yaml (BL-* invariants, one file per domain — Grep the id, never read them all)",
   ".claude/knowledge/api/platform-patterns.md",
 ];
 

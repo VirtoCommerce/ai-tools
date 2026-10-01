@@ -111,7 +111,7 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
    | CSV suites | subtract | already asserted — don't re-validate |
    | [`vc-bug-catalog.md`](../knowledge/oracles/vc-bug-catalog.md) | subtract | already discovered here — don't re-discover |
    | [`e-commerce-edge-cases-library.md`](../knowledge/oracles/e-commerce-edge-cases-library.md) | **supply** | boundary/failure shapes to go hunting for — **`[THEORETICAL]` first** |
-   | [`business-logic.md`](../knowledge/oracles/business-logic.md) | **supply** | the oracle of expected behaviour: what makes an observation a *bug* rather than a *"huh"* |
+   | BL oracle (`npm run bl:extract -- --domain <d>`) | **supply** | the oracle of expected behaviour: what makes an observation a *bug* rather than a *"huh"* |
    | [`release-ledger.md`](../knowledge/domain/release-ledger.md) (Step 3a) | **supply** | *surfaces* that are provably uncovered — shipped upstream, asserted by no suite, never failed here |
 
    - **ECL — `[THEORETICAL]` is the session's half of the library.** Its 175 `[OBSERVED]` patterns are
@@ -212,8 +212,8 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 |---|---|---|---|
 | `[THEORETICAL]` → `[OBSERVED]` | ECL-<n>.<m> | [what reproduced it here] | `/qa-review-oracles ecl` |
 | Candidate new pattern | (none — `Oracle ref: NONE` above) | [scenario + evidence] | `/qa-review-oracles ecl` |
-| Candidate new invariant | (behaviour no `BL-*` covers) | [observation] | `/qa-review-oracles bl` |
-| Contradicted | BL-XXX-NNN / ECL-<n>.<m> | [live behaviour disagrees with the entry] | `/qa-review-oracles` — **never** edit the oracle from a session |
+| Candidate new invariant | (behaviour no `BL-*` covers) | [observation] | `kb_capture`; a rule needs a human source |
+| Contradicted | BL-XXX-NNN / ECL-<n>.<m> | [live behaviour disagrees with the entry] | a bug; `/qa-review-oracles` — **never** edit an oracle from a session |
 
 > If this table is empty, the session is `[VAL]` not `[EXP]`. Update the Session type field.
 > **Every row needs a `Fate`.** `PROMOTE` = author it as a `Draft` case via `/qa-test-cases-generator`
@@ -256,7 +256,7 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 ## Rules
 - **Discovery first**: every session must end with at least one net-new scenario in the "Net-New Scenarios Discovered" table, OR be re-labeled `[VAL]` re-validation. No bugs found is acceptable; no net-new-scenario consideration is not.
 - The VC bug catalog + existing CSV suites are read FIRST in pre-flight to identify what NOT to spend time on (the discovery target is everything else)
-- **The ECL and `business-logic.md` are read in the opposite direction — to supply, not subtract** (Step 5a). `[THEORETICAL]` ECL sections are candidate scenarios (`[OBSERVED]` ones belong to `/qa-checklist` and the suites); `BL-*` invariants are what turn an odd observation into a filed bug instead of a shrug
+- **The ECL and the BL oracle are read in the opposite direction — to supply, not subtract** (Step 5a). `[THEORETICAL]` ECL sections are candidate scenarios (`[OBSERVED]` ones belong to `/qa-checklist` and the suites); `BL-*` invariants are what turn an odd observation into a filed bug instead of a shrug
 - **Every net-new scenario carries an `Oracle ref` — and `NONE` is a valid, valuable answer**, which routes it to the Oracle Feedback table as a candidate ECL pattern
 - **Oracle changes are proposals, never edits.** A confirmed `[THEORETICAL]`, a missing pattern, a contradicted invariant → `/qa-review-oracles`; `ba-system-analyzer` is the sole writer, and no session renumbers or invents an ID
 - Heuristic packs (CRISP/SFDPOT, Whittaker tours, FAILURE, HICCUPPS-F) are filters, not checklists — they help spot familiar problems faster but are not the primary work
@@ -279,7 +279,7 @@ Write a session report to `reports/exploratory/SBTM-{charter}-YYYY-MM-DD.md`:
 - `/qa-sbtm` skill — Full SBTM methodology: scenario discovery (primary), core framework, charter templates, CRISP/SFDPOT, adversarial heuristics, personas, modern web attack surface, charter library, debrief format
 - [knowledge/oracles/vc-bug-catalog.md](../knowledge/oracles/vc-bug-catalog.md) — VC-specific historical bug patterns (read to AVOID re-discovery)
 - [knowledge/oracles/e-commerce-edge-cases-library.md](../knowledge/oracles/e-commerce-edge-cases-library.md) — 54 `ECL-<n>.<m>` boundary/failure shapes (read to SUPPLY candidates — `[THEORETICAL]` first; a session is also the only source of `[OBSERVED]` promotions and new patterns)
-- [knowledge/oracles/business-logic.md](../knowledge/oracles/business-logic.md) — 204 `BL-*` invariants (read as the correctness oracle, so a deviation is recognised as a bug during the session, not after)
+- `npm run bl:extract -- --domain <d>` — the `BL-*` invariants (read as the correctness oracle, so a deviation is recognised as a bug during the session, not after)
 - `/qa-review-oracles` — where a session's oracle proposals go (`ecl` / `bl` axes); the only writer of either file
 - [knowledge/execution/live-discovery.md](../knowledge/execution/live-discovery.md) — Runtime test-data resolution (`live-discover` / `random-data` / `@td()`); use when a session needs to pick "any product / any address" and when a discovered gap becomes a follow-up test case
 - `/qa-coverage-gap` skill — Programmatic coverage-gap analysis (complementary to manual exploratory discovery)

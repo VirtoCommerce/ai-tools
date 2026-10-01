@@ -76,7 +76,11 @@
           "additionalProperties": false,
           "properties": {
             "module": { "type": "string", "minLength": 1 },
-            "code_ref": { "type": "string", "minLength": 1 }
+            "code_ref": {
+              "description": "Where the rule is implemented, as <repo>:<path>[#<symbol>]; a path ending in / is a directory. A merged change to it makes the rule SUSPECT (npm run bl:fresh).",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._-]+:[^#\\s]+(#.+)?$"
+            }
           }
         },
         "check": {
@@ -89,6 +93,12 @@
               "description": "executable: the path of the check. manual: the steps.",
               "type": "string",
               "minLength": 1
+            },
+            "run": {
+              "description": "executable only: the npm run inv:run arguments that re-run the check unattended (npm run bl:fresh --rerun). Absent when the check needs arguments only a person can choose.",
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "minItems": 1
             },
             "steps": {
               "description": "executable only: the manual steps kept for a person or a browser agent verifying by hand.",
@@ -112,12 +122,7 @@
         },
         "status": { "enum": ["ACTIVE", "SUSPECT", "RETIRED"] },
         "suspect_reason": { "type": ["string", "null"] },
-        "owner": { "type": "string", "minLength": 1 },
-        "history": {
-          "description": "Where the write-ups, dates and rationale live, e.g. docs/decisions/bl/cart.md#bl-cart-004.",
-          "type": "string",
-          "minLength": 1
-        }
+        "owner": { "type": "string", "minLength": 1 }
       },
       "allOf": [
         {

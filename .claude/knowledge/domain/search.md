@@ -57,7 +57,7 @@ excludes: Admin Search → Index management (blue-green build/swap/backup/cancel
 
 > Refresh with `/qa-domain-map srch`. This file answers **what the feature is and where its surfaces
 > are**. It does **not** carry behavioural rules — those are `BL-SRCH-*`/`BL-CAT-*`/`BL-STORE-*` in
-> `oracles/business-logic.md` (cited by id below, never restated) — and it can **never ground an
+> the BL oracle (`npm run bl:extract -- --domain srch,cat,store`; cited by id, never restated) — and it can **never ground an
 > assertion as `{DOC}`**. It is a pointer index plus a surface inventory: it tells you *where to look*
 > and *what exists*, never *what correct looks like*.
 

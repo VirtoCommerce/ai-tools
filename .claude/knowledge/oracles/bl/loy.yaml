@@ -1,0 +1,341 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 17: Loyalty & Mixed Cart (BL-LOY)"
+  prefixes:
+    - BL-LOY
+  agents:
+    - qa-frontend-expert
+    - qa-backend-expert
+  intro: '> Loyalty "Mixed Cart" mode (store setting `Loyalty.Mode = "Mixed Cart"`, `Loyalty.Currency` e.g. `PTS`) lets a single cart hold regular primary-currency lines and loyalty (points-currency) lines simultaneously, with one checkout. These invariants govern that model. Introduced with VCST-5101 / Epic VCST-5099 (vc-module-x-cart PR #120, vc-module-cart PR #188, vc-frontend PR #2310). See BL-CART-004 (currency switch, amended) and BL-CART-003 (coupon + sale).'
+rules:
+  - id: BL-LOY-001
+    title: Mixed Cart — promotion/coupon evaluation scoped to primary-currency lines only
+    rule: In Mixed Cart mode, promotion and coupon discount evaluation MUST use only line items whose currency matches the cart's primary currency. Loyalty-currency lines MUST NOT enter the promotion entries, the discount base (`CartTotal`), or any reward calculation. A percentage-off coupon on a mixed cart applies exclusively to the primary-currency (e.g. USD) subtotal, independent of loyalty-line quantity.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart `CartAggregate.cs:143` (`CartCurrencySelectedLineItems` = selected lines filtered to the cart currency) + `XCartMapper.cs:373-387` `ApplyCartPromoEntries` (\"Tax and Promotion are computed only on primary-currency lines\") builds the promotion entries from that set. The **discount base** is `RewardExtensions.cs:201` — `subTotalExcludeDiscount = aggregate.CartCurrencySelectedLineItems.Sum(li => (li.ListPrice - li.DiscountAmount) * li.Quantity)`, consumed at `:215`. The eval-context scalar `XCartMapper.cs:321` `CartTotal = Cart.SubTotal` is ALSO primary-currency-only (vc-module-cart `DefaultShoppingCartTotalsCalculator.cs:65-85` seeds `cartsByCurrency` with the cart itself under the cart currency, then sums only that currency's selected non-gift lines) and feeds promotion CONDITIONS, not the reward amount — the earlier \"suspected leak site\" note is superseded. Suite: `050b4` GQL-MC-006/010/011."
+      - kind: ac
+        ref: "VCST-5101 (Done) — Task 1 AC: tax and promotion are computed only on primary-currency lines"
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Loyalty/overview.md (published) — mixed-cart example shows discount only in the primary-currency totals entry, zero on points
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/XCartMapper.cs#ApplyCartPromoEntries
+    check:
+      kind: manual
+      ref: Add 1 USD line + 1 PTS loyalty line; apply a 10% subtotal coupon → discount = exactly 10% × USD subtotal with zero contribution from the PTS line. Step PTS qty 1→2→3 with the USD line constant → discount does not change.
+    violation_signal: Discount > 10% × USD subtotal, or discount equals `(USD_subtotal + PTS_qty × PTS_listPrice) × 0.10` (PTS value folded into the base at 1:1). This is the VCST-5101 Bug-1 symptom.
+    status: ACTIVE
+  - id: BL-LOY-002
+    title: Mixed Cart — `addItem(itemCurrencyCode)` pins the line currency; no cross-currency merge
+    rule: When `addItem` is called with a non-null `itemCurrencyCode`, the resulting `LineItem.Currency` MUST equal `itemCurrencyCode` and the cart-product key MUST be `{productId}:{itemCurrencyCode}`. Adding the same `productId` at two different currencies MUST produce two separate line items — never a merged/quantity-summed line. (This is the Mixed Cart counterpart to BL-CART-007, which merges same-SKU adds in a single currency.)
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart PR #120 `CartAggregate.cs` — cart-product key / find-existing-line matches on productId AND currency. Suite: `050b4` GQL-MC-001/005."
+      - kind: ac
+        ref: "VCST-5101 (Done) — Task 2 AC: mutation allows adding a loyalty product to the current cart with a currency"
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#FindExistingLineItemBeforeAdd
+    check:
+      kind: manual
+      ref: '`addItem(productId=X, itemCurrencyCode="PTS")` then `addItem(productId=X, itemCurrencyCode=cart.currency)` → assert two distinct line items for `X` with different `currencyCode`.'
+    violation_signal: One line item for `X` with doubled quantity; cross-currency dedup collapses the two adds.
+    status: ACTIVE
+  - id: BL-LOY-003
+    title: Mixed Cart — `cartTotals` exposes one entry per distinct line currency
+    rule: "`cart.cartTotals[]` MUST contain exactly one entry per distinct currency present among the cart's line items. The entry with `isDefaultTotalCurrency = true` MUST correspond to `cart.currency`. Each entry's `subTotal`/`discountTotal`/`taxTotal`/`total` reflect ONLY that currency's lines. A primary-currency-only cart → exactly one entry."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart PR #120 `CartType.cartTotals` + vc-module-cart PR #188 `DefaultShoppingCartTotalsCalculator` (`cartsByCurrency`). `CartTotalType` = `{ isDefaultTotalCurrency, total, subTotal, taxTotal, discountTotal }`. Suite: `050b4` GQL-MC-002, `CRX-GQL-096`."
+      - kind: ac
+        ref: "VCST-5101 (Done) — Task 1 AC: cart returns per-currency totals; a primary-currency-only cart has one element"
+      - kind: doc
+        ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Loyalty/overview.md (published) — cartTotals gives one breakdown per currency; isDefaultTotalCurrency marks primary; scalars are primary only
+    scope:
+      code_ref: vc-module-cart:src/VirtoCommerce.CartModule.Data/Services/DefaultShoppingCartTotalsCalculator.cs#CalculateTotals
+    check:
+      kind: manual
+      ref: Mixed cart (USD + PTS) → query `cartTotals { isDefaultTotalCurrency total { currency { code } } subTotal { amount } }` → assert exactly 2 entries; the default entry's currency = cart currency; each `subTotal` = that currency's lines' sum.
+    violation_signal: Single entry on a mixed cart (grouping broken); zero or multiple `isDefaultTotalCurrency = true` entries; a block's totals include other-currency values.
+    status: ACTIVE
+  - id: BL-LOY-004
+    title: Mixed Cart — loyalty lines excluded from the CART-LEVEL promotion context even when selected for checkout
+    rule: A loyalty-currency line with `selectedForCheckout = true` MUST NOT appear in the promotion evaluation context's entries, and its price MUST NOT contribute to the cart-subtotal discount base. This holds for every CART-LEVEL reward (percentage off subtotal, fixed amount off subtotal) and for shipping and payment rewards, which are evaluated against primary-currency amounts. Selecting a loyalty line for checkout never makes it eligible for a primary-currency cart promotion. **SCOPE LIMIT — per-line rewards are NOT currency-scoped:** a per-line catalog-item reward is applied to every line item and matched on product id alone, with no currency guard, so this invariant does not extend to a per-line reward that names no product, or that names a product also carried as a loyalty-currency line (see BL-LOY-002). Treat that as an open risk, not a guarantee.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart `CartAggregate.cs:143` (`CartCurrencySelectedLineItems`) + `:145`/`:1057` (`HasSelectedLineItems` gate on `EvaluatePromotionsAsync`) + `XCartMapper.cs:373-387` (currency-filtered promo entries) + `RewardExtensions.cs:201` (currency-filtered cart-subtotal base). Counter-anchor for the scope limit: `RewardExtensions.cs:184-186` iterates ALL `aggregate.LineItems`, and `RewardExtensions.cs:50-55` matches per-line rewards on product id with no currency predicate, booking the discount in the cart currency. Complements BL-LOY-001."
+      - kind: ac
+        ref: "VCST-5101 (Done) — Task 1 AC: promotion is computed only on primary-currency lines"
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/CartAggregate.cs#CartCurrencySelectedLineItems
+    check:
+      kind: manual
+      ref: Select a loyalty line for checkout alongside a cash line; apply a cart-subtotal percentage coupon → the cash lines are discounted, the loyalty line's price is unchanged, and no discount line appears on it. Then step the loyalty line's quantity with the cash line held constant → the cart-level discount MUST NOT move.
+    violation_signal: The loyalty item is discounted; or the cash-currency total discount exceeds the cash-currency subtotal because the loyalty line entered the base; or the discount tracks loyalty-line quantity.
+    status: ACTIVE
+  - id: BL-LOY-005
+    title: Mixed Cart — a loyalty-currency line shows no "earn points" indicator
+    rule: When loyalty points are computed for a line item, if `lineItem.Currency == Loyalty.Currency` (the store's configured points currency), the returned `loyaltyPoints` MUST be zero or null. Computing points-on-points from a points-priced item is semantically invalid and MUST NOT be displayed.
+    priority: P2-ux
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: vc-module-loyalty `LineItemTypeHook.CalculatePoints(x.ExtendedPrice, x.ProductId)` has no currency guard; `LoyaltyPointsCalculator` resolves `PointsCurrency` from the `Loyalty.Currency` setting.
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.ExperienceApi/TypeHooks/LineItemTypeHook.cs#BeforeTypeInitialized
+    check:
+      kind: manual
+      ref: Mode "Mixed Cart", `Loyalty.Currency = "PTS"`; add a PTS line → query `cart.items { loyaltyPoints { amount } }` → assert the PTS line returns null or 0.
+    violation_signal: A PTS line returns a non-zero `loyaltyPoints` value (suggests earning points on a points purchase).
+    status: ACTIVE
+  - id: BL-LOY-006
+    title: Mixed Cart — currency switch converts primary lines, preserves loyalty lines
+    rule: On a cart-currency change in Mixed Cart mode, items whose currency = the PREVIOUS cart currency MUST be converted to the new cart currency; items in any other currency (e.g. PTS loyalty) MUST retain their original currency. No line item is lost or duplicated. This is the Mixed Cart refinement of BL-CART-004.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-x-cart PR #120 `ChangeCartCurrencyCommandHandler.ResolveTargetCurrency` — `itemCurrencyCode.EqualsIgnoreCase(current.Cart.Currency) ? newCart.Currency : current.GetCurrencyByCode(itemCurrencyCode)`. See BL-CART-004 (amended)."
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Commands/ChangeCartCurrencyCommandHandler.cs#ResolveTargetCurrency
+    check:
+      kind: manual
+      ref: Mixed cart USD + PTS, `cart.currency = USD`; `changeCartCurrency → EUR` → USD items now EUR (EUR pricing), PTS items still PTS at original prices, item count unchanged.
+    violation_signal: PTS items disappear, are duplicated, or are switched to the new base currency on a currency change.
+    status: ACTIVE
+  - id: BL-LOY-007
+    title: Mixed Cart order — points earned and redeemed exactly once, dedup per operation type
+    rule: 'On a Mixed-Cart order (`LoyaltyMode = "Mixed Cart"`): (a) exactly one `Earned` log per `(CustomerOrder, orderId)` for cash-line ProductPoints; (b) exactly one `Redeemed` log per `(CustomerOrder, orderId)` for the loyalty-currency order total; (c) both may coexist on one orderId — dedup key is `(objectType, objectId, operationType)`; (d) a Hangfire retry posts neither a second time; (e) orders paid via the LoyaltyPaymentMethod gateway are excluded (handled by the gateway).'
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: vc-module-loyalty `Data/Services/LoyaltyLogicService.cs` `LogLoyaltyProgramOperationInternalAsync` — dedup on `(ContextObjectType, ContextObjectId, OperationType)`; `Data/Handlers/LoyaltyProgramHandler.cs` `ProcessOrderAsync` (LoyaltyPaymentMethod orders early-return) / `EarnProductPointsAsync` (pre-check on `Earned`) / `RedeemLoyaltyProductsAsync`. **The dedup key is NOT owner-scoped** — `IsObjectProcessedAsync` sets neither owner field and `LoyaltyBalanceOperationLogSearchService.BuildOwnerQuery` leaves the query unfiltered when both are empty — so the rule holds unchanged when the store calculates loyalty per organization. Redeem depends on `OrderTotals` being loaded (see report PP-06). Covered by suites 075b/083b.
+      - kind: ac
+        ref: "VCST-5104 (Done) — Task 3 AC: creating an order with loyalty products decreases the loyalty balance"
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Data/Services/LoyaltyLogicService.cs#LogLoyaltyProgramOperationInternalAsync
+    check:
+      kind: manual
+      ref: Mixed order → operation log for `objectId=orderId` has exactly 2 entries (one `Earned`, one `Redeemed`). Re-trigger `ProcessOrdersAsync` for the same order → still exactly 2 (idempotent). Second mixed order, same user → its own 2 entries. LoyaltyPaymentMethod-gateway order → 0 entries from this handler.
+    violation_signal: 0 or ≥2 `Earned`/`Redeemed` for one order; missing earn or redeem (balance not deducted); retry duplicates.
+    status: ACTIVE
+  - id: BL-LOY-008
+    title: Insufficient loyalty balance blocks order creation with a typed `LOYALTY_INSUFFICIENT_BALANCE` error
+    rule: When a cart's loyalty-currency total exceeds the **balance of the scope the store resolves for that cart** — the customer's own balance by default, the organization's pooled balance when the store calculates loyalty per organization (see the store's loyalty balance calculation mode) — `LoyaltyCartValidator` MUST surface a `LOYALTY_INSUFFICIENT_BALANCE` validation error with params `{required, available}` (`required > available`), and the order MUST NOT be created — the shortfall blocks checkout. `available` MUST equal the balance the same actor is shown on their own account page. The cart MUST remain intact and readable.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: vc-module-loyalty `ExperienceApi/Validators/LoyaltyCartValidator.cs:53-77` (rule 4 — the balance is selected by `store.IsOrganizationBalanceCalculationMode()`, and `GetOrganizationBalanceAsync` on an empty owner id yields 0 with no null guard); vc-frontend i18n `loyalty_insufficient_balance`.
+      - kind: ac
+        ref: "VCST-5103 (Done) — AC: points total in cart must not exceed available balance; not-enough-points error blocks checkout"
+      - kind: resolution
+        ref: VCST-5953 (Done) — fixed organization-mode validator using zero balance for a buyer whose shown balance was non-zero
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.ExperienceApi/Validators/LoyaltyCartValidator.cs#LoyaltyCartValidator
+    check:
+      kind: manual
+      ref: "Mixed cart whose loyalty total exceeds the resolved balance → cart validation returns `LOYALTY_INSUFFICIENT_BALANCE` with `required`/`available` present and `required > available`; order not created; cart still readable. Storefront surfaces the localized message (i18n `loyalty_insufficient_balance`). Then: read the points balance the actor is shown on their account page, build a cart whose points total exceeds it, and assert `available` equals that same figure — not 0 and not another scope's number."
+    violation_signal: Order created despite a balance shortfall; missing/empty `required`/`available`; balance allowed to go negative; **or `available` disagrees with the balance the same actor is shown, so an actor who holds enough points is refused (or one who does not is allowed).**
+    status: ACTIVE
+  - id: BL-LOY-009
+    title: Mixed Cart earn — only cash-currency lines earn points; loyalty-currency lines earn zero
+    rule: "In Mixed-Cart `EarnProductPointsAsync`, earned points are computed exclusively from `order.Items` whose `Currency != loyaltyCurrency`; loyalty-currency (points-priced) items contribute 0. Holds both in the order-time job and the cart `loyaltyPoints` preview. Guard: `Items.Where(x => !x.Currency.EqualsIgnoreCase(loyaltyCurrency))`. Order-layer refinement of BL-LOY-005."
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-loyalty #10 `LoyaltyProgramHandler.EarnProductPointsAsync` + `LineItemTypeHook` (currency-filtered) + `LoyaltyPointsCalculator.ResolveAsync` (early-return when `currencyCode == pointsCurrency`). Refines BL-LOY-005."
+      - kind: doc
+        ref: platform/user-guide/docs/loyalty/configuring-loyalty-points-per-product.md (published) — points = (product price minus discount) times multiply factor
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Data/Handlers/LoyaltyProgramHandler.cs#EarnProductPointsAsync
+    check:
+      kind: manual
+      ref: Mixed cart 1 USD + 1 PTS → placed order `Earned` amount = points from the USD line only. `cart.items { loyaltyPoints { amount } }` → PTS line null/0, USD line non-zero. PTS-only cart → no `Earned` log (points ≤ 0 → not written).
+    violation_signal: A loyalty-currency line earns non-zero; USD earn includes a PTS contribution; `loyaltyPoints` non-zero on a PTS line.
+    status: ACTIVE
+  - id: BL-LOY-010
+    title: Mixed Cart — a points-only cart is rejected; at least one cash line is required
+    rule: A cart whose lines are **entirely** loyalty-currency (points-priced), with no cash-currency line, MUST surface a `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED` validation error and MUST NOT be checked out. Adding at least one cash-currency line MUST clear that specific error (the cart becomes valid if no other rule fires). Implements the VCST-5103 AC "at least one common (cash) product must be in the cart, otherwise error."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: ac
+        ref: "vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 2; VCST-5103 AC. Covered by suite 075b MCO-GQL-006. Live-verified PASS 5/5 on the environment 2026-06-24."
+      - kind: ac
+        ref: "VCST-5103 (Done) — AC note: at least one common product must be in the cart, otherwise error"
+      - kind: resolution
+        ref: VCST-5657 (Done) — fixed Place order staying enabled when only loyalty products are selected
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.ExperienceApi/Validators/LoyaltyCartValidator.cs#LoyaltyCartValidator
+    check:
+      kind: manual
+      ref: Auth as a loyalty user in a Mixed-Cart store; build a cart with only a PTS line → `cart.validationErrors` contains `LOYALTY_ONLY_POINT_PRODUCTS_NOT_ALLOWED`; add a cash line and re-read → that error code is gone.
+    violation_signal: A points-only cart validates clean / is allowed to check out; or the error fails to clear after a cash line is added.
+    status: ACTIVE
+  - id: BL-LOY-012
+    title: The loyalty payment gateway is only valid in Payment Method mode
+    rule: When a cart carries a payment whose gateway code is `LoyaltyPaymentMethod` and the store loyalty mode is anything other than `"Payment Method"`, the cart MUST surface a `LOYALTY_PAYMENT_METHOD_NOT_ALLOWED` validation error and MUST NOT be checked out.
+    priority: P1-data
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "vc-module-loyalty #10 `LoyaltyCartValidator.cs` rule 3 + `ModuleConstants.LoyaltyPaymentMethodGatewayCode`. Covered by suite 075b MCO-GQL-011. Live-verified PASS 3/3 on the environment 2026-06-24."
+      - kind: doc
+        ref: platform/user-guide/docs/loyalty/overview.md (published) — customers can pay with points via LoyaltyPaymentMethod when balance covers the full order
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.ExperienceApi/Validators/LoyaltyCartValidator.cs#LoyaltyCartValidator
+    check:
+      kind: manual
+      ref: In a non-Payment-Method store (e.g. the seeded Mixed Cart mode), add a payment via the `LoyaltyPaymentMethod` gateway → `cart.validationErrors` contains `LOYALTY_PAYMENT_METHOD_NOT_ALLOWED`. (`addOrUpdateCartPayment` accepts the gateway code without a registered-method requirement, so no mode flip or gateway provisioning is needed to exercise this.)
+    violation_signal: A `LoyaltyPaymentMethod` payment is accepted outside Payment Method mode; checkout proceeds.
+    status: ACTIVE
+  - id: BL-LOY-013
+    title: Mixed Cart order — `order.orderTotals` exposes one entry per distinct line currency
+    rule: "The GraphQL `order` query MUST return `orderTotals: [OrderTotalType]` with exactly one element per distinct line-item currency on the order. Each element carries `isDefaultTotalCurrency` (`true` for the store's primary currency, `false` otherwise) and per-currency `total`/`subTotal`/`taxTotal`/`discountTotal` (`MoneyType`). Exactly one element has `isDefaultTotalCurrency = true`. A single-currency order returns one element; a mixed-cart loyalty order (cash + points) returns ≥2. The order's top-level scalar `total`/`subTotal`/`taxTotal`/`discountTotal` reflect ONLY the primary-currency leg — the loyalty (points) leg is exposed exclusively in the non-default `orderTotals` element. Order-level analog of BL-LOY-003 (cart-level `cartTotals`). NOTE: the deployed field is `orderTotals`, not `totals` as the originating story (VCST-5104) worded it."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "VCST-5104 PRs vc-module-x-order #43 + vc-module-order #497. Live introspection of `CustomerOrderType.orderTotals: [OrderTotalType]` / `OrderTotalType` / `MoneyType` / `CurrencyType` on `{{BACK_URL}}/graphql`, confirmed against 4 live orders (single-currency length 1; 3 mixed orders length 2) — 2026-06-24. Select `currency { code symbol }` (avoid `currency.name`, pre-existing resolver `INVALID_OPERATION`). See BL-LOY-003 (cart analog)."
+      - kind: ac
+        ref: "VCST-5104 (Done) — Task 1 AC: order query returns per-currency totals; a primary-currency-only order has one element"
+    scope:
+      code_ref: vc-module-x-order:src/VirtoCommerce.XOrder.Core/CustomerOrderAggregate.cs#OrderTotals
+    check:
+      kind: manual
+      ref: "Place a mixed-cart order (1 USD line + 1 PTS line); query `order(number: …) { total { amount currency { code } } orderTotals { isDefaultTotalCurrency total { amount currency { code } } subTotal { amount } } }` → assert exactly 2 `orderTotals` entries; exactly one `isDefaultTotalCurrency = true` (currency = store currency); the non-default entry's currency = the loyalty/points currency; top-level `total` equals the default entry's `total`. Single-currency order → `orderTotals` length 1, `isDefaultTotalCurrency = true`."
+    violation_signal: A single `orderTotals` entry on a mixed-currency order (grouping broken); zero or multiple `isDefaultTotalCurrency = true` entries; the points leg leaks into the top-level scalar totals; an entry's totals mix amounts from another currency.
+    status: ACTIVE
+  - id: BL-LOY-014
+    title: Mixed Cart order — Admin SPA Line items blade shows per-currency totals independently
+    rule: In the Admin SPA, the order **Line items** blade for a mixed-currency order MUST display one totals summary bar per currency (e.g. a USD bar and a PTS bar), and the line items table MUST carry a per-row **Currency** column so each line's currency is unambiguous. Neither currency's totals may be omitted. The order's top-level totals accordion legitimately shows the primary-currency total only — the per-currency split is surfaced in the Line items blade.
+    priority: P2-ux
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "VCST-5104 Task 4 (Admin UI multi-currency totals), PR vc-module-order #497. UI-observed on the environment 2026-06-24 — `reports/ba/screenshots/vcst-5104/08-admin-order-line-items-split-currency.png` (USD 240.00 / PTS 10.00 bars + Currency column)."
+      - kind: ac
+        ref: "VCST-5104 (Done) — Task 4 AC: Admin UI should display the multi-currency totals"
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Web/Scripts/blades/customerOrder-items.tpl.html
+    check:
+      kind: manual
+      ref: Open the Admin (`{{BACK_URL}}`, `@td(ADMIN_DEFAULT)`), Orders → open a mixed-cart order (one PTS line + one USD line) → open the **Line items** accordion → assert two totals bars (one USD, one PTS) above the table, and a **Currency** column showing PTS for the loyalty line and USD for the cash line.
+    violation_signal: The Line items blade shows only the primary-currency totals; the points-line total is absent from the summary bars despite PTS line items in the table; the Currency column is missing.
+    status: ACTIVE
+  - id: BL-LOY-015
+    title: A subsystem that settles many entities per event MUST expose per-entity attribution of the settlement
+    rule: "Where a single business event (an order insert) settles MULTIPLE independent entities in one pass — several loyalty missions advancing and granting from one order — each resulting ledger entry MUST be attributable, through a reachable API, to the specific entity that caused it. A points-ledger row MUST let a caller answer *\"which mission granted this?\"*, and a progress record MUST let a caller answer *\"did this order contribute to this mission?\"*. An aggregate — a balance total, a history row count, a sum — is NOT attribution: it is moved by every entity that settled in the same event, so it can neither confirm nor refute any single entity's contribution."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: 'StorefrontUserGuide → *Points History*: "This section shows the number of points earned and redeemed **for each order**, as well as the total balance of points remaining." PlatformDeveloperGuide → xAPI *Loyalty* overview documents the entire storefront loyalty surface as `loyaltyBalance` + `loyaltyPointsHistory`, and describes `LoyaltyOperationLogObject` as "the object associated with a loyalty program operation log entry, such as an order". Both state a per-causing-object attribution model; the mission path satisfies neither. **The prior `Docs: N/A` claim was wrong** — the ledger surface IS documented even though missions themselves are not (re-checked 2026-09-14).'
+      - kind: code
+        ref: "`VirtoCommerce/vc-module-loyalty` @ `1be73b4` — `LoyaltyMissionTransaction` carries `MissionId`, `ObjectId`, `UserId` behind `IX_LoyaltyMissionTransaction_MissionId_ObjectId_UserId` and is the record the accrual dedup reads (`LoyaltyMissionLogicService.cs:311`, `:488-497`), but no query, type or field exposes it. Live introspection of the deployed schema (2026-08-28, vcst-qa): the entire loyalty surface is `loyaltyBalance(userId, orderId)` / `loyaltyPointsHistory(...)` / `loyaltyMissionProgress(...)`; `LoyaltyOperationLogObject` exposes only `type`, `orderId`, `orderNumber`; the only `missionId` in the schema is `LoyaltyUserMission.missionId`, which is the progress record, not the grant. Measured consequence, run `REG-2026-08-28-1154`: one order granted `+250 / +200 / +100 / +0` across four missions, so the account's balance moved by 1058 while the mission under test contributed 508."
+      - kind: code
+        ref: '(read-side anchor, re-read 2026-09-14 against the deployed build) `VirtoCommerce/vc-module-loyalty` — `ExperienceApi/Extensions/DataLoaderContextAccessorExtensions.cs` → `LoadLoyaltyObject()` now carries a third switch arm, `nameof(LoyaltyMissionProgress) => new LoyaltyOperationLogObject { Type = "Mission" }`. It sets the discriminator ONLY: `LoyaltyOperationLogObject` is `{ Type, OrderId, OrderNumber }` (`Core/Models/LoyaltyOperationLogObject.cs`), so a mission row returns `{type: "Mission", orderId: null, orderNumber: null}` and the type has no field that could carry a mission id. `Schemas/LoyaltyOperationLogType.cs` projects `id`, `operationType`, `amount`, `createdDate`, `object` — no `userId`, no `sourceId`, no `sourceType`, although `Core/Models/LoyaltyBalanceOperationLog` persists all four.'
+      - kind: resolution
+        ref: VCST-5916 (Done) — fixed empty Operation column for mission-granted points rows
+      - kind: resolution
+        ref: VCST-5917 (Cancelled) — request to expose per-mission attribution on the points ledger closed without fix or stated reason
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.ExperienceApi/Extensions/DataLoaderContextAccessorExtensions.cs#LoadLoyaltyObject
+    check:
+      kind: manual
+      ref: "Introspect the loyalty GraphQL surface and read a settled ledger entry: the entry (or a sibling query reachable by the same caller) MUST carry the id of the granting mission alongside the order reference. Then place one order that satisfies two or more missions and confirm each grant is separately identifiable. Not satisfied by an entry that carries only an order reference, because one order legitimately produces several entries."
+    violation_signal: "The ledger row exposes only an order reference (`type` / `orderId` / `orderNumber`) and no entity id; a single order yields multiple grant rows that cannot be told apart except by amount; a test or a customer asking \"which mission paid these points?\" has no query that answers it. Downstream symptom: every assertion about one entity's contribution degrades to a total, and any such assertion silently measures co-settling entities as well."
+    status: ACTIVE
+  - id: BL-LOY-016
+    title: A mission goal measures the ORDER TOTAL — shipping and tax included, net of discount
+    rule: "An `OrderValueGoal`'s progress MUST accrue the order's grand total — merchandise plus shipping plus tax, net of any discount — as the measure of a customer's spend toward the goal. A spend target is a promise about total spend, not about goods alone: shipping and tax the customer actually pays count toward it, and a discount that reduces what the customer actually spent correspondingly reduces progress."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: other
+        ref: "`LoyaltyMissionLogicService.ApplyContribution` — `case OrderValueGoal: return order.Total;` (`:410` at `1be73b4`, `:417` on the deployed `da8abc6`). No `SubTotal` / `DiscountTotal` / `ShippingTotal` / `TaxTotal` appears anywhere in the mission path."
+      - kind: resolution
+        ref: VCST-5854 (Cancelled, closed by design) — closing comment declares OrderValueGoal is intended to measure order total incl. shipping and tax, net of discount
+      - kind: ac
+        ref: "VCST-5319 (Done) — AC: order-value mission tracks orders toward a target total value per period; basis not specified"
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Data/Services/LoyaltyMissionLogicService.cs#ApplyContribution
+    check:
+      kind: manual
+      ref: "Place ONE order whose merchandise value falls BELOW the goal's target while its order total rises ABOVE it — a target placed strictly between the two readings is what makes the case decidable (`.claude/rules/test-data.md` §SECOND RULE). Read `loyaltyMissionProgress` for that user: `currentValue` must equal the order total, and the mission must reach `Completed` once that total meets or exceeds the target."
+    violation_signal: "`currentValue` equals the order's merchandise value alone, excluding shipping/tax; a mission fails to complete on an order whose total cleared the target even though its goods did not; a discount that lowered what the customer paid does not lower `currentValue`."
+    status: ACTIVE
+  - id: BL-LOY-017
+    title: Mission accrual counts cash-currency spend only — loyalty-currency lines contribute nothing
+    rule: "A mission goal MUST ignore line items priced in the loyalty currency. A points-priced line is a REDEMPTION, not a purchase: counting it lets a customer convert previously-earned points into fresh mission progress and a fresh reward, which is a self-feeding loop. This is the mission-path analogue of **BL-LOY-009**, which already states it for the loyalty-program earn path."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "re-derived 2026-09-28 at the release the environment runs (`ab0908a8`). `LoyaltyMissionLogicService.ApplyMissionInternalAsync` — the only currency gate (`:319-323`) compares the ORDER's primary currency with an `OrderValueGoal`'s `CurrencyCode`, never an individual line's, and self-disables when `CurrencyCode` is empty. `ApplyContribution` — `case OrderValueGoal: return order.Total;` (`:441`); `case PerSkuGoal:` increments `item.CurrentQuantity` from every `order.Items` entry with **no currency predicate** (`:451`). The sibling `LoyaltyProgramHandler` filters `!x.Currency.EqualsIgnoreCase(loyaltyCurrency)` before earning (`:254`). **What makes `OrderValueGoal` safe is outside the mission path:** `vc-module-order` `DefaultCustomerOrderTotalsCalculator.CalculateTotals` keys its per-currency buckets with the order itself as the primary-currency bucket (`:60-63`) and computes each bucket's `Total` only from its own currency's lines (`:87`, `:157`), so `order.Total` excludes loyalty-currency lines by construction (read at the module's `dev`; the exposed `orderTotals` shape is BL-LOY-013's)."
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Data/Services/LoyaltyMissionLogicService.cs#ApplyContribution
+    check:
+      kind: manual
+      ref: Place one order mixing a loyalty-currency line with a cash line, where the points-priced line alone would satisfy the goal. **`OrderValueGoal`:** the order's primary-currency `orderTotals` entry must equal the order's top-level `total` — the value `currentValue` accrues (BL-LOY-016) — and must not include the loyalty-currency entry. **`PerSkuGoal`:** the item's `currentQuantity` must not move on account of the points line — exercisable only on a configuration the product does not support (see Status).
+    violation_signal: "(1) a `PerSkuGoal` target quantity satisfied by a loyalty-currency line — present in code, but it needs a PerSku target purchasable in the loyalty currency, which is **not a supported configuration** (product decision, 2026-09-02); (2) an `OrderValueGoal` advancing on the value of a loyalty-currency line — **not reachable**: the order's own `total` cannot contain it (Source, Live); (3) a mission completing on a cart paid for with points — not reachable through Mixed Cart, which rejects a points-only cart (**BL-LOY-010**), so it reduces to (1). `OrderCountGoal` credits one per qualifying order and has no amount a points line could inflate."
+    status: ACTIVE
+  - id: BL-LOY-018
+    title: A mission grants at most once PER PROGRESS OWNER, and an order contributes at most once
+    rule: Within one progress owner and one progress period, a mission MUST grant its reward at most once, no matter how many times the accrual runs, the progress is re-read, or the order event is redelivered. A given order MUST contribute to a given mission at most once — and this second guarantee is UNCONDITIONAL, holding across owners as well as within one. **The first guarantee is scoped, and the scope is load-bearing:** a mission's progress is keyed on the owner, which is the ORGANIZATION when the store calculates balances per organization and the order carries one, and the USER otherwise. Changing that key — an administrator switching the store's calculation mode, OR a multi-organization buyer simply placing an order under a different company — starts a fresh progress record at zero, which can complete and grant the reward again. The reward is therefore grantable once per distinct owner a customer passes through, not once per customer.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "`Data/Services/LoyaltyMissionLogicService.cs` — `ApplyMissionInternalAsync` short-circuits on a `Completed` status, and `GetOrCreateProgressAsync` searches `criteria.OwnerId` + `PeriodStart`, creating a fresh record at `CurrentValue = 0` on a miss. `ResolveOwnerId(userId, organizationId) => organizationId.IsNullOrEmpty() ? userId : organizationId`, and `ProcessOrderAsync` computes `organizationId = store.IsOrganizationBalanceCalculationMode() ? order.OrganizationId : null` — so the key moves with the STORE MODE and with THE ORDER'S ORGANIZATION independently. The distributed lock is `loyalty-mission:{missionId}:{ownerId}`, also per owner. The database agrees: the unique index is `IX_LoyaltyMissionProgress_MissionId_OwnerId_PeriodStart` (it replaced the per-user `…_MissionId_UserId_PeriodStart` in the organization-balance change), and it constrains nothing across owners. The second clause is implemented separately and deliberately unscoped — `TransactionExistsAsync(missionId, objectId)` is narrowed by neither user nor organization, its own comment stating that an order id is globally unique \"so it contributes to a mission exactly once no matter who it is attributed to.\""
+      - kind: resolution
+        ref: VCST-5954 (Cancelled) — report that a calculation-mode switch re-grants completed missions closed without fix or stated reason
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Data/Services/LoyaltyMissionLogicService.cs#ApplyMissionInternalAsync
+    check:
+      kind: manual
+      ref: "(a) *Within a scope* — place TWO qualifying orders against a target-2 `OrderCountGoal`: `currentValue` must reach exactly 2 (not 4) and the mission must complete once; re-read the points history repeatedly and confirm an identical entry set with no duplicate row ids. (b) *Across a scope change* — with the store calculating per organization, have one buyer who belongs to two organizations complete the same mission under each: expect (and assert the product's actual intent for) two progress records and two grants. (c) *The unconditional clause* — confirm that no single order appears as a contribution to the same mission under more than one owner."
+    violation_signal: "`currentValue` advancing by more than the order's own contribution; two ledger rows for one mission completion under ONE owner; a re-read producing a larger entry set; one order contributing to the same mission under two owners. **Not a violation of this rule but its declared cost:** the same mission granted once per owner scope a customer traverses."
+    status: ACTIVE
+  - id: BL-LOY-019
+    title: A cancelled order's mission contribution and its granted reward MUST be reversed
+    rule: "When an order that contributed to a mission is cancelled, rejected or refunded, its contribution MUST be withdrawn from that mission's progress, and any reward the contribution triggered MUST be deducted from the customer's balance with a reversing ledger entry. Points are money: an accrual that survives the cancellation of the purchase that earned it is an unbounded grant, and a customer can farm it by ordering and cancelling."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: code
+        ref: "no reversal path exists at any layer. Both loyalty handlers filter `EntryState.Added` only (`LoyaltyMissionHandler.cs:22`, `LoyaltyProgramHandler.cs:44`), so no `Modified`/`Deleted` order event is observed; `ModuleConstants` declares exactly `Earned` and `Redeemed`, so no reversing operation type can even be constructed; and `ApplyMissionInternalAsync` is insert-only with no negative-contribution branch. The **decrement primitive already exists** — `LoyaltyLogicService` computes `Balance = Earned ? balance + amount : balance − amount`, and only `Redeemed` uses it today. The missing pieces are a constant, a caller and a trigger, not a mechanism."
+    check:
+      kind: manual
+      ref: Place an order that completes a mission, confirm the grant landed, then cancel the order. Within the settlement window the mission's `currentValue` must fall by that order's contribution, its status must leave `Completed` if the goal is no longer met, the balance must fall by the reward, and a reversing entry must appear in `loyaltyPointsHistory`.
+    violation_signal: balance and mission status unchanged after a cancellation; no reversing or negative entry attributable to the cancelled order; a mission still `Completed` at a `currentValue` equal to that order's own total.
+    status: ACTIVE
+  - id: BL-LOY-020
+    title: The store's loyalty balance calculation mode selects the OWNER SCOPE of the balance; no surface may resolve a different one
+    rule: "The store setting `Loyalty.LoyaltyBalanceCalculationMode` (`Customer` | `Organization`, platform default `Customer`) selects which owner a loyalty balance belongs to, and every surface that reads or writes that balance — cart/order validation, earn, redeem, the account-page balance and points history, missions — MUST resolve the same scope: the individual user in `Customer` mode, the user's organization (pooled across every member) in `Organization` mode. Switching the mode changes which balance is *resolved* on the next read; it MUST NOT alter, migrate or destroy any existing `LoyaltyBalanceOperationLog` row — a user-scope row (`OrganizationId == null`) and an org-scope row (`OrganizationId == <id>`) are permanently disjoint ledgers, never two views onto one total."
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: code
+        ref: "vc-module-loyalty PR #17 (`feat/VCST-5024-org-level`, head `973e7c9`) — write side: `LoyaltyProgramHandler.cs` `RedeemLoyaltyProductsAsync` / `EarnProductPointsAsync` / `EarnLoyaltyProgramAsync`, each gated `if (store.IsOrganizationBalanceCalculationMode()) { loyaltyContext.OrganizationId = order.OrganizationId; }` — the order's own organization decides the write scope, with no contact/member lookup. Read side: `LoyaltyBalanceOperationLogSearchService.cs` `BuildOwnerQuery` (new file lines ~60-86) — `predicate.Or(x => x.UserId == criteria.UserId && x.OrganizationId == null)` OR'd with `predicate.Or(x => x.OrganizationId == criteria.OrganizationId)`, so a user-scope query explicitly excludes org-scoped rows and an org-scope query never falls back to a member's personal rows. This is the unwritten premise **BL-LOY-008** already leans on parenthetically (\"the store's loyalty balance calculation mode\")."
+      - kind: ac
+        ref: "VCST-5024 (Done) — AC: multiple managers earn and redeem points for the same organization; transactions still kept per contact"
+      - kind: resolution
+        ref: VCST-5953 (Done) — fixed checkout validation resolving a different balance scope than the account page in organization mode
+    scope:
+      code_ref: vc-module-loyalty:src/VirtoCommerce.Loyalty.Core/Extensions/StoreExtensions.cs#IsOrganizationBalanceCalculationMode
+    check:
+      kind: manual
+      ref: Read the org's pooled balance in `Organization` mode → flip the store to `Customer` → same session, one reload, no re-login → the org figure becomes invisible and each member's own user-scope balance reads independently (0 for a member who never earned in `Customer` scope) → flip back to `Organization` → reload → the pooled figure returns EXACTLY equal to the pre-flip reading. Confirm the ledger itself is untouched across the flip (row count, signed sum, every row's `OrganizationId` unchanged).
+    violation_signal: A balance reading changes (grows, shrinks or zeroes) across a mode flip with no order placed in between; a user-scope read includes an org-scope row or vice versa; restoring the prior mode does not restore the prior figure exactly; any ledger row's `OrganizationId` or amount changes as a side effect of the settings write.
+    status: ACTIVE

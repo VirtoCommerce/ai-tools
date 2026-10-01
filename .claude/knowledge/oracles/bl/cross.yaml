@@ -1,0 +1,173 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 8: Cross-Domain Invariants (BL-CROSS)"
+  prefixes:
+    - BL-CROSS
+  agents:
+    - qa-backend-expert
+    - qa-frontend-expert
+    - qa-testing-expert
+  intro: These invariants span multiple modules and are where the most expensive production bugs hide. Agents should prioritize these during regression testing.
+rules:
+  - id: BL-CROSS-001
+    title: Price list deletion → storefront unavailability
+    rule: When a price list is deleted in Admin, affected products on the storefront must show as "Unavailable" (not $0). The "Add to Cart" button must be disabled. Products without any active price list in the current currency cannot be purchased.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — default buyability price policy rejects zero-price products; allowing them needs a code override
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Core/Specifications/CatalogProductIsBuyableSpecification.cs#CheckPricePolicy
+    check:
+      kind: manual
+      ref: 'Delete price list in Admin → storefront product shows "Unavailable" or equivalent, not "$0.00" → "Add to Cart" disabled → xAPI `products` query returns `price: null` or empty price object.'
+    violation_signal: Product displays "$0.00" price after price list deletion; "Add to Cart" remains active; order can be placed for $0.
+    status: ACTIVE
+  - id: BL-CROSS-002
+    title: Catalog change → search lag → cart price mismatch window
+    rule: After a product price or availability is changed in Admin, there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, the storefront may show stale prices. However, the cart/checkout must always use the server-side (current) price — not the cached search index price.
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/pricing/troubleshooting-guide.md (published) — rebuild the product index for price changes to reflect in the frontend
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartProductService.cs#ApplyPricesToCartProductAsync
+    check:
+      kind: manual
+      ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
+    violation_signal: Cart uses stale price from search index; order placed at old price after admin price increase; price mismatch between listing and cart persists beyond reindex window.
+    status: ACTIVE
+  - id: BL-CROSS-003
+    title: Module disable → API 404, Admin section removal, dependent degradation
+    rule: When a module is disabled in Admin, its REST APIs return 404, its Admin SPA sections disappear, and its GraphQL schema types are removed. Dependent modules should degrade gracefully — not crash.
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Disable module → its API endpoints return 404 → Admin menu item gone → dependent module shows appropriate fallback (not error screen) → re-enable → everything restored.
+    violation_signal: API returns 500 instead of 404; Admin section still visible but broken; dependent module crashes; re-enable doesn't restore functionality.
+    status: ACTIVE
+  - id: BL-CROSS-004
+    title: Currency switch triggers multi-system recalculation
+    rule: "When a user switches currency on the storefront, the following must all update atomically: (1) product prices switch to the new currency's price list, (2) cart line items recalculate using new prices, (3) shipping rates update for the new currency, (4) tax recalculates if rates differ. Products without prices in the new currency become unavailable."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: resolution
+        ref: VCST-2961 (Done) — fixed cart becoming empty after merging and changing cart currency
+    check:
+      kind: manual
+      ref: Switch currency → all prices update → cart totals recalculate → shipping and tax adjust → products without new-currency prices show "Unavailable".
+    violation_signal: Partial update (prices change but cart doesn't recalculate); shipping in old currency; tax on pre-switch amounts; mixed currency display.
+    status: ACTIVE
+  - id: BL-CROSS-005
+    title: Order placement triggers multi-system side effects
+    rule: "When an order is successfully placed, the following side effects must all occur: (1) inventory decremented by ordered quantities, (2) order confirmation email sent to the customer, (3) GA4 `purchase` event fired with correct order ID, revenue, and items, (4) order appears in the customer's order history, (5) cart is cleared. All side effects must complete — partial execution (e.g., inventory decremented but email not sent) is a bug."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/order-management/notifications.md (published) — customers get automated email on order creation
+      - kind: doc
+        ref: storefront/user-guide/docs/shopping/checkout-process.md (published) — placed orders are viewable in the account Orders section
+    check:
+      kind: manual
+      ref: 'Place order → check inventory (decremented) → check email inbox (confirmation received) → check GA4 dataLayer (purchase event with correct data) → check "My Orders" (order listed) → check cart (empty). Verify in Admin: order exists with correct totals.'
+    violation_signal: Inventory not decremented; email not sent; GA4 event missing or wrong revenue; order not in history; cart not cleared; any side effect missing.
+    status: ACTIVE
+  - id: BL-CROSS-006
+    title: Feature flag toggle → immediate behavior change
+    rule: Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/feature-flags.md (published) — public store settings via xAPI control feature activation at runtime
+    check:
+      kind: manual
+      ref: 'Toggle `quotesEnabled` OFF in Admin → refresh storefront → "Request Quote" button disappears. Toggle ON → button returns. For module flags: disable module → restart platform → verify effects.'
+    violation_signal: Flag change requires restart when it shouldn't; flag change has no effect until cache expires; storefront caches flags beyond one page load.
+    status: ACTIVE
+  - id: BL-CROSS-007
+    title: Admin entity deletion → cascade cleanup
+    rule: "When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database."
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: "Delete a catalog → its products no longer appear in search, pricing, or any virtual catalog. Delete an org → members can still log in but have no org association. Check xAPI: no references to deleted entities."
+    violation_signal: Orphaned products in search after catalog deletion; orphaned prices referencing deleted products; member accounts deleted with org; API returns references to deleted entities.
+    status: ACTIVE
+  - id: BL-CROSS-008
+    title: Organization switch → full context swap
+    rule: "When a B2B user switches organization, ALL of the following must swap atomically: (1) cart — new org's cart loads, (2) addresses — new org's address book, (3) pricing — new org's price list, (4) lists/wish lists — new org's lists, (5) white labeling — new org's theme (if WL enabled), (6) quotes — new org's quotes. Partial swap (e.g., cart changes but prices don't) is a critical bug."
+    priority: P0-revenue
+    trust: INFERRED
+    source:
+      - kind: doc
+        ref: platform/user-guide/docs/white-labeling/overview.md (published) — branding follows the logged-in organization
+      - kind: doc
+        ref: storefront/user-guide/docs/account/company-members.md (published) — users switch between their companies from the account menu
+    check:
+      kind: manual
+      ref: As Org A, note cart, addresses, prices, theme → switch to Org B → verify ALL six contexts changed → switch back → ALL restored to Org A's state.
+    violation_signal: Cart swaps but prices remain from previous org; addresses from wrong org; theme doesn't change; partial context swap of any kind.
+    status: ACTIVE
+  - id: BL-CROSS-009
+    title: Eventual consistency is bounded
+    rule: "Any change to an entity — an admin edit (product, price, inventory, category, settings) **or a write through any API surface** (REST, xAPI/GraphQL) — must be reflected everywhere that entity is read within 120 seconds (2 reindex cycles). This bound covers search index, cache layers, CDN, **and per-entity read caches**: a write on one surface must invalidate the cached read of the *same* entity on every other surface — caches must expire on the entity's change event, not only on a same-surface write. After 120 seconds, any discrepancy (Admin vs storefront, or one API surface vs another) is a bug."
+    priority: P1-data
+    trust: DECLARED
+    source:
+      - kind: resolution
+        ref: VCST-5505 (Done) — fixed xCart cache not invalidated when the cart is saved via REST API
+    check:
+      kind: manual
+      ref: "(a) Make an admin change → start timer → check storefront repeatedly → reflects within 120s; if using CDN, verify cache purge within the same window. (b) Cross-surface: write an entity via one API (e.g. a REST cart change) → read the *same* entity via another API (e.g. a GraphQL cart query) → the read reflects the write, because the change event invalidated the read cache."
+    violation_signal: Storefront shows stale data after 120s; change requires manual cache purge; inconsistency between search results and product detail pages; a read on one API surface returns stale data after a write on another surface (read cache not invalidated on the change event).
+    status: ACTIVE
+  - id: BL-CROSS-010
+    title: Idempotency on all checkout mutations
+    rule: All checkout-related mutations (addToCart, removeFromCart, placeOrder, processPayment) must be idempotent when retried with the same idempotency key or cart token. Network retries, browser refreshes, and double-clicks must never produce duplicate side effects (double charges, double orders, double inventory decrement).
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: resolution
+        ref: VP-757 (Done) — fixed double checkout click creating two equal orders; expected one cart converts to one order
+    check:
+      kind: manual
+      ref: Call `placeOrder` twice with same cart token → only 1 order created, 1 inventory decrement, 1 payment charge. Simulate network timeout + retry → same result. Refresh the confirmation page → no new order.
+    violation_signal: Duplicate orders on retry; double payment charge; inventory decremented twice; different results on identical retry.
+    status: ACTIVE
+  - id: BL-CROSS-011
+    title: Graceful degradation when dependent service is down
+    rule: "When a dependent service is unavailable (Elasticsearch down, payment gateway timeout, email service failure, analytics endpoint unreachable), the platform must degrade gracefully: (1) search down → show \"Search unavailable\" message, catalog browsing via categories still works; (2) payment gateway down → show error at checkout, don't create orphan orders; (3) email down → order still placed, email queued for retry; (4) analytics down → order still placed, events lost (acceptable)."
+    priority: P1-data
+    trust: INFERRED
+    source: []
+    check:
+      kind: manual
+      ref: Simulate each service outage → verify core flow continues or shows meaningful error → no 500 errors, no white screens, no data corruption.
+    violation_signal: White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
+    status: ACTIVE
+  - id: BL-CROSS-012
+    title: Admin entity deletion never creates $0 products
+    rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
+    priority: P0-revenue
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
+      - kind: doc
+        ref: "platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag"
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Specifications/ProductIsBuyableSpecification.cs#IsSatisfiedBy
+    check:
+      kind: manual
+      ref: Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.
+    violation_signal: Any product purchasable at $0.00 due to admin action; "Add to Cart" active when price data is missing; order placed at $0.
+    status: ACTIVE
