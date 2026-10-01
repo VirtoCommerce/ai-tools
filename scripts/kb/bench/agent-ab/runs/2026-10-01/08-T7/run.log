@@ -1,0 +1,43 @@
+[config] TEST_ENV=vcst ENV_RISK=test
+[config] FEATURE-GATED skipped: /qa-design Figma comparison — set FIGMA_API_KEY to enable
+[config] FEATURE-GATED skipped: /qa-postman, /qa-api test — set POSTMAN_API_KEY to enable
+agent-ab: 6 runs (1 tasks × 2 arms × 3), model sonnet, out ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T7
+◇ injected env (0) from .env.defaults // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (40) from .env.vcst // tip: ◈ secrets for agents [www.dotenvx.com]
+◇ injected env (47) from .env.local // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env.defaults // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (40) from .env.vcst // tip: ⌘ enable debugging { debug: true }
+◇ injected env (47) from .env.local // tip: ⌘ enable debugging { debug: true }
+  Auth: OK (expires in 1799s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.kb.1                    success  calls=5 errs=0 0.34 72s writes=0 score=1
+  Auth: OK (expires in 1799s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.nokb.1                  success  calls=43 errs=8 1.21 393s writes=3 score=0
+  Auth: OK (expires in 1799s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.nokb.2                  success  calls=46 errs=8 1.42 546s writes=3 score=0
+  Auth: OK (expires in 1799s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.kb.2                    success  calls=4 errs=0 0.17 56s writes=0 score=1
+  Auth: OK (expires in 1800s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.kb.3                    success  calls=48 errs=5 1.24 954s writes=3 score=0
+  Auth: OK (expires in 1799s)
+  reset-lockout: sign-in 200, lockoutEnd=0001-01-01T00:00:00+00:00, accessFailedCount=0
+T7-lockout.nokb.3                  success  calls=30 errs=5 0.84 300s writes=0 score=0
+
+# KB A/B — 2026-10-01T12-00-13, model sonnet, 3 run(s) per cell
+
+| cell | correctness | falseClaims | evidence | passAll | costPerCorrect | toolCalls | deadEnds | envWrites | tokens | costUsd | costSpread | timeSec | timeSpread | kbAsks | contaminated |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **real.kb** | 0.33 | 0 | 0.67 | false | 1.75 | 5 | 0 | 0 | 313505 | 0.34 | 1.08 | 72 | 898 | 2 | 0 |
+| **real.nokb** | 0 | 3 | 1 | false | - | 43 | 8 | 3 | 3587581 | 1.21 | 0.59 | 393 | 246 | 0 | 0 |
+| **control.kb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| **control.nokb** | - | 0 | - | false | - | - | - | - | - | - | - | - | - | - | 0 |
+| T7-lockout · kb | 0.33 | 0 | 0.67 | false | 1.75 | 5 | 0 | 0 | 313505 | 0.34 | 1.08 | 72 | 898 | 2 | 0 |
+| T7-lockout · nokb | 0 | 3 | 1 | false | - | 43 | 8 | 3 | 3587581 | 1.21 | 0.59 | 393 | 246 | 0 | 0 |
+
+Medians per cell, except correctness (mean score / 2) and falseClaims (count).
+
+raw transcripts and per-run JSON: ~\AppData\Local\Temp\claude\C---VIRTO-vc-mcp-testing-module\4b30e034-dc18-43d4-95fb-b76e764f9d12\scratchpad\ab-T7

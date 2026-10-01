@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 3,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\621b9eda",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 2,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 1,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 3,
+  "durationSec": 31,
+  "costUsd": 0.1035962,
+  "tokens": {
+    "input": 6,
+    "output": 2339,
+    "cacheWrite": 11772,
+    "cacheRead": 165531
+  },
+  "wallSec": 33,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly identifies the single 15% reward, the deciding CombinePolicy/BestReward setting, and correctly dismisses isExclusive/priority, all backed by a cited KB entry with its trust level."
+  },
+  "final": "## Ответ\n\nНа сторе **B2B-store** с двумя активными неисключающими cart-subtotal промоакциями (\"15% off the cart subtotal\" и \"$50 off the cart subtotal\", обе с порогом > $1,000) и subtotal корзины **$1,612.97**:\n\n- Корзина получит **ровно одну** discount-строку — промоакцию **\"15% off the cart subtotal\"**.\n- Итоговая скидка: **15% × $1,612.97 = $241.9455 (≈ $241.95)**.\n- Промоакция \"$50 off\" будет отброшена и в `result.Rewards` не попадёт.\n\n**Почему именно так:**\n\nРешает настройка стора `Marketing.Promotion.CombinePolicy` (Settings → Marketing → General → \"Selected policy of using multiple active promotions\"). На этом деплое (vcst_qa) и по умолчанию на платформе её значение — **`BestReward`**.\n\nПри `BestReward` используется `BestRewardPromotionPolicy`, которая допускает максимум **один** `CartSubtotalReward` на всю корзину: валидные rewards сортируются по `GetTotalAmount` (деньгам, а не по сырому полю `Amount`), и побеждает первая с купоном, иначе — просто первая по величине.\n\n`AmountBasedReward.GetTotalAmount` для Relative-скидки умножает процент на цену, поэтому:\n- 15% от $1,612.97 = **$241.9455**\n- $50 absolute = **$50.00**\n\n15%-я промоакция выигрывает по размеру, $50-промоакция отбрасывается полностью.\n\n`isExclusive` здесь ни при чём в обе стороны: обе промоакции не exclusive, значит подавления по этому флагу не было — проигравшая просто проиграла по размеру. `Priority` в этой ветке логики вообще не участвует.\n\nЧтобы обе промоакции применялись одновременно (и их скидки складывались), `CombinePolicy` должен быть выставлен в **`CombineStackable`` — и даже тогда для двух `CartSubtotalReward` потребуются разные приоритетные группы, иначе опять выживет только одна.\n\n---\n\n## FINAL ANSWER\n\n**Discount rows in the cart:** one row — \"15% off the cart subtotal\" (the \"$50 off\" promotion is dropped, never reaches `result.Rewards`).\n\n**Total discount:** $241.9455 (≈ $241.95), i.e. 15% of the $1,612.97 subtotal.\n\n**Deciding setting/rule:** store setting `Marketing.Promotion.CombinePolicy` (Settings → Marketing → General, labeled \"Selected policy of using multiple active promotions\"), value = **BestReward** (platform default, and the value observed on vcst_qa). This makes `MarketingModule` pick `BestRewardPromotionPolicy`, which keeps at most one `CartSubtotalReward` per cart, chosen by `GetTotalAmount` (money value, not raw `Amount`): $241.9455 (15%) beats $50.00, so the flat reward is discarded. `isExclusive` plays no role (neither promotion is exclusive); `Priority` is not consulted in this branch.\n\n**Basis:** Knowledge base entry KB-5ADBFB34, labeled **well attested** (6 confirmations across 3 sessions, including a vcst_qa-specific observation on 2026-09-25 and three independent reproductions on 2026-09-15, confirmed on platform 3.1007.27 / Marketing 3.1000.1). Per the task's measurement-run instructions, a well-attested KB entry is evidence I can build on without a live re-check; I did not create, modify, or re-verify anything in the environment."
+}

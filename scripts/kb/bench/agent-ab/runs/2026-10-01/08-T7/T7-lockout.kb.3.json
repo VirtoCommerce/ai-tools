@@ -1,0 +1,45 @@
+{
+  "task": "T7-lockout",
+  "kind": "expensive",
+  "arm": "kb",
+  "run": 3,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\c5a60683",
+  "promptSha": "27c3008bec46",
+  "toolCalls": 48,
+  "byTool": {
+    "ToolSearch": 2,
+    "mcp__kb__kb_ask": 6,
+    "Bash": 38,
+    "Read": 2
+  },
+  "toolErrors": 2,
+  "httpFailures": 3,
+  "envCalls": 19,
+  "envWrites": 3,
+  "kbAsks": 6,
+  "kbAnswered": 2,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 49,
+  "durationSec": 954,
+  "costUsd": 1.24422,
+  "tokens": {
+    "input": 96,
+    "output": 23927,
+    "cacheWrite": 56192,
+    "cacheRead": 3899950
+  },
+  "wallSec": 962,
+  "grade": {
+    "score": 0,
+    "falseClaim": false,
+    "evidence": 0,
+    "reason": "The answer contains no actual content addressing the lockout policy, attempts, duration, token endpoint behavior, or organization/{{ADMIN}} distinction."
+  },
+  "final": "I'll pause here and wait for the background task notification before continuing the analysis."
+}

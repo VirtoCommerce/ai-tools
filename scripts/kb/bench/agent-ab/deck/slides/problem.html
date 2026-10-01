@@ -1,0 +1,30 @@
+<section id="problem" data-transition="fade" style="background:#F6F3EC;color:#15233F;font-family:'DM Sans', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#B5531A">The problem</p>
+<h2 style="font-family:'Space Grotesk', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1">Every agent starts from zero</h2>
+</div>
+<div style="display:flex;gap:48px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;gap:24px;align-items:start">
+<x-icon name="Clock" style="color:#2B5FA0;width:48px;height:48px"></x-icon>
+<div style="display:flex;flex-direction:column;gap:6px"><h3 style="font-size:36px;font-weight:600">It rediscovers the same quirks</h3><p style="font-size:28px;color:#3E4A5C;line-height:1.4">Clicks, API calls and tokens spent on a question someone already answered last week.</p></div>
+</div>
+<div style="display:flex;gap:24px;align-items:start">
+<x-icon name="Warning" style="color:#B5531A;width:48px;height:48px"></x-icon>
+<div style="display:flex;flex-direction:column;gap:6px"><h3 style="font-size:36px;font-weight:600">It guesses, and guesses wrong</h3><p style="font-size:28px;color:#3E4A5C;line-height:1.4">A plausible guess becomes a wrong test assertion or a bug that is not a bug.</p></div>
+</div>
+<div style="display:flex;gap:24px;align-items:start">
+<x-icon name="Book" style="color:#2B5FA0;width:48px;height:48px"></x-icon>
+<div style="display:flex;flex-direction:column;gap:6px"><h3 style="font-size:36px;font-weight:600">What it learned is lost</h3><p style="font-size:28px;color:#3E4A5C;line-height:1.4">The session ends, and the finding ends with it.</p></div>
+</div>
+</div>
+<div style="width:640px;display:flex;flex-direction:column;gap:20px;background:#15233F;color:#F6F3EC;padding:48px;border-radius:24px">
+<p style="font-size:24px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#F2A46B">A real example</p>
+<p style="font-size:34px;line-height:1.35">Two "stackable" promotions on one cart: 15% off and $50 off.</p>
+<p style="font-family:'Space Grotesk', Arial, sans-serif;font-size:44px;font-weight:700;line-height:1.2;color:#F2A46B">Only the bigger one applies.</p>
+<p style="font-size:26px;line-height:1.4;color:#C9D3E3">The "exclusive" flag does not decide it; a store setting does. Three separate agent runs were needed to pin it down. Now it is one lookup.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1400px;font-size:24px;color:#6A7179">Example: knowledge-base entry KB-5ADBFB34 · well attested, 6 confirmations</p>
+<aside>Agents are smart but have no memory between sessions. Three costs: they spend time and tokens rediscovering quirks; when they do not check, they guess, and a plausible guess is often wrong, which turns into wrong assertions or false bug reports; and whatever one session learns disappears when it ends. The example on the right is real: with two promotions active, people and models expect them to stack. The platform keeps only the most valuable one, because of the store's CombinePolicy setting, and isExclusive is irrelevant. It took three independent runs to establish. Today any agent gets it in one lookup.</aside>
+</section>

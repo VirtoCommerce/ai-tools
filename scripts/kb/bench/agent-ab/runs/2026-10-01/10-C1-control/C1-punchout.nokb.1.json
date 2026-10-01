@@ -1,0 +1,45 @@
+{
+  "task": "C1-punchout",
+  "kind": "control",
+  "arm": "nokb",
+  "run": 1,
+  "kbRule": null,
+  "workDir": "~\\agent-work\\70bae54b",
+  "promptSha": "383e2eee4c24",
+  "toolCalls": 14,
+  "byTool": {
+    "Bash": 10,
+    "ToolSearch": 1,
+    "WebSearch": 2,
+    "WebFetch": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 6,
+  "envWrites": 0,
+  "kbAsks": 0,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 15,
+  "durationSec": 132,
+  "costUsd": 0.4034644,
+  "tokens": {
+    "input": 28,
+    "output": 7715,
+    "cacheWrite": 24565,
+    "cacheRead": 887927
+  },
+  "wallSec": 133,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "Ответ отрицает поддержку «из коробки» и каждое утверждение подкреплено конкретным источником (путь к файлу контроллера в репозитории, статус PR через gh, прямые curl-запросы к стенду), без голословных утверждений о модуле/эндпоинте."
+  },
+  "final": "## Итог проверки\n\n**Нет, \"из коробки\" (в текущем стабильном релизе) cXML PunchOut session setup не поддерживается.** Модуль под это существует в экосистеме Virto Commerce, но на данный момент (2026-10-01) это пустой скелет, а не рабочая реализация, и на проверяемом стенде он не установлен.\n\n### Что проверено\n\n1. **Публичный репозиторий модуля существует**: `VirtoCommerce/vc-module-punchout` (namespace `VirtoCommerce.Punchout`).\n2. Его единственный API-контроллер (`src/VirtoCommerce.Punchout.Web/Controllers/Api/PunchoutController.cs`) на роуте `api/punchout` содержит только один `GET`-эндпоинт, который возвращает `{ \"result\": \"Hello world!\" }`. Никакого парсинга cXML, `PunchOutSetupRequest`/`PunchOutSetupResponse`, никакой cXML-логики в коде нет — это сгенерированный шаблон модуля, не реализация.\n3. Остальные папки модуля (`Events`, `Models`, `Notifications`, `Services` и т.д.) содержат только файлы-заглушки `.remove`, что типично для нетронутого шаблона модуля Virto Commerce.\n4. В `vc-frontend` есть PR **#2506** `feat(VCST-5886): punch out setup request`, который добавляет публичный роут сторфронта `/punchout/:sessionToken` и обмен токена на доступ через кастомный OAuth grant `punchout`. Статус PR — **OPEN, не смёрджен** (`mergedAt: null`).\n5. На проверяемом стенде (`vcst-qa-storefront.govirto.com`, `vcst-qa.govirto.com`):\n   - `GET https://vcst-qa-storefront.govirto.com/punchout/test1` → HTTP 200 (это SPA-shell, страница отдаётся всегда), но в теле ответа нет ни слова \"punchout\" — значит фронтенд-роут из PR #2506 на этот стенд не задеплоен.\n   - `GET https://vcst-qa.govirto.com/api/punchout` → **404** — контроллер модуля на платформе не установлен/не доступен.\n\n### FINAL ANSWER\n\n**Нет, Virto Commerce storefront не поддерживает cXML PunchOut session setup \"из коробки\" — ни в текущем стабильном релизе, ни на данном QA-стенде.**\n\n- Модуль, который призван это реализовать: **`VirtoCommerce.Punchout`** (репозиторий `VirtoCommerce/vc-module-punchout`), но его код на сегодня — это нетронутый шаблон модуля: единственный эндпоинт `GET api/punchout` возвращает заглушку `\"Hello world!\"`, реализации cXML `PunchOutSetupRequest`/`PunchOutSetupResponse` в коде нет.\n  Источник: `src/VirtoCommerce.Punchout.Web/Controllers/Api/PunchoutController.cs` в репозитории `VirtoCommerce/vc-module-punchout` (ветка `dev`), прочитан напрямую через GitHub raw-контент.\n- Сторона сторфронта: открытый (не смёрдженный) PR `VirtoCommerce/vc-frontend#2506` \"feat(VCST-5886): punch out setup request\" добавляет публичный роут `/punchout/:sessionToken` и grant `punchout` для обмена токена на сессию — то есть работа идёт, но ещё не выпущена.\n  Источник: `gh pr view 2506 --repo VirtoCommerce/vc-frontend` → `state: OPEN`, `mergedAt: null`.\n- На самом проверяемом стенде эндпоинта нет: `GET /api/punchout` на `https://vcst-qa.govirto.com` → `404`; роут `/punchout/:sessionToken` на `https://vcst-qa-storefront.govirto.com` отдаёт пустой SPA-shell без каких-либо упоминаний punchout в теле.\n  Источник: прямые `curl`-запросы к обоим хостам стенда (только GET, ничего не изменялось).\n\nСоответственно, \"эндпоинт\" для cXML PunchOutSetupRequest на сегодняшний день **не существует ни в выпущенном виде, ни на этом стенде** — есть только заготовка модуля и незавершённый PR."
+}

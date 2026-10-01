@@ -1,0 +1,106 @@
+{
+  "model": "sonnet",
+  "runs": 1,
+  "overall": {
+    "real.kb": {
+      "runs": 0,
+      "correctness": null,
+      "passAll": false,
+      "falseClaims": 0,
+      "toolCalls": null,
+      "deadEnds": null,
+      "envCalls": null,
+      "envWrites": null,
+      "tokens": null,
+      "outputTokens": null,
+      "costUsd": null,
+      "timeSec": null,
+      "kbAsks": null,
+      "contaminated": 0
+    },
+    "real.nokb": {
+      "runs": 0,
+      "correctness": null,
+      "passAll": false,
+      "falseClaims": 0,
+      "toolCalls": null,
+      "deadEnds": null,
+      "envCalls": null,
+      "envWrites": null,
+      "tokens": null,
+      "outputTokens": null,
+      "costUsd": null,
+      "timeSec": null,
+      "kbAsks": null,
+      "contaminated": 0
+    },
+    "control.kb": {
+      "runs": 1,
+      "correctness": 0,
+      "passAll": false,
+      "falseClaims": 0,
+      "toolCalls": 22,
+      "deadEnds": 1,
+      "envCalls": 7,
+      "envWrites": 0,
+      "tokens": 1319804,
+      "outputTokens": 10376,
+      "costUsd": 0.6206408,
+      "timeSec": 178,
+      "kbAsks": 2,
+      "contaminated": 0
+    },
+    "control.nokb": {
+      "runs": 1,
+      "correctness": 0,
+      "passAll": false,
+      "falseClaims": 0,
+      "toolCalls": 9,
+      "deadEnds": 0,
+      "envCalls": 4,
+      "envWrites": 0,
+      "tokens": 449700,
+      "outputTokens": 6307,
+      "costUsd": 0.32355159999999994,
+      "timeSec": 104,
+      "kbAsks": 0,
+      "contaminated": 0
+    }
+  },
+  "byTask": {
+    "C1-punchout": {
+      "kb": {
+        "runs": 1,
+        "correctness": 0,
+        "passAll": false,
+        "falseClaims": 0,
+        "toolCalls": 22,
+        "deadEnds": 1,
+        "envCalls": 7,
+        "envWrites": 0,
+        "tokens": 1319804,
+        "outputTokens": 10376,
+        "costUsd": 0.6206408,
+        "timeSec": 178,
+        "kbAsks": 2,
+        "contaminated": 0
+      },
+      "nokb": {
+        "runs": 1,
+        "correctness": 0,
+        "passAll": false,
+        "falseClaims": 0,
+        "toolCalls": 9,
+        "deadEnds": 0,
+        "envCalls": 4,
+        "envWrites": 0,
+        "tokens": 449700,
+        "outputTokens": 6307,
+        "costUsd": 0.32355159999999994,
+        "timeSec": 104,
+        "kbAsks": 0,
+        "contaminated": 0
+      }
+    }
+  }
+}

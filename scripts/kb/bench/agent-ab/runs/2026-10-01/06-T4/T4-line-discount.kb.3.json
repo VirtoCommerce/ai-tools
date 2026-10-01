@@ -1,0 +1,43 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 3,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\fddc3601",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 2,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 1,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 3,
+  "durationSec": 40,
+  "costUsd": 0.112985,
+  "tokens": {
+    "input": 6,
+    "output": 3259,
+    "cacheWrite": 11809,
+    "cacheRead": 165735
+  },
+  "wallSec": 42,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly concludes it's not a bug, explains that order-level discounts aren't allocated to line items so the Line items header is the pre-discount sum, gives the correct order-header-based assertion, and backs every claim with a cited KB entry plus REST field observations."
+  },
+  "final": "## Вывод\n\nЭто **не баг** — это два разных по охвату показателя, которые в данном случае оба корректны.\n\nВ KB уже есть well-attested запись (KB-F1542157, 4 подтверждения из 3 сессий, одно из них — прямая проверка на той же проблемной записи заказа CO260915-00001 с теми же цифрами: Line items blade Subtotal 1,612.97 / Discount 0.00 / Total 1,612.97, а order header Total discount -241.95 / Total 1,371.02). Платформа не распределяет order-level скидку по строкам: все `items[].discountAmount` и `items[].discountTotal` в REST-ответе равны 0, а вся сумма 241.9455 сидит в `order.discounts[]` на уровне заказа.\n\nПоэтому:\n- Хедер блейда **Line items** показывает чистую сумму строк (line-level rollup), без учёта order-level промо — это by design, а не потеря скидки.\n- Хедер самого **заказа** показывает итог после применения order-level скидки.\n- Арифметика сходится: 1,612.97 − 241.95 = 1,371.02 — скидка нигде не потеряна, она просто не \"течёт\" в блейд строк.\n\nЕдинственная реальная проблема — UX: два экрана в один клик друг от друга не подписаны по своему scope, из-за чего легко принять Discount 0.00 в Line items за итоговую скидку по заказу.\n\n## Assertion для regression-теста\n\nНе проверять, что Discount в блейде Line items равен order-level скидке (он и не должен быть равен при order-level промо). Вместо этого проверять согласованность на уровне заказа:\n\n```\norder.total == sum(lineItem.total for lineItem in order.items) - sum(d.amount for d in order.discounts)\n```\nт.е. в конкретном случае: `1,612.97 - 241.95 == 1,371.02`.\n\nДополнительно, если нужно покрыть именно этот сценарий (order-level, а не line-level промо): `sum(items[].discountAmount) == 0` и `order.discounts[]` содержит запись с нужной суммой — это подтверждает, что скидка применена на уровне заказа, а не потеряна.\n\n## FINAL ANSWER\n\n**Не баг.** Discount 0.00 в хедере блейда Line items и Total 1,612.97 там же — это сумма строк заказа без учёта order-level скидки (by design, т.к. order-level промо в Virto Commerce не распределяется по строкам — все `items[].discountAmount`/`discountTotal` равны 0). Discount 241.95 и Total 1,371.02 в хедере заказа — это итог после применения order-level скидки из `order.discounts[]`. Оба числа верны для своего scope; 1,612.97 − 241.95 = 1,371.02 сходится, скидка не теряется.\n\nИсточник: KB-F1542157 (well attested, 4 подтверждения/3 сессии), в т.ч. прямое live-наблюдение на том же заказе CO260915-00001 с идентичными цифрами (Subtotal 1,612.97 / Discount 0.00 / Total 1,612.97 в блейде Line items; Total discount -241.95 / Total 1,371.02 в хедере заказа; REST-подтверждение, что `items[].discountAmount`=0 везде, а вся сумма скидки — в `order-level discounts[]`).\n\nРекомендуемый assertion для regression-теста: `order.total == sum(line totals) - sum(order.discounts[].amount)`, а не сравнение Discount в блейде Line items с order-level скидкой."
+}

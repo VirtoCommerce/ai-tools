@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "nokb",
+  "run": 3,
+  "workDir": "~\\agent-work\\f7fe8844",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 23,
+  "byTool": {
+    "Bash": 21,
+    "ToolSearch": 1,
+    "WebFetch": 1
+  },
+  "toolErrors": 3,
+  "httpFailures": 1,
+  "envCalls": 9,
+  "envWrites": 0,
+  "kbAsks": 0,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 24,
+  "durationSec": 299,
+  "costUsd": 0.7624974000000001,
+  "tokens": {
+    "input": 48,
+    "output": 20803,
+    "cacheWrite": 50331,
+    "cacheRead": 1765237
+  },
+  "wallSec": 301,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly identifies that only the 15% reward (241.95) applies, names CombinePolicy=BestReward as the deciding setting with its default, explicitly rules out priority/isExclusive as deciding factors, and backs every load-bearing claim with a cited source (API call, store settings, source file/line, order search)."
+  },
+  "final": "## Summary\n\nThe two described promotions (\"15% off the cart subtotal\" and \"$50 off the cart subtotal\", both for subtotal > $1,000) do not exist verbatim in the system — the 26 active promotions configured on B2B-store use different names (`Super Discount`, `QA Fixed Dollar Off`, `Register and get 15% for all`, etc.), none matching these exact conditions. So I can't quote an existing cart's actual discount lines for *this specific pair*. I answered from the platform's actual, verified configuration and engine source code, which determines the behavior deterministically regardless of which promotions carry these names.\n\n**The decisive setting:** `Marketing.Promotion.CombinePolicy`, a global (not store-scoped) platform setting with allowed values `BestReward` / `CombineStackable`, default `BestReward`.\n\n- Verified on this environment: `GET /api/platform/settings/Marketing.Promotion.CombinePolicy` → `\"value\": \"BestReward\"`.\n- Confirmed not store-overridden: B2B-store's own `settings` array (116 entries, `GET /api/stores/B2B-store`) contains no `Marketing.Promotion.CombinePolicy` entry — it's a single global value for the whole platform.\n- Confirmed via source (`VirtoCommerce/vc-module-marketing`, `dev` branch, `Module.cs` ~L110-124): DI picks `BestRewardPromotionPolicy` unless this setting equals `\"CombineStackable\"`.\n- `BestRewardPromotionPolicy.cs`: for cart-level (`CartSubtotalReward`) promotions, it does **not** look at `Priority` or `IsExclusive` for ranking (exclusivity only short-circuits everything else when an exclusive promo also matches, which isn't the case here) — it orders every valid, matching cart-subtotal reward by **actual dollar amount** (`GetTotalAmount(...)` descending) and keeps only `FirstOrDefault()` — i.e. exactly one row, the single largest discount. A coupon-based reward is preferred only if one is present; these are plain cart promotions, so that tie-break doesn't apply.\n- Empirical cross-check: searched the 200 most recent B2B-store orders (`POST /api/order/customerOrders/search`, read-only) — zero orders carry more than one discount row, consistent with `BestReward` being the live behavior (no stacking observed anywhere on this store).\n\n**Applying this to the stated scenario** (subtotal $1,612.97, both promos non-exclusive, both trigger at >$1,000):\n- 15% reward = 0.15 × $1,612.97 = $241.9455 → $241.95\n- $50 reward = $50.00 (flat)\n- `BestReward` compares the two computed amounts and keeps only the larger one.\n\n## FINAL ANSWER\n\nThe cart will carry **one** discount row: the **\"15% off the cart subtotal\"** promotion's reward, ≈ **$241.95**. The \"$50 off\" promotion is evaluated as eligible (subtotal > $1,000) but its reward is **discarded**, because it computes to a smaller dollar amount than the 15% reward — it never appears as a line on the cart.\n\n**Total discount on the cart: $241.95** (not $291.95 — the two promotions do not stack).\n\n**What decides it:** the global platform setting **`Marketing.Promotion.CombinePolicy`**, currently set to **`BestReward`** (its default) on this environment. Under `BestReward`, when multiple non-exclusive promotions produce a cart-subtotal-level reward, the engine keeps only the single reward with the highest computed discount amount (`BestRewardPromotionPolicy.EvaluatePromotionWithoutCache`, `vc-module-marketing`) — `Priority` and `IsExclusive` on the individual promotions are irrelevant to this particular choice (exclusivity only matters when an *exclusive* promotion also qualifies, which isn't the case for this pair). Had the setting instead been `CombineStackable`, both rewards would eventually be applied by `CombineStackablePromotionPolicy` and the cart would carry two rows totaling ≈ $291.95 — but that is not this environment's configuration.\n\n**Caveat (explicitly flagged):** No promotions named/configured exactly as described exist on B2B-store right now, so this is not a readout of a real cart's discount lines — it's the engine's deterministic behavior given the current, verified `CombinePolicy=BestReward` setting and the module's source logic, applied to the numbers given. I did not create the described promotions or a cart to test live, per the read-only constraint; if such promotions are added later without changing `Marketing.Promotion.CombinePolicy`, this is the behavior to expect."
+}

@@ -1,0 +1,46 @@
+{
+  "task": "C1-punchout",
+  "kind": "control",
+  "arm": "kb",
+  "run": 3,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\533205bc",
+  "promptSha": "383e2eee4c24",
+  "toolCalls": 22,
+  "byTool": {
+    "ToolSearch": 2,
+    "mcp__kb__kb_ask": 2,
+    "WebSearch": 4,
+    "WebFetch": 5,
+    "Bash": 9
+  },
+  "toolErrors": 0,
+  "httpFailures": 1,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 2,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 23,
+  "durationSec": 151,
+  "costUsd": 0.5406092,
+  "tokens": {
+    "input": 36,
+    "output": 8857,
+    "cacheWrite": 26863,
+    "cacheRead": 1183056
+  },
+  "wallSec": 153,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "Every load-bearing claim (manifest version, release list, controller route/response, frontend PR, KB check phrasing) names an explicit source rather than being asserted outright."
+  },
+  "final": "Собрал достаточно данных через поиск по официальным репозиториям VirtoCommerce на GitHub (через `gh api`), так как KB по этому вопросу ничего не содержит (проверено двумя формулировками вопроса).\n\n## Что удалось установить\n\n**1. Отдельный модуль платформы существует, но не выпущен.**\nРепозиторий `VirtoCommerce/vc-module-punchout`, module id `VirtoCommerce.Punchout`.\n- У репозитория нет ни одного релиза (`gh api repos/VirtoCommerce/vc-module-punchout/releases` → пусто), ветка по умолчанию — `dev`, последний push — 2026-10-01 (сегодня).\n- `module.manifest`: `<version>3.1000.0</version>`, `<releaseNotes>First version.</releaseNotes>` — т.е. это ещё \"первая версия в разработке\", не вышедший продукт.\n- Единственный API-контроллер (`src/VirtoCommerce.Punchout.Web/Controllers/Api/PunchoutController.cs`) — заглушка: `[Route(\"api/punchout\")]`, единственный метод `GET api/punchout`, возвращает `{\"result\":\"Hello world!\"}`. Реального приёма/разбора cXML `PunchOutSetupRequest` там нет.\n- `VirtoCommerce.Punchout.Core/Models` — пустая папка (только служебный `.remove`), то есть модели cXML-сообщений ещё не реализованы.\n- Модуль не числится в каталоге `VirtoCommerce/vc-modules` (поиск по `punchout` в `modules.json` ничего не дал), то есть он не опубликован как устанавливаемый модуль.\n\n**2. Часть на стороне storefront (vc-frontend) есть, но это не сам setup-endpoint.**\nPR `VirtoCommerce/vc-frontend#2506` (\"feat(VCST-5886): punch out setup request\") добавляет модуль `punchout` в теме B2B-storefront: публичный роут `/punchout/:sessionToken`, который обменивает token на доступ через кастомный OAuth grant `punchout`, запускает punchout-сессию (localStorage) и редиректит на главную. Это — сторона \"приземления\" покупателя в сторефронте **после** того, как setup уже произошёл где-то ещё (т.е. Level-1 consumption), а не публичный HTTP-эндпоинт, принимающий cXML `<PunchOutSetupRequest>` от процюрмент-системы (Ariba/Coupa).\n\n## Вывод\n\nOut of the box (в базовой поставке, без доустановки/доработки) storefront/platform Virto Commerce **не поддерживает** приём cXML PunchOut setup-запроса — готового эндпоинта для `<cXML><PunchOutSetupRequest>` в составе платформы нет. Есть заявленный, но ещё не выпущенный модуль **`VirtoCommerce.Punchout`** (репозиторий `vc-module-punchout`) + парная часть storefront-модуля **`punchout`** в `vc-frontend` (роут `/punchout/:sessionToken`) — но серверная часть на данный момент (2026-10-01) представляет собой заглушку (`GET api/punchout` → \"Hello world!\"), без реализованного разбора/ответа cXML.\n\n---\n\n**FINAL ANSWER**\n\nНет, \"из коробки\" (в текущей опубликованной поставке) Virto Commerce storefront/platform не поддерживает приём cXML PunchOut setup-сессии — готового endpoint'а для `<PunchOutSetupRequest>` нет.\n\n- Модуль, который должен это закрыть: **`VirtoCommerce.Punchout`** (репозиторий `VirtoCommerce/vc-module-punchout`), версия манифеста `3.1000.0` (\"First version\"), **релизов не выпущено** (ветка по умолчанию `dev`). Источник: `module.manifest` и `gh api repos/VirtoCommerce/vc-module-punchout/releases` (пусто).\n- Единственный HTTP-эндпоинт модуля на сегодня — `GET api/punchout` (контроллер `PunchoutController`, `[Route(\"api/punchout\")]`), возвращающий заглушку `{\"result\":\"Hello world!\"}` — не реализует разбор cXML `PunchOutSetupRequest`. Источник: `PunchoutController.cs` в этом репозитории.\n- На стороне storefront (`VirtoCommerce/vc-frontend`) в PR #2506 добавлен модуль `punchout` с роутом `/punchout/:sessionToken` — это consumption-сторона (обмен уже готового session token на доступ через OAuth grant `punchout`), а не сам приёмник cXML setup-запроса.\n- KB (`mcp__kb__kb_ask`, deployment `vcst_qa`) по теме не содержит ничего — проверено двумя переформулировками вопроса (\"does storefront support cXML PunchOut session setup endpoint\" и \"is there a cXML punchout module for Virto Commerce\"), оба раза \"the base was read and holds nothing\".\n- Живое окружение (vcst-qa / vcst-qa-storefront) отдельно не проверялось — вопрос касается возможностей продукта \"из коробки\", а найденных данных из официальных репозиториев GitHub для однозначного ответа достаточно; если нужно подтверждение именно для этого стенда (установлен ли модуль here), это отдельная read-only проверка списка модулей в Admin, которую я не делал, так как она не меняет ответ на вопрос \"из коробки\"."
+}

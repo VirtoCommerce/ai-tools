@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "kb": {
+      "command": "node",
+      "args": [
+        "C:\\_VIRTO\\vc-mcp-testing-module\\scripts\\kb\\mcp.mjs"
+      ],
+      "env": {
+        "KB_ENABLED": "0"
+      }
+    }
+  }
+}

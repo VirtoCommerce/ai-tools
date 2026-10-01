@@ -1,0 +1,43 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "nokb",
+  "run": 2,
+  "kbRule": null,
+  "workDir": "~\\agent-work\\01e32c43",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 42,
+  "byTool": {
+    "Bash": 41,
+    "ToolSearch": 1
+  },
+  "toolErrors": 2,
+  "httpFailures": 1,
+  "envCalls": 23,
+  "envWrites": 0,
+  "kbAsks": 0,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 43,
+  "durationSec": 447,
+  "costUsd": 1.1452282000000003,
+  "tokens": {
+    "input": 86,
+    "output": 24912,
+    "cacheWrite": 59550,
+    "cacheRead": 3288681
+  },
+  "wallSec": 449,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly verdicts 'not a bug', explains the order-level discount lives in order.discounts/discountAmount rather than being allocated to line items, and proposes asserting against order-level fields instead of the line-item sum, all backed by cited order IDs, API endpoints, and source file references."
+  },
+  "final": "Confirmed at the exact deployed module version. I have everything needed to back a verdict.\n\n## Verdict: **Not a bug** — no discount/money is lost, no calculation is wrong\n\n**What's actually happening (verified live, in this environment):**\n\nI pulled real orders from `GET /api/order/customerOrders/search` on this env that carry an order-level (\"cart subtotal\") promotion, e.g. `CO260925-00003`, `CO260924-00001`, `CO260929-00003`. All show the identical pattern from the report: an entry in `order.discounts[]` (e.g. *\"Take 10% off for cart subtotal no more than $1000\"*) with `order.discountTotal`/`discountAmount` > 0, while **every** line item's `discountAmount` is `0.0` and the order's own `subTotalDiscount` is `0.0`.\n\nReconciling the numbers for `CO260925-00003`: `subTotalWithTax (1254.0) + shippingTotalWithTax (300.0) − discountTotalWithTax (125.4) = 1428.6 = order.total`. The discount is fully accounted for in the order grand total — it's just carried in a different field than the one the Line Items blade reads.\n\n**Why the two blades disagree — by design, not a defect:**\n\nI read the actual Admin UI source for the deployed module version (`VirtoCommerce.Orders` **v3.1016.0**, confirmed via `/api/platform/modules` on this env, source pulled from GitHub tag `3.1016.0`):\n\n- Line Items blade header (`customerOrder-items.tpl.html`) binds to `blade.currentEntity.subTotal`, `.subTotalDiscount`, `.subTotalTaxTotal`, and computes Total as `subTotalWithTax − subTotalDiscountWithTax`. These fields track only discounts *allocated onto line items*.\n- Order header blade (`customerOrder-detail.tpl.html`) binds to `blade.currentEntity.discountAmount` / `discountAmountWithTax` — the order-root fields that include order-level (cart-wide, non-allocated) promotion amounts.\n\nAn order-level/cart-subtotal promotion is recorded only in `order.discountTotal`/`discountAmount`/`discounts[]`; it is never distributed back into each line's `discountAmount` or into `order.subTotalDiscount`. So the Line Items blade — which by design only ever shows the line-item-scoped subtotal view — correctly shows `Discount 0.00` and `Total = subTotalWithTax` (undiscounted), while the Order header correctly shows the real discount and the fully reconciled total. The ticket's own numbers (`1,612.97 − 241.95 = 1,371.02`) obey exactly this same identity, with shipping/tax apparently netting to zero in that order.\n\nThis is consistent across every such order sampled in this environment and is baked into the stock, unmodified module template — not an isolated glitch on one order. At most, this is a UX-labeling nit (the \"Discount\" label on the Line Items blade could be scoped as \"Line item discount\" to avoid the reading \"discount wasn't applied\"), which would be a UX enhancement ticket, not a defect against this build.\n\n**Regression test assertion (what to assert instead):**\n\nDon't assert that the Line Items blade's `Discount`/`Total` equal the order header's `Discount`/`Total` — they're intentionally different, scoped fields. Instead assert order-level reconciliation:\n\n```\norder.total == round(order.subTotalWithTax + order.shippingTotalWithTax - order.discountTotalWithTax, 2)\n```\nand that the applied promotion is present and correctly amounted in `order.discounts[]` / `order.discountTotal`. Optionally, as a secondary, non-blocking assertion for the Line Items blade itself: `LineItemsBlade.Total == order.subTotalWithTax - order.subTotalDiscountWithTax` (i.e., the blade is internally consistent with its own scoped fields), without comparing it to the order header's discount/total.\n\n## FINAL ANSWER\n\n**Verdict: Not a bug.** The order-level promotion discount is not lost — it is correctly recorded in `order.discountTotal`/`discountAmount`/`discounts[]` and correctly subtracted into the order's grand `total`. The Admin Line Items blade showing `Discount 0.00` is expected: that blade's header is, by design, bound to `subTotalDiscount`/`subTotalWithTax` (discount allocated onto line items only), while the Order header is bound to `discountAmount`/`discountAmountWithTax` (the whole-order discount, including non-allocated cart/order-level promotions). These are two different, intentionally-scoped fields in the stock `VirtoCommerce.Orders` module.\n\n- Live evidence: orders `CO260925-00003`, `CO260924-00001`, `CO260929-00003`, `CO260929-00004` on `vcst-qa.govirto.com` (fetched via `GET /api/order/customerOrders/{id}`, {{ADMIN}} token) all show an order-level promotion in `discounts[]` with `subTotalDiscount = 0` and every line item's `discountAmount = 0`, while `order.total` reconciles exactly as `subTotalWithTax + shippingTotalWithTax − discountTotalWithTax`.\n- Source evidence: `VirtoCommerce.Orders` module version **3.1016.0** is installed on this platform (`GET /api/platform/modules`). The matching GitHub tag `3.1016.0` shows `customerOrder-items.tpl.html` (Line Items blade) binding its header to `subTotal` / `subTotalDiscount` / `subTotalWithTax − subTotalDiscountWithTax`, while `customerOrder-detail.tpl.html` (Order header blade) binds its Discount field to `discountAmount`/`discountAmountWithTax`.\n- Arithmetic check: the ticket's own figures (`1,612.97 − 241.95 = 1,371.02`) match this exact reconciliation formula, consistent with what I reproduced on live orders in this environment.\n\n**Regression test assertion:** assert `order.total == round(order.subTotalWithTax + order.shippingTotalWithTax - order.discountTotalWithTax, 2)` and that the promotion appears with the correct amount in `order.discounts[]`/`order.discountTotal` — not that the Line Items blade's own `Discount`/`Total` match the order header's, since those are deliberately different, differently-scoped fields."
+}

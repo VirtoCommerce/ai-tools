@@ -1,0 +1,43 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 2,
+  "kbRule": "v2",
+  "workDir": "~\\agent-work\\cee772da",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 2,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 0,
+  "envWrites": 0,
+  "kbAsks": 1,
+  "kbAnswered": 1,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 3,
+  "durationSec": 29,
+  "costUsd": 0.10012879999999999,
+  "tokens": {
+    "input": 6,
+    "output": 1947,
+    "cacheWrite": 11871,
+    "cacheRead": 165814
+  },
+  "wallSec": 33,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly calls it not a bug, explains order-level discounts aren't allocated to line items leaving items[].discountAmount=0, and specifies the regression test should assert against order.discounts/order header rather than line-item sums, all backed by a named KB entry with trust level and concrete field/order references."
+  },
+  "final": "## Вердикт: не баг\n\nЭто ожидаемое поведение, а не потеря скидки. Line items blade показывает сумму по строкам заказа (line-level), а order header — итог заказа с учётом order-level скидки. Когда промоушен применяется на уровне заказа (order-level), он не распределяется по строкам — соответственно `items[].discountAmount`/`discountTotal` у каждой позиции остаются 0.00, вся сумма скидки (241.95) сидит в `discounts[]` на уровне заказа. Поэтому заголовок Line items blade закономерно показывает Discount 0.00 / Total 1,612.97 (сумма строк без скидки), а order header — Discount 241.95 / Total 1,371.02 (итог после скидки). Оба числа корректны, просто это разные scope.\n\n**Источник:** KB-F1542157 (well attested, 4 подтверждения, 3 сессии, deployment vcptcore_stable) — наблюдение буквально воспроизводит этот же кейс с теми же цифрами (CO260915-00001: Subtotal 1,612.97 / Discount 0.00 / Total 1,612.97 на Line items blade vs Total discount -241.95 / Total 1,371.02 на order header), причём в REST-payload подтверждено, что `items[].discountAmount` = 0 у всех строк, а вся скидка 241.9455 — в order-level `discounts[]`. Плюс второй независимый пример на других заказах (CO260910-00001 и смежный) с тем же паттерном причины: \"cart-subtotal reward recorded once at order level and never distributed to lines\".\n\nПовторная живая проверка не требуется — запись well attested и совпадает с репортом тестировщика вплоть до цифр.\n\n## Что должен проверять регрессионный тест вместо текущего\n\nНынешняя (ошибочная) экспектация, видимо, была \"Discount на Line items blade == Discount в order header\" — это неверная экспектация, её и нужно убрать.\n\nПравильные ассерты:\n1. **Line items blade header** (line-level scope, без учёта order-level скидки):\n   - `Subtotal == Total` == сумма строк (например, 1,612.97)\n   - `Discount == 0.00`, когда все `items[].discountAmount` равны 0 (т.е. скидка не распределена по строкам)\n2. **Order header** (order-level scope, с учётом скидки):\n   - `Total discount` == сумме всех записей в `discounts[]` на заказе (например, 241.95)\n   - `Total` == `Subtotal - Total discount` (1,612.97 − 241.95 = 1,371.02)\n3. **Согласованность между scope** (это и есть регрессионная защита от реальной потери скидки):\n   - сумма `discounts[].amount` на заказе (order-level) + сумма `items[].discountAmount` по всем строкам (line-level) должна равняться разнице `Line items Subtotal − Order Total`\n   - т.е. тест должен фейлиться не на \"Discount на blade равен 0\", а на случай, когда скидка **нигде** не учтена — ни в line-level, ни в order-level `discounts[]`, ни в итоговом `Total` заказа."
+}

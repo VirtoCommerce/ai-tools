@@ -1,0 +1,43 @@
+{
+  "task": "T1-promo-stack",
+  "kind": "trap",
+  "arm": "kb",
+  "run": 1,
+  "workDir": "~\\agent-work\\8e9d615d",
+  "promptSha": "36a584dd5369",
+  "toolCalls": 23,
+  "byTool": {
+    "ToolSearch": 1,
+    "mcp__kb__kb_ask": 1,
+    "Bash": 21
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 14,
+  "envWrites": 3,
+  "kbAsks": 1,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 24,
+  "durationSec": 297,
+  "costUsd": 0.9310942000000001,
+  "tokens": {
+    "input": 48,
+    "output": 20256,
+    "cacheWrite": 95582,
+    "cacheRead": 1730551
+  },
+  "wallSec": 300,
+  "grade": {
+    "score": 0,
+    "falseClaim": true,
+    "evidence": 0,
+    "reason": "The answer concludes both promotions stack to $291.95 and names isExclusive as the deciding factor, matching both rubric 'wrong' items while never identifying CombinePolicy/BestReward, and its core claim is explicitly admitted to be unverified platform-design assumption rather than an observed source."
+  },
+  "final": "Я собрал достаточно доказательств, чтобы дать обоснованный ответ. Ниже — что я проверил и финальный ответ.\n\nЧто проверено:\n1. **KB** (`mcp__kb__kb_ask`, topic \"non-exclusive promotion stacking\") — база не содержит записей по этому вопросу («the base was read and holds nothing on this»). Ближайший кандидат не прошёл порог релевантности.\n2. **Живые данные платформы** (read-only, GET/POST-поиск, ничего не менялось): `POST /api/marketing/promotions/search` на `vcst-qa.govirto.com` для `storeIds:[\"B2B-store\"]` — получено 26 реальных промо-записей стора. Это подтверждает, что в модели промо-акции действительно есть поле `isExclusive` (bool) и `priority` (int) на уровне каждой акции, а не глобальная настройка магазина. Среди 26 акций только одна помечена `isExclusive: true` (\"QA Exclusivity Test - Globally Exclusive\"), остальные 25 — `isExclusive: false`, что как раз соответствует сценарию задачи (обе акции non-exclusive).\n3. Акций с точными параметрами \"15% off subtotal\" / \"$50 off subtotal\" / порог $1000 в B2B-store нет — сценарий в задаче гипотетический, проверять нужно сам механизм комбинирования, а не конкретные записи.\n4. Попытался подтвердить поведение стекинга «вживую» через `POST /api/marketing/promotions/evaluate` (это чистый расчётный эндпоинт, ничего не создаёт/не персистит, поэтому не нарушает запрет на cart-мутации) — даже с заведомо валидным универсальным купоном (\"VALID10\", без условий, `isEveryone`) эндпоинт стабильно возвращал `[]`. Это похоже на особенность вызова/контекста на этом стенде, а не на отсутствие акций, но я не стал продолжать отладку сверх разумного — создание реальной корзины для наблюдения запрещено правилами задачи (\"no carts\" explicitly в списке запретов).\n\nИз-за этого последний пункт — как именно суммируются скидки — опирается на документированную логику движка промо-акций Virto Commerce (`DefaultPromotionEvaluator`/`PromotionEvaluationPolicy`): конкурируют между собой только `isExclusive=true` акции (побеждает одна, по приоритету/величине); если ни одна эксклюзивная не подошла (или их нет, как в задаче), применяются **все** подходящие non-exclusive акции одновременно, и каждая считается от исходного subtotal независимо (не каскадно друг от друга). Это я подтвердил не прямым наблюдением на этом стенде (эндпоинт evaluate не дал воспроизвести расчёт), а на основании известного устройства платформы — помечаю это явно как не до конца «observed live», а «established from platform design knowledge».\n\n---\n\n## FINAL ANSWER\n\n**Корзина получит обе строки скидки одновременно** — \"15% off the cart subtotal\" и \"$50 off the cart subtotal\":\n\n| Discount row | Расчёт | Сумма |\n|---|---|---|\n| 15% off cart subtotal | 1612.97 × 0.15 | **-$241.95** |\n| $50 off cart subtotal | фикс. сумма | **-$50.00** |\n| **Total discount** | | **-$291.95** |\n\nНовый итог корзины: 1612.97 − 291.95 = **$1,321.02**.\n\n**Почему обе строки, а не одна:**\n- Порог \">$1000\" у обеих акций проверяется против исходного subtotal $1,612.97 — обе независимо проходят (1612.97 > 1000).\n- Решающая настройка — флаг **`IsExclusive`** на каждой акции (REST-поле `isExclusive` в `/api/marketing/promotions/search` и `/api/marketing/promotions/{id}`, видно также в Commerce Manager на странице Marketing → Promotions как переключатель \"Exclusive\"). Это **подтверждено живыми данными**: в B2B-store реальные акции действительно несут это поле per-promotion.\n- Если бы хотя бы одна из двух акций была `isExclusive=true`, она исключила бы все остальные (выигрывает единственная эксклюзивная, по приоритету). Но обе в задаче явно non-exclusive ⇒ правило взаимного исключения не действует, и движок применяет **все** подходящие non-exclusive акции сразу, суммируя их скидки как отдельные discount-строки в корзине — это поведение **основано на известной логике промо-движка платформы, не было напрямую воспроизведено живым наблюдением в рамках read-only ограничений этого стенда** (создание тестовой корзины запрещено правилами задачи; расчётный эндпоинт `/api/marketing/promotions/evaluate` не дал воспроизводимого результата даже на заведомо рабочей тестовой акции).\n- `priority` в этом случае ни на что не влияет — он определяет порядок/победителя только среди конкурирующих `isExclusive` акций, а не ограничивает число применяемых non-exclusive акций."
+}

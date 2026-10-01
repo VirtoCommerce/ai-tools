@@ -1,0 +1,42 @@
+{
+  "task": "T4-line-discount",
+  "kind": "trap",
+  "arm": "nokb",
+  "run": 3,
+  "kbRule": null,
+  "workDir": "~\\agent-work\\3de8abfb",
+  "promptSha": "4ae3b41709e8",
+  "toolCalls": 11,
+  "byTool": {
+    "Bash": 11
+  },
+  "toolErrors": 0,
+  "httpFailures": 0,
+  "envCalls": 7,
+  "envWrites": 3,
+  "kbAsks": 0,
+  "kbAnswered": 0,
+  "contaminated": false,
+  "models": [
+    "claude-sonnet-5"
+  ],
+  "modelChanged": false,
+  "status": "success",
+  "turns": 12,
+  "durationSec": 286,
+  "costUsd": 0.3856776,
+  "tokens": {
+    "input": 24,
+    "output": 11861,
+    "cacheWrite": 29995,
+    "cacheRead": 735198
+  },
+  "wallSec": 292,
+  "grade": {
+    "score": 2,
+    "falseClaim": false,
+    "evidence": 2,
+    "reason": "The answer correctly calls it not a bug, explains the order-level discount lives in order.discounts/discountTotal rather than being allocated to line items, gives a correct regression assertion against the order header/discounts collection, and backs every load-bearing claim with specific API endpoints and order IDs from the environment."
+  },
+  "final": "## Вердикт: это не баг (скидка не «потеряна»), это ожидаемое поведение блейда Line Items для промо уровня заказа\n\n**Арифметика в самом репорте это подтверждает:** 1 612.97 − 241.95 = 1 371.02 — ровно сходится с цифрами хедера. Это не совпадение: блейд Line Items показывает сумму по позициям *до* применения скидки уровня заказа, а хедер — итог *после* неё. Деньги нигде не теряются, они просто агрегируются в разных местах модели данных.\n\n### Как я это проверил (read-only, без изменений среды)\n\n1. Залогинился как `$ADMIN` через `POST /api/platform/security/login` на `https://vcst-qa.govirto.com`.\n2. `POST /api/order/customerOrders/search` по `storeId=B2B-store` — нашёл в этой же среде реальные заказы с скидкой уровня заказа (cart-level promotion), например **CO260925-00001**, **CO260929-00001..03**.\n3. Получил полный JSON заказа CO260925-00001 и посмотрел на модель данных:\n   - На уровне **заказа**: `discounts: [{name: \"Cart more than $1000\", description: \"Take 10% off for cart subtotal no more than $1000\", discountAmount: 104.5}]`, `discountAmount: 104.5`, `discountTotal: 104.5`, `subTotal: 1045.0`, **`subTotalDiscount: 0.0`**, `shippingTotal: 250.0`, `taxTotal: 238.1`, `total: 1428.6`.\n   - Проверка: `subTotal (1045) + shippingTotal (250) + taxTotal (238.1) − discountTotal (104.5) = 1428.6` — сходится с `total`. Деньги учтены корректно.\n   - На уровне **позиций заказа (LineItem)**: у каждой `discountAmount: 0.0`, `discounts: []` — сумма скидок по позициям равна 0, хотя скидка на заказ реально есть.\n4. Повторил ту же проверку на других заказах с скидкой из той же выдачи (CO260929-00001/02/03, CO260925-00002/00003, CO260924-00001) — паттерн одинаковый везде: `item.discountAmount` = 0, а `order.discountTotal` > 0, `order.subTotalDiscount` = 0.0.\n\n### Почему так происходит (архитектурно)\n\nVirto Commerce различает два типа promotion reward:\n- **line-item-level** (например, скидка на конкретный товар/каталог) — пишется в `lineItem.discountAmount` / `lineItem.discounts[]`;\n- **order/cart-level** (например, «Cart more than $1000», скидка от подытога корзины) — пишется только в `order.discounts[]` / `order.discountAmount` / `order.discountTotal`, в позиции заказа она **не** распределяется.\n\nБлейд Line Items в Admin UI, судя по цифрам из репорта (0.00 / 1 612.97) и по тому, что мы видим в API (`subTotalDiscount = 0.0`, `item.discountAmount = 0`), агрегирует именно поля уровня позиций — отсюда `Discount 0.00` и `Total` = сумма по строкам **до** вычета order-level скидки. Хедер заказа показывает `discountTotal` и `total` **после** всех скидок, включая order-level. Это два разных среза одних и тех же данных, не расхождение/потеря.\n\n### Ограничение проверки\nUI-рендеринг самого блейда Line Items в браузере я не открывал (не было необходимости менять/создавать данные, а визуальная проверка ничего не добавила бы к уже сошедшейся арифметике и к подтверждённой модели данных через API). Вывод основан на точном совпадении чисел из репорта и на структуре реальных заказов в этой же среде — этого достаточно для ответа.\n\n---\n\n## FINAL ANSWER\n\n**Вердикт: не баг.** Скидка уровня заказа не теряется — она корректно хранится в `order.discounts[]`, `order.discountAmount`/`discountTotal` и учтена в `order.total`. Блейд Line Items в Admin показывает `Discount 0.00` и `Total` без вычета, потому что эта скидка относится к заказу целиком (cart/order-level promotion reward), а не к отдельным строкам — поэтому `item.discountAmount` и агрегированный `order.subTotalDiscount` равны 0 для всех позиций, что подтверждено на живых заказах в среде (CO260925-00001 и другие, см. выше). Арифметика из репорта (1 612.97 − 241.95 = 1 371.02) это один в один подтверждает.\n\n**Что должен проверять регрессионный тест вместо сравнения \"Discount в блейде == Discount в хедере\":**\n1. `order.discountTotal == сумма(order.discounts[].discountAmount)` — скидка корректно учтена на уровне заказа.\n2. `order.subTotal + order.shippingTotal + order.taxTotal − order.discountTotal == order.total` (с учётом применимых *WithTax* полей, если тест денежный с налогом) — то есть скидка реально дошла до итоговой суммы к оплате.\n3. `сумма(lineItem.extendedPrice по всем позициям) == order.subTotal` — то есть именно это число блейд Line Items и должен показывать как «Total», и оно по определению равно сумме до order-level скидки, а не после.\n4. Явно: `lineItem.discountAmount == 0` и `order.subTotalDiscount == 0` для случая, когда применена **order-level** (не line-item) промо — это ожидаемое значение, а не признак бага; тест не должен ожидать, что блейд Line Items покажет order-level скидку.\n\n**Источники:**\n- Логин и запросы: `https://vcst-qa.govirto.com` (`/api/platform/security/login`, `/api/order/customerOrders/search`), учётка `$ADMIN`.\n- Конкретный заказ-пример: `CO260925-00001` (store `B2B-store`), поля `discounts`, `discountAmount`, `discountTotal`, `subTotal`, `subTotalDiscount`, `shippingTotal`, `taxTotal`, `total` из его JSON, плюс позиции (`items[].discountAmount == 0`).\n- Подтверждение паттерна на дополнительных заказах с скидками той же среды: `CO260929-00001`, `CO260929-00002`, `CO260929-00003`, `CO260925-00002`, `CO260925-00003`, `CO260924-00001`.\n- Арифметическое совпадение чисел из самого репорта тестировщика (1 612.97 − 241.95 = 1 371.02)."
+}
