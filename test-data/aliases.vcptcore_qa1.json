@@ -163,5 +163,9 @@
   "OTP_NO_STORE_CONTACT": {
     "id": "cfbc0a42-908f-4200-9cc0-486793b9e26c",
     "user_id": "5a1a512e-da59-40d1-a739-26e521728d72"
+  },
+  "OTP_BLOCKED_USER": {
+    "id": "4f56faac-1057-42de-9251-417a386a066f",
+    "user_id": "dd4d4b72-fd12-4932-9426-4b70e51d3a5a"
   }
 }
