@@ -20,13 +20,13 @@
   },
   "LOYALTY_VIP_USER": {
     "_inline": true,
-    "memberId": "ce559a6d-8ad3-408e-9b03-7dbf5b4b0c8b",
-    "securityAccountId": "95a30901-9b99-4269-a855-109607378479",
+    "memberId": "5fe7b1aa-4fdf-4b93-a44e-e054126ea3e1",
+    "securityAccountId": "9ccb9d6f-99f5-4ee9-b530-ce11e59e6ccf",
     "fields": {
       "memberId": "memberId",
       "securityAccountId": "securityAccountId"
     },
-    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ (moved out of base aliases.json per the multi-env rule). LIVE vcst ids as of 2026-07-13 (prior account 1dba59a3-… / member 2fae41c3-… was deleted+reseeded with fresh GUIDs on 2026-07-01). Live security account 95a30901-… genuinely holds 0 PTS; the orphaned ~4.87M sits on the deleted account's read-only op-log. memberId is also resolvable live by email. Re-seed the user (seed:company-users loyalty) mints new GUIDs — refresh these when it does."
+    "_notes": "Per-env runtime GUIDs for AGENT-TEST-vip@ (moved out of base aliases.json per the multi-env rule). Refreshed 2026-10-01 from GET /api/platform/security/users/email/{email}: the account was recreated 2026-09-19 (2026-09-19T08:32:13.1766055Z) and holds 0 PTS. The previous account 95a30901-… / member ce559a6d-… no longer exist; ~2.80bn PTS sit orphaned on the deleted account's read-only op-log (no purge path). Earlier history: 1dba59a3-… / 2fae41c3-… deleted 2026-07-01. seed:company-users loyalty REUSES this account and does not write these ids back — refresh them by hand (or by this lookup) whenever the account is recreated."
   },
   "WL_ELECTRONICS_PLATFORM_ID": {
     "_inline": true,
@@ -726,8 +726,8 @@
     "productId": "f4f27033-d688-4d22-ade7-5106f4748add"
   },
   "LOYALTY_NOBAL_USER": {
-    "memberId": "83bcb310-9856-47a0-8e68-c4e34a143dce",
-    "securityAccountId": "e383066c-56dc-4ff2-8e92-3c5a3a1329bd"
+    "memberId": "7a89f754-6053-49cd-96d7-6d2e7b2fc4bf",
+    "securityAccountId": "758c8c14-1f8b-410d-896f-001246b0c141"
   },
   "MULTI_ORG_TF_BR": {
     "id": "83637bb5-6c0f-4e8d-b5ea-dff81d69fd38",
@@ -768,8 +768,8 @@
     "variation_white_id": "2cf1b2ae-68e0-40c2-ae87-f95d55268caa"
   },
   "LOYALTY_WHOLESALE_USER": {
-    "memberId": "0554b16e-1989-46ee-9944-b639289e7c95",
-    "securityAccountId": "fa360b8f-aab2-43eb-828e-9edb9c451d15"
+    "memberId": "f268e513-ef98-4662-a237-403761a966e6",
+    "securityAccountId": "add6d0c8-fac4-45e7-b773-0f8ed0b5d08d"
   },
   "CATALOG_LINK_RESTRICTED": {
     "_inline": true,
@@ -1437,7 +1437,7 @@
   "ORG_LOY_A": {
     "userId": "8e31d1d9-d7c1-4514-93c7-92376aac423a",
     "contactId": "8fcfbd67-8f16-4ad3-80ed-4a5ac0e3b8e4",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "sibling_org_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
     "earn_points_expected": "30000",
     "balance_at_seed": "0"
@@ -1445,16 +1445,16 @@
   "ORG_LOY_B": {
     "userId": "71297bdc-28cc-4568-94cd-d4e729553f7b",
     "contactId": "94f5696a-9bfb-4fd4-869b-8892a55e9a0c",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "earn_points_expected": "90000",
     "balance_at_seed": "0"
   },
   "ORG_LOY_LOCKED": {
     "userId": "762105ea-f1f4-4968-adab-a91735710aea",
     "contactId": "dbcb0c07-db61-44b4-a4f7-cf2e40b26a3c",
-    "org_id": "12b52a61-6dc0-4aa7-9e62-a5eb57e12d4f",
+    "org_id": "fbecdf1e-7b2c-4e6b-ba90-c3a3dee82136",
     "balance_at_seed": "0",
-    "membershipId": "fe542ef3-b817-4bdd-aba0-0aaede66a0b8"
+    "membershipId": "cb86d48f-2925-484d-80f4-c50fc9776147"
   },
   "LOY_PERSONAL_NOORG": {
     "userId": "2cdf9bb1-bfef-424c-a68f-b371e37f1bc1",
@@ -1466,22 +1466,22 @@
     "dearest_pts_price": "552"
   },
   "ORG_LOY_MISSION": {
-    "id": "ba383695-d833-40d9-a920-ee565d3283c6",
-    "name": "AGENT-TEST-MSN-ORGLOY-20260914092256-79fa",
-    "run_id": "20260914092256-79fa",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "48bca2a1-5620-465d-a85f-5eea0eaaee3b",
+    "name": "AGENT-TEST-MSN-ORGLOY-20261001083600-e1e0",
+    "run_id": "20261001083600-e1e0",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "ORG_LOY_MISSION_2": {
-    "id": "c2c3dffb-fef2-43aa-9238-df6760965c8b",
-    "name": "AGENT-TEST-MSN-ORGLOY-M2-20260914092256-84e5",
-    "run_id": "20260914092256-84e5",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "be97ba42-04ec-4076-b4c7-e48a04ef0890",
+    "name": "AGENT-TEST-MSN-ORGLOY-M2-20261001083600-0fed",
+    "run_id": "20261001083600-0fed",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "ORG_LOY_MISSION_PARTIAL": {
-    "id": "7d30cc17-df1c-4dc3-ab52-52f1e74dfee7",
-    "name": "AGENT-TEST-MSN-ORGLOY-P2-20260914092257-69ac",
-    "run_id": "20260914092257-69ac",
-    "seeded_at": "2026-09-14T09:22:57.588Z"
+    "id": "6a380a7c-e8ee-48aa-810d-97f5c064f3b5",
+    "name": "AGENT-TEST-MSN-ORGLOY-P2-20261001083601-8e47",
+    "run_id": "20261001083601-8e47",
+    "seeded_at": "2026-10-01T08:36:01.947Z"
   },
   "MULTI_ORG_LOY_POOLS": {
     "user_email": "agent-test-multiorg-alt-20260803@yopmail.com",
