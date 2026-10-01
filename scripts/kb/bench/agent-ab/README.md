@@ -32,6 +32,34 @@ A run whose `nokb` transcript touches `vc-knowledge` or `business-logic.md` is f
 reach the public base. Only the variables listed in `PASS_THROUGH` reach the agent; tracker,
 GitHub and cloud tokens do not.
 
+## Where the numbers come from
+
+Each run is `claude -p --output-format stream-json`: the CLI prints every event of the session as
+one JSON line, and the runner keeps that stream verbatim as `<task>.<arm>.<n>.jsonl`. Nothing is
+self-reported by the agent.
+
+- `assistant` events carry each `tool_use` block (name + input) and the model id;
+- `user` events carry each `tool_result` (`is_error`, and the output text scanned for HTTP failures);
+- the closing `result` event carries `usage` (input, output, cache tokens), `total_cost_usd`,
+  `duration_ms` and `num_turns`.
+
+The final answer is graded by a separate `claude -p` judge that sees only the task, the rubric and
+the answer.
+
+### Taken from `agent-log-toolkit` (C:/_VIRTO/agent-log-toolkit)
+
+| toolkit rule | here |
+|---|---|
+| the condition comes from the working directory, the prompt is byte-identical across arms | each run's prompt is saved to `prompts/` and hashed; differing hashes within a task void its delta |
+| check the model after each run | distinct `message.model` values are recorded; more than one marks the run `MODEL-CHANGED` |
+| no subagents (they share the session and inherit context) | `Task`/`Agent` are disallowed in both arms; a call marks the run `SUBAGENT` |
+| say what a legitimate negative result looks like | the preamble says "not established" is an answer and a confident guess is not |
+| scrub before a capture leaves the machine | run `node C:/_VIRTO/agent-log-toolkit/tools/scrub-scan.mjs <out>` before sharing transcripts |
+
+Not taken: the agent-written question log (`log-row.mjs`). It measures *what the agent did not
+know*, which is a different study, and asking an agent to log every lookup changes its tool-call
+count and cost: the very numbers this bench compares.
+
 ## Metrics
 
 | metric | from | why |
