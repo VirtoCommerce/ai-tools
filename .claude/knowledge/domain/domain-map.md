@@ -46,7 +46,7 @@ excludes: <what was deliberately left out, and that it is a later pass>
 # <Domain> — domain map
 
 > Refresh with `/qa-domain-map <slug>`. This file answers **what the feature is and where its surfaces
-> are**. It does **not** carry behavioural rules — those are `BL-*` in `oracles/business-logic.md` — and
+> are**. It does **not** carry behavioural rules — those are `BL-*` (`npm run bl:extract -- --domain <slug>`) — and
 > it can **never ground an assertion as `{DOC}`**. Pointer index plus surface inventory: it says *where
 > to look* and *what exists*, never *what correct looks like*.
 

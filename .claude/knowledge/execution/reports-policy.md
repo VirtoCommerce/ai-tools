@@ -353,7 +353,7 @@ reports/exploratory/; new test cases to regression/suites/ as category 2, not th
 | Failure trace (real FAIL) | `reports/regression/{RUN_ID}/traces/{TC-ID}-FAIL-trace.json` | Link from the case row; don't inline the JSON |
 | Full screenshot set | `reports/bugs/screenshots/` | Link 1–2 inline; reference the folder |
 | Test data | `test-data/aliases.json` | `@td(ALIAS.field)` — don't paste rows |
-| BL/ECL invariants | `knowledge/oracles/business-logic.md` | Cite the ID (`BL-AUTH-005`), not the body |
+| BL/ECL invariants | `npm run bl:extract -- --id <ID>` · `knowledge/oracles/e-commerce-edge-cases-library.md` | Cite the ID (`BL-AUTH-005`), not the body |
 | Prior runs | `reports/regression/REG-*` | Link by run ID, don't recap |
 | Coverage gap inventory / batch results | `reports/coverage/COV-*/gap-inventory.json`, `batch-*-results.json` | Reference by `GAP-*` ID or batch letter, don't inline the JSON |
 

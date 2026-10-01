@@ -38,7 +38,7 @@ excludes: >-
 
 > **GENERATED-ish, but hand-curated.** Refresh with `/qa-domain-map b2b`. This file answers **what the
 > feature is and where its surfaces are**. It does **not** carry behavioural rules — those are
-> `BL-*` in `oracles/business-logic.md` — and it can **never ground an assertion as `{DOC}`**. It is
+> `BL-*` in the BL oracle (`npm run bl:extract -- --domain b2b`) — and it can **never ground an assertion as `{DOC}`**. It is
 > a pointer index plus a surface inventory: it tells you *where to look* and *what exists*, never
 > *what correct looks like*.
 
