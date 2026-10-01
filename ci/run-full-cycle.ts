@@ -1,7 +1,9 @@
 import "../scripts/lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { query } from "@anthropic-ai/claude-agent-sdk";
-import { writeFileSync, mkdirSync } from "fs";
+import { execFileSync } from "child_process";
+import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "fs";
 import { join } from "path";
+import { fileURLToPath } from "url";
 import { selectAffectedSuites } from "./lib/affected-suites.js";
 
 /**
@@ -11,6 +13,11 @@ import { selectAffectedSuites } from "./lib/affected-suites.js";
  *   1. /qa-test-lifecycle {CHANGE_SOURCE} --ci --skip-generate --skip-verify   (change-driven)
  *   2. /qa-test-lifecycle suite {suites} --ci --skip-sync --skip-generate --skip-verify  (review-only)
  *   3. /qa-regression {affected suites}
+ *
+ * Around them, BL freshness (BL 2.0 M5, `scripts/knowledge/bl-fresh.ts`) with no agent and no person: before
+ * Phase 1 the change, the age threshold and closed / decided Jira bugs mark rules SUSPECT; after Phase 3 the
+ * run's case results and the executable checks clear or confirm them. So a change at a rule's code_ref is
+ * re-checked inside the same cycle.
  *
  * Each phase is a single Agent SDK query() that tells Claude
  * to execute the command. The command files define all the logic.
@@ -33,6 +40,9 @@ const CHANGE_SOURCE = process.env.CHANGE_SOURCE || "diff";
 const SKIP_SYNC = process.env.SKIP_SYNC === "true";
 const SKIP_LIFECYCLE = process.env.SKIP_LIFECYCLE === "true";
 const SKIP_REGRESSION = process.env.SKIP_REGRESSION === "true";
+const SKIP_BL_FRESH = process.env.SKIP_BL_FRESH === "true";
+/** `npx` is `npx.cmd` on Windows and execFileSync has no shell: run tsx's CLI under this node instead. */
+const TSX_CLI = fileURLToPath(new URL("../node_modules/tsx/dist/cli.mjs", import.meta.url));
 const SUITE_SELECTION = process.env.SUITE_SELECTION || "";
 const MAX_BUDGET_USD = parseFloat(process.env.MAX_BUDGET_USD || "20.0");
 const MODEL = process.env.MODEL || "claude-sonnet-4-5-20250929";
@@ -80,6 +90,31 @@ async function runPhase(
   return { costUsd, result: text };
 }
 
+/**
+ * One `bl:fresh --write` pass. A failure is logged, never fatal: freshness must not stop the cycle, and a pass
+ * that could not read its input (no Jira credentials, say) writes nothing.
+ */
+function blFresh(step: string, args: string[]) {
+  if (SKIP_BL_FRESH) return log(`${step}: bl:fresh skipped (SKIP_BL_FRESH — the workflow runs it as its own step)`);
+  log(`${step}: bl:fresh ${args.join(" ")}`);
+  try {
+    execFileSync(process.execPath, [TSX_CLI, "scripts/knowledge/bl-fresh.ts", ...args, "--write"], { stdio: "inherit" });
+  } catch (err) {
+    log(`${step}: bl:fresh exited ${(err as { status?: number }).status ?? "?"} — this step changed no rule`);
+  }
+}
+
+/** The regression run dir Phase 3 created: the newest `reports/regression/CI-*` started after `since`. */
+function regressionRunDir(since: number): string | undefined {
+  const root = join("reports", "regression");
+  if (!existsSync(root)) return undefined;
+  return readdirSync(root)
+    .filter((d) => d.startsWith("CI-"))
+    .map((d) => join(root, d))
+    .filter((d) => statSync(d).mtimeMs >= since)
+    .sort((a, b) => statSync(b).mtimeMs - statSync(a).mtimeMs)[0];
+}
+
 async function main() {
   mkdirSync(outputDir, { recursive: true });
 
@@ -88,6 +123,10 @@ async function main() {
 
   let budgetLeft = MAX_BUDGET_USD;
   let affectedSuites = SUITE_SELECTION;
+
+  // --- Phase 0: BL freshness — mark. Deterministic first, then the Jira-backed pass (it may lack credentials).
+  blFresh("Phase 0", ["--change", CHANGE_SOURCE, "--age"]);
+  blFresh("Phase 0", ["--closed", "--resolve"]);
 
   // --- Phase 1: /qa-test-lifecycle (change-driven: scope + sync + review) ---
   if (!SKIP_SYNC) {
@@ -175,6 +214,7 @@ proved. Never promote Automation_Status out of Draft, never set Deprecated, neve
     const { execSync } = await import("child_process");
 
     log(`Phase 3: Regression — suites: ${affectedSuites}`);
+    const started = Date.now();
     try {
       execSync(`npx tsx ci/run-regression.ts`, {
         env: {
@@ -188,6 +228,11 @@ proved. Never promote Automation_Status out of Draft, never set Deprecated, neve
     } catch (err) {
       log(`Regression exited with error: ${err instanceof Error ? err.message : err}`);
     }
+
+    // --- Phase 4: BL freshness — what the run observed, then the executable checks of what is still SUSPECT.
+    const runDir = regressionRunDir(started);
+    if (runDir) blFresh("Phase 4", ["--results", runDir, "--rerun"]);
+    else log("Phase 4: no regression run dir found — BL freshness not updated from this run");
   }
 
   log(`=== Cycle complete: ${RUN_ID} ===`);

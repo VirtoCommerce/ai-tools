@@ -26,7 +26,7 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import Ajv from "ajv";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { parse as parseYaml, parseDocument, stringify as stringifyYaml } from "yaml";
 import { flagValue, rejectUnknownFlags } from "../lib/cli-args.ts";
 
 // Posix separators: SCHEMA_PATH is also read by fs on Windows, which accepts `/`.
@@ -53,7 +53,7 @@ export interface BlRule {
   trust: "DECLARED" | "OBSERVED" | "INFERRED" | "UNREVIEWED";
   source: BlSource[];
   scope?: { module?: string; code_ref?: string };
-  check: { kind: "executable" | "manual" | "none"; ref?: string; steps?: string };
+  check: { kind: "executable" | "manual" | "none"; ref?: string; run?: string[]; steps?: string };
   violation_signal: string;
   verified?: { date: string; version?: string; by: string };
   status: "ACTIVE" | "SUSPECT" | "RETIRED";
@@ -231,6 +231,32 @@ export function checkView(oracle: Pick<BlOracle, "preamble" | "domains">, view: 
   return [];
 }
 
+/**
+ * A domain file not in the yaml library's own output form (a hand-typed `[a, b]` list, say) would be reformatted
+ * the first time `bl:fresh` edits one field of it, burying that edit in a whole-file diff. Empty = clean.
+ */
+export function checkFormat(dir = BL_DIR): string[] {
+  return readdirSync(dir)
+    .filter((f) => f.endsWith(".yaml")) // _oracle.yaml too: bl:fresh writes freshness.closed_checked_through
+    .filter((f) => {
+      const text = readFileSync(join(dir, f), "utf-8").replace(/\r\n/g, "\n");
+      return parseDocument(text).toString({ lineWidth: 0 }) !== text;
+    })
+    .map((f) => `bl/${f} is not in the form the yaml library writes (a flow list or odd spacing?) — rewrite that part in block style`);
+}
+
+/** Write every generated view (business-logic.md and the plugin copies) that differs from the render. Path → rewritten. */
+export function renderViews(oracle: Pick<BlOracle, "preamble" | "domains"> = loadBl()): Map<string, boolean> {
+  const text = renderBl(oracle);
+  const out = new Map<string, boolean>();
+  for (const path of VIEWS) {
+    const before = existsSync(path) ? readFileSync(path, "utf-8") : null;
+    if (before !== text) writeFileSync(path, text);
+    out.set(path, before !== text);
+  }
+  return out;
+}
+
 function main(argv: string[]) {
   rejectUnknownFlags(argv, ["--check", "--render", "--render-oracle"], ["--render"]);
   const renderPath = flagValue(argv, "--render");
@@ -246,12 +272,7 @@ function main(argv: string[]) {
       console.error("bl:render: fix the index first; nothing written");
       return 1;
     }
-    const text = renderBl(oracle);
-    for (const path of VIEWS) {
-      const before = existsSync(path) ? readFileSync(path, "utf-8") : null;
-      if (before !== text) writeFileSync(path, text);
-      console.log(`bl:render: ${oracle.domains.length} domains ${before === text ? "already current" : "regenerated"} in ${path}`);
-    }
+    for (const [path, changed] of renderViews(oracle)) console.log(`bl:render: ${oracle.domains.length} domains ${changed ? "regenerated" : "already current"} in ${path}`);
     return 0;
   }
 
@@ -260,7 +281,7 @@ function main(argv: string[]) {
     return 2;
   }
   const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf-8") : null);
-  const problems = [...checkBl(oracle, read(BL_PATH), readAgentRoster()), ...PLUGIN_COPIES.flatMap((p) => checkView(oracle, read(p), p))];
+  const problems = [...checkBl(oracle, read(BL_PATH), readAgentRoster()), ...PLUGIN_COPIES.flatMap((p) => checkView(oracle, read(p), p)), ...checkFormat()];
   const rules = oracle.domains.reduce((n, d) => n + d.file.rules.length, 0);
   console.log(`bl:convert --check: ${oracle.domains.length} domains, ${rules} rules, all owned by YAML`);
   for (const { slug, file: f } of oracle.domains) {
