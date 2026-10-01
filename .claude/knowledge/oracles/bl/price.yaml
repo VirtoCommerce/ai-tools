@@ -23,7 +23,6 @@ rules:
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-001
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -37,7 +36,6 @@ rules:
       ref: "In cart/checkout, compare: `taxTotal` should equal `taxRate × (subtotal - totalDiscount)`, not `taxRate × subtotal`."
     violation_signal: Tax amount is higher than expected (calculated on pre-discount price), or tax changes when discount is applied/removed but the math doesn't align.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-002
   - id: BL-PRICE-003
     title: Price rounding
     rule: All monetary amounts round half-up to 2 decimal places in the display currency. Intermediate calculations may use higher precision, but all customer-visible prices (line totals, subtotal, tax, grand total) display exactly 2 decimals.
@@ -53,7 +51,6 @@ rules:
       ref: "No prices display with 0, 1, or 3+ decimal places. Check edge cases: items at $X.X95 should round to $X.X0 (half-up)."
     violation_signal: Price displays like "$12.5" or "$12.456", or rounding inconsistency between line total and cart subtotal.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-003
   - id: BL-PRICE-004
     title: Tiered/volume pricing boundaries
     rule: When a product has tiered pricing (e.g., 1-9 units = $10, 10+ units = $8), the lower price activates at exactly the threshold quantity. All units in the line use the same tier price (not split pricing).
@@ -71,7 +68,6 @@ rules:
       ref: Add 9 units → price = $10/unit. Add 1 more (qty=10) → price drops to $8/unit for ALL 10 units. Line total = $80, not $90+$8.
     violation_signal: "\"From $X\" label on listing doesn't match lowest tier; adding 1 unit at threshold doesn't change all units; split pricing applied."
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-004
   - id: BL-PRICE-005
     title: Currency-specific price lists
     rule: Each currency has its own price list. Switching currency activates the corresponding price list — prices are NOT converted by exchange rate. If no price list exists for the selected currency, the product shows as unavailable.
@@ -87,7 +83,6 @@ rules:
       ref: Switch currency → prices change to values from that currency's price list (not mathematically converted). Products without prices in the new currency disappear or show "Unavailable".
     violation_signal: Prices appear to be exchange-rate conversions of the default currency; products without currency-specific prices still show a price.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-005
   - id: BL-PRICE-006
     title: Price list deletion behavior
     rule: Deleting a price list in Admin removes all price entries it contained. Products that relied solely on that price list become unpurchasable on the storefront. No prices should fall back to $0 — they should show as "Unavailable" or hide the "Add to Cart" button. Already-placed orders retain their historical prices.
@@ -99,7 +94,6 @@ rules:
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
     violation_signal: Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-006
   - id: BL-PRICE-007
     title: Organization-specific (contract) pricing
     rule: When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.
@@ -117,7 +111,6 @@ rules:
       ref: Sign in as Org A member → product shows contract price (e.g., $7) instead of store default ($10). Sign in as non-org user → same product shows $10. Org A member adds to cart → cart uses $7.
     violation_signal: Non-org user sees contract prices; org member sees store default instead of contract; cart uses wrong price list after org switch.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-007
   - id: BL-PRICE-008
     title: No floating-point money arithmetic
     rule: All monetary calculations must use decimal or integer-cent arithmetic internally. Floating-point rounding errors must never accumulate across line items — the sum of rounded line totals must equal the displayed subtotal. A discrepancy of even $0.01 between `sum(lineTotals)` and `cartSubtotal` is a bug.
@@ -133,7 +126,6 @@ rules:
       ref: "Add 3+ items with prices like $19.99, $7.33, $0.10 → manually sum line totals → compare against displayed subtotal. Check multi-quantity lines: qty × unit price = line total exactly."
     violation_signal: Subtotal differs from manual sum of line totals by $0.01+; penny discrepancy grows with more items; line total ≠ qty × unit price.
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-008
   - id: BL-PRICE-009
     title: "`discountPercent` is a 4-decimal fraction, rounded away-from-zero, independent of the money rounding policy"
     rule: The `discountPercent` field (backing model `ProductPrice.DiscountPercent`, exposed via GraphQL `PriceType.discountPercent`) is computed as `discountAmount / listPrice`, rounded to exactly **4 decimal places** using **away-from-zero** midpoint rounding — hardcoded, and NOT routed through the pluggable money-rounding-policy extension point (that policy governs currency `MoneyType` amounts only, not this raw decimal fraction). When `listPrice` is zero, the value is `0`. The field is a **fraction** (e.g. `0.1250`), never a whole-number percentage, and is never `null`.
@@ -149,4 +141,3 @@ rules:
       ref: Query a product's `price { discountPercent }` where a discount is active. Compute `round(discountAmount / listPrice, 4, AwayFromZero)` independently and assert equality. Confirm the value carries up to 4 decimal digits rather than being pre-multiplied by 100 or truncated to fewer decimals. A product with no discount returns `0`, not `null`.
     violation_signal: "`discountPercent` returned as a whole number instead of a fraction; precision truncated below 4 decimals; a midpoint value rounded to-even instead of away-from-zero; `null` on a no-discount product; or the value changing after a custom money-rounding policy is registered (it must not — this field bypasses that policy entirely)."
     status: ACTIVE
-    history: docs/decisions/bl/price.md#bl-price-009

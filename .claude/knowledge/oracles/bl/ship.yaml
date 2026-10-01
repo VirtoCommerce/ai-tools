@@ -25,7 +25,6 @@ rules:
       ref: "Confirm options derive from the delivery address, not billing. Default install (Fixed Rate): Ground/Air appear at their configured flat rates regardless of destination. Store with a zone/address-aware provider: changing to an out-of-zone address removes uncovered methods and updates rates; an uncovered zone blocks checkout with a message."
     violation_signal: Billing address used instead of shipping to compute methods/rates; a zone-aware provider's methods/rates don't change when the delivery address changes; methods shown for an uncovered zone; rates don't update for a new destination on a zone-aware provider.
     status: ACTIVE
-    history: docs/decisions/bl/ship.md#bl-ship-001
   - id: BL-SHIP-002
     title: BOPIS requires store pickup location
     rule: Buy Online, Pick Up In Store (BOPIS) is only available when at least one fulfillment center is configured for store pickup in the customer's area. The customer must select a specific pickup location during checkout. BOPIS orders skip the shipping address step but still require a billing address.
@@ -41,7 +40,6 @@ rules:
       ref: Select BOPIS → prompted to choose pickup location from list → no shipping address form shown → billing address still required → order placed with pickup location in order details.
     violation_signal: BOPIS shown when no pickup locations exist; shipping address required for BOPIS; no pickup location selection; order lacks pickup location reference.
     status: ACTIVE
-    history: docs/decisions/bl/ship.md#bl-ship-002
   - id: BL-SHIP-003
     title: Free shipping threshold recalculates on cart change
     rule: When a store offers free shipping above a threshold (e.g., orders over $100), the shipping cost must recalculate every time the cart changes (add/remove items, change quantity, apply/remove coupon). The threshold applies to the cart subtotal after discounts but before tax. A progress indicator ("$15 away from free shipping") is recommended.
@@ -55,7 +53,6 @@ rules:
       ref: Cart = $90 → standard shipping = $10. Add item ($20) → cart = $110 → shipping = $0 (free). Apply coupon reducing total to $95 → free shipping removed, shipping = $10 again.
     violation_signal: Free shipping not recalculated after cart change; threshold applies to pre-discount total; free shipping persists after coupon reduces total below threshold.
     status: ACTIVE
-    history: docs/decisions/bl/ship.md#bl-ship-003
   - id: BL-SHIP-004
     title: Shipping method selection persists through checkout edits
     rule: Once a customer selects a shipping method, that selection must persist through address edits, payment entry, and back-navigation within checkout — unless the address change invalidates the method (BL-SHIP-001). The selected method's rate is locked at selection time — no silent rate changes during checkout.
@@ -67,4 +64,3 @@ rules:
       ref: Select "Express $15" → go to payment step → go back to shipping → "Express $15" still selected. Edit address (same zone) → method and rate persist. Edit address (different zone) → method deselected with notification.
     violation_signal: Shipping selection lost on back-navigation; rate changes silently during checkout; method persists after address change to incompatible zone.
     status: ACTIVE
-    history: docs/decisions/bl/ship.md#bl-ship-004

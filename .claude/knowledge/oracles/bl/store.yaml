@@ -25,4 +25,3 @@ rules:
       ref: Open two different stores in the Admin store list → confirm each shows its own independent value for a shared-shape field (default language, SEO link type, or a feature toggle). Change a setting on the first store and save → reopen the second → its value for the same setting is unchanged. Query the storefront xAPI store query for two different store ids → each returns its own settings block.
     violation_signal: A setting change on one store is visible on another store's storefront or Admin blade; the store query returns identical settings for two differently-configured store ids; a newly created store inherits a setting value from another store rather than a documented default.
     status: ACTIVE
-    history: docs/decisions/bl/store.md#bl-store-001

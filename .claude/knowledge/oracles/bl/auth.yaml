@@ -20,7 +20,6 @@ rules:
       ref: Start checkout → wait for session expiry (or manually expire token) → re-sign in → verify cart intact, checkout resumable from last step.
     violation_signal: Cart emptied after session expiry; user redirected to homepage instead of checkout; items lost.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-001
   - id: BL-AUTH-002
     title: Email verification gate
     rule: When `emailVerificationRequired = true` in store settings, newly registered users cannot access protected features (checkout, order history, account management) until they verify their email via the confirmation link. They can still browse the catalog and add items to cart. The verification link must expire after a configurable period.
@@ -36,7 +35,6 @@ rules:
       ref: Register with `emailVerificationRequired = true` → attempt checkout → blocked with "Please verify your email" message. Click verification link → features unlocked. Test expired link → shows "Link expired, request a new one."
     violation_signal: Unverified user completes checkout; no verification prompt; expired link still works; verified status not persisted after sign-out/sign-in.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-002
   - id: BL-AUTH-003
     title: Account lockout after N failed attempts
     rule: "After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter."
@@ -58,7 +56,6 @@ rules:
       ref: Enter wrong password 5 times → 6th attempt (even with correct password) → "Account locked" message. Wait for lockout expiry → successful login. Verify 4 failures + 1 success → counter resets (next failure starts from 1).
     violation_signal: No lockout after many failures; lockout message reveals account existence ("Account locked" vs "No such user"); lockout doesn't expire; counter not reset after success.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-003
   - id: BL-AUTH-004
     title: Returning vs new customer defaults
     rule: Shipping-address pre-fill at checkout is **config-gated and off by default.** The store's shipping-address policy setting has exactly two values — a disabled value (the **default**) and a previous-order value. Only under the previous-order value does checkout pre-fill the shipping address, and it then copies the **shipping (or billing-and-shipping) address of the customer's most recent order** — not the customer's saved address book — and only when the cart's shipment has **no** delivery address yet. Under the disabled value a returning customer sees **no** pre-filled shipping address, exactly like a first-time customer, and must select one; that is by design, not a defect. A new customer (first order) always sees empty address forms and no saved payment methods. Saved payment methods are a separate per-customer store of tokenized cards, offered only by card processors that support saving, and are **not** governed by the shipping-address policy. In every configuration the system must not show addresses or payment methods belonging to another account, even if the email was reused across organizations.
@@ -74,7 +71,6 @@ rules:
       ref: Read the store's shipping-address policy setting first — the expected result depends on it. Disabled value (default) → sign in as a customer **with** prior orders → checkout → the shipping section prompts for an address selection and nothing is pre-filled. Previous-order value → same customer → checkout → the shipping address matches the most recent order's shipping address; then set a delivery address on the shipment first and re-enter checkout → the existing address is **not** overwritten. Any value → brand-new account with no orders → empty address form, no saved cards. Sign in as a different user → no cross-contamination of addresses.
     violation_signal: "Checkout pre-fills a shipping address while the policy is at its disabled value, or fails to pre-fill while it is at the previous-order value; pre-fill overwrites a delivery address already chosen on the shipment; pre-fill draws from the saved address book rather than the most recent order; a brand-new customer sees pre-filled data; addresses or saved cards from another account are displayed. NOTE: a returning customer seeing an empty address form under the **default** (disabled) policy is **expected** — do not file it."
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-004
   - id: BL-AUTH-005
     title: RBAC 6-permission model
     rule: Every module in Virto Commerce follows the same permission-claim model built from a canonical base set — `access`, `read`, `create`, `update`, `delete` (the 5-permission module template in `ModuleConstants.cs`) — plus `export` on modules that support data export, and further module-specific extensions (e.g. Orders adds `read_prices` / `update_shipments`). The commonly-used "6-permission" shorthand = the base 5 + `export`. Permissions are assigned to roles, and roles are assigned to users. A user without `create` permission on a module must not see the "Create" button in Admin. API calls without the required permission must return 403 Forbidden.
@@ -90,7 +86,6 @@ rules:
       ref: Create a role with only `read` on Catalog → assign to user → sign in as that user → "Create" and "Delete" buttons absent in Catalog blade. Attempt `POST /api/catalog/products` → 403. Add `create` permission → button appears.
     violation_signal: Buttons visible for unauthorized actions; API returns 200 instead of 403; user can create/delete without permission; `access` permission not required to enter module.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-005
   - id: BL-AUTH-006
     title: Role hierarchy
     rule: "Virto Commerce roles are independent permission-claim sets, **NOT** a built-in inheritance hierarchy — a role has exactly the permissions assigned to it and does not automatically inherit a lower role's permissions. The role entity carries no parent, base, extends, or child field of any kind. Three names are **reserved system roles** carried on the account rather than rows in the role list (administrator, manager, customer); every other role is **per-deployment data** — role names and their permission sets are created per deployment and must be read from the environment, never assumed to exist. Administrator power is a **short-circuit, not inheritance**: a principal in the reserved administrator system role passes every global permission check without holding the claim, while everyone else must hold the specific permission claim. Within that model: An Administrator can perform any action. Store Managers can manage their assigned store(s) but not platform settings. Customers can only access their own data — a storefront account is an account category, not a platform role, and typically holds no platform role at all (its rights arrive as organization-scoped claims). Anonymous users are limited to browsing (if `anonymousUsersAllowed = true`) — an unauthenticated state, not a role."
@@ -106,7 +101,6 @@ rules:
       ref: Read the environment's role list first and pick roles that actually exist there rather than assuming a role by name. Assert no role exposes a parent/inheritance field, and that a role's effective permissions equal exactly what was assigned to it. Store Manager → can manage products, orders for assigned store → cannot access Platform Settings blade. Customer → can view own orders → cannot access Admin SPA. Anonymous → can browse catalog (if flag ON) → cannot access cart/checkout (if guest checkout OFF). Confirm an account in the reserved administrator system role passes a permission check for a permission no role grants it.
     violation_signal: Lower role accesses higher-role functions; Store Manager modifies platform settings; customer sees other customers' orders; anonymous user bypasses access restrictions; a role gains permissions it was never assigned (would imply inheritance); a non-administrator passes a permission check without holding the claim.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-006
   - id: BL-AUTH-007
     title: Storefront logout UX — popup-only
     rule: 'The storefront exposes logout **only** inside the account-menu popup in the top header. There is no `/sign-out` page, no `/logout` page, and no standalone logout icon in the header. Correct sequence: (1) click the account button `data-test-id="account-button"` in the top-right header — opens the account-menu popup (`data-test-id="account-menu"`); (2) click the logout button **inside that popup**, selector `data-test-id="sign-out-button"`. Note the storefront test attribute is `data-test-id` (hyphenated) with the **flat** value `sign-out-button` — `data-testid` is not used in vc-frontend and there is no dotted-path value. (vc-frontend source: `client-app/shared/layout/components/header/_internal/top-header.vue`; composable `useSignMeOut`; routes `client-app/router/routes/main.ts` + `constants.ts` confirm no `/sign-out` or `/logout` route — logout calls `signMeOut` which clears the session and reloads through the auth guard.)'
@@ -120,7 +114,6 @@ rules:
       ref: Navigating to `/sign-out` and `/logout` must not resolve to a logout page (they fall through to the catch-all 404). Header nav must not contain a top-level logout button. Clicking `data-test-id="account-button"` opens the popup; clicking `data-test-id="sign-out-button"` inside it signs the user out, and the auth guard redirects to the sign-in route carrying a `returnUrl` for the page that was open. The popup control is an **icon-only** button — its visible content is a logout glyph and its accessible name/title is the localized "Logout" label — so locate it by `data-test-id="sign-out-button"`, never by visible text.
     violation_signal: A `/sign-out` route renders a page; a header-level logout button exists; logout works only via a URL (no popup); the popup logout selector `data-test-id="sign-out-button"` (inside `data-test-id="account-menu"`) is missing.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-007
   - id: BL-AUTH-008
     title: Self-impersonation must have a defined non-circular outcome
     rule: "When an operator with `CanImpersonate` navigates to `/account/impersonate/{ownUserId}` (their own platform user ID), the result must be a defined, non-circular outcome: (a) session cleared with redirect to `/sign-in`, (b) a handled error page, or (c) a redirect to home with the operator's own session intact and no impersonation banner. The system must NOT enter a circular state where the banner shows \"Operator logged in as Operator\" or an infinite redirect loop."
@@ -134,7 +127,6 @@ rules:
       ref: Authenticated SUPPORT_AGENT navigates to `/account/impersonate/@td(SUPPORT_AGENT.userId)` → outcome is one of the three acceptable states; no banner showing the operator as both impersonator and target; no infinite redirect loop in Network panel.
     violation_signal: Banner displays "{operator name} logged in as {operator name}"; infinite redirect loop (>5 consecutive redirects between `/account/impersonate/...` and other routes); session enters a wedged state where neither operator nor target is authenticated and no error is shown.
     status: SUSPECT
-    history: docs/decisions/bl/auth.md#bl-auth-008
     suspect_reason: "VCST-5174 was closed as by design: self-impersonation producing a circular operator==target token was judged a harmless no-op, and the closing comment names BL-AUTH-008 for review/retirement."
   - id: BL-AUTH-009
     title: Nested impersonation forbidden — no silent path from impersonated session
@@ -151,7 +143,6 @@ rules:
       ref: From a session already impersonating User-A, navigate to the impersonate route for User-B → the silent path fires (**no form is expected**). At the network layer, `/connect/token grant_type=impersonate` on the impersonated token **currently returns HTTP 200** (a chained token) — the expected-post-fix behavior is a rejection (4xx, no token issued).
     violation_signal: "The backend issues a chained impersonation token from an already-impersonated session (privilege escalation) — **currently the case**. NOTE: the storefront form NOT rendering is **expected** (it is not the enforcement point) — do not treat that as the violation."
     status: SUSPECT
-    history: docs/decisions/bl/auth.md#bl-auth-009
     suspect_reason: "VCST-5174 (the nested-impersonation privilege-escalation bug) was closed as by design: retargeting impersonation inside an already-authorized operator session is intended; the closing note says BL-AUTH-009 should be reviewed/retired."
   - id: BL-AUTH-010
     title: Impersonation banner must persist across SPA navigation
@@ -166,7 +157,6 @@ rules:
       ref: "Start impersonation → verify the banner on home → navigate by **clicking internal links** (not reloading) to the catalog, cart, checkout, and account pages → the banner is present at each, and its DOM element is the *same* node throughout (accessibility-tree references are stable across the transitions, not re-created). The banner is not a page-level bar: it is three top-header elements — `data-test-id=\"operator-name-label\"` (the operator), the localized \"logged in as\" label, and `data-test-id=\"account-button\"` carrying the target's name — rendered inside the persistent `data-test-id=\"top-header\"` layout component, outside the router view."
     violation_signal: Banner disappears on any storefront route except the explicit Stop Impersonation action; banner re-renders inconsistently (flicker); banner missing on cart or checkout (revenue-critical pages); banner shows operator/target names that don't match the live session.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-010
   - id: BL-AUTH-011
     title: Stop Impersonation must restore operator session without sign-in round-trip
     rule: "Stopping impersonation must restore the original operator's authenticated session **without a sign-in round-trip** — no redirect to the sign-in route and no re-authentication prompt. The action is the **\"Back to operator\" row inside the account-menu popup** (`data-test-id=\"back-to-operator-row\"`, label \"Back to {operator name}\"), NOT a button in the banner. It calls `useImpersonate().backToOperator()` → `revertImpersonate(...)` → `requestImpersonateToken(\"\", ...)`, which POSTs `/connect/token` with `grant_type=impersonate` and an **empty `user_id`** — minting a **fresh operator session** (never `grant_type=password`). The restored operator tokens are written to storage and **then** the tab performs a full-page navigation (`location.href`) to the operator landing route (other tabs reload via broadcast). Because the operator token is persisted **before** the reload, no re-auth occurs. (vc-frontend source: `useImpersonate` `backToOperator`/`revertImpersonate`; account-menu popup row `back-to-operator-row`.)"
@@ -180,7 +170,6 @@ rules:
       ref: Operator starts impersonating target → confirms banner → clicks the "Back to operator" row (`data-test-id="back-to-operator-row"`) → the `/connect/token grant_type=impersonate` call carries an **empty `user_id`** (no `grant_type=password`); the URL does **NOT** go to the sign-in route; after the navigation the account menu shows the operator name (not target).
     violation_signal: 'Stopping impersonation redirects to the sign-in route (operator must re-authenticate); account menu shows "Sign in" instead of operator name (session lost); a `grant_type=password` call is made. NOTE: a full-page navigation to the operator landing route **is expected by design** — it is NOT a violation (the operator token is persisted before the reload, so the session survives).'
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-011
   - id: BL-AUTH-012
     title: Org-scoped lockout does not touch the global account
     rule: 'Setting `OrganizationMembership.IsLocked = true` for (userId, orgX) MUST NOT set `ApplicationUser.LockoutEnd`. `GET /api/platform/security/users/{userId}/locked` MUST remain `{"locked": false}`, and the user MUST still authenticate into any other organization whose membership is unlocked. (VCST-5028 — the exact regression the feature exists to prevent: the old handler globally locked the shared user.)'
@@ -200,7 +189,6 @@ rules:
       ref: "Lock membership in org X via `POST /api/customer/organization-memberships/{id}/lock` → `GET /api/platform/security/users/{userId}/locked` returns `locked: false` → `/connect/token` with `organization_id=X` → HTTP 400 `code: user_is_locked_in_organization` → `/connect/token` with `organization_id=Y` (same user, unlocked) → HTTP 200. **The 400 requires X to be the user's ONLY accessible organization** (or a non-`password` grant): on a `password` grant, a user who also has an accessible org Y is **silently fallen back to Y and gets HTTP 200 with no error** — see BL-AUTH-016. Use a single-org fixture, or assert the refusal on a non-`password` grant, or the step reads as a false PASS/FAIL depending on the fixture's org count. Two further traps: the **no-`organization_id`** variant of the same call returns **HTTP 200 with no organization context** rather than any refusal (the chain resolves nothing — BL-AUTH-015), so a refusal must be asserted on the explicit-org form; and the global-lock state must be read from the `/locked` endpoint, because the by-id platform-user payload can come back successful but **empty**, in which case a test reading `isLockedOut` off it sees `undefined` and passes without proving anything."
     violation_signal: "Global `locked: true` after an org-scoped lock; login to a non-locked org fails with the same credentials."
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-012
   - id: BL-AUTH-013
     title: Org-scoped access refusal is distinct from global lockout, and per-cause
     rule: |-
@@ -224,7 +212,6 @@ rules:
       ref: For each cause, put a **single-accessible-org** user into that state, then `/connect/token` (`grant_type=password`, a store identifier, and `organization_id` naming that org) → assert `error == "invalid_grant"` and the exact `code` from the table above; assert `errors[]` carries **exactly one** entry whose `code` matches (BL-AUTH-016). Do **not** assert on the response's `count` field — it is the token response's parameter count, not an error count, and reads greater than one on a single-error refusal. Storefront `/sign-in` or an org-switch into the refused org → assert org-specific copy, distinct from the global-lockout copy.
     violation_signal: A global lockout code is returned for an org-scoped refusal; two different causes collapse onto the same code (a caller cannot tell "invitation pending" from "removed"); a blocking status returns the LOCK code or vice-versa (see BL-AUTH-016 for the deliberate lock-wins precedence); the storefront shows the generic lockout message.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-013
   - id: BL-AUTH-014
     title: Admin/Platform API cookie-auth challenge returns a status code, never a login-page redirect
     rule: "When cookie authentication challenges a request whose path's first segment is `api` (case-insensitive; a path that merely starts with the string \"api\", e.g. `/apiary/...`, does NOT match) or that carries the header `X-Requested-With: XMLHttpRequest`, the response is a direct status code — 401 if unauthenticated, 403 if authenticated but forbidden — with no `Location` header and no login-page HTML body. Any other cookie-authentication challenge (e.g. the OIDC `/connect/authorize` flow) still issues a 302 redirect to the login page, so browser-driven authorization flows are unaffected."
@@ -240,7 +227,6 @@ rules:
       ref: "Unauthenticated `GET` to an `/api/platform/**` endpoint → 401, no `Location` header, body is not login-page HTML. Authenticated-but-forbidden call to an `/api/**` endpoint → direct 403 (not the old 302→AccessDenied→404 chain). A path that merely starts with the string \"api\" but isn't the `/api` segment (e.g. `/apiary/...`) is NOT treated as an API path. An AJAX/XHR request outside `/api` (e.g. SignalR hub negotiation) carrying `X-Requested-With: XMLHttpRequest` also gets a direct status code. Unauthenticated navigation to `/connect/authorize` still redirects (302) to the login page."
     violation_signal: An unauthenticated `/api/**` call returns 200 with login-page HTML, or a 302 with a `Location` header, instead of a direct 401; an authenticated-but-forbidden `/api/**` call falls through a 302→AccessDenied→404 chain instead of a direct 403; a path like `/apiary/...` is incorrectly treated as an API path (false-positive segment match).
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-014
   - id: BL-AUTH-015
     title: Active organization resolves by a fixed 5-step chain over *accessible* orgs only
     rule: |-
@@ -267,7 +253,6 @@ rules:
       ref: Multi-org user, `password` grant naming org Y explicitly → active org is Y even when the contact's `CurrentOrganizationId` is X (step 1 beats step 3). Re-read the contact after that grant → `CurrentOrganizationId` is now Y (the write-back), so re-read stored state between steps instead of assuming the seeded value. Switch orgs through the real UI, then sign out and sign in again → the resend/persisted org is honoured, not the previous first-accessible one. Put a single-org user's only membership at a blocking status → sign in with **no** explicit `organization_id` → the org is absent from the resolved context (org switcher and org-scoped navigation are gone), not merely refused. A contact with organization associations but no membership rows → accessible per the contact's own status. Confirm the switcher lists only accessible orgs.
     violation_signal: A blocked or blocking-status org is selected as active; `DefaultOrganizationId` is pinned despite being inaccessible; an explicit `organization_id` is ignored in favour of the contact's stored org; a user with associations but no membership rows is denied every org **while their contact status is non-blocking**; the resolved org is not persisted, or a substituted org is persisted for a grant type that should not write.
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-015
   - id: BL-AUTH-016
     title: An org refusal is a single code, lock-first, and only when no fallback remains
     rule: |-
@@ -291,7 +276,6 @@ rules:
       ref: Single-accessible-org user, membership both locked and at a blocking status → `password` grant naming that org → exactly one error, code `user_is_locked_in_organization`; unlock → the same call returns the status code instead; re-lock → back to the lock code. Multi-org user with one blocked org → `password` grant naming the blocked org → **HTTP 200**, active org is the accessible one (no error). Same request as a non-`password` grant → refused with the lock code; take the refresh token **fresh** for that assertion, since a consumed one fails with a code-less `invalid_grant` that is easily mistaken for the org refusal. Single-org user at a blocking status signing in with **no** explicit org → HTTP 200, session has no organization. Count errors from the `errors[]` array, never from the response's `count` field (that is the parameter count).
     violation_signal: More than one error code returned for one refusal; the status code returned while the membership is locked (precedence inverted); a `password` grant refused outright when another accessible org exists (the fallback regressed — this locks a multi-org user out of orgs they can still use); a non-`password` org switch silently succeeding on an inaccessible org (the fallback leaking into the explicit-switch path).
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-016
   - id: BL-AUTH-017
     title: A malformed REST request body yields 400, never 500
     rule: A REST endpoint that accepts a request body MUST validate required fields **before** touching any downstream store or lookup; a missing, null, or unparseable body MUST return **400 Bad Request**, never an unhandled **500**. A well-formed body carrying a merely *wrong* value (an empty-string or unknown username) is a different outcome and MUST still resolve gracefully — typically `200` with a failure flag. No response body may leak a stack trace.
@@ -309,4 +293,3 @@ rules:
       ref: '`POST /api/platform/security/login` with `{}`, `{"userName":null,"password":null}`, a missing `password` key, or an empty raw body → `400`. The same shape with a well-formed but unknown `userName` → `200` + `succeeded:false`. Assert no `stackTrace` in any response.'
     violation_signal: "`500 Internal Server Error` on a malformed or empty request body; a parameter-name leak such as `Value cannot be null. (Parameter 'userName')` surfacing to the caller; or an over-correction that starts rejecting previously-valid payloads with `400`."
     status: ACTIVE
-    history: docs/decisions/bl/auth.md#bl-auth-017
