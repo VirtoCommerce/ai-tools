@@ -110,6 +110,7 @@ export interface SuiteConfig {
   runner?: string;
   runnerCommand?: string;
   preferredBrowser?: string;
+  exclusiveGroup?: string;
   /** Derived at manifest-sync time: the suite clicks, so it must never land on firefox. */
   clickDriven?: boolean;
 }
@@ -135,6 +136,7 @@ for (const suite of manifest.suites) {
     runner: suite.runner,
     runnerCommand: suite.runnerCommand,
     preferredBrowser: suite.preferredBrowser,
+    exclusiveGroup: suite.exclusiveGroup,
     clickDriven: suite.clickDriven,
   };
 }
@@ -982,6 +984,7 @@ async function main() {
     testCount: config.testCount,
     estimatedMinutes: config.estimatedMinutes,
     preferredBrowser: config.preferredBrowser,
+    exclusiveGroup: config.exclusiveGroup,
     browserDenyList: browserDenyListFor(config, manifest),
     config,
   }));

@@ -44,6 +44,8 @@ export interface SchedulableSuite extends SuiteCapsInput {
   browserDenyList?: readonly string[];
   /** Browser server this suite REQUIRES (manifest `preferredBrowser`, e.g. 039/041). */
   preferredBrowser?: string;
+  /** Manifest `exclusiveGroup`: never in flight together with another suite of the same group. */
+  exclusiveGroup?: string;
 }
 
 /** One unit of concurrency. `server` is set only for the browser lane. */
@@ -191,6 +193,9 @@ export interface PoolOutcome<T> {
  *
  * A suite no remaining slot can ever accept is deferred with a reason rather than silently
  * dropped or forced onto a slot that cannot run it.
+ *
+ * A suite whose `exclusiveGroup` is held by an in-flight suite WAITS (it is skipped for now, never
+ * deferred): the group frees when the holder settles, so it always becomes dispatchable.
  */
 export async function runLanePool<T>(opts: {
   suites: readonly SchedulableSuite[];
@@ -211,6 +216,7 @@ export async function runLanePool<T>(opts: {
   const queue = orderLpt(suites as readonly (SchedulableSuite & { id: string })[]);
   const freeSlots: PoolSlot[] = [...slots];
   const inFlight = new Map<Promise<void>, true>();
+  const heldGroups = new Set<string>();
   let stopped: string | null = null;
 
   const deferRest = (reason: string): void => {
@@ -235,6 +241,8 @@ export async function runLanePool<T>(opts: {
       let index = -1;
       let slotIndex = -1;
       pair: for (let q = 0; q < queue.length; q++) {
+        const group = queue[q].exclusiveGroup;
+        if (group && heldGroups.has(group)) continue;
         for (let s = 0; s < freeSlots.length; s++) {
           if (slotAccepts(queue[q], freeSlots[s])) {
             index = q;
@@ -261,6 +269,7 @@ export async function runLanePool<T>(opts: {
 
       queue.splice(index, 1);
       freeSlots.splice(slotIndex, 1);
+      if (suite.exclusiveGroup) heldGroups.add(suite.exclusiveGroup);
       dispatchedAny = true;
       onDispatch?.(suite, slot);
 
@@ -270,6 +279,7 @@ export async function runLanePool<T>(opts: {
           outcomes.push({ suite, slot, result });
         } finally {
           freeSlots.push(slot);
+          if (suite.exclusiveGroup) heldGroups.delete(suite.exclusiveGroup);
         }
       })();
       const tracked = task.then(

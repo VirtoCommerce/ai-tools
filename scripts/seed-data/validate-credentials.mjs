@@ -29,6 +29,15 @@ import {
   collectDeclarations, findPasswordConflicts, findDestructiveOverlaps, findUndeclaredVars,
 } from './credential-specs.mjs';
 import { USER_ROLES } from '../lib/user-roles.mjs';
+import { SEEDED_ACCOUNTS as OTP_ACCOUNTS, PASSWORD_VAR as OTP_PASSWORD_VAR } from './auth/otp-signin-specs.mjs';
+
+/**
+ * Destructive accounts declared OUTSIDE user-roles.mjs: the VCST-5748 OTP lockout fixtures (one per
+ * lockout case, seeded by auth/seed-otp-signin.mjs). Registered as roles so [3] and [4] see them.
+ */
+const SPEC_DESTRUCTIVE = OTP_ACCOUNTS.filter((s) => s.kind === 'lockout')
+  .map((s) => ({ key: s.alias, email: s.email, passwordVar: OTP_PASSWORD_VAR }));
+const DESTRUCTIVE_KEYS = [...DESTRUCTIVE_ROLE_KEYS, ...SPEC_DESTRUCTIVE.map((r) => r.key)];
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const problems = [];
@@ -99,7 +108,7 @@ for (const layer of envLayers) {
       if (email && email.includes('@')) { entries.push({ key: role.key, email, passwordVar: role.passwordVar }); break; }
     }
   }
-  roleEntriesByEnv.set(layer.file, entries);
+  roleEntriesByEnv.set(layer.file, [...entries, ...SPEC_DESTRUCTIVE]);
   ok(`${layer.file}: ${entries.length} role identity/ies declared`);
 }
 
@@ -128,14 +137,14 @@ console.log('\n[4] Destructive (lockout/abuse) fixtures own a dedicated account'
 let overlapCount = 0;
 for (const [envFile, roleEntries] of roleEntriesByEnv) {
   const decls = collectDeclarations({ csvFiles, roleEntries });
-  for (const o of findDestructiveOverlaps(decls)) {
+  for (const o of findDestructiveOverlaps(decls, DESTRUCTIVE_KEYS)) {
     overlapCount++;
     fail(`${envFile}: destructive role ${o.roleKey} points at "${o.email}", which is ALSO declared by `
       + o.sharedWith.map((d) => d.origin).join(', ')
       + `  |  ${o.roleKey} deliberately fails logins, so every other consumer of this account is BLOCKED for the lockout window — give ${o.roleKey} its own AGENT-TEST account`);
   }
 }
-if (!overlapCount) ok(`destructive role(s) [${DESTRUCTIVE_ROLE_KEYS.join(', ')}] are isolated from shared fixtures`);
+if (!overlapCount) ok(`destructive role(s) [${DESTRUCTIVE_KEYS.join(', ')}] are isolated from shared fixtures`);
 
 // ── 5. Advisory: `{{VAR}}` cells whose var isn't documented anywhere ─────────
 console.log('\n[5] Every {{VAR}} password token names a documented variable');

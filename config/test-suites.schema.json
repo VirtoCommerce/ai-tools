@@ -57,6 +57,11 @@
           "agent": { "type": "string" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "preferredBrowser": { "type": "string" },
+          "exclusiveGroup": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Suites sharing this value mutate the same shared state (e.g. a store-wide setting) and must never run at the same time. The CI pool never dispatches two members together; batching puts all members of a group into ONE session, so an interactive run executes them one after another."
+          },
           "browserRequirementReason": { "type": "string" },
           "storefrontProfile": {
             "type": "array",

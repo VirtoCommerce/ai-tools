@@ -162,7 +162,7 @@ async function seed(ctx) {
     // Read back — the PUT envelope is not proof (lockoutEnd / accessFailedCount have lied before).
     let bad = 0;
     for (const spec of active) {
-      const p = await liveProblems(spec, ctx);
+      const { problems: p } = await liveState(spec, ctx);
       p.forEach((x) => log(`  ✗ ${x}`)); bad += p.length;
       if (!p.length) log(`  ✓ armed ${spec.alias}`);
     }
@@ -170,10 +170,11 @@ async function seed(ctx) {
   }
 }
 
-async function liveProblems(spec, ctx) {
+/** One user search + one member GET; returns the row too so a caller never searches twice. */
+async function liveState(spec, ctx) {
   const user = await findUser(spec.email);
   const member = user?.memberId ? await getMember(user.memberId) : null;
-  return seededProblems(spec, user, { member, envStoreId: STORE_ID, trustedGroups: ctx.trustedGroups });
+  return { user, problems: seededProblems(spec, user, { member, envStoreId: STORE_ID, trustedGroups: ctx.trustedGroups }) };
 }
 
 /* ── verify (live; the only write is a code email) ───────────────────────────── */
@@ -187,8 +188,7 @@ async function verify(ctx) {
   const { active, skipped } = scopeOf(ctx);
   logSkipped(skipped);
   for (const spec of active) {
-    const user = await findUser(spec.email);
-    const p = await liveProblems(spec, ctx);
+    const { user, problems: p } = await liveState(spec, ctx);
     log(`${p.length ? '✗' : '✓'} ${spec.alias} = ${spec.email} {userType:${user?.userType}, admin:${user?.isAdministrator}, storeId:${user?.storeId || 'none'}, member:${user?.memberId ? 'yes' : 'none'}, roles:${(user?.roles || []).length}, lockoutEnabled:${user?.lockoutEnabled}, passwordExpired:${user?.passwordExpired}}`);
     problems.push(...p);
   }

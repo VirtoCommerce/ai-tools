@@ -421,3 +421,26 @@ test("an empty suite list is a no-op", async () => {
   const outcomes = await runLanePool<void>({ suites: [], slots: [{ id: "1" }], run: async () => {} });
   assert.deepEqual(outcomes, []);
 });
+
+test("two suites of one exclusiveGroup are never in flight together, even with free slots", async () => {
+  let inFlight = 0;
+  let peakGroup = 0;
+  const order: string[] = [];
+  const outcomes = await runLanePool<void>({
+    suites: [
+      { id: "104", lane: "browser", estimatedMinutes: 60, exclusiveGroup: "otp" },
+      { id: "105", lane: "browser", estimatedMinutes: 40, exclusiveGroup: "otp" },
+      { id: "free", lane: "browser", estimatedMinutes: 30 },
+    ],
+    slots: [{ id: "1" }, { id: "2" }, { id: "3" }],
+    run: async (suite) => {
+      order.push(suite.id);
+      if (suite.exclusiveGroup) peakGroup = Math.max(peakGroup, ++inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      if (suite.exclusiveGroup) inFlight--;
+    },
+  });
+  assert.equal(peakGroup, 1, "the group must be serialised");
+  assert.deepEqual(order.slice(0, 2), ["104", "free"], "a held group does not block other suites");
+  assert.ok(outcomes.every((o) => !o.deferredReason), "a waiting member is dispatched later, never deferred");
+});

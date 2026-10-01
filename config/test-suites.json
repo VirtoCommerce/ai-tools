@@ -3571,7 +3571,8 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting and so must run ALONE on the store (it shares the setting with 105 OTP-022). Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
       "clickDriven": true
     },
     {
@@ -3595,7 +3596,8 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
-      "notes": "VCST-5748. REST half of OTP email sign-in (storefront half: 104). OTP-019 and OTP-020 each lock their OWN disposable account (OTP_LOCKOUT_USER_1 / _2): re-arm with scripts/seed-data/auth/seed-otp-signin.mjs --verify before each run. OTP-022 flips the store-wide OtpSignIn.Enabled setting and must run alone. OTP-018, OTP-025 and OTP-028 encode the SPEC expectation the current build does not meet (code reuse, notification sender/subject, code sent to a blocked account) and are expected to FAIL until fixed.",
+      "notes": "VCST-5748. REST half of OTP email sign-in (storefront half: 104). OTP-019 and OTP-020 each lock their OWN disposable account (OTP_LOCKOUT_USER_1 / _2): re-arm with `npm run seed:otp-signin:rearm` (seed + live verify) before each run. OTP-022 flips the store-wide OtpSignIn.Enabled setting, shared with 104 OTP-007 — exclusiveGroup keeps the two suites from running at the same time. OTP-018, OTP-025 and OTP-028 encode the SPEC expectation the current build does not meet (code reuse, notification sender/subject, code sent to a blocked account) and are expected to FAIL until fixed.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
       "clickDriven": true
     }
   ],
@@ -3671,7 +3673,9 @@
         "032",
         "033",
         "082",
-        "101"
+        "101",
+        "104",
+        "105"
       ]
     },
     "platform": {

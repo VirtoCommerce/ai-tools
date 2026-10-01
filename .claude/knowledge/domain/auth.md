@@ -91,7 +91,7 @@ reconstructed from source + live; neither user guide states it as one sentence.
 ### API / contract layer
 
 - `POST /connect/token grant_type=password` — `storeId` required (kb KB-7A4C260E); lockout per BL-AUTH-003.
-- `POST /api/otp/request {storeId, email}` — anonymous; returns `{outcome, maskedEmail}`. Outcomes `CodeSent / StoreNotFound / OtpDisabled / UserNotFound / DuplicateEmail / LockoutDisabled / StoreAccessDenied`; the four identity-revealing ones are masked as `CodeSent` only when `PasswordLogin:DetailedErrors` is false. **CONFIRMED live** (vcptcore_qa1 runs DetailedErrors = true, so `UserNotFound` is returned as-is).
+- `POST /api/otp/request {storeId, email}` — anonymous. **Shape changed between builds:** from OTP module `3.1000.0-pr-1-11d6` (vcptcore_qa1, 2026-10-01) it returns `200 {succeeded, error:{code, description}, maskedEmail}` — `succeeded:true` when a code is sent, else an error code such as `user_not_found` (kb KB-33B89BDD; KB-6D7B2ED7). **CONFIRMED live** for `succeeded:true` and `user_not_found`. The earlier build returned `{outcome, maskedEmail}` with `CodeSent / StoreNotFound / OtpDisabled / UserNotFound / DuplicateEmail / LockoutDisabled / StoreAccessDenied` (kb KB-903E980C, 2026-09-30) — superseded, do not assert it. The store-rule refusal on the new shape is expected as `user_cannot_login_in_store` (the grant's code; what `seed-otp-signin.mjs --verify` checks) — **UNVERIFIED live**. Identity-revealing errors are masked only when `PasswordLogin:DetailedErrors` is false (vcptcore_qa1 runs it true).
 - `POST /connect/token grant_type=otp_email {storeId, email, code}` — error codes `missing_parameter`, `store_not_found`, `otp_disabled`, `user_not_found`*, `lockout_disabled`*, `account_locked`*, `user_cannot_login_in_store`, `invalid_code` (* only when DetailedErrors). **CONFIRMED live** for missing_parameter, user_not_found, invalid_code, and a 200 token.
 - `GET /api/stores/{id}` — `trustedGroups` (B2B-store ↔ New-super on vcptcore_qa1). **CONFIRMED populated**; cross-store behaviour UNVERIFIED (G6).
 - **What is NOT here**: no GraphQL sign-in mutation (kb KB-0407F36E); no OTP code-length / expiry / resend-cooldown setting — all owned by ASP.NET Identity's Email token provider.
@@ -121,7 +121,7 @@ Basis: `config/test-suites.json`, read directly 2026-09-29.
 | 042 | Smoke Tests | partial of 34 (tagged `auth`) | `regression/suites/Frontend/smoke/042-smoke-tests.csv` |
 | 078 | Backend Smoke — Platform, API & GraphQL | partial of 27 (tagged `auth`) | `regression/suites/Backend/smoke/078-backend-smoke-tests.csv` |
 
-**Zero coverage — a hole, not a deliberate exclusion:** the manifest holds no `otp` suite, case or tag (2026-09-29). The feature is ahead of the release ledger.
+**OTP coverage:** suites `104` (storefront) and `105` (API), tagged `otp`, added by VCST-5748 (cases Draft until a run promotes them). Before that the manifest held no `otp` suite (2026-09-29).
 
 **Cross-corpus dependency:** `[PRE:SIGNIN_AS]` (`.claude/knowledge/execution/test-execution-preflight.md` §SIGNIN_AS) fills a password on `/sign-in`; with `OtpSignIn.Enabled` true the default view has no password field, so every suite using it depends on this domain's toggle.
 

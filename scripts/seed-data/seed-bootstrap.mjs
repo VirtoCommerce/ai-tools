@@ -198,7 +198,8 @@ const STEPS = [
   // `required: false` because it hard-aborts on an env with no genuine second store
   // (STORE_ID_SECONDARY), which is a legitimate deployment shape — see seed-wishlists.mjs.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', required: false, priority: 150 },
-  // VCST-5748 OTP sign-in accounts (7, incl. one Administrator). Self-contained: creates its own contacts/accounts on STORE_ID.
+  // VCST-5748 OTP sign-in accounts (the non-optIn SEEDED_ACCOUNTS of auth/otp-signin-specs.mjs — no
+  // Administrator: the opt-in back-office accounts need --only). Self-contained: creates its own contacts/accounts on STORE_ID.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', required: false, priority: 102 },
 ].sort((a, b) => a.priority - b.priority);
 
