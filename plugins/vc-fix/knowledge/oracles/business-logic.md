@@ -277,6 +277,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -450,6 +451,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/user-email-verification.md (published) — email verification is a per-store toggle, disabled by default, checked on registration.
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/confirmEmail.md (published) — confirming the email completes verification, allowing the customer to sign in.
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [code] vc-module-profile-experience-api@42213c4:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#LockAccount - when email verification is required the account is locked until the email is confirmed, so the user cannot sign in at all; the rule describes a signed-in unverified user (browse, cart allowed, checkout blocked, 'Please verify' message) and expiring links - re-run the check
 
 ### BL-AUTH-003: Account lockout after N failed attempts `[P1-data]`
 - **Rule:** After a configurable number of consecutive failed login attempts (platform default: 5), the account is temporarily locked. During lockout, even correct credentials are rejected with a generic message (not revealing whether the account exists). Lockout duration is configurable. Successful login resets the failure counter.
@@ -706,7 +708,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5401 (Done) — expected: a B2B customer's global account roles stay empty; permissions come only from membership roles
 - **Trust:** DECLARED
 
-### BL-B2B-011: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate `[P1-data]`
+### BL-B2B-011: Org role whitelist scopes assignable roles; changeOrganizationContactRole rejects roles outside it `[P1-data]`
 - **Rule:** Two dictionary platform settings — `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`
   (`ValueType=ShortText`, `IsDictionary=true`) — each hold a SELECTED subset of the live platform roles list
   (`GET /api/platform/security/roles/search`), never free-text. **Which field carries the SELECTED set is
@@ -745,11 +747,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
   edits the **GLOBAL** scope only; the store-scope override is API-only, and VirtoOZ's published guides (Platform
   Developer Guide's settings/v2 coverage, Platform User Guide's whitelist article) name no such override or its
   fallback — a released, in-use mechanism the docs do not cover (docs axis finding, not a defect in the mechanism
-  itself). **Server-side enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story
-  EPIC-5239-03): as of 2026-07, `PUT /api/organizations` and `changeOrganizationContactRole` accept a
-  non-whitelisted `roleId` with no rejection (backend finding F1 — zero whitelist references in
-  `profile-experience-api#137` or the REST organizations endpoint) — the whitelist today constrains only the Admin
-  UI picker's *offered* options, not what the API will *accept*.
+  itself). **Server-side enforcement is implemented** (VCST-5450 AC #4, Done: "Related XAPI should accept only these roles; other roles should be rejected"): `changeOrganizationContactRole` rejects a role outside the whitelist and accepts a whitelisted one. No source states enforcement on `PUT /api/organizations`.
 - **Verify:** Remove a currently-visible role from a NON-EMPTY GLOBAL whitelist → cache-reset + reload → picker no
   longer offers it. Empty GLOBAL whitelist → picker shows **ALL** platform roles (filter skipped) — this is correct,
   NOT a fallback bug. For a STORE-scoped override: write a NON-EMPTY store value via
@@ -759,9 +757,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
   When asserting the legacy v1 surface, read `allowedValues`; when asserting the v2 tenant surface, read `value` —
   same content, inverted field name, not interchangeable across API versions. Add-direction persists round-trip
   after reload; clear-to-empty **persists** after reload as of Platform 3.1044.0 / vc-platform PR #3076 (VCST-5441
-  fixed 2026-07-15; previously silently reverted). Direct PUT/GraphQL bypass with a non-whitelisted role currently
-  succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the
-  same path.
+  fixed 2026-07-15; previously silently reverted). Direct GraphQL `changeOrganizationContactRole` with a non-whitelisted role is rejected (`errors[]` non-empty) without blocking a whitelisted role on the same path.
 - **Violation signal:** With a NON-EMPTY GLOBAL whitelist, the picker offers a role outside it after a genuine
   cache-reset+reload, OR fails to narrow to the whitelist's entries; an EMPTY GLOBAL whitelist wrongly locks out /
   shows zero options (empty must show ALL roles — the filter is skipped by design); a case asserts "empty STORE
@@ -771,12 +767,12 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
   inversion — silently asserts against the wrong field and can pass vacuously); a write is attempted against the v2
   `schema` endpoint's `allowedValues` (the pool is a hardcoded module constant, not a writable per-tenant resource);
   one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently reverts (the pre-fix VCST-5441
-  signature — a re-appearance now means PR #3076 regressed); once server enforcement ships — a non-whitelisted role
-  is accepted by the API, OR a whitelisted role is rejected (over-blocking).
+  signature — a re-appearance now means PR #3076 regressed); a non-whitelisted role is accepted by `changeOrganizationContactRole`, OR a whitelisted role is rejected (over-blocking).
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Docs:** platform/user-guide/docs/contacts/managing-organization-roles.md (published) — whitelists for organization and membership roles restrict assignable roles; reset cache after edits
 - **Docs:** platform/user-guide/docs/contacts/settings.md (published) — role whitelists in Customer settings control which roles are eligible for organizations and memberships
 - **Source:** VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
+- **Source:** VCST-5450 (Done 2026-09-01; released customer 3.1023.0, profile-experience-api 3.1017.0, platform 3.1063.0) — AC #4: related XAPI should accept only whitelisted roles; other roles should be rejected
 - **Trust:** DECLARED
 
 ### BL-B2B-012: Declining or revoking an invite changes a status — it never deletes the membership row `[P1-data]`
@@ -846,6 +842,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-7347 (Done) — a child of a hidden category was still returned as visible; fixed: subcategories inherit hidden
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check
 
 ### BL-CAT-005: Product requires virtual catalog assignment for storefront `[P1-data]`
 - **Rule:** A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -889,6 +886,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Source:** VP-2628 (Done) — deleting a category with more than 2100 products returned 500 from the product-removal cascade; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Repositories/CatalogRepositoryImpl.cs#RemoveCategoriesInternalAsync (:628-654) selects every item whose CategoryId is in the removed categories and calls RemoveItemsInternalAsync, so products are deleted with the category; this contradicts the clause 'unassigns (does not orphan) products'. No human source states the rule (VP-2628 only fixes a 500 in that product-removal path), re-run the check
 
 ### BL-CAT-010: Catalog link-permission enforcement (RBAC) `[P1-data]`
 - **Rule:** Linking a whole **category** into another category/catalog requires the `catalog:categories:link` permission; linking a **product/variation** requires `catalog:products:link`. Enforcement is **server-side** on `POST /api/catalog/listentrylinks` (403 without the permission) **and** reflected in the Admin mapping picker (category rows non-selectable without `categories:link`; product/item rows follow `products:link`). With full permissions both remain selectable (backward-compatible default).
@@ -1008,11 +1006,12 @@ These invariants span multiple modules and are where the most expensive producti
 - **Trust:** INFERRED
 
 ### BL-CROSS-012: Admin entity deletion never creates $0 products `[P0-revenue]`
-- **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable by design only when the store's `zero_price_product_enabled` theme flag is TRUE (default FALSE); with the flag FALSE, $0-priced products are not addable to cart. When auditing, confirm the flag state before treating a $0 purchase as a violation.
+- **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
 - **Verify:** Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.
 - **Violation signal:** Any product purchasable at $0.00 due to admin action; "Add to Cart" active when price data is missing; order placed at $0.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
+- **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag
 - **Trust:** DECLARED
 
 ---
@@ -1243,7 +1242,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Source:** vc-module-notification `Scripts/blades/notifications-edit-template.tpl.html` — the `class="text __note"` paragraph gated on `isPredefined && isEdited` renders on `dev` (:7) but is HTML-commented-out on the editor-rework branch `feat/VCST-5557` (:5), while its localized strings (`…notifications-edit-template.labels.note-caption` / `note-text`) still ship in every locale. `Scripts/blades/notifications-edit-template.js` — `saveTemplate()` sets `isPredefined`/`isEdited` on an override save (:457-459); `persistNotification()` flips `isPredefined` to `false` so the override persists (:521-526); the `notifications.commands.restore` toolbar command is gated on `isPredefined && isEdited` (:701-711) and routes through a typed confirmation dialog (:477-488 → `notification-templates-list-reset-dialog.tpl.html`).
 - **Source:** VCST-5606 (Cancelled) — missing replace-the-default warning on predefined templates closed without fix
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — VCST-5606 (Cancelled) — the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored.
+- **Lifecycle:** SUSPECT — VCST-5606 (Cancelled) - the bug that the predefined-template replace warning was removed was closed by the developer with the reason that Save really saves; the warn-before-replace clause was not restored. The note is still HTML-commented-out on the default branch too (vc-module-notification@a816b0a:notifications-edit-template.tpl.html line 5; it rendered before the editor rework), so the clause is not met on dev either; re-run the check.
 
 ### BL-NOTIF-006: A code editor must not lose user content to a single undo `[P1-data]`
 - **Rule:** The document a code editor loads is the undo baseline, not an undoable edit. On a freshly opened editor where the user has typed nothing, undo is a no-op: it must never empty or truncate the buffer, and must not mark the surface as modified. Conversely, after an undo/redo round trip that restores content identical to the loaded document, the surface must report itself unmodified (Save disabled).
@@ -2034,6 +2033,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Agents:** qa-backend-expert, qa-frontend-expert
 - **Source:** module layout-surface component (mounts a block's component only when currently visible) and the shared page-level statistics composable feeding every stat card regardless of hidden state. Live-confirmed: hiding and saving a widget dropped exactly that widget's own operations from the reload trace against a positive control; hiding and saving a stat card left the page-level statistics query firing with an unchanged request shape.
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/modules/sales-rep/composables/useStatDataNeeds.ts#useStatDataNeeds (:46-54) outside edit mode returns statDataNeeds(scope, current.visible), and layout/stat-data-needs.ts#orderStatisticsFlags turns those needs into @include flags on the statistics query, so hiding a stat card does shrink the query; this contradicts the clause 'hiding a card does not shrink that query's scope or omit it' (the queries are also held until the layout has settled). No human source decides it (the in-code comment cites VCST-5647, which only asks that unrendered fields not be requested), re-run the check
 
 ### BL-SR-032: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty `[P2-ux]`
 - **Rule:** The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.
@@ -2351,11 +2351,11 @@ ticket or a docs page disputes (`status`).
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 0 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 0 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 4 | 0 |
-| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 2 |
+| Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 1 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 1 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 3 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 0 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
@@ -2369,7 +2369,7 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 0 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 1 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 0 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2377,4 +2377,4 @@ ticket or a docs page disputes (`status`).
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **113** | **8** |
+| **Total** | | **223** | **60** | **125** | **38** | **113** | **13** |
