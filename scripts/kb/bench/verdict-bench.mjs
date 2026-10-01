@@ -124,11 +124,14 @@ async function verdict({ rows, reader, body, set, rankerPath }) {
       const parsed = await body(c.row);
       lines = verdictLines({ verdict: 'answer', hit: parsed ? describeHit(hit, parsed) : describeHit(hit, null, { unavailable: 'body unavailable' }) });
     } else if (d.verdict === 'ambiguous') {
-      lines = verdictLines({ verdict: 'ambiguous', headlines: d.entries.map((c) => ({ id: c.row.id, subject: c.row.subject, separating: c.separating })) });
+      const headlines = await Promise.all(d.entries.map(async (c) => ({
+        id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: (await body(c.row))?.body ?? null,
+      })));
+      lines = verdictLines({ verdict: 'ambiguous', headlines });
     } else {
       lines = verdictLines({ verdict: 'none', concepts: d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id) });
     }
-    return { verdict: d.verdict, entries: d.entries.map((c) => c.row.id), candidates, tokens: tokensOf(lines), p: d.p, features: d.features };
+    return { verdict: d.verdict, entries: d.entries.map((c) => c.row.id), candidates, tokens: tokensOf(lines), p: d.p, features: d.features, lines };
   };
   fn.ranker = ranker;
   return fn;

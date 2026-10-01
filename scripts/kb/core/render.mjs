@@ -87,20 +87,42 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   return lines;
 }
 
+/** How many characters of an entry's body an `ambiguous` headline carries. */
+export const EXCERPT_CHARS = 200;
+
+/** The opening of a body, on one line, cut at a word boundary. Bodies lead with the fact itself. */
+export function excerpt(body, max = EXCERPT_CHARS) {
+  const flat = String(body ?? '').replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max).replace(/\s+\S*$/, '')} …` : flat;
+}
+
 /**
- * The three verdicts (VCST-6122 Decision 1). An `answer` is ONE entry, rendered exactly as a hit always
- * was; `ambiguous` is a few headlines and the concept that tells each apart, never bodies -- the reader
- * opens the one it means; `none` names the nearest concepts the base does hold, so "nothing recorded"
- * is distinguishable from "recorded under another name".
+ * The agent's half of an `ambiguous` verdict, said where the agent reads it: the base found these and
+ * cannot certify that any of them states the fact (VCST-6122 Decision 1a). Short because it is paid on
+ * every ask; the full rule belongs in the MCP tool description, paid once per session. M4 measured a
+ * Sonnet-class agent on exactly this text -- changing it changes what the gate measured.
+ */
+export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. kb_show <id> the one most likely to state your fact, '
+  + 'then rely on it only if its body does; if none could, kb_none. Same topic is not an answer.';
+
+/**
+ * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit
+ * always was; `ambiguous` is a few headlines -- subject, the question each answers, the opening of its
+ * body, the concept that tells it apart -- for the agent to open one of; `none` names the nearest
+ * concepts the base does hold, so "nothing recorded" is distinguishable from "recorded under another name".
  *
- * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating}>, concepts?:string[]}} v
+ * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */
 export function verdictLines(v, { prefix = 'kb ask' } = {}) {
   if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
   if (v.verdict === 'ambiguous') {
     return [
-      `${prefix}: the base holds entries close to this and cannot tell which one you mean — open the one that fits (kb_show), or say none does (kb_none):`,
-      ...v.headlines.map((h) => `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`),
+      `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      ...v.headlines.flatMap((h) => [
+        `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
+        ...(h.question ? [`      answers: ${h.question}`] : []),
+        ...(h.body ? [`      says: ${excerpt(h.body)}`] : []),
+      ]),
     ];
   }
   return [
