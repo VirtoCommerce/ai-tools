@@ -94,6 +94,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 
 | File | What it answers |
 |---|---|
+| [`auth.md`](./domain/auth.md) | Storefront sign-in and account access, plus the Admin-SPA security surfaces that govern it: password sign-in, the OTP email sign-in (VCST-5748,… |
 | [`b2b-organizations.md`](./domain/b2b-organizations.md) | What the B2B / multi-organization feature IS — actors, value chain, the surface inventory per layer (Admin SPA / storefront / API), where the layers… |
 | [`catalog.md`](./domain/catalog.md) | Platform knowledge for testing the Virto Commerce Catalog module. |
 | [`configurable-products.md`](./domain/configurable-products.md) | What "configurable products" (product-configuration sections attached to a catalog product — Product / Text / File sections, each optionally… |

@@ -1,0 +1,76 @@
+{
+  "ticket": "VCST-6000",
+  "verdict": "VERIFIED",
+  "date": "2026-09-25",
+  "supersedes": "2026-09-24 run (VERIFIED_WITH_NOTES, backend only; storefront failed)",
+  "environment": "https://vcptcore-qa-storefront.govirto.com",
+  "backend": "https://vcptcore-qa.govirto.com",
+  "build": {
+    "platform": "3.1071.0",
+    "storefront": "2.59.0-pr-2510-2e9a-2e9a6793",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1037.0-pr-144-a0ce",
+      "VirtoCommerce.FileExperienceApi": "3.1005.0-pr-22-2c0a"
+    },
+    "pr_builds_confirmed_deployed": [
+      "vc-module-x-cart#144 -> 3.1037.0-pr-144-a0ce",
+      "vc-frontend#2510 -> 2.59.0-pr-2510-2e9a",
+      "vc-module-file-experience-api#22 -> 3.1005.0-pr-22-2c0a"
+    ],
+    "confirmed_via": "GET /api/platform/modules + storefront footer version string"
+  },
+  "verified_by": "orchestrator directly (no agent delegation this run)",
+  "browser_lane": "playwright-edge",
+  "layers": {
+    "cart_validation": {
+      "pr": "vc-module-x-cart#144",
+      "status": "WORKS",
+      "evidence": "addItem with only a 0-byte file in the required File section -> itemsCount 0, CONFIGURATION_SECTION_FILES_REQUIRED. Control with a 17-byte file -> itemsCount 1, no errors."
+    },
+    "storefront": {
+      "pr": "vc-frontend#2510",
+      "status": "WORKS",
+      "str_result": "3/3",
+      "evidence": "0-byte file uploads and renders as (0B), section header shows 'Section is required' (previously it flipped to the filename), and 'Add to cart' stays [disabled]. Control: adding a 30-byte file alongside it releases the button and clears the error. After the scope minimum was enabled, the storefront additionally surfaces the server's own reason inline: 'Minimum allowed file size: 1' on the file row plus a blocking 'Fix file upload errors to continue.'"
+    },
+    "upload_endpoint": {
+      "pr": "vc-module-file-experience-api#22",
+      "status": "WORKS",
+      "evidence": "After MinFileSize:1 was set for the product-configuration scope (vc-deploy-dev@vcptcore-qa, commit fdbf5a7), POST /api/files/product-configuration with a 0-byte file returns succeeded:false, INVALID_MIN_SIZE, 'Minimum allowed file size: 1', errorParameter 1, url/id null (not persisted). Boundary control: a 1-byte file is accepted. Isolation controls: a 0-byte file is still accepted by quote-attachments and organization-logos, proving the rule is per-scope and did not leak."
+    }
+  },
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug (2026-09-23, same stand, pre-fix XCart 3.1036.0 / storefront 2.59.0-pr-2485) + the 2026-09-24 run which measured the storefront still broken",
+  "checklist_total": 11,
+  "checklist_passed": 11,
+  "checklist_failed": 0,
+  "checklist_inert": 0,
+  "regression_issues": [],
+  "side_effects": [],
+  "bugs_filed": [],
+  "tracker_transition": {
+    "role": null,
+    "state": "In review",
+    "applied": false,
+    "reason": "All three PRs are still open and unmerged; only their alpha builds are on the stand. Operator previously elected to hold the ticket at In review until merge."
+  },
+  "evidence": "reports/tickets/Sprint26-19/VCST-6000/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6000/",
+  "notes": [
+    "The developer simplified the upload guard in 2c0aecf from 'MinFileSize > 0 && Size < MinFileSize' to 'Size < MinFileSize'. Functionally equivalent (Size is never negative) and all 17 unit tests, including the back-compat pin, pass on that commit - verified locally.",
+    "Follow-up, not filed: MinFileSize is exposed neither via the REST options endpoint nor the GraphQL schema, so the storefront cannot pre-validate against it.",
+    "Expected of the ticket is now satisfied literally and end-to-end: rejected at upload, with an explicit error naming its limit, next to the maximum-size rule."
+  ],
+  "teardown": "Test carts and uploaded fixtures remain on the stand (zero-verify.txt / real-verify.txt in the product-configuration scope).",
+  "confidence": "HIGH",
+  "config_change": {
+    "repo": "VirtoCommerce/vc-deploy-dev",
+    "branch": "vcptcore-qa",
+    "file": "infra/environments.yml",
+    "key": "FileUpload__Scopes__3__MinFileSize: 1",
+    "commit": "fdbf5a7",
+    "applied_by": "operator",
+    "deploy": "Cloud infra deployment - success 11:13"
+  }
+}

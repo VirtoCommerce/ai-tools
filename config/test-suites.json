@@ -204,7 +204,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 56,
+      "testCount": 75,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1628,7 +1628,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 44,
       "estimatedMinutes": 21,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1640,7 +1640,7 @@
       "customerApplicability": "universal",
       "clickDriven": true,
       "lanes": {
-        "machine": 34,
+        "machine": 43,
         "browser": 0,
         "manual": 1
       }
@@ -3658,6 +3658,56 @@
       ],
       "customerApplicability": "reference",
       "clickDriven": true
+    },
+    {
+      "id": "104",
+      "name": "Auth OTP Sign-In",
+      "file": "regression/suites/Frontend/auth/104-auth-otp-sign-in.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 17,
+      "estimatedMinutes": 60,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "auth",
+        "otp",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "otp"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5748. Storefront half of OTP email sign-in (API half: 105). OTP-007 flips the store-wide OtpSignIn.Enabled setting, shared with 105 OTP-022 — exclusiveGroup keeps the two suites from running at the same time. Reads the code from the notification journal (SMTP may be off). Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "105",
+      "name": "OTP Sign-In API",
+      "file": "regression/suites/Backend/api/105-otp-sign-in-api.csv",
+      "domain": "auth-security",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 11,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "auth",
+        "otp",
+        "sign-in"
+      ],
+      "requiresModules": [
+        "otp"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5748. REST half of OTP email sign-in (storefront half: 104). OTP-019 and OTP-020 each lock their OWN disposable account (OTP_LOCKOUT_USER_1 / _2): re-arm with `npm run seed:otp-signin:rearm` (seed + live verify) before each run. OTP-022 flips the store-wide OtpSignIn.Enabled setting, shared with 104 OTP-007 — exclusiveGroup keeps the two suites from running at the same time. OTP-018, OTP-025 and OTP-028 encode the SPEC expectation the current build does not meet (code reuse, notification sender/subject, code sent to a blocked account) and are expected to FAIL until fixed.",
+      "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3733,7 +3783,9 @@
         "032",
         "033",
         "082",
-        "101"
+        "101",
+        "104",
+        "105"
       ]
     },
     "platform": {
