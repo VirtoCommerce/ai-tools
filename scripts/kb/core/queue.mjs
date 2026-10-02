@@ -339,8 +339,7 @@ export async function log(record, { env = process.env, who, run } = {}) {
   } catch (err) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
-  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
-  if (line.via === 'cli') await noteTranscript(env);
+  await noteLine(env, line);
   return { ok: true, path, line };
 }
 
@@ -412,16 +411,27 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
   .filter((a) => a && typeof a.at === 'string' && a.at);
 
 /**
- * Record the ask just written. Best effort in the strict sense: a sidecar that could not be written
- * costs a later capture its pointer — which is what happened on every flush before this — and must
- * never cost the ask.
+ * Record what the sidecar keeps about the line just written: an ask's `at`/`q`, and a CLI line's
+ * transcript id (`metaTranscripts` below says why). ONE read and ONE write per line, so this adds no second
+ * window in which two parallel kb processes of one session overwrite each other's update. Best
+ * effort in the strict sense: a sidecar that could not be written costs a later capture its pointer
+ * — which is what happened on every flush before this — and must never cost the line.
  */
-async function noteAsk(env, at, q) {
+async function noteLine(env, line) {
+  const ask = line.kind === 'ask';
+  const tx = line.via === 'cli' ? String(env.CLAUDE_CODE_SESSION_ID ?? '').trim() : '';
+  const newTx = TRANSCRIPT_ID.test(tx) ? tx : '';
+  if (!ask && !newTx) return;
   try {
     const meta = await readMeta(env);
-    const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? '') }].slice(-ASK_MEMORY);
-    await writeFile(metaPath(env), JSON.stringify({ ...meta, asks }), 'utf8');
-  } catch { /* the pointer is lost, the ask is not */ }
+    const known = metaTranscripts(meta);
+    const addTx = newTx && !known.includes(newTx);
+    if (!ask && !addTx) return;
+    const next = { ...meta };
+    if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? '') }].slice(-ASK_MEMORY);
+    if (addTx) next.transcripts = [...known, newTx].slice(-TRANSCRIPT_MEMORY);
+    await writeFile(metaPath(env), JSON.stringify(next), 'utf8');
+  } catch { /* the pointer is lost, the line is not */ }
 }
 
 /**
@@ -439,17 +449,6 @@ const TRANSCRIPT_ID = /^[A-Za-z0-9-]{8,64}$/;
 /** The transcript ids the sidecar holds. A torn or older sidecar is `[]`. */
 export const metaTranscripts = (meta) => (Array.isArray(meta?.transcripts) ? meta.transcripts : [])
   .filter((t) => typeof t === 'string' && TRANSCRIPT_ID.test(t));
-
-async function noteTranscript(env) {
-  const id = String(env.CLAUDE_CODE_SESSION_ID ?? '').trim();
-  if (!TRANSCRIPT_ID.test(id)) return;
-  try {
-    const meta = await readMeta(env);
-    const known = metaTranscripts(meta);
-    if (known.includes(id)) return;
-    await writeFile(metaPath(env), JSON.stringify({ ...meta, transcripts: [...known, id].slice(-TRANSCRIPT_MEMORY) }), 'utf8');
-  } catch { /* the attribution is lost, the line is not */ }
-}
 
 // ── what the last push did: the only trace a detached push leaves ─────────────────────────────
 //

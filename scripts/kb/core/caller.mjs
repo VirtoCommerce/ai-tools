@@ -125,8 +125,9 @@ export function resolveCallers(callIds, { dirs, sinceMs = 0, names = knownAgentN
 //
 // Exact, not plausible: only the transcripts of the session that wrote the line are read (its queue
 // sidecar records them, `metaTranscripts` in queue.mjs), the verb must match, the line's key
-// (question, entry id, capture subject) must appear in the command, the command is at most
-// CLI_WINDOW_MS older than the line, and a call is spent once per kb invocation it holds. Anything
+// (question, entry id, capture subject) must appear in the command, the line must fall between the
+// call and its result (and at most CLI_WINDOW_MS after the call), and a call is spent once per kb
+// invocation it holds. Anything
 // else — a plain terminal, a key the command does not carry — stays unstamped, as an unresolved MCP
 // call does.
 
@@ -155,17 +156,31 @@ export function cliKey(line) {
   return needle ? { verb, needle } : null;
 }
 
-/** Every shell `tool_use` in one transcript that invokes kb: `{ id, atMs, verbs, text }`. */
+/**
+ * Slack on the end of a call: the line is written while the process runs and the `tool_result`
+ * after it exits (measured 156 ms apart), so this only absorbs timestamp rounding.
+ */
+const END_SLACK_MS = 1000;
+
+/**
+ * Every shell `tool_use` in one transcript that invokes kb: `{ id, atMs, endMs, verbs, runs, text }`.
+ * `endMs` is its `tool_result`'s time, or Infinity while it has none: a line written after the call
+ * returned was not written by it (a later `!` command asking the same question, say), and that holds
+ * across pushes with no state kept between them.
+ */
 export function kbShellCalls(text) {
   const out = [];
+  const ends = new Map();
   for (const raw of String(text).split('\n')) {
-    if (!raw.includes('kb')) continue;
+    const result = raw.includes('"tool_result"');
+    if (!result && !raw.includes('kb')) continue;
     let rec;
     try { rec = JSON.parse(raw); } catch { continue; }
     const content = rec?.message?.content;
     if (!Array.isArray(content)) continue;
     const atMs = Date.parse(rec.timestamp);
     for (const c of content) {
+      if (c?.type === 'tool_result' && typeof c.tool_use_id === 'string' && Number.isFinite(atMs)) ends.set(c.tool_use_id, atMs);
       if (c?.type !== 'tool_use' || !SHELLS.has(c.name) || typeof c.input?.command !== 'string') continue;
       const runs = [...c.input.command.matchAll(KB_VERB)].map((m) => m[1]);
       // A loop runs its one kb invocation once per item, so it is not spent by count (measured
@@ -174,6 +189,7 @@ export function kbShellCalls(text) {
       if (runs.length) out.push({ id: c.id, atMs, verbs: new Set(runs), runs: limit, text: flat(c.input.command) });
     }
   }
+  for (const c of out) c.endMs = ends.has(c.id) ? ends.get(c.id) + END_SLACK_MS : Infinity;
   return out;
 }
 
@@ -199,7 +215,7 @@ export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNa
   for (const w of wanted.sort((a, b) => a.atMs - b.atMs)) {
     let best = null;
     for (const c of calls) {
-      if ((spent.get(c.id) ?? 0) >= c.runs || c.atMs > w.atMs || w.atMs - c.atMs > CLI_WINDOW_MS) continue;
+      if ((spent.get(c.id) ?? 0) >= c.runs || c.atMs > w.atMs || w.atMs > c.endMs || w.atMs - c.atMs > CLI_WINDOW_MS) continue;
       if (!c.verbs.has(w.key.verb) || !c.text.includes(w.key.needle)) continue;
       if (!best || c.atMs > best.atMs) best = c;
     }

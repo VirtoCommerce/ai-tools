@@ -138,6 +138,23 @@ test('only the writing session\'s transcripts are searched; no recorded session 
   assert.equal(resolveAt(dir, [line], ['sess-2']).get(0).call, 'toolu_OTHER_SESSION');
 }));
 
+test('a line written after its call returned is not that call\'s, in this push or a later one', () => {
+  const result = (id, s) => JSON.stringify({ timestamp: iso(s), message: { content: [{ type: 'tool_result', tool_use_id: id }] } });
+  const dir = mkdtempSync(join(tmpdir(), 'kb-caller-end-'));
+  try {
+    // The call ran 0..2 s; a `!` command 300 s later asked the same question with no tool call.
+    writeFileSync(join(dir, 'sess-1.jsonl'), [shell('toolu_DONE', 0, 'npm run kb -- ask "asked twice"'), result('toolu_DONE', 2)].join('\n'));
+    const r = resolveCliCalls([cli(1, 'ask', { q: 'asked twice' }), cli(300, 'ask', { q: 'asked twice' })], { dirs: [dir], names: NAMES, sessions: ['sess-1'] });
+    assert.equal(r.get(0).call, 'toolu_DONE');
+    assert.equal(r.has(1), false);
+    // A later push sees only the second line, and still does not hand it the finished call.
+    assert.equal(resolveCliCalls([cli(300, 'ask', { q: 'asked twice' })], { dirs: [dir], names: NAMES, sessions: ['sess-1'] }).size, 0);
+    assert.equal(kbShellCalls(result('toolu_DONE', 2) + '\n' + shell('toolu_DONE', 0, 'npm run kb -- ask "x"'))[0].endMs, T0 + 3000);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('a loop is shell syntax outside quotes, never "for … in" inside a question', () => {
   const limit = (command) => kbShellCalls(shell('t', 0, command))[0].runs;
   assert.equal(limit('npm run kb -- ask "discount for items in cart"'), 1);
