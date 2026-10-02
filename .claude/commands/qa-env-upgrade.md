@@ -202,7 +202,8 @@ questions · N blocked`, the result of each check in one line, and:
   `GithubReleases.Modules`, indented like their siblings.
 
 **Verify before writing:** the result parses; recompute every pin old → new and require the set of changes
-to equal exactly what the operator approved; no Id in two sources; no other top-level key changed. Any
+to equal exactly what the operator approved; no Id in two sources; no other top-level key and no source header (`Name`, `ModuleSources`, …)
+changed — compare by VALUE (`JSON.stringify`), since arrays compared with `!==` always differ. Any
 mismatch → STOP and show it.
 
 **Deliver** (write permission = `GET /repos/{repo}/collaborators/{login}/permission` is write/maintain/admin):
