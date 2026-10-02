@@ -1,5 +1,14 @@
 # Page Builder Designer accessibility: the section tree is unreachable by keyboard, plus four related defects
 
+## Status: FIXED — verified 2026-10-01 on vcptcore-qa (VCST-6012 → Tested, with notes)
+
+## Resolution
+- **Fix:** vc-module-pagebuilder PR https://github.com/VirtoCommerce/vc-module-pagebuilder/pull/165 (head `1ab4e68`; not merged yet at verification time)
+- **Verified on:** vcptcore-qa, Platform `3.1072.0`, `VirtoCommerce.PageBuilderModule 3.1030.0-pr-165-1ab4`, 2026-10-01
+- **Method:** `/qa-verify-fix`. Findings 1–4, the Escape checks and the row-centre click each passed 3/3. Refresh no longer overlaps Rename at 375 px. axe reports 0 aria-prohibited-attr / button-name / nested-interactive. Evidence: `reports/tickets/Sprint26-19/VCST-6012/` (`verification-report.md`, `verification-summary.json`)
+- **Tracker:** VCST-6012 moved Testing → Tested; comment 111000
+- **Notes, not filed (operator is showing them to the developer first):** (1) at 375 px the AI Assistant FAB (vc-shell `ai-agent` plugin, added to the stand after this bug was filed) now overlaps Rename; (2) the CDK live-announcer text is visible after a keyboard reorder and overflows the page (Low)
+
 - **Severity:** High
 - **Provenance:** **PRE-EXISTING** for the tree itself; the Shared-placement row added by PR #159 inherits it
 - **Environment:** vcptcore-qa · `VirtoCommerce.PageBuilderModule 3.1025.0-pr-159-7361` (PR #159)
@@ -82,3 +91,4 @@ indicator; axe-core must report zero `aria-prohibited-attr`; no accessible name 
 `reports/tickets/Sprint26-19/VCST-4933/design-report.md` and
 `reports/tickets/Sprint26-19/VCST-4933/screenshots/` (16 files, `01`–`16`), plus
 `INC-addcircle-intercept.png`. Run record: `reports/tickets/Sprint26-19/VCST-4933/findings.md` §C F3/F5/F6/F7.
+

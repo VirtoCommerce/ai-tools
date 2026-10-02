@@ -13,6 +13,7 @@ rationale: |
   called that out, and this domain inherits the same discipline: breadth first.
 generated: 2026-09-18
 rev: 3
+amended: 2026-09-29
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -456,6 +457,19 @@ error. Not a finding until it repeats — noted so a case waits for content rath
 surface — reaching them needs a token that acts as the rep. `graphql-schema.md` and
 `scripts/.graphql-schema.cache.json` do **not** carry these fields yet (the cache predates them).
 
+### 3j. Lists sharing — the rep shares a wishlist with customers (VCST-5707) — NEW 2026-09-29
+
+`CONFIRMED` live 2026-09-29 on vcptcore-qa, theme `2.59.0-pr-2476-0604` + XCart `pr-141` · Cart `pr-194` · SalesRep `pr-21` (**open PRs, not released**). Not in any prior art. Source: `/qa-test VCST-5707` (3x · 4a · C1 `REG-2026-09-29-1506`).
+
+| Element | What renders / does |
+|---|---|
+| Entry points | `/account/lists` card gear **Rename · Share · Remove list**; list-details **Rename** + **Share** buttons. Share is offered to the list **owner** only |
+| Share dialog | *"Share "<list>""* · "Who can access": **Private · My organization · Specific customers · Anyone with link** (4 `aria-pressed` buttons) · **Link** + Copy · Customers picker (the rep's served orgs, name + city/region) · recipients list (per-row remove, Clear all + Undo, "Show all N" past 3) · Message (optional) 0/250 · primary **Share** (recipients) or **Save** |
+| Semantics | Specific customers = a SET of orgs written as `addSharedWithIds`/`removeSharedWithIds` deltas; adds must be served (else "Access denied.", nothing written); one stable link key reused across Stop/re-share; only newly added orgs are notified (push + email) |
+| Confirmations | Leaving an audience-bearing scope: **"Stop sharing this list?"** (→ Private) or **"Change who can access?"** (→ other scope) |
+| Recipient side | `/shared-list/<key>` read-only, "Recommended by your sales representative"; the list does NOT appear in the recipient's own Lists and `wishlist(listId)` is denied (VCST-5925 §3.1/§3.2 open) |
+| Rename dialog | List name (≤25 chars) + Description only — sharing is not touched by a rename |
+
 ---
 
 ## §4 — Storefront — buyer-facing (`/company/sales-reps`)
@@ -619,6 +633,7 @@ Numbered `D1..Dn`; never renumber — a citation contract.
 
 | **D20 — the dashboard's Document library widget offers no action on a document the page can download** | Both surfaces gate **Open** on the same inline-renderable type list, but only the `/company/documents` page adds an unconditional **Download**. On the widget, a `.docx`/`.xlsx` row renders its title and meta with **no button**. The rep can see the document from the dashboard and cannot act on it there. `vc-frontend` `components/sales-rep-documents.vue` vs `pages/documents.vue` | `CONFIRMED` live + source 2026-09-24. Low severity — the page is one click away. **FILED 2026-09-24 as VCST-6083**; report `reports/bugs/open/low/BUG-SalesRep-doc-widget-no-action-for-non-renderable-types-VCST-6083.md` |
 | **D21 — the docs cover the hub's PAGES and none of its WIDGETS** | `StorefrontUserGuide` §Sales Rep Hub: the Dashboard *"shows KPI cards summarizing the rep's activity, top selling products, and available documents"* and *"can be edited"*; the cards themselves appear only in a screenshot. **No page defines what Active carts counts**, the creator scope for carts, the gift clause, the Calendar or tasks. `PlatformUserGuide` §Sales Rep overview states the creator rule **for orders only**: *"List and filter orders: Show the orders a rep **created** for their customers."* So the carts half of `BL-SR-002`(b) and all of `BL-SR-006` rest on source + live, not `{DOC}`. And both oracles' *"Docs: N/A — pre-GA module, no VirtoOZ coverage"* is now stale: coverage exists, it just stops at the page level | `CONFIRMED` against VirtoOZ 2026-09-24. The oracle wording is `ba-system-analyzer`'s to change (`/qa-review-oracles`), not this map's |
+| **D22 — the widening confirmation says the opposite of what the API does** | Share → Specific customers → **Anyone with link** shows *"Change who can access?"* / *"Everyone the list is shared with now will lose access."* In the API, after confirming, the sharing key is unchanged, scope is `AnyoneAnonymous`, and the previous recipients (plus anonymous callers) still read the list via `sharedWishlist(sharingKey)`. The UI promises a revocation the contract never performs | `CONFIRMED` live 2026-09-29 on both layers (VCST-5707, filed VCST-6115) |
 
 ---
 
@@ -870,6 +885,13 @@ product did in response, which is why §3c/§3i can state tile arithmetic exactl
   `addItem`. A case that adds "any product in category X" is environment-fragile.
 - **Environments run different module versions** — see G16. Check `GET /api/platform/modules` before
   treating a missing sales-rep surface as a defect.
+
+### A9 (2026-09-29) — VCST-5707 write-back (5-docs-map, no re-enumeration)
+
+- §3 **+1 surface**: 3j Lists sharing (Share/Rename dialogs, 4 scopes, recipients, confirmations, recipient page) — `CONFIRMED` live.
+- §6 **+D22** (widening confirmation vs API) — `CONFIRMED` live on both layers.
+- **D9 corroborated, verdict unchanged:** a second rep (`SR_REP_EXCLUSIVE_TECHFLOW`) read a list shared to TechFlow purely as a TechFlow MEMBER — the rep-as-member structure is what the sharing access check keys on (active org ∈ targets).
+- Not written (hypothesis / not verified live): which org "My organization" binds to for a multi-org rep; member of two targeted orgs; revoke of a no-longer-served org.
 
 ---
 

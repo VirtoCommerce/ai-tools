@@ -85,3 +85,12 @@ render its items in both, with `Paste section` disabled.
 `qa6-03-actions-menu.png`, `qa6-05-page-menu.png` (populated, permission granted).
 Confirmed independently by the operator in desktop Chrome with the permission prompt accepted.
 Run record: `reports/tickets/Sprint26-19/VCST-4933/findings.md` §C F4.
+
+## Resolution
+
+- **Tracker:** VCST-6011 → Tested (2026-10-01)
+- **Fixed in:** VirtoCommerce.PageBuilderModule `3.1030.0-pr-165-1ab4` (vc-module-pagebuilder PR #165 @ `1ab4e68`, not yet merged), Platform 3.1072.0, vcptcore-qa
+- **Method:** `/qa-verify-fix` — Firefox 151 and Edge without clipboard permission, 3/3 each: menus populated, `readText` calls on open = 0, Shared Component created via the UI and persisted (usage 1)
+- **Open notes:** Paste is never disabled (silent wait/no feedback on click without access); Firefox native right-click closes the menu at once. See `reports/tickets/Sprint26-19/VCST-6011/evidence.html`
+
+## Status: FIXED

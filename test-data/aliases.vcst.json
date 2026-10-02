@@ -561,40 +561,40 @@
     "storeOriginalCatalog": "fc596540864a41bf8ab78734ee7353a3"
   },
   "SR_REP_PRIMARY": {
-    "id": "969269c4-9766-41e4-b538-b7ba68157dd0",
-    "user_id": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "19ba228a-ae37-436f-bb4d-436de7309b33",
+    "user_id": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "SR_REP_SECOND_STORE": {
-    "id": "34a0474a-6579-44c8-8d42-007dcceb5db0",
-    "user_id": "515ab5a2-948f-48ad-8830-6c82db04b904"
+    "id": "f045b4b4-9830-40ba-b163-14e6b20e72de",
+    "user_id": "aaa42b5b-3830-4089-a11f-02c0a3423775"
   },
   "SR_REP_BLOCKED": {
-    "id": "694b8c8a-ae5d-4f7d-810f-e717f8626aef",
-    "user_id": "46189ac1-747b-48c4-9b05-07b6823bc9fb"
+    "id": "914c9f4a-142d-445b-bd19-944d774f4504",
+    "user_id": "b3381644-7e18-4fbc-922c-8dfe88ad08e9"
   },
   "SR_REP_LOCKED": {
-    "id": "617ff3ab-cb8a-4e67-9547-8f926d0aba10",
-    "user_id": "2efbfc2d-ad02-400d-9b2d-a63fab4265c2",
-    "membership_locked_id": "41d85601-467c-4ae8-94db-03bfea14498d"
+    "id": "bbbbd97b-cfab-4158-a8c6-73f9f0fffe41",
+    "user_id": "8d155f47-b3c7-4a9a-9ee6-343d8e66ba5c",
+    "membership_locked_id": "51a96ac1-28fe-4ab7-bc17-4f3c33d65550"
   },
   "SR_REP_EXCLUSIVE_TECHFLOW": {
-    "id": "005ec00c-417e-4224-ad1a-cd9530ec8db2",
-    "user_id": "b911e559-c195-403d-b3c0-c67a9338ecd1"
+    "id": "abe7b846-425a-4a7c-81fb-1a7476baa410",
+    "user_id": "656ae24d-ea4d-4cdc-832d-9a78439b0aab"
   },
   "SR_REP_ACME2": {
-    "id": "0139cc48-7218-4a77-9697-95e98c235abd",
-    "user_id": "dc879343-0e9f-44a8-b04c-8e2614c660a7"
+    "id": "1dea7611-563b-4b73-b20b-184cf157a897",
+    "user_id": "7d9b46fd-df11-4555-b2c2-1d41ed7b2311"
   },
   "SR_REP_NOCUSTOMERS": {
-    "id": "9406a11b-56ab-40d8-b775-5375fa9a41f7",
-    "user_id": "a0a7b684-d475-43bb-8bdc-28f903644051"
+    "id": "059ce50e-b8fe-44cd-9758-a326d44412e9",
+    "user_id": "bef0c846-5f6f-4214-8633-8c069817c6e1"
   },
   "SR_REP_PAGING": {
-    "id": "3f2fbeb0-a122-4640-a409-ce43c1d93936",
-    "user_id": "281beb5a-b753-48cd-a884-fa429c0ad997"
+    "id": "3cb03c43-76d8-4368-9e0e-4f44a25f48be",
+    "user_id": "0a6a859e-79b7-4764-be15-621cc9ea400a"
   },
   "SR_OWNER_ACME": {
-    "id": "5c357a1c-af00-4865-82b0-ac12a41897a0"
+    "id": "8fdcf909-7984-4eee-ba82-cdc138729d49"
   },
   "COMPLETED_ORDER": {
     "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
@@ -802,8 +802,8 @@
     "role_id": "AGENT-TEST-SalesRep-Full"
   },
   "SR_REP_ACME3": {
-    "id": "e8f2eee6-6396-47e5-b340-498ddd2a6ee4",
-    "user_id": "5badccfa-b4f9-45c4-80e8-379e4870c75c"
+    "id": "3bf70e83-d1ee-4851-94f3-7e87977c62f4",
+    "user_id": "f18dbf6a-f792-4034-ba92-75430c343fbd"
   },
   "CATALOG_READ_ONLY": {
     "_inline": true,
@@ -847,8 +847,8 @@
     "techflow_membership_id": "108f48d7-7a19-4d10-badf-11185fcee61b"
   },
   "SR_REP_LAYOUT": {
-    "id": "f7ab0294-bbda-41ca-918b-027d725e3a71",
-    "user_id": "adda6ecd-d25d-43ab-ae70-c23f051b003d"
+    "id": "597a218a-c4b5-4310-99d7-98ca47484fe5",
+    "user_id": "31949b97-a5c6-4709-886a-6116dc28acb4"
   },
   "SR_STATS_TOPSELLER_ORDER": {
     "id": "3f732df3-9fc0-4861-8e99-882d7bf265f6",
@@ -906,12 +906,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "ca493165-1408-4bf3-87ba-3019cec0bec4",
-    "createdDate": "2026-09-18T10:23:57.3488015Z"
+    "id": "88c6721e-4768-462b-b55e-d9a65a575a45",
+    "createdDate": "2026-09-24T14:30:56.4347695Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "206682b6-4184-4c51-a5eb-07428289a88c",
-    "createdDate": "2026-09-18T10:24:16.4959849Z"
+    "id": "2a1f9f3b-f16d-4a78-b0a7-32ab1942ff56",
+    "createdDate": "2026-09-24T14:30:58.1329361Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -928,8 +928,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "2e28e846-88e3-4837-bc90-a82b90734912",
-    "createdDate": "2026-09-18T10:24:30.5455928Z"
+    "id": "a6551f1e-4720-40be-a235-dfaf458e557e",
+    "createdDate": "2026-09-24T14:31:14.2639256Z"
   },
   "MSN_ORDERVALUE": {
     "id": "91ec8c28-d73a-4df9-8045-5171cd3a504b",
@@ -1374,23 +1374,23 @@
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "ORDER_REP_PLACED": {
-    "id": "a037c69d-7b41-41a3-ba90-15817f19a553",
-    "createdDate": "2026-09-02T15:52:19.8822992Z",
-    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "5a6be14b-b639-4f82-bf36-f2ebac3a9e4d",
+    "createdDate": "2026-09-24T14:30:59.5311579Z",
+    "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "ORDER_BUYER_PLACED": {
-    "id": "2d1ff582-9b63-4509-9c5f-ea9ed57cb2c5",
-    "createdDate": "2026-09-19T08:53:08.4636076Z",
+    "id": "b5382d43-bebc-4f72-ac0f-9a4cce6948b1",
+    "createdDate": "2026-09-24T14:31:01.5713297Z",
     "customerId": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "ORDER_NOT_SERVED": {
-    "id": "d0af627e-373a-42db-b156-c6dbab15f40f",
-    "createdDate": "2026-09-02T15:52:28.2422314Z",
-    "customerId": "31c6feef-f7b2-46ae-a965-1b94280e7ef0"
+    "id": "42dd5cb0-31b9-4e45-93b9-b964a551aa36",
+    "createdDate": "2026-09-24T14:31:03.1395117Z",
+    "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "SR_REP_LOCKABLE": {
-    "id": "85b99e4d-517c-4143-85b2-616eceddd545",
-    "user_id": "2461c44f-b3a2-42d8-a910-e4eb5377fb03"
+    "id": "4d4b58ee-1bfd-4f44-b288-f053f29d22dd",
+    "user_id": "5d9fcad2-6eb5-49c4-a2d4-0641074a5bca"
   },
   "PROD_CMP_A": {
     "id": "b2c64e9c-62f6-4538-87f8-71acf42f9e4e"
@@ -1504,88 +1504,88 @@
     "user_id": "cd815be1-614c-4989-8ef3-9c3534afb3de"
   },
   "SR_REP_DOCS_WRITER": {
-    "id": "cde12dab-6d79-467c-a945-7048fefad6e6",
-    "user_id": "a15ca448-3bf5-4937-8a28-19e1828e3521"
+    "id": "a45d4b20-a08f-4a1c-8135-1b7ea7a462ee",
+    "user_id": "cae796a8-c3db-44ab-92da-b13cfafa2188"
   },
   "SR_DOC_PDF": {
-    "id": "d97e880c-0eda-4a34-8b15-5687b98584b2",
-    "file_id": "bfbd8f79fd3f4084b9160116a6f12902",
-    "url": "/api/files/bfbd8f79fd3f4084b9160116a6f12902"
+    "id": "cea47849-a2b5-4ff7-8453-047c5b0c12c1",
+    "file_id": "96c967724e2149cd977765b4b014a9d6",
+    "url": "/api/files/96c967724e2149cd977765b4b014a9d6"
   },
   "SR_DOC_DOCX": {
-    "id": "22ae1d8a-2029-4f55-a703-65fb97d3a2fa",
-    "file_id": "5e63e587a59f4a46955f3c90d5021ac3",
-    "url": "/api/files/5e63e587a59f4a46955f3c90d5021ac3"
+    "id": "14e165db-4c2f-4bf7-88cb-ad133c1fa396",
+    "file_id": "3dc26ee994c2480091fb010b85b5c145",
+    "url": "/api/files/3dc26ee994c2480091fb010b85b5c145"
   },
   "SR_DOC_XLSX": {
-    "id": "cc88a190-8ffc-4aeb-94aa-87958aaaf6f7",
-    "file_id": "074aeaf88b2d4eef8e26742461ed644f",
-    "url": "/api/files/074aeaf88b2d4eef8e26742461ed644f"
+    "id": "15f6d1c0-1bc1-4613-9119-44e9df50aec2",
+    "file_id": "9d2fc5a236ce4834885dd6fe662366e4",
+    "url": "/api/files/9d2fc5a236ce4834885dd6fe662366e4"
   },
   "SR_DOC_TXT": {
-    "id": "037f321c-d950-4ccd-b2c9-6c6f8c5f3ab7",
-    "file_id": "179a6787daad4488baf514e18d3f912b",
-    "url": "/api/files/179a6787daad4488baf514e18d3f912b"
+    "id": "5ee01c57-f259-4fe8-b476-a265d847a438",
+    "file_id": "ff410f65d6f14e748657898c4ba4dda1",
+    "url": "/api/files/ff410f65d6f14e748657898c4ba4dda1"
   },
   "SR_DOC_PNG": {
-    "id": "b4d09afb-d8e1-45c5-a289-e984870382af",
-    "file_id": "c3a386fecc7041cab6c5b62b9ca4fd6d",
-    "url": "/api/files/c3a386fecc7041cab6c5b62b9ca4fd6d"
+    "id": "b5cc872e-25a0-430a-8330-9cdb6c2b2552",
+    "file_id": "ced4c5c5494c492ca7605788ba7357b2",
+    "url": "/api/files/ced4c5c5494c492ca7605788ba7357b2"
   },
   "SR_DOC_JPG": {
-    "id": "e29e6c5d-18c0-4429-ad95-d1eae2eb732e",
-    "file_id": "fa12819540924ca185f6e6c5da220043",
-    "url": "/api/files/fa12819540924ca185f6e6c5da220043"
+    "id": "03e22068-3310-4892-a519-6fc2c191a42b",
+    "file_id": "9d01b76ccac841afa9386097cf8d46b4",
+    "url": "/api/files/9d01b76ccac841afa9386097cf8d46b4"
   },
   "SR_DOC_UNKNOWN_EXT": {
-    "id": "0eee6c97-3007-4655-a12d-ca5c5611e681",
-    "file_id": "66cbdee7a4a2450bbe29a4ab1a18b3db",
-    "url": "/api/files/66cbdee7a4a2450bbe29a4ab1a18b3db"
+    "id": "4744f977-8876-4b30-bcd5-aeafc1ed1fd0",
+    "file_id": "9bb87f83c1b14e298aa536fa45b0d797",
+    "url": "/api/files/9bb87f83c1b14e298aa536fa45b0d797"
   },
   "SR_DOC_UNICODE": {
-    "id": "7e23304e-9af8-46b2-88ff-2154a9dace26",
-    "file_id": "4b4402467e414a48a2aa584822deb11c",
-    "url": "/api/files/4b4402467e414a48a2aa584822deb11c"
+    "id": "544a9dbd-86b1-42ef-81b0-18a5c3019eed",
+    "file_id": "430af30d8562452b998ef6126cacef2f",
+    "url": "/api/files/430af30d8562452b998ef6126cacef2f"
   },
   "SR_DOC_LARGE": {
-    "id": "387d0b91-cfe3-4679-a7c6-3b46f275217b",
-    "file_id": "ba02f5eba52c46d6a9bb071e16aeb109",
-    "url": "/api/files/ba02f5eba52c46d6a9bb071e16aeb109"
+    "id": "ef8d2ea0-5a89-4552-ab44-4bd9f1c62aec",
+    "file_id": "3b12e6d8c86445848387df0656a78304",
+    "url": "/api/files/3b12e6d8c86445848387df0656a78304"
   },
   "SR_DOC_FILLER_01": {
-    "id": "df789a88-2e38-4066-8440-5a2705b11d25",
-    "file_id": "713abad6a0424f43ac239a6bc6ecb5b5",
-    "url": "/api/files/713abad6a0424f43ac239a6bc6ecb5b5"
+    "id": "680ebd81-881d-4651-b989-d3506e937413",
+    "file_id": "a5c9100fe1d64573b8593453da051cee",
+    "url": "/api/files/a5c9100fe1d64573b8593453da051cee"
   },
   "SR_DOC_FILLER_02": {
-    "id": "858be15a-d11c-41a6-9a19-a8bc87304913",
-    "file_id": "1c466c3f20bb4ddfb25fc7fe3d0b34c4",
-    "url": "/api/files/1c466c3f20bb4ddfb25fc7fe3d0b34c4"
+    "id": "0e359e54-20c1-40b7-a56e-5f51ee317347",
+    "file_id": "c270abb072dc439d85a1be22fdfea411",
+    "url": "/api/files/c270abb072dc439d85a1be22fdfea411"
   },
   "SR_DOC_FILLER_03": {
-    "id": "210ad1e1-a0ff-4286-851b-132a862134f8",
-    "file_id": "94b373d3a0484e77bc26d5f0001297ee",
-    "url": "/api/files/94b373d3a0484e77bc26d5f0001297ee"
+    "id": "d737fee0-4ebe-4414-8fb3-26f697967ab6",
+    "file_id": "001e97d528c1482aabc96c60ecdec470",
+    "url": "/api/files/001e97d528c1482aabc96c60ecdec470"
   },
   "SR_DOC_FILLER_04": {
-    "id": "78de74c0-2aa3-441d-b61f-85a44986dc52",
-    "file_id": "585b86aa83084c958d4ec0f26fffb7e1",
-    "url": "/api/files/585b86aa83084c958d4ec0f26fffb7e1"
+    "id": "ee493abe-bdba-493a-aa2e-467a83e8ca83",
+    "file_id": "d0d112f532b64cf2b96d8a2a3093cc36",
+    "url": "/api/files/d0d112f532b64cf2b96d8a2a3093cc36"
   },
   "SR_DOC_FILLER_05": {
-    "id": "c2d3ac1a-293a-4e36-b127-f53877f6dfe6",
-    "file_id": "24b455ea8cb44a64a588ce6672d0c57f",
-    "url": "/api/files/24b455ea8cb44a64a588ce6672d0c57f"
+    "id": "be067cfd-067b-4ba1-9ace-aca34e2933ae",
+    "file_id": "3390875b59074e77aec011c99f78ce53",
+    "url": "/api/files/3390875b59074e77aec011c99f78ce53"
   },
   "SR_DOC_FILLER_06": {
-    "id": "b5c31202-cfcd-4504-b787-3d0b0cba3f80",
-    "file_id": "1e59a2ac34084ff0bb271fd37153af0a",
-    "url": "/api/files/1e59a2ac34084ff0bb271fd37153af0a"
+    "id": "4a289d9d-4890-4be1-9ddc-6a724e806d3f",
+    "file_id": "d4d7daea36fe4598ba993eef7e1600e5",
+    "url": "/api/files/d4d7daea36fe4598ba993eef7e1600e5"
   },
   "SR_DOC_FILLER_07": {
-    "id": "9eeca812-707b-4f4d-a1f6-56848e89c881",
-    "file_id": "086c10c9551c400193f5a9ec9f931017",
-    "url": "/api/files/086c10c9551c400193f5a9ec9f931017"
+    "id": "1f622aa3-618b-4acb-8826-0ae2d4e195bc",
+    "file_id": "9cf960b2b88346beb82866013fa63d6a",
+    "url": "/api/files/9cf960b2b88346beb82866013fa63d6a"
   },
   "SR_ROWCAP_ORDER_ACME_NEW": {
     "id": "a7681963-5c71-4c5e-8099-2a4f4e06c83b",
