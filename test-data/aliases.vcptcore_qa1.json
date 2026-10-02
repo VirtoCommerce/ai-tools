@@ -143,5 +143,29 @@
     "seeded_at": "2026-09-17T14:23:31.101Z",
     "decays_at_utc": "2026-09-18T00:00:00.000Z",
     "owner_rep_email": "salesrep@sales.rep"
+  },
+  "OTP_TRUSTED_STORE_CONTACT": {
+    "id": "a24d426c-338f-4b66-9abe-62804af9fc16",
+    "user_id": "70cd0503-08ee-43eb-90fe-50ee1683430a"
+  },
+  "OTP_FOREIGN_STORE_CONTACT": {
+    "id": "144e60e1-c4e0-406b-a877-cca012d20997",
+    "user_id": "a7af2bca-e656-4c56-a2bd-2a6c8f4da18b"
+  },
+  "OTP_LOCKOUT_USER_1": {
+    "id": "7d63d7fa-9028-42f5-9381-e169ab55d43d",
+    "user_id": "2182dbd3-f3f0-4820-a11a-ddeb78d53694"
+  },
+  "OTP_LOCKOUT_USER_2": {
+    "id": "c1d03c64-f831-49a0-8d79-b2331d75c26b",
+    "user_id": "ec4d7e6b-96ee-4395-9d4e-06bec93b03eb"
+  },
+  "OTP_NO_STORE_CONTACT": {
+    "id": "cfbc0a42-908f-4200-9cc0-486793b9e26c",
+    "user_id": "5a1a512e-da59-40d1-a739-26e521728d72"
+  },
+  "OTP_BLOCKED_USER": {
+    "id": "4f56faac-1057-42de-9251-417a386a066f",
+    "user_id": "dd4d4b72-fd12-4932-9426-4b70e51d3a5a"
   }
 }
