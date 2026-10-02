@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  CLI_WINDOW_MS, carries, cliKey, kbShellCalls, knownAgentNames, resolveCallers, resolveCliCalls, stampCallers,
+  BACKGROUND_DEFAULT_MS, CLI_WINDOW_MS, carries, cliKey, kbShellCalls, knownAgentNames, resolveCallers, resolveCliCalls, stampCallers,
   stampCallersFromTranscripts, transcriptDirFor,
 } from '../kb/core/caller.mjs';
 
@@ -212,6 +212,29 @@ test('a background call returns at once but keeps writing until its own timeout'
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('a background call ends at its task-notification; without one, at 30 min by default', () => {
+  const bg = (id, s) => JSON.stringify({
+    timestamp: iso(s), message: { content: [{ type: 'tool_use', id, name: 'Bash', input: { command: 'npm run kb -- ask "bg q"', run_in_background: true } }] },
+  });
+  const done = (id, s) => JSON.stringify({ type: 'queue-operation', timestamp: iso(s), content: `<task-notification>\n<task-id>b1</task-id>\n<tool-use-id>${id}</tool-use-id>\n<status>completed</status>` });
+  const dir = mkdtempSync(join(tmpdir(), 'kb-caller-bgend-'));
+  try {
+    writeFileSync(join(dir, 'sess-1.jsonl'), [bg('toolu_FIN', 0), done('toolu_FIN', 20), bg('toolu_OPEN', 100)].join('\n'));
+    assert.equal(resolveAt(dir, [cli(10, 'ask', { q: 'bg q' })]).get(0).call, 'toolu_FIN');
+    assert.equal(resolveAt(dir, [cli(60, 'ask', { q: 'bg q' })]).size, 0, 'FIN has ended and OPEN has not started');
+    assert.equal(resolveAt(dir, [cli(150, 'ask', { q: 'bg q' })]).get(0).call, 'toolu_OPEN');
+    const open = kbShellCalls(bg('toolu_OPEN', 100)).at(0);
+    assert.equal(open.endMs - open.atMs, BACKGROUND_DEFAULT_MS);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('an entry id matches whatever case the caller typed it in', () => withShellTranscripts((dir) => {
+  writeFileSync(join(dir, 'sess-1.jsonl'), shell('toolu_LOWER', 200, 'npm run kb -- show kb-ab12cd34'));
+  assert.equal(resolveAt(dir, [cli(201, 'show', { id: 'KB-AB12CD34' })]).get(0).call, 'toolu_LOWER');
+}));
 
 test('npm flags before `run` and after `kb` are recognised', () => {
   const verbsOf = (command) => kbShellCalls(shell('t', 0, command)).flatMap((c) => [...c.verbs]);

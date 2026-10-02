@@ -154,10 +154,12 @@ const LOOP = /\b(?:for|while|until)\b[^;\n]*[;\n]\s*do\b|\b(?:for|while|foreach)
 const unquoted = (s) => s.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
 /**
  * How long after its call a line may be written. A foreground shell call is capped at ten minutes;
- * one run in the background (`run_in_background`) returns at once and keeps running for up to its
- * own `timeout`, two hours at most.
+ * one run in the background (`run_in_background`) returns at once and ends when its
+ * `<task-notification>` arrives — until then, at its own `timeout` (the Bash tool's default is 30
+ * minutes, its ceiling two hours).
  */
 export const CLI_WINDOW_MS = 10 * 60 * 1000;
+export const BACKGROUND_DEFAULT_MS = 30 * 60 * 1000;
 export const BACKGROUND_WINDOW_MS = 2 * 60 * 60 * 1000;
 
 /** Quotes, escapes and runs of spaces differ between a shell command and the argv kb logged. */
@@ -184,7 +186,9 @@ export function cliKey(line) {
     : verb === 'capture' ? line.subject
       : ['show', 'confirm', 'dispute'].includes(verb) ? line.id : null;
   const needle = flat(key);
-  return needle ? { verb, needle } : null;
+  if (!needle) return null;
+  // An entry id is logged in its canonical upper case whatever case the caller typed it in.
+  return verb === 'ask' || verb === 'capture' ? { verb, needle } : { verb, needle: needle.toLowerCase(), fold: true };
 }
 
 /**
@@ -196,7 +200,7 @@ const END_SLACK_MS = 1000;
 /**
  * Every shell `tool_use` in one transcript that invokes kb: `{ id, atMs, endMs, verbs, runs, text }`.
  * `endMs` is the last moment a line can be the call's: its `tool_result`, or — for a call run in the
- * background, whose result comes back at once — its own timeout. A line written after that was not
+ * background, whose result comes back at once — its `<task-notification>`, or its timeout before one. A line written after that was not
  * written by it (a later `!` command asking the same question, say), which holds across pushes with
  * no state kept between them.
  *
@@ -223,27 +227,35 @@ export function kbShellCalls(text) {
       const background = c.input.run_in_background === true;
       const timeout = Number(c.input.timeout);
       const window = background
-        ? Math.min(Number.isFinite(timeout) && timeout > 0 ? timeout : BACKGROUND_WINDOW_MS, BACKGROUND_WINDOW_MS)
+        ? Math.min(Number.isFinite(timeout) && timeout > 0 ? timeout : BACKGROUND_DEFAULT_MS, BACKGROUND_WINDOW_MS)
         : CLI_WINDOW_MS;
       out.push({ id: c.id, atMs, background, window, verbs: new Set(runs), runs: limit, text: flatLines(c.input.command) });
     }
   }
+  // A foreground call ends at its `tool_result`; a background one at the `<task-notification>` that
+  // names its tool-use id (its tool_result comes back the moment it is started).
   const ends = new Map();
   if (out.length) {
-    const ids = out.filter((c) => !c.background).map((c) => c.id);
+    const fg = out.filter((c) => !c.background).map((c) => c.id);
+    const bg = out.filter((c) => c.background).map((c) => c.id);
+    const end = (id, atMs) => { if (Number.isFinite(atMs) && !(ends.get(id) <= atMs)) ends.set(id, atMs); };
     for (const raw of rows) {
-      if (!raw.includes('"tool_result"') || !ids.some((id) => raw.includes(id))) continue;
-      let rec;
-      try { rec = JSON.parse(raw); } catch { continue; }
-      const atMs = Date.parse(rec.timestamp);
-      for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
-        if (c?.type === 'tool_result' && typeof c.tool_use_id === 'string' && Number.isFinite(atMs)) ends.set(c.tool_use_id, atMs);
+      if (raw.includes('"tool_result"') && fg.some((id) => raw.includes(id))) {
+        let rec;
+        try { rec = JSON.parse(raw); } catch { continue; }
+        for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
+          if (c?.type === 'tool_result' && fg.includes(c.tool_use_id)) end(c.tool_use_id, Date.parse(rec.timestamp));
+        }
+      } else if (raw.includes('<task-notification>')) {
+        const id = bg.find((b) => raw.includes(`<tool-use-id>${b}</tool-use-id>`));
+        if (!id) continue;
+        let rec;
+        try { rec = JSON.parse(raw); } catch { continue; }
+        end(id, Date.parse(rec.timestamp));
       }
     }
   }
-  for (const c of out) {
-    c.endMs = !c.background && ends.has(c.id) ? ends.get(c.id) + END_SLACK_MS : c.atMs + c.window;
-  }
+  for (const c of out) c.endMs = ends.has(c.id) ? ends.get(c.id) + END_SLACK_MS : c.atMs + c.window;
   return out;
 }
 
@@ -268,7 +280,7 @@ export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNa
   const spent = new Map();
   for (const w of wanted.sort((a, b) => a.atMs - b.atMs)) {
     const fits = calls.filter((c) => (spent.get(c.id) ?? 0) < c.runs && c.atMs <= w.atMs && w.atMs <= c.endMs
-      && c.verbs.has(w.key.verb) && carries(c.text, w.key.needle));
+      && c.verbs.has(w.key.verb) && carries(w.key.fold ? c.text.toLowerCase() : c.text, w.key.needle));
     if (!fits.length) continue;
     // Two different callers both fit: which one wrote the line cannot be told, so neither is named.
     if (new Set(fits.map((c) => c.who)).size > 1) continue;
