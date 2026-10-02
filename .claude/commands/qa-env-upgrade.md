@@ -152,41 +152,50 @@ Repo = `modules[<Id>]` in `config/module-repo-map.json` (a bare repo name under 
 - Where the latest release is LOWER than the pin's `X.Y.Z`, replacing the pin is a downgrade — say so in
   the question.
 
-## 6. Checks, the table, the questions
+## 6. Questions, checks, the table
 
-Run on the **proposed end state** (current pins + every proposed change):
-
-- **Platform floor:** each target module version's `PlatformVersion` (from its feed entry) ≤ target
-  platform; else either the platform must move or that module stays — say which.
-- **Dependencies:** each non-optional `Dependencies[]` `{Id, Version}` of a target module that is pinned on
-  the env must be ≥ that version in the end state; else `DEP_CONFLICT`, not bumped.
-- **Coupled:** `VirtoCommerce.XCMS` and `VirtoCommerce.PageBuilderModule` move together or not at all.
-- **Downloadable, without a token** (the deploy fetches anonymously; one 404 rolls back the whole install):
-  `HEAD` each target module `PackageUrl` (follow redirects) → 200 — for an `AzureBlob` release pin, `HEAD`
-  `<ServiceUri>/<Container>/<Id>_<target>.zip` instead; the platform release carries
-  `VirtoCommerce.Platform.<v>.zip` → `HEAD` 200; the image exists — anonymous token from
-  `https://ghcr.io/token?scope=repository:<PlatformImage path>:pull`, then `HEAD
-  https://ghcr.io/v2/<path>/manifests/<v>` with OCI/Docker manifest `Accept` headers → 200. Any miss →
-  `BLOCKED_ASSET`, not bumped.
-- **Live column (optional):** `<BACK_URL>/api/platform/modules` with an admin token. Admin credentials via
-  `config.js` promotion (`ADMIN_PASSWORD_<ENV>`, as in `resolveEnvCoords()`); any failure → `?`, carry on.
-
-Print one header line and one table — platform first, then by status (changes, questions, blocked, rest), then Id:
-
-```
-Env: <env> · <repo>@<branch> · feed fetched <ISO time> · platform latest <x.y.z>
-
-| Component | On env | Live | Latest release | Status | Action / note |
-|---|---|---|---|---|---|
-```
-
-Collapse `EQUAL` into one line ("N other modules already match"). Then: `N to change · N equal · N
-questions · N blocked`, the result of each check in one line, and:
+Order matters: the checks judge the end state, and the end state is not known until the operator has
+answered. So: **ask → check → table → yes.**
 
 1. **Questions first** — one `AskUserQuestion` per feature group (≤4 per call). Give the pins, the PR
    links and their state, what the release would be, and whether that is a downgrade. Options: *Keep the
-   PR/alpha builds (Recommended when the PR is open)* · *Replace with release* · *Decide per module*.
-2. **Then one yes/no**: "Open a deploy PR into `<branch>` with these N changes? A human merges." Nothing to
+   PR/alpha builds (Recommended when the PR is open)* · *Replace with release* · *Decide per module*. Each
+   *Replace* adds that group's rows to the proposed changes as `PRERELEASE→RELEASE`.
+2. **Checks** on the **proposed end state** (current pins + every proposed change, the approved replacements
+   included). Run them **to a fixed point**: a failed check drops its change, and dropping one can break
+   another (a dependant now needs a version that will not be deployed, an XCMS/PageBuilder partner loses
+   its pair) — so after any drop, recompute the end state and re-run every check; stop when a pass drops
+   nothing. A dropped change keeps the reason it was first dropped for (and the dependant names what it
+   depended on).
+   - **Platform floor:** each target module version's `PlatformVersion` (from its feed entry) ≤ target
+     platform; else either the platform must move or that module stays — say which.
+   - **Dependencies:** each non-optional `Dependencies[]` `{Id, Version}` of a target module that is pinned on
+     the env must be ≥ that version in the end state; else `DEP_CONFLICT`, not bumped.
+   - **Coupled:** `VirtoCommerce.XCMS` and `VirtoCommerce.PageBuilderModule` move together or not at all.
+   - **Downloadable, without a token** (the deploy fetches anonymously; one 404 rolls back the whole install):
+     `HEAD` each target module `PackageUrl` (follow redirects) → 200 — for a target that will sit in
+     `AzureBlob` (§2, §7), `HEAD` `<ServiceUri>/<Container>/<Id>_<target>.zip` instead; the platform release
+     carries `VirtoCommerce.Platform.<v>.zip` → `HEAD` 200; the image exists — anonymous token from
+     `https://ghcr.io/token?scope=repository:<PlatformImage path>:pull`, then `HEAD
+     https://ghcr.io/v2/<path>/manifests/<v>` with OCI/Docker manifest `Accept` headers → 200. Any miss →
+     `BLOCKED_ASSET`, not bumped.
+   - **Live column (optional):** `<BACK_URL>/api/platform/modules` with an admin token. Admin credentials via
+     `config.js` promotion (`ADMIN_PASSWORD_<ENV>`, as in `resolveEnvCoords()`); any failure → `?`, carry on.
+
+   A *Replace* the checks drop is reported back as such ("you approved X → release; blocked because …").
+3. **The table** — one header line and one table, platform first, then by status (changes, kept, blocked,
+   rest), then Id:
+
+   ```
+   Env: <env> · <repo>@<branch> · feed fetched <ISO time> · platform latest <x.y.z>
+
+   | Component | On env | Live | Latest release | Status | Action / note |
+   |---|---|---|---|---|---|
+   ```
+
+   Collapse `EQUAL` into one line ("N other modules already match"). Then: `N to change · N equal · N
+   kept · N blocked`, the result of each check in one line (with how many passes it took).
+4. **Then one yes/no**: "Open a deploy PR into `<branch>` with these N changes? A human merges." Nothing to
    change → say the env is up to date and stop.
 
 ## 7. On yes — edit, verify, deliver
@@ -197,9 +206,12 @@ questions · N blocked`, the result of each check in one line, and:
 - theme: in the theme file change only the `URL` value. Re-read it before writing too (step 1 below).
 - `BEHIND`: change only the `Version` line inside that Id's `GithubReleases` block — or, for an `AzureBlob`
   release pin, only its `BlobName` (and `Version`, if the entry has one).
-- `PRERELEASE→RELEASE`: delete the Id's `{ … }` block from `AzureBlob` (if it was the last element, drop the
-  now-trailing comma of the previous `}`), and insert `{ "Id": …, "Version": … },` blocks at the top of
-  `GithubReleases.Modules`, indented like their siblings.
+- `PRERELEASE→RELEASE`, public repo: delete the Id's `{ … }` block from `AzureBlob` (if it was the last
+  element, drop the now-trailing comma of the previous `}`), and insert `{ "Id": …, "Version": … },` blocks
+  at the top of `GithubReleases.Modules`, indented like their siblings.
+- `PRERELEASE→RELEASE`, private repo (§2 — `GET /repos/{repo}` with the token shows `private: true`): the
+  pin stays in `AzureBlob`; change only its `BlobName` to `<Id>_<release>.zip` (and `Version`, if the entry
+  has one). The step-6 download check has already `HEAD`ed that blob.
 
 **Verify before writing:** the result parses; recompute every pin old → new and require the set of changes
 to equal exactly what the operator approved; no Id in two sources; no other top-level key and no source header (`Name`, `ModuleSources`, …)
@@ -211,7 +223,8 @@ mismatch → STOP and show it.
 1. Re-read each file you change at the branch head. Not byte-identical to the step-2 snapshot → STOP: someone changed
    the env; re-run the command.
 2. Create `refs/heads/env-upgrade-<branch>-<YYYYMMDD>` (taken → add `-2`, `-3`) at the branch head.
-3. `PUT /contents/<path>` with the file `sha`, author/committer = the operator's `git config user.name` /
+3. `PUT /contents/<path>` with `branch: env-upgrade-…` (the step-2 branch — without it GitHub writes to
+   the repo's DEFAULT branch, unreviewed), the file `sha`, author/committer = the operator's `git config user.name` /
    `user.email`. Message `<env>: upgrade to latest releases (<N> components)` + one line per changed
    component + the session's commit attribution.
 4. Open the PR into `<branch>`, same title. Body (in English): a *Changed* table (component, was, now,
