@@ -104,6 +104,8 @@ rules:
         ref: VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles apply to an individual within a particular organization
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/OpenIddict/OrganizationIdClaimProvider.cs#AddOrgScopedPermissionsAsync
     check:
       kind: manual
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
@@ -119,6 +121,8 @@ rules:
         ref: VCST-5028 (Done) — roles scoped to one organization, governing an org without affecting the user's access elsewhere
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-roles.md (published) — membership roles are assigned per individual per organization via the memberships widget
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/ChangeOrganizationContactRoleCommandHandler.cs#ApplyRoles
     check:
       kind: manual
       ref: Member is employee in X, manager in Y. Change X → manager. `POST /api/customer/organization-memberships/search {userId}` → X role = manager, Y role still manager. `GET /api/platform/security/users/{userId}` → global `roles[]` unchanged.
@@ -136,6 +140,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/inviteUser.md (published) — invite takes organizationId and roleIds to assign
       - kind: ac
         ref: VCST-5028 (Done) — roles scoped per organization rather than on the global account
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/Services/InviteCustomerService.cs#CreateUser
     check:
       kind: manual
       ref: Invite a new user into X as employee; after acceptance, `POST /search {userId}` → contains org X with role employee. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / no org-specific role.
@@ -151,13 +157,15 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/requestRegistration.md (published) — company registration makes the registrant a member/owner with the Organization maintainer role
       - kind: resolution
         ref: "VCST-5401 (Done) — expected: a B2B customer's global account roles stay empty; permissions come only from membership roles"
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Commands/RegisterRequestCommandHandler.cs#CreateOrganizationMembershipAsync
     check:
       kind: manual
       ref: Register a new company with a fresh `AGENT-TEST-` user. `POST /api/customer/organization-memberships/search {userEmail}` → membership exists with non-empty org role(s) and `isActive=true`. `GET /api/platform/security/users/{userId}` → global `roles[]` empty / contains no platform admin role. The two assertions together prove roles live in the membership record, not on the global account.
     violation_signal: After registration the global `ApplicationUser.Roles` is non-empty with platform roles; or no membership/org role is created for the new organization.
     status: ACTIVE
   - id: BL-B2B-011
-    title: Org role whitelist scopes assignable roles; enforcement is a planned server-side gate
+    title: Org role whitelist scopes assignable roles; changeOrganizationContactRole rejects roles outside it
     rule: |-
       Two dictionary platform settings — `Customer.OrganizationRolesWhitelist` and `Customer.MembershipRolesWhitelist`
         (`ValueType=ShortText`, `IsDictionary=true`) — each hold a SELECTED subset of the live platform roles list
@@ -197,11 +205,7 @@ rules:
         edits the **GLOBAL** scope only; the store-scope override is API-only, and VirtoOZ's published guides (Platform
         Developer Guide's settings/v2 coverage, Platform User Guide's whitelist article) name no such override or its
         fallback — a released, in-use mechanism the docs do not cover (docs axis finding, not a defect in the mechanism
-        itself). **Server-side enforcement of the whitelist is a planned gate, not yet implemented** (VCST-5239 Story
-        EPIC-5239-03): as of 2026-07, `PUT /api/organizations` and `changeOrganizationContactRole` accept a
-        non-whitelisted `roleId` with no rejection (backend finding F1 — zero whitelist references in
-        `profile-experience-api#137` or the REST organizations endpoint) — the whitelist today constrains only the Admin
-        UI picker's *offered* options, not what the API will *accept*.
+        itself). **Server-side enforcement is implemented** (VCST-5450 AC #4, Done: "Related XAPI should accept only these roles; other roles should be rejected"): `changeOrganizationContactRole` rejects a role outside the whitelist and accepts a whitelisted one. No source states enforcement on `PUT /api/organizations`.
     priority: P1-data
     trust: DECLARED
     source:
@@ -211,6 +215,10 @@ rules:
         ref: platform/user-guide/docs/contacts/settings.md (published) — role whitelists in Customer settings control which roles are eligible for organizations and memberships
       - kind: resolution
         ref: VCST-5441 (Done) — fixed dictionary setting (whitelist) not persisting when cleared to empty
+      - kind: ac
+        ref: "VCST-5450 (Done 2026-09-01; released customer 3.1023.0, profile-experience-api 3.1017.0, platform 3.1063.0) — AC #4: related XAPI should accept only whitelisted roles; other roles should be rejected"
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Web/Scripts/services/rolesPickerService.js
     check:
       kind: manual
       ref: |-
@@ -223,9 +231,7 @@ rules:
           When asserting the legacy v1 surface, read `allowedValues`; when asserting the v2 tenant surface, read `value` —
           same content, inverted field name, not interchangeable across API versions. Add-direction persists round-trip
           after reload; clear-to-empty **persists** after reload as of Platform 3.1044.0 / vc-platform PR #3076 (VCST-5441
-          fixed 2026-07-15; previously silently reverted). Direct PUT/GraphQL bypass with a non-whitelisted role currently
-          succeeds — expected-post-fix it must be rejected (`errors[]` non-empty) without blocking a whitelisted role on the
-          same path.
+          fixed 2026-07-15; previously silently reverted). Direct GraphQL `changeOrganizationContactRole` with a non-whitelisted role is rejected (`errors[]` non-empty) without blocking a whitelisted role on the same path.
     violation_signal: |-
       With a NON-EMPTY GLOBAL whitelist, the picker offers a role outside it after a genuine
         cache-reset+reload, OR fails to narrow to the whitelist's entries; an EMPTY GLOBAL whitelist wrongly locks out /
@@ -236,8 +242,7 @@ rules:
         inversion — silently asserts against the wrong field and can pass vacuously); a write is attempted against the v2
         `schema` endpoint's `allowedValues` (the pool is a hardcoded module constant, not a writable per-tenant resource);
         one whitelist's picker reflects the other whitelist's roles; clear-to-empty silently reverts (the pre-fix VCST-5441
-        signature — a re-appearance now means PR #3076 regressed); once server enforcement ships — a non-whitelisted role
-        is accepted by the API, OR a whitelisted role is rejected (over-blocking).
+        signature — a re-appearance now means PR #3076 regressed); a non-whitelisted role is accepted by `changeOrganizationContactRole`, OR a whitelisted role is rejected (over-blocking).
     status: ACTIVE
   - id: BL-B2B-012
     title: Declining or revoking an invite changes a status — it never deletes the membership row
@@ -257,6 +262,8 @@ rules:
         ref: storefront/user-guide/docs/account/company-members.md (published) — deleting a member sets status Inactive; the record remains in the list
       - kind: ac
         ref: VCST-5281 (Done) — invite existing customers to multiple organizations with membership-based statuses
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Data/Services/InviteCustomerService.cs
     check:
       kind: manual
       ref: Decline an invitation → membership search still returns the row with `Status = "Rejected"`; the contact's organization list still contains that organization; the member is still listed in the organization's member list (surfaced under an inactive-style label, not removed). Re-invite the same user into the same organization → succeeds. Repeat against a membership at `Invited` → rejected as already-a-member. A test asserting a member is *gone* must check the **row's absence**, not a `Deleted` status; teardown must delete the row.
@@ -279,6 +286,8 @@ rules:
         ref: "`vc-module-customer` `OrganizationMembership.ResolveEffectiveStatus` (the three tiers) and `IsCurrentlyLocked` (the separate lock axis) + `ModuleConstants.MembershipStatuses` (`ManuallySelectableStatuses` / `BlockingStatuses` / `ReinvitableStatuses`) and the `OrganizationMembershipStatuses` setting descriptor (`IsDictionary = true`, `DefaultValue = Approved`, `AllowedValues = ManuallySelectableStatuses`). Live-confirmed on the environment: a membership at `Rejected` whose contact was `Approved` resolved to the membership's value (the org was excluded from access), i.e. tier 1 beats tier 2; and the member list rendered the lock axis as its own label distinct from every status label. Tiers 2 and 3 (inherit-from-contact, and the terminal `Approved`) are **source-only this run**. Docs axis: N/A — the published guide documents that Customer statuses are configurable dictionaries but names no membership-status value, default, or resolution order (waived)."
       - kind: doc
         ref: platform/user-guide/docs/contacts/managing-organization-membership-status.md (published) — values Approved/Invited/Rejected/Deleted; 'Inherit from member' sentinel; Approved full access, others block
+    scope:
+      code_ref: vc-module-customer:src/VirtoCommerce.CustomerModule.Core/Model/OrganizationMembership.cs#ResolveEffectiveStatus
     check:
       kind: manual
       ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.

@@ -20,6 +20,8 @@ rules:
         ref: vc-platform `src/VirtoCommerce.Platform.Security/CustomRoleManager.cs` — `CreateAsync`, `UpdateInternalAsync` and `DeleteAsync` each call `SecurityCacheRegion.ExpireRegion()` on success, invalidating cached role/permission lookups platform-wide on every role mutation.
       - kind: resolution
         ref: VP-8379 (Done) — a role assigned to users could not be deleted (nor its users); fixed
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Security/CustomRoleManager.cs
     check:
       kind: manual
       ref: "As an administrator, add or remove a permission on a role (or delete a role) → confirm the effect is visible on the very next request without requiring re-authentication. Separately: create a role, assign it to a user, then delete the role → deletion succeeds (no 5xx or constraint error), the user's detail view opens normally afterward, and the deleted role no longer appears in that user's role list while other assigned roles are unaffected."
@@ -41,6 +43,8 @@ rules:
         ref: VCST-5933 (Done) — a locked-out member could still read organization orders; fixed
       - kind: doc
         ref: platform/developer-guide/docs/Fundamentals/Security/authentication/api-key-authentication.md (docs) — each API key is tied to a user and requests are authorized on behalf of that user
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Web/Security/Authentication/ApiKeyAuthenticationHandler.cs#HandleAuthenticateAsync
     check:
       kind: manual
       ref: "Generate an active API key for a test user → confirm it authenticates. Lock the user's account → the same active key now fails authentication. Delete the account → the key fails authentication. Separately: sign in as a test user in one session, then as an administrator lock (or delete) that account from a second session → the first session's tokens are revoked and further requests are rejected."
@@ -58,6 +62,8 @@ rules:
         ref: vc-platform `src/VirtoCommerce.Platform.Core/DynamicProperties/DynamicProperty.cs` (`ObjectType`, `ValueType`, `IsArray`, `IsDictionary`, `IsMultilingual`) + `DynamicPropertyValueTypeCapabilities.cs` — the static capability registry (boolean and date-time declare no array/dictionary/localization support; short text declares all three).
       - kind: doc
         ref: platform/developer-guide/docs/Fundamentals/Dynamic-Properties/using-DynamicPropertyAccessor.md (docs) — DynamicPropertyValueTypeCapability declares SupportArray/SupportDictionary/SupportLocalization per value type
+    scope:
+      code_ref: vc-platform:src/VirtoCommerce.Platform.Core/DynamicProperties/DynamicPropertyValueTypeCapabilities.cs
     check:
       kind: manual
       ref: Define a new dynamic property against a given entity type with a chosen value type → open any existing entity of that type → the property is present and editable without further setup. Attempt to combine an unsupported capability with a value type not registered to support it (e.g. mark a boolean property as a dictionary or multilingual) → the option is unavailable or rejected. Enter a value matching the declared value type → persists and round-trips; enter a value of the wrong shape → rejected.

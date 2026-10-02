@@ -21,6 +21,8 @@ rules:
         ref: vc-module-customer-review `CustomerReviewStatus.cs` (`New = 0` — the C# default enum value) + `CreateReviewCommandHandler.cs` (persists the mapped review without setting a status, so it lands on the default) + `ReviewValidator.cs` (purchase-eligibility gate runs before persistence).
       - kind: doc
         ref: "platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — moderation: approve to publish and include in rating, reject to exclude, reset status, delete"
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.ExperienceApi/Commands/CreateReviewCommandHandler.cs#Handle
     check:
       kind: manual
       ref: As an eligible buyer, submit a review for a purchased product → mutation returns a non-empty id with no validation errors → in Admin, the new review appears in the review list with Status = New → the review is absent from the public storefront review list until approved.
@@ -34,6 +36,8 @@ rules:
     source:
       - kind: code
         ref: vc-frontend `client-app/modules/customer-reviews/components/product-reviews.vue` — `feedbackAvailable` (ref, defaults `false`) is only assigned inside `onActivated`'s `if (isAuthenticated.value) { … }`; the "Leave feedback" button's `v-if` requires `isAuthenticated && feedbackAvailable`.
+    scope:
+      code_ref: vc-frontend:client-app/modules/customer-reviews/components/product-reviews.vue
     check:
       kind: manual
       ref: As an anonymous visitor, open a product page that has approved reviews → the reviews are readable, but no "leave feedback" button or review form is present anywhere in the widget.
@@ -49,6 +53,8 @@ rules:
         ref: vc-module-customer-review `CanLeaveFeedbackQueryHandler.cs` (`IsProductReview(request) && await OrderExists(request) && !await ReviewExists(request)`) + vc-frontend `product-reviews.vue` (`feedbackAvailable = await canLeaveFeedback(...)`).
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/canLeaveFeedback.md (docs) — boolean eligibility check per store/entity/entityType
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.ExperienceApi/Queries/CanLeaveFeedbackQueryHandler.cs#Handle
     check:
       kind: manual
       ref: As a logged-in user with a completed order and no prior review for a product, open its page → the leave-feedback control is shown. As a logged-in user with no completed order for a different product, open that page → the control is hidden. After leaving a review, reload → the control is hidden for that product.
@@ -68,6 +74,8 @@ rules:
         ref: platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — approving a review publishes it; rejected reviews remain in the admin list as Rejected
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Reviews/Queries/customerReviews.md (docs) — paginated, sortable customerReviews query
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.ExperienceApi/Queries/CustomerReviewsQueryHandler.cs#GetSearchCriteria
     check:
       kind: manual
       ref: Seed a product with a mix of Approved, New, and Rejected reviews → the public query's total count and item list equal the Approved subset only. With more reviews than one page, navigate pages → each page returns the expected slice, total count stable across pages. Switch sort direction → item order reverses.
@@ -83,6 +91,8 @@ rules:
         ref: PlatformUserGuide "Overview > Key features" ("use rating information for sorting and filtering review objects").
       - kind: code
         ref: vc-module-customer-review `CustomerReviewsModuleController.cs` (`SearchCustomerReviews`, `[Authorize(CustomerReviewRead)]`) + `Core/Models/CustomerReviewSearchCriteria.cs` (`ReviewStatus[]`, `StartRating`/`EndRating`) + `CustomerReviewsQueryHandler.cs` (maps a parsed rating range onto `StartRating`/`EndRating`).
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.Data/Services/CustomerReviewSearchService.cs#BuildQuery
     check:
       kind: manual
       ref: In Admin, filter by Status = Approved → only Approved rows shown; filter by Status = New → only New rows shown. Filter by a rating window → each window returns only in-range rows. Sort by Created date or Rating → the list reorders accordingly.
@@ -100,6 +110,8 @@ rules:
         ref: vc-module-customer-review `CustomerReviewsModuleController.cs` (`ApproveReview`/`RejectReview`/`ResetReviewStatus`, all `[Authorize(CustomerReviewUpdate)]`) → `CustomerReviewService.cs` (all three delegate to `ChangeReviewStatusAsync`, which persists the new status and publishes `ReviewStatusChangedEvent`).
       - kind: doc
         ref: platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — approve, reject and reset review status actions
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.Data/Services/CustomerReviewService.cs#ChangeReviewStatusAsync
     check:
       kind: manual
       ref: Open a New review in Admin → Approve → status becomes Approved and the review appears in the storefront's public list. Reject an Approved review → status becomes Rejected and it disappears from the storefront. Reset an Approved/Rejected review → status returns to New and it is absent from the storefront.
@@ -117,6 +129,8 @@ rules:
         ref: vc-module-customer-review `RatingService.cs` `Calculate` (filters the review set to Approved before grouping) + `AverageRatingCalculator.cs` (arithmetic mean) + recomputation driven by the `ReviewStatusChangedEvent` published from `ChangeReviewStatusAsync`.
       - kind: doc
         ref: platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — approved reviews are included in the rating calculation, rejected ones excluded
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.Data/Services/RatingService.cs#Calculate
     check:
       kind: manual
       ref: Read a product's rating → review count equals its Approved-review count, value is their average, both within the valid rating scale. Approve a New review for that product → rating recomputes to include it. Reject an Approved review → rating recomputes to exclude it.
@@ -134,6 +148,8 @@ rules:
         ref: vc-module-customer-review `ModuleConstants.cs` — `CustomerReviewsEnabled`, `GroupName = "Store|Product Reviews"`, Boolean, default false, `IsPublic = true`, store-scoped.
       - kind: doc
         ref: platform/user-guide/docs/rating-reviews/managing-reviews.md (docs) — "Product reviews enabled" setting toggles reviews shown after the product description
+    scope:
+      code_ref: vc-frontend:client-app/pages/product.vue
     check:
       kind: manual
       ref: On a store with the setting enabled, open any product page → the review widget renders. On a store with the setting disabled, open a product page → no review widget or form renders anywhere on the page.
@@ -147,6 +163,8 @@ rules:
     source:
       - kind: code
         ref: vc-module-customer-review `Core/ModuleConstants.cs` (the five `customerReviews:*` permission constants) + `CustomerReviewsModuleController.cs` and `CustomerReviewsModuleRatingController.cs` (`[Authorize(...)]` on every admin endpoint).
+    scope:
+      code_ref: vc-module-customer-review:src/VirtoCommerce.CustomerReviews.Web/Controllers/Api/CustomerReviewsModuleController.cs#CustomerReviewsModuleController
     check:
       kind: manual
       ref: With a token holding only the read permission, call search → succeeds; call approve/reject/reset/delete/recalculate → each returns 403. With a token holding no CustomerReviews permissions, every one of these endpoints returns 403.

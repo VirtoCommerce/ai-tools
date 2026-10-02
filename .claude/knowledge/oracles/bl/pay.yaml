@@ -17,6 +17,8 @@ rules:
         ref: VCST-5162 PR vc-frontend#2309 (`bank-card-form.vue` `validationSchema`, incl. `isExpirationDateValid` "not-expired" test + yup `.length(2)` year rule); suite 040b PAY-AN-012/013/018/019/020; mirrors CyberSource/Skyflow validation. Authenticated-only scoping per product-owner ruling 2026-09-19 — same correction precedent as BL-PAY-004 (2026-06-25).
       - kind: resolution
         ref: VCST-5202 (Done) — fixed card form CVV validation letting an invalid CVV enable Place order and create an unpaid order.
+    scope:
+      code_ref: vc-frontend:client-app/shared/payment/components/bank-card-form.vue#validationSchema
     check:
       kind: manual
       ref: Enter a Luhn-invalid number, empty/partial fields, an expired or out-of-range expiry, or a short/non-numeric CVV → "Place order" stays disabled; no POST to the processor (e.g. `api2.authorize.net`) and no `createOrderFromCart`; an inline field-level error is shown; errors clear and the button enables only on fully valid data. **Run this authenticated only** — a guest cart has no card form to invalidate, so the check is not merely inapplicable there, it is guaranteed to read as a failure (see Rule).
@@ -49,6 +51,8 @@ rules:
         ref: "VCST-5162 (Done) — story: customer enters card details on the checkout page (AllowCartPayment for the gateway)."
       - kind: resolution
         ref: VCST-5369 (Done) — fixed Place Order blocked on Review in multistep checkout with an AllowCartPayment method.
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/composables/useCheckout.ts#canPayFromCart
     check:
       kind: manual
       ref: '*Single-step:* select an `allowCartPayment` method on `/cart` → inline form, URL stays `/cart`, network shows `initializeCartPayment`; switch to a manual method then place order → no charge to the card. *Multistep:* selecting an `allowCartPayment` method routes to `/checkout/payment` (NO inline form on `/cart`), card entered there, Review → Place order succeeds → paid order, not "Payment Required". Exactly one GA4 `purchase` in both modes.'

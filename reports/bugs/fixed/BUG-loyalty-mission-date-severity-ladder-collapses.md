@@ -1,6 +1,7 @@
 # Mission date badge collapses three designed states into two — amber for every live mission, red from 10 days out instead of the designed threshold — **P2**
 
 ## Status: CONFIRMED (from source + design spec)
+**Verified fixed 2026-10-01** — `/qa-test VCST-5957` on theme `2.59.0-pr-2524-3069` (vc-frontend PR #2524, unmerged): see `reports/tickets/Sprint26-19/VCST-5957/testing-checklist.md`.
 **Found by:** `/qa-design VCST-5346` (2026-08-28)
 **Tracker:** **VCST-5910** (standalone Bug — the live ticket). Was VCST-5832, a Subtask of VCST-5346, now **Cancelled** and superseded by the VCST-5910 clone; do not route work at 5832.
 **Archetype:** `BOUNDARY`

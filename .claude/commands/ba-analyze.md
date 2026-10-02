@@ -104,7 +104,7 @@ Launch agents 1 and 2 **in parallel** (single message with 2 Task calls). Agent 
   one — it is derived from the layer via §9.1, and an explicit one narrows rather than replaces.
   **`--publish` posts to the tracker, so ASK before posting**; the subagent composes the body and never
   posts it itself. Mechanics are `knowledge/execution/tracker-ops.md`'s — **§2** for the endpoint, **§5d**
-  for what a delivery is (the guides in full; split one comment per audience if they do not fit; never a
+  for what a delivery is (the guides in full, in ONE comment however long — never split; never a
   repo path in place of content), **§5a** for the body dialect and **§5c** for the screenshot carve-out.
 - If scope is `docs`: run all agents (docs need full context), then `ba-doc-writer` with the requested `audience`. For `sales`, the system analysis is still required — Sales claims must map to observed features (see `ba-doc-writer` Truth guardrail).
 - Default (full): run all four agents

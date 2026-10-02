@@ -8,6 +8,72 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## Every bug a test run finds is triaged, then investigated, then filed — `vc-fix` `0.9.6` — 2026-10-01
+
+Before this, a `/qa-test` checklist FAIL and every `/qa-test-fast` finding went straight from a runner's
+note to `/vc-fix:qa-bug`. `/qa-triage-results` ran only on a regression `RUN_ID`, and `/qa-investigate` was
+cited but never called, because the vc-fix copy carried `disable-model-invocation: true`. Both flows now
+run the same chain: **`qa-triage-results` → `vc-fix:qa-investigate` → `/vc-fix:qa-bug`**. `vc-perf` is
+unchanged.
+
+**Changed (`vc-fix`): `qa-investigate` is model-invocable.** The flag is removed, and the description now
+says when to use the skill, because the model reads it to decide. A new handoff mode is added: run ahead of
+`/vc-fix:qa-bug`, the skill stops at its evidence gate. It returns the evidence package
+(`evidence-index.md` + `root-cause.md`), the `REPRODUCED` / `NOT_REPRODUCED` result and the owning
+layer/repo, and writes no report, so one bug gets one report. Because the skill can now trigger by
+itself, it may also start in client sessions when a bug is being investigated.
+
+**Added: `/qa-triage-results ticket <KEY>`.** `npm run triage:collect -- --ticket <KEY>`
+(`scripts/lib/regression-triage.ts`) reads the ticket's newest `testing-checklist.md`. Its FAIL / BLOCKED /
+NOT-RUN rows become `source: "checklist"` issues for the same classifier a regression run uses. If an item
+appears twice, the last row wins, so a later re-test round supersedes the first. Advisory rows (`DRIFT`,
+`UNSPEC`, `WAIVED`) are counted and not triaged. A row with no readable verdict is listed in
+`unresulted[]` and stops the triage. Ticket mode writes only `triage-report.md` and the investigation
+packages. It returns everything else to the calling flow, which stays the only writer of its checklist and
+the only caller of `qa-bug`. Phase 4 live verification now has the QA expert invoke
+`vc-fix:qa-investigate`, in both modes.
+
+**Changed: `/qa-test` and `/qa-test-fast`.** 5-triage and Stage 3 run
+`qa-triage-results ticket <KEY> --verify`, so every real-bug candidate is investigated. `qa-bug` then
+reuses each package and does not reproduce the bug again. Every exploratory and visual finding must be a
+checklist row with a verdict before triage. `/qa-test-fast` also gains the visual lane: `ui-ux-expert`
+invokes the `qa-design` skill when `visual_surface: true`, and `--no-visual` drops it
+(`skills/qa-test/visual-axis.md` is the single source for both flows).
+
+## Tracker comment rounds: a retest of a new build is a new comment — `vc-fix` `0.9.5` — 2026-10-01
+
+Fixes #360. On VCST-5883 a round-2 retest of new builds was amended into round 1's comment, and an edit
+notifies nobody, so the developer and PO never learned the retest happened. `vc-perf` is unchanged.
+
+**Added: rounds keyed on the build under test.** `tracker:comment` takes `--artifact "<build under test>"` and
+records it in `.tracker-comments.json`. A post for a new artifact is a new round and is allowed; an `--amend`
+of a comment recorded for a different artifact is refused. With no artifact, a ledger comment older than 12 h
+(`TRACKER_ROUND_HOURS`) counts as a previous round: a post is allowed and an amend is refused. The one
+override for an amend is `--same-round "<reason>"`, which the `/qa-test --iterate` loop uses. The decision is
+`scripts/tracker/round-guard.mjs`.
+
+**Fixed: the helper's run id.** It read `CLAUDE_SESSION_ID`, which Claude Code does not export, so every post
+recorded run `local` and a checkout counted as one run forever. It now reads `CLAUDE_CODE_SESSION_ID`, the
+same transcript id the hooks receive.
+
+**Fixed: the MCP hooks covered one server name.** `enforce-one-tracker-comment` and `record-tracker-comment`
+(`.claude/` and `plugins/vc-fix/hooks/`, changed together) now match
+`^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$`, so the claude.ai Atlassian connectors no longer
+bypass them. A call with `commentId` is an edit, not a second comment: the guard blocks it only when the
+ledger comment is older than 12 h or was posted by another session, and the recorder no longer logs it as a
+new post. An amend from a provably different session is refused the same way (`--same-round` overrides), as
+is an amend that names no `--artifact` when the comment records one; amending an older comment no longer
+replaces the ledger entry for the current round. An
+amend of a comment this checkout's ledger does not know takes its age from Jira's `created` time, and a
+successful amend records the build it now reports.
+
+**Changed: `tracker-ops.md` §0** gains rule 5 (a new build is a new round and a new comment) and rewords
+rule 4, in both copies. §0a no longer says the MCP has no edit tool. `/qa-test` 5-report and `/qa-test-fast`
+pass the probed build as `--artifact`; `/qa-verify-fix`, which posts through the MCP, is told that a
+verification of a newer build is a new comment.
+
+---
+
 ## Origin labels on bugs Claude files; a tracker-neutral ticket placeholder — `vc-fix` `0.9.4` — 2026-09-30
 
 Ships the `plugins/vc-fix/` changes from #355 and #357, which merged after `0.9.3` without a version bump. Text

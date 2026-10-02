@@ -17,6 +17,8 @@ rules:
     source:
       - kind: doc
         ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — default buyability price policy rejects zero-price products; allowing them needs a code override
+    scope:
+      code_ref: vc-module-x-catalog:src/VirtoCommerce.XCatalog.Core/Specifications/CatalogProductIsBuyableSpecification.cs#CheckPricePolicy
     check:
       kind: manual
       ref: 'Delete price list in Admin → storefront product shows "Unavailable" or equivalent, not "$0.00" → "Add to Cart" disabled → xAPI `products` query returns `price: null` or empty price object.'
@@ -30,6 +32,8 @@ rules:
     source:
       - kind: doc
         ref: platform/user-guide/docs/pricing/troubleshooting-guide.md (published) — rebuild the product index for price changes to reflect in the frontend
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Data/Services/CartProductService.cs#ApplyPricesToCartProductAsync
     check:
       kind: manual
       ref: Change price in Admin → immediately check storefront listing (may show old price) → add to cart → cart must show the NEW price. After reindex → listing matches cart.
@@ -152,12 +156,16 @@ rules:
     status: ACTIVE
   - id: BL-CROSS-012
     title: Admin entity deletion never creates $0 products
-    rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable by design only when the store's `zero_price_product_enabled` theme flag is TRUE (default FALSE); with the flag FALSE, $0-priced products are not addable to cart. When auditing, confirm the flag state before treating a $0 purchase as a violation.
+    rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
     priority: P0-revenue
     trust: DECLARED
     source:
       - kind: doc
         ref: platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
+      - kind: doc
+        ref: "platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag"
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Specifications/ProductIsBuyableSpecification.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.

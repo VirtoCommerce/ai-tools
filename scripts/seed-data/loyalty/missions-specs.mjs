@@ -482,6 +482,65 @@ export const ZERO_STOCK_PRODUCT = {
 };
 
 /**
+ * The TRACKED-STOCK featured-SKU target, slot T (MSNF-034 / MSNF-101).
+ *
+ * WHY IT EXISTS. Both cases type a quantity ABOVE the stock the modal row shows, and ask what the
+ * modal and the cart do with it. Against MSN_PERSKU_PRODUCT_A that question is undecidable, and that
+ * was measured, not guessed (REG-2026-10-01-1243 triage §2): A is `trackInventory: false` by design,
+ * so its badge reads "In stock" with NO number, there is no stock to exceed, and "STOCK + 51" has
+ * nothing to add 51 to. A finite tracked stock is the only thing that makes "over-stock" a state.
+ *
+ * WHY IT IS NOT IN PERSKU_PRODUCTS — the same reason Z is not. `buildGoalItems` maps every default
+ * PerSku mission over PERSKU_PRODUCTS, so a third shared slot would add a target to MSN_PERSKU_ALL /
+ * MSN_PERSKU_ANY / MSN_PROGRESS_PARTIAL / MSN_PROGRESS_COMPLETED and re-derive every declared
+ * percentage. It is opt-in through `goalSlots`, like Z.
+ *
+ * WHY THE STOCK IS SMALL, FINITE AND RE-ASSERTED. Small, so an over-stock entry is a short typing step
+ * rather than a five-digit one. Finite and >= 2, so a VALID quantity strictly below the stock (1)
+ * and an INVALID one above it both exist on the same row — the two halves MSNF-101 compares. It is
+ * written back to `inStockQuantity` on EVERY seed, because tracked stock is state a case can move (a
+ * case that adds within stock and checks out drains it), and a drained row reads "Out of stock" —
+ * MSNF-035's state, not this one. No seed order ever buys slot T, and the guard asserts that.
+ */
+export const TRACKED_STOCK_PRODUCT = {
+  aliasName: 'MSN_PERSKU_TRACKED_PRODUCT',
+  slot: 'T',
+  quantity: 2,
+  sku: `${NAME_PREFIX}-TRACKED-SKU`,
+  productName: 'AGENT-TEST Missions Tracked-Stock Target',
+  /** THE fixture: a finite tracked stock a quantity can exceed. Re-asserted every seed. */
+  inStockQuantity: 5,
+  /** Distinct from every other cash target (30 / 42.50 / 99), so a row-sum cannot coincide with another row. */
+  listPrice: 12,
+  currencyIntent: 'store-default',
+  minQuantity: 1,
+  packSize: 1,
+  /** The point of the slot. The guard fails if this is ever flipped to false. */
+  trackInventory: true,
+};
+
+/** Bounds on the tracked stock: >= 2 so a valid quantity below it exists, small so "over" is a short step. */
+export const TRACKED_STOCK_BOUNDS = { min: 2, max: 20 };
+
+/**
+ * MSNF-097 — the bounds the LONG-CONTENT mission must stay inside. The case gates itself
+ * BLOCKED below a 40-character title or a 5-digit reward; the fixture sits well above that gate so a
+ * layout that copes with ordinary content cannot pass for one that copes with long content.
+ * The name ceiling is the column width (LoyaltyMissionEntity.Name, StringLength 256 — source,
+ * vc-module-loyalty). The reward is a `decimal` with no upper validator rule (LoyaltyMissionValidator
+ * rejects only a negative amount — source), so 9 digits is the brief's upper bound, not the platform's.
+ */
+export const LONG_CONTENT_BOUNDS = { minTitleChars: 80, maxTitleChars: 256, minRewardDigits: 5, maxRewardDigits: 9 };
+
+/**
+ * The goal type whose storefront type chip is the LONGEST en label. {OBSERVED} on /account/missions
+ * (.claude/knowledge/domain/loyalty-missions.md surface inventory, CONFIRMED live): "Order value" (11),
+ * "Order count" (11), "Featured SKUs" (13). A label is a UI string, so this is an observation, not a
+ * documented contract — re-observe it if the redesign renames a chip.
+ */
+export const LONGEST_GOAL_LABEL_TYPE = 'PerSkuGoal';
+
+/**
  * The LOYALTY-CURRENCY target, slot P. FOUND, never created, and never priced by this seeder.
  *
  * It is `LOY_SKU_PTS_UNIT` — the repo's existing 1-PTS unit product. Minting a second points-priced
@@ -522,7 +581,17 @@ export const POINTS_PRODUCT = {
  * Every product slot the fixture set can target: the owned buyable pair, the owned zero-stock
  * target, and the found points-priced one.
  */
-export const TARGET_PRODUCTS = [...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT, POINTS_PRODUCT];
+export const TARGET_PRODUCTS = [...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT, TRACKED_STOCK_PRODUCT, POINTS_PRODUCT];
+
+/**
+ * The CASH-priced products this seeder creates and prices in the store default: the buyable pair,
+ * the zero-stock target and the tracked-stock target. The featured-SKU modal sums its rows, so these
+ * must all resolve to ONE currency — the seeder asserts it over exactly this list. Pure.
+ */
+export const CASH_TARGET_PRODUCTS = [...PERSKU_PRODUCTS, ZERO_STOCK_PRODUCT, TRACKED_STOCK_PRODUCT];
+
+/** The products that track inventory, each with the stock level the seeder re-asserts. Pure. */
+export const TRACKED_PRODUCTS = [ZERO_STOCK_PRODUCT, TRACKED_STOCK_PRODUCT];
 
 /** The products this seeder CREATES (and may therefore delete on teardown). Pure. */
 export const OWNED_PRODUCTS = TARGET_PRODUCTS.filter((p) => p.created !== false);
@@ -1729,6 +1798,56 @@ export const MISSIONS = [
       + 'product would take somebody else\'s fixture out of stock, which is why the slot is opt-in via '
       + '`goalSlots` rather than a third entry in PERSKU_PRODUCTS.',
   },
+  {
+    aliasName: 'MSN_PERSKU_TRACKED',
+    key: 'PERSKU-TRACKED',
+    status: 'Published',
+    public: true,
+    window: 'active',
+    condition: { type: 'AnyUserGroupCondition' },
+    // all=true for the same reason as MSN_PERSKU_OOS: a mission that completes goes READ-ONLY and hides
+    // the stepper both cases type into.
+    goal: { type: 'PerSkuGoal', all: true },
+    // Slot T ALONE: one row, so 'Total units', 'Targets met' and 'Cart subtotal' are each a function
+    // of the one stepper the case drives, and nothing else on the modal can move them.
+    goalSlots: ['T'],
+    // Target 2 against stock 5. A valid quantity of 1 is BELOW it (target not met), a quantity within
+    // stock can legitimately meet it, and an over-stock entry would meet it only if the counter
+    // wrongly counts an invalid value — so MSNF-101's "Targets met" arm can fail. Guarded.
+    goalItemQuantities: { T: 2 },
+    reward: 285,
+    // No `progress`, deliberately — same reasoning as MSN_PERSKU_OOS: a mission minted after the
+    // provisioning order gets no progress row, and declaring one would force the whole-set reset. The
+    // seed orders never buy slot T, so it predicts 0% InProgress, which is what both cases need.
+    purpose:
+      'MSNF-034 / MSNF-101 — an over-stock quantity on a featured-SKU row. Its only target is '
+      + 'MSN_PERSKU_TRACKED_PRODUCT, the one product in the set with a FINITE TRACKED stock '
+      + '(TRACKED_STOCK_PRODUCT.inStockQuantity), so the modal badge shows a number and a quantity above '
+      + 'it is a real state. The buyable pair is trackInventory:false by design and cannot express it.',
+  },
+  {
+    aliasName: 'MSN_LONG_CONTENT',
+    // The KEY is the title: the storefront card renders the mission name, and a localized name is
+    // MSN_LOCALIZED's alone (validateSpecShape). Spaces are deliberate — a realistic merchant title
+    // wraps at word boundaries, which is the layout behaviour MSNF-097 measures.
+    key: 'LONG-CONTENT Quarterly bulk-purchase challenge for featured warehouse supplies and spare parts',
+    status: 'Published',
+    public: true,
+    window: 'active',
+    condition: { type: 'AnyUserGroupCondition' },
+    // PerSku because "Featured SKUs" is the longest type chip (LONGEST_GOAL_LABEL_TYPE).
+    goal: { type: 'PerSkuGoal', all: true },
+    goalSlots: ['T'],
+    // ABOVE the tracked stock, so the mission can never be completed by anyone: a 9-digit reward that
+    // could actually be granted would put 123 million points on whichever shared account bought it.
+    goalItemQuantities: { T: 50 },
+    reward: 123456789,
+    purpose:
+      'MSNF-097 — long content on the missions page at 375 and 768 px: a title well past 80 '
+      + 'characters, a 9-digit points reward and the longest goal-type chip, on one card, so the banner, '
+      + 'chips and title are stressed together. Uncompletable by construction (its slot-T target exceeds '
+      + 'the tracked stock and no seed order buys slot T), because its reward is absurd on purpose.',
+  },
 
   /* ── VCST-5346 storefront progress states ─────────────────────────────────
    * The three fixtures below are the PROGRESS axis. Everything above them varies the mission
@@ -2611,7 +2730,7 @@ export function validateSpecShape() {
     if (Number(p.packSize || 1) !== 1 || Number(p.minQuantity || 1) !== 1) {
       problems.push(`${p.aliasName} declares packSize ${p.packSize} / minQuantity ${p.minQuantity} — above 1 the storefront stepper jumps, so a case step reading "set the quantity to exactly 1" is unachievable and reads as a stepper defect (measured: the previously-discovered slot B, 55557702, carries minQuantity 2)`);
     }
-    if (p.aliasName !== ZERO_STOCK_PRODUCT.aliasName && p.created !== false && p.trackInventory !== false) {
+    if (!TRACKED_PRODUCTS.some((t) => t.aliasName === p.aliasName) && p.created !== false && p.trackInventory !== false) {
       problems.push(`${p.aliasName} tracks inventory — it is bought by the seed order on EVERY run, so a tracked fixture drains and eventually blocks cases for a reason that has nothing to do with missions`);
     }
   }
@@ -2773,6 +2892,78 @@ export function validateSpecShape() {
       problems.push(`${m.aliasName} is COMPLETED by the seed order despite carrying an unbuyable target — the modal would be read-only and the disabled control unreachable`);
     }
   }
+  /* ── TRACKED-STOCK SLOT (MSNF-034 / MSNF-101) ─────────────────────────────── */
+  {
+    const t = TRACKED_STOCK_PRODUCT;
+    if (t.trackInventory !== true) {
+      problems.push(`${t.aliasName} no longer tracks inventory — its badge then reads "In stock" with no number, and "a quantity above the shown stock" is undecidable again (REG-2026-10-01-1243)`);
+    }
+    if (!Number.isInteger(t.inStockQuantity) || t.inStockQuantity < TRACKED_STOCK_BOUNDS.min || t.inStockQuantity > TRACKED_STOCK_BOUNDS.max) {
+      problems.push(`${t.aliasName}.inStockQuantity is ${t.inStockQuantity}; it must be an integer in [${TRACKED_STOCK_BOUNDS.min}, ${TRACKED_STOCK_BOUNDS.max}] — below 2 no valid quantity sits under the stock, and 0 is MSNF-035's out-of-stock state`);
+    }
+    if (!isSeededMissionName(t.sku)) problems.push(`${t.aliasName}'s sku "${t.sku}" lacks the ${NAME_PREFIX}- prefix, so teardown cannot sweep it`);
+    if (PERSKU_PRODUCTS.some((p) => p.slot === t.slot)) {
+      problems.push('the tracked-stock slot has been added to PERSKU_PRODUCTS — every default PerSku mission would inherit it and MSN_PROGRESS_PARTIAL / MSN_PROGRESS_COMPLETED would be re-derived');
+    }
+    if (PROGRESS_ORDERS.some((o) => o.lines.some((l) => l.slot === t.slot))) {
+      problems.push('a seed order buys the tracked-stock slot — the stock it holds would drain on every progress re-provision');
+    }
+    const cashPrices = CASH_TARGET_PRODUCTS.map((p) => Number(p.listPrice));
+    if (new Set(cashPrices).size !== cashPrices.length) {
+      problems.push(`two cash targets share a list price (${cashPrices.join(', ')}) — a modal row-sum could coincide with another row and a row mix-up would pass`);
+    }
+    const tracked = MISSION_BY_ALIAS.MSN_PERSKU_TRACKED;
+    if (!tracked) {
+      problems.push('MSN_PERSKU_TRACKED is gone — MSNF-034 / MSNF-101 have no mission whose row carries a finite stock');
+    } else {
+      const slots = goalSlotsFor(tracked);
+      if (slots.length !== 1 || slots[0] !== t.slot) problems.push(`MSN_PERSKU_TRACKED targets ${JSON.stringify(slots)} rather than the tracked slot "${t.slot}" alone — a second row lets the summary move for a reason the case did not drive`);
+      if (tracked.goal?.type !== 'PerSkuGoal' || tracked.goal.all !== true) problems.push('MSN_PERSKU_TRACKED must be a PerSkuGoal with all=true — a completed mission goes read-only and hides the stepper');
+      const q = goalItemQuantities(tracked)[t.slot];
+      if (!(q > 1 && q <= t.inStockQuantity)) {
+        problems.push(`MSN_PERSKU_TRACKED's slot-T target is ${q}; it must be > 1 (so a valid quantity of 1 leaves it unmet) and <= the tracked stock ${t.inStockQuantity} (so meeting it is possible) — otherwise "an over-stock entry does not mark the target met" cannot fail`);
+      }
+      if (predictProgress(tracked)?.status === 'Completed') problems.push('MSN_PERSKU_TRACKED is completed by the seed orders — its modal would be read-only');
+    }
+  }
+
+  /* ── LONG CONTENT (MSNF-097) ───────────────────────────────────────────── */
+  {
+    const lc = MISSION_BY_ALIAS.MSN_LONG_CONTENT;
+    if (!lc) {
+      problems.push('MSN_LONG_CONTENT is gone — MSNF-097 falls back to the extremes of ordinary content and gates itself BLOCKED');
+    } else {
+      const title = missionName(lc);
+      const b = LONG_CONTENT_BOUNDS;
+      if (title.length < b.minTitleChars || title.length > b.maxTitleChars) {
+        problems.push(`MSN_LONG_CONTENT's title is ${title.length} chars; it must be in [${b.minTitleChars}, ${b.maxTitleChars}] — shorter does not stress the card, longer does not fit the Name column`);
+      }
+      const digits = String(Math.trunc(Math.abs(lc.reward))).length;
+      if (!Number.isInteger(lc.reward) || digits < b.minRewardDigits || digits > b.maxRewardDigits) {
+        problems.push(`MSN_LONG_CONTENT's reward ${lc.reward} has ${digits} digit(s); it must be a whole number of ${b.minRewardDigits}-${b.maxRewardDigits} digits — below that the reward chip is ordinary width`);
+      }
+      if (lc.goal?.type !== LONGEST_GOAL_LABEL_TYPE) {
+        problems.push(`MSN_LONG_CONTENT is a ${lc.goal?.type}, not ${LONGEST_GOAL_LABEL_TYPE} — its type chip is then not the longest label and the chip-overflow arm is weaker than it claims`);
+      }
+      if (lc.status !== 'Published' || lc.public !== true || WINDOWS[lc.window]?.expectOpen !== true) {
+        problems.push('MSN_LONG_CONTENT must be Published, public and on an open window — otherwise the card never renders');
+      }
+      const end = WINDOWS[lc.window]?.endOffsetDays;
+      if (end != null && end < 90) problems.push(`MSN_LONG_CONTENT's window ends in ${end} days — a near deadline adds a danger/warning badge the layout case did not ask for`);
+      if (lc.l10n) problems.push('MSN_LONG_CONTENT carries l10n — the long title must be the NAME every culture falls back to, and localized names belong to MSN_LOCALIZED');
+      // UNCOMPLETABLE: its reward is absurd on purpose, so it must never be grantable.
+      const rows = predictProgress(lc)?.rows || [];
+      const q = goalItemQuantities(lc);
+      const reachable = goalSlotsFor(lc).every((s) => {
+        const p = productBySlot[s];
+        return !(p?.trackInventory === true && Number(q[s]) > Number(p.inStockQuantity));
+      });
+      if (lc.goal?.type !== 'PerSkuGoal' || lc.goal.all !== true || reachable || rows.some((r) => r.current >= r.target)) {
+        problems.push('MSN_LONG_CONTENT is completable — every PerSku target must exceed its product\'s tracked stock (all=true), or a 9-digit reward can actually be granted to a shared account');
+      }
+    }
+  }
+
   for (const m of MISSIONS) {
     for (const s of goalSlotsFor(m)) {
       if (!productBySlot[s]) problems.push(`${m.aliasName}.goalSlots names slot "${s}", which no product spec declares — the seeder has nothing to resolve it to`);

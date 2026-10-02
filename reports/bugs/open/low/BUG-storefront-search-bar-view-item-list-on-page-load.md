@@ -1,6 +1,6 @@
 # Search-bar `view_item_list` is pushed on page load for the URL keyword, with no dropdown shown `[Low]`
 
-## Status: READY_TO_SUBMIT
+## Status: CONFIRMED — VCST-6100 · fix PR VirtoCommerce/vc-frontend#2529 (In review, 2026-10-01)
 
 **Tracker:** VCST-6100 (Bug, relates to VCST-2945; labels vc-fix + qa-autofix)
 

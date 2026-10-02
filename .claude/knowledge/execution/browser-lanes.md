@@ -138,21 +138,17 @@ lane**. Leaving it unstated is what produced the VCST-5733 loss: the agent infer
 agent left to guess its own auth path burns a turn discovering the lane cannot do it. Never tell an agent
 to type a plaintext password, and never work around a permission denial on a credential.
 
-**A subagent CAN read `DesignSync` — but only after `ToolSearch select:DesignSync`.** The tool is
-**deferred**: its name arrives in a system-reminder carrying no parameter schema, so an agent that
-consults its own tool list finds nothing callable and concludes the tool is unavailable. That is what
-produced the original finding recorded here — the `vs. DESIGN` axis was briefed at `ui-ux-expert` after
-the orchestrator had verified `DesignSync` in its own session, the subagent reported it missing, and this
-file wrote it up as non-inheritance. **Re-probed 2026-09-08** against project `518d0b90-…`: a dispatched
-subagent that calls `ToolSearch` with `select:DesignSync` first receives the schema, and both
-`get_project` and `get_file` return real content — no permission prompt, no auth error. The
-`/design-consent` grant IS inherited; the schema is what is not.
-
-So the axis is **runnable inside a subagent, on one condition**: the brief must tell it to load the
-schema via `ToolSearch select:DesignSync` before its first `DesignSync` call, or it will re-derive the
-same wrong conclusion and report a false `SKIPPED`. Having the orchestrator read the spec and pass the
-declared expectations into the brief **as data** remains the safer default — it keeps `unresolved`
-countable and the extraction reviewable — but it is now a choice, not a constraint.
+**No lane calls `DesignSync` any more — the `vs. DESIGN` source is files on disk.** This section
+used to record how a subagent *could* call it (load the deferred schema with `ToolSearch
+select:DesignSync` first; re-probed 2026-09-08 against project `518d0b90-…`). Since Claude Code
+2.1.280 the tool's own description restricts it to the user-started `/design-sync` skill, and on
+2026-10-01 (VCST-5957) the orchestrator declined it on exactly that ground — so a brief that names
+the `ToolSearch` step now asks an agent to use a tool outside its declared purpose, and the outcome
+depends on the model. The orchestrator instead runs `npm run design:extract` over the local copy
+of the ticket's project (`.design-source/<uuid>/`) and hands the agent the **spec JSON path**:
+`unresolved` is machine-counted, every input carries a sha256, and nothing about the lane or the
+session decides whether the axis runs. Source ladder:
+[`skills/qa-design/claude-design-verification.md`](../../skills/qa-design/claude-design-verification.md) §1.
 
 ## Storybook Visual Regression
 
