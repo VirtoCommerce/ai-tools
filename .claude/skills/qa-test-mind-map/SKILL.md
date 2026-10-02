@@ -67,8 +67,8 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
    `/qa-domain-map <slug>`: the mind map is derived from the map's value chain. If the map is STALE,
    say so and proceed only in `audit` mode.
 2. **Ask the base for this run's coordinates.** For each GraphQL operation, endpoint and page path the
-   domain map §2 names for the behaviours in scope, run `npm run kb -- ask "<coordinate> <question>"`
-   (MCP: `mcp__kb__kb_ask`). Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../../CLAUDE.md)
+   domain map §2 names for the behaviours in scope, run `mcp__kb__kb_ask`
+   (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../../CLAUDE.md)
    §Essential Rules → *Product context*.
 3. **VirtoOZ before any behaviour claim** (`/vc-docs`), the same rule. Released vs new decides the
    source: released behaviour needs `{DOC}`, `{BL}` or `{OBSERVED}` evidence before it can be CONFIRMED.
