@@ -39,8 +39,8 @@ import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
-  DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, orderQueue, queueDir, queuePath, readQueue, recordPush,
-  releaseConsumed, runOf, sessionId,
+  DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
+  readQueue, recordPush, releaseConsumed, runOf, sessionId,
 } from './queue.mjs';
 import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
@@ -787,7 +787,11 @@ async function flushOnce({
 
   // WHO CALLED, derived from this machine's transcripts before anything leaves it (`core/caller.mjs`).
   // Before the secret gate, so the stamped line is the one the gate judges.
-  for (const f of loaded) f.lines = stampCallersFromTranscripts(f.lines, { env });
+  // A CLI line is matched only inside the transcripts its own session recorded (`metaTranscripts`).
+  for (const f of loaded) {
+    const sessions = f.session ? metaTranscripts(await readMeta(env, f.session)) : [];
+    f.lines = stampCallersFromTranscripts(f.lines, { env, sessions });
+  }
 
   // THE SECRET GATE, before anything leaves the machine. Over the whole line, payload included:
   // the payload is what becomes an entry body in the public base.

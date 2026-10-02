@@ -12,7 +12,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, kbDisabled, pendingMutations, queuePath, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, TRANSCRIPT_MEMORY, kbDisabled, log, metaTranscripts, pendingMutations, queuePath, readMeta, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { captureLines, evidenceLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
@@ -528,3 +528,28 @@ test('hasSessionId says whether a key is a session or a per-process fallback (VC
   assert.equal(hasSessionId({ CLAUDE_CODE_HOST_SESSION_ID: 'local_ab.cd' }), false, 'an unusable id is none');
   assert.equal(hasSessionId({}), false);
 });
+
+// ─── the sidecar remembers which transcript a CLI line can be matched in (VCST-6146) ─────────────
+
+test('a CLI line records its transcript id once; an MCP line or a shell without one records none', () => withQueue(async (dir, env) => {
+  const tx = '23b796a8-db8e-477d-b9cc-9b8199ecbf25';
+  await log({ kind: 'ask', q: 'a', via: 'mcp' }, { env: { ...env, CLAUDE_CODE_SESSION_ID: tx } });
+  assert.deepEqual(metaTranscripts(await readMeta(env)), []);
+  await log({ kind: 'ask', q: 'b', via: 'cli' }, { env: { ...env, CLAUDE_CODE_SESSION_ID: tx } });
+  await log({ kind: 'show', id: 'KB-1', via: 'cli' }, { env: { ...env, CLAUDE_CODE_SESSION_ID: tx } });
+  assert.deepEqual(metaTranscripts(await readMeta(env)), [tx]);
+  const plain = { KB_QUEUE_DIR: dir, CLAUDE_CODE_HOST_SESSION_ID: 'plainterm' };
+  await log({ kind: 'ask', q: 'c', via: 'cli' }, { env: plain });
+  assert.deepEqual(metaTranscripts(await readMeta(plain)), []);
+  assert.equal((await readMeta(env)).asks.length, 2, 'the asks the sidecar already held are kept');
+}));
+
+test('the sidecar keeps the most recent transcript ids and drops anything that is not one', () => withQueue(async (dir, env) => {
+  for (let i = 0; i < TRANSCRIPT_MEMORY + 3; i += 1) {
+    await log({ kind: 'ask', q: String(i), via: 'cli' }, { env: { ...env, CLAUDE_CODE_SESSION_ID: `tx-${String(i).padStart(6, '0')}` } });
+  }
+  const kept = metaTranscripts(await readMeta(env));
+  assert.equal(kept.length, TRANSCRIPT_MEMORY);
+  assert.equal(kept.at(-1), `tx-${String(TRANSCRIPT_MEMORY + 2).padStart(6, '0')}`);
+  assert.deepEqual(metaTranscripts({ transcripts: ['../etc', 7, 'ok-id-12345'] }), ['ok-id-12345']);
+}));

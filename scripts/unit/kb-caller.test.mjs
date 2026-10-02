@@ -119,6 +119,8 @@ function withShellTranscripts(fn) {
       shell('toolu_MAIN_LOOP', 80, 'while IFS= read -r q; do npm run -s kb -- ask "$q"; done <<\'EOF\'\nfirst looped question\nsecond looped question\nEOF'),
       shell('toolu_PS', 100, 'npm run kb -- capture --subject "Coupon codes are case-insensitive" --question "q" --claim "c"', 'PowerShell'),
     ].join('\n'));
+    // Another Claude session in the same project, asking a question sess-1's lines also ask.
+    writeFileSync(join(dir, 'sess-2.jsonl'), shell('toolu_OTHER_SESSION', 120, 'npm run kb -- ask "asked by two sessions"'));
     return fn(dir);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -126,7 +128,24 @@ function withShellTranscripts(fn) {
 }
 
 const cli = (s, kind, key) => ({ at: iso(s), kind, via: 'cli', ...key });
-const resolveAt = (dir, lines) => resolveCliCalls(lines, { dirs: [dir], names: NAMES });
+const resolveAt = (dir, lines, sessions = ['sess-1']) => resolveCliCalls(lines, { dirs: [dir], names: NAMES, sessions });
+
+test('only the writing session\'s transcripts are searched; no recorded session means no match', () => withShellTranscripts((dir) => {
+  const line = cli(121, 'ask', { q: 'asked by two sessions' });
+  // A plain terminal or another session asking what sess-2's agent asked must not claim its call.
+  assert.equal(resolveAt(dir, [line]).size, 0);
+  assert.equal(resolveAt(dir, [line], []).size, 0);
+  assert.equal(resolveAt(dir, [line], ['sess-2']).get(0).call, 'toolu_OTHER_SESSION');
+}));
+
+test('a loop is shell syntax outside quotes, never "for … in" inside a question', () => {
+  const limit = (command) => kbShellCalls(shell('t', 0, command))[0].runs;
+  assert.equal(limit('npm run kb -- ask "discount for items in cart"'), 1);
+  assert.equal(limit("npm run kb -- ask 'while true: what does the cart do'"), 1);
+  assert.equal(limit('for q in a b; do npm run kb -- ask "$q"; done'), Infinity);
+  assert.equal(limit('while IFS= read -r q\ndo npm run -s kb -- ask "$q"; done < qs.txt'), Infinity);
+  assert.equal(limit('foreach ($q in $qs) { npm run kb -- ask $q }'), Infinity);
+});
 
 test('a sub-agent CLI call is stamped with the Bash tool-use id and that sub-agent', () => withShellTranscripts((dir) => {
   const r = resolveAt(dir, [cli(1, 'ask', { q: 'What does GET /account/coupons show?' }), cli(6, 'show', { id: 'KB-35F20D97' })]);
@@ -185,10 +204,13 @@ test('kb invocations are recognised through npm flags and the script path, nothi
 test('the push-time stamper stamps CLI lines from a plain-terminal-free transcript, and only those', () => withShellTranscripts((dir) => {
   const out = stampCallersFromTranscripts(
     [cli(1, 'ask', { q: 'What does GET /account/coupons show?' }), cli(1, 'ask', { q: 'typed in a plain terminal' })],
-    { env: { KB_TRANSCRIPTS_DIR: dir }, names: NAMES },
+    { env: { KB_TRANSCRIPTS_DIR: dir }, names: NAMES, sessions: ['sess-1'] },
   );
   assert.equal(out[0].call, 'toolu_SUB_ASK');
   assert.equal(out[0].agent, 'qa-frontend-expert');
   assert.equal('call' in out[1], false);
   assert.equal('agent' in out[1], false);
+  // A queue whose sidecar recorded no transcript (a plain terminal) is never CLI-matched.
+  const bare = stampCallersFromTranscripts([cli(1, 'ask', { q: 'What does GET /account/coupons show?' })], { env: { KB_TRANSCRIPTS_DIR: dir }, names: NAMES });
+  assert.equal('call' in bare[0], false);
 }));

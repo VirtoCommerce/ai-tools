@@ -340,6 +340,7 @@ export async function log(record, { env = process.env, who, run } = {}) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
   if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
+  if (line.via === 'cli') await noteTranscript(env);
   return { ok: true, path, line };
 }
 
@@ -421,6 +422,33 @@ async function noteAsk(env, at, q) {
     const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? '') }].slice(-ASK_MEMORY);
     await writeFile(metaPath(env), JSON.stringify({ ...meta, asks }), 'utf8');
   } catch { /* the pointer is lost, the ask is not */ }
+}
+
+/**
+ * WHICH TRANSCRIPT a CLI line can be matched in (VCST-6146). `core/caller.mjs` attributes a CLI line
+ * by finding the shell tool call that ran it, and it must look only in THIS session's transcript:
+ * searched project-wide, a plain-terminal line (its own process-keyed queue) or another session's
+ * line claimed an agent's call by asking the same question minutes later. The queue key cannot say
+ * which transcript that is — on the desktop it comes from `CLAUDE_CODE_HOST_SESSION_ID`, not the
+ * transcript's id — so the id Claude Code gives every shell it runs is recorded here. A process with
+ * none (a plain terminal, CI) records nothing, and its lines are never matched. Local, like `asks`.
+ */
+export const TRANSCRIPT_MEMORY = 20;
+const TRANSCRIPT_ID = /^[A-Za-z0-9-]{8,64}$/;
+
+/** The transcript ids the sidecar holds. A torn or older sidecar is `[]`. */
+export const metaTranscripts = (meta) => (Array.isArray(meta?.transcripts) ? meta.transcripts : [])
+  .filter((t) => typeof t === 'string' && TRANSCRIPT_ID.test(t));
+
+async function noteTranscript(env) {
+  const id = String(env.CLAUDE_CODE_SESSION_ID ?? '').trim();
+  if (!TRANSCRIPT_ID.test(id)) return;
+  try {
+    const meta = await readMeta(env);
+    const known = metaTranscripts(meta);
+    if (known.includes(id)) return;
+    await writeFile(metaPath(env), JSON.stringify({ ...meta, transcripts: [...known, id].slice(-TRANSCRIPT_MEMORY) }), 'utf8');
+  } catch { /* the attribution is lost, the line is not */ }
 }
 
 // ── what the last push did: the only trace a detached push leaves ─────────────────────────────
