@@ -1,5 +1,5 @@
 ---
-description: "Upgrade a deployed environment to the LATEST released modules + platform. Compare the env's vc-deploy-dev backend/packages.json against VirtoCommerce/vc-modules modules_v3.json (modules) and the latest vc-platform release (platform — it is NOT in modules_v3.json); print ONE diff table; move PR/alpha pins to the release that contains them and ASK only where no release exists yet; then ask once before opening ONE deploy PR. Read-only until the operator says yes; never merges — a human merges to deploy."
+description: "Upgrade a deployed environment to the LATEST released modules + platform and the latest GREEN dev alpha of the storefront theme. Compare the env's vc-deploy-dev backend/packages.json against VirtoCommerce/vc-modules modules_v3.json (modules) and the latest vc-platform release (platform — it is NOT in modules_v3.json), and theme/artifact.json against the newest vc-frontend dev alpha whose Theme CI run is green; print ONE diff table; move PR/alpha pins to the release that contains them and ASK only where no release exists yet; then ask once before opening ONE deploy PR. Read-only until the operator says yes; never merges — a human merges to deploy."
 argument-hint: "<env>"
 disable-model-invocation: true
 ---
@@ -16,7 +16,8 @@ disable-model-invocation: true
 
 What you get, in order:
 
-1. **A table** — platform + every module on the env against the latest release, one status per row.
+1. **A table** — platform + every module against the latest release, and the storefront theme against
+   the newest `dev` alpha whose CI run is fully green, one status per row.
    Nothing has been written at this point; you can stop here.
 2. **Questions, only where the answer is not obvious** — a module running a PR or alpha build that no
    release contains yet (typically a feature still in testing). You choose: keep the build, switch to the
@@ -26,7 +27,7 @@ What you get, in order:
    and merges it; the merge deploys. Give it a minute or two after the deploy Action goes green before
    checking versions on the env.
 
-Out of scope: the storefront theme, adding or removing modules, hotfix delivery (`/qa-hotfix-check`),
+Out of scope: adding or removing modules, hotfix delivery (`/qa-hotfix-check`),
 deploying a ticket's PR builds (`/qa-deploy-pr`).
 
 Requires `GIT_TOKEN` with read access to `VirtoCommerce/vc-deploy-dev` (write access to open the PR
@@ -40,7 +41,7 @@ Input: `$ARGUMENTS` = the **environment name** in `TEST_ENV` form (`vcst`, `vcpt
 Deploy plumbing — a **Mechanic** ([`authoring-standard.md`](../knowledge/agents/authoring-standard.md) §5.2):
 it states nothing about platform behaviour, so it carries no `kb` step.
 
-**Safety contract.** Steps 1–5 only READ. Step 7 is the only write, and only after the operator's yes in
+**Safety contract.** Steps 1–6 only READ. Step 7 is the only write, and only after the operator's yes in
 step 6. Never merge, never force-push, never touch a branch other than the named env's.
 
 **Tooling.** Talk to GitHub through its REST API from Node `fetch` with `GIT_TOKEN`, read from
@@ -73,6 +74,10 @@ Fetch the file at the branch (`Accept: application/vnd.github.raw`). Keep the **
   first `_` that is followed by a digit.
 - `Sources[]` entry `Name: "GithubReleases"` — release pins `{ "Id", "Version" }`.
 
+A **release** version can sit in `AzureBlob` too — modules whose repo is private (the deploy downloads
+anonymously, so a `GithubReleases` pin of them 404s). Such a pin stays in `AzureBlob`: its target is checked
+and moved there (§7), never into `GithubReleases`.
+
 One pin per Id per env. An Id pinned in both sources → `DUPLICATE` row, not bumped. Scope is only the
 modules already pinned; this command never adds or removes a module.
 
@@ -87,10 +92,35 @@ suffix. An entry with only alpha versions has no release target.
 **Platform — not in the feed.** `GET /repos/VirtoCommerce/vc-platform/releases/latest` (not draft, not
 prerelease) → `tag_name`.
 
+**Theme — the newest GREEN `dev` alpha of `themeRepo` (`config/module-repo-map.json`).** Theme alphas are not
+in the feed or in GitHub releases; they are blobs in `https://vc3prerelease.blob.core.windows.net/packages`.
+
+1. Version = `version` in the theme repo's `package.json` on its default branch (`dev`) → `X.Y.Z`.
+2. List blobs with `?restype=container&comp=list&prefix=vc-theme-b2b-vue-X.Y.Z-alpha.` (anonymous; the
+   listing is alphabetical and paged — always use this narrow prefix). Keep only `…-alpha.<N>.zip`: a
+   longer suffix is a feature-branch build. Sort by `N` **numerically**.
+3. Map each alpha to its CI run: walk `dev` commits from the head (`/commits?sha=dev`) and for each call
+   `/actions/runs?head_sha=<sha>`, keeping `theme-ci.yml` push runs on `dev`. Do NOT list runs with
+   `branch=dev&event=push` — that filter returned nothing newer than two weeks back (measured 2026-10-02). The blob's `Last-Modified` falls inside one run's `Publish to Blob` step window
+   (`started_at`–`completed_at`); the name carries no sha, so this window is the only link.
+4. Target = the highest `N` whose run has `conclusion: success`. A red run can still have published (its
+   failure came after the publish step) — such an alpha exists but is never the target. No green run among
+   the current version's alphas → the theme row is `NO_RELEASE`, nothing changes.
+
+Theme pin = `URL` in the branch's theme file (`DEPLOY_THEME_PATH`, else the script's default). Kinds: a
+`vc-theme-b2b-vue-X.Y.Z.zip` / `vc-frontend-X.Y.Z.zip` GitHub release asset; a plain alpha; a
+feature-branch alpha; a PR build `…-pr-<N>-<sha>…`. Statuses (same names as for modules):
+`EQUAL` = the target alpha; `BEHIND` = a release or older alpha → the target; `AHEAD` = a newer alpha than
+the target (it came from a red run) → keep; PR build → `GET /pulls/{N}` in the theme repo: merged and
+`/compare/{merge_sha}...{target alpha's head_sha}` is `ahead` or `identical` → `PRERELEASE→RELEASE` (→
+target), else `PRERELEASE?`; feature-branch alpha → `PRERELEASE?`. The target blob must answer `HEAD` 200
+anonymously, else `BLOCKED_ASSET`.
+
 ## 4. Classify every module and the platform
 
 Pin kinds: plain `X.Y.Z` = release; `X.Y.Z-pr-<N>-<sha>` = PR build; `X.Y.Z-alpha.<N>` = dev build (no
-commit sha in the name); any other suffix → `PRERELEASE?` with reason "unrecognised suffix". Platform: a
+commit sha in the name); `X.Y.Z-alpha.<N>-<branch>` = feature-branch build → `PRERELEASE?` ("feature
+branch `<branch>`"); any other suffix → `PRERELEASE?` with reason "unrecognised suffix". Platform: a
 `PlatformImageTag` that is not plain `X.Y.Z` or differs from `PlatformVersion` is a prerelease image → `PRERELEASE?`.
 
 | Status | Condition | Action |
@@ -106,7 +136,7 @@ commit sha in the name); any other suffix → `PRERELEASE?` with reason "unrecog
 
 ## 5. Does a prerelease pin have a release?
 
-Repo = the Id's entry in `config/module-repo-map.json`, else the feed's `ProjectUrl`.
+Repo = `modules[<Id>]` in `config/module-repo-map.json` (a bare repo name under `VirtoCommerce/`), else the feed's `ProjectUrl`.
 
 - **PR build** → `GET /repos/{repo}/pulls/{N}`. Not merged → `PRERELEASE?` ("PR open" / "closed
   unmerged"). Merged → `merge_commit_sha`. List the repo's releases (paginate; skip draft, prerelease and
@@ -115,9 +145,10 @@ Repo = the Id's entry in `config/module-repo-map.json`, else the feed's `Project
   None hits → check the latest release's commit subjects for `(#N)` (hotfix cherry-picks are made without
   `-x`, so the sha alone misses them). Still nothing → `PRERELEASE?` ("merged, not released yet").
 - **Alpha build** → no sha to compare. `X.Y.Z-alpha.N` is a dev build that precedes release `X.Y.Z`, so a
-  release ≥ `X.Y.Z` ⇒ `PRERELEASE→RELEASE` (note "by version"); otherwise `PRERELEASE?`.
-- **Group the `PRERELEASE?` rows by feature**: PRs whose titles share a tracker key (`VCST-1234`) are one
-  feature and get ONE question. Moving only part of a feature to releases breaks it.
+  release ≥ `X.Y.Z` ⇒ `PRERELEASE→RELEASE` (note "by version" — the last alpha of a version is built minutes before its release); otherwise `PRERELEASE?`.
+- **Group the `PRERELEASE?` rows by feature**: rows sharing a tracker key (`VCST-1234`) — from the PR title,
+  or from the branch name of a feature-branch build — are one feature and get ONE question. Include in the
+  group the theme row and any `NOT_IN_FEED` PR build with the same key, so the operator sees the whole feature. Moving only part of a feature to releases breaks it.
 - Where the latest release is LOWER than the pin's `X.Y.Z`, replacing the pin is a downgrade — say so in
   the question.
 
@@ -131,7 +162,8 @@ Run on the **proposed end state** (current pins + every proposed change):
   the env must be ≥ that version in the end state; else `DEP_CONFLICT`, not bumped.
 - **Coupled:** `VirtoCommerce.XCMS` and `VirtoCommerce.PageBuilderModule` move together or not at all.
 - **Downloadable, without a token** (the deploy fetches anonymously; one 404 rolls back the whole install):
-  `HEAD` each target module `PackageUrl` (follow redirects) → 200; the platform release carries
+  `HEAD` each target module `PackageUrl` (follow redirects) → 200 — for an `AzureBlob` release pin, `HEAD`
+  `<ServiceUri>/<Container>/<Id>_<target>.zip` instead; the platform release carries
   `VirtoCommerce.Platform.<v>.zip` → `HEAD` 200; the image exists — anonymous token from
   `https://ghcr.io/token?scope=repository:<PlatformImage path>:pull`, then `HEAD
   https://ghcr.io/v2/<path>/manifests/<v>` with OCI/Docker manifest `Accept` headers → 200. Any miss →
@@ -162,7 +194,9 @@ questions · N blocked`, the result of each check in one line, and:
 **Edit the raw text minimally** — keep line endings, indentation and odd whitespace exactly as found:
 
 - platform: change only the values of the `PlatformVersion` and `PlatformImageTag` lines.
-- `BEHIND`: change only the `Version` line inside that Id's `GithubReleases` block.
+- theme: in the theme file change only the `URL` value. Re-read it before writing too (step 1 below).
+- `BEHIND`: change only the `Version` line inside that Id's `GithubReleases` block — or, for an `AzureBlob`
+  release pin, only its `BlobName` (and `Version`, if the entry has one).
 - `PRERELEASE→RELEASE`: delete the Id's `{ … }` block from `AzureBlob` (if it was the last element, drop the
   now-trailing comma of the previous `}`), and insert `{ "Id": …, "Version": … },` blocks at the top of
   `GithubReleases.Modules`, indented like their siblings.
@@ -173,7 +207,7 @@ mismatch → STOP and show it.
 
 **Deliver** (write permission = `GET /repos/{repo}/collaborators/{login}/permission` is write/maintain/admin):
 
-1. Re-read the file at the branch head. Not byte-identical to the step-2 snapshot → STOP: someone changed
+1. Re-read each file you change at the branch head. Not byte-identical to the step-2 snapshot → STOP: someone changed
    the env; re-run the command.
 2. Create `refs/heads/env-upgrade-<branch>-<YYYYMMDD>` (taken → add `-2`, `-3`) at the branch head.
 3. `PUT /contents/<path>` with the file `sha`, author/committer = the operator's `git config user.name` /
@@ -183,7 +217,8 @@ mismatch → STOP and show it.
    why — PR link and the release that contains it), a *Kept on purpose* table (each `PRERELEASE?` the
    operator kept, `DEP_CONFLICT`, `BLOCKED_ASSET`, with reason), "the other N modules already match", the
    check results, and the merge note below. End with the session's PR attribution.
-5. Confirm `GET /pulls/{n}/files` shows only the manifest. Report the PR URL.
+5. Confirm `GET /pulls/{n}/files` shows only the manifest (and the theme file, if it changed). Write both
+   files on the same branch, one `PUT` each, in one PR. Report the PR URL.
 
 No write permission → the fork path or the web-edit URL of the `/qa-deploy-pr` delivery gate
 ([`../skills/qa-deploy-pr/SKILL.md`](../skills/qa-deploy-pr/SKILL.md) §Delivery gate).
@@ -195,6 +230,6 @@ deploy Action is green **and** the versions have actually changed.
 ## Never
 
 - Never downgrade, never add or remove a module, never call an alpha a release.
-- Never touch the storefront theme (`theme/artifact.json`) — backend modules and platform only.
+- Never pin a theme alpha from a red CI run, a feature-branch alpha (`-alpha.N-<branch>`) or a PR build as the target.
 - Never write before the step-6 yes; never merge; never edit another env's branch.
 - Never transcribe versions, module lists or env→branch mappings into this file — read them live each run.
