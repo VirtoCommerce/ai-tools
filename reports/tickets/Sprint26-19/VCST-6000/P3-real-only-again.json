@@ -1,0 +1,53 @@
+{
+  "case": "P3-real-only-again",
+  "request": {
+    "query": "mutation($command:InputAddItemType!){addItem(command:$command){id itemsCount validationErrors{errorCode errorMessage objectId} items{sku configurationItems{sectionId type files{name url size}}}}}",
+    "variables": {
+      "command": {
+        "storeId": "B2B-store",
+        "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+        "cartName": "v6000-p-1790249054073-P3-real-only-again",
+        "currencyCode": "USD",
+        "cultureName": "en-US",
+        "productId": "28d6bc0c-37d3-4ddd-8b86-3a459e82d77b",
+        "quantity": 1,
+        "configurationSections": [
+          {
+            "sectionId": "a3c3b040-91ad-43cb-904a-79af8bf448ab",
+            "type": "Product",
+            "option": {
+              "productId": "86610048-1001-4bcb-9b5d-44cc658c5999",
+              "quantity": 1
+            }
+          },
+          {
+            "sectionId": "656d7dea-7d68-4c11-98dc-1252b1440172",
+            "type": "File",
+            "fileUrls": [
+              "/api/files/5c86bb14df41471eb4daf8409a8a0f6b"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "httpStatus": 200,
+    "body": {
+      "data": {
+        "addItem": {
+          "id": "903a2c1b-b5b6-4ba3-be9c-b9f355c1b6ce",
+          "itemsCount": 0,
+          "validationErrors": [
+            {
+              "errorCode": "CONFIGURATION_SECTION_FILES_REQUIRED",
+              "errorMessage": "Configuration section requires to add at list one file",
+              "objectId": "656d7dea-7d68-4c11-98dc-1252b1440172"
+            }
+          ],
+          "items": []
+        }
+      }
+    }
+  }
+}

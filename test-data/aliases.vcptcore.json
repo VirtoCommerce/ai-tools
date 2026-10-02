@@ -549,5 +549,9 @@
     "seeded_at": "2026-09-22T11:54:44.917Z",
     "decays_at_utc": "2026-09-23T00:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com"
+  },
+  "SR_UNSERVED_ORG": {
+    "id": "c00b995b-fc31-430e-89b8-4a8802e9a843",
+    "platform_id": "c00b995b-fc31-430e-89b8-4a8802e9a843"
   }
 }

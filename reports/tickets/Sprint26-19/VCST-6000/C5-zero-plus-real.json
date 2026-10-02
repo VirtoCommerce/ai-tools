@@ -1,0 +1,119 @@
+{
+  "case": "C5-zero-plus-real",
+  "label": "REQUIRED File section, fresh 0-byte AND fresh real file",
+  "env": {
+    "back": "https://vcptcore-qa.govirto.com",
+    "store": "B2B-store",
+    "buyer": "test-john.mitchell-20260310@test-agent.com",
+    "module": "VirtoCommerce.XCart 3.1037.0-pr-144-a0ce"
+  },
+  "note": "Authorization header redacted; bearer token not captured.",
+  "uploads": [
+    {
+      "succeeded": true,
+      "errorCode": null,
+      "errorMessage": null,
+      "errorParameter": null,
+      "scope": "product-configuration",
+      "name": "zero-byte-fixture.txt",
+      "contentType": "text/plain",
+      "size": 0,
+      "url": "/api/files/748a6561e5b040c5bccf996cda0e562f",
+      "publicUrl": "/api/files/748a6561e5b040c5bccf996cda0e562f",
+      "ownerEntityId": null,
+      "ownerEntityType": null,
+      "id": "748a6561e5b040c5bccf996cda0e562f"
+    },
+    {
+      "succeeded": true,
+      "errorCode": null,
+      "errorMessage": null,
+      "errorParameter": null,
+      "scope": "product-configuration",
+      "name": "real-fixture.txt",
+      "contentType": "text/plain",
+      "size": 28,
+      "url": "/api/files/b09d71ae86ec4638aebce057280271e0",
+      "publicUrl": "/api/files/b09d71ae86ec4638aebce057280271e0",
+      "ownerEntityId": null,
+      "ownerEntityType": null,
+      "id": "b09d71ae86ec4638aebce057280271e0"
+    }
+  ],
+  "request": {
+    "endpoint": "POST /graphql",
+    "query": "mutation($command:InputAddItemType!){addItem(command:$command){id itemsCount validationErrors{errorCode errorMessage objectId objectType} items{sku quantity configurationItems{sectionId type customText files{name url size}}}}}",
+    "variables": {
+      "command": {
+        "storeId": "B2B-store",
+        "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+        "cartName": "v6000-1790249087986-C5-zero-plus-real",
+        "currencyCode": "USD",
+        "cultureName": "en-US",
+        "productId": "28d6bc0c-37d3-4ddd-8b86-3a459e82d77b",
+        "quantity": 1,
+        "configurationSections": [
+          {
+            "sectionId": "a3c3b040-91ad-43cb-904a-79af8bf448ab",
+            "type": "Product",
+            "option": {
+              "productId": "86610048-1001-4bcb-9b5d-44cc658c5999",
+              "quantity": 1
+            }
+          },
+          {
+            "sectionId": "656d7dea-7d68-4c11-98dc-1252b1440172",
+            "type": "File",
+            "fileUrls": [
+              "/api/files/748a6561e5b040c5bccf996cda0e562f",
+              "/api/files/b09d71ae86ec4638aebce057280271e0"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "httpStatus": 200,
+    "body": {
+      "data": {
+        "addItem": {
+          "id": "995896ab-c7e3-4acb-ad0c-c3fc7976194b",
+          "itemsCount": 1,
+          "validationErrors": [],
+          "items": [
+            {
+              "sku": "Configuration-AGENT-TEST-CFG-026-20260519",
+              "quantity": 1,
+              "configurationItems": [
+                {
+                  "sectionId": "a3c3b040-91ad-43cb-904a-79af8bf448ab",
+                  "type": "Product",
+                  "customText": null,
+                  "files": []
+                },
+                {
+                  "sectionId": "656d7dea-7d68-4c11-98dc-1252b1440172",
+                  "type": "File",
+                  "customText": null,
+                  "files": [
+                    {
+                      "name": "zero-byte-fixture.txt",
+                      "url": "/api/files/748a6561e5b040c5bccf996cda0e562f",
+                      "size": 0
+                    },
+                    {
+                      "name": "real-fixture.txt",
+                      "url": "/api/files/b09d71ae86ec4638aebce057280271e0",
+                      "size": 28
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+}

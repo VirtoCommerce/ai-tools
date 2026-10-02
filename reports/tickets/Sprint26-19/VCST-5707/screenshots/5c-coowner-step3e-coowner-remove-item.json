@@ -1,0 +1,62 @@
+{
+ "item": "step3e-coowner-remove-item",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-30T11:55:52.996Z",
+ "calls": [
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 267,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistItemType!){ removeWishlistItem(command:$c){ id items { id } } }",
+    "variables": {
+     "c": {
+      "listId": "60e2ba89-cc95-4268-a68c-567c5fcc4a71",
+      "lineItemId": "8ba22d82-0832-43be-8556-e53a6bebed45"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlistItem": {
+      "id": "60e2ba89-cc95-4268-a68c-567c5fcc4a71",
+      "items": []
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 189,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name description customerId customerName items { id quantity } sharingSetting { id scope isOwner access } } }",
+    "variables": {
+     "l": "60e2ba89-cc95-4268-a68c-567c5fcc4a71"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "60e2ba89-cc95-4268-a68c-567c5fcc4a71",
+      "name": "AGENT-TEST-5707-co2",
+      "description": "co-owner ui rename",
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "db6b4652-8dc8-4781-9c9e-5fd22b4c6ef4",
+       "scope": "Organization",
+       "isOwner": true,
+       "access": "Write"
+      }
+     }
+    }
+   }
+  }
+ ]
+}
