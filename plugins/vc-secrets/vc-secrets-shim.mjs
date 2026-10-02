@@ -18,7 +18,7 @@ import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-const SHIM_CONTRACT = 1;
+const SHIM_CONTRACT = 2;
 const PLUGIN_KEY = "vc-secrets@ai-tools";
 const REGISTRY_SCHEMA = 2;
 const LAUNCHER = "vc-secrets.mjs";

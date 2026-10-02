@@ -367,8 +367,10 @@ function validateAuthorized(label, authorized) {
 // oauth declaration is the same shape: the token is minted against whatever identity the developer signs in
 // as, which the repository does not own — while the tenantId and clientId it signs in against DO come from
 // the repository, so the authorization is keyed by that pair in the user file too. A project-declared
-// `local` secret needs nothing: its key is namespaced to the project (keyFor), so what you `set` cannot
-// be read by another project — the namespacing itself is what stands in for authorization. A sign-in is
+// `local` secret needs no AUTHORIZATION: its key is namespaced to the project (keyFor), so what you `set`
+// cannot be read by another project — the namespacing itself is what stands in for authorization. It does
+// need this checkout's trust when the consumer is a user-scope launchable (trustGateOf): the namespace is
+// the repository's projectId claim, and only the trust record, keyed by the root, pins it. A sign-in is
 // not namespaced that way: the token it mints is not confined to one project, so it cannot stand in for
 // a per-project grant the way a namespaced keystore entry can.
 // Every lookup below reads parsed JSON, except the registrations outer level, which the merge rebuilds
@@ -931,10 +933,18 @@ const DOCTOR_REMEDY = '; run "vc-secrets doctor" for the block to add';
 //
 // `local` is gated with `project`. The two differ by whether git tracks the file, and telling them apart
 // would mean running git inside the very repository that has not been trusted yet.
-// secrets/oauth/vaults declarations are not gated: they execute nothing. What guards them is the
+// secrets/oauth/vaults declarations are not gated as such: they execute nothing. What guards them is the
 // authorization a CONSUMER needs to receive one (crossingProblem) -- the `vaults` / `registrations` /
 // `authorized` block in the user file -- and `doctor` reads a repository's Key Vault secret only for a
 // consumer that has passed both this gate and that authorization.
+//
+// One exception is gated on top of that authorization: a user-scope launchable, which is the person's own
+// and so needs no trust of its own, that reads a repository-declared `local` secret or oauth entry. Those
+// keystore entries are keyed by the repository's projectId (keyFor), and a repository can claim any id --
+// including another project's, whose entries the launch would then read, and for an oauth entry exchange
+// and rewrite. The trust record is keyed by the repository ROOT, which it cannot claim, and pins the id,
+// so the launch requires a record for this root whose projectId is the one in play. The `local`-backend
+// exemption in authorizationFor is unaffected: that is about authorization, this is about the checkout.
 
 const TRUST_FILE_NAME = "trust.json";
 const TRUST_SCHEMA_VERSION = 1;
@@ -1090,13 +1100,87 @@ function trustDifferences(trusted, actual) {
     return diffs;
 }
 
-// Every launchable whose winning entry a repository declared -- the ones the gate applies to.
+// Whether a declaration stores its value in the keystore namespace a repository chose: a `local` secret or
+// an oauth entry whose winning declaration is not the person's own. `kind` is the reference kind ("secret"
+// or "oauth"). The one definition behind every question about that namespace -- who reads it
+// (namespaceReads), what it holds (namespaceDeclarations), and the verbs that write or remove an entry.
+function isNamespaceDecl(kind, decl) {
+    return decl !== undefined && decl.home !== USER_SCOPE && (kind === "oauth" || decl.backend === "local");
+}
+
+// What a user-scope launchable reads out of the namespace a repository chose: every `secret:` reference
+// whose winning declaration is a repository's `local` one, and every `oauth:` reference whose entry is a
+// repository's. Both are keyed by `cfg.projectId` (keyFor), and that id is the repository's own claim --
+// nothing stops it naming another project's. A declaration in the LOCAL file counts like a project one:
+// the launcher cannot tell a tracked file from an untracked one without running git in the very
+// repository that is not trusted yet. A Key Vault secret is not here: it does not touch the keystore, and
+// the `vaults` grant keyed by vault and secret name already decides it.
+function namespaceReads(cfg, launchable) {
+    const found = [];
+    const seen = new Set();
+    for (const value of Object.values(launchable?.env ?? {})) {
+        let ref = null;
+        try {
+            ref = parseReference(value);
+        } catch { /* a malformed reference is reported where it is validated */ }
+        if (ref === null) {
+            continue;
+        }
+        const decl = ref.kind === "oauth" ? own(cfg.oauth, ref.name) : own(cfg.secrets, ref.name);
+        if (isNamespaceDecl(ref.kind, decl) && !seen.has(`${ref.kind}:${ref.name}`)) {
+            seen.add(`${ref.kind}:${ref.name}`);
+            found.push({ kind: ref.kind, name: ref.name });
+        }
+    }
+
+    return found;
+}
+
+// Everything the repository declares into that namespace, whether or not a launchable reads it: the
+// entries `set`, `login` and `logout` write or remove and `doctor` would read. A repository that declares
+// any is recorded by `trust` for its projectId, because the verbs that store an entry need that record
+// (namespaceTrustProblem) and nothing else would ever ask the person for it.
+function namespaceDeclarations(cfg) {
+    const found = [];
+    for (const [name, decl] of Object.entries(cfg.secrets ?? {})) {
+        if (isNamespaceDecl("secret", decl)) {
+            found.push({ kind: "secret", name });
+        }
+    }
+    for (const [name, decl] of Object.entries(cfg.oauth ?? {})) {
+        if (isNamespaceDecl("oauth", decl)) {
+            found.push({ kind: "oauth", name });
+        }
+    }
+
+    return found;
+}
+
+// The ONE predicate for whether a launch needs this checkout's trust, and why; null when it does not.
+// Tagged, because the two reasons are recorded and shown differently:
+//   repository -- the winning entry is a repository's: it decides what runs, so its shape is recorded.
+//   namespace  -- the entry is the person's own, but it reads a keystore namespace the repository chose
+//                 (namespaceReads). What it runs is not in question; which project's secrets it is handed
+//                 is, and that rests on the repository's projectId. Trust is what pins that id, and the
+//                 record is keyed by the repository ROOT, which a repository cannot claim.
+// cmdLaunch, trustAssessment, trustNotes and cmdTrust all ask this, so they cannot disagree on what is gated.
+function trustGateOf(cfg, launchable) {
+    if (launchable.home !== USER_SCOPE) {
+        return { via: "repository" };
+    }
+    const reads = namespaceReads(cfg, launchable);
+
+    return reads.length === 0 ? null : { via: "namespace", reads };
+}
+
+// Every launchable the gate applies to, each carrying its trustGateOf tag.
 function gatedLaunchables(cfg) {
     const found = [];
     for (const kind of LAUNCHABLE_KINDS) {
         for (const [name, launchable] of Object.entries(cfg[kind] ?? {})) {
-            if (launchable.home !== USER_SCOPE) {
-                found.push({ kind, name, launchable });
+            const gate = trustGateOf(cfg, launchable);
+            if (gate !== null) {
+                found.push({ kind, name, launchable, ...gate });
             }
         }
     }
@@ -1113,32 +1197,71 @@ function shadowsUserScope(cfg, kind, name) {
     return (cfg.collisions ?? []).some((c) => c.kind === singular && c.name === name && c.from === USER_SCOPE);
 }
 
+// The projectId half of a record, shared by both kinds of gate: it decides which project's namespace a
+// project-scope `secret:<name>` of a trusted entry resolves in (a user-scope one resolves under `user`,
+// whatever the id): a change of it alone would point a trusted server at another project's secrets.
+// A record without the field differs from every config, null included. An absent field is said to be
+// absent: rendered as null it would read as a recorded "no projectId" and produce "projectId is null,
+// trusted null" for a record that predates the field.
+function projectIdDifference(repository, cfg) {
+    if (repository.projectId === cfg.projectId) {
+        return null;
+    }
+    const trustedId = repository.projectId === undefined ? "(not recorded)" : JSON.stringify(repository.projectId);
+
+    return `projectId is ${JSON.stringify(cfg.projectId ?? null)}, trusted ${trustedId}`;
+}
+
+// Whether this checkout may use the keystore namespace its projectId names: a trust record for THIS root
+// whose projectId is the one in play. The id is the repository's own claim -- another project's included --
+// and the record is keyed by the root, which a repository cannot claim, so the record is what pins it.
+// `reads` is carried into the problem to name what put the namespace in play: the references a user-scope
+// launchable reads (trustProblem), or the one entry a verb stores or removes (requireNamespaceTrust).
+// Null when trusted. Pure, as trustProblem is: the state is handed in.
+function namespaceTrustProblem(cfg, state, reads) {
+    const repository = own(state.repositories, cfg.projectRoot);
+    if (repository === undefined) {
+        return { reason: "untrusted", reads };
+    }
+    const difference = projectIdDifference(repository, cfg);
+
+    return difference === null ? null : { reason: "changed", differences: [difference], reads };
+}
+
 // The ONE predicate behind the launch gate, `doctor` and `emit-config`. Pure: the state is handed in,
 // so a caller reads the file only once it knows a gated launchable exists.
 //
 // `shadowsUser` is reported because it is the case a person is least able to see: the approved name is
 // theirs, the file that now decides what it runs is not.
+//
+// A user-scope launchable that reads a repository's namespace (trustGateOf) is held to the record's
+// projectId alone: there is no shape to compare, since the person wrote the entry. The problem carries
+// the `reads` that put it under the gate, which is what tells the refusal wording apart from a
+// repository launchable's.
 function trustProblem(cfg, kind, name, state) {
     const launchable = own(cfg[kind], name);
-    if (launchable === undefined || launchable.home === USER_SCOPE) {
+    if (launchable === undefined) {
         return null;
     }
-    const shadowsUser = shadowsUserScope(cfg, kind, name);
+    const gate = trustGateOf(cfg, launchable);
+    if (gate === null) {
+        return null;
+    }
+    if (gate.via === "namespace") {
+        const problem = namespaceTrustProblem(cfg, state, gate.reads);
+
+        return problem === null ? null : { ...problem, home: launchable.home, shadowsUser: false };
+    }
     const repository = own(state.repositories, cfg.projectRoot);
+    const shadowsUser = shadowsUserScope(cfg, kind, name);
     const recorded = own(own(repository, kind), name);
     if (recorded === undefined) {
         return { reason: "untrusted", home: launchable.home, shadowsUser };
     }
     const differences = trustDifferences(recorded, launchShape(launchable));
-    // The projectId is not part of any launchable's shape, but it decides which project's namespace a
-    // project-scope `secret:<name>` of a trusted entry resolves in (a user-scope one resolves under `user`,
-    // whatever the id): a change of it alone would point a trusted server at another project's secrets.
-    // A record without the field differs from every config, null included.
-    if (repository.projectId !== cfg.projectId) {
-        // An absent field is said to be absent: rendered as null it would read as a recorded "no projectId"
-        // and produce "projectId is null, trusted null" for a record that predates the field.
-        const trustedId = repository.projectId === undefined ? "(not recorded)" : JSON.stringify(repository.projectId);
-        differences.unshift(`projectId is ${JSON.stringify(cfg.projectId ?? null)}, trusted ${trustedId}`);
+    const difference = projectIdDifference(repository, cfg);
+    if (difference !== null) {
+        differences.unshift(difference);
     }
 
     return differences.length === 0 ? null : { reason: "changed", differences, home: launchable.home, shadowsUser };
@@ -1147,6 +1270,11 @@ function trustProblem(cfg, kind, name, state) {
 // A path is context, not approved content, so it stays readable -- but it is a directory name somebody
 // chose, and one carrying ESC or CR would rewrite the line it sits on. Escaped without truncating.
 const pathForTerminal = (value) => forTerminal(value, Infinity);
+
+// `secret "pat", oauth "ado"` -- the references a user-scope launchable reads from a repository's namespace.
+function namespaceReadsText(reads) {
+    return reads.map((r) => `${r.kind} "${r.name}"`).join(", ");
+}
 
 // Carries the root because the verb acts on the CURRENT directory's repository, and this text is read
 // out of a client's log where the current directory is not the reader's.
@@ -1158,6 +1286,15 @@ function trustRemedy(problem, cfg) {
 // its last line.
 function trustRefusal(kind, name, problem, cfg) {
     const label = `${kind === "tasks" ? "task" : "server"} "${name}"`;
+    if (problem.reads !== undefined) {
+        // A user-scope launchable: it is the person's own, so nothing is said about a declaring file --
+        // what the repository decides is the namespace its secrets are read from.
+        return `${label} (user) reads ${namespaceReadsText(problem.reads)} from namespace ${JSON.stringify(cfg.projectId)}, `
+            + (problem.reason === "changed"
+                ? `and the projectId changed since you trusted this checkout: ${problem.differences.join("; ")}`
+                : "which this repository declares, and this checkout is not trusted")
+            + ` -- ${trustRemedy(problem, cfg)}`;
+    }
     if (problem.reason === "changed") {
         return `${label} changed since you trusted it: ${problem.differences.join("; ")} -- ${trustRemedy(problem, cfg)}`;
     }
@@ -1165,6 +1302,36 @@ function trustRefusal(kind, name, problem, cfg) {
     const shadow = problem.shadowsUser ? ` (it shadows your user-scope "${name}")` : "";
 
     return `${label} is declared by ${file}${shadow} and is not trusted -- ${trustRemedy(problem, cfg)}`;
+}
+
+// The refusal of a verb that stores or removes an entry in a repository's namespace (`set`, `login`,
+// `logout`), from namespaceTrustProblem's answer for that one entry. One line, for the reasons
+// trustRefusal's is, and it names the trust remedy only: the probe reads a "vc-secrets login" in a
+// launcher refusal as a sign-in problem, and this is not one.
+function namespaceStoreRefusal(problem, cfg) {
+    return `${namespaceReadsText(problem.reads)} is stored in namespace ${JSON.stringify(cfg.projectId)}, `
+        + (problem.reason === "changed"
+            ? `and the projectId changed since you trusted this checkout: ${problem.differences.join("; ")}`
+            : "which this repository declares, and this checkout is not trusted")
+        + ` -- ${trustRemedy(problem, cfg)}`;
+}
+
+// The gate `set`, `login` and `logout` stand behind for a target the repository declared: before any
+// keystore access, sign-in or prompt for a value. The key they write or delete is
+// `vc-secrets:<projectId>:<name>`, and a repository chooses that projectId -- Y can claim X's, and the
+// person's `set` would then overwrite X's secret, their `login` replace X's sign-in, their `logout` delete
+// it. The same predicate as the launch's (namespaceTrustProblem). A person's own declaration is stored
+// under `user`, whatever any repository claims, so it never depends on the trust file -- an unreadable one
+// cannot stop the person managing what they wrote. `trustState`: the seam for a test; the file otherwise.
+function requireNamespaceTrust(cfg, kind, name, trustState = null) {
+    const decl = kind === "oauth" ? own(cfg.oauth, name) : own(cfg.secrets, name);
+    if (!isNamespaceDecl(kind, decl)) {
+        return;
+    }
+    const problem = namespaceTrustProblem(cfg, trustState ?? readTrustState(process.env), [{ kind, name }]);
+    if (problem !== null) {
+        throw new VcSecretsError(namespaceStoreRefusal(problem, cfg));
+    }
 }
 
 function emptyTrustState() {
@@ -1285,6 +1452,16 @@ function trustNotes(cfg, { problems, unreadable }) {
         if (kind !== "servers" || !problem) {
             continue;
         }
+        if (problem.reads !== undefined) {
+            // The references and the namespace are named in both: the note is read on its own, away from the
+            // refusal, and "a namespace" does not say which one is in question. A changed id carries both
+            // ids, as the refusal does.
+            const from = `reads ${namespaceReadsText(problem.reads)} from namespace ${JSON.stringify(cfg.projectId)}`;
+            notes.push(problem.reason === "changed"
+                ? `${name}: ${from}, and the projectId changed since you trusted this checkout: ${problem.differences.join("; ")} -- run "vc-secrets trust" again before starting it`
+                : `${name}: ${from}, which this repository declares and is not trusted yet -- run "vc-secrets trust" before starting it`);
+            continue;
+        }
         notes.push(problem.reason === "changed"
             ? `${name}: changed since you trusted it -- run "vc-secrets trust" again before starting it`
             : `${name}: declared by this repository and not trusted yet -- run "vc-secrets trust" before starting it`);
@@ -1307,10 +1484,13 @@ function requireLaunchable(kind, name, cfg) {
 // difference is who starts them — the MCP client, or a person running `task`.
 //
 // `prefetch`, when given, is called once, after every reference has passed validation and before the
-// first read, with every secret reference's name and declaration; it returns a Map of what it already
-// read -- a name to its value, or to the error reading it produced -- and the loop takes those instead
-// of calling resolveSecret. An error is thrown where that name's entry is reached, so a launch fails on
-// the same entry, with the same message, as it does without a prefetch. cmdLaunch passes one on Windows.
+// first read, with every secret reference's name and declaration -- and, as a second argument, the oauth
+// entries the launchable references, which are validated and authorized by then; it returns a Map of what
+// it already read -- a name to its value, or to the error reading it produced -- and the loop takes those
+// instead of calling resolveSecret. An error is thrown where that name's entry is reached, so a launch
+// fails on the same entry, with the same message, as it does without a prefetch. The oauth entries are
+// for the prefetch to read ahead and keep; nothing about them comes back through the Map. cmdLaunch passes
+// one on Windows.
 async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers", { prefetch } = {}) {
     const server = requireLaunchable(kind, name, cfg);
     // validate every reference BEFORE contacting any backend
@@ -1356,8 +1536,31 @@ async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers", { p
     const rawCache = new Map();
     if (prefetch !== undefined) {
         const refs = entries.filter((x) => x.literal === undefined).map((x) => ({ name: x.ref.name, decl: x.decl }));
-        for (const [secretName, outcome] of await prefetch(refs)) {
+        for (const [secretName, outcome] of await prefetch(refs, oauthEntries)) {
             rawCache.set(secretName, outcome);
+        }
+    }
+    // Key Vault reads are independent round trips to the network, so they all start here, together, rather
+    // than one per entry as the loop below reaches it. Here and not earlier: every reference has been
+    // authorized (the loop above refuses before any read), and prefetch has resolved -- on win32 the `az`
+    // processes must start inside the job it has just bound. One read per distinct name; local-backend
+    // names keep the sequential path below, because they are one keystore and one prompt at a time.
+    //
+    // Each read is settled into a tagged result the moment it is created: a rejection nobody has awaited
+    // yet would be unhandled, and the tag is a wrapper rather than the Error itself so that a rejection
+    // that is not an Error -- a string, say -- can never be mistaken for the value it replaced. The loop
+    // consumes them in entry order and throws the first entry's error, which is the error a sequential
+    // run reports. The cost: a launch that fails may have performed every authorized Key Vault read.
+    const keyvaultReads = new Map();
+    for (const { ref, decl, literal } of entries) {
+        if (literal === undefined && decl.backend === "keyvault" && !rawCache.has(ref.name) && !keyvaultReads.has(ref.name)) {
+            keyvaultReads.set(ref.name, (async () => {
+                try {
+                    return { v: await resolveSecret(ref.name, decl) };
+                } catch (e) {
+                    return { e };
+                }
+            })());
         }
     }
     const jsonCache = new Map();
@@ -1369,7 +1572,15 @@ async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers", { p
         }
         const { ref, decl } = entry;
         if (!rawCache.has(ref.name)) {
-            rawCache.set(ref.name, await resolveSecret(ref.name, decl));
+            if (keyvaultReads.has(ref.name)) {
+                const settled = await keyvaultReads.get(ref.name);
+                if ("e" in settled) {
+                    throw settled.e;
+                }
+                rawCache.set(ref.name, settled.v);
+            } else {
+                rawCache.set(ref.name, await resolveSecret(ref.name, decl));
+            }
         }
         const raw = rawCache.get(ref.name);
         if (raw instanceof Error) {
@@ -1902,6 +2113,17 @@ async function credReadManyIo({ keys, pid, env = process.env, redactValues = [] 
     return result;
 }
 
+// What a single PS_CRED_READ would have thrown for a key the batched call reported as `{ err: code }`: 1168
+// (ERROR_NOT_FOUND) is its exit 3 with nothing on stderr, any other code its exit 1 naming it -- and runTool's
+// message for a non-zero exit, which mapResolveError rewrites for exit 3 and passes through for exit 1. One
+// copy because the secret reads and the oauth reads must both stay exactly what the single read says.
+function batchedReadError(cmd, code) {
+    const exit = code === 1168 ? 3 : 1;
+    const stderr = exit === 3 ? "" : `CredRead failed win32err=${code}`;
+
+    return Object.assign(new VcSecretsError(`${cmd} exited ${exit}: ${stderr}`), { toolExitCode: exit });
+}
+
 function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
     assertKeyShape(key);
     if (backend === "wcm") {
@@ -2294,9 +2516,12 @@ function buildSpawnInvocation(resolved, args) {
     //    resolved secrets live; a CR or LF ends the command line there and starts another. None of the
     //    three can be quoted away, so an argument holding one is refused here and not at load: a
     //    URL-encoded argument is legitimate on every direct path.
-    //  - The program's own parser (MSVCRT) reads a backslash run before a quote as escaping it, so a
-    //    trailing `\` would swallow the closing quote and run the rest of the line into the argument.
-    //    That run is doubled; `"C:\dir\"` then reaches the program as `C:\dir\`.
+    //  - A trailing `\` is refused too. The program's own parser (MSVCRT) reads a backslash run before a
+    //    quote as escaping it, so left alone it would swallow the closing quote and run the rest of the
+    //    line into the argument. Doubling the run repairs that for a wrapper that forwards to an
+    //    MSVCRT-parsed program (npx.cmd, az.cmd) but corrupts it for a batch file that reads the argument
+    //    itself (%~1), and the same argv cannot be told apart from here. A refusal is the one answer that
+    //    keeps what runs identical to what the trust review showed, for every .cmd/.bat.
     // The position is named, never the value: an argument can carry a token.
     //
     // The command sits on the same line inside its own quotes, so cmd.exe expands a `%` in it from the same
@@ -2311,7 +2536,11 @@ function buildSpawnInvocation(resolved, args) {
             throw new VcSecretsError(`argument ${i + 1} contains %, CR or LF, which cmd.exe interprets inside the quotes of a .cmd/.bat shim -- it cannot be passed through one on Windows`);
         }
 
-        return `"${a.replace(/\\+$/, (run) => run + run)}"`;
+        if (a.endsWith("\\")) {
+            throw new VcSecretsError(`argument ${i + 1} ends with a backslash, which a .cmd/.bat shim cannot pass on unchanged -- drop the trailing backslash`);
+        }
+
+        return `"${a}"`;
     });
     const line = [`"${resolved.cmd}"`, ...quoted].join(" ");
 
@@ -2581,8 +2810,16 @@ async function clearEntryPair(remove, keys) {
 // on — see the comment beside its own test), and it returns FULL three-segment keystore keys
 // ("vc-secrets:<scope>:<name>"), never a bare entry name. Every read/write below is built from one
 // of those full keys.
+//
+// `seed`: raw outcomes of the launch's one batched Credential Manager call (readWcmBatch's `outcomes`), by
+// full key -- or null. It exists to save the first readCache of a launch its PowerShell round trips and
+// answers nothing else: readCache takes it and drops it before its first read, so the re-read under the
+// lock, every poll while another launcher holds it and every renewal tick read the store itself. That is
+// what the refresh token's safety rests on -- the exchange spends the token it read under the lock, never
+// one batched before the lock was asked for, which a neighbour may have rotated since. An outcome is
+// interpreted only when consumed, by the same branches as a read that ran then.
 function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(), env = process.env,
-    run = runTool, write = writeSecretValue, remove = null } = {}) {
+    run = runTool, write = writeSecretValue, remove = null, seed = null } = {}) {
     const keys = oauthEntryKeys(entryName, decl, cfg);
     // `= null` in the parameter list and resolved here, the way cmdLogin and cmdLogout resolve their
     // own locks: the default needs `backend`, `env` and `run`, and reading sibling parameters out of
@@ -2592,7 +2829,21 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
     // that from a run that looks entirely green. That has happened once already, to cmdLogin's
     // equivalent seam; the note is on loginDeps in the test file.
     const removeEntry = remove ?? deleteEntryIo(backend, env, { run });
-    const readEntry = async (key) => {
+    // The raw read: what the backend printed for `key`, or what it threw. A batched outcome stands in for the
+    // run when there is one, and throws the very error that run would have -- so everything past this point,
+    // absent-versus-failure included, is one code path for both.
+    const fetchRaw = (key, batched) => {
+        const outcome = backend === "wcm" ? batched?.get(key) : undefined;
+        if (outcome === undefined) {
+            return run(buildLocalRead(backend, key, env));
+        }
+        if (typeof outcome.ok === "string") {
+            return outcome.ok;
+        }
+
+        throw batchedReadError(psCommand(env), outcome.err);
+    };
+    const readEntry = async (key, batched = null) => {
         // keyToPath (not the source's flat `${name}.gpg`) — this package's gpg layout already
         // namespaces entries by scope, so the file this key resolves to is the one keyToPath
         // computes everywhere else, not a hand-built path that skips the scope directory.
@@ -2602,7 +2853,7 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
         const keyName = nameFromKey(key);
         let raw;
         try {
-            raw = await run(buildLocalRead(backend, key, env));
+            raw = await fetchRaw(key, batched);
         } catch (e) {
             if (isAbsentEntry(backend, e)) {
                 return undefined;   // not stored: "sign in", not a tool failure
@@ -2637,14 +2888,17 @@ function oauthLaunchDeps(entryName, decl, cfg, { backend = detectLocalBackend(),
 
     return {
         readCache: async () => {
-            const refresh = await readEntry(keys.refresh);
+            // Taken and dropped before anything can throw: only this call may see the batch.
+            const s = seed;
+            seed = null;
+            const refresh = await readEntry(keys.refresh, s);
             if (refresh?.refreshToken === undefined) {
                 // Short-circuited before the second read: deciding "no token can be obtained
                 // without interaction" is the path with a latency budget on it, and on Credential
                 // Manager each read is a PowerShell P/Invoke worth one to three seconds.
                 return { state: "absent" };
             }
-            const status = cache.cacheStatus({ refresh, access: await readEntry(keys.access) },
+            const status = cache.cacheStatus({ refresh, access: await readEntry(keys.access, s) },
                 decl, Date.now(), os.uptime());
 
             // The refresh token rides back with the verdict: cacheStatus deliberately returns a
@@ -3420,6 +3674,7 @@ async function cmdLogin(serverName, cfg, {
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
     waitMs = LOGIN_WAIT_MS,
     oversize = null,
+    trustState = null,
 } = {}) {
     const decl = (cfg.oauth ?? {})[serverName];
     if (!decl) {
@@ -3451,6 +3706,12 @@ async function cmdLogin(serverName, cfg, {
                 + ` registration it names must be acknowledged at ${source.where} in`
                 + ` ${CONFIG_HINT_PATH}${DOCTOR_REMEDY}`);
         }
+        // The acknowledgement above says the person accepts this app registration; it says nothing about
+        // WHICH project's sign-in this entry replaces. The keys are namespaced by the repository's own
+        // projectId, so a repository claiming another project's id would have this login overwrite that
+        // project's tokens. Trust is what pins the id. Still before the capability check, the browser and
+        // the listener.
+        requireNamespaceTrust(cfg, "oauth", serverName, trustState);
     }
     if (!LOCAL_BACKENDS.includes(backend)) {
         // Checked before anything is bound or opened. The alternative is to discover it at the
@@ -3651,19 +3912,24 @@ async function cmdLogin(serverName, cfg, {
 
 // Ported from the source's cmdLogout (mcpw.js). Unlike cmdLogin, this verb carries NO
 // authorization/policy gate: minting a credential is the privileged act, removing one is not, and
-// refusing a removal would leave the refresh token on disk — the one outcome logout exists to
-// prevent.
+// refusing a removal on policy would leave the refresh token on disk — the one outcome logout exists to
+// prevent. The one refusal it does make is the namespace's: a repository's entry lives under a projectId
+// the repository chose, which may be another project's, and removing that sign-in is not removing the
+// person's own. The remedy is the trust a person gives the checkout, after which the removal runs.
 async function cmdLogout(serverName, cfg, { deleteEntry = null,
     backend = detectLocalBackend(),
     acquireLock = null, now = Date.now,
     sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
-    log = (line) => process.stderr.write(line) } = {}) {
+    log = (line) => process.stderr.write(line),
+    trustState = null } = {}) {
     const decl = (cfg.oauth ?? {})[serverName];
     if (!decl) {
         // Before any deletion: a typo must not remove a different server's tokens, and there is
         // no way to tell afterwards which name was meant.
         throw new VcSecretsError(`unknown oauth entry "${serverName}" -- not declared in ${CONFIG_NAME}`);
     }
+    // Before the lock is taken and before any deletion.
+    requireNamespaceTrust(cfg, "oauth", serverName, trustState);
     // Resolved here rather than defaulted in the parameter list, for the same reason cmdLogin
     // resolves its own lock here: tokenLockFor needs `decl` and `cfg` (this package's keystore
     // keys are scoped per project), neither of which exists until the guard above has run. The
@@ -3776,7 +4042,14 @@ function makeSecretResolver(cfg, env = process.env) {
     //
     // Each value joins resolvedValues here, before this returns: the later reads in the same launch --
     // a Key Vault secret, an oauth exchange -- print their tool's stderr through that list.
-    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo }) => {
+    //
+    // `extraKeys`: further full keystore keys for the same call -- the launch's oauth entries. Their
+    // outcomes come back apart, in `outcomes`, a Map from the full key to the raw `{ ok }` / `{ err }` the
+    // script reported, and are neither decoded, nor turned into an error, nor added to resolvedValues, nor
+    // keyed by a secret's name: what an oauth entry's outcome means is decided where it is consumed
+    // (oauthLaunchDeps), and a secret that happens to share a name with an entry must not receive it. A key
+    // the script did not report is simply absent from the Map.
+    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo, extraKeys = [] }) => {
         const wanted = new Map();
         const localRefs = refs.filter(({ decl }) => decl.backend !== "keyvault");
         // The local backend is consulted only when a reference needs it, as the resolver above does: a
@@ -3801,13 +4074,14 @@ function makeSecretResolver(cfg, env = process.env) {
         }
         let result;
         try {
-            result = await run({ keys: [...new Set(wanted.values())], pid, env, redactValues: resolvedValues });
+            result = await run({ keys: [...new Set([...wanted.values(), ...extraKeys])], pid, env,
+                redactValues: resolvedValues });
         } catch (e) {
             if (!(e instanceof VcSecretsError)) {
                 throw e;
             }
 
-            return { seeded: new Map(), job: e.message };
+            return { seeded: new Map(), job: e.message, outcomes: new Map() };
         }
         const cmd = psCommand(env);
         const seeded = new Map();
@@ -3822,20 +4096,21 @@ function makeSecretResolver(cfg, env = process.env) {
                 resolvedValues.push(value);
                 seeded.set(name, value);
             } else if (Number.isInteger(outcome?.err)) {
-                // PS_CRED_READ's two exits: 1168 is exit 3 with nothing on stderr, any other code exit 1
-                // naming it -- and runTool's message for a non-zero exit, which mapResolveError then
-                // rewrites for exit 3 and passes through for exit 1.
-                const exit = outcome.err === 1168 ? 3 : 1;
-                const stderr = exit === 3 ? "" : `CredRead failed win32err=${outcome.err}`;
-                const raw = Object.assign(new VcSecretsError(`${cmd} exited ${exit}: ${stderr}`), { toolExitCode: exit });
-                seeded.set(name, mapResolveError("wcm", name, raw));
+                seeded.set(name, mapResolveError("wcm", name, batchedReadError(cmd, outcome.err)));
             }
             // Anything else -- a key the script did not report -- is left unseeded, and its read goes
             // through the resolver above.
         }
+        const outcomes = new Map();
+        for (const key of extraKeys) {
+            const outcome = Object.hasOwn(result.creds, key) ? result.creds[key] : null;
+            if (typeof outcome?.ok === "string" || Number.isInteger(outcome?.err)) {
+                outcomes.set(key, outcome);
+            }
+        }
         const job = result.job === "ok" || Number.isInteger(result.job) ? result.job : "the bind reported no result";
 
-        return { seeded, job };
+        return { seeded, job, outcomes };
     };
 
     return resolver;
@@ -3892,7 +4167,7 @@ function promptHidden(question) {
     });
 }
 
-async function cmdSet(name, cfg) {
+async function cmdSet(name, cfg, { trustState = null } = {}) {
     const decl = cfg.secrets[name];
     if (!decl) {
         throw new VcSecretsError(`unknown secret "${name}" -- declare it in ${CONFIG_NAME} first`);
@@ -3900,6 +4175,9 @@ async function cmdSet(name, cfg) {
     if (decl.backend !== "local") {
         throw new VcSecretsError(`secret "${name}" is backend "${decl.backend}" -- set it in its own store, not via vc-secrets`);
     }
+    // Before the backend is consulted and before the value is asked for: a person must not type a secret
+    // for a checkout that has not earned the namespace it would be stored in.
+    requireNamespaceTrust(cfg, "secret", name, trustState);
     const key = keyFor(name, decl, cfg);
     const backend = detectLocalBackend();
     const spec = buildLocalWrite(backend, key, process.env, { tmp: backend === "gpg" });
@@ -3922,10 +4200,14 @@ async function cmdSet(name, cfg) {
 // before a migration NO secret exists under a new key — so looking only there left the agent cold,
 // and migrate then failed on the very run it was supposed to enable. One decrypt warms the agent for
 // all of them; the first file that exists is enough.
-function unlockTargets(cfg, exists = keystoreFilePresent) {
+//
+// `includeNamespace` false leaves out what a repository declares into its own namespace
+// (isNamespaceDecl): an existence check and a test decrypt of `vc-secrets:<projectId>:<name>` tells a
+// checkout that is not trusted for that id -- possibly another project's -- which of its entries exist.
+function unlockTargets(cfg, exists = keystoreFilePresent, includeNamespace = true) {
     const files = [];
     for (const [name, decl] of Object.entries(cfg.secrets)) {
-        if (decl.backend !== "local") {
+        if (decl.backend !== "local" || (!includeNamespace && isNamespaceDecl("secret", decl))) {
             continue;
         }
         const current = keyToPath(keyFor(name, decl, cfg));
@@ -3937,6 +4219,9 @@ function unlockTargets(cfg, exists = keystoreFilePresent) {
         }
     }
     for (const [name, decl] of Object.entries(cfg.oauth ?? {})) {
+        if (!includeNamespace && isNamespaceDecl("oauth", decl)) {
+            continue;
+        }
         for (const key of Object.values(oauthEntryKeys(name, decl, cfg))) {
             const entryName = nameFromKey(key);
             const file = keyToPath(key);
@@ -3950,7 +4235,8 @@ function unlockTargets(cfg, exists = keystoreFilePresent) {
 }
 
 async function cmdUnlock(cfg, opts = {}) {
-    const { exists, run = runTool, write = (s) => process.stderr.write(s) } = opts;   // exists: unlockTargets' default
+    // exists: unlockTargets' default. trustState: the seam for a test; the file otherwise.
+    const { exists, run = runTool, write = (s) => process.stderr.write(s), trustState = null } = opts;
     if (detectLocalBackend() !== "gpg") {
         write("vc-secrets: unlock is a no-op on this platform\n");
         return;
@@ -3960,7 +4246,26 @@ async function cmdUnlock(cfg, opts = {}) {
         // that hands gpg a bogus terminal path instead of leaving the variable unset.
         write("vc-secrets: GPG_TTY is not set -- pinentry may fail; add `if [ -t 0 ]; then export GPG_TTY=$(tty); fi` to your shell rc\n");
     }
-    const files = unlockTargets(cfg, exists);
+    // What this checkout may not examine: the entries a repository declares into its namespace while no
+    // record pins its projectId to this root (namespaceTrustProblem), the rule `doctor` reads them under.
+    // Only a repository that declares any asks, so a user-only config never opens the trust file.
+    const declared = namespaceDeclarations(cfg);
+    let includeNamespace = true;
+    if (declared.length > 0) {
+        try {
+            includeNamespace = namespaceTrustProblem(cfg, trustState ?? readTrustState(process.env), declared) === null;
+        } catch (e) {
+            // Unreadable counts as not trusted, as it does for a launch; the file is named once.
+            includeNamespace = false;
+            write(`vc-secrets: ${e?.message ?? "the trust file could not be read"}\n`);
+        }
+        if (!includeNamespace) {
+            for (const { kind, name } of declared) {
+                write(`SKIP ${kind} "${name}" not checked -- this checkout is not trusted for namespace ${JSON.stringify(cfg.projectId)}\n`);
+            }
+        }
+    }
+    const files = unlockTargets(cfg, exists, includeNamespace);
     if (files.length === 0) {
         write("vc-secrets: nothing stored on the gpg backend to unlock\n");
         return;
@@ -4483,7 +4788,7 @@ async function oauthTenantChecks(cfg, references, { resolveOrgTenant: resolve = 
     return checks;
 }
 
-function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, notRead = [], toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [] }) {
+function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, notRead = [], toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [], namespaceNotRead = [] }) {
     const lines = [];
     const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${pathForTerminal(file)}`).join(", ");
     if (loadedFiles) {
@@ -4566,6 +4871,9 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
     for (const name of notRead) {
         lines.push(`SKIP secret "${name}" not read -- declared by the repository, and no trusted, authorized consumer uses it`);
     }
+    for (const { kind, name } of namespaceNotRead) {
+        lines.push(`SKIP ${kind} "${name}" not read -- this checkout is not trusted for namespace ${JSON.stringify(cfg.projectId)}`);
+    }
     if (writeProbe === "ok") {
         // The probe writes a value of exactly WCM_BLOB_LIMIT bytes, so it proves only that the store
         // accepts a write of that size through the non-interactive path. Whether the entry THIS
@@ -4605,6 +4913,17 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
             lines.push(`INFO oauth "${name}" (${home}): the declaration changed since sign-in (tenant, client or scopes) -- run "vc-secrets login ${name}"`);
         } else {
             lines.push(`FAIL oauth "${name}" (${home}) cache could not be read -- ${status}`);
+        }
+        // Renewal replaces the token in the environment of a launch it supervises; it cannot reach into a
+        // server that copied the variable at startup. That limit belongs on the report itself, not only in
+        // the skill text that explains the report: it is the one fact that decides whether signing in
+        // once is enough. Names only -- the variable is identified, never its value.
+        for (const ref of oauthReferences(cfg)) {
+            if (ref.name === name) {
+                const kind = ref.kind === "tasks" ? "task" : "server";
+                lines.push(`INFO oauth "${name}": a renewed token reaches ${kind} "${ref.launchableName}" only if it reads ${ref.envVar}`
+                    + " from its environment at each use -- one that keeps its startup copy runs on it until it expires");
+            }
         }
         // Printed beside the status rather than instead of it, because the two are independent: the
         // entry above usually reads "needs-refresh", which is an OK line and honestly so -- the next
@@ -4784,8 +5103,13 @@ const WRITE_PROBE_NAME = "vc-secrets-writeprobe";
 // the project when one is declared (mirroring where a real local secret would actually live), or to
 // the user otherwise, so the key stays syntactically valid (vc-secrets:<scope>:<name>) even with no
 // project configured at all.
-function writeProbeKey(cfg) {
-    return keyFor(WRITE_PROBE_NAME, { scope: cfg?.projectId ? "project" : USER_SCOPE }, cfg);
+//
+// The project scope is that namespace's key, and a repository chooses its projectId -- another project's
+// included. Where this checkout is not trusted for it (`namespaceTrusted` false), the probe writes and
+// then DELETES under whatever that other project stored there, so it is keyed under the user scope
+// instead: the probe answers a question about the keystore, which any key answers alike.
+function writeProbeKey(cfg, namespaceTrusted = true) {
+    return keyFor(WRITE_PROBE_NAME, { scope: cfg?.projectId && namespaceTrusted ? "project" : USER_SCOPE }, cfg);
 }
 
 // Rehearses at the LIMIT, not with a token-shaped string, and the two backends fail at different
@@ -4793,7 +5117,7 @@ function writeProbeKey(cfg) {
 // the value is sized to put that line exactly at its limit. On Windows the constraint is the blob
 // itself, so the value IS the limit. Either way a probe that writes something small passes on
 // precisely the machine where a real entry would not fit.
-function writeProbeValue(cfg, env = process.env, backend = "keychain") {
+function writeProbeValue(cfg, env = process.env, backend = "keychain", namespaceTrusted = true) {
     if (backend === "wcm") {
         return "p".repeat(WCM_BLOB_LIMIT);
     }
@@ -4802,7 +5126,7 @@ function writeProbeValue(cfg, env = process.env, backend = "keychain") {
     // this way rehearses the same thing. Sizing from some other key (a real oauth entry's, say)
     // breaks that: the value is then padded for a different overhead, and where the other key is
     // the shorter one the probe overflows its own budget and reports a FAIL on a healthy machine.
-    const key = writeProbeKey(cfg);
+    const key = writeProbeKey(cfg, namespaceTrusted);
     const overhead = Buffer.byteLength(buildLocalWrite("keychain", key, env, { value: "" }).stdinCommand(""));
 
     return "p".repeat(Math.max(1, SECURITY_LINE_LIMIT - overhead));
@@ -4820,7 +5144,7 @@ const WRITE_PROBED_BACKENDS = ["keychain", "wcm"];
 // after the authorization code is spent, which cannot be retried. gpg stays out for now: there the
 // write is a file, and a probe there answers a different question (a directory that reads but does
 // not write) worth its own decision.
-async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = null, cfg = null }) {
+async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = null, cfg = null, namespaceTrusted = true }) {
     if (!WRITE_PROBED_BACKENDS.includes(backend)) {
         return null;
     }
@@ -4833,10 +5157,10 @@ async function probeKeystoreWrite({ backend, write = writeSecretValue, remove = 
         // is a doctor run silently missing one line, and the alternative risks the entry itself.
         return null;
     }
-    const key = writeProbeKey(cfg);
+    const key = writeProbeKey(cfg, namespaceTrusted);
     const removeEntry = remove ?? deleteEntryIo(backend);
     try {
-        await write(key, writeProbeValue(cfg, process.env, backend), { backend });
+        await write(key, writeProbeValue(cfg, process.env, backend, namespaceTrusted), { backend });
     } catch (e) {
         // Classified here, where the error still carries its exit code, and narrowly: exit 4 is the
         // Credential Manager helper's own code for an oversize blob and means nothing on any other
@@ -4920,7 +5244,8 @@ function consumedSecrets(cfg, enableLists, wired) {
 
 // Whether some launchable that references `secret:<name>` would be allowed to receive it: not refused by
 // the trust gate (`trustProblems` is trustAssessment's map, keyed "<kind>/<name>"; a user-home launchable
-// is never in it) and not refused by the authorization crossingProblem decides. Both calls are the
+// is in it only for a repository-namespace reader, which a Key Vault secret never makes it) and not
+// refused by the authorization crossingProblem decides. Both calls are the
 // launch's own, so this answers "would a launch read this?" -- which is what `doctor` must ask before it
 // reads a secret the repository chose: a Key Vault read is paid for by the developer's `az` login, and an
 // untrusted or unauthorized consumer is exactly the one whose launch would have been refused first.
@@ -4997,7 +5322,45 @@ async function cmdDoctor(cfg, flags = []) {
 
     // Before the loop below, which needs it: a repository's Key Vault secret is read only on behalf of a
     // consumer the launch itself would let through.
-    const trust = trustAssessment(cfg);
+    //
+    // The trust file is read at most once however many questions put to it, and only when one is asked: a
+    // gated launchable (trustAssessment), or an entry the repository stores in its namespace (below). An
+    // unreadable file is one finding, not one per question.
+    let trustStateRead = null;
+    const readState = () => {
+        if (trustStateRead === null) {
+            try {
+                trustStateRead = { state: readTrustState(process.env) };
+            } catch (e) {
+                trustStateRead = { error: e };
+            }
+        }
+        if (trustStateRead.error !== undefined) {
+            throw trustStateRead.error;
+        }
+
+        return trustStateRead.state;
+    };
+    const trust = trustAssessment(cfg, readState);
+    // What this checkout may not read: the `local` secrets and oauth entries a repository declares, while no
+    // record pins its projectId to this root (namespaceTrustProblem). Not read at all -- `doctor` is not a
+    // launch, but a repository claiming another project's id would have the diagnostic read that project's
+    // secret and its sign-in cache, and print the failure text. A user-scope declaration is never here.
+    const trustFindings = [...trust.findings];
+    const namespaceDeclared = namespaceDeclarations(cfg);
+    let namespaceBlocked = false;
+    if (namespaceDeclared.length > 0) {
+        try {
+            namespaceBlocked = namespaceTrustProblem(cfg, readState(), namespaceDeclared) !== null;
+        } catch (e) {
+            // Unreadable counts as not trusted, as it does for a launch; named once.
+            namespaceBlocked = true;
+            if (trust.unreadable === null) {
+                trustFindings.push(e.message);
+            }
+        }
+    }
+    const namespaceNotRead = [];
 
     const resolver = makeSecretResolver(cfg);
     const resolvable = {};
@@ -5015,6 +5378,10 @@ async function cmdDoctor(cfg, flags = []) {
         // performed -- and its failure text printed -- by the diagnostic alone.
         if (decl.backend === "keyvault" && decl.home !== USER_SCOPE && !hasTrustedAuthorizedConsumer(cfg, name, trust.problems)) {
             notRead.push(name);
+            continue;
+        }
+        if (namespaceBlocked && isNamespaceDecl("secret", decl)) {
+            namespaceNotRead.push({ kind: "secret", name });
             continue;
         }
         try {
@@ -5047,6 +5414,21 @@ async function cmdDoctor(cfg, flags = []) {
         .some(([name, d]) => d.backend === "keyvault" && !notRead.includes(name) && (checkAll || consumed.has(name)));
     const toolsMissing = [...backendTools, ...(needsAz ? ["az"] : [])].filter((t) => !commandOnPath(t));
 
+    // Under the user scope when this checkout is not trusted for the repository's namespace: the probe
+    // writes and deletes its key, and the repository's projectId may name another project's.
+    const probeNamespaceTrusted = () => {
+        if (!cfg.projectId || !WRITE_PROBED_BACKENDS.includes(localBackend)) {
+            return true;
+        }
+        try {
+            return namespaceTrustProblem(cfg, readState(), []) === null;
+        } catch {
+            // Unreadable counts as not trusted, as it does for a launch. Not a finding of its own: the
+            // file is named where an entry or a launchable is held to it, and the probe is correct either way.
+            return false;
+        }
+    };
+
     // cfg passed, because the probe's own guard is worthless without it: it refuses to run when a
     // DECLARED secret carries the probe name, and a caller not handing it the config would check
     // nothing. A guard nothing feeds is a comment.
@@ -5056,13 +5438,17 @@ async function cmdDoctor(cfg, flags = []) {
     // a SECOND FAIL for that one cause plus a cleanup warning about an entry that was never written.
     const writeProbe = localBackend === null || backendTools.some((t) => toolsMissing.includes(t))
         ? null
-        : await probeKeystoreWrite({ backend: localBackend, cfg });
+        : await probeKeystoreWrite({ backend: localBackend, cfg, namespaceTrusted: probeNamespaceTrusted() });
 
     // Read, never exchanged: proving a token is refreshable would rotate the refresh token as a side
     // effect of a diagnostic -- and Entra rotates on use, which signs out every session but one.
     const oauthStatus = {};
     const oauthOversize = {};
     for (const [name, decl] of Object.entries(cfg.oauth ?? {})) {
+        if (namespaceBlocked && isNamespaceDecl("oauth", decl)) {
+            namespaceNotRead.push({ kind: "oauth", name });
+            continue;
+        }
         // Read, never recomputed. doctor holds no fresh token and must not exchange for one, so it
         // cannot measure what an access entry WOULD weigh -- and an entry that exceeded the ceiling
         // was never stored, so there is nothing in the keystore to measure either. The marker a
@@ -5094,7 +5480,7 @@ async function cmdDoctor(cfg, flags = []) {
         env: process.env, platform: process.platform, enableLists, resolvable, skipped, notRead,
         toolsMissing, wired, configDirOverride: Boolean(process.env.VC_SECRETS_CONFIG_DIR), legacyOnly,
         shimContract: activeShimContract, wiringProblems, clientConfigsSeen,
-        writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings: trust.findings,
+        writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings, namespaceNotRead,
     });
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
     fs.writeSync(2, lines.join("\n") + "\n");
@@ -5240,10 +5626,11 @@ const RENEWAL_TICK_MS = 5 * 60 * 1000;
 async function cmdLaunch(kind, name, cfg, deps = {}) {
     // The gate stands before anything that could prompt or spend a credential: a repository nobody has
     // trusted must not cost even a keystore unlock, and refusing after resolution would have already
-    // handed it that. The trust file is read only when the winning entry is a repository's, so a
-    // user-scope launch never depends on it -- an unreadable file cannot take down the servers you
-    // wrote yourself.
-    if (requireLaunchable(kind, name, cfg).home !== USER_SCOPE) {
+    // handed it that. The trust file is read only when trustGateOf says the launch is gated: the winning
+    // entry is a repository's, or it is the person's own but reads a namespace the repository declares.
+    // Every other user-scope launch never depends on the file -- an unreadable one cannot take down the
+    // servers you wrote yourself.
+    if (trustGateOf(cfg, requireLaunchable(kind, name, cfg)) !== null) {
         const problem = trustProblem(cfg, kind, name, deps.trustState ?? readTrustState(process.env));
         if (problem !== null) {
             throw new VcSecretsError(trustRefusal(kind, name, problem, cfg));
@@ -5262,10 +5649,32 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // A bind that fails -- a restricted context can deny the job calls -- leaves the launch where it was
     // before this existed: it runs, and says once that a client stop may leave its tree behind. Refusing
     // to launch over it would trade a working server for a guarantee the platform would not give.
+    //
+    // The oauth entries' two keys ride in that same call when oauthLaunchDeps will read the Credential
+    // Manager, which saves the launch two more PowerShell round trips. What comes back is held apart
+    // (oauthSeed) and handed to oauthLaunchDeps, whose first readCache alone may use it. It is not part of
+    // the Map prefetch returns, which is keyed by a secret's name: an entry and a secret may share one.
+    let oauthSeed = null;
     const prefetch = (deps.bindPlatform ?? process.platform) === "win32"
-        ? async (refs) => {
-            const { seeded, job } = await resolver.readWcmBatch(refs,
-                { pid: process.pid, ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
+        ? async (refs, oauthRefs) => {
+            // The backend oauthLaunchDeps defaults to. An invalid VC_SECRETS_LOCAL_BACKEND is not raised here:
+            // it is raised where it is today, by the read that needs it.
+            let oauthBackend = null;
+            if (oauthRefs.length > 0) {
+                try {
+                    oauthBackend = deps.backend ?? detectLocalBackend();
+                } catch (e) {
+                    if (!(e instanceof VcSecretsError)) {
+                        throw e;
+                    }
+                }
+            }
+            const extraKeys = oauthBackend === "wcm"
+                ? oauthRefs.flatMap(({ name: entryName, decl }) => Object.values(oauthEntryKeys(entryName, decl, cfg)))
+                : [];
+            const { seeded, job, outcomes } = await resolver.readWcmBatch(refs,
+                { pid: process.pid, extraKeys, ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
+            oauthSeed = outcomes.size > 0 ? outcomes : null;
             if (job !== "ok") {
                 // A whole-call failure carries PowerShell's stderr, which can span lines; the warning is one.
                 const why = Number.isInteger(job) ? `win32 error ${job}` : job.replace(/\s*\r?\n\s*/g, " ");
@@ -5306,7 +5715,8 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     };
     if (oauthEntry !== undefined) {
         launchDeps = { serverName: oauthEntry.name,
-            ...oauthLaunchDeps(oauthEntry.name, oauthEntry.decl, cfg, { ...deps }), ...deps };
+            ...oauthLaunchDeps(oauthEntry.name, oauthEntry.decl, cfg, { ...deps, seed: oauthSeed }), ...deps };
+        oauthSeed = null;   // oauthLaunchDeps holds the only reference that may be used, and drops it at its first read
         token = await ensureFreshToken(launchDeps);
         // Probe the declared binary when it is a node; otherwise the PATH node, which is a guess at
         // what the wrapper will resolve. The message distinguishes the two, because a refusal naming
@@ -5500,13 +5910,21 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // the uncaught-exception path turns into the "exit" handler above killing the group -- loud, and not a
     // leak.
     const onChildStdinError = (e) => {
-        // The child went away mid-write; its close is on the way and ends the launcher.
         if (e?.code !== "EPIPE" && e?.code !== "ERR_STREAM_DESTROYED") {
             throw e;
         }
+        // The child has stopped reading, not necessarily exited: a server may close its stdin and keep its
+        // event loop, and then no close is on the way. pipe() detaches on this error and leaves the
+        // launcher's stdin paused, so the client's EOF -- queued behind whatever it wrote last -- would
+        // never be read and the grace timer never armed. Keep draining; onStdinEnd still gets the EOF.
+        stdin.unpipe(child.stdin);
+        stdin.resume();
     };
     const onStdinEnd = () => {
-        child.stdin.end();
+        // The stream may already be destroyed by the error above; ending it again has nothing to do.
+        if (!child.stdin.destroyed) {
+            child.stdin.end();
+        }
         // A signal that got here first has begun the teardown and armed the escalation; a grace timer
         // behind it would only signal the group again.
         if (escalationTimer === null) {
@@ -5518,6 +5936,10 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         child.stdin.on("error", onChildStdinError);
         stdin.on("end", onStdinEnd);
         stdin.pipe(child.stdin, { end: false });
+        // A stdin that has already ended will not emit "end" again.
+        if (stdin.readableEnded) {
+            onStdinEnd();
+        }
     }
 
     // A launch outlives this call in production -- the process exits from the handlers above -- so
@@ -5602,7 +6024,10 @@ function askLine(question, terminal = { input: process.stdin, output: process.st
 
 const logToStderr = (text) => fs.writeSync(2, text);
 
-// Records what this repository's declarations ask to run, after the person has read it.
+// Records what this repository's declarations ask to run, after the person has read it -- and, for a
+// repository that declares no launchable of its own, that its projectId may be trusted as the namespace of
+// the secrets and sign-ins it declares: the ones the person's own user-scope launchables read from it, and
+// the ones `set`, `login` and `logout` store and remove.
 //
 // The terminal requirement is a CONFIRMATION OF INTENT, not a security boundary. The guard hook sees
 // only the client's write tools, so the record is reachable through a shell, and this verb refuses to
@@ -5620,7 +6045,11 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
     now = () => new Date(), log = logToStderr } = {}) {
     const root = cfg.projectRoot;
     const gated = gatedLaunchables(cfg);
-    if (gated.length === 0) {
+    // Entries the repository stores in its namespace count with the launchables: `set`, `login` and `logout`
+    // need this checkout's record for them (requireNamespaceTrust), so a repository that declares one is
+    // recorded even when nothing launches it. The same notion decides the exit below and the record's removal.
+    const declared = namespaceDeclarations(cfg);
+    if (gated.length === 0 && declared.length === 0) {
         // An old record for a repository that declares nothing gated any more would be trust waiting for
         // the next declaration to inherit, so it goes -- the safe direction, which is why this needs no
         // terminal.
@@ -5646,10 +6075,10 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
     if (!isTTY || !isErrTTY) {
         throw refusal;
     }
-    // Read for its validation only: it throws on an unreadable or corrupt record BEFORE the person is
-    // asked, and before the terminal is opened, so a refusal here leaves nothing to close. What is
-    // written is read again after the answer, below.
-    readTrustState(env);
+    // It throws on an unreadable or corrupt record BEFORE the person is asked, and before the terminal is
+    // opened, so a refusal here leaves nothing to close. The review reads the other roots' projectIds from
+    // it; what is written is read again after the answer, below.
+    const current = readTrustState(env);
     let terminal;
     if (platform === "win32") {
         terminal = { input: process.stdin, output: process.stderr, close: () => {} };
@@ -5661,7 +6090,7 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
         }
     }
     const review = [];
-    for (const { kind, name, launchable } of gated) {
+    for (const { kind, name, launchable } of gated.filter((x) => x.via === "repository")) {
         const file = pathForTerminal(cfg.files?.[launchable.home] ?? launchable.home);
         const shadow = shadowsUserScope(cfg, kind, name) ? ` -- shadows your user-scope "${name}"` : "";
         // What the person approves is printed as JSON, each part on its own line: unambiguous where a joined
@@ -5674,6 +6103,29 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
             `    command: ${jsonForTerminal(launchable.command)}`,
             `    args: ${jsonForTerminal(launchable.args)}`,
             `    env: ${Object.keys(launchable.env).length === 0 ? "(none)" : jsonForTerminal(launchable.env)}`);
+    }
+    // A user-scope launchable is the person's own, so there is no command to read -- what is approved is
+    // which project's keystore namespace it is handed, and that is the repository's claim. One line per
+    // reference, in every review that has any.
+    const readers = gated.filter((x) => x.via === "namespace");
+    for (const { kind, name, reads } of readers) {
+        for (const read of reads) {
+            review.push(`${kind === "tasks" ? "task" : "server"} "${name}" (user) will read ${read.kind} "${read.name}" from namespace ${JSON.stringify(cfg.projectId)}`);
+        }
+    }
+    // What the repository stores in the namespace, named once: it is what `set`, `login` and `logout` act on.
+    if (declared.length > 0) {
+        review.push(`${namespaceReadsText(declared)} ${declared.length === 1 ? "is" : "are"} stored in namespace ${JSON.stringify(cfg.projectId)}`);
+    }
+    // Another root already recorded under this projectId is what a worktree of this repository looks like,
+    // and equally what a different repository claiming the same id looks like -- the two cannot be told
+    // apart from here, so the person is shown the fact and the reading that applies to each.
+    const sharing = readers.length === 0 && declared.length === 0 ? [] : Object.entries(current.repositories)
+        .filter(([other, record]) => other !== root && record.projectId === cfg.projectId)
+        .map(([other]) => pathForTerminal(other));
+    if (sharing.length > 0) {
+        review.push(`INFO namespace ${JSON.stringify(cfg.projectId)} is already recorded for ${sharing.join(", ")} -- `
+            + "expected for a worktree of this repository, not for another repository");
     }
     // The effective projectId, once: it is what a project-scope `secret:<name>` in the review resolves
     // under (a user-scope one resolves under `user`), and it is part of what the record pins.
@@ -5691,15 +6143,27 @@ async function cmdTrust(cfg, { isTTY = process.stdin.isTTY === true, isErrTTY = 
         return;
     }
     const record = { trustedAt: now().toISOString(), projectId: cfg.projectId ?? null };
+    // The shape is recorded for a repository's launchables only. A user-scope reader has none to pin; the
+    // record's existence and its projectId are what it is held to (trustProblem).
     for (const kind of LAUNCHABLE_KINDS) {
-        record[kind] = Object.fromEntries(gated.filter((x) => x.kind === kind).map((x) => [x.name, launchShape(x.launchable)]));
+        record[kind] = Object.fromEntries(gated.filter((x) => x.via === "repository" && x.kind === kind)
+            .map((x) => [x.name, launchShape(x.launchable)]));
     }
     // Read AGAIN: the person took as long as they took, and an `untrust` (or a trust of another
     // repository) that landed meanwhile is in the file now and not in a copy read before the prompt.
     const state = readTrustState(env);
     state.repositories[root] = record;
     writeTrustState(env, state);
-    log(`vc-secrets: trusted ${Object.keys(record.servers).length} server(s) and ${Object.keys(record.tasks).length} task(s) for ${pathForTerminal(root)}\n`
+    const recordedCount = Object.keys(record.servers).length + Object.keys(record.tasks).length;
+    const readerLine = readers.length === 0 ? ""
+        : `vc-secrets: ${readers.length} user-scope launchable(s) may now read namespace ${JSON.stringify(cfg.projectId)} from ${pathForTerminal(root)}\n`;
+    const storeLine = declared.length === 0 ? ""
+        : `vc-secrets: ${namespaceReadsText(declared)} may now be stored and removed in namespace ${JSON.stringify(cfg.projectId)} from ${pathForTerminal(root)}\n`;
+    log((recordedCount === 0
+        ? `vc-secrets: recorded ${pathForTerminal(root)} as the source of namespace ${JSON.stringify(cfg.projectId)} -- it declares no server or task of its own to run\n`
+        : `vc-secrets: trusted ${Object.keys(record.servers).length} server(s) and ${Object.keys(record.tasks).length} task(s) for ${pathForTerminal(root)}\n`)
+        + readerLine
+        + storeLine
         + `vc-secrets: a secret crossing still needs its own authorization in ${CONFIG_HINT_PATH} -- "vc-secrets doctor" reports each one\n`);
 }
 
@@ -5743,7 +6207,7 @@ function fail(e) {
 // Raised only when the shim's own contract changes. `doctor` compares it against what the shim
 // reported so a stale shim says so itself -- the failure it would otherwise cause (an old pointer to a
 // launcher whose entry contract moved) surfaces as a missing export, which reads like a broken install.
-const REQUIRED_SHIM_CONTRACT = 1;
+const REQUIRED_SHIM_CONTRACT = 2;
 let activeShimContract = null;
 
 // TOML bare keys are [A-Za-z0-9_-]+; anything else must be a quoted key, or the dots in the name
@@ -5926,20 +6390,17 @@ async function runCli(argv, { shimContract } = {}) {
 // Node resolves symlinks for import.meta.url but process.argv[1] stays as typed, so a plain
 // path.resolve comparison is false whenever the plugin is reached through a symlinked directory (a
 // marketplace cache entry, a linked checkout) and the CLI then exits 0 having done nothing -- no usage
-// line, no error. The JS realpathSync, not `.native`: it is the resolution Node's own loader applies to
-// the module URL, so the two sides agree. import.meta.main would be simpler but is absent on older Node.
+// line, no error. Both sides are canonicalised, not only argv[1]: under `node --preserve-symlinks-main`
+// import.meta.url of the entry file keeps the link path, so realpathing one side alone would leave the
+// two apart again. The JS realpathSync, not `.native`: it is the resolution Node's own loader applies to
+// the module URL, so the two sides agree (canonicalPath, with the same resolve fallback). import.meta.main
+// would be simpler but is absent on older Node.
 function isDirectRun(moduleUrl, argv1 = process.argv[1]) {
     if (!argv1) {
         return false;
     }
-    let invoked;
-    try {
-        invoked = fs.realpathSync(argv1);
-    } catch {
-        invoked = path.resolve(argv1);
-    }
 
-    return fileURLToPath(moduleUrl) === invoked;
+    return canonicalPath(fileURLToPath(moduleUrl)) === canonicalPath(argv1);
 }
 
 export {
@@ -5973,7 +6434,7 @@ export {
     consumerShape, shapeDifferences, validateAuthorized, validateVaults, authorizationFor, crossingProblem, own,
     emitConfig, cmdEmitConfig, SERVER_DECL_KEYS,
     trustFilePath, trustRootKey, launchShape, trustDifferences, trustProblem, trustRefusal, trustAssessment, trustNotes,
-    gatedLaunchables, readTrustState, writeTrustState, cmdTrust, cmdUntrust, openControllingTerminal,
+    gatedLaunchables, namespaceDeclarations, namespaceTrustProblem, namespaceStoreRefusal, readTrustState, writeTrustState, cmdTrust, cmdUntrust, openControllingTerminal,
     // Re-exported so the test file reaches them through the namespace import it already uses.
     clientNames, clientDescriptor, MIN_VERSION_UNKNOWN, defaultDataHome, defaultShimDir, defaultShimPath,
 };

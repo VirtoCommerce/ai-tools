@@ -2321,9 +2321,18 @@ socketTest("a teardown does not wait on a peer that only connected -- the sign-i
 // `source !== null` and takes it as "needs no authorization". Fail-closed at one site and
 // permissive at the other is the reason to match the merge rather than to guard the null.
 const LOGIN_DECL = { ...DECL_IDENTITY, kind: "oauth", scope: "project", home: "project", declaredName: "azure-mcp" };
-const LOGIN_CFG = { oauth: { "azure-mcp": LOGIN_DECL }, projectId: "login-p1",
+const LOGIN_CFG = { oauth: { "azure-mcp": LOGIN_DECL }, projectId: "login-p1", projectRoot: "/repo/login",
     registrations: { [DECL_IDENTITY.tenantId]: { [DECL_IDENTITY.clientId]: {} } } };
 const LOGIN_KEYS = m.oauthEntryKeys("azure-mcp", LOGIN_DECL, LOGIN_CFG);
+
+// A repository's entries are stored under a projectId the repository chose, so login and logout for one
+// are held to a trust record for the checkout (requireNamespaceTrust). The fixtures below are about
+// something else, and the repository they declare is recorded under its own root and id, as `trust`
+// would; the verbs' trust behaviour is tested in vc-secrets.test.mjs.
+function trustedFor(cfg) {
+    return { schemaVersion: 1, repositories: { [cfg.projectRoot]: {
+        trustedAt: "2000-01-01T00:00:00.000Z", projectId: cfg.projectId, servers: {}, tasks: {} } } };
+}
 
 // UNACKNOWLEDGED_CFG differs from LOGIN_CFG in exactly one property, so a test driven by it fails
 // for the reason its name gives. USER_CFG differs in two -- the declaration's home AND the absent
@@ -2373,6 +2382,8 @@ function loginDeps(overrides = {}) {
         // halves run on ordinary paths -- `clear` on every successful login. Left to default, every
         // login test would litter a real machine from a green run.
         oversize: { record: (key, info) => { marked.push([key, info]); }, clear: (key) => { cleared.push(key); } },
+        // Injected for the reason the others are: the default reads the developer's own trust file.
+        trustState: trustedFor(LOGIN_CFG),
         ...overrides,
     };
 
@@ -2449,7 +2460,7 @@ test("loginDeps: every cmdLogin seam that reaches outside this process is inject
     // A parser that quietly finds nothing would make this test pass forever. Pin the whole list,
     // so adding a seam fails here and forces a decision about whether it needs injecting.
     assert.deepEqual(seams, ["listen", "open", "browser", "exchange", "writeEntry", "removeEntry",
-        "randomState", "log", "backend", "acquireLock", "now", "sleep", "waitMs", "oversize"],
+        "randomState", "log", "backend", "acquireLock", "now", "sleep", "waitMs", "oversize", "trustState"],
         "the seam list changed, or the parse broke — both need a human");
     // These four stay inside the process: a pure command builder, the clock, a timer, and a plain
     // number of milliseconds. `waitMs` is injected by the tests that drive the deadline, but it
@@ -2472,7 +2483,7 @@ test("cmdLogout: every seam this verb declares is pinned, so a new one forces a 
     // only feeds `deleteEntryIo(backend)`. It is pinned all the same: whether that stays true is
     // exactly the decision this test exists to force.
     assert.deepEqual(cmdLogoutSeams(),
-        ["deleteEntry", "backend", "acquireLock", "now", "sleep", "log"],
+        ["deleteEntry", "backend", "acquireLock", "now", "sleep", "log", "trustState"],
         "the seam list changed, or the parse broke — both need a human");
 });
 
@@ -3025,7 +3036,8 @@ test("cmdLogin: a user-scope entry needs no registrations block, because its own
 // ---------------------------------------------------------------------------------------------
 
 const LOGOUT_DECL = { ...DECL_IDENTITY, kind: "oauth", scope: "project", home: "project", declaredName: "azure-mcp" };
-const LOGOUT_CFG = { oauth: { "azure-mcp": LOGOUT_DECL }, projectId: "logout-p1" };
+const LOGOUT_CFG = { oauth: { "azure-mcp": LOGOUT_DECL }, projectId: "logout-p1", projectRoot: "/repo/logout" };
+const LOGOUT_TRUST = trustedFor(LOGOUT_CFG);
 const LOGOUT_KEYS = m.oauthEntryKeys("azure-mcp", LOGOUT_DECL, LOGOUT_CFG);
 const FREE_LOCK = async () => ({ release: async () => {} });
 
@@ -3035,7 +3047,7 @@ test("cmdLogout: removes both entries, refresh before access", async () => {
     // The source sorts both sides here (mcpw.test.js), which makes the order invisible:
     // measured, reversing `names` in the production loop left the whole suite green.
     const deleted = [];
-    await m.cmdLogout("azure-mcp", LOGOUT_CFG, { deleteEntry: async (n) => { deleted.push(n); },
+    await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST, deleteEntry: async (n) => { deleted.push(n); },
         acquireLock: FREE_LOCK });
     assert.deepEqual(deleted, [LOGOUT_KEYS.refresh, LOGOUT_KEYS.access]);
 });
@@ -3044,7 +3056,7 @@ test("cmdLogout: an already-absent entry is success, and both are still attempte
     // The not-found signal is toolExitCode, the property runTool actually sets -- a stub carrying
     // `code` would be read by nothing in production.
     const attempted = [];
-    const report = await m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    const report = await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => {
             attempted.push(n);
             throw Object.assign(new m.VcSecretsError("not found"), { toolExitCode: 3 });
@@ -3061,7 +3073,7 @@ test("cmdLogout: an already-absent entry is success, and both are still attempte
 test("cmdLogout: a real failure is not swallowed as already-absent", async () => {
     // Only exit 3 means "no such entry". Treating every failure as success would report a
     // logout that left the refresh token on disk -- the one outcome logout exists to prevent.
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async () => { throw Object.assign(new m.VcSecretsError("keystore locked"), { toolExitCode: 1 }); },
         acquireLock: FREE_LOCK,
     }), /keystore locked/);
@@ -3078,7 +3090,7 @@ test("cmdLogout: a store that fails part-way has already removed the refresh tok
     // Inherited from the source, which builds `names` the same way and sorts it away in its own
     // assertions, so this is a strengthening of the port rather than a correction to it.
     const deleted = [];
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => {
             if (deleted.length === 1) {
                 throw Object.assign(new m.VcSecretsError("keystore locked"), { toolExitCode: 1 });
@@ -3098,7 +3110,7 @@ test("cmdLogout: a part-way failure says what it already removed, instead of los
     // stack, and the developer read "keystore locked" over a state where the refresh token -- the
     // credential this verb exists to remove -- is in fact already gone. Retrying is right either
     // way; what changes is what the developer believes is still on disk.
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => {
             if (n === LOGOUT_KEYS.access) {
                 throw Object.assign(new m.VcSecretsError("keystore locked"), { toolExitCode: 1 });
@@ -3120,7 +3132,7 @@ test("cmdLogout: a failure on the FIRST entry claims nothing was removed", async
     // The other side of the same message, and the one that would be a lie: "HALF done" appended
     // unconditionally would tell a developer a credential is gone when the store refused before
     // touching anything.
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async () => { throw Object.assign(new m.VcSecretsError("keystore locked"), { toolExitCode: 1 }); },
         acquireLock: FREE_LOCK,
     }), (e) => {
@@ -3133,7 +3145,7 @@ test("cmdLogout: a failure on the FIRST entry claims nothing was removed", async
 
 test("cmdLogout: an undeclared server is refused before anything is deleted", async () => {
     const attempted = [];
-    await assert.rejects(() => m.cmdLogout("ghost", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("ghost", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => { attempted.push(n); },
         acquireLock: FREE_LOCK,
     }), /ghost/);
@@ -3144,7 +3156,7 @@ test("cmdLogout: the lock is released even when a deletion throws", async () => 
     // Same reason ensureFreshToken releases in a finally: a leaked holder outlives the process
     // that took it and blocks every launch on this machine until someone notices.
     let released = 0;
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async () => { throw Object.assign(new m.VcSecretsError("keystore locked"), { toolExitCode: 1 }); },
         acquireLock: async () => ({ release: async () => { released++; } }),
     }), /keystore locked/);
@@ -3161,7 +3173,7 @@ test("cmdLogout: the one thing that can undo the removal is named, even when not
         async () => { throw Object.assign(new m.VcSecretsError("not found"), { toolExitCode: 3 }); }]) {
         const logged = [];
         await m.cmdLogout("azure-mcp", LOGOUT_CFG,
-            { deleteEntry, acquireLock: FREE_LOCK, log: (line) => logged.push(line) });
+            { trustState: LOGOUT_TRUST, deleteEntry, acquireLock: FREE_LOCK, log: (line) => logged.push(line) });
         assert.match(logged.join(""), /already open in a browser/, "the residual has to reach the developer");
         assert.match(logged.join(""), /azure-mcp/, "and name the entry it applies to");
     }
@@ -3170,7 +3182,7 @@ test("cmdLogout: the one thing that can undo the removal is named, even when not
 test("cmdLogout: a holder that never releases fails the logout instead of reporting a removal", async () => {
     const attempted = [];
     let ms = 0;
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => { attempted.push(n); },
         acquireLock: async () => cache.HELD_BY_OTHER,
         now: () => (ms += 10_000),
@@ -3183,7 +3195,7 @@ test("cmdLogout: where the lock cannot be bound at all, the removal proceeds and
     const deleted = [];
     const logged = [];
     let ms = 0;
-    await m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         log: (line) => logged.push(line),
         deleteEntry: async (n) => { deleted.push(n); },
         acquireLock: async () => { throw Object.assign(new Error("bind refused"), { code: "EPERM" }); },
@@ -3237,7 +3249,7 @@ test("cmdLogout: a renewal in flight cannot put back the credential logout repor
         sleep: async () => {},
     });
     await inExchange;
-    const logout = m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    const logout = m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (n) => {
             if (!store.delete(n)) {
                 throw Object.assign(new m.VcSecretsError("not found"), { toolExitCode: 3 });
@@ -3260,11 +3272,11 @@ test("cmdLogout: an unserialised removal is announced, and a serialised one is q
     const write = process.stderr.write;
     process.stderr.write = (line) => { lines.push(String(line)); return true; };
     try {
-        await m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+        await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
             deleteEntry: async () => {},
             acquireLock: async () => { throw Object.assign(new Error("nope"), { code: "EACCES" }); },
         });
-        await m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+        await m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
             deleteEntry: async () => {}, acquireLock: FREE_LOCK,
         });
     } finally {
@@ -3302,7 +3314,7 @@ test("cmdLogout: an error from the lock reaches the caller, and nothing is delet
     // delete the assertion as decorative.
     const attempted = [];
     const boom = new TypeError("acquireLock is not a function");
-    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, {
+    await assert.rejects(() => m.cmdLogout("azure-mcp", LOGOUT_CFG, { trustState: LOGOUT_TRUST,
         deleteEntry: async (name) => { attempted.push(name); },
         acquireLock: async () => { throw boom; },
     }), (e) => e === boom, "the wiring error must reach the caller unchanged");
@@ -3327,7 +3339,7 @@ lockTest("the renewal, a login and a logout all lock on ONE name -- pre-occupied
     // logout's own lock was wired from its `main`, not from inside the verb.
     const entryName = "azure-mcp";
     const decl = { ...DECL_IDENTITY, kind: "oauth", scope: "project", home: "project", declaredName: entryName };
-    const cfg = { oauth: { [entryName]: decl }, projectId: "lock-name-p1",
+    const cfg = { oauth: { [entryName]: decl }, projectId: "lock-name-p1", projectRoot: "/repo/lock-name",
         registrations: { [DECL_IDENTITY.tenantId]: { [DECL_IDENTITY.clientId]: {} } } };
     const lockPath = cache.lockPathFor(entryName, cfg.projectId, { platform: process.platform, env: process.env });
     const holder = await cache.acquireLock(lockPath);
@@ -3347,7 +3359,7 @@ lockTest("the renewal, a login and a logout all lock on ONE name -- pre-occupied
         // the only signal that it actually contended on the SAME path rather than sailing through
         // on one of its own.
         const { deps: loginDepsObj, logged: loginLogged } = loginDeps({ acquireLock: undefined,
-            now: () => 0, sleep: async () => {} });
+            now: () => 0, sleep: async () => {}, trustState: trustedFor(cfg) });
         await m.cmdLogin(entryName, cfg, loginDepsObj);
         assert.match(loginLogged.join(""), /was still holding the lock/,
             "cmdLogin's default must contend on the same pre-occupied path");
@@ -3355,7 +3367,7 @@ lockTest("the renewal, a login and a logout all lock on ONE name -- pre-occupied
         // Writer 3: cmdLogout, same default, but this verb treats a busy lock as fatal.
         let ms = 0;
         await assert.rejects(() => m.cmdLogout(entryName, cfg, {
-            deleteEntry: async () => {}, acquireLock: undefined,
+            trustState: trustedFor(cfg), deleteEntry: async () => {}, acquireLock: undefined,
             now: () => (ms += 10_000), sleep: async () => {},
         }), /still refreshing/, "cmdLogout's default must contend on the same pre-occupied path");
     } finally {
@@ -4356,6 +4368,12 @@ function fakeChild() {
     return new EventEmitter();
 }
 
+// Every in-process launch below goes through this: with no bindPlatform cmdLaunch binds the launching
+// process to a kill-on-close job on win32, and here the launching process is the test runner.
+function launch(kind, name, cfg, deps = {}) {
+    return m.cmdLaunch(kind, name, cfg, { bindPlatform: "linux", ...deps });
+}
+
 // A launchable declared entirely at USER scope, so neither the oauth entry nor the server it is
 // referenced from needs a registration grant (resolveEnvEntries exempts a user-scope launchable
 // outright) or a projectId (keyFor and cmdLaunch's scopeKey both short-circuit on
@@ -4372,7 +4390,7 @@ const CMD_LAUNCH_CFG = {
 
 channelTest("cmdLaunch: the oauth server is launched with the token, the channel and the preload", async () => {
     let seen = null;
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: (cmd, args, opts) => { seen = opts.env; return fakeChild(); },
@@ -4389,7 +4407,7 @@ channelTest("cmdLaunch: the oauth server is launched with the token, the channel
 });
 
 channelTest("cmdLaunch: the channel directory is gone once the launch is disposed", async () => {
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: () => fakeChild(),
@@ -4405,7 +4423,7 @@ channelTest("cmdLaunch: dispose detaches the exit handler that removes the chann
     // A delta, not a count: the runner has "exit" listeners of its own. Only the oauth path
     // installs this one, so it cannot be pinned from the plain cmdLaunch tests.
     const before = process.listenerCount("exit");
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
         spawnFn: () => fakeChild(),
@@ -4435,6 +4453,7 @@ channelTest("cmdLaunch: the channel directory is removed when the launcher proce
         import path from "node:path";
         import { EventEmitter } from "node:events";
         const handle = await m.cmdLaunch("servers", "s", ${JSON.stringify(CMD_LAUNCH_CFG)}, {
+            bindPlatform: "linux",
             readCache: async () => ({ state: "valid", accessToken: "t" }),
             childNodeVersion: () => "v20.11.0",
             spawnFn: () => new EventEmitter(),
@@ -4459,6 +4478,7 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
         import fs from "node:fs";
         const before = new Set(fs.readdirSync("/tmp").filter((x) => x.startsWith("vc-secrets-ch-")));
         m.cmdLaunch("servers", "s", ${JSON.stringify(CMD_LAUNCH_CFG)}, {
+            bindPlatform: "linux",
             readCache: async () => ({ state: "valid", accessToken: "t" }),
             childNodeVersion: () => "v20.11.0",
             spawnFn: () => { throw new Error("spawn refused"); },
@@ -4480,7 +4500,7 @@ channelTest("cmdLaunch: a slow renewal tick does not stack on the one still runn
     // Without the re-entrancy guard a tick that outlasts its interval -- the contended wait alone
     // runs to 45 s -- starts another one on top of it.
     let inFlight = 0, maxInFlight = 0, calls = 0;
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         spawnFn: () => fakeChild(),
         renewalTickMs: 5,
@@ -4530,7 +4550,7 @@ channelTest("cmdLaunch: a tick with nothing attached is reported twice and then 
         return Buffer.byteLength(str);
     });
     let calls = 0;
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         spawnFn: () => fakeChild(),
         renewalTickMs: 5,
@@ -4576,7 +4596,7 @@ test("cmdLaunch: once something has attached, a later drop reports the silence b
 
         return done();
     };
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         spawnFn: () => fakeChild(),
         renewalTickMs: 5,
@@ -4621,7 +4641,7 @@ channelTest("cmdLaunch: a failed renewal is loud on fd 2, and does not disturb t
     let killed = false;
     child.kill = () => { killed = true; };
     let calls = 0;
-    const handle = await m.cmdLaunch("servers", "s", CMD_LAUNCH_CFG, {
+    const handle = await launch("servers", "s", CMD_LAUNCH_CFG, {
         childNodeVersion: () => "v20.11.0",
         spawnFn: () => child,
         renewalTickMs: 5,
@@ -4711,7 +4731,7 @@ channelTest("cmdLaunch: an oauth reference and an ordinary secret both reach the
     let seen = null;
     let handle;
     try {
-        handle = await m.cmdLaunch("servers", "both", cfg, {
+        handle = await launch("servers", "both", cfg, {
             childNodeVersion: () => "v20.11.0",
             readCache: async () => ({ state: "valid", accessToken: "TOKEN-VALUE" }),
             spawnFn: (cmd, args, opts) => { seen = opts.env; return fakeChild(); },

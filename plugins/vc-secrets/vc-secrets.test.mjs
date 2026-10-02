@@ -1,14 +1,17 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { EventEmitter } from "node:events";
 import fs from "node:fs";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { PassThrough, Writable } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as target from "./vc-secrets-target.mjs";
+import * as cache from "./vc-secrets-cache.mjs";
 import * as clients from "./clients.mjs";
 import * as t from "./hooks/targets.mjs";
 import { CANONICAL_DATA_ID } from "./scripts/shim-path.mjs";
@@ -482,7 +485,7 @@ test("the vaults block authorizes by vault and secret name, and pins the consume
         /command is "curl", authorized "printenv"/);
 });
 
-test("a project-declared LOCAL secret still needs nothing — the set you ran is the authorization", async () => {
+test("a project-declared LOCAL secret still needs no authorization — the set you ran is the authorization", async () => {
     // The rule must not spread to the case the namespace already covers: this reads
     // vc-secrets:demo:x, which holds only what was set for this project.
     const cfg = m.loadConfig(scopedPaths({
@@ -1101,6 +1104,121 @@ test("resolveEnvEntries: json fields, one fetch per secret", async () => {
     assert.equal(calls, 1);
 });
 
+// Two Key Vault secrets, each authorized for the one server, so the reads these tests count are ones the
+// launch is entitled to make.
+function keyvaultPairCfg({ grantB = true } = {}) {
+    // The shape check compares the server's whole env key list, so both grants name both variables.
+    const grant = () => ({ servers: { s: { command: "dnx", args: [], envKeys: ["A", "B"] } } });
+
+    return {
+        secrets: {
+            a: { backend: "keyvault", vault: "demo-vault", secret: "sa" },
+            b: { backend: "keyvault", vault: "demo-vault", secret: "sb" },
+        },
+        servers: { s: { command: "dnx", args: [], env: { A: "secret:a", B: "secret:b" } } },
+        tasks: {},
+        vaults: { "demo-vault": { sa: grant(), ...(grantB ? { sb: grant() } : {}) } },
+    };
+}
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+test("resolveEnvEntries: Key Vault reads run in parallel, so two that wait for each other both finish",
+    { timeout: 15_000 },
+    async () => {
+        const started = [];
+        let bothStarted = null;
+        const gate = new Promise((resolve) => { bothStarted = resolve; });
+        // Sequential reading never starts the second call, so the first waits on it forever; the deadline
+        // turns that into a failure instead of a hung suite.
+        const outcome = await m.withDeadline(m.resolveEnvEntries("s", keyvaultPairCfg(), async (name) => {
+            started.push(name);
+            if (started.length === 2) {
+                bothStarted();
+            }
+            await gate;
+
+            return `value-${name}`;
+        }), 3000, () => "deadlock");
+        assert.notEqual(outcome, "deadlock", `only ${started.join(", ")} was ever asked for: the reads are sequential`);
+        assert.deepEqual(outcome.env, { A: "value-a", B: "value-b" });
+    });
+
+test("resolveEnvEntries: with several Key Vault reads failing, the first entry's error is the one reported, and none is left unhandled",
+    async () => {
+        const unhandled = [];
+        const onUnhandled = (reason) => { unhandled.push(reason); };
+        process.on("unhandledRejection", onUnhandled);
+        try {
+            const asked = [];
+            await assert.rejects(m.resolveEnvEntries("s", keyvaultPairCfg(), async (name) => {
+                asked.push(name);
+                if (name === "a") {
+                    await delay(50);
+                    throw new m.VcSecretsError("secret \"a\": late failure");
+                }
+                throw new m.VcSecretsError("secret \"b\": early failure");
+            }), /secret "a": late failure/);
+            assert.deepEqual(asked, ["a", "b"], "both reads were started before either was awaited");
+            // Past the point where an unobserved rejection would have been reported.
+            await delay(50);
+            await new Promise((resolve) => setImmediate(resolve));
+            assert.deepEqual(unhandled, [], "the second entry's rejection must have been observed");
+        } finally {
+            process.off("unhandledRejection", onUnhandled);
+        }
+    });
+
+test("resolveEnvEntries: a Key Vault read that rejects with something that is not an Error is thrown, never used as a value",
+    async () => {
+        const unhandled = [];
+        const onUnhandled = (reason) => { unhandled.push(reason); };
+        process.on("unhandledRejection", onUnhandled);
+        try {
+            let outcome = null;
+            await assert.rejects(m.resolveEnvEntries("s", keyvaultPairCfg(), async (name) => {
+                if (name === "b") {
+                    throw "not-an-error";   // eslint-disable-line no-throw-literal
+                }
+
+                return "value-a";
+            }).then((r) => { outcome = r; }), (e) => e === "not-an-error");
+            assert.equal(outcome, null, "no env was produced from the rejection");
+            await delay(20);
+            assert.deepEqual(unhandled, []);
+        } finally {
+            process.off("unhandledRejection", onUnhandled);
+        }
+    });
+
+test("resolveEnvEntries: Key Vault reads start only after prefetch has resolved, so on win32 they start inside the bound job",
+    async () => {
+        const order = [];
+        const { env } = await m.resolveEnvEntries("s", keyvaultPairCfg(), async (name) => {
+            order.push(`read ${name}`);
+
+            return `value-${name}`;
+        }, "servers", { prefetch: async () => {
+            order.push("bind started");
+            await delay(30);
+            order.push("bind done");
+
+            return new Map();
+        } });
+        assert.deepEqual(order, ["bind started", "bind done", "read a", "read b"]);
+        assert.deepEqual(env, { A: "value-a", B: "value-b" });
+    });
+
+test("resolveEnvEntries: a refused entry makes no Key Vault read at all, not even for an entry before it", async () => {
+    const asked = [];
+    await assert.rejects(m.resolveEnvEntries("s", keyvaultPairCfg({ grantB: false }), async (name) => {
+        asked.push(name);
+
+        return "value";
+    }), /env B: /);
+    assert.deepEqual(asked, [], "authorization is decided for every entry before the first read starts");
+});
+
 test("resolveEnvEntries: unknown server → VcSecretsError, resolver never called", async () => {
     let called = false;
     await assert.rejects(
@@ -1693,6 +1811,197 @@ test("PS_CRED_READ_MANY duplicates the job into the launcher before assigning th
     assert.ok(duplicate < assign, "duplicate first, then assign");
 });
 
+// The job object, run for real. The source-text tests above pin what the script says; only a Windows
+// machine can show that terminating the bound process ends the tree it started. Both tests below build
+// the same tree and differ only in the bind, so the second says whether the first could have failed.
+//
+// Skipped where the bind cannot run, with the missing thing named. A machine where Add-Type is blocked
+// is NOT skipped: there the script is the feature not working, and the bind test must say so.
+const CAN_BIND_JOB = process.platform === "win32" && probe(() => {
+    m.resolveSpawnCommand(m.psCommand({}));
+
+    return true;
+});
+const JOB_BIND_SKIP = !CAN_BIND_JOB && (process.platform === "win32"
+    ? `needs ${m.psCommand({})} on PATH to run the bind`
+    : `needs Windows: the bind is a Windows job object and this platform is ${process.platform}`);
+const TIMED_OUT = Symbol("timed out");
+
+// One file plays all three roles. Each member connects to the pipe the test owns and says who it is; that
+// connection is its liveness, because a pid can be reused and a connection cannot outlive its process.
+// The grandchild goes through cmd.exe /d /s /c with a verbatim line, as `npx.cmd` does for a real server.
+// A fixture ends itself after 180 s, and when the test closes its end of the pipe.
+const JOB_TREE_FIXTURE = String.raw`"use strict";
+const net = require("node:net");
+const { spawn } = require("node:child_process");
+const [role, pipe] = process.argv.slice(2);
+
+setTimeout(() => process.exit(0), 180000);
+
+function join(label) {
+    const socket = net.connect(pipe);
+    socket.on("connect", () => socket.write(label + " " + process.pid + "\n"));
+    socket.on("error", () => process.exit(3));
+    socket.on("close", () => process.exit(0));
+}
+
+if (role === "parent") {
+    process.stdin.setEncoding("utf8");
+    process.stdin.once("data", () => {
+        spawn(process.execPath, [__filename, "child", pipe], { stdio: "ignore", windowsHide: true });
+    });
+    process.stdin.on("end", () => process.exit(0));
+} else if (role === "child") {
+    join("child");
+    const line = '"' + process.execPath + '" "' + __filename + '" grandchild "' + pipe + '"';
+    spawn(process.env.ComSpec || "cmd.exe", ['/d /s /c "' + line + '"'],
+        { stdio: "ignore", windowsHide: true, windowsVerbatimArguments: true });
+} else {
+    join("grandchild");
+}
+`;
+
+// Starts the parent fixture, which does nothing until `go()`, and listens for its descendants. The
+// returned `cleanup` is for a `finally`: it kills only a pid whose connection is still open, then closes
+// the sockets and the server.
+async function startJobTree() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-jobtree-"));
+    tmpDirs.push(dir);
+    const script = path.join(dir, "tree.cjs");
+    fs.writeFileSync(script, JOB_TREE_FIXTURE);
+    const pipe = `\\\\.\\pipe\\vc-secrets-job-${process.pid}-${randomUUID()}`;
+
+    const members = new Map();
+    const sockets = [];
+    let reportUp = () => {};
+    const bothUp = new Promise((resolve) => { reportUp = resolve; });
+    const server = net.createServer((socket) => {
+        sockets.push(socket);
+        const entry = { pid: null, open: true };
+        entry.closed = new Promise((resolve) => socket.once("close", () => {
+            entry.open = false;
+            resolve();
+        }));
+        socket.on("error", () => {});
+        socket.setEncoding("utf8");
+        let heard = "";
+        socket.on("data", (chunk) => {
+            if (entry.pid !== null) {
+                return;
+            }
+            heard += chunk;
+            const end = heard.indexOf("\n");
+            if (end === -1) {
+                return;
+            }
+            const [role, pid] = heard.slice(0, end).trim().split(" ");
+            entry.pid = Number(pid);
+            members.set(role, entry);
+            if (members.has("child") && members.has("grandchild")) {
+                reportUp();
+            }
+        });
+    });
+    await new Promise((resolve, reject) => {
+        server.once("error", reject);
+        server.listen(pipe, resolve);
+    });
+
+    // Not the temp directory: a process whose cwd is a directory keeps it from being removed.
+    const parent = spawn(process.execPath, [script, "parent", pipe],
+        { stdio: ["pipe", "ignore", "ignore"], windowsHide: true, cwd: path.dirname(LAUNCHER_PATH) });
+    parent.on("error", () => {});
+    parent.stdin.on("error", () => {});
+    const parentExit = new Promise((resolve) => parent.once("exit", resolve));
+
+    return {
+        parent,
+        parentExit,
+        bothUp,
+        members,
+        go: () => parent.stdin.write("go\n"),
+        allGone: () => Promise.all([...members.values()].map((x) => x.closed)),
+        cleanup: async () => {
+            try {
+                parent.kill();
+            } catch { /* already gone */ }
+            for (const entry of members.values()) {
+                if (entry.open) {
+                    try {
+                        process.kill(entry.pid);
+                    } catch { /* ended between the check and the kill */ }
+                }
+            }
+            for (const socket of sockets) {
+                socket.destroy();
+            }
+            await m.withDeadline(new Promise((resolve) => server.close(resolve)), 5_000, () => TIMED_OUT);
+        },
+    };
+}
+
+// Deadlines add up to 60 + 30 + 15 + 15 s, under the test's own 150 s with room for the cleanup.
+test("PS_CRED_READ_MANY's bind, run for real: terminating the bound process ends what it started through cmd.exe",
+    { skip: JOB_BIND_SKIP, timeout: 150_000 }, async () => {
+        const tree = await startJobTree();
+        try {
+            assert.ok(Number.isInteger(tree.parent.pid), "the parent fixture started");
+
+            // The pid bound is the fixture's, never this process's: the job kills whatever holds it, and this
+            // process is the test runner.
+            const out = await m.withDeadline(
+                m.runTool({ ...m.buildCredReadMany([], tree.parent.pid, {}), timeoutMs: 60_000 }),
+                60_000, () => TIMED_OUT);
+            assert.notEqual(out, TIMED_OUT, "the bind answered within 60 s");
+            assert.deepEqual(JSON.parse(out), { creds: {}, job: "ok" });
+
+            // Started only now, so that both members are created after the assignment.
+            tree.go();
+            assert.notEqual(await m.withDeadline(tree.bothUp, 30_000, () => TIMED_OUT), TIMED_OUT,
+                "the child and the grandchild both connected within 30 s");
+            for (const [role, entry] of tree.members) {
+                assert.equal(entry.open, true, `${role} is connected before the kill`);
+            }
+
+            tree.parent.kill();
+            assert.notEqual(await m.withDeadline(tree.parentExit, 15_000, () => TIMED_OUT), TIMED_OUT,
+                "the parent ended within 15 s of being terminated");
+            assert.notEqual(await m.withDeadline(tree.allGone(), 15_000, () => TIMED_OUT), TIMED_OUT,
+                "the child and the grandchild ended within 15 s of the parent");
+        } finally {
+            await tree.cleanup();
+        }
+    });
+
+// Pins how this Node starts a tree, not the launcher: if a Node ever ended every descendant of a killed
+// parent by itself, the bind test above would pass without the bind, and this one says so as a skip.
+test("without the bind, terminating the parent leaves part of the same tree running (what the bind test is told apart from)",
+    { skip: JOB_BIND_SKIP, timeout: 150_000 }, async (t) => {
+        const tree = await startJobTree();
+        try {
+            assert.ok(Number.isInteger(tree.parent.pid), "the parent fixture started");
+
+            tree.go();
+            assert.notEqual(await m.withDeadline(tree.bothUp, 30_000, () => TIMED_OUT), TIMED_OUT,
+                "the child and the grandchild both connected within 30 s");
+
+            tree.parent.kill();
+            if (await m.withDeadline(tree.parentExit, 15_000, () => TIMED_OUT) === TIMED_OUT) {
+                t.skip("the parent fixture did not end when terminated, so what outlives it cannot be measured");
+
+                return;
+            }
+            if (await m.withDeadline(tree.allGone(), 15_000, () => TIMED_OUT) !== TIMED_OUT) {
+                t.skip("this Node ends the tree without the bind, so the bind test above cannot discriminate here");
+
+                return;
+            }
+            assert.ok([...tree.members.values()].some((x) => x.open), "a member outlived the parent that started it");
+        } finally {
+            await tree.cleanup();
+        }
+    });
+
 test("a blob written by the pre-UTF-8 launcher still reads, since it cannot be re-entered", () => {
     // `set` needs the plaintext and the keystore does not give it back, so asking a teammate to
     // retype would mean minting a new credential.
@@ -2085,7 +2394,7 @@ test("cmdUnlock: must keep showing pinentry interactively — no --pinentry-mode
     tmpDirs.push(secretsHome);
     const savedXdg = process.env.XDG_CONFIG_HOME;
     process.env.XDG_CONFIG_HOME = secretsHome;
-    const cfg = { secrets: { "ado-pat": { backend: "local", scope: "user" } } };
+    const cfg = { secrets: { "ado-pat": { backend: "local", scope: "user", home: "user" } } };
     const keyPath = m.keyToPath(m.keyFor("ado-pat", cfg.secrets["ado-pat"], cfg));
     fs.mkdirSync(path.dirname(keyPath), { recursive: true });
     fs.writeFileSync(keyPath, "ciphertext");
@@ -2131,7 +2440,7 @@ test("a keyvault secret is not an unlock target, since there is no local file to
 });
 
 test("unlock reports a count, since naming one entry reads as only that one being affected", { skip: m.detectLocalBackend(process.platform, process.env) !== "gpg" && "needs gpg to be the backend this machine selects -- cmdUnlock returns early on any other, and this test injects its own run rather than reaching a stub" }, async () => {
-    const cfg = { secrets: { a: { backend: "local", scope: "user" }, b: { backend: "local", scope: "user" } },
+    const cfg = { secrets: { a: { backend: "local", scope: "user", home: "user" }, b: { backend: "local", scope: "user", home: "user" } },
         oauth: {}, projectId: "p", files: {} };
     const err = [];
     await m.cmdUnlock(cfg, { exists: () => true, run: async () => {}, write: (s) => err.push(s) });
@@ -2143,7 +2452,7 @@ test("cmdUnlock: with no exists injected, a keystore file that cannot be examine
     // of existsSync dropped that entry, so an unlock whose only entry it was reported nothing stored:
     // the wrong diagnosis for an entry that is there and could not be examined.
     // The backend is forced so the test runs on every platform: cmdUnlock returns early on any other.
-    const cfg = { secrets: { a: { backend: "local", scope: "user" } }, oauth: {}, projectId: "p", files: {} };
+    const cfg = { secrets: { a: { backend: "local", scope: "user", home: "user" } }, oauth: {}, projectId: "p", files: {} };
     denyFs(t, "statSync", m.keyToPath(m.keyFor("a", cfg.secrets.a, cfg)));
     const saved = process.env.VC_SECRETS_LOCAL_BACKEND;
     process.env.VC_SECRETS_LOCAL_BACKEND = "gpg";
@@ -2474,58 +2783,26 @@ test("buildSpawnInvocation: verbatim cmd line quotes every token", () => {
     assert.deepEqual(direct, { cmd: "npx", args: ["-y"], opts: {} });
 });
 
-test("buildSpawnInvocation: a trailing backslash run in a cmd-shim argument is doubled, and nothing else is", () => {
+test("buildSpawnInvocation: a cmd-shim argument ending in a backslash is refused by position, never by value; a direct spawn takes it", () => {
     const shell = "C:\\Windows\\System32\\cmd.exe";
     const shim = { kind: "cmd-shim", cmd: "C:\\nodejs\\npx.cmd", shell };
     const line = (args) => m.buildSpawnInvocation(shim, args).args[0];
 
-    // MSVCRT reads `\"` as an escaped quote, so an undoubled run swallowed the closing quote and ran the
-    // rest of the command line into the argument. Doubled, the program's parser yields the original.
-    assert.equal(line(["C:\\dir\\"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "C:\\dir\\\\""');
-    assert.equal(line(["C:\\dir\\\\"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "C:\\dir\\\\\\\\""', "a run of two becomes four");
-    assert.equal(line(["a\\b", "C:\\x"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "a\\b" "C:\\x""', "interior backslashes are untouched");
-
-    // Decoding the line the way MSVCRT does is the derivation: every argument must come back as it went in.
-    const decode = (cmdLine) => {
-        const out = [];
-        let i = 0;
-        while (i < cmdLine.length) {
-            if (cmdLine[i] === " ") {
-                i += 1;
-                continue;
-            }
-            let arg = "";
-            let inQuotes = false;
-            while (i < cmdLine.length && (inQuotes || cmdLine[i] !== " ")) {
-                let slashes = 0;
-                while (cmdLine[i] === "\\") {
-                    slashes += 1;
-                    i += 1;
-                }
-                if (cmdLine[i] === '"') {
-                    arg += "\\".repeat(Math.floor(slashes / 2));
-                    if (slashes % 2 === 1) {
-                        arg += '"';
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                    i += 1;
-                } else {
-                    arg += "\\".repeat(slashes);
-                    if (i < cmdLine.length) {
-                        arg += cmdLine[i];
-                        i += 1;
-                    }
-                }
-            }
-            out.push(arg);
-        }
-
-        return out;
-    };
-    const args = ["C:\\dir\\", "C:\\a b\\\\", "plain", "x\\y"];
-    const inner = line(args).slice("/d /s /c \"".length, -1);
-    assert.deepEqual(decode(inner).slice(1), args);
+    // Doubling the run is right for a wrapper that forwards to an MSVCRT-parsed program and wrong for a
+    // batch file that reads %~1 itself, and the builder cannot tell which it is feeding: so none is
+    // rewritten, and the line cmd.exe runs is always the argv the trust review showed.
+    for (const bad of ["C:\\dir\\", "C:\\a b\\\\", "\\"]) {
+        assert.throws(() => line(["ok", bad]),
+            (e) => e instanceof m.VcSecretsError
+                && e.message === "argument 2 ends with a backslash, which a .cmd/.bat shim cannot pass on unchanged -- drop the trailing backslash"
+                && !e.message.includes(bad.trim()),
+            `${JSON.stringify(bad)} must be refused without echoing it`);
+    }
+    // Interior backslashes, and a backslash that is not last, pass through untouched.
+    assert.equal(line(["a\\b", "C:\\x", "C:\\dir\\file"]),
+        '/d /s /c ""C:\\nodejs\\npx.cmd" "a\\b" "C:\\x" "C:\\dir\\file""');
+    // A direct spawn hands the argument to the program as it is, so there is nothing to refuse.
+    assert.deepEqual(m.buildSpawnInvocation({ kind: "direct", cmd: "npx" }, ["C:\\dir\\"]), { cmd: "npx", args: ["C:\\dir\\"], opts: {} });
 });
 
 test("buildSpawnInvocation: a cmd-shim argument cmd.exe would interpret is refused by position, never by value; a direct spawn takes it", () => {
@@ -2871,6 +3148,15 @@ test("doctorReport: a legacy-only secret is a WARN naming migrate, and not also 
     assert.ok(!lines.some((l) => l.startsWith("FAIL") && l.includes("ado-pat")));
 });
 
+test("the shim in this package declares the contract the launcher requires", () => {
+    // A freshly installed shim must not make `doctor` warn that it is stale, so the two constants move
+    // together; only an installed copy left behind by an older plugin version should ever trail.
+    const shimSource = fs.readFileSync(new URL("./vc-secrets-shim.mjs", import.meta.url), "utf8");
+    const declared = /^const SHIM_CONTRACT = (\d+);$/m.exec(shimSource);
+    assert.ok(declared, "the shim declares SHIM_CONTRACT");
+    assert.equal(Number(declared[1]), m.REQUIRED_SHIM_CONTRACT);
+});
+
 test("doctorReport: a shim contract below REQUIRED_SHIM_CONTRACT is a WARN", () => {
     const cfg = { secrets: {}, servers: {} };
     const lines = m.doctorReport(cfg, {
@@ -2879,6 +3165,21 @@ test("doctorReport: a shim contract below REQUIRED_SHIM_CONTRACT is a WARN", () 
         shimContract: m.REQUIRED_SHIM_CONTRACT - 1,
     });
     assert.ok(lines.some((l) => l.startsWith("WARN") && l.includes("install skill")));
+});
+
+test("doctorReport: a shim at contract 1 is told to reinstall, and the line names contract 2", () => {
+    // The equality test above passes while both constants sit at 1, and the relative test above it passes
+    // whatever they are. Contract 2 is what added the marketplace-restricted cache fallback to the shim, so
+    // an install that kept its copied contract-1 shim must be told -- pinned by value, not by comparison.
+    const cfg = { secrets: {}, servers: {} };
+    const lines = m.doctorReport(cfg, {
+        env: {}, platform: "linux", enableLists: { enabled: [], disabled: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), configDirOverride: false,
+        shimContract: 1,
+    });
+    assert.ok(lines.includes("WARN the installed shim speaks contract 1, this launcher expects 2 -- re-run the vc-secrets install skill"),
+        lines.join("\n"));
+    assert.equal(m.REQUIRED_SHIM_CONTRACT, 2);
 });
 
 // ── oauth verdicts, the tenant check, and the child node floor ──────────────────────────────────
@@ -2946,6 +3247,32 @@ test("doctorReport: a needs-refresh verdict is reported as routine, not as a fin
     const lines = oauthDoctorLines({ oauthStatus: { "azure-mcp": "needs-refresh" } });
     assert.ok(!lines.some((l) => l.startsWith("FAIL") || l.includes("vc-secrets login")), lines.join("\n"));
     assert.ok(lines.some((l) => l.startsWith("OK") && /renew/i.test(l)), lines.join("\n"));
+});
+
+test("doctorReport: an oauth entry with a consumer says renewal reaches only a server that re-reads its variable", () => {
+    // Renewal replaces the variable in the supervised launch's environment; a server that copied it at
+    // startup never sees the new value. The report states that itself, with names only.
+    const lines = oauthDoctorLines({ oauthStatus: { "azure-mcp": "ok" } });
+    const info = lines.filter((l) => l.startsWith("INFO oauth \"azure-mcp\": a renewed token"));
+    assert.equal(info.length, 1, lines.join("\n"));
+    assert.match(info[0], /reaches server "azure-mcp" only if it reads ADO_MCP_AUTH_TOKEN from its environment at each use/);
+    assert.match(info[0], /keeps its startup copy runs on it until it expires/);
+});
+
+test("doctorReport: the renewal caveat names a task as a task and is absent when nothing consumes the entry", () => {
+    const taskCfg = {
+        ...OAUTH_DOCTOR_CFG,
+        servers: {},
+        tasks: { sync: { command: "node", args: [], home: "project", env: { TOK: "oauth:azure-mcp" } } },
+    };
+    const base = { env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), oauthStatus: { "azure-mcp": "ok" } };
+    const forTask = m.doctorReport(taskCfg, base).filter((l) => l.includes("a renewed token"));
+    assert.equal(forTask.length, 1);
+    assert.match(forTask[0], /reaches task "sync" only if it reads TOK from/);
+
+    const unconsumed = m.doctorReport({ ...OAUTH_DOCTOR_CFG, servers: {} }, base);
+    assert.ok(!unconsumed.some((l) => l.includes("a renewed token")), unconsumed.join("\n"));
 });
 
 test("doctorReport: a cache that cannot be read at all is a FAIL naming the entry", () => {
@@ -3436,21 +3763,23 @@ test("cmdDoctor: the oauth checks are wired to the report, not merely available"
 test("cmdDoctor: nothing on the doctor path can exchange a token", () => {
     // Pinned as a property of the code rather than of one run: proving a token is refreshable would
     // rotate the refresh token as a side effect of a diagnostic, and the rotation is irreversible.
-    // Comments stripped before any slice: the guards below are negative, so a comment that mentions
-    // `exchange(` cannot fail them -- but the positive `readCache()` assertion could be satisfied by one.
-    const source = strippedLauncherSource();
-    const bodyOf = (name) => strippedBodyOf(name, source);
+    // The negative guards read RAW source: a comment stripper cuts at a `//` inside a string literal (a
+    // URL, say) and would hide a real call after it, and a comment mentioning `exchange(` costs a
+    // false failure at worst. Only the positive `readCache()` match reads stripped source, because a
+    // comment could satisfy it.
+    const raw = fs.readFileSync(LAUNCHER_PATH, "utf8");
+    const stripped = strippedLauncherSource();
     // Both halves of the path, because the risk lives in the half cmdDoctor CALLS: making readCache
     // exchange on needs-refresh -- which is what ensureFreshToken does -- would leave a test that only
     // reads cmdDoctor green. A call shape rather than the bare word, so a comment mentioning the
     // exchange cannot fail it.
-    assert.ok(!/\bexchange\(/.test(bodyOf("async function cmdDoctor")), "cmdDoctor must not reach the exchange");
-    const readCacheStart = source.indexOf("readCache: async () => {");
+    assert.ok(!/\bexchange\(/.test(strippedBodyOf("async function cmdDoctor", raw)), "cmdDoctor must not reach the exchange");
+    const readCacheStart = raw.indexOf("readCache: async () => {");
     assert.notEqual(readCacheStart, -1, "readCache moved");
-    const readCacheBody = source.slice(readCacheStart, source.indexOf("writeCache:", readCacheStart));
+    const readCacheBody = raw.slice(readCacheStart, raw.indexOf("writeCache:", readCacheStart));
     assert.ok(!/\bexchange\(/.test(readCacheBody),
         "readCache is the half cmdDoctor CALLS -- an exchange added there would leave a cmdDoctor-only test green");
-    assert.ok(/readCache\(\)/.test(bodyOf("async function cmdDoctor")), "it reads the cache");
+    assert.ok(/readCache\(\)/.test(strippedBodyOf("async function cmdDoctor", stripped)), "it reads the cache");
 });
 
 test("oauthTenantChecks: driven by the declaration, preferring the reference once one exists", () => {
@@ -3696,6 +4025,11 @@ test("resolveEnvEntries: a project-local override of a user-declared secret stay
     assert.equal(cfg.secrets.pat.home, "project");
     assert.equal(m.crossingProblem(cfg, "servers", "s", "pat"), null);
     assert.deepEqual((await m.resolveEnvEntries("s", cfg, async () => "tok")).env, { PAT: "tok" });
+    // No AUTHORIZATION is needed, but the launch is not free: the namespace is the repository's projectId
+    // claim, and only a trust record for this root pins it.
+    assert.equal(m.trustProblem(cfg, "servers", "s", NO_TRUST)?.reason, "untrusted",
+        "the launch is gated by this checkout's trust");
+    assert.equal(m.trustProblem(cfg, "servers", "s", trustedStateFor(cfg)), null);
 });
 
 test("doctorReport: a user-scope server refused a repository's Key Vault secret gets the block to paste, and a granted one does not", () => {
@@ -3886,11 +4220,35 @@ test("resolveEnvEntries: an env entry declared after an oauth reference still re
 // these do not reach createChannel at all, so a plain `test` is enough.
 // ---------------------------------------------------------------------------------------------
 
+// Every in-process launch below that is not ABOUT the Windows bind goes through this. With no bindPlatform
+// cmdLaunch binds the launching process to a kill-on-close job on win32 -- and in these tests the launching
+// process is the test runner, so an unset default would put the runner itself in a job. A test about the
+// bind passes bindPlatform: "win32" and stubs credReadMany (launchWithBind, above).
+function launch(kind, name, cfg, deps = {}) {
+    return m.cmdLaunch(kind, name, cfg, { bindPlatform: "linux", ...deps });
+}
+
+test("every in-process cmdLaunch call in the test files states its bind platform", () => {
+    // Left unset, cmdLaunch binds the launching process to a kill-on-close job on win32 through a real
+    // PowerShell -- and here that process is the test runner. Nothing fails on a Linux run, so the
+    // omission only shows on the Windows leg, as a runner that dies with the job. The check is textual:
+    // the call, or the helper that wraps it, must name bindPlatform within its first lines.
+    const callSite = new RegExp("m\\.cmdLaunch\\(", "g");
+    for (const file of ["./vc-secrets.test.mjs", "./vc-secrets-oauth.test.mjs"]) {
+        const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
+        for (const hit of source.matchAll(callSite)) {
+            const where = `${file}:${source.slice(0, hit.index).split("\n").length}`;
+            assert.match(source.slice(hit.index, hit.index + 120), /bindPlatform/,
+                `${where} launches in-process without saying whether the bind runs`);
+        }
+    }
+});
+
 test("cmdLaunch: a server with no oauth reference gets no NODE_OPTIONS and no channel", async () => {
     let seen = null;
     const cfg = m.loadConfig(projectPaths({ secrets: {},
         servers: { github: { command: process.execPath, args: ["-e", ""], env: { LIT: "literal:x" } } } }));
-    const handle = await m.cmdLaunch("servers", "github", cfg,
+    const handle = await launch("servers", "github", cfg,
         { trustState: trustedStateFor(cfg), spawnFn: (cmd, args, opts) => { seen = opts.env; return fakeChild(); } });
     try {
         assert.equal(seen.LIT, "x");
@@ -3911,7 +4269,7 @@ test("cmdLaunch: a child node below the flag floor is refused before anything is
     const before = channelDirs();
     const cfg = m.loadConfig(authorizedOauthPaths());
     let spawned = 0;
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+    await assert.rejects(() => launch("servers", "s", cfg, {
         trustState: trustedStateFor(cfg),
         childNodeVersion: () => "v18.17.1",
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
@@ -3936,7 +4294,7 @@ test("cmdLaunch: the version gate probes the declared node, and says so when it 
 
     let probed = null;
     const cfg = m.loadConfig(paths);
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+    await assert.rejects(() => launch("servers", "s", cfg, {
         trustState: trustedStateFor(cfg),
         childNodeVersion: (opts) => { probed = opts?.command ?? null; return "v18.17.1"; },
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
@@ -3967,7 +4325,7 @@ test("cmdLaunch: the version probe searches the PATH the spawn searches, and is 
         let probeEnv;
         let spawnEnv;
         await withProcessEnv({ VC_SECRETS_LOCAL_BACKEND: "keychain", GITHUB_PERSONAL_ACCESS_TOKEN: "ambient-stale-token" }, () => withStubOnPath("security", `#!/bin/sh\necho ${sentinel}\n`, async () => {
-            const handle = await m.cmdLaunch("servers", "s", cfg, {
+            const handle = await launch("servers", "s", cfg, {
                 childNodeVersion: (options) => { probeEnv = options.env; return "v22.0.0"; },
                 readCache: async () => ({ state: "valid", accessToken: "cached" }),
                 createChannel: () => ({ path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1,
@@ -3992,7 +4350,7 @@ test("cmdLaunch: a wrapper command is probed via PATH, and the refusal does not 
     // which node it holds and that the launch goes through the wrapper.
     let probed = "unset";
     const cfg = m.loadConfig(authorizedOauthPaths());
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+    await assert.rejects(() => launch("servers", "s", cfg, {
         trustState: trustedStateFor(cfg),
         childNodeVersion: (opts) => { probed = opts?.command ?? null; return "v18.17.1"; },
         readCache: async () => ({ state: "valid", accessToken: "cached" }),
@@ -4010,7 +4368,7 @@ test("cmdLaunch: a wrapper command is probed via PATH, and the refusal does not 
 test("cmdLaunch: no usable token fails naming login, and never spawns", async () => {
     const cfg = m.loadConfig(authorizedOauthPaths());
     let spawned = 0;
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, {
+    await assert.rejects(() => launch("servers", "s", cfg, {
         trustState: trustedStateFor(cfg),
         readCache: async () => ({ state: "absent" }),
         spawnFn: () => { spawned++; return fakeChild(); },
@@ -4035,7 +4393,7 @@ test("cmdLaunch: dispose detaches the handlers that would exit the process", asy
     const signals = ["SIGINT", "SIGTERM", "SIGHUP", ...(process.platform === "win32" ? [] : ["SIGQUIT"])];
     const before = signals.map((s) => process.listenerCount(s));
     const exitBefore = process.listenerCount("exit");
-    const handle = await m.cmdLaunch("servers", "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
+    const handle = await launch("servers", "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
     assert.equal(child.listenerCount("close"), 1);
     assert.deepEqual(signals.map((s) => process.listenerCount(s)), before.map((n) => n + 1));
     assert.equal(process.listenerCount("exit"), exitBefore + (process.platform === "win32" ? 0 : 1),
@@ -4237,6 +4595,339 @@ test("cmdLaunch off win32 never makes the bind call", async () => {
     await handle.dispose();
 });
 
+// ---------------------------------------------------------------------------------------------
+// The oauth entry's two keystore keys ride in the launch's one PowerShell call on win32. What that is
+// allowed to change is only where the FIRST readCache of a launch gets its bytes: the exchange spends the
+// refresh token read under the lock, so these tests drive the real oauthLaunchDeps through cmdLaunch, with
+// the batched call stubbed (credReadMany) and the live keystore reads stubbed apart from it (run).
+// ---------------------------------------------------------------------------------------------
+
+const D1_ENV = { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-no-such-powershell" };
+
+// A user-scope launchable, so no trust or registration is involved: the secret (when there is one) and
+// the oauth entry "ado" share one scope, "user".
+function d1Config({ secretName = "pat" } = {}) {
+    const env = { ADO_TOKEN: "oauth:ado" };
+    const secrets = {};
+    if (secretName !== null) {
+        secrets[secretName] = { backend: "local" };
+        env.PAT = `secret:${secretName}`;
+    }
+    const cfg = m.loadConfig(scopedPaths({ user: { oauth: { ado: OAUTH_DECL }, secrets,
+        servers: { s: { command: "node", args: ["server.js"], env } } } }));
+    const identity = { tenantId: cfg.oauth.ado.tenantId, clientId: cfg.oauth.ado.clientId, scopes: cfg.oauth.ado.scopes };
+
+    return {
+        cfg,
+        keys: m.oauthEntryKeys("ado", cfg.oauth.ado, cfg),
+        secretKey: (name) => m.keyFor(name, cfg.secrets[name], cfg),
+        refreshBlob: (refreshToken) => cache.serializeRefresh({ refreshToken, ...identity }),
+        accessBlob: (accessToken) => cache.serializeAccess({ accessToken, expiresAt: Date.now() + 3_600_000,
+            obtainedAt: Date.now(), lifetimeMs: 3_600_000, uptimeAtIssue: os.uptime() }),
+    };
+}
+
+// Live keystore reads: `store` maps a full key to the stored text; a key it does not hold is the
+// entry-not-found exit. Every key asked for is appended to `reads`.
+function d1LiveRun(store, reads) {
+    return async (spec) => {
+        const key = spec.extraEnv.VC_SECRETS_NAME;
+        reads.push(key);
+        if (!Object.hasOwn(store, key)) {
+            throw Object.assign(new m.VcSecretsError("not found"), { toolExitCode: 3 });
+        }
+
+        return credHex(store[key]);
+    };
+}
+
+// Everything the launch is given besides the configuration, and what it did with it.
+async function launchD1(cfg, { credReadMany, run, deps = {}, env = D1_ENV } = {}) {
+    const seen = { childEnv: null, pushed: [], exchanged: [], locks: 0, bound: [] };
+    const handle = await withProcessEnv(env, () => m.cmdLaunch("servers", "s", cfg, {
+        bindPlatform: "win32",
+        credReadMany: async (request) => { seen.bound.push(request); return credReadMany(request); },
+        run: run ?? (async () => { throw new Error("a live read this test did not expect"); }),
+        exchange: async (refreshToken) => {
+            seen.exchanged.push(refreshToken);
+
+            return { accessToken: "a-fresh", refreshToken: "r-fresh", expiresAt: Date.now() + 3_600_000,
+                obtainedAt: Date.now(), lifetimeMs: 3_600_000, uptimeAtIssue: os.uptime() };
+        },
+        writeCache: async () => {},
+        acquireLock: async () => { seen.locks += 1; return { release: async () => {} }; },
+        childNodeVersion: () => "v22.0.0",
+        createChannel: () => ({ path: "/tmp/not-a-real.sock", push: (token) => { seen.pushed.push(token); return 1; },
+            peers: () => 1, close: async () => {}, removeSync: () => {} }),
+        resolveCommand: (command) => ({ kind: "direct", cmd: command }),
+        spawnFn: (cmd, args, opts) => { seen.childEnv = opts.env; return fakeChild(); },
+        ...deps,
+    }));
+
+    return { handle, seen };
+}
+
+// What reaches fd 2 through fs.writeSync. Any other fd goes on to the real call: a real tool run in the same
+// test pipes its input through it.
+function captureStderr(t, onWrite = () => {}) {
+    const lines = [];
+    const real = fs.writeSync;
+    t.mock.method(fs, "writeSync", (fd, str, ...rest) => {
+        if (fd !== 2) {
+            return real(fd, str, ...rest);
+        }
+        lines.push(str);
+        onWrite(str);
+
+        return Buffer.byteLength(str);
+    });
+
+    return lines;
+}
+
+const NO_SPAWN = { spawnFn: () => { throw new Error("must not spawn"); } };
+
+test("cmdLaunch on win32: one call carries the secret keys and the oauth entry's two, with no per-name read, and the child gets the batched token", async () => {
+    const fx = d1Config();
+    const reads = [];
+    const { handle, seen } = await launchD1(fx.cfg, {
+        run: d1LiveRun({}, reads),
+        credReadMany: async () => ({ job: "ok", creds: {
+            [fx.secretKey("pat")]: { ok: credHex("the-pat") },
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r1")) },
+            [fx.keys.access]: { ok: credHex(fx.accessBlob("a-batch")) } } }),
+    });
+    try {
+        assert.equal(seen.bound.length, 1, "one PowerShell call for the whole launch");
+        assert.deepEqual(seen.bound[0].keys, [fx.secretKey("pat"), fx.keys.refresh, fx.keys.access]);
+        assert.deepEqual(reads, [], "no per-name read afterwards");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-batch");
+        assert.equal(seen.childEnv.PAT, "the-pat");
+        assert.deepEqual(seen.exchanged, [], "a valid batched access token is not exchanged");
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("oauthLaunchDeps: the seed answers the first readCache only, and a later one reads the keystore", async () => {
+    const fx = d1Config();
+    const reads = [];
+    const seed = new Map([[fx.keys.refresh, { ok: credHex(fx.refreshBlob("r-batch")) }],
+        [fx.keys.access, { ok: credHex(fx.accessBlob("a-batch")) }]]);
+    const deps = m.oauthLaunchDeps("ado", fx.cfg.oauth.ado, fx.cfg, { backend: "wcm", seed,
+        run: d1LiveRun({ [fx.keys.refresh]: fx.refreshBlob("r-live"), [fx.keys.access]: fx.accessBlob("a-live") }, reads) });
+
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-batch" });
+    assert.deepEqual(reads, [], "the first call was answered from the batch");
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-live" });
+    assert.deepEqual(reads, [fx.keys.refresh, fx.keys.access], "the second call read the keystore");
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-live" });
+    assert.equal(reads.length, 4);
+});
+
+test("oauthLaunchDeps: a seed whose first use throws is gone for the next readCache", async () => {
+    const fx = d1Config();
+    const reads = [];
+    const seed = new Map([[fx.keys.refresh, { err: 5 }]]);
+    const deps = m.oauthLaunchDeps("ado", fx.cfg.oauth.ado, fx.cfg, { backend: "wcm", seed,
+        run: d1LiveRun({ [fx.keys.refresh]: fx.refreshBlob("r-live"), [fx.keys.access]: fx.accessBlob("a-live") }, reads) });
+
+    await assert.rejects(() => deps.readCache(), /win32err=5/);
+    assert.deepEqual(reads, []);
+    assert.deepEqual(await deps.readCache(), { state: "valid", accessToken: "a-live" });
+    assert.deepEqual(reads, [fx.keys.refresh, fx.keys.access], "the failure did not leave the batch behind for the retry");
+});
+
+test("cmdLaunch on win32: a renewal tick reads the keystore, not the batch the launch started from", async () => {
+    const fx = d1Config({ secretName: null });
+    const reads = [];
+    const { handle, seen } = await launchD1(fx.cfg, {
+        run: d1LiveRun({ [fx.keys.refresh]: fx.refreshBlob("r-live"), [fx.keys.access]: fx.accessBlob("a-live") }, reads),
+        credReadMany: async () => ({ job: "ok", creds: {
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r-batch")) },
+            [fx.keys.access]: { ok: credHex(fx.accessBlob("a-batch")) } } }),
+        deps: { renewalTickMs: 20 },
+    });
+    try {
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-batch");
+        assert.ok(await waitFor(() => seen.pushed.length > 0, { timeoutMs: 5000 }), "a tick ran");
+        assert.equal(seen.pushed[0], "a-live", "the tick's token came from the keystore");
+        assert.ok(reads.includes(fx.keys.refresh) && reads.includes(fx.keys.access));
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("cmdLaunch on win32: the refresh token exchanged is the one read under the lock, not the one batched before it", async () => {
+    // Entra rotates the refresh token on use: a neighbour that finished between the batch and the lock has
+    // left the batched one dead, and spending it signs the developer out. The batch holds r1 and no access
+    // entry, so the launch must exchange; the store, read again under the lock, holds r2.
+    const fx = d1Config({ secretName: null });
+    const reads = [];
+    const { handle, seen } = await launchD1(fx.cfg, {
+        run: d1LiveRun({ [fx.keys.refresh]: fx.refreshBlob("r2") }, reads),
+        credReadMany: async () => ({ job: "ok", creds: {
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r1")) },
+            [fx.keys.access]: { err: 1168 } } }),
+    });
+    try {
+        assert.deepEqual(seen.exchanged, ["r2"]);
+        assert.equal(seen.locks, 1);
+        assert.deepEqual(reads, [fx.keys.refresh, fx.keys.access], "the re-read under the lock went to the keystore");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-fresh");
+    } finally {
+        await handle.dispose();
+    }
+});
+
+test("cmdLaunch on win32: refresh absent in the batch is absent whatever the access outcome, with no notice and no other error", async (t) => {
+    const stderr = captureStderr(t);
+    const fx = d1Config({ secretName: null });
+    await assert.rejects(() => launchD1(fx.cfg, {
+        credReadMany: async () => ({ job: "ok", creds: { [fx.keys.refresh]: { err: 1168 }, [fx.keys.access]: { err: 5 } } }),
+        deps: NO_SPAWN,
+    }), (e) => e instanceof m.VcSecretsError && e.message === 'no usable token for "ado" -- run "vc-secrets login ado"');
+    assert.deepEqual(stderr, []);
+});
+
+test("cmdLaunch on win32: a refresh read that failed in the batch says what the single read says", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, async (t) => {
+    const stderr = captureStderr(t);
+    const fx = d1Config({ secretName: null });
+    const env = { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-d1-stub" };
+    const stub = "#!/bin/sh\nprintf 'CredRead failed win32err=5' >&2\nexit 1\n";
+    let single = null;
+    await withStubOnPath("vc-ps-d1-stub", stub, () => withProcessEnv(env, async () => {
+        await assert.rejects(() => m.oauthLaunchDeps("ado", fx.cfg.oauth.ado, fx.cfg).readCache(),
+            (e) => { single = e.message; return true; });
+    }));
+    assert.match(single, /win32err=5/, "the control: the single read fails and says why");
+
+    await assert.rejects(() => launchD1(fx.cfg, { env,
+        credReadMany: async () => ({ job: "ok", creds: { [fx.keys.refresh]: { err: 5 } } }),
+        deps: NO_SPAWN,
+    }), (e) => e instanceof m.VcSecretsError && e.message === single);
+    assert.deepEqual(stderr, []);
+});
+
+test("cmdLaunch on win32: a corrupt refresh blob is named once, after the batch, and the access entry is not looked at", async (t) => {
+    const order = [];
+    const stderr = captureStderr(t, () => order.push("notice"));
+    const fx = d1Config();
+    await assert.rejects(() => launchD1(fx.cfg, {
+        credReadMany: async () => {
+            order.push("batch");
+
+            return { job: "ok", creds: {
+                [fx.secretKey("pat")]: { ok: credHex("the-pat") },
+                [fx.keys.refresh]: { ok: credHex("{not json") },
+                [fx.keys.access]: { ok: credHex("{also not json") } } };
+        },
+        deps: NO_SPAWN,
+    }), /vc-secrets login ado/);
+    assert.deepEqual(order, ["batch", "notice"], "the notice is the consumer's, not the batch's");
+    assert.equal(stderr.length, 1);
+    assert.match(stderr[0], /"oauth-ado-refresh" is not readable JSON/);
+    assert.ok(!stderr.join("").includes("oauth-ado-access"));
+});
+
+test("cmdLaunch on win32: a whole-call failure sends the oauth entry through per-name reads, a bind-only failure keeps the batch", async (t) => {
+    const stderr = captureStderr(t);
+    const fx = d1Config({ secretName: null });
+    const live = { [fx.keys.refresh]: fx.refreshBlob("r-live"), [fx.keys.access]: fx.accessBlob("a-live") };
+
+    const reads = [];
+    const whole = await launchD1(fx.cfg, { run: d1LiveRun(live, reads),
+        credReadMany: async () => { throw new m.VcSecretsError("powershell.exe exited 1: nope"); } });
+    try {
+        assert.deepEqual(reads, [fx.keys.refresh, fx.keys.access], "the batch seeded nothing, so each key was read");
+        assert.equal(whole.seen.childEnv.ADO_TOKEN, "a-live");
+        assert.equal(stderr.length, 1);
+        assert.match(stderr[0], /could not bind the launch's process tree .*\(powershell\.exe exited 1: nope\)/);
+    } finally {
+        await whole.handle.dispose();
+    }
+
+    stderr.length = 0;
+    reads.length = 0;
+    const bindOnly = await launchD1(fx.cfg, { run: d1LiveRun(live, reads),
+        credReadMany: async () => ({ job: 5, creds: {
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r-batch")) },
+            [fx.keys.access]: { ok: credHex(fx.accessBlob("a-batch")) } } }) });
+    try {
+        assert.deepEqual(reads, [], "a refused job object does not make the read results unusable");
+        assert.equal(bindOnly.seen.childEnv.ADO_TOKEN, "a-batch");
+        assert.match(stderr.join(""), /win32 error 5/);
+    } finally {
+        await bindOnly.handle.dispose();
+    }
+});
+
+test("cmdLaunch on win32: a failing secret is reported alone -- no oauth notice, no oauth error", async (t) => {
+    const stderr = captureStderr(t);
+    const fx = d1Config();
+    await assert.rejects(() => launchD1(fx.cfg, {
+        credReadMany: async () => ({ job: "ok", creds: {
+            [fx.secretKey("pat")]: { err: 5 },
+            [fx.keys.refresh]: { ok: credHex("{not json") },
+            [fx.keys.access]: { err: 5 } } }),
+        deps: NO_SPAWN,
+    }), (e) => {
+        const expected = m.mapResolveError("wcm", "pat", Object.assign(
+            new m.VcSecretsError("vc-no-such-powershell exited 1: CredRead failed win32err=5"), { toolExitCode: 1 }));
+        assert.equal(e.message, expected.message);
+
+        return true;
+    });
+    assert.deepEqual(stderr, []);
+});
+
+test("cmdLaunch on win32: an invalid VC_SECRETS_LOCAL_BACKEND asks the batch for no oauth keys, and fails where it does without one", async () => {
+    const fx = d1Config({ secretName: null });
+    const bogus = { VC_SECRETS_LOCAL_BACKEND: "bogus", VC_SECRETS_POWERSHELL: "vc-no-such-powershell" };
+    let today = null;
+    await withProcessEnv(bogus, async () => {
+        assert.throws(() => m.oauthLaunchDeps("ado", fx.cfg.oauth.ado, fx.cfg),
+            (e) => { today = e.message; return e instanceof m.VcSecretsError; });
+    });
+    assert.match(today, /VC_SECRETS_LOCAL_BACKEND="bogus"/, "the control: this is where the bad value is refused");
+
+    const calls = [];
+    await assert.rejects(() => launchD1(fx.cfg, { env: bogus,
+        credReadMany: async (request) => { calls.push(request.keys); return { job: "ok", creds: {} }; },
+        deps: NO_SPAWN,
+    }), (e) => e instanceof m.VcSecretsError && e.message === today);
+    assert.deepEqual(calls, [[]], "the bind still ran, with no key to read");
+});
+
+test("cmdLaunch on win32: oauth keys are batched only when the oauth entry will be read from Credential Manager", async () => {
+    // The environment says wcm; the backend handed to oauthLaunchDeps says keychain, and that one wins.
+    const fx = d1Config({ secretName: null });
+    const calls = [];
+    const { handle } = await launchD1(fx.cfg, {
+        credReadMany: async (request) => { calls.push(request.keys); return { job: "ok", creds: {} }; },
+        deps: { backend: "keychain", readCache: async () => ({ state: "valid", accessToken: "cached" }) },
+    });
+    await handle.dispose();
+    assert.deepEqual(calls, [[]]);
+});
+
+test("cmdLaunch on win32: an oauth entry's outcome never becomes a secret's value, even when the two share a name", async () => {
+    const fx = d1Config({ secretName: "ado" });
+    const { handle, seen } = await launchD1(fx.cfg, {
+        credReadMany: async () => ({ job: "ok", creds: {
+            [fx.secretKey("ado")]: { ok: credHex("the-secret") },
+            [fx.keys.refresh]: { ok: credHex(fx.refreshBlob("r1")) },
+            [fx.keys.access]: { ok: credHex(fx.accessBlob("a-batch")) } } }),
+    });
+    try {
+        assert.equal(seen.childEnv.PAT, "the-secret");
+        assert.equal(seen.childEnv.ADO_TOKEN, "a-batch");
+        assert.deepEqual(seen.bound[0].keys, [fx.secretKey("ado"), fx.keys.refresh, fx.keys.access]);
+    } finally {
+        await handle.dispose();
+    }
+});
+
 // Signal 0 says a process exists, and a killed one whose parent never reaps it -- PID 1 of a container
 // with no init -- keeps answering it as a zombie. Those are dead for this purpose.
 function processIsAlive(pid) {
@@ -4340,7 +5031,7 @@ test("cmdLaunch: on win32 no SIGQUIT listener is registered, and the other three
     const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
     const count = (signal) => process.listenerCount(signal);
     const before = Object.fromEntries(["SIGINT", "SIGTERM", "SIGHUP", "SIGQUIT"].map((signal) => [signal, count(signal)]));
-    const handle = await m.cmdLaunch("servers", "github", cfg,
+    const handle = await launch("servers", "github", cfg,
         { trustState: trustedStateFor(cfg), spawnFn: () => child, signalPlatform: "win32" });
     for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
         assert.equal(count(signal), before[signal] + 1, `${signal} is registered`);
@@ -4483,7 +5174,7 @@ async function launchWithRecordingChild(kind = "servers") {
         [kind]: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
     const killed = [];
     const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1, kill: (s) => killed.push(s) });
-    const handle = await m.cmdLaunch(kind, "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
+    const handle = await launch(kind, "github", cfg, { trustState: trustedStateFor(cfg), spawnFn: () => child });
 
     return { handle, killed };
 }
@@ -4690,7 +5381,7 @@ async function launchWithRelay(kind, fixture, stdinOverride = fixture.stdin) {
         [kind]: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
     const spawned = [];
 
-    const handle = await m.cmdLaunch(kind, "github", cfg, { trustState: trustedStateFor(cfg), stdin: stdinOverride,
+    const handle = await launch(kind, "github", cfg, { trustState: trustedStateFor(cfg), stdin: stdinOverride,
         spawnFn: (cmd, args, opts) => { spawned.push(opts); return fixture.child; } });
 
     return { handle, spawned };
@@ -4874,6 +5565,110 @@ test("cmdLaunch: a write to a child that has gone is swallowed, and any other st
         }
     });
 
+// The same defect without a process or a timer to race: the error is EMITTED on the child's stdin, and the
+// bytes and the EOF the client sends afterwards are what the launcher must still read. The real-process test
+// below waits for the error to be handled by sleeping, which a delayed error would defeat; the order here is
+// fixed by construction.
+test("cmdLaunch: after the child's stdin fails with EPIPE the launcher keeps draining its own, and the client's EOF arms the teardown",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        for (const code of ["EPIPE", "ERR_STREAM_DESTROYED"]) {
+            const fixture = relayFixture();
+            const { handle } = await launchWithRelay("servers", fixture);
+            try {
+                fixture.child.stdin.emit("error", Object.assign(new Error(code), { code }));
+                // Behind the error, with the EOF still to come: nobody reads it unless the launcher drains.
+                fixture.stdin.write(Buffer.alloc(1024, 2));
+                await nextTurn();
+                assert.equal(fixture.stdin.readableFlowing, true, `${code}: the launcher's stdin is still being read`);
+                assert.equal(fixture.stdin.readableLength, 0, `${code}: and what the client wrote after the error was consumed`);
+                fixture.stdin.end();
+                await nextTurn();
+                t.mock.timers.tick(m.LAUNCH_STDIN_CLOSE_GRACE_MS - 1);
+                assert.deepEqual(fixture.killed, [], `${code}: the server is given the grace first`);
+                t.mock.timers.tick(1);
+                assert.deepEqual(fixture.killed, ["SIGTERM"], `${code}: the EOF was seen, so the teardown armed`);
+            } finally {
+                await handle.dispose();
+            }
+        }
+    });
+
+// A server that closes its stdin and keeps running. The launcher learns of it only by writing, and what
+// the client wrote after that sits unread in the launcher's own stdin with the EOF behind it. Without the
+// launcher draining it, the EOF is never seen: the grace timer never starts and the tree outlives the client.
+test("cmdLaunch: a server that closed its stdin and kept running is still torn down after the client's EOF behind unread input",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups", timeout: 60_000 },
+    async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-epipe-"));
+        tmpDirs.push(dir);
+        const marker = path.join(dir, "closed");
+        // No double quote anywhere: a declaration refuses one, for Windows' sake.
+        const script = "require('fs').closeSync(0);\n"
+            + "require('fs').writeFileSync(process.env.MARKER, String(process.pid));\n"
+            + "setInterval(() => {}, 1000);\n";
+        const configDir = tmpConfigDir({ secrets: {}, servers: {
+            deaf: { command: process.execPath, args: ["-e", script], env: { MARKER: `literal:${marker}` } } } });
+        const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "deaf"],
+            { env: trustedLauncherEnv(configDir), stdio: ["pipe", "ignore", "pipe"] });
+        let stderr = "";
+        launcher.stderr.on("data", (d) => { stderr += d; });
+        const readPid = () => {
+            try {
+                const pid = Number(fs.readFileSync(marker, "utf8"));
+
+                return pid > 0 ? pid : null;
+            } catch {
+                return null;
+            }
+        };
+        let serverPid = null;
+        try {
+            serverPid = await waitFor(readPid, { timeoutMs: 10_000 });
+            assert.ok(serverPid, `the fixture never closed its stdin: ${stderr}`);
+            // The first write is what raises EPIPE in the launcher. The pause lets it be handled before the
+            // rest arrives: written together, the bytes and the EOF would all be read before the error.
+            launcher.stdin.write(Buffer.alloc(1024, 1));
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            // Behind the EOF, and unread by a launcher that stopped draining.
+            launcher.stdin.write(Buffer.alloc(1024, 2));
+            launcher.stdin.end();
+            const closedAt = Date.now();
+            const gone = await waitFor(() => launcher.exitCode !== null && !processIsAlive(serverPid), { timeoutMs: 8000 });
+            assert.ok(gone, `after ${Date.now() - closedAt} ms the launcher or the server was still running: ${stderr}`);
+            assert.equal(launcher.signalCode, null, "the launcher must leave by its own exit, not be killed from outside");
+        } finally {
+            launcher.kill("SIGKILL");
+            const pid = serverPid ?? readPid();
+            if (pid) {
+                try {
+                    process.kill(pid, "SIGKILL");
+                } catch { /* already gone */ }
+            }
+        }
+    });
+
+test("cmdLaunch: a launcher stdin that ended before the relay attached still arms the teardown",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        fixture.stdin.end();
+        fixture.stdin.resume();
+        await new Promise((resolve) => fixture.stdin.once("end", resolve));
+        assert.equal(fixture.stdin.readableEnded, true, "the fixture must be consumed before the launch, or the test proves nothing");
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            await nextTurn();
+            assert.equal(fixture.sink.ended, true, "the child's stdin is ended at once");
+            t.mock.timers.tick(m.LAUNCH_STDIN_CLOSE_GRACE_MS);
+            assert.deepEqual(fixture.killed, ["SIGTERM"]);
+        } finally {
+            await handle.dispose();
+        }
+    });
+
 test("cmdLaunch: the spawn command is looked up against the child's env, so a declared PATH is what is searched", async () => {
     // resolveSpawnCommand only searches on win32, so on any other platform the lookup is a
     // pass-through and its env cannot be observed from the result -- hence the seam. What is asserted is
@@ -4882,7 +5677,7 @@ test("cmdLaunch: the spawn command is looked up against the child's env, so a de
         servers: { github: { command: "tool", args: [], env: { PATH: "literal:/declared/bin" } } } }));
     const seen = [];
     const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
-    const handle = await m.cmdLaunch("servers", "github", cfg, {
+    const handle = await launch("servers", "github", cfg, {
         trustState: trustedStateFor(cfg),
         resolveCommand: (command, options) => { seen.push([command, options.env.PATH]); return { kind: "direct", cmd: command }; },
         spawnFn: () => child,
@@ -4897,9 +5692,9 @@ test("cmdLaunch: hands createChannel the same namespace keyFor keys the entry un
     // guarding the same renewal land in different namespaces. What is handed over is the only thing
     // to assert, hence deps.createChannel -- and it is asserted against keyFor rather than against
     // a literal, because agreeing with keyFor is the whole requirement.
-    const launch = async (cfg) => {
+    const passedScopeKey = async (cfg) => {
         let passed;
-        const handle = await m.cmdLaunch("servers", "s", cfg, {
+        const handle = await launch("servers", "s", cfg, {
             trustState: trustedStateFor(cfg),
             childNodeVersion: () => "v20.11.0",
             readCache: async () => ({ state: "valid", accessToken: "cached" }),
@@ -4916,14 +5711,14 @@ test("cmdLaunch: hands createChannel the same namespace keyFor keys the entry un
         return passed;
     };
     const project = m.loadConfig(authorizedOauthPaths());
-    assert.equal(`${m.KEY_PREFIX}:${await launch(project)}:probe`,
+    assert.equal(`${m.KEY_PREFIX}:${await passedScopeKey(project)}:probe`,
         m.keyFor("probe", project.oauth.ado, project));
 
     const user = m.loadConfig(scopedPaths({ user: {
         oauth: { ado: OAUTH_DECL },
         servers: { s: { command: "npx", args: [], env: { ADO_TOKEN: "oauth:ado" } } },
     } }));
-    assert.equal(`${m.KEY_PREFIX}:${await launch(user)}:probe`,
+    assert.equal(`${m.KEY_PREFIX}:${await passedScopeKey(user)}:probe`,
         m.keyFor("probe", user.oauth.ado, user));
 });
 
@@ -4938,7 +5733,7 @@ test("cmdLaunch: a launch can renew only one", async () => {
             servers: { s: { command: "npx", args: [], env: { A: "oauth:ado", B: "oauth:ado2" } } },
         },
     }));
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg),
+    await assert.rejects(() => launch("servers", "s", cfg),
         /server "s" references 2 oauth entries \(A, B\) -- a launch can renew only one/);
 });
 
@@ -5831,7 +6626,9 @@ test("doctorReport: duplicate-tool suppression matches gpg's real message shape 
 // the walk climbs out of the fixture, and on Windows os.tmpdir() sits inside the developer's real profile,
 // whose own ~/.claude/vc-secrets.json would then be read as a project's. `project` and `local` are that
 // repository's files, and default to a declaration of nothing.
-function runMigrate({ user, project = { secrets: {}, servers: {} }, local, env: extra, verb = "migrate" }) {
+// `trusted`: record the repository in the trust file before the verb runs, for a test about something other
+// than the namespace gate that reads or writes the repository's own secrets.
+function runMigrate({ user, project = { secrets: {}, servers: {} }, local, env: extra, verb = "migrate", trusted = false }) {
     const env = launcherEnv(extra);
     fs.mkdirSync(path.join(env.HOME, ".claude"), { recursive: true });
     fs.writeFileSync(path.join(env.HOME, ".claude", m.CONFIG_NAME), JSON.stringify(user));
@@ -5841,6 +6638,9 @@ function runMigrate({ user, project = { secrets: {}, servers: {} }, local, env: 
     fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify(project));
     if (local !== undefined) {
         fs.writeFileSync(path.join(repo, ".claude", m.LOCAL_CONFIG_NAME), JSON.stringify(local));
+    }
+    if (trusted) {
+        seedTrust(env, repo);
     }
 
     return spawnSync(process.execPath, [LAUNCHER_PATH, verb], { env, cwd: repo, encoding: "utf8" });
@@ -5980,7 +6780,8 @@ esac
     const r = runMigrate({ verb: "doctor",
         user: { secrets: { mine: { backend: "local" } }, servers: {}, tasks: {} },
         project: { projectId: "demo", secrets: { theirs: { backend: "local" } }, servers: {}, tasks: {} },
-        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` } });
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", PATH: `${binDir}${path.delimiter}${process.env.PATH}` },
+        trusted: true });
 
     assert.match(r.stderr, /^WARN secret "mine" is only under the legacy key -- run "vc-secrets migrate"$/m, r.stderr);
     assert.doesNotMatch(r.stderr, /WARN secret "theirs"/, r.stderr);
@@ -6327,6 +7128,23 @@ test("both direct-run gates fire when the plugin is reached through a symlinked 
     assert.equal(probeRun.status, 2, "a gate that never fires exits 0 having done nothing");
 
     const launcher = spawnSync(process.execPath, [path.join(link, "vc-secrets.mjs")], { encoding: "utf8" });
+    assert.match(launcher.stderr, /usage: vc-secrets </, `launcher stderr: ${launcher.stderr}`);
+    assert.notEqual(launcher.status, 0, "a gate that never fires exits 0 having done nothing");
+});
+
+test("both direct-run gates fire under --preserve-symlinks-main through a symlinked directory", { skip: !CAN_SYMLINK && "this machine cannot create a directory link" }, () => {
+    // With that flag import.meta.url of the entry file keeps the link path, so canonicalising only
+    // argv[1] leaves the two sides apart again and the CLI exits 0 having done nothing.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-linked-main-"));
+    tmpDirs.push(root);
+    const link = path.join(root, "linked-plugin");
+    fs.symlinkSync(path.dirname(fileURLToPath(import.meta.url)), link, LINK_TYPE);
+
+    const probeRun = spawnSync(process.execPath, ["--preserve-symlinks-main", path.join(link, "vc-secrets-probe.mjs")], { encoding: "utf8" });
+    assert.match(probeRun.stderr, /usage: node vc-secrets-probe\.mjs/, `probe stderr: ${probeRun.stderr}`);
+    assert.equal(probeRun.status, 2, "a gate that never fires exits 0 having done nothing");
+
+    const launcher = spawnSync(process.execPath, ["--preserve-symlinks-main", path.join(link, "vc-secrets.mjs")], { encoding: "utf8" });
     assert.match(launcher.stderr, /usage: vc-secrets </, `launcher stderr: ${launcher.stderr}`);
     assert.notEqual(launcher.status, 0, "a gate that never fires exits 0 having done nothing");
 });
@@ -7881,7 +8699,7 @@ async function withProcessEnv(env, fn) {
     }
 }
 
-test("trustProblem: a user-scope launchable needs no trust, whatever the state holds", () => {
+test("trustProblem: a user-scope launchable that reads nothing a repository declares needs no trust, whatever the state holds", () => {
     const cfg = m.loadConfig(scopedPaths({ user: {
         servers: { gh: TRUST_BASE }, tasks: { job: { command: "true", args: [], env: {} } } } }));
     assert.equal(m.trustProblem(cfg, "servers", "gh", NO_TRUST), null);
@@ -8268,13 +9086,13 @@ test("cmdLaunch: an untrusted repository server is refused before any token, cac
         createChannel: () => { touched.push("createChannel"); return { path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1, close: async () => {}, removeSync: () => {} }; },
         spawnFn: () => { touched.push("spawn"); return fakeChild(); },
     };
-    await assert.rejects(() => m.cmdLaunch("servers", "s", cfg, { ...deps, trustState: NO_TRUST }),
+    await assert.rejects(() => launch("servers", "s", cfg, { ...deps, trustState: NO_TRUST }),
         new RegExp(`server "s" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in `));
     assert.deepEqual(touched, [], "a repository nobody trusted must not cost a keystore read");
 
     // The control: with the record the same launch reaches the cache, which is what proves the seam above
     // is on the path the refusal cut short.
-    const handle = await m.cmdLaunch("servers", "s", cfg, { ...deps, trustState: trustedStateFor(cfg) });
+    const handle = await launch("servers", "s", cfg, { ...deps, trustState: trustedStateFor(cfg) });
     await handle.dispose();
     assert.ok(touched.includes("readCache"), `the trusted launch never reached the cache: ${touched}`);
 });
@@ -8284,7 +9102,7 @@ test("cmdLaunch: a changed repository server is refused with the differences, an
     const state = trustedStateFor(cfg);
     const changed = withDeclaration(cfg, "servers", "gh", { args: ["-y", "another-package"] });
     let spawned = 0;
-    await assert.rejects(() => m.cmdLaunch("servers", "gh", changed, { trustState: state, spawnFn: () => { spawned++; return fakeChild(); } }),
+    await assert.rejects(() => launch("servers", "gh", changed, { trustState: state, spawnFn: () => { spawned++; return fakeChild(); } }),
         /server "gh" changed since you trusted it: args changed -- review it, then run "vc-secrets trust" again in /);
     assert.equal(spawned, 0);
 });
@@ -8292,21 +9110,27 @@ test("cmdLaunch: a changed repository server is refused with the differences, an
 test("cmdLaunch: an unknown name is reported as unknown, before the trust file is consulted", async () => {
     const cfg = trustCfg();
     await assert.rejects(() => m.cmdLaunch("servers", "ghost", cfg, {
+        bindPlatform: "linux",
         get trustState() { throw new Error("the trust state must not be read for a name nothing declares"); } }),
         /unknown server "ghost"/);
 });
 
-test("cmdLaunch: the trust file is read only for a repository launchable, and an unreadable one refuses that launch alone", async () => {
+test("cmdLaunch: the trust file is read only for a gated launch, and an unreadable one refuses that launch alone", async () => {
     const env = trustEnv();
     const file = m.trustFilePath(env);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, "{ corrupt");
     const user = m.loadConfig(scopedPaths({ user: { servers: { mine: { command: process.execPath, args: ["-e", ""], env: {} } } } }));
     await withProcessEnv(env, async () => {
-        const handle = await m.cmdLaunch("servers", "mine", user, { spawnFn: () => fakeChild() });
+        const handle = await launch("servers", "mine", user, { spawnFn: () => fakeChild() });
         await handle.dispose();
 
-        await assert.rejects(() => m.cmdLaunch("servers", "gh", trustCfg(), { spawnFn: () => fakeChild() }),
+        await assert.rejects(() => launch("servers", "gh", trustCfg(), { spawnFn: () => fakeChild() }),
+            (e) => e instanceof m.VcSecretsError && e.message.includes(file));
+
+        // The one user-scope launch that does depend on it: the person's own server reading a repository's
+        // local secret. Refused by the unreadable file, not waved through as if nothing were gated.
+        await assert.rejects(() => launch("servers", "s", namespaceCfg(), { spawnFn: () => fakeChild() }),
             (e) => e instanceof m.VcSecretsError && e.message.includes(file));
     });
 });
@@ -9180,6 +10004,13 @@ test("trustAssessment: reads no file when nothing is gated, so a user-scope conf
     assert.equal(result.problems.size, 0);
     assert.deepEqual(result.findings, []);
     assert.equal(result.unreadable, null);
+
+    // A repository that declares a local secret, with a user-scope server that does not read it: still no file.
+    const withRepository = m.loadConfig(scopedPaths({
+        user: { servers: { mine: TRUST_BASE } },
+        project: { projectId: "proj-x", secrets: { unrelated: { backend: "local" } } } }));
+    assert.equal(m.trustAssessment(withRepository, () => { throw new Error("the trust file was read"); }).problems.size, 0);
+    assert.deepEqual(m.trustNotes(withRepository, m.trustAssessment(withRepository, () => { throw new Error("read"); })), []);
 });
 
 test("trustAssessment: untrusted and changed launchables are findings, trusted ones say nothing", () => {
@@ -9261,6 +10092,1040 @@ test("trustNotes: an unreadable trust file is reported once, as itself", () => {
     const cfg = trustCfg({ servers: { a: TRUST_BASE, b: TRUST_BASE } });
     const failure = new m.VcSecretsError("the trust file /x/trust.json is unusable (not an object)");
     assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => { throw failure; })), [failure.message]);
+});
+
+// ── a user-scope launchable that reads the repository's keystore namespace ─────────────────────────
+//
+// The person's own server or task needs no trust of its own, but a `local`-backend secret or an `oauth`
+// entry a repository declares is stored under the repository's projectId -- which the repository chooses,
+// another project's included. The launch is therefore held to a trust record for THIS root whose
+// projectId is the one in play (trustGateOf). The repository's own launchables are unchanged.
+
+const NS_SERVER = { command: process.execPath, args: ["-e", ""], env: { PAT: "secret:pat" } };
+const NS_OAUTH_SERVER = { command: process.execPath, args: ["-e", ""], env: { ADO_TOKEN: "oauth:ado" } };
+const NS_GRANT = { servers: { s: { command: process.execPath, args: ["-e", ""], envKeys: ["ADO_TOKEN"] } } };
+
+// scopedPaths gives every config the same root (the parent of its temp directory), so two "repositories"
+// built with it would be one. A root of its own is what makes the trust record's key mean something.
+function withOwnRoot(paths) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ns-root-"));
+    tmpDirs.push(root);
+
+    return { ...paths, root };
+}
+
+// A user-scope server `s` that reads `secret:pat`, with the repository declaring `pat` as a local secret
+// in the file named by `declaredIn`. The repository declares no launchable of its own.
+function namespaceCfg({ projectId = "proj-x", declaredIn = "project", user = {}, secrets = { pat: { backend: "local" } } } = {}) {
+    return m.loadConfig(withOwnRoot(scopedPaths({
+        user: { servers: { s: NS_SERVER }, ...user },
+        project: { projectId, ...(declaredIn === "project" ? { secrets } : {}) },
+        ...(declaredIn === "local" ? { local: { secrets } } : {}),
+    })));
+}
+
+// The same for a sign-in: the repository declares `oauth.ado`, and the user file grants it to `s`.
+function namespaceOauthCfg({ projectId = "proj-x", grant = true } = {}) {
+    return m.loadConfig(withOwnRoot(scopedPaths({
+        user: { servers: { s: NS_OAUTH_SERVER },
+            ...(grant ? { registrations: { [OAUTH_TENANT_ID]: { [OAUTH_CLIENT_ID]: NS_GRANT } } } : {}) },
+        project: { projectId, oauth: { ado: OAUTH_DECL } },
+    })));
+}
+
+const SECRET_PAT = [{ kind: "secret", name: "pat" }];
+
+test("trustProblem: a user-scope launchable reading a repository's local secret needs a record for this root with this projectId", () => {
+    const cfg = namespaceCfg();
+    assert.deepEqual(m.trustProblem(cfg, "servers", "s", NO_TRUST),
+        { reason: "untrusted", home: "user", shadowsUser: false, reads: SECRET_PAT });
+    assert.equal(m.trustProblem(cfg, "servers", "s", trustedStateFor(cfg)), null);
+
+    // The record is keyed by the root: another repository's record trusts nothing here.
+    const elsewhere = { schemaVersion: 1, repositories: { "/somewhere/else": trustedStateFor(cfg).repositories[cfg.projectRoot] } };
+    assert.equal(m.trustProblem(cfg, "servers", "s", elsewhere).reason, "untrusted");
+
+    // The projectId is what the record pins: a different one reports as changed, naming both.
+    const moved = trustedStateFor(cfg);
+    moved.repositories[cfg.projectRoot].projectId = "proj-other";
+    assert.deepEqual(m.trustProblem(cfg, "servers", "s", moved),
+        { reason: "changed", differences: ['projectId is "proj-x", trusted "proj-other"'], home: "user", shadowsUser: false, reads: SECRET_PAT });
+    delete moved.repositories[cfg.projectRoot].projectId;
+    assert.deepEqual(m.trustProblem(cfg, "servers", "s", moved).differences, ['projectId is "proj-x", trusted (not recorded)']);
+});
+
+test("trustProblem: a secret declared in the LOCAL file gates a user-scope reader like a project one, and a task like a server", () => {
+    const cfg = namespaceCfg({ declaredIn: "local", user: { tasks: { job: NS_SERVER } } });
+    assert.equal(cfg.secrets.pat.home, "local");
+    for (const kind of ["servers", "tasks"]) {
+        const name = kind === "servers" ? "s" : "job";
+        assert.deepEqual(m.trustProblem(cfg, kind, name, NO_TRUST),
+            { reason: "untrusted", home: "user", shadowsUser: false, reads: SECRET_PAT }, kind);
+        assert.equal(m.trustProblem(cfg, kind, name, trustedStateFor(cfg)), null, kind);
+    }
+});
+
+test("trustProblem: only what a repository's namespace holds puts a user-scope launchable under the gate", () => {
+    const gated = (cfg) => m.trustProblem(cfg, "servers", "s", NO_TRUST);
+    // The user's own secret, even while the repository declares others.
+    assert.equal(gated(namespaceCfg({ user: { secrets: { pat: { backend: "local" } } }, secrets: { other: { backend: "local" } } })), null);
+    // A Key Vault secret: it never touches the keystore, and the `vaults` grant already decides it.
+    assert.equal(gated(namespaceCfg({ secrets: { pat: KV_PAT } })), null);
+    // A literal, and a reference whose winner is the user's own after the repository declared nothing of the name.
+    const literal = m.loadConfig(scopedPaths({
+        user: { servers: { s: { ...NS_SERVER, env: { PAT: "literal:x" } } } }, project: { projectId: "proj-x", secrets: { pat: { backend: "local" } } } }));
+    assert.equal(gated(literal), null);
+    // The positive control for all of the above: the same shape with the repository's local secret.
+    assert.notEqual(gated(namespaceCfg()), null);
+    // An oauth entry the user declared is the user's.
+    const own = m.loadConfig(scopedPaths({ user: { oauth: { ado: OAUTH_DECL }, servers: { s: NS_OAUTH_SERVER } } }));
+    assert.equal(gated(own), null);
+    assert.deepEqual(gated(namespaceOauthCfg())?.reads, [{ kind: "oauth", name: "ado" }]);
+});
+
+test("trustProblem: a second repository claiming another project's id is untrusted while the first one is trusted", () => {
+    const x = namespaceCfg();
+    const y = namespaceCfg();
+    assert.notEqual(x.projectRoot, y.projectRoot, "the fixture must be two repositories");
+    assert.equal(x.projectId, y.projectId);
+    const state = trustedStateFor(x);
+    assert.equal(m.trustProblem(x, "servers", "s", state), null);
+    assert.equal(m.trustProblem(y, "servers", "s", state).reason, "untrusted",
+        "the id Y claims is X's, and X's record is keyed by X's root");
+
+    const both = { schemaVersion: 1, repositories: { ...state.repositories, ...trustedStateFor(y).repositories } };
+    assert.equal(m.trustProblem(y, "servers", "s", both), null, "a record for Y's own root, made by the person, lifts it");
+});
+
+test("trustRefusal: a user-scope reader's refusal names the reference, the namespace and the remedy, on one line", () => {
+    const cfg = namespaceCfg();
+    const root = cfg.projectRoot;
+    const untrusted = m.trustRefusal("servers", "s", m.trustProblem(cfg, "servers", "s", NO_TRUST), cfg);
+    assert.equal(untrusted, `server "s" (user) reads secret "pat" from namespace "proj-x", which this repository declares, and this checkout is not trusted`
+        + ` -- review it, then run "vc-secrets trust" in ${root}`);
+
+    const moved = trustedStateFor(cfg);
+    moved.repositories[root].projectId = "proj-other";
+    assert.equal(m.trustRefusal("servers", "s", m.trustProblem(cfg, "servers", "s", moved), cfg),
+        `server "s" (user) reads secret "pat" from namespace "proj-x", and the projectId changed since you trusted this checkout:`
+        + ` projectId is "proj-x", trusted "proj-other" -- review it, then run "vc-secrets trust" again in ${root}`);
+
+    for (const text of [untrusted, m.trustRefusal("servers", "s", m.trustProblem(cfg, "servers", "s", moved), cfg)]) {
+        assert.doesNotMatch(text, /\n/);
+        assert.doesNotMatch(text, /declared by/, "the entry is the person's own, so no file is blamed");
+    }
+    const oauth = namespaceOauthCfg();
+    assert.match(m.trustRefusal("servers", "s", m.trustProblem(oauth, "servers", "s", NO_TRUST), oauth),
+        /^server "s" \(user\) reads oauth "ado" from namespace "proj-x", which this repository declares/);
+});
+
+test("trustRefusal: a reader of both kinds lists both, and the probe reads the refusal as the launcher's, not as a token problem", async () => {
+    const cfg = m.loadConfig(scopedPaths({
+        user: { servers: { s: { ...NS_SERVER, env: { ...NS_SERVER.env, ...NS_OAUTH_SERVER.env } } },
+            registrations: { [OAUTH_TENANT_ID]: { [OAUTH_CLIENT_ID]: { servers: { s: { command: process.execPath, args: ["-e", ""], envKeys: ["ADO_TOKEN", "PAT"] } } } } } },
+        project: { projectId: "proj-x", secrets: { pat: { backend: "local" } }, oauth: { ado: OAUTH_DECL } } }));
+    const line = m.trustRefusal("servers", "s", m.trustProblem(cfg, "servers", "s", NO_TRUST), cfg);
+    assert.match(line, /reads secret "pat", oauth "ado" from namespace "proj-x"/);
+    const probe = await import("./vc-secrets-probe.mjs");
+    // The refusals of set, login and logout are never a launcher's last line, but they share the remedy
+    // and the wording, and a sign-in word creeping into one would be read as a token problem here.
+    const oauthCfg = namespaceOauthCfg();
+    const oauthRead = [{ kind: "oauth", name: "ado" }];
+    const storeRefusals = [
+        m.namespaceStoreRefusal(m.namespaceTrustProblem(oauthCfg, NO_TRUST, oauthRead), oauthCfg),
+        m.namespaceStoreRefusal(m.namespaceTrustProblem(namespaceCfg(), NO_TRUST, SECRET_PAT), namespaceCfg()),
+    ];
+    for (const text of [line, m.trustRefusal("servers", "s", m.trustProblem(oauthCfg, "servers", "s", NO_TRUST), oauthCfg), ...storeRefusals]) {
+        assert.equal(probe.classifyProbeFailure(`vc-secrets: ${text}\n`, 1), "launcher",
+            "TOKEN_REFUSAL must not match: the remedy is trust, not a sign-in");
+    }
+});
+
+test("cmdLaunch on win32: a user-scope server reading a repository's local secret is refused without a record, before any keystore read", async () => {
+    for (const kind of ["servers", "tasks"]) {
+        const cfg = m.loadConfig(scopedPaths({ user: { [kind]: { s: NS_SERVER } }, project: { projectId: "proj-x", secrets: { pat: { backend: "local" } } } }));
+        const key = m.keyFor("pat", cfg.secrets.pat, cfg);
+        const calls = [];
+        let childEnv = null;
+        const deps = {
+            credReadMany: async (request) => { calls.push(request); return { creds: { [key]: { ok: credHex("the-pat") } }, job: "ok" }; },
+            spawnFn: (cmd, args, opts) => { childEnv = opts.env; return fakeChild(); },
+        };
+        await assert.rejects(() => launchWithBind(kind, cfg, { ...deps, trustState: NO_TRUST }),
+            /\(user\) reads secret "pat" from namespace "proj-x", which this repository declares, and this checkout is not trusted/, kind);
+        assert.deepEqual(calls, [], `${kind}: a refused launch must not cost a keystore read`);
+        assert.equal(childEnv, null);
+
+        const moved = trustedStateFor(cfg);
+        moved.repositories[cfg.projectRoot].projectId = "proj-other";
+        await assert.rejects(() => launchWithBind(kind, cfg, { ...deps, trustState: moved }),
+            /the projectId changed since you trusted this checkout: projectId is "proj-x", trusted "proj-other"/, kind);
+        assert.deepEqual(calls, []);
+
+        const handle = await launchWithBind(kind, cfg, { ...deps, trustState: trustedStateFor(cfg) });
+        try {
+            assert.equal(childEnv.PAT, "the-pat", `${kind}: the control -- with the record the same launch reads the secret`);
+        } finally {
+            await handle.dispose();
+        }
+    }
+});
+
+test("cmdLaunch: repository Y claiming X's projectId, with a matching registrations grant, is refused without a record for Y's root", async () => {
+    const x = namespaceOauthCfg();
+    const y = namespaceOauthCfg();
+    assert.equal(m.crossingProblem(y, "servers", "s", "ado", "oauth"), null, "the grant is keyed by tenant and client, so it passes whatever the id");
+    const touched = [];
+    const deps = {
+        readCache: async () => { touched.push("readCache"); return { state: "valid", accessToken: "cached" }; },
+        childNodeVersion: () => "v20.11.0",
+        createChannel: () => ({ path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1, close: async () => {}, removeSync: () => {} }),
+        spawnFn: () => fakeChild(),
+    };
+    // X is trusted; that says nothing about Y's root.
+    await assert.rejects(() => launch("servers", "s", y, { ...deps, trustState: trustedStateFor(x) }),
+        /server "s" \(user\) reads oauth "ado" from namespace "proj-x", which this repository declares, and this checkout is not trusted/);
+    assert.deepEqual(touched, [], "a refused launch must not read, let alone exchange, the other project's refresh token");
+
+    const handle = await launch("servers", "s", y, { ...deps, trustState: trustedStateFor(y) });
+    await handle.dispose();
+    assert.deepEqual(touched, ["readCache"], "the control: with a record for Y's own root the same launch reaches the cache");
+});
+
+test("cmdLaunch: untrust revokes what trust granted to a user-scope reader, through the real trust file", async () => {
+    const cfg = namespaceOauthCfg();
+    const env = trustEnv();
+    m.writeTrustState(env, trustedStateFor(cfg));
+    const deps = {
+        readCache: async () => ({ state: "valid", accessToken: "cached" }),
+        childNodeVersion: () => "v20.11.0",
+        createChannel: () => ({ path: "/tmp/not-a-real.sock", push: () => 1, peers: () => 1, close: async () => {}, removeSync: () => {} }),
+        spawnFn: () => fakeChild(),
+    };
+    await withProcessEnv(env, async () => {
+        const handle = await launch("servers", "s", cfg, deps);
+        await handle.dispose();
+        await m.cmdUntrust(cfg.projectRoot, { env, log: () => {} });
+        await assert.rejects(() => launch("servers", "s", cfg, deps), /\(user\) reads oauth "ado" from namespace "proj-x"/);
+    });
+});
+
+test("cmdLaunch: a user-scope launch that reads nothing the repository declares never touches the trust file", async () => {
+    // A repository is present and declares secrets, including a Key Vault one the launch reads -- but none
+    // is a `local` secret or an oauth entry the launch reads, so the file is not consulted.
+    const cfg = m.loadConfig(scopedPaths({
+        user: { secrets: { pat: { backend: "local" } },
+            servers: { mine: { ...NS_SERVER, env: { PAT: "secret:pat", KV: "secret:kv" } } } },
+        project: { projectId: "proj-x", secrets: { other: { backend: "local" }, kv: KV_PAT } } }));
+    assert.equal(m.trustAssessment(cfg, () => { throw new Error("the trust file was read"); }).problems.size, 0);
+    await assert.rejects(() => m.cmdLaunch("servers", "mine", cfg, { bindPlatform: "linux",
+        get trustState() { throw new Error("the trust state must not be read"); } }),
+        (e) => e instanceof m.VcSecretsError && /not authorized to receive "kv"/.test(e.message));
+});
+
+test("trustAssessment: a user-scope reader is a finding like a repository launchable, and an unreadable trust file refuses it too", () => {
+    const cfg = namespaceCfg();
+    const result = m.trustAssessment(cfg, () => NO_TRUST);
+    assert.deepEqual([...result.problems.keys()], ["servers/s"]);
+    assert.deepEqual(result.findings, [`server "s" (user) reads secret "pat" from namespace "proj-x", which this repository declares, `
+        + `and this checkout is not trusted -- review it, then run "vc-secrets trust" in ${cfg.projectRoot}`]);
+    assert.deepEqual(m.trustAssessment(cfg, () => trustedStateFor(cfg)).findings, []);
+
+    const failure = new m.VcSecretsError("the trust file /x/trust.json is unusable (not an object)");
+    const unreadable = m.trustAssessment(cfg, () => { throw failure; });
+    assert.deepEqual([...unreadable.problems.keys()], ["servers/s"]);
+    assert.deepEqual(unreadable.findings, [failure.message]);
+});
+
+test("doctorReport and trustNotes: a user-scope reader is a FAIL and an emit-config note, in its own words", () => {
+    const cfg = namespaceCfg();
+    const untrusted = m.trustAssessment(cfg, () => NO_TRUST);
+    const report = m.doctorReport(cfg, {
+        env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(), trustFindings: untrusted.findings });
+    assert.ok(report.includes(`FAIL ${untrusted.findings[0]}`), report.join("\n"));
+    assert.deepEqual(m.trustNotes(cfg, untrusted),
+        ['s: reads secret "pat" from namespace "proj-x", which this repository declares and is not trusted yet -- run "vc-secrets trust" before starting it']);
+
+    // After an id change the note still names the references and the namespace, and both ids: it is read on
+    // its own, away from the refusal, by someone deciding whether to run `trust` again.
+    const moved = trustedStateFor(cfg);
+    moved.repositories[cfg.projectRoot].projectId = "proj-other";
+    assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => moved)),
+        ['s: reads secret "pat" from namespace "proj-x", and the projectId changed since you trusted this checkout:'
+            + ' projectId is "proj-x", trusted "proj-other" -- run "vc-secrets trust" again before starting it']);
+    assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => trustedStateFor(cfg))), []);
+});
+
+test("a user-scope server reading a repository's namespace: the real run, doctor and emit-config say so, and trust lifts it",
+    { skip: process.platform === "win32" && "writes a user file under a fixture HOME" }, () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ns-repo-"));
+        tmpDirs.push(root);
+        fs.mkdirSync(path.join(root, ".claude"));
+        fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME), JSON.stringify({ projectId: "proj-x", secrets: { pat: { backend: "local" } } }));
+        const env = launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg" });
+        fs.mkdirSync(path.join(env.HOME, ".claude"));
+        fs.writeFileSync(path.join(env.HOME, ".claude", m.CONFIG_NAME), JSON.stringify({ servers: { s: NS_SERVER } }));
+        const verb = (...args) => spawnSync(process.execPath, [LAUNCHER_PATH, ...args], { cwd: root, env, encoding: "utf8" });
+
+        const refused = verb("run", "s");
+        assert.equal(refused.status, 1);
+        assert.match(refused.stderr, /vc-secrets: server "s" \(user\) reads secret "pat" from namespace "proj-x", which this repository declares, and this checkout is not trusted -- review it, then run "vc-secrets trust" in /);
+        assert.match(verb("doctor").stderr, /^FAIL server "s" \(user\) reads secret "pat" from namespace "proj-x"/m);
+        assert.match(verb("emit-config", "claude-code").stderr,
+            /emit-config: s: reads secret "pat" from namespace "proj-x", which this repository declares and is not trusted yet -- run "vc-secrets trust" before starting it/);
+
+        seedTrust(env, root);
+        const trusted = verb("run", "s");
+        assert.doesNotMatch(trusted.stderr, /not trusted/, "the gate is lifted");
+        assert.match(trusted.stderr, /secret "pat" not set/, "and the launch went on to the keystore, where the control fails for want of a value");
+        assert.doesNotMatch(verb("doctor").stderr, /reads secret "pat" from namespace/);
+    });
+
+// cmdTrust: what the person is shown and what is recorded for a user-scope reader. `reader` is the user
+// server `s` of namespaceCfg; `gh` is a launchable the repository declares itself.
+function mixedNamespaceCfg() {
+    return m.loadConfig(withOwnRoot(scopedPaths({
+        user: { servers: { s: NS_SERVER } },
+        project: { projectId: "proj-x", secrets: { pat: { backend: "local" } }, servers: { gh: TRUST_BASE } } })));
+}
+
+test("cmdTrust: a repository whose only gated consumers are user-scope readers is recorded with its projectId, and says what it recorded", async () => {
+    const cfg = namespaceCfg();
+    const env = trustEnv();
+    let shown = null;
+    const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+    await m.cmdTrust(cfg, seams);
+
+    assert.deepEqual(m.readTrustState(env).repositories[cfg.projectRoot],
+        { trustedAt: "2001-02-03T04:05:06.000Z", projectId: "proj-x", servers: {}, tasks: {} },
+        "no launchShape for a launchable that is the person's own");
+    assert.ok(shown.includes('server "s" (user) will read secret "pat" from namespace "proj-x"'), `shown before the prompt:\n${shown}`);
+    assert.ok(shown.includes("projectId: proj-x"));
+    const after = log.join("");
+    assert.match(after, /recorded .* as the source of namespace "proj-x" -- it declares no server or task of its own to run/);
+    assert.match(after, /1 user-scope launchable\(s\) may now read namespace "proj-x"/);
+    assert.doesNotMatch(after, /trusted 0 server/);
+    assert.equal(m.trustProblem(cfg, "servers", "s", m.readTrustState(env)), null);
+});
+
+test("cmdTrust: a repository with launchables of its own AND a user-scope reader shows both, and records the shape of its own only", async () => {
+    const cfg = mixedNamespaceCfg();
+    const env = trustEnv();
+    let shown = null;
+    const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+    await m.cmdTrust(cfg, seams);
+
+    assert.match(shown, /server "gh" \(project, .*\)\n {4}command: "npx"/);
+    assert.ok(shown.includes('server "s" (user) will read secret "pat" from namespace "proj-x"'), shown);
+    const record = m.readTrustState(env).repositories[cfg.projectRoot];
+    assert.deepEqual(Object.keys(record.servers), ["gh"], "the reader is not a repository launchable");
+    assert.match(log.join(""), /trusted 1 server\(s\) and 0 task\(s\) for /);
+});
+
+test("cmdTrust: an oauth reader is shown by its own reference", async () => {
+    const cfg = namespaceOauthCfg();
+    const env = trustEnv();
+    let shown = null;
+    const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+    await m.cmdTrust(cfg, seams);
+    assert.ok(shown.includes('server "s" (user) will read oauth "ado" from namespace "proj-x"'), shown);
+});
+
+test("cmdTrust: another root already recorded under this projectId is called out before the prompt, in every review that has a reader", async () => {
+    const worktree = { trustedAt: "2000-01-01T00:00:00.000Z", projectId: "proj-x", servers: {}, tasks: {} };
+    const info = 'INFO namespace "proj-x" is already recorded for /work/other-checkout -- expected for a worktree of this repository, not for another repository';
+    for (const [what, cfg] of [["a secrets-only repository", namespaceCfg()], ["one with launchables of its own", mixedNamespaceCfg()]]) {
+        const env = trustEnv();
+        m.writeTrustState(env, { schemaVersion: 1, repositories: { "/work/other-checkout": worktree } });
+        let shown = null;
+        const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+        await m.cmdTrust(cfg, seams);
+        assert.ok(shown.includes(info), `${what}:\n${shown}`);
+        assert.ok(shown.indexOf(info) > shown.indexOf('(user) will read secret "pat"'), "after the reader lines, before the prompt");
+
+        // Not for another projectId, and not for this root's own earlier record.
+        const quiet = trustEnv();
+        m.writeTrustState(quiet, { schemaVersion: 1, repositories: {
+            "/work/other-checkout": { ...worktree, projectId: "proj-else" }, [cfg.projectRoot]: worktree } });
+        let quietShown = null;
+        const q = trustSeams(quiet, { beforeAnswer: () => { quietShown = q.log.join(""); } });
+        await m.cmdTrust(cfg, q.seams);
+        assert.doesNotMatch(quietShown, /^INFO namespace/m, what);
+    }
+});
+
+test("cmdTrust: no INFO about a shared namespace when the repository has no user-scope reader", async () => {
+    const cfg = trustCfg();
+    const env = trustEnv();
+    m.writeTrustState(env, { schemaVersion: 1, repositories: {
+        "/work/other-checkout": { trustedAt: "2000-01-01T00:00:00.000Z", projectId: "proj-x", servers: {}, tasks: {} } } });
+    let shown = null;
+    const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+    await m.cmdTrust(cfg, seams);
+    assert.doesNotMatch(shown, /INFO namespace|will read/);
+});
+
+test("cmdTrust and untrust: a repository that no longer has a reader loses the record it had for one, and untrust removes it outright", async () => {
+    const cfg = namespaceCfg();
+    const env = trustEnv();
+    await m.cmdTrust(cfg, trustSeams(env).seams);
+    assert.ok(Object.hasOwn(m.readTrustState(env).repositories, cfg.projectRoot));
+
+    const gone = namespaceCfg({ secrets: {} });
+    gone.projectRoot = cfg.projectRoot;
+    const log = [];
+    await m.cmdTrust(gone, { ...trustSeams(env).seams, log: (text) => log.push(text) });
+    assert.ok(!Object.hasOwn(m.readTrustState(env).repositories, cfg.projectRoot), "nothing is gated any more, so the record goes");
+    assert.match(log.join(""), /removed its trust record/);
+
+    await m.cmdTrust(cfg, trustSeams(env).seams);
+    await m.cmdUntrust(cfg.projectRoot, { env, log: () => {} });
+    assert.deepEqual(m.readTrustState(env).repositories, {});
+    assert.notEqual(m.trustProblem(cfg, "servers", "s", m.readTrustState(env)), null);
+});
+
+// ── a repository's namespace under set, login, logout and doctor ────────────────────────────────────
+//
+// What `set`, `login` and `logout` write or delete, and `doctor` reads, is `vc-secrets:<projectId>:<name>` for
+// anything a repository declares -- and the projectId is the repository's own claim, another project's
+// included. The launch is held to a trust record for the root (trustGateOf); these verbs are held to the same
+// one, by the same predicate (namespaceTrustProblem). A person's own declaration lives under `user` and is
+// never held to it.
+
+const POSIX_STUB_ONLY = { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" };
+
+// A repository on disk, found the way a real run finds it: by walking up from its working directory.
+function namespaceRepo(project, local) {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-ns-store-"));
+    tmpDirs.push(root);
+    fs.mkdirSync(path.join(root, ".claude"));
+    fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME), JSON.stringify(project));
+    if (local !== undefined) {
+        fs.writeFileSync(path.join(root, ".claude", m.LOCAL_CONFIG_NAME), JSON.stringify(local));
+    }
+
+    return root;
+}
+
+// Every call made to a `security` stub on PATH, so that "the keystore was not touched" is observed and not
+// inferred. A read answers with a value, so a secret the verb read reports as resolvable.
+function keychainRecorder() {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-recorder-"));
+    tmpDirs.push(dir);
+    const log = path.join(dir, "calls.log");
+    const binDir = stubBinary("security", '#!/bin/sh\necho "$@" >> "$SECURITY_CALL_LOG"\n'
+        + 'case "$*" in *find-generic-password*) echo a-value;; esac\nexit 0\n');
+
+    return {
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", USER: "recorder", SECURITY_CALL_LOG: log,
+            PATH: `${binDir}${path.delimiter}${process.env.PATH}` },
+        calls: () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").split("\n").filter(Boolean) : []),
+    };
+}
+
+const runVerb = (env, cwd, ...args) => spawnSync(process.execPath, [LAUNCHER_PATH, ...args], { cwd, env, encoding: "utf8", timeout: 30_000 });
+
+// The user's own declaration file, under the fixture HOME the launcher will read it from.
+function writeUserDeclarations(env, declarations) {
+    fs.mkdirSync(path.join(env.HOME, ".claude"), { recursive: true });
+    fs.writeFileSync(path.join(env.HOME, ".claude", m.CONFIG_NAME), JSON.stringify(declarations));
+}
+
+function corruptTrustFile(env) {
+    const file = m.trustFilePath(env);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, "{ corrupt");
+
+    return file;
+}
+
+const NS_PAT_PROJECT = { projectId: "proj-x", secrets: { pat: { backend: "local" } } };
+
+test("namespaceDeclarations: only what a repository stores in its own namespace -- a local secret or an oauth entry, from either of its files",
+    () => {
+        const cfg = m.loadConfig(withOwnRoot(scopedPaths({
+            user: { secrets: { mine: { backend: "local" } }, oauth: { own: OAUTH_DECL } },
+            project: { projectId: "proj-x", secrets: { pat: { backend: "local" }, kv: KV_PAT } },
+            local: { oauth: { ado: OAUTH_DECL } },
+        })));
+        assert.deepEqual(m.namespaceDeclarations(cfg), [{ kind: "secret", name: "pat" }, { kind: "oauth", name: "ado" }],
+            "not the person's own, not a Key Vault secret");
+        assert.deepEqual(m.namespaceDeclarations(m.loadConfig(scopedPaths({ user: { secrets: { mine: { backend: "local" } } } }))), []);
+    });
+
+test("namespaceTrustProblem: the one rule behind the launch gate, whichever references put the namespace in play", () => {
+    const cfg = namespaceCfg();
+    const state = trustedStateFor(cfg);
+    assert.equal(m.namespaceTrustProblem(cfg, state, SECRET_PAT), null);
+    assert.deepEqual(m.namespaceTrustProblem(cfg, NO_TRUST, SECRET_PAT), { reason: "untrusted", reads: SECRET_PAT });
+    state.repositories[cfg.projectRoot].projectId = "proj-other";
+    assert.deepEqual(m.namespaceTrustProblem(cfg, state, SECRET_PAT),
+        { reason: "changed", differences: ['projectId is "proj-x", trusted "proj-other"'], reads: SECRET_PAT });
+    // The launch gate adds only who the reader is -- the rule itself is not restated there.
+    assert.deepEqual(m.trustProblem(cfg, "servers", "s", state),
+        { ...m.namespaceTrustProblem(cfg, state, SECRET_PAT), home: "user", shadowsUser: false });
+});
+
+test("namespaceStoreRefusal: names the entry, the namespace and the trust remedy on one line, and the probe reads it as the launcher's",
+    async () => {
+        const probe = await import("./vc-secrets-probe.mjs");
+        const secret = namespaceCfg();
+        const oauth = namespaceOauthCfg();
+        const moved = trustedStateFor(oauth);
+        moved.repositories[oauth.projectRoot].projectId = "proj-other";
+        const lines = [
+            m.namespaceStoreRefusal(m.namespaceTrustProblem(secret, NO_TRUST, SECRET_PAT), secret),
+            m.namespaceStoreRefusal(m.namespaceTrustProblem(oauth, NO_TRUST, [{ kind: "oauth", name: "ado" }]), oauth),
+            m.namespaceStoreRefusal(m.namespaceTrustProblem(oauth, moved, [{ kind: "oauth", name: "ado" }]), oauth),
+        ];
+        assert.equal(lines[0], `secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted`
+            + ` -- review it, then run "vc-secrets trust" in ${secret.projectRoot}`);
+        assert.equal(lines[2], `oauth "ado" is stored in namespace "proj-x", and the projectId changed since you trusted this checkout:`
+            + ` projectId is "proj-x", trusted "proj-other" -- review it, then run "vc-secrets trust" again in ${oauth.projectRoot}`);
+        for (const line of lines) {
+            assert.doesNotMatch(line, /\n/);
+            assert.equal(probe.classifyProbeFailure(`vc-secrets: ${line}\n`, 1), "launcher",
+                "TOKEN_REFUSAL must not match: the remedy is trust, not a sign-in");
+        }
+    });
+
+test("set: a repository's local secret is stored only once this checkout is trusted for its namespace, and the refusal comes before the keystore",
+    POSIX_STUB_ONLY, () => {
+        const recorder = keychainRecorder();
+        const env = launcherEnv(recorder.env);
+        const root = namespaceRepo(NS_PAT_PROJECT);
+
+        const untrusted = runVerb(env, root, "set", "pat");
+        assert.equal(untrusted.status, 1, untrusted.stderr);
+        assert.equal(untrusted.stderr, `vc-secrets: secret "pat" is stored in namespace "proj-x", which this repository declares, `
+            + `and this checkout is not trusted -- review it, then run "vc-secrets trust" in ${m.trustRootKey(root)}\n`);
+        assert.deepEqual(recorder.calls(), [], "refused before the keystore, and before a value was asked for");
+
+        seedTrust(env, root);
+        const trusted = runVerb(env, root, "set", "pat");
+        assert.equal(trusted.status, 0, trusted.stderr);
+        assert.ok(recorder.calls().some((call) => call.includes("-s vc-secrets:proj-x:pat")),
+            "the control: with the record the same verb reaches the keystore");
+
+        // The id the record pins is the id in play: the same root, declaring another namespace now.
+        const before = recorder.calls().length;
+        fs.writeFileSync(path.join(root, ".claude", m.CONFIG_NAME),
+            JSON.stringify({ projectId: "proj-y", secrets: { pat: { backend: "local" } } }));
+        const moved = runVerb(env, root, "set", "pat");
+        assert.equal(moved.status, 1, moved.stderr);
+        assert.equal(moved.stderr, `vc-secrets: secret "pat" is stored in namespace "proj-y", and the projectId changed since you trusted `
+            + `this checkout: projectId is "proj-y", trusted "proj-x" -- review it, then run "vc-secrets trust" again in ${m.trustRootKey(root)}\n`);
+        assert.equal(recorder.calls().length, before);
+    });
+
+test("set: a secret declared in the LOCAL file is gated like a project one", POSIX_STUB_ONLY, () => {
+    const recorder = keychainRecorder();
+    const env = launcherEnv(recorder.env);
+    const root = namespaceRepo({ projectId: "proj-x" }, { secrets: { pat: { backend: "local" } } });
+    const refused = runVerb(env, root, "set", "pat");
+    assert.equal(refused.status, 1, refused.stderr);
+    assert.match(refused.stderr, /secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/);
+    assert.deepEqual(recorder.calls(), []);
+});
+
+test("set: repository Y claiming X's projectId is refused while X is trusted, and a record for Y's own root lifts it", POSIX_STUB_ONLY, () => {
+    const recorder = keychainRecorder();
+    const env = launcherEnv(recorder.env);
+    const x = namespaceRepo(NS_PAT_PROJECT);
+    const y = namespaceRepo(NS_PAT_PROJECT);
+    assert.notEqual(m.trustRootKey(x), m.trustRootKey(y));
+    seedTrust(env, x);
+    assert.equal(runVerb(env, x, "set", "pat").status, 0, "X is trusted, and stores its own secret");
+    const stored = recorder.calls().length;
+
+    const refused = runVerb(env, y, "set", "pat");
+    assert.equal(refused.status, 1, refused.stderr);
+    assert.match(refused.stderr, /secret "pat" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/,
+        "the record is keyed by X's root, and Y cannot claim that");
+    assert.equal(recorder.calls().length, stored, "Y's set did not overwrite X's secret");
+
+    seedTrust(env, y);
+    assert.equal(runVerb(env, y, "set", "pat").status, 0, "the person's own record for Y lifts it");
+});
+
+test("set, login and logout: the in-process refusal is the same rule, for X's namespace claimed by Y", async () => {
+    const x = namespaceOauthCfg();
+    const y = namespaceOauthCfg();
+    assert.equal(x.projectId, y.projectId);
+    assert.notEqual(x.projectRoot, y.projectRoot);
+    const seams = namespaceStoreSeams();
+    const refused = (e) => {
+        assert.ok(e instanceof m.VcSecretsError);
+        assert.match(e.message, /is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/);
+
+        return true;
+    };
+    const state = trustedStateFor(x);
+    await assert.rejects(() => m.cmdSet("pat", namespaceCfg({ projectId: "proj-x" }), { trustState: state }), refused);
+    await assert.rejects(() => m.cmdLogin("ado", y, { ...seams.login, trustState: state }), refused);
+    await assert.rejects(() => m.cmdLogout("ado", y, { ...seams.logout, trustState: state }), refused);
+    assert.deepEqual(seams.calls, [], "X's sign-in was neither replaced nor removed");
+    // The control, so the refusals above are not the fixture failing for another reason.
+    await m.cmdLogout("ado", x, { ...seams.logout, trustState: state });
+    assert.equal(seams.calls.filter((call) => call.startsWith("remove ")).length, 2);
+});
+
+// The seams cmdLogin and cmdLogout take, recording every call that reaches outside the process. An empty
+// record is "nothing was started": no listener, no browser, no lock, no write, no deletion.
+function namespaceStoreSeams() {
+    const calls = [];
+    const lock = async () => {
+        calls.push("acquireLock");
+
+        return { release: async () => { calls.push("release"); } };
+    };
+
+    return {
+        calls,
+        login: {
+            listen: async () => {
+                calls.push("listen");
+
+                return { port: 51234, next: async () => ({ code: "the-code" }), close: async () => {} };
+            },
+            open: () => { calls.push("open"); },
+            exchange: async () => {
+                calls.push("exchange");
+
+                return { refreshToken: "new-rt", accessToken: "at", expiresAt: 1_703_600_000,
+                    obtainedAt: 1_700_000_000, lifetimeMs: 3600_000, uptimeAtIssue: 1000 };
+            },
+            writeEntry: async (name) => { calls.push(`write ${name}`); },
+            removeEntry: async (name) => { calls.push(`remove ${name}`); },
+            oversize: { record: () => {}, clear: () => {} },
+            randomState: () => "STATE",
+            log: () => {},
+            backend: "gpg",
+            acquireLock: lock,
+        },
+        logout: {
+            deleteEntry: async (name) => { calls.push(`remove ${name}`); },
+            backend: "gpg",
+            acquireLock: lock,
+            log: () => {},
+        },
+    };
+}
+
+test("login and logout: a repository's oauth entry is refused without this checkout's trust, before any listener, sign-in, lock or deletion", async () => {
+    const cfg = namespaceOauthCfg();
+    const moved = trustedStateFor(cfg);
+    moved.repositories[cfg.projectRoot].projectId = "proj-other";
+    const cases = [
+        ["no record", NO_TRUST, /oauth "ado" is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted -- review it, then run "vc-secrets trust" in /],
+        ["a changed projectId", moved, /oauth "ado" is stored in namespace "proj-x", and the projectId changed since you trusted this checkout: projectId is "proj-x", trusted "proj-other" -- review it, then run "vc-secrets trust" again in /],
+    ];
+    for (const [what, trustState, pattern] of cases) {
+        const seams = namespaceStoreSeams();
+        const matches = (e) => {
+            assert.match(e.message, pattern);
+
+            return true;
+        };
+        await assert.rejects(() => m.cmdLogin("ado", cfg, { ...seams.login, trustState }), matches, `login, ${what}`);
+        await assert.rejects(() => m.cmdLogout("ado", cfg, { ...seams.logout, trustState }), matches, `logout, ${what}`);
+        assert.deepEqual(seams.calls, [], `${what}: nothing was started`);
+    }
+
+    // The controls: with the record, the same calls run.
+    const trustState = trustedStateFor(cfg);
+    const login = namespaceStoreSeams();
+    await m.cmdLogin("ado", cfg, { ...login.login, trustState });
+    assert.ok(login.calls.includes("listen"));
+    assert.equal(login.calls.filter((call) => call.startsWith("write ")).length, 2, "both entries were stored");
+    const logout = namespaceStoreSeams();
+    await m.cmdLogout("ado", cfg, { ...logout.logout, trustState });
+    assert.equal(logout.calls.filter((call) => call.startsWith("remove ")).length, 2);
+});
+
+test("login: the acknowledgement of the app registration is checked as before, ahead of the trust the namespace needs", async () => {
+    // Both are refusals with no side effect, and the acknowledgement is the one a repository's declaration
+    // has always met first: its remedy (a block in the person's own file) is unchanged by this one.
+    const cfg = namespaceOauthCfg({ grant: false });
+    const seams = namespaceStoreSeams();
+    await assert.rejects(() => m.cmdLogin("ado", cfg, { ...seams.login, trustState: NO_TRUST }), /not authorized/);
+    assert.deepEqual(seams.calls, []);
+});
+
+test("login and logout: with no seam the trust file is read -- a corrupt one stops a repository's entry and never the person's own", async () => {
+    const env = trustEnv();
+    const file = corruptTrustFile(env);
+    const repository = namespaceOauthCfg();
+    const own = m.loadConfig(scopedPaths({ user: { oauth: { ado: OAUTH_DECL } } }));
+    await withProcessEnv(env, async () => {
+        const seams = namespaceStoreSeams();
+        const unreadable = (e) => {
+            assert.ok(e.message.includes(file), e.message);
+
+            return true;
+        };
+        await assert.rejects(() => m.cmdLogin("ado", repository, seams.login), unreadable);
+        await assert.rejects(() => m.cmdLogout("ado", repository, seams.logout), unreadable);
+        assert.deepEqual(seams.calls, [], "an unreadable file counts as not trusted");
+
+        const mine = namespaceStoreSeams();
+        await m.cmdLogin("ado", own, mine.login);
+        await m.cmdLogout("ado", own, mine.logout);
+        assert.ok(mine.calls.includes("listen") && mine.calls.includes("acquireLock"),
+            "the person's own entry never consults the file, so a corrupt one cannot stop them managing it");
+    });
+});
+
+// Counts the reads of one file made by the verbs that run under `env`, by a preload that wraps
+// fs.readFileSync in each node process. The verbs run as child processes, so no in-process spy can see
+// them, and the trust file is read behind swallowed errors (doctor's write probe), so output cannot show
+// a read either: a count is the only observation that tells "not read" from "read and ignored".
+function fileReadCounter(env, file) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-reads-"));
+    tmpDirs.push(dir);
+    const log = path.join(dir, "reads.log");
+    const preload = path.join(dir, "spy.cjs");
+    fs.writeFileSync(preload, [
+        'const fs = require("node:fs");',
+        "const real = fs.readFileSync;",
+        "const append = fs.appendFileSync;",
+        "fs.readFileSync = function (p, ...rest) {",
+        "    if (typeof p === \"string\" && p === process.env.SPY_READ_FILE) {",
+        "        append(process.env.SPY_READ_LOG, \"read\\n\");",
+        "    }",
+        "    return real.call(this, p, ...rest);",
+        "};",
+    ].join("\n"));
+
+    return {
+        env: { ...env, NODE_OPTIONS: `--require ${preload}`, SPY_READ_FILE: file, SPY_READ_LOG: log },
+        reads: () => (fs.existsSync(log) ? fs.readFileSync(log, "utf8").split("\n").filter(Boolean).length : 0),
+    };
+}
+
+test("set, doctor: a user-scope declaration is never gated, a corrupt trust file stops neither, and only doctor's write probe opens it",
+    POSIX_STUB_ONLY, () => {
+        const recorder = keychainRecorder();
+        const baseEnv = launcherEnv(recorder.env);
+        writeUserDeclarations(baseEnv, { secrets: { mine: { backend: "local" } } });
+        const trustFile = corruptTrustFile(baseEnv);
+        const noRepository = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-no-repo-"));
+        tmpDirs.push(noRepository);
+        // A repository that declares a projectId but nothing in its namespace to store: doctor's write probe
+        // is keyed under that projectId, so it consults the file once -- its supported read -- and falls back
+        // to the user key silently when the file is unusable. Nothing else here has a reason to open it.
+        const quiet = namespaceRepo({ projectId: "proj-x", secrets: { kv: KV_PAT } });
+        for (const [what, cwd, doctorReads] of [
+            ["no repository", noRepository, 0],
+            ["a repository with no entry of its own to store", quiet, 1],
+        ]) {
+            const setCounter = fileReadCounter(baseEnv, trustFile);
+            const set = runVerb(setCounter.env, cwd, "set", "mine");
+            assert.equal(set.status, 0, `${what}: ${set.stderr}`);
+            assert.doesNotMatch(set.stderr, /trust/i, what);
+            assert.equal(setCounter.reads(), 0, `${what}: set never reads the trust file`);
+            const doctorCounter = fileReadCounter(baseEnv, trustFile);
+            const doctor = runVerb(doctorCounter.env, cwd, "doctor");
+            assert.match(doctor.stderr, /^OK secret "mine" resolvable$/m, `${what}: ${doctor.stderr}`);
+            assert.doesNotMatch(doctor.stderr, /trust file|SKIP secret "mine"/, what);
+            assert.equal(doctorCounter.reads(), doctorReads, `${what}: reads of the trust file by doctor`);
+        }
+        assert.ok(recorder.calls().some((call) => call.includes("-s vc-secrets:user:mine")));
+    });
+
+test("doctor: a repository's local secret and oauth cache are not read in a checkout that is not trusted for the namespace, and are once it is",
+    POSIX_STUB_ONLY, () => {
+        const recorder = keychainRecorder();
+        const env = launcherEnv(recorder.env);
+        writeUserDeclarations(env, { secrets: { mine: { backend: "local" } } });
+        const root = namespaceRepo({ ...NS_PAT_PROJECT, oauth: { ado: OAUTH_DECL } });
+        const touchedNamespace = () => recorder.calls().filter((call) => call.includes("vc-secrets:proj-x:"));
+        const skipPat = 'SKIP secret "pat" not read -- this checkout is not trusted for namespace "proj-x"';
+        const skipAdo = 'SKIP oauth "ado" not read -- this checkout is not trusted for namespace "proj-x"';
+
+        const untrusted = runVerb(env, root, "doctor").stderr;
+        assert.ok(untrusted.split("\n").includes(skipPat), untrusted);
+        assert.ok(untrusted.split("\n").includes(skipAdo), untrusted);
+        assert.doesNotMatch(untrusted, /secret "pat" (resolvable|not resolvable)|oauth "ado" \(project\) (signed in|not signed in|cache could not)/);
+        assert.deepEqual(touchedNamespace().filter((call) => /:(pat|oauth-ado-)/.test(call)), [], "neither the secret nor the cache was read");
+        assert.match(untrusted, /^OK secret "mine" resolvable$/m, "the person's own secret is read as before");
+
+        seedTrust(env, root);
+        const trusted = runVerb(env, root, "doctor").stderr;
+        assert.doesNotMatch(trusted, /SKIP (secret|oauth)/);
+        assert.match(trusted, /^OK secret "pat" resolvable$/m, trusted);
+        const reads = touchedNamespace();
+        assert.ok(reads.some((call) => call.includes("-s vc-secrets:proj-x:pat ")), `the secret was read: ${reads.join("\n")}`);
+        assert.ok(reads.some((call) => call.includes("vc-secrets:proj-x:oauth-ado-refresh")), `and the cache: ${reads.join("\n")}`);
+    });
+
+test("doctor: a corrupt trust file is named once, and it is read as not trusted for a repository's entries",
+    POSIX_STUB_ONLY, () => {
+        const recorder = keychainRecorder();
+        const env = launcherEnv(recorder.env);
+        const root = namespaceRepo({ ...NS_PAT_PROJECT, oauth: { ado: OAUTH_DECL } });
+        const file = corruptTrustFile(env);
+        const result = runVerb(env, root, "doctor");
+        assert.equal(result.status, 1);
+        const naming = result.stderr.split("\n").filter((line) => line.startsWith("FAIL") && line.includes(file));
+        assert.equal(naming.length, 1, `one FAIL naming the file:\n${result.stderr}`);
+        assert.match(result.stderr, /^SKIP secret "pat" not read -- this checkout is not trusted for namespace "proj-x"$/m);
+        assert.match(result.stderr, /^SKIP oauth "ado" not read -- this checkout is not trusted for namespace "proj-x"$/m);
+        assert.deepEqual(recorder.calls().filter((call) => /vc-secrets:proj-x:/.test(call) && !/writeprobe/.test(call)), []);
+    });
+
+test("doctor: with a launchable that is also gated, an unreadable trust file is still one finding", POSIX_STUB_ONLY, () => {
+    const recorder = keychainRecorder();
+    const env = launcherEnv(recorder.env);
+    writeUserDeclarations(env, { servers: { s: NS_SERVER } });
+    const root = namespaceRepo(NS_PAT_PROJECT);
+    const file = corruptTrustFile(env);
+    const result = runVerb(env, root, "doctor");
+    const naming = result.stderr.split("\n").filter((line) => line.startsWith("FAIL") && line.includes(file));
+    assert.equal(naming.length, 1, result.stderr);
+    assert.match(result.stderr, /^SKIP secret "pat" not read/m);
+});
+
+test("doctorReport: a namespace the checkout is not trusted for is a SKIP per entry, in the Key Vault SKIP's form", () => {
+    const cfg = { secrets: {}, servers: {}, projectId: "proj-x" };
+    const lines = m.doctorReport(cfg, {
+        env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(),
+        namespaceNotRead: [{ kind: "secret", name: "pat" }, { kind: "oauth", name: "ado" }] });
+    assert.deepEqual(lines.filter((line) => line.startsWith("SKIP")), [
+        'SKIP secret "pat" not read -- this checkout is not trusted for namespace "proj-x"',
+        'SKIP oauth "ado" not read -- this checkout is not trusted for namespace "proj-x"',
+    ]);
+});
+
+test("trustNotes: an oauth reader's note names the entry and the namespace too", () => {
+    const cfg = namespaceOauthCfg();
+    assert.deepEqual(m.trustNotes(cfg, m.trustAssessment(cfg, () => NO_TRUST)),
+        ['s: reads oauth "ado" from namespace "proj-x", which this repository declares and is not trusted yet -- run "vc-secrets trust" before starting it']);
+});
+
+test("cmdTrust: a repository that only declares a local secret or an oauth entry is recorded with its projectId, and the review names them", async () => {
+    const cfg = m.loadConfig(withOwnRoot(scopedPaths({
+        project: { projectId: "proj-x", secrets: { pat: { backend: "local" } }, oauth: { ado: OAUTH_DECL } } })));
+    const env = trustEnv();
+    m.writeTrustState(env, { schemaVersion: 1, repositories: { "/work/other-checkout": {
+        trustedAt: "2000-01-01T00:00:00.000Z", projectId: "proj-x", servers: {}, tasks: {} } } });
+    let shown = null;
+    const { seams, log } = trustSeams(env, { beforeAnswer: () => { shown = log.join(""); } });
+    assert.equal(m.namespaceTrustProblem(cfg, m.readTrustState(env), m.namespaceDeclarations(cfg))?.reason, "untrusted");
+    await m.cmdTrust(cfg, seams);
+
+    assert.ok(shown.includes('secret "pat", oauth "ado" are stored in namespace "proj-x"'), shown);
+    assert.ok(shown.includes('INFO namespace "proj-x" is already recorded for /work/other-checkout'), "with no reader, the same fact is shown");
+    assert.deepEqual(m.readTrustState(env).repositories[cfg.projectRoot],
+        { trustedAt: "2001-02-03T04:05:06.000Z", projectId: "proj-x", servers: {}, tasks: {} });
+    assert.match(log.join(""), /secret "pat", oauth "ado" may now be stored and removed in namespace "proj-x"/);
+    assert.equal(m.namespaceTrustProblem(cfg, m.readTrustState(env), m.namespaceDeclarations(cfg)), null, "which is what lifts set, login and logout");
+
+    // Declining records nothing.
+    const declined = trustEnv();
+    await m.cmdTrust(cfg, trustSeams(declined, { answer: "n" }).seams);
+    assert.deepEqual(m.readTrustState(declined).repositories, {});
+});
+
+test("cmdTrust: a person's own declarations need no record, and the record goes with the last entry the repository stores", async () => {
+    const own = m.loadConfig(withOwnRoot(scopedPaths({ user: { secrets: { mine: { backend: "local" } }, oauth: { ado: OAUTH_DECL } } })));
+    const env = trustEnv();
+    const log = [];
+    await m.cmdTrust(own, { ...trustSeams(env).seams, log: (text) => log.push(text) });
+    assert.match(log.join(""), /nothing in .* needs trust/);
+    assert.deepEqual(m.readTrustState(env).repositories ?? {}, {});
+
+    const declaring = m.loadConfig(withOwnRoot(scopedPaths({ project: { projectId: "proj-x", secrets: { pat: { backend: "local" } } } })));
+    await m.cmdTrust(declaring, trustSeams(env).seams);
+    assert.ok(Object.hasOwn(m.readTrustState(env).repositories, declaring.projectRoot));
+    const gone = m.loadConfig(withOwnRoot(scopedPaths({ project: { projectId: "proj-x", secrets: { pat: KV_PAT } } })));
+    gone.projectRoot = declaring.projectRoot;
+    const removal = [];
+    await m.cmdTrust(gone, { ...trustSeams(env).seams, log: (text) => removal.push(text) });
+    assert.ok(!Object.hasOwn(m.readTrustState(env).repositories, declaring.projectRoot), "nothing is stored in the namespace any more");
+    assert.match(removal.join(""), /removed its trust record/);
+});
+
+test("untrust revokes what trust granted to set, login and logout", POSIX_STUB_ONLY, () => {
+    const recorder = keychainRecorder();
+    const env = launcherEnv(recorder.env);
+    const root = namespaceRepo(NS_PAT_PROJECT);
+    seedTrust(env, root);
+    assert.equal(runVerb(env, root, "set", "pat").status, 0);
+    assert.equal(runVerb(env, root, "untrust").status, 0);
+    const refused = runVerb(env, root, "set", "pat");
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /is stored in namespace "proj-x", which this repository declares, and this checkout is not trusted/);
+});
+
+// ── the two namespace touches that are not a read of an entry: doctor's write probe and unlock ───────
+//
+// The probe writes and then deletes a key of its own; `unlock` existence-checks and test-decrypts the entries
+// a repository declares. Both build keys from the repository's projectId, so both stand behind the same
+// predicate as the verbs above (namespaceTrustProblem).
+
+const PROBE_CLAIMED = `${m.KEY_PREFIX}:proj-x:${m.WRITE_PROBE_NAME}`;
+const PROBE_USER = `${m.KEY_PREFIX}:user:${m.WRITE_PROBE_NAME}`;
+
+async function probeKeys(cfg, extra = {}) {
+    const keys = { written: [], removed: [], values: [] };
+    await m.probeKeystoreWrite({ backend: "keychain", cfg, ...extra,
+        write: async (key, value) => { keys.written.push(key); keys.values.push(value); },
+        remove: async (key) => { keys.removed.push(key); } });
+
+    return keys;
+}
+
+test("probeKeystoreWrite: in a checkout not trusted for its namespace the probe writes and removes under the user key, never the claimed namespace", async () => {
+    const cfg = { projectId: "proj-x", secrets: {}, oauth: {} };
+    const keys = await probeKeys(cfg, { namespaceTrusted: false });
+    assert.deepEqual(keys.written, [PROBE_USER]);
+    assert.deepEqual(keys.removed, [PROBE_USER]);
+    assert.ok([...keys.written, ...keys.removed].every((key) => !key.includes(":proj-x:")), "nothing under the claimed id");
+});
+
+test("probeKeystoreWrite: a trusted checkout, and a call that says nothing about trust, keep the project key", async () => {
+    const cfg = { projectId: "proj-x", secrets: {}, oauth: {} };
+    for (const extra of [{ namespaceTrusted: true }, {}]) {
+        const keys = await probeKeys(cfg, extra);
+        assert.deepEqual(keys.written, [PROBE_CLAIMED], JSON.stringify(extra));
+        assert.deepEqual(keys.removed, [PROBE_CLAIMED], JSON.stringify(extra));
+    }
+    // No repository: no projectId, so the user key whatever is said about trust.
+    const keys = await probeKeys({ secrets: {}, oauth: {} }, { namespaceTrusted: true });
+    assert.deepEqual(keys.written, [PROBE_USER]);
+});
+
+test("probeKeystoreWrite: the keychain value is sized for the key the probe wrote under, trusted or not", async () => {
+    // The two keys differ in length, and the composed line must still sit exactly on the limit under the
+    // one that was used: sized for the other, an untrusted probe would overflow its own budget (a FAIL on a
+    // healthy machine) or rehearse a smaller write than a real entry makes.
+    const env = { USER: "abcde" };
+    const cfg = { projectId: "a-much-longer-project-id-than-user", secrets: {}, oauth: {} };
+    const saved = process.env.USER;
+    process.env.USER = env.USER;
+    try {
+        for (const namespaceTrusted of [false, true]) {
+            const keys = await probeKeys(cfg, { namespaceTrusted });
+            const line = m.buildLocalWrite("keychain", keys.written[0], env, { value: keys.values[0] }).stdinCommand(keys.values[0]);
+            assert.equal(Buffer.byteLength(line), m.SECURITY_LINE_LIMIT, `namespaceTrusted=${namespaceTrusted}, key ${keys.written[0]}`);
+        }
+    } finally {
+        if (saved === undefined) { delete process.env.USER; } else { process.env.USER = saved; }
+    }
+    assert.notEqual(m.writeProbeValue(cfg, env, "keychain", false), m.writeProbeValue(cfg, env, "keychain", true),
+        "the fixture must make the two keys differ, or this test cannot see the sizing");
+});
+
+test("cmdDoctor: the write probe is told whether this checkout is trusted for the namespace it would write in", () => {
+    const call = strippedBodyOf("async function cmdDoctor").match(/const writeProbe = [\s\S]*?;/);
+    assert.ok(call, "cmdDoctor must compute writeProbe");
+    assert.match(call[0], /namespaceTrusted:\s*probeNamespaceTrusted\(\)/, call[0]);
+});
+
+test("doctor: the write probe goes under the user key in a checkout not trusted for its namespace, and under the project key once trusted",
+    POSIX_STUB_ONLY, () => {
+        const recorder = keychainRecorder();
+        const env = launcherEnv(recorder.env);
+        const root = namespaceRepo({ projectId: "proj-x", secrets: { kv: KV_PAT } });
+        const probeCalls = () => recorder.calls().filter((call) => call.includes(m.WRITE_PROBE_NAME));
+
+        runVerb(env, root, "doctor");
+        assert.ok(probeCalls().some((call) => call.includes(PROBE_USER)), probeCalls().join("\n"));
+        assert.ok(probeCalls().every((call) => !call.includes(":proj-x:")), `no claimed namespace:\n${probeCalls().join("\n")}`);
+
+        seedTrust(env, root);
+        runVerb(env, root, "doctor");
+        assert.ok(probeCalls().some((call) => call.includes(PROBE_CLAIMED)), probeCalls().join("\n"));
+    });
+
+test("doctor: an unreadable trust file puts the probe under the user key without a finding of its own", POSIX_STUB_ONLY, () => {
+    const recorder = keychainRecorder();
+    const env = launcherEnv(recorder.env);
+    const root = namespaceRepo({ projectId: "proj-x", secrets: { kv: KV_PAT } });
+    corruptTrustFile(env);
+    const result = runVerb(env, root, "doctor");
+    const probeCalls = recorder.calls().filter((call) => call.includes(m.WRITE_PROBE_NAME));
+    assert.ok(probeCalls.length > 0 && probeCalls.every((call) => !call.includes(":proj-x:")), probeCalls.join("\n"));
+    assert.doesNotMatch(result.stderr, /trust file/, "nothing here is held to the file, so nothing names it");
+});
+
+async function unlockRun(cfg, { trustState = null, extraEnv = {} } = {}) {
+    const checked = [];
+    const decrypted = [];
+    const out = [];
+    await withProcessEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg", GPG_TTY: "/dev/null", ...extraEnv }, () => m.cmdUnlock(cfg, {
+        exists: (file) => { checked.push(file); return true; },
+        run: async (spec) => { decrypted.push(spec.args.at(-1)); },
+        write: (text) => out.push(text),
+        ...(trustState === null ? {} : { trustState }),
+    }));
+
+    return { checked, decrypted, out: out.join("") };
+}
+
+function unlockCfg() {
+    return m.loadConfig(withOwnRoot(scopedPaths({
+        user: { secrets: { mine: { backend: "local" } } },
+        project: { projectId: "proj-x", secrets: { pat: { backend: "local" } }, oauth: { ado: OAUTH_DECL } },
+    })));
+}
+
+const keyFilesIn = (cfg, files) => files.filter((file) => file.includes(`${m.KEY_PREFIX}-proj-x-`) || file.includes("proj-x"));
+
+test("unlock: a repository's namespace is neither checked nor decrypted in a checkout that is not trusted for it, and says so",
+    async () => {
+        const cfg = unlockCfg();
+        const result = await unlockRun(cfg, { trustState: NO_TRUST });
+        assert.deepEqual(keyFilesIn(cfg, result.checked), [], `no existence check in the claimed namespace:\n${result.checked.join("\n")}`);
+        assert.deepEqual(keyFilesIn(cfg, result.decrypted), []);
+        assert.ok(result.checked.some((file) => file.includes("mine")), "the person's own entry is still checked");
+        assert.equal(result.decrypted.length, 1);
+        assert.ok(result.out.includes('SKIP secret "pat" not checked -- this checkout is not trusted for namespace "proj-x"\n'), result.out);
+        assert.ok(result.out.includes('SKIP oauth "ado" not checked -- this checkout is not trusted for namespace "proj-x"\n'), result.out);
+        assert.match(result.out, /gpg agent warmed \(1 entry\)/);
+    });
+
+test("unlock: once the checkout is trusted for the namespace, the repository's entries are checked and decrypted as before", async () => {
+    const cfg = unlockCfg();
+    const result = await unlockRun(cfg, { trustState: trustedStateFor(cfg) });
+    assert.doesNotMatch(result.out, /SKIP/);
+    assert.equal(keyFilesIn(cfg, result.checked).length > 0, true);
+    assert.equal(result.decrypted.length, 4, "mine, pat, and the sign-in's refresh and access");
+    assert.match(result.out, /gpg agent warmed \(4 entries\)/);
+
+    // A recorded root with another project's id is not trusted for THIS one.
+    const claimed = trustedStateFor(cfg);
+    claimed.repositories[cfg.projectRoot].projectId = "proj-y";
+    const changed = await unlockRun(cfg, { trustState: claimed });
+    assert.deepEqual(keyFilesIn(cfg, changed.checked), []);
+    assert.match(changed.out, /SKIP secret "pat" not checked/);
+});
+
+test("unlock: an unreadable trust file counts as not trusted, is named once, and the repository's entries are not touched", async () => {
+    const cfg = unlockCfg();
+    const env = launcherEnv();
+    const file = corruptTrustFile(env);
+    const result = await unlockRun(cfg, { extraEnv: { HOME: env.HOME, USERPROFILE: env.USERPROFILE, XDG_CONFIG_HOME: env.XDG_CONFIG_HOME } });
+    assert.equal(result.out.split(file).length - 1, 1, `the file is named once:\n${result.out}`);
+    assert.deepEqual(keyFilesIn(cfg, result.checked), []);
+    assert.match(result.out, /SKIP secret "pat" not checked/);
+});
+
+test("unlock: a config with nothing in a repository's namespace never reads the trust file, whatever it holds", async () => {
+    const env = launcherEnv();
+    corruptTrustFile(env);
+    const seam = { HOME: env.HOME, USERPROFILE: env.USERPROFILE, XDG_CONFIG_HOME: env.XDG_CONFIG_HOME };
+    const userOnly = m.loadConfig(scopedPaths({ user: { secrets: { mine: { backend: "local" } }, oauth: { ado: OAUTH_DECL } } }));
+    const quiet = m.loadConfig(withOwnRoot(scopedPaths({
+        user: { secrets: { mine: { backend: "local" } } }, project: { projectId: "proj-x", secrets: { kv: KV_PAT } } })));
+    for (const [what, cfg] of [["a user-only config", userOnly], ["a repository that declares nothing in its namespace", quiet]]) {
+        const result = await unlockRun(cfg, { extraEnv: seam });
+        assert.doesNotMatch(result.out, /trust|SKIP/i, `${what}: ${result.out}`);
+        assert.ok(result.decrypted.length >= 1, what);
+    }
 });
 
 test("guard-declarations: blocks the trust file, in every payload shape and as an absolute, relative or Windows path", () => {

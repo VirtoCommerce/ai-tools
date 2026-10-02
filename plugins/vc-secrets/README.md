@@ -44,9 +44,11 @@ team's servers, a person for their own.
 | `migrate` | One-time: move user-scope secrets stored under the pre-plugin flat `mcpw:<name>` credential (or `~/.config/mcpw/secrets/<name>.gpg`) to their namespaced keys. A repository's local-store secret is skipped |
 
 `install` deliberately installs a **shim**, not a copy of the launcher: plugin files live in a cache
-directory whose path carries the version, so a copy would keep running an old launcher after an
-update while the plugin's commands moved on. The shim resolves the plugin's current location on every
-launch, so an ordinary plugin update needs no reinstall.
+directory whose path carries the version, so a copy would keep running an old launcher after an update
+while the plugin's commands moved on. The shim resolves the plugin's current location on every launch, so
+an ordinary plugin update needs no reinstall. An update that changes the shim itself does: `doctor` warns
+when the installed shim is older than the launcher expects, and re-running the `install` skill replaces
+it.
 
 From a terminal, everything runs through the shim, by its literal path — `install` prints the exact
 commands, and every other verb takes the same form, so there is nothing to configure first. (If you'd
@@ -58,13 +60,13 @@ but a command you type by hand does not:
 
 | Verb | |
 |---|---|
-| `set <name>` | Store one secret. Hidden prompt; the value never appears in argv. Only works for a name already declared — it refuses an unknown one. |
-| `login <name>` | Sign in to the `oauth` entry `<name>` in a browser and store its token. Refuses an entry a repository declares until your user file acknowledges its app registration. |
-| `logout <name>` | Delete the stored token for that entry, and print which entries were removed and how many were already absent. A `login` still waiting on its browser tab can finish afterwards and store a token again — close that tab. |
+| `set <name>` | Store one secret. Hidden prompt; the value never appears in argv. Only works for a name already declared — it refuses an unknown one, and a repository's `local` secret until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
+| `login <name>` | Sign in to the `oauth` entry `<name>` in a browser and store its token. Refuses an entry a repository declares until your user file acknowledges its app registration and [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
+| `logout <name>` | Delete the stored token for that entry, and print which entries were removed and how many were already absent. Refuses an entry a repository declares until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. A `login` still waiting on its browser tab can finish afterwards and store a token again — close that tab. |
 | `run <server>` | Resolve and run that server on stdio, staying as its parent. This is what an MCP entry calls. |
 | `task <name>` | Same, for a declared non-MCP command — a load-test harness, a migration step. |
 | `doctor` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. |
-| `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. No-op on Windows and macOS. |
+| `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. A repository's `local` secrets and `oauth` entries are skipped, with a `SKIP` line, until [this checkout is trusted](#trusting-a-repositorys-declarations) for their namespace. No-op on Windows and macOS. |
 | `migrate` | Copy legacy-prefix entries to namespaced keys, for user-scope declarations only: a legacy entry is your own value, so it is never copied into a repository's namespace, and a repository's local-store secrets are skipped with a line saying so (a Key Vault secret never reaches `migrate`). Idempotent. |
 | `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr, including a note for each repository server you have not trusted yet. See [Clients](#clients). |
 | `trust` | Show what this repository's declarations would run — command, args, env names and `literal:` values, and the `projectId` — and, on a `y` typed at a terminal, record it. Refuses without an interactive terminal, before showing anything. See [Trusting a repository's declarations](#trusting-a-repositorys-declarations). |
@@ -82,9 +84,13 @@ Reviewable, and committed where they belong. Three homes, precedence
 | `user` | `~/.claude/vc-secrets.json` | no | yours, everywhere |
 
 A server or task whose winning entry is in a `project` or `local` file needs [your trust](#trusting-a-repositorys-declarations)
-before it launches; a `user` one does not, since you wrote it. `local` is gated with `project` although it
-is nominally yours: the launcher cannot tell a tracked file from an untracked one without running `git`
-inside a repository it has not yet decided to trust, and it will not do that.
+before it launches; a `user` one does not, since you wrote it — with one exception: a `user` server or task
+that reads a `local`-backend secret or an `oauth` entry which a repository declared needs the trust of the
+checkout it is launched from, because those entries live under the repository's `projectId` (see
+[Trusting a repository's declarations](#trusting-a-repositorys-declarations)). `local` is gated with `project`
+although it is nominally yours: the launcher cannot tell a tracked file from an untracked one without running
+`git` inside a repository it has not yet decided to trust, and it will not do that, so a secret declared in
+the `local` file counts as the repository's here too.
 
 ```jsonc
 {
@@ -134,15 +140,17 @@ A task's whole process group ends with the launcher. A helper the task backgroun
 its environment from outliving the launcher. On Windows the launcher binds the tree to itself with a job
 object before it starts anything, so any end of the launcher ends the whole tree -- a client stopping the
 server (which on Windows terminates the launcher outright, running none of its handlers), a crash, or Task
-Manager. The bind is made in the same PowerShell call that reads the launch's Credential Manager secrets, and
-it can be refused in a restricted context; the launch then goes ahead and says so on stderr (`could not bind
+Manager. The bind is made in the same PowerShell call that reads the launch's Credential Manager secrets and,
+for a launch with an `oauth:` reference stored there, its cached sign-in; it can be refused in a restricted context; the launch then goes ahead and says so on stderr (`could not bind
 the launch's process tree to this launcher`), and a client stop may leave that launch's tree running. The job does not permit breakaway, so a descendant
 that explicitly asks to leave it (`CREATE_BREAKAWAY_FROM_JOB`) fails to start; the `npx → cmd → node` chain
 never asks, and permitting it would let any descendant escape the teardown. On Linux and macOS a **server's** group also ends when the client closes the launcher's stdin: the
 launcher sits between the client and the server, passes stdin through, and if the server is still running a
 second after the client closed it, takes the group down the way a `SIGTERM` would. Without that, a server that
 ignores end-of-input (the MCP SDK's stdio transport does not act on it) keeps its event loop, and a client that
-died sends no signal at all. A task keeps the terminal itself, and so does a server whose stdin is a terminal.
+died sends no signal at all. A server that stops reading its stdin without closing it holds the relay paused once
+the pipe is full, so an end-of-input queued behind that unread input is not seen -- the same as before the relay
+existed. A task keeps the terminal itself, and so does a server whose stdin is a terminal.
 A `SIGKILL` of the launcher itself (the OOM killer, `kill -9`) runs nothing and leaves the group standing: no
 portable operating-system mechanism ends a whole process tree when its parent dies (`PR_SET_PDEATHSIG`
 reaches one generation). Something meant to outlive the task has to be started **outside** it: a helper
@@ -173,7 +181,8 @@ environment does not help there; that case wants a git credential helper, not th
   reviewable text rather than a surface this tool can defend. A control character (a newline, a tab,
   an escape) in `command` or in an `env` key is refused when the declaration loads: nothing
   legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine, except through a `.cmd`/`.bat` shim on Windows, where an
-  argument or the command holding a CR or LF (or a `%`) is refused at launch because `cmd.exe` would act on it --
+  argument or the command holding a CR or LF (or a `%`) is refused at launch because `cmd.exe` would act on it, and so is
+  an argument ending in a backslash, which such a shim cannot pass on unchanged --
   and the review prints `args` as JSON, so a control byte in one is an escape and not a terminal command.
 - `projectId` is **declared, never derived.** A git worktree has a different path from its main
   checkout, so a path-derived identity would hide the secrets you already set. It may appear in the
@@ -181,18 +190,24 @@ environment does not help there; that case wants a git credential helper, not th
 - Being declared, it is also **claimable**: two repos that write the same `projectId` share one
   namespace, and a developer with both checked out gives each the other's secrets. So the separation
   between projects is a convention this tool keeps for you, not a boundary it enforces against a
-  declaration that wants to cross it. Don't copy a `projectId` between repos.
+  declaration that wants to cross it. Don't copy a `projectId` between repos. Where the tool does hold the
+  line is your own side of it: a user-scope server or task that reads a repository-declared `local` secret
+  or `oauth` entry is launched only from a checkout whose [trust](#trusting-a-repositorys-declarations)
+  record pins that `projectId`, and `set`, `login`, `logout` and `doctor` touch such an entry only from the
+  same, so a repository cannot aim any of them at another project's entries by claiming the id.
 
 ### Signed-in tokens: the `oauth` block
 
 A server that can sign in by itself may not need this. `@azure-devops/mcp -a azcli` takes its token from
-Azure Identity's developer sign-ins — `az login` among them — which keep it fresh themselves, so it
-needs no `oauth` entry and no `vc-secrets login`. What changes is whose token it is: the
-server then holds your developer identity, with every right your account has in Azure DevOps, and the
-sign-in behind it reaches the rest of your Azure account from the same environment. An `oauth` entry
-signs in against an app registration and scopes the declaration names, keeps the refresh token in the
-OS keystore, and asks your consent before a repository's registration is used. Choose `azcli` when the
-ambient identity is acceptable for the agent that will run the server.
+Azure Identity's developer sign-ins — `az login` among them — which renew it without this tool, so it
+needs no `oauth` entry and no `vc-secrets login`. Both routes hand the server a delegated token for your
+own account; what differs is where it comes from. With `azcli` the client is the developer tool you
+signed in with, the token lives in that tool's cache, and the sign-in behind it reaches every Azure
+resource your account can, for any process in the same environment. An `oauth` entry signs in against the
+app registration and scopes the declaration names, keeps the refresh token in the OS keystore, and asks
+your consent before a repository's registration is used. Neither keeps the server away from sign-ins
+already present in its environment (see [Scope of the protection](#scope-of-the-protection)). Choose
+`azcli` when that ambient identity is acceptable for the agent that will run the server.
 
 An `oauth:<name>` reference names an entry here. It describes the app registration to sign in against,
 and the server process that is meant to hold the token:
@@ -334,11 +349,49 @@ Trust these for /work/repo? [y/N]
   The vault and secret name are the repository's choice and the read is paid for by your `az` login, so
   without that rule an untrusted repository's task would make `doctor` run `az` for it. Otherwise `doctor`
   prints `SKIP secret "x" not read -- declared by the repository, and no trusted, authorized consumer uses
-  it` and does not call `az`; `--all` does not override it. Local-store secrets stay read: they are
-  namespaced to the project, so the read can only return what you `set` for it. Only a launch of a
-  repository's launchable depends on the trust file, so your own user-scope servers never do; `doctor` and
-  `emit-config` read it to report on the repository's. A trust file that cannot be read refuses repository
-  launches rather than reading as empty or as trusted, and `doctor` names it.
+  it` and does not call `az`; `--all` does not override it. A repository's `local` secret and `oauth` entry
+  are read only once this checkout is trusted for their namespace (below): until then `doctor` prints
+  `SKIP secret "x" not read -- this checkout is not trusted for namespace "p"` (`SKIP oauth ...` for a
+  sign-in) and does not touch the keystore for it. The namespace is the repository's own `projectId`, which
+  it can set to another project's, so a read there could return, and a failure there could print, what
+  belongs to that project. Your own user-scope declarations are read as always. The same holds for the two
+  places a verb reaches into that namespace without reading an entry: `doctor`'s write probe (a throwaway
+  keystore entry it writes and removes again) is keyed under the repository's `projectId` only once this
+  checkout is trusted for it, and under the `user` namespace until then, so the diagnostic cannot delete
+  inside a namespace the repository merely claims; and `unlock` neither checks nor decrypts those entries
+  until then, printing `SKIP secret "x" not checked -- this checkout is not trusted for namespace "p"`
+  (`SKIP oauth ...` for a sign-in) instead. The trust file is read for a
+  repository's launchable and for the other cases below: your own user-scope server or task that reads a
+  repository-declared `local` secret or `oauth` entry, and `set`, `login`, `logout`, `unlock` and `doctor`
+  for those entries. `doctor`'s write probe also consults it whenever the repository declares a `projectId`
+  (on the keychain and Credential Manager backends), and falls back to the `user` key silently when this
+  checkout is not trusted or the file cannot be read. Any other launch or verb never depends on it, so a
+  user-only configuration never reads it; `doctor` and `emit-config` read it to report on the repository's. A
+  trust file that cannot be read refuses those launches and verbs rather than reading as empty or as trusted,
+  and `doctor` names it.
+- **A user-scope launchable that reads the repository's namespace needs this checkout's trust.** A
+  `local`-backend secret or an `oauth` entry a repository declares is stored under the repository's
+  `projectId`, and a repository can write any `projectId` — another project's included. Without the gate,
+  your own `user` server launched from that checkout would read, and for an `oauth` entry exchange and
+  rewrite, the other project's entries with no prompt. So such a launch requires a trust record for this
+  checkout's root whose `projectId` is the one in play (the record is keyed by the root, which a repository
+  cannot claim). Run `vc-secrets trust`; the review lists each such reference —
+  `server "s" (user) will read secret "pat" from namespace "my-repo"` — and says when another trusted root
+  already holds that `projectId`, which is expected for a worktree of this repository and not for another
+  repository. A repository that declares only such secrets and no launchable is recorded too, with no
+  command to trust. A secret declared in the `local` file counts. The `vaults` and `registrations`
+  authorization described below still applies on top.
+- **`set`, `login` and `logout` for a repository's entries need this checkout's trust too.** The key they
+  write or delete is `vc-secrets:<projectId>:<name>`, and a repository chooses the `projectId`: repository Y
+  declaring X's id would have your `set` overwrite X's secret, your `login` replace X's sign-in and your
+  `logout` delete it. The record is keyed by the repository root, which Y cannot claim, so the verb is
+  refused unless a record for this root holds the `projectId` in play, and it is refused before the keystore
+  is touched, a browser is opened or a value is asked for. For that reason `trust` records a repository that
+  declares any `local` secret or `oauth` entry even when nothing launches it; the review prints
+  `secret "pat", oauth "ado" are stored in namespace "my-repo"` and the same note about another root holding
+  the id. Your own user-scope declarations are stored under `user` whatever a repository claims, and are
+  never held to this. `trust` and `untrust` are the remedy and stay usable. `login` still needs the
+  acknowledgement of the app registration, checked first as before.
 - `secrets`, `oauth` and `vaults` declarations are not gated — they execute nothing — and a secret crossing
   still needs its own authorization block. Trusting a server does not grant it your secret.
 - `doctor` prints a `FAIL` for each repository launchable that is untrusted or has changed since, and does
@@ -409,12 +462,15 @@ merge, so a user-scope server that references `secret:pat` can find that `pat` i
 repository chose, paid for by your `az` login. That server is authorized exactly as a repository's server
 would be, with the block described next (`vaults` for a Key Vault secret, `registrations` for a sign-in):
 the consumer is named by kind and name under the vault and secret, in the same user file. A repository
-declaration that is a `local` secret stays allowed without one, for the namespacing reason given next.
+declaration that is a `local` secret needs no such block, for the namespacing reason given next — but a
+user-scope launchable reading it, like one reading a repository's `oauth` entry, still needs this checkout's
+[trust](#trusting-a-repositorys-declarations), because the namespace is the repository's `projectId`.
 
 **A `keyvault` secret needs the same authorization even when the project declares it**, and this is the one
-place the rule is not about which file the declaration sits in. A project-declared `local` secret is already
-harmless: its key is namespaced to the project, so it reads what *you* set for that project and nothing
-else — the `set` you ran is the authorization. A vault read has no such act behind it. `keyFor` is not
+place the rule is not about which file the declaration sits in. A project-declared `local` secret needs no
+`secrets` authorization: its key is namespaced to the project, so it reads what *you* set for that project
+and nothing else — the `set` you ran is the authorization, and the [trust](#trusting-a-repositorys-declarations)
+of this checkout is what pins the `projectId` that namespace is named by. A vault read has no such act behind it. `keyFor` is not
 consulted; the vault and secret name are read from the declaration as written, and the read is paid for by
 whatever identity `az` holds, which the repository does not own. So a committed declaration naming any vault
 your login can reach would otherwise hand over that secret. The vault and the secret name stay in the
@@ -447,7 +503,8 @@ expanded by `cmd.exe` on Windows; the refusal names the field and does not echo 
 One consequence worth knowing: when a project declares a secret whose name you also use personally, the
 project's entry wins **and keys the project's namespace**, so its server reads
 `vc-secrets:<projectId>:<name>` and not your personal value. Nothing silently borrows the other's
-credential; the two simply live under different keys.
+credential; the two simply live under different keys. (A user-scope server reading that project entry is
+launched only from a trusted checkout, as above.)
 
 The value itself lives where your platform keeps credentials: a Credential Manager generic
 credential (Windows), a Keychain generic password (macOS), or a gpg-encrypted file under
@@ -481,7 +538,9 @@ Every verb reads the declaration, so write one first — `<repo>/.claude/vc-secr
 secrets, `~/.claude/vc-secrets.json` for your own. On a fresh machine, skipping this step means every
 verb below throws. Then, for a repository's servers and tasks, read them and run `vc-secrets trust` in
 that repository from a terminal — a launch refuses them until you have, and again after any change to
-them. Your own user-scope ones need no such step.
+them. Your own user-scope ones need no such step, unless they read a secret or sign-in the repository
+declares (a `local`-backend secret or an `oauth` entry): those need the same `trust`, for the namespace — as do
+`set`, `login` and `logout` for a repository's own entries.
 
 Then follow your client's branch. They differ in three things and nothing else: how the plugin is
 installed, whether the shim is needed at all, and — on one of them — whether the hook is trusted.
@@ -589,6 +648,10 @@ The secrets themselves stay in the credential store; nothing here removes them.
 | `secret "x" is only under the legacy key` | Run `migrate` — the value cannot be re-typed, the store never gives it back. `doctor` says this for user-scope secrets only: `migrate` skips a repository's (a legacy entry is yours, not the repository's), which shows as an ordinary `secret "x" not resolvable` — `set` it |
 | `projectId disagrees` | The project and local files name different ids; they key the same secrets |
 | `server "x" is declared by <file> ... and is not trusted` | A repository declares it and you have not trusted it. Read the declaration, then run `vc-secrets trust` in the repository named at the end of the line, from a terminal |
+| `server "x" (user) reads secret "y" from namespace "p", which this repository declares, and this checkout is not trusted` | Your own user-scope server or task reads a `local`-backend secret or an `oauth` entry that a repository declares, and this checkout has no trust record. Review the repository's `projectId`, then run `vc-secrets trust` in the directory named at the end of the line |
+| `server "x" (user) reads secret "y" from namespace "p", and the projectId changed since you trusted this checkout: ...` | The repository's `projectId` differs from the one you trusted. If you did not change it, that is the finding; if you accept it, run `vc-secrets trust` again |
+| `secret "y" is stored in namespace "p", which this repository declares, and this checkout is not trusted` / `oauth "y" is stored in ...` | `set`, `login` or `logout` for an entry a repository declares, from a checkout with no trust record. The key is under the repository's `projectId`, which it can set to another project's; nothing was written or deleted. Review the `projectId`, then run `vc-secrets trust` in the directory named at the end of the line |
+| `secret "y" is stored in namespace "p", and the projectId changed since you trusted this checkout: ...` | the same verbs, and the repository's `projectId` differs from the one you trusted. If you did not change it, that is the finding; if you accept it, run `vc-secrets trust` again |
 | `server "x" changed since you trusted it: ...` | The declaration differs from what you trusted; the line lists what. If you accept it, run `vc-secrets trust` again in that repository. If you did not make the change, that is the finding |
 | `the trust file ... could not be read (...)` / `the trust file ... is unusable` | The trust file is unreadable or malformed (invalid JSON reads as *could not be read*), or from a newer launcher. Repository launches are refused until it reads: fix or delete it and run `trust` again in each repository |
 | `vc-secrets trust requires an interactive terminal` | Run it yourself in a terminal. A pipe, a script and an agent's plain shell tool are refused; a process that allocates its own pseudo-terminal is not, so this is a confirmation of intent — see [Scope of the protection](#scope-of-the-protection) |
