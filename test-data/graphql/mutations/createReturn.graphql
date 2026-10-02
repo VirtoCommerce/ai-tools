@@ -1,0 +1,47 @@
+# name: createReturn
+# category: returns
+# role: ORG_USER
+# purpose: Creates a Draft return against the caller's own order. Draft HOLDS NOTHING -- re-querying
+#   returnableItems immediately after shows the SAME returnableQuantity as before. reasonCode is
+#   optional at create time (submitReturn requires it); attachmentUrls come from a prior
+#   POST {{BACK_URL}}/api/files/return-attachments upload (scope confirmed live 2026-09-25, allowed
+#   extensions .jpg/.jpeg/.png/.webp/.pdf). quantity <= 0 -> INVALID_QUANTITY; items: [] -> NO_ITEMS;
+#   attachmentUrls referencing a file already attached to a DIFFERENT return -> ATTACHMENT_NOT_AVAILABLE.
+# required-vars: ORDER_ID (String), ORDER_LINE_ITEM_ID (String), QUANTITY via $qty variable (Int)
+# optional-vars: REASON_CODE (String), REASON_COMMENT (String), SERIAL_NUMBER (String),
+#   ATTACHMENT_URLS (list of String)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-013, RET-GQL-014, RET-GQL-015, RET-GQL-016, RET-GQL-017, RET-GQL-018, RET-GQL-019,
+#   RET-GQL-020, RET-GQL-021, RET-GQL-022, RET-GQL-023, RET-GQL-024, RET-GQL-025, RET-GQL-026,
+#   RET-GQL-027, RET-GQL-028 (050o-graphql-returns.csv)
+# runner-note: VCST-5628. createReturn itself does NOT check availability against quantity already
+#   HELD by other Requested returns -- that check happens at submitReturn (RETURN_QUANTITY_UNAVAILABLE /
+#   LINE_NOT_RETURNABLE). A createReturn for more than is actually available still succeeds as Draft.
+#   The suite's own cases pass quantity as a fixed literal Int directly in the query body (0, -1, 1, 2,
+#   3, 6, 8 depending on the case) rather than via $qty, since each value is fixed at authoring time --
+#   use $qty (as below) only when a case needs to vary the quantity from Test_Data/a capture.
+
+mutation ($qty: Int!) {
+  createReturn(command: {
+    orderId: "{{ORDER_ID}}"
+    items: [{
+      orderLineItemId: "{{ORDER_LINE_ITEM_ID}}"
+      quantity: $qty
+      reasonCode: "NoLongerNeeded"
+    }]
+  }) {
+    id
+    number
+    status
+    orderId
+    itemsQuantity
+    items {
+      id
+      orderLineItemId
+      quantity
+      orderedQuantity
+      itemState
+    }
+  }
+}

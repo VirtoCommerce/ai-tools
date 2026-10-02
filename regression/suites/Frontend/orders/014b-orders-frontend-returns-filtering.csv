@@ -18,11 +18,11 @@ Buyer logged in as {{USER_EMAIL}}; completed/delivered order exists; return feat
 [STATE] submission succeeds after selecting a valid reason
 [DOM] selected reason visible in confirmation",[API] return mutation payload includes reason field; [CONSOLE] no errors on reason validation; [NETWORK] 2xx on return submission with reason,reason selection absent from return form; return accepted without any reason; dropdown has no predefined options; validation does not fire on empty reason,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
 ORD-038,Return - Status Tracking Display,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-{{ORDER_WITH_RETURN}} env var set (completed order with an RMA/return request already acknowledged by admin); buyer logged in as {{USER_EMAIL}}; RETURNS_FEATURE_ENABLED=true",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};order_with_return_id={{ORDER_WITH_RETURN}},"[NAV] Navigate to /account/orders
-[ACT] locate order {{ORDER_WITH_RETURN}} and click to open detail
+Buyer signed in as {{USER_EMAIL}}; fixture RETURNS_AUTH_PARTIAL_LINE (order carrying a return already decided PartiallyApproved by an agent) exists on this account -- REPAIRED 2026-09-29: the return module is deployed (vc-module-return PR #27) and the prior {{ORDER_WITH_RETURN}} fixture was DEFERRED/never resolvable (test-data/README.md).",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};order=@td(RETURNS_AUTH_PARTIAL_LINE.orderNumber),"[NAV] Navigate to /account/orders
+[ACT] locate order @td(RETURNS_AUTH_PARTIAL_LINE.orderNumber) and click to open detail
 [WAIT] wait for detail page
 [ASSERT] verify return status section or badge visible on order detail
-[ASSERT] verify return status shows current state (e.g. 'Return Requested' or 'Return Approved' or 'Return Received')
+[ASSERT] verify return status shows current state (e.g. 'Requested' or 'Approved' or 'Partially approved')
 [ASSERT] verify return reference number or RMA ID displayed
 [ASSERT] verify return items listed with quantities being returned
 [NAV] navigate to returns section (if separate /account/returns page exists)","[DOM] return status visible on order detail page
@@ -30,7 +30,7 @@ ORD-038,Return - Status Tracking Display,Orders > Returns,High,PROPOSED-BL-RTN-0
 [DOM] RMA ID or return reference number displayed
 [DOM] returned items listed with correct quantities
 [DOM] return status badge visually distinct from order status
-[STATE] return appears in returns list if such page exists",[API] GET order detail includes return/RMA status data; [CONSOLE] no errors rendering return status section; [NETWORK] 2xx on order detail with return data,return status absent from order detail; RMA ID missing; returned items not listed; return status shows stale/incorrect state,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
+[STATE] return appears in returns list if such page exists",[API] GET order detail includes return/RMA status data; [CONSOLE] no errors rendering return status section; [NETWORK] 2xx on order detail with return data,return status absent from order detail; RMA ID missing; returned items not listed; return status shows stale/incorrect state,none,"VCST-5883; SUPERSEDED proposal (5-triage, 2026-09-29, TRI-006 -- retirement is a human decision, not auto-applied): asserts return status on the ORDER page with no spec citation; superseded by 014c ORD-RET-012 (the [JOURNEY] case) and ORD-RET-015 (decided/cancelled action visibility), both of which assert the same surface against a real, current fixture and a {SPEC} oracle.",Draft
 ORD-039,Return - Partial Return Quantity Selection,Orders > Returns,Medium,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; delivered order has line item with quantity >= 3; return feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on delivered order with item qty >= 3

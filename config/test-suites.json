@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-01",
-    "totalSuites": 148,
+    "generated": "2026-10-02",
+    "totalSuites": 150,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -423,6 +423,31 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "universal",
+      "clickDriven": true
+    },
+    {
+      "id": "014c",
+      "name": "Orders Frontend — Returns (buyer's own returns + agent decisions, steps 1-2)",
+      "file": "regression/suites/Frontend/orders/014c-orders-frontend-returns.csv",
+      "domain": "purchase-flow",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 23,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "orders",
+        "frontend",
+        "returns",
+        "notifications",
+        "sprint"
+      ],
+      "requiresModules": [
+        "returns"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
       "clickDriven": true
     },
     {
@@ -1803,6 +1828,35 @@
       }
     },
     {
+      "id": "050o",
+      "name": "GraphQL xAPI — Returns (buyer's own returns + decided-return read surface, steps 1-2)",
+      "file": "regression/suites/Backend/graphql/050o-graphql-returns.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 45,
+      "estimatedMinutes": 75,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "graphql",
+        "xapi",
+        "returns",
+        "b2b",
+        "sprint"
+      ],
+      "requiresModules": [
+        "returns"
+      ],
+      "customerApplicability": "reference",
+      "notes": "RET-GQL-031..035 (added 2026-09-25) prove five store settings are actually READ, not hardcoded defaults, by changing each live via POST /api/platform/settings/v2/tenant/Store/{id}/values, observing the shift, then restoring: Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses (blank means ANY status here, the inverse of AllowedOrderStatuses's blank), and Return.ReturnNewNumberTemplate; RET-GQL-035 is a pure read proving returnReasons.localizedName is per-culture admin text with a code fallback, not a global string. These intentionally do NOT write through PUT /api/stores despite a live 2026-09-25 finding that it propagates faster: PUT /api/stores REPLACES the whole store entity (scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage from a partial body), and safely reconstructing its ~100-entry settings array has no equivalent in this runner's declarative Steps grammar — only a real GET-spread-PUT script (or the Admin SPA's own Save) can do that safely. So these cases accept the slower, already-documented (RET-GQL-028) propagation risk of the tenant-values endpoint instead; a WAIT timeout on them is a cache/propagation finding, not a functional regression. Return.Reasons (the reason-dictionary SELECTION setting, distinct from ReasonsRequiringComment) could not be covered at all: PUT /api/stores returns 204 but the value stays null on every write attempt — no case exists for it, and none should be authored until that write path is understood. VERIFIED LIVE ON vcptcore_qa1 2026-09-25 (npm run store:set -- --list --store B2B-store) that the real persisted setting names are Return.WindowDays / Return.AllowedOrderStatuses / Return.AllowedShipmentStatuses / Return.ReturnNewNumberTemplate / Return.ReturnEnabled / Return.Reasons / Return.ReasonsRequiringComment / Return.AttachmentsRequired — NOT the ReturnWindowDays/ReturnAllowedOrderStatuses/ReturnAllowedShipmentStatuses spelling the domain map's own ModuleConstants.cs citation uses; that citation names C# field identifiers, not the dotted setting keys the REST/GraphQL surface actually reads.",
+      "lanes": {
+        "machine": 45,
+        "browser": 0,
+        "manual": 0
+      }
+    },
+    {
       "id": "051",
       "name": "Catalog Admin Products",
       "file": "regression/suites/Backend/catalog/051-catalog-admin-products.csv",
@@ -2466,7 +2520,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 22,
+      "testCount": 23,
       "estimatedMinutes": 15,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2479,7 +2533,62 @@
         "returns"
       ],
       "envRiskGate": "staging",
-      "customerApplicability": "reference"
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "073a",
+      "name": "Returns — Authorize & Notifications (agent decisions, step 2)",
+      "file": "regression/suites/Backend/returns/073a-returns-authorize-notifications.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "api",
+      "priority": "P1",
+      "testCount": 31,
+      "estimatedMinutes": 50,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "returns",
+        "authorize",
+        "notifications",
+        "sprint"
+      ],
+      "requiresModules": [
+        "returns"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "lanes": {
+        "machine": 31,
+        "browser": 0,
+        "manual": 0
+      }
+    },
+    {
+      "id": "073b",
+      "name": "Returns — Admin SPA Decisions (Approve / decline, status set, settings, permissions)",
+      "file": "regression/suites/Backend/returns/073b-returns-admin-decisions.csv",
+      "domain": "purchase-flow",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 12,
+      "estimatedMinutes": 40,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "returns",
+        "admin",
+        "authorize",
+        "settings",
+        "permissions",
+        "sprint"
+      ],
+      "requiresModules": [
+        "returns"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "074",
@@ -3660,6 +3769,7 @@
       "include": [
         "014",
         "014b",
+        "014c",
         "015",
         "017",
         "017b",
@@ -3872,6 +3982,15 @@
       },
       "exclude": [
         "092"
+      ]
+    },
+    "returns": {
+      "include": [
+        "014c",
+        "050o",
+        "073",
+        "073a",
+        "073b"
       ]
     },
     "loyalty": {

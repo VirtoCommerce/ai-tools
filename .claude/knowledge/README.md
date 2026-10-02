@@ -106,6 +106,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 | [`products.md`](./domain/products.md) | Storefront product types + xAPI fields. |
 | [`push-messages.md`](./domain/push-messages.md) | Push Messages is the module by which a sender (a marketer in the back office, or a sales rep from the storefront) puts a short message into named… |
 | [`release-ledger.md`](./domain/release-ledger.md) | What shipped in the Virto Commerce product line and when. |
+| [`returns.md`](./domain/returns.md) | What the Returns feature IS today, on this stand: TWO mechanisms sharing one word. |
 | [`sales-rep.md`](./domain/sales-rep.md) | What the Sales Rep feature IS — a Contact + login account that holds sales-rep:access and serves a defined set of customer organizations — its… |
 | [`search.md`](./domain/search.md) | What the Search domain IS on the storefront (keyword search bar, suggestions/hints, results page with facets/sorting/paging/empty-state), in the… |
 | [`sitemap.md`](./domain/sitemap.md) | Full storefront URL map. Customer's sitemap differs by storefront customizations. |
