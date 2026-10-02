@@ -33,7 +33,7 @@ those FAILs as findings.
 |---|---|---|
 | `OK` | resolved | — |
 | `INFO` | which declaration files loaded | confirm the expected scopes are there; a missing project file usually means the wrong working directory |
-| `INFO <server/task> "x" (home) is authorized to receive "y"` | a project- or local-declared server or task consumes a secret or oauth entry whose authorization lives in your user file | allowed and often intended; report it so the operator knows the crossing exists |
+| `INFO <server/task> "x" (home) is authorized to receive "y"` | a project- or local-declared server or task — or a user-scope one whose secret or sign-in a repository's declaration replaced — consumes a secret or oauth entry whose authorization lives in your user file | allowed and often intended; report it so the operator knows the crossing exists |
 | `FAIL <server/task> "x" (home) wants <secret\|oauth> "y" and is not authorized` / `... authorized for a different shape` | the same crossing, but the granting file has not granted it, or the launch shape has drifted from what was granted | paste the JSON block the line prints under the `where` it names, in the user file |
 | `FAIL <server/task> "x" is declared by <file> ... and is not trusted` / `... changed since you trusted it: ...` | a repository's own declaration names what an approved client entry runs, and the operator has not reviewed this argv in this repository (or it changed since) | show the operator the line, and ask them to review the declaration and run `vc-secrets trust` in the named directory **in their own terminal**. Do not try to run it yourself: it requires an interactive terminal so that trusting is the operator's own confirmation, which a pipe, a script or a plain shell tool cannot give (a process that allocates its own pseudo-terminal could; that is why the instruction is to ask the operator, not to work around it) |
 | `FAIL the trust file … could not be read` / `... is unusable` | the trust file is unreadable or malformed, so every repository-declared launchable is refused | report the named file; the operator fixes it, or deletes it and re-runs `vc-secrets trust` in each repository |
@@ -47,7 +47,8 @@ those FAILs as findings.
 | `FAIL` | not resolvable | `set` it, or `az login` for a Key Vault secret |
 | `FAIL wcm rejected a write at the size limit` | Credential Manager refused a value at its documented blob limit — the only backend with a size verdict here, and the only one this line can name | a store limit, not a configuration error: the token this machine produces may not fit, and no declaration change helps |
 | `FAIL <backend> refused a write` | the rehearsal write failed for anything else — a locked keychain, a sandbox, a timeout — with the cause on the same line after the colon | act on that cause, not on size. The probe does not run at all when the backend's tool is missing, so a missing tool appears once, as its own FAIL |
-| `SKIP` | a Key Vault secret no enabled server consumes | `--all` to check it anyway |
+| `SKIP secret "y" (keyvault) -- no enabled server consumes it` | a Key Vault secret no enabled server consumes | `--all` to check it anyway |
+| `SKIP secret "y" not read -- declared by the repository, and no trusted, authorized consumer uses it` | a Key Vault secret the repository declared, and no launchable that references it is both trusted and authorized — `doctor` did not call `az` for it, and `--all` does not change that | resolve the `FAIL` lines for the consumer (trust it, or paste the block its crossing line prints), then re-run |
 | `WARN <file>: cannot be read … so advice about leftover tokens may be wrong` | the file behind a wiring check couldn't be read | the legacy-token verdict above it is unreliable — fix the read access and re-run |
 | `WARN … looks like a mistyped reference but is treated as a literal` | an env value looks like a `secrets:`-style typo for `secret:<name>` | fix the reference, or confirm the literal is intended |
 | `WARN … projectId is meaningless at user scope` | a user-scope declaration sets `projectId` | remove it — user scope doesn't use one |
@@ -86,6 +87,12 @@ with and will lose access when that one expires
 The usual cause is a missing or wrong `binName`. Check it against the package's own `bin` entry: the
 key is the name to declare, and the value says whether the `dist/index.js` alternative can match at
 all — `../../README.md` has the rule and the packages it does not hold for.
+
+A third cause prints no line at all: the target matched, but the server read the token once at startup
+and keeps its own copy. Renewal replaces the variable the `oauth:` reference is bound to in the server's
+`process.env`, so only a server that reads it from there at each use gets the new token; one that caches
+it runs on the launch token until it expires. That is a property of the server's code, not of the
+declaration.
 
 ## Report
 

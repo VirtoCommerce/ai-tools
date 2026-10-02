@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SHIM, CANONICAL_DATA_ID, defaultDataHome, defaultShimDir } from "./shim-path.mjs";
+import { SHIM, defaultDataHome, defaultShimDir } from "./shim-path.mjs";
 
 function fail(message) {
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes

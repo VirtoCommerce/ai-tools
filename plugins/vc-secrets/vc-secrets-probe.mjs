@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 // reaches the direct child only — dnx's dotnet.exe outlived every timeout, orphaned, and held a lock
 // on the package file, so the next attempt failed with a file-in-use error instead of timing out
 // again. Measured on Windows.
-import { forwardedSignalsFor, killProcessTree } from "./vc-secrets.mjs";
+import { forwardedSignalsFor, isDirectRun, killProcessTree } from "./vc-secrets.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -176,7 +176,7 @@ export { classifyProbeFailure, describeFailure };
 
 // Guarded so the suite can require the classification without spawning anything — the module used
 // to run on load, which is why its logic had no test at all.
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (isDirectRun(import.meta.url)) {
     const server = process.argv[2];
     if (!server) {
         fs.writeSync(2, "usage: node vc-secrets-probe.mjs <server>\n");

@@ -131,11 +131,23 @@ refused until you have trusted it — and the caller chooses only *which declare
 A task's whole process group ends with the launcher. A helper the task backgrounds (`kubectl port-forward … &`,
 `nohup … &`) is killed when the launcher receives a signal it can catch (`SIGINT`, `SIGTERM`, `SIGHUP`, and
 `SIGQUIT` off Windows) and, on Linux and macOS, when the task exits, because that is what keeps the secrets in
-its environment from outliving the launcher. (On Windows the tree is taken down when the launcher is
-signalled.) A `SIGKILL` of the launcher runs nothing and leaves the group standing. Something meant to
-outlive the task has to be started **outside** it: a helper started from inside -- a `tmux` server or a
-`screen -dm` launched by the task included -- inherits the task's environment, secrets among them, and
-survives with them.
+its environment from outliving the launcher. On Windows the launcher binds the tree to itself with a job
+object before it starts anything, so any end of the launcher ends the whole tree -- a client stopping the
+server (which on Windows terminates the launcher outright, running none of its handlers), a crash, or Task
+Manager. The bind is made in the same PowerShell call that reads the launch's Credential Manager secrets, and
+it can be refused in a restricted context; the launch then goes ahead and says so on stderr (`could not bind
+the launch's process tree to this launcher`), and a client stop may leave that launch's tree running. The job does not permit breakaway, so a descendant
+that explicitly asks to leave it (`CREATE_BREAKAWAY_FROM_JOB`) fails to start; the `npx → cmd → node` chain
+never asks, and permitting it would let any descendant escape the teardown. On Linux and macOS a **server's** group also ends when the client closes the launcher's stdin: the
+launcher sits between the client and the server, passes stdin through, and if the server is still running a
+second after the client closed it, takes the group down the way a `SIGTERM` would. Without that, a server that
+ignores end-of-input (the MCP SDK's stdio transport does not act on it) keeps its event loop, and a client that
+died sends no signal at all. A task keeps the terminal itself, and so does a server whose stdin is a terminal.
+A `SIGKILL` of the launcher itself (the OOM killer, `kill -9`) runs nothing and leaves the group standing: no
+portable operating-system mechanism ends a whole process tree when its parent dies (`PR_SET_PDEATHSIG`
+reaches one generation). Something meant to outlive the task has to be started **outside** it: a helper
+started from inside -- a `tmux` server or a `screen -dm` launched by the task included -- inherits the task's
+environment, secrets among them, and survives with them.
 
 What this does not reach: a credential that must appear inside a URL or an argument the tool then
 writes somewhere (a git remote with an embedded token, for instance). Injecting it into the
@@ -160,7 +172,8 @@ environment does not help there; that case wants a git credential helper, not th
   `args` stay free text — a token there would be visible in the machine's process list anyway, so it is
   reviewable text rather than a surface this tool can defend. A control character (a newline, a tab,
   an escape) in `command` or in an `env` key is refused when the declaration loads: nothing
-  legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine --
+  legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine, except through a `.cmd`/`.bat` shim on Windows, where an
+  argument or the command holding a CR or LF (or a `%`) is refused at launch because `cmd.exe` would act on it --
   and the review prints `args` as JSON, so a control byte in one is an escape and not a terminal command.
 - `projectId` is **declared, never derived.** A git worktree has a different path from its main
   checkout, so a path-derived identity would hide the secrets you already set. It may appear in the
@@ -213,6 +226,11 @@ and the server process that is meant to hold the token:
   launched with, and loses access when that expires. The launcher reports the miss on its second renewal
   tick, naming the target the declaration asked for — and that line is the only report there is, so a
   server that quietly loses access is worth a look at the launcher's stderr.
+- **Renewal reaches only a server that reads the token from `process.env` at each use.** What is
+  renewed is the value of the variable the declaration binds the `oauth:` reference to, inside the target
+  process. A server that copies it into its own state at startup — an API client built once with the token
+  in it — keeps using the copy and runs on the launch token until that expires, even though the target
+  matched and no line is printed. The launcher cannot see this from outside; the server's source can.
 - `authorized` works as it does for a secret: in your user file it names the project servers allowed to
   use the token, and anywhere else it is ignored with a warning.
 
@@ -300,14 +318,20 @@ Trust these for /work/repo? [y/N]
   [Scope of the protection](#scope-of-the-protection). `untrust` removes trust and needs neither a terminal
   nor a declaration.
 - On a launch (`run`, `task`) the check happens before anything is resolved: an untrusted repository does
-  not trigger a keystore prompt or a token refresh that way. `doctor` is not a launch: it reads every declared
-  secret it would check (a Key Vault secret that no enabled server consumes needs `--all`), because
-  `secrets` declarations are not gated (they execute nothing). Only a launch of a repository's launchable
-  depends on the trust file, so your own user-scope servers never do; `doctor` and `emit-config` read it to
-  report on the repository's. A trust file that cannot be read refuses repository launches
-  rather than reading as empty or as trusted, and `doctor` names it.
+  not trigger a keystore prompt or a token refresh that way. `doctor` is not a launch, and it reads the
+  secrets it would check on its own (a Key Vault secret that no enabled server consumes needs `--all`) —
+  with one exception: a **Key Vault secret the repository declared** is read only if at least one launchable
+  that references it is both trusted and authorized to receive it (the same two checks a launch applies).
+  The vault and secret name are the repository's choice and the read is paid for by your `az` login, so
+  without that rule an untrusted repository's task would make `doctor` run `az` for it. Otherwise `doctor`
+  prints `SKIP secret "x" not read -- declared by the repository, and no trusted, authorized consumer uses
+  it` and does not call `az`; `--all` does not override it. Local-store secrets stay read: they are
+  namespaced to the project, so the read can only return what you `set` for it. Only a launch of a
+  repository's launchable depends on the trust file, so your own user-scope servers never do; `doctor` and
+  `emit-config` read it to report on the repository's. A trust file that cannot be read refuses repository
+  launches rather than reading as empty or as trusted, and `doctor` names it.
 - `secrets`, `oauth` and `vaults` declarations are not gated — they execute nothing — and a secret crossing
-  still needs its own `authorized` block. Trusting a server does not grant it your secret.
+  still needs its own authorization block. Trusting a server does not grant it your secret.
 - `doctor` prints a `FAIL` for each repository launchable that is untrusted or has changed since, and does
   not run the `--version` probe on it: that probe would execute the very command the gate refuses.
   `emit-config` still emits every server and notes on stderr which ones are not trusted yet.
@@ -369,8 +393,14 @@ answer different questions: your **trust** in the repository pins the command an
 task that repository declares, whether or not a secret is involved; `authorized` still decides which
 command may receive *your* secret, and stays in your user file where no repository can write it.
 
-Your own user-scope servers and tasks need no block: you wrote both sides, and there is no one to
-authorize against.
+Your own user-scope servers and tasks need no block for what you declared yourself: you wrote both sides,
+and there is no one to authorize against. The exception is a secret or sign-in whose declaration a
+repository replaced. A project or local file that declares a name your user file also declares wins the
+merge, so a user-scope server that references `secret:pat` can find that `pat` is now a Key Vault read the
+repository chose, paid for by your `az` login. That server is authorized exactly as a repository's server
+would be, with the block described next (`vaults` for a Key Vault secret, `registrations` for a sign-in):
+the consumer is named by kind and name under the vault and secret, in the same user file. A repository
+declaration that is a `local` secret stays allowed without one, for the namespacing reason given next.
 
 **A `keyvault` secret needs the same authorization even when the project declares it**, and this is the one
 place the rule is not about which file the declaration sits in. A project-declared `local` secret is already
@@ -393,8 +423,17 @@ repository, where they belong; the authorization is keyed by that pair in your f
 }
 ```
 
-Same comparison, same `doctor` output, same paste. `vaults` takes effect only in the user file — in a
+Same comparison, same `doctor` output, same paste. The consumer named under `servers` or `tasks` is
+identified by its name and its shape and not by which file declares it, so the block above also authorizes
+a user-scope server called `api` that reads this repository-declared secret (the case described above), and
+`doctor` prints the same block to paste for it. `vaults` takes effect only in the user file — in a
 repository file it is ignored with a warning, for the reason `authorized` is user-scope only.
+
+A `keyvault` declaration is also validated when the file loads, since both fields reach `az` as
+arguments: `vault` must be a valid Azure Key Vault name (3–24 letters, digits and hyphens, starting with a
+letter, ending with a letter or digit, no `--`) and `secret` must be 1–127 letters, digits and hyphens. A
+`/` in the vault would redirect the request `az` builds to a host the repository chose, and `%VAR%` is
+expanded by `cmd.exe` on Windows; the refusal names the field and does not echo the value.
 
 One consequence worth knowing: when a project declares a secret whose name you also use personally, the
 project's entry wins **and keys the project's namespace**, so its server reads
@@ -496,6 +535,30 @@ Paste `emit-config codex` into `~/.codex/config.toml`, run `doctor`, and trust t
 > standing assumption recorded in `hooks/targets.mjs`, and this probe is its only detector, so a
 > repeat that still goes through after trusting is the finding worth reporting rather than working
 > around.
+
+## Turning it off, and uninstalling
+
+Disabling the plugin does **not** stop launches, and it does switch the guard off.
+The entries you pasted from `emit-config`'s output — in `<repo>/.mcp.json`, `~/.claude.json`,
+`<repo>/.cursor/mcp.json`, `~/.cursor/mcp.json` or `~/.codex/config.toml` — still call the shim, and the shim
+does not read whether the plugin is enabled: it resolves an install from the client's registry or plugin cache
+and runs it.
+The guard hook, on the other hand, ships *with* the plugin, so a disabled plugin leaves declarations
+editable by the tools the hook used to refuse while the servers keep launching with their secrets.
+Uninstalling from the last scope in Claude Code deletes the plugin's data directory, which is where the shim
+lives (unless `--keep-data` is passed), so entries pointing at it then fail to start. Under Codex or Cursor, or
+with `--keep-data`, the shim stays and still finds whatever install the client's registry and cache hold, so do
+not rely on an uninstall as the off switch either.
+
+The off switch is the entries and the shim, not the plugin:
+
+- Restore or delete the entries you pasted from `emit-config`, in the files named above.
+- Remove the `VC_SECRETS` entry from the `env` block of Claude Code's user settings (Cursor: the `export`
+  in your shell's startup file; Codex has no such variable, its entries carry the literal path).
+- Delete the shim directory, `~/.claude/plugins/data/vc-secrets-ai-tools/` — the file inside it is
+  `vc-secrets-shim.mjs`. If `install` was run with `--data-dir`, it is that directory instead.
+
+The secrets themselves stay in the credential store; nothing here removes them.
 
 ## Knobs
 

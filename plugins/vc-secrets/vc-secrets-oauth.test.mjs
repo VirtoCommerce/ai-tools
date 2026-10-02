@@ -4791,9 +4791,11 @@ test("vc-secrets-probe: importing it spawns nothing -- the module is guarded", (
     // It used to run on load: reading argv and spawning a child. That is why none of the logic
     // above could have a test, and why the two failures went on being one message.
     const source = stripComments(fs.readFileSync(PROBE_PATH, "utf8"));
-    assert.match(source, /if \(process\.argv\[1\] && fileURLToPath\(import\.meta\.url\) === path\.resolve\(process\.argv\[1\]\)\)/);
+    // The gate is the launcher's isDirectRun, which resolves symlinks; the behaviour is pinned by the
+    // symlinked-directory run in vc-secrets.test.mjs, and this keeps the call site inside it.
+    assert.match(source, /if \(isDirectRun\(import\.meta\.url\)\)/);
     assert.equal(source.split("main(server);").length - 1, 1, "exactly one call site");
-    assert.ok(source.indexOf("if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]))")
+    assert.ok(source.indexOf("if (isDirectRun(import.meta.url))")
         < source.indexOf("main(server);"), "and it is inside the guard");
 });
 

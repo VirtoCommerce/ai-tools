@@ -22,13 +22,16 @@ const SHIM_CONTRACT = 1;
 const PLUGIN_KEY = "vc-secrets@ai-tools";
 const REGISTRY_SCHEMA = 2;
 const LAUNCHER = "vc-secrets.mjs";
-const [PLUGIN_NAME] = PLUGIN_KEY.split("@");
+const [PLUGIN_NAME, MARKETPLACE] = PLUGIN_KEY.split("@");
 
 // Only one of the three clients maintains an install registry, so resolution has two stages. The
 // registry is preferred where it exists because it is the only source that knows about per-project
 // installs. Everywhere else the cache layout is the source: measured as
-// <root>/<marketplace>/<plugin>/<version>/ on both clients available to measure. The marketplace
-// segment is globbed rather than named, because whoever registered the marketplace chose its name.
+// <root>/<marketplace>/<plugin>/<version>/ on both clients available to measure. Only the marketplace
+// segment of PLUGIN_KEY is a candidate: the plugin's name is not its identity, and a same-named
+// vc-secrets from another marketplace is a different publisher's code. Ranking across marketplaces
+// would hand it the launch -- and every resolved secret -- the moment its version number was higher.
+// Such an install is reported when nothing of ours is found, and never imported.
 //
 // Cursor has no entry yet. That is deliberate: an unmeasured root would be a guess, and a wrong one
 // resolves to nothing in exactly the same way as an absent one while implying it was checked. When
@@ -45,8 +48,11 @@ const CACHE_ROOTS = [
 // target is really usable is settled inside installsInCaches, by looking for the launcher in it.
 const isDirLike = (entry) => entry.isDirectory() || entry.isSymbolicLink();
 
+// `own` are the installs under this plugin's marketplace; `foreign` the same-named plugin under any
+// other, which exists only so the failure can name it.
 function installsInCaches() {
-    const found = [];
+    const own = [];
+    const foreign = [];
     for (const root of CACHE_ROOTS) {
         let marketplaces;
         try {
@@ -85,13 +91,13 @@ function installsInCaches() {
                 // it would hand the newest slot to a directory whose launch then fails on a missing
                 // file, naming a path nobody chose.
                 if (fs.existsSync(path.join(installPath, LAUNCHER))) {
-                    found.push({ version: version.name, installPath });
+                    (marketplace.name === MARKETPLACE ? own : foreign).push({ version: version.name, installPath });
                 }
             }
         }
     }
 
-    return found;
+    return { own, foreign };
 }
 
 function fail(message) {
@@ -241,7 +247,15 @@ if (fromRegistry.length > 0) {
     // Either the registry knew nothing — ordinary on a client that does not maintain one — or every
     // record it holds points at a directory with no launcher in it. installsInCaches returns only
     // directories that DO hold one, so anything it finds is usable by construction.
-    const cached = installsInCaches();
+    const { own: cached, foreign } = installsInCaches();
+    if (cached.length === 0 && foreign.length > 0) {
+        // Not imported, not ranked, not offered as a fallback. Naming the paths is what makes this
+        // actionable: the developer either installed the wrong marketplace's plugin or has a
+        // lookalike, and neither is something this shim can decide for them.
+        fail(`no install of ${PLUGIN_KEY} was found in the plugin cache, but a plugin named ${PLUGIN_NAME} from another marketplace is installed: `
+            + `${foreign.map((x) => x.installPath).join(", ")}. It is not used -- the same name is not the same plugin. `
+            + "Install it from the marketplace, then run the vc-secrets install skill");
+    }
     if (cached.length === 0 && records.length > 0) {
         fail(`no usable install of ${PLUGIN_KEY} -- every record in ${registryPath} points at a directory holding no ${LAUNCHER}, and no plugin cache holds one either. `
             + "Reinstall it from the marketplace, then run the vc-secrets install skill");

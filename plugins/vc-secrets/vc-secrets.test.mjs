@@ -5,12 +5,13 @@ import { EventEmitter } from "node:events";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { PassThrough } from "node:stream";
+import { PassThrough, Writable } from "node:stream";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as target from "./vc-secrets-target.mjs";
 import * as clients from "./clients.mjs";
 import * as t from "./hooks/targets.mjs";
+import { CANONICAL_DATA_ID } from "./scripts/shim-path.mjs";
 
 const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -962,7 +963,7 @@ test("the secret side's own scope decides the clash, in both directions", () => 
 test("a keyvault secret holds no keystore slot, so its spelling is not a clash", () => {
     const cfg = m.loadConfig(scopedPaths({ project: { projectId: "proj-x",
         oauth: { ado: OAUTH_DECL },
-        secrets: { "oauth-ado-refresh": { backend: "keyvault", vault: "v", secret: "s" } } } }));
+        secrets: { "oauth-ado-refresh": { backend: "keyvault", vault: "demo-vault", secret: "s" } } } }));
     assert.deepEqual(m.oauthKeyClashes(cfg), []);
 });
 
@@ -1654,6 +1655,44 @@ test("the read script exits absent only for ERROR_NOT_FOUND, never for an unread
     assert.equal(m.PS_CRED_READ.match(/exit 3/g).length, 1, "exactly one condition may exit 3");
 });
 
+test("PS_CRED_READ_MANY reads each name exactly as PS_CRED_READ does", () => {
+    // Derived from the single read rather than restated: the batched read replaces it on the launch path,
+    // so the CredRead declaration, the CREDENTIAL layout, the output encoding and the hex the decoder expects
+    // have to be the single read's own, and a later change to one that misses the other must show here.
+    const single = m.PS_CRED_READ;
+    const credRead = /\[DllImport\("advapi32"[^\n]*\n\s*public static extern bool CredRead\([^\n]*/.exec(single)[0];
+    const struct = /public struct CREDENTIAL \{[\s\S]*?\}/.exec(single)[0];
+    const hex = /\(\(\$b \| ForEach-Object \{ \$_\.ToString\("x2"\) \}\) -join ''\)/.exec(single)[0];
+    const encoding = /\[Console\]::OutputEncoding=[^\n]*/.exec(single)[0];
+    for (const [what, text] of Object.entries({ credRead, struct, hex, encoding })) {
+        assert.ok(m.PS_CRED_READ_MANY.includes(text), `the batched read carries the single read's ${what}: ${text}`);
+    }
+});
+
+test("PS_CRED_READ_MANY's job kills its tree on close and grants no breakaway", () => {
+    // A job that let its members' children break away is libuv's own, and it is the job the server's
+    // grandchildren already escape. KILL_ON_JOB_CLOSE alone is the whole point; any breakaway flag -- by
+    // name or by value -- undoes it for the processes that hold the secrets.
+    const script = m.PS_CRED_READ_MANY;
+    assert.doesNotMatch(script, /BREAKAWAY/i);
+    assert.match(script, /const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;/);
+    const assignments = script.match(/LimitFlags\s*=[^;]*;/g);
+    assert.deepEqual(assignments, ["LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;"],
+        "the one flag, and nothing OR-ed into it");
+});
+
+test("PS_CRED_READ_MANY duplicates the job into the launcher before assigning the launcher to it", () => {
+    // Assigned first, a failed duplicate leaves PowerShell the job's only holder, and its exit closes the
+    // job and kills the launcher under KILL_ON_JOB_CLOSE. The duplicate must also not be inheritable: a
+    // child holding the job open would outlive the launcher with it.
+    const script = m.PS_CRED_READ_MANY;
+    const duplicate = script.indexOf("DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)");
+    const assign = script.indexOf("AssignProcessToJobObject(job, launcher)");
+    assert.ok(duplicate >= 0, "the job handle is duplicated into the launcher, non-inheritable");
+    assert.ok(assign >= 0, "the launcher is assigned to the job");
+    assert.ok(duplicate < assign, "duplicate first, then assign");
+});
+
 test("a blob written by the pre-UTF-8 launcher still reads, since it cannot be re-entered", () => {
     // `set` needs the plaintext and the keystore does not give it back, so asking a teammate to
     // retype would mean minting a new credential.
@@ -1947,9 +1986,10 @@ test("cmdDoctor: a resolver that threw is never recorded as a secret that was ne
     // (keyvault)" -- the advice for a secret nobody configured. A throw is a different event, and an
     // error carrying no message arrived at that branch through `false`, sending the developer to
     // repair a configuration that may be correct. Source-inspected because cmdDoctor performs real
-    // keystore io. STRIP_COMMENTS first, for the reason given where it is declared.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8").replace(STRIP_COMMENTS, "");
-    const assign = source.match(/resolvable\[name\] = (?!true)[\s\S]*?;/);
+    // keystore io. Comments stripped before the cmdDoctor body is sliced (see strippedBodyOf), and the
+    // match is confined to that body: across the whole file it would accept the same assignment in any
+    // other function.
+    const assign = strippedBodyOf("async function cmdDoctor").match(/resolvable\[name\] = (?!true)[\s\S]*?;/);
     assert.ok(assign, "the failure branch's assignment moved");
     assert.doesNotMatch(assign[0], /\bfalse\b/,
         `a throw must not be recorded as the absent-secret case: ${assign[0]}`);
@@ -1963,13 +2003,13 @@ test("cmdDoctor: the write probe is actually wired to the report, not merely ava
     // textual hit, so `// const writeProbe = await probeKeystoreWrite(...)` left above a live
     // `const writeProbe = null;` satisfies every assertion below while the probe is unwired -- a
     // mutant measured byte-identical to the green baseline. Same rule as where STRIP_COMMENTS is
-    // declared.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8").replace(STRIP_COMMENTS, "");
-    const call = source.match(/const writeProbe = [\s\S]*?;/);
+    // declared; the match is confined to the cmdDoctor body for the reason given in the test above.
+    const body = strippedBodyOf("async function cmdDoctor");
+    const call = body.match(/const writeProbe = [\s\S]*?;/);
     assert.ok(call, "cmdDoctor must compute writeProbe");
     assert.match(call[0], /probeKeystoreWrite\(/, `writeProbe is not computed from the probe: ${call[0]}`);
     assert.match(call[0], /cfg/, "and must hand it the config, or the probe's own guard checks nothing");
-    const doctorCall = source.match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
+    const doctorCall = body.match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
     assert.ok(doctorCall, "the doctorReport call site moved");
     assert.match(doctorCall[0], /\bwriteProbe\b/, "and must pass it to doctorReport");
 });
@@ -2434,6 +2474,90 @@ test("buildSpawnInvocation: verbatim cmd line quotes every token", () => {
     assert.deepEqual(direct, { cmd: "npx", args: ["-y"], opts: {} });
 });
 
+test("buildSpawnInvocation: a trailing backslash run in a cmd-shim argument is doubled, and nothing else is", () => {
+    const shell = "C:\\Windows\\System32\\cmd.exe";
+    const shim = { kind: "cmd-shim", cmd: "C:\\nodejs\\npx.cmd", shell };
+    const line = (args) => m.buildSpawnInvocation(shim, args).args[0];
+
+    // MSVCRT reads `\"` as an escaped quote, so an undoubled run swallowed the closing quote and ran the
+    // rest of the command line into the argument. Doubled, the program's parser yields the original.
+    assert.equal(line(["C:\\dir\\"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "C:\\dir\\\\""');
+    assert.equal(line(["C:\\dir\\\\"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "C:\\dir\\\\\\\\""', "a run of two becomes four");
+    assert.equal(line(["a\\b", "C:\\x"]), '/d /s /c ""C:\\nodejs\\npx.cmd" "a\\b" "C:\\x""', "interior backslashes are untouched");
+
+    // Decoding the line the way MSVCRT does is the derivation: every argument must come back as it went in.
+    const decode = (cmdLine) => {
+        const out = [];
+        let i = 0;
+        while (i < cmdLine.length) {
+            if (cmdLine[i] === " ") {
+                i += 1;
+                continue;
+            }
+            let arg = "";
+            let inQuotes = false;
+            while (i < cmdLine.length && (inQuotes || cmdLine[i] !== " ")) {
+                let slashes = 0;
+                while (cmdLine[i] === "\\") {
+                    slashes += 1;
+                    i += 1;
+                }
+                if (cmdLine[i] === '"') {
+                    arg += "\\".repeat(Math.floor(slashes / 2));
+                    if (slashes % 2 === 1) {
+                        arg += '"';
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                    i += 1;
+                } else {
+                    arg += "\\".repeat(slashes);
+                    if (i < cmdLine.length) {
+                        arg += cmdLine[i];
+                        i += 1;
+                    }
+                }
+            }
+            out.push(arg);
+        }
+
+        return out;
+    };
+    const args = ["C:\\dir\\", "C:\\a b\\\\", "plain", "x\\y"];
+    const inner = line(args).slice("/d /s /c \"".length, -1);
+    assert.deepEqual(decode(inner).slice(1), args);
+});
+
+test("buildSpawnInvocation: a cmd-shim argument cmd.exe would interpret is refused by position, never by value; a direct spawn takes it", () => {
+    const shim = { kind: "cmd-shim", cmd: "C:\\nodejs\\npx.cmd", shell: "C:\\Windows\\System32\\cmd.exe" };
+
+    // The child's environment holds the resolved secrets, and cmd.exe expands %VAR% inside quotes from it.
+    for (const bad of ["%ADO_MCP_AUTH_TOKEN%", "100%", "a\nb", "a\rb"]) {
+        assert.throws(() => m.buildSpawnInvocation(shim, ["ok", bad]),
+            (e) => e instanceof m.VcSecretsError && /argument 2 contains/.test(e.message) && !e.message.includes(bad.trim()),
+            `${JSON.stringify(bad)} must be refused without echoing it`);
+    }
+    // Legitimate on every direct path: a URL-encoded argument.
+    assert.deepEqual(m.buildSpawnInvocation({ kind: "direct", cmd: "npx" }, ["a%20b", "x\ny"]), { cmd: "npx", args: ["a%20b", "x\ny"], opts: {} });
+});
+
+test("buildSpawnInvocation: a pathful .cmd command holding % is refused without echoing it; a direct spawn takes the same path", () => {
+    // The quoted command sits on the same /c line as the arguments, so cmd.exe expands %VAR% in it from the
+    // child's environment too.
+    const existsSync = onlyFiles("c:/windows/system32/cmd.exe");
+    for (const command of ["C:\\tools\\%X%\\x.cmd", "C:\\tools\\100%\\x.bat"]) {
+        const resolved = m.resolveSpawnCommand(command, { platform: "win32", env: WIN_ENV, existsSync });
+        assert.equal(resolved.kind, "cmd-shim", "the control: it is run through cmd.exe");
+        assert.throws(() => m.buildSpawnInvocation(resolved, ["ok"]),
+            (e) => e instanceof m.VcSecretsError && /^the command contains %/.test(e.message)
+                && !e.message.includes("tools") && !e.message.includes("%X%"),
+            `${command} must be refused without echoing it`);
+    }
+    // A direct spawn hands the path to the loader untouched, so a % there is only a character.
+    const direct = m.resolveSpawnCommand("C:\\tools\\%X%\\x.exe", { platform: "win32", env: WIN_ENV, existsSync });
+    assert.deepEqual(m.buildSpawnInvocation(direct, ["ok"]), { cmd: "C:\\tools\\%X%\\x.exe", args: ["ok"], opts: {} });
+});
+
 test("cmdRun: child gets literal env, legacy + dangerous vars stripped, exit code forwarded, stdout silent", () => {
     const dir = tmpConfigDir({
         secrets: {},
@@ -2461,6 +2585,23 @@ test("cmdRun: unknown server → exit 1, single-line stderr without stack", () =
 // text lets a comment stand in for the code it describes: `// was: spawnSyncProcess = spawnSync` and
 // `// killProcessTree(child, signal)` each satisfied the guard for the thing they replaced.
 const STRIP_COMMENTS = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
+
+// The launcher with its comments removed, and a body sliced out of THAT. Order is the point: a body is
+// cut at the first "\n}\n" after its name, so slicing the raw text first lets a comment that mentions the
+// name -- or a block comment holding a column-0 brace -- move the cut, and stripping afterwards only
+// tidies what was already mis-cut. Every source-inspecting test below slices through these two.
+function strippedLauncherSource() {
+    return fs.readFileSync(LAUNCHER_PATH, "utf8").replace(STRIP_COMMENTS, "");
+}
+
+function strippedBodyOf(name, source = strippedLauncherSource()) {
+    const start = source.indexOf(name);
+    assert.notEqual(start, -1, `${name} moved`);
+    const end = source.indexOf("\n}\n", start);
+    assert.notEqual(end, -1, `the end of ${name} moved`);
+
+    return source.slice(start, end);
+}
 
 test("runCli hardens the spawn environment of this very process before it dispatches anything", () => {
     // The two halves are tested alone -- hardenSpawnEnv's result above, the resolver's cwd rule in its
@@ -3282,8 +3423,10 @@ test("cmdDoctor: the oauth checks are wired to the report, not merely available"
     // Both halves tested and the seam between them not: computing oauthStatus and forgetting to pass
     // it leaves every test above green while doctor reports nothing. Source-inspected because
     // cmdDoctor performs real keystore io -- a behavioural test here would need a live backend.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8");
-    const call = source.match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
+    // Comments stripped, then the cmdDoctor body sliced: `.match` takes the FIRST textual hit, so a
+    // commented-out `// const lines = doctorReport(cfg, { oauthStatus, ... });` above a live call that
+    // omits the keys would satisfy every assertion below.
+    const call = strippedBodyOf("async function cmdDoctor").match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
     assert.ok(call, "the doctorReport call site moved");
     for (const key of ["oauthStatus", "tenantChecks", "childNodes"]) {
         assert.match(call[0], new RegExp(`\\b${key}\\b`), `${key} is computed but never passed`);
@@ -3293,13 +3436,10 @@ test("cmdDoctor: the oauth checks are wired to the report, not merely available"
 test("cmdDoctor: nothing on the doctor path can exchange a token", () => {
     // Pinned as a property of the code rather than of one run: proving a token is refreshable would
     // rotate the refresh token as a side effect of a diagnostic, and the rotation is irreversible.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8");
-    const bodyOf = (name) => {
-        const start = source.indexOf(name);
-        assert.notEqual(start, -1, `${name} moved`);
-
-        return source.slice(start, source.indexOf("\n}\n", start));
-    };
+    // Comments stripped before any slice: the guards below are negative, so a comment that mentions
+    // `exchange(` cannot fail them -- but the positive `readCache()` assertion could be satisfied by one.
+    const source = strippedLauncherSource();
+    const bodyOf = (name) => strippedBodyOf(name, source);
     // Both halves of the path, because the risk lives in the half cmdDoctor CALLS: making readCache
     // exchange on needs-refresh -- which is what ensureFreshToken does -- would leave a test that only
     // reads cmdDoctor green. A call shape rather than the bare word, so a comment mentioning the
@@ -3318,13 +3458,12 @@ test("oauthTenantChecks: driven by the declaration, preferring the reference onc
     // SETUP -- otherwise the one check that turns it into a named finding stays dormant through
     // exactly the phase where someone would fix it cheaply. Source-inspected for the property that a
     // behavioural test cannot pin on its own: THIS is the loop cmdDoctor calls, not a lookalike.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8");
-    const start = source.indexOf("async function oauthTenantChecks");
-    const body = source.slice(start, source.indexOf("\n}\n", start));
+    // Comments stripped before the slice; the call site is looked for in the cmdDoctor body alone.
+    const body = strippedBodyOf("async function oauthTenantChecks");
     assert.notEqual(body, "", "oauthTenantChecks moved");
     assert.match(body, /Object\.entries\(cfg\.oauth/, "the tenant loop must be driven by the declaration");
     assert.match(body, /references\.find/, "and still prefer the reference once one exists");
-    assert.match(source, /const tenantChecks = await oauthTenantChecks\(cfg, references\)/,
+    assert.match(strippedBodyOf("async function cmdDoctor"), /const tenantChecks = await oauthTenantChecks\(cfg, references\)/,
         "cmdDoctor must call this function, not a private copy of its loop");
 });
 
@@ -3334,9 +3473,7 @@ test("cmdDoctor: the oauth status read passes cfg through to oauthLaunchDeps, no
     // entry and throw for a project-scope one -- caught by cmdDoctor's own try/catch, but reported as
     // an opaque "Cannot read properties of undefined" instead of the sign-in state a developer could
     // act on.
-    const source = fs.readFileSync(LAUNCHER_PATH, "utf8");
-    const start = source.indexOf("async function cmdDoctor");
-    const body = source.slice(start, source.indexOf("\n}\n", start));
+    const body = strippedBodyOf("async function cmdDoctor");
     assert.match(body, /oauthLaunchDeps\(name, decl, cfg\)/,
         "the oauth status loop must pass cfg -- oauthEntryKeys needs it to build the namespaced key");
 });
@@ -3465,9 +3602,9 @@ test("resolveEnvEntries: an oauth reference is reported apart from the resolved 
 });
 
 test("resolveEnvEntries: a user-scope launchable needs no grant for a sign-in, exactly as for a secret", async () => {
-    // crossingProblem exempts a user-scope launchable outright — it is not crossing a scope boundary,
-    // so there is nothing for a grant to police. Without the same exemption the two kinds disagree on
-    // the plainest config there is: everything in one personal file.
+    // crossingProblem exempts a user-scope launchable consuming a user-scope declaration — it is not
+    // crossing a scope boundary, so there is nothing for a grant to police. Without the same exemption
+    // the two kinds disagree on the plainest config there is: everything in one personal file.
     const paths = (env, extra) => scopedPaths({ user: { ...extra,
         servers: { s: { command: "npx", args: [], env } } } });
     const viaOauth = m.loadConfig(paths({ TOK: "oauth:ado" }, { oauth: { ado: OAUTH_DECL } }));
@@ -3478,16 +3615,112 @@ test("resolveEnvEntries: a user-scope launchable needs no grant for a sign-in, e
     assert.deepEqual((await m.resolveEnvEntries("s", viaSecret, async () => "PLAINTEXT")).env, { TOK: "PLAINTEXT" });
 });
 
-test("resolveEnvEntries: the exemption follows the launchable's home, not the declaration's", async () => {
-    // The two are only distinguishable where they differ. A fixture with both at user scope is
-    // satisfied by either rule, which is why "resolveEnvEntries: a user-scope launchable needs no
-    // grant for a sign-in, exactly as for a secret" cannot stand in for this one.
-    const cfg = m.loadConfig(scopedPaths({
-        user: { servers: { s: { command: "npx", args: [], env: { TOK: "oauth:ado" } } } },
+test("resolveEnvEntries: a user-scope launchable is exempt only while the declaration it consumes is the user's too", async () => {
+    // The merge lets a repository's declaration replace a user-scope one of the same name, and a server
+    // you wrote follows the name. The exemption therefore needs BOTH sides to be user-home: a fixture
+    // with both at user scope is satisfied by either rule, which is why "resolveEnvEntries: a user-scope
+    // launchable needs no grant for a sign-in, exactly as for a secret" cannot stand in for this one.
+    const grant = { servers: { s: { command: "npx", args: [], envKeys: ["TOK"] } } };
+    const paths = (extraUser) => scopedPaths({
+        user: { servers: { s: { command: "npx", args: [], env: { TOK: "oauth:ado" } } }, ...extraUser },
         project: { projectId: "proj-x", oauth: { ado: OAUTH_DECL } },
+    });
+    const refused = m.loadConfig(paths({}));
+    await assert.rejects(() => m.resolveEnvEntries("s", refused, async () => "PLAINTEXT"), /not authorized to receive "ado"/);
+
+    const granted = m.loadConfig(paths({ registrations: { [OAUTH_TENANT_ID]: { [OAUTH_CLIENT_ID]: grant } } }));
+    const out = await m.resolveEnvEntries("s", granted, async () => "PLAINTEXT");
+    assert.equal(out.oauth.length, 1, "with the registration block the user-scope server may receive the repository's sign-in");
+});
+
+// A user-scope server `s` that consumes `secret:pat`, whose declaration comes from the file(s) given.
+const KV_PAT = { backend: "keyvault", vault: "demo-vault", secret: "pat-secret" };
+const KV_PAT_SHAPE = { command: "printenv", args: ["PAT"], envKeys: ["PAT"] };
+
+function userServerPaths({ user = {}, project }) {
+    return scopedPaths({
+        user: { servers: { s: { command: "printenv", args: ["PAT"], env: { PAT: "secret:pat" } } }, ...user },
+        project,
+    });
+}
+
+test("resolveEnvEntries: a user-scope server is refused a Key Vault secret the repository declared, until the vaults block names it", async () => {
+    // The repository picks the vault and the secret name; the developer's `az` login pays. Whether the
+    // consuming server sits in the user file is beside the point -- the read is the repository's choice.
+    const repoDeclares = { projectId: "proj-x", secrets: { pat: KV_PAT } };
+    let called = false;
+    const resolver = async () => { called = true; return "tok"; };
+    const refused = m.loadConfig(userServerPaths({ project: repoDeclares }));
+    await assert.rejects(() => m.resolveEnvEntries("s", refused, resolver), /not authorized to receive "pat"/);
+    assert.equal(called, false, "the vault must not be contacted for a refused launch");
+
+    // The same block format a project launchable uses, keyed by the consumer's kind and name.
+    const vaults = { "demo-vault": { "pat-secret": { servers: { s: KV_PAT_SHAPE } } } };
+    const granted = m.loadConfig(userServerPaths({ user: { vaults }, project: repoDeclares }));
+    assert.deepEqual((await m.resolveEnvEntries("s", granted, resolver)).env, { PAT: "tok" });
+
+    // A grant for the wrong vault does not transfer, as for a project launchable.
+    const elsewhere = m.loadConfig(userServerPaths({
+        user: { vaults: { "other-vault": { "pat-secret": { servers: { s: KV_PAT_SHAPE } } } } }, project: repoDeclares }));
+    await assert.rejects(() => m.resolveEnvEntries("s", elsewhere, resolver), /not authorized/);
+});
+
+test("resolveEnvEntries: a repository overriding a user-declared secret by name does not slip past a user-scope server", async () => {
+    // The shape the merge makes possible: the user file declares `pat` itself, the repository declares
+    // the same name as a Key Vault read, and the repository's entry wins.
+    const cfg = m.loadConfig(userServerPaths({
+        user: { secrets: { pat: { backend: "local" } } },
+        project: { projectId: "proj-x", secrets: { pat: KV_PAT } },
     }));
-    const out = await m.resolveEnvEntries("s", cfg, async () => "PLAINTEXT");
-    assert.equal(out.oauth.length, 1, "the server is the user's own; the grant polices a crossing that is not happening");
+    assert.equal(cfg.secrets.pat.home, "project");
+    await assert.rejects(() => m.resolveEnvEntries("s", cfg, async () => "tok"), /not authorized to receive "pat"/);
+});
+
+test("resolveEnvEntries: a user-scope server consuming a user-declared secret is unaffected, Key Vault included", async () => {
+    // Both sides are the user's, so there is nothing to authorize -- the positive control for the two
+    // tests above, without which a rule that refused every user-scope launchable would pass them.
+    for (const decl of [{ backend: "local" }, KV_PAT]) {
+        const cfg = m.loadConfig(userServerPaths({ user: { secrets: { pat: decl } }, project: { projectId: "proj-x" } }));
+        assert.equal(m.crossingProblem(cfg, "servers", "s", "pat"), null, decl.backend);
+        assert.deepEqual((await m.resolveEnvEntries("s", cfg, async () => "tok")).env, { PAT: "tok" }, decl.backend);
+    }
+});
+
+test("resolveEnvEntries: a project-local override of a user-declared secret stays allowed for a user-scope server", async () => {
+    // authorizationFor returns null for a project-declared `local` secret: its key is namespaced to the
+    // project, so what is read is what was `set` for it, not something the repository can aim elsewhere.
+    const cfg = m.loadConfig(userServerPaths({
+        user: { secrets: { pat: KV_PAT } },
+        project: { projectId: "proj-x", secrets: { pat: { backend: "local" } } },
+    }));
+    assert.equal(cfg.secrets.pat.home, "project");
+    assert.equal(m.crossingProblem(cfg, "servers", "s", "pat"), null);
+    assert.deepEqual((await m.resolveEnvEntries("s", cfg, async () => "tok")).env, { PAT: "tok" });
+});
+
+test("doctorReport: a user-scope server refused a repository's Key Vault secret gets the block to paste, and a granted one does not", () => {
+    // The refusal says "run vc-secrets doctor for the block to add"; doctor's crossing loop must apply the
+    // predicate the launch applies, or that promise is empty for exactly this case.
+    const report = (cfg) => m.doctorReport(cfg, {
+        env: {}, platform: "linux", enableLists: { enabled: [], disabled: [], envKeys: [] },
+        resolvable: {}, skipped: [], toolsMissing: [], wired: new Set(),
+    });
+    const repoDeclares = { projectId: "proj-x", secrets: { pat: KV_PAT } };
+    const fail = report(m.loadConfig(userServerPaths({ project: repoDeclares })))
+        .find((l) => l.startsWith("FAIL") && l.includes('server "s"'));
+    assert.ok(fail, "doctor must report the refused crossing");
+    assert.match(fail, /wants secret "pat" and is not authorized/);
+    assert.match(fail, /vaults\."demo-vault"\."pat-secret"\.servers/);
+    assert.match(fail, /"command": "printenv"/);
+
+    const vaults = { "demo-vault": { "pat-secret": { servers: { s: KV_PAT_SHAPE } } } };
+    const granted = report(m.loadConfig(userServerPaths({ user: { vaults }, project: repoDeclares })));
+    assert.ok(!granted.some((l) => l.startsWith("FAIL")), granted.join("\n"));
+    assert.ok(granted.some((l) => l.includes('server "s" (user) is authorized to receive "pat"')), granted.join("\n"));
+
+    // Nothing to report when both sides are the user's.
+    const own = report(m.loadConfig(userServerPaths({ user: { secrets: { pat: KV_PAT } }, project: { projectId: "proj-x" } })));
+    assert.ok(!own.some((l) => l.includes('"pat"')), own.join("\n"));
 });
 
 test("an authorization refusal names the doctor command, and doctor's own report names the same where", async () => {
@@ -3815,6 +4048,193 @@ test("cmdLaunch: dispose detaches the handlers that would exit the process", asy
     // SIGKILL that group when the process ends.
     assert.deepEqual(signals.map((s) => process.listenerCount(s)), before);
     assert.equal(process.listenerCount("exit"), exitBefore);
+});
+
+// Hex as PS_CRED_READ and PS_CRED_READ_MANY print a Credential Manager blob: UTF-8 bytes, two digits each.
+const credHex = (value) => Buffer.from(value, "utf8").toString("hex");
+
+test("readWcmBatch: a value, ERROR_NOT_FOUND and any other code seed exactly what a single read returns or throws", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, async () => {
+    // The expected outcomes are not written out: they are what the single-read resolver produces against a
+    // PowerShell stub exiting the way PS_CRED_READ does -- the value as hex, exit 3 for 1168, exit 1 naming
+    // any other code. So "absent" stays 1168 alone, the way the single read has it: an unreadable store
+    // read as absent sends a developer through a sign-in that rotates a live refresh token away.
+    const cfg = m.loadConfig(scopedPaths({ user: {
+        secrets: { pat: { backend: "local" }, gone: { backend: "local" }, locked: { backend: "local" },
+            vaulted: { backend: "keyvault", vault: "kv-one", secret: "s1" } },
+        servers: {} } }));
+    const env = { VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-ps-batch-stub" };
+    const stub = `#!/bin/sh
+case "$VC_SECRETS_NAME" in
+  *:pat) printf '%s\\n' '${credHex("the-pat-value")}'; exit 0 ;;
+  *:gone) exit 3 ;;
+  *) printf 'CredRead failed win32err=5' >&2; exit 1 ;;
+esac
+`;
+    const names = ["pat", "gone", "locked"];
+    const single = {};
+    await withStubOnPath("vc-ps-batch-stub", stub, async () => {
+        const resolver = m.makeSecretResolver(cfg, env);
+        for (const name of names) {
+            try {
+                single[name] = { value: await resolver(name, cfg.secrets[name]) };
+            } catch (e) {
+                single[name] = { message: e.message, toolExitCode: e.toolExitCode };
+            }
+        }
+    });
+    assert.equal(single.pat.value, "the-pat-value", "the control: the stub answers the single read");
+    assert.notEqual(single.gone.message, single.locked.message, "the control: absent and unreadable differ");
+
+    const key = (name) => m.keyFor(name, cfg.secrets[name], cfg);
+    const resolver = m.makeSecretResolver(cfg, env);
+    let asked = null;
+    const { seeded, job } = await resolver.readWcmBatch(
+        [...names, "vaulted"].map((name) => ({ name, decl: cfg.secrets[name] })),
+        { pid: 4242, run: async ({ keys, pid }) => {
+            asked = { keys, pid };
+
+            return { creds: { [key("pat")]: { ok: credHex("the-pat-value") }, [key("gone")]: { err: 1168 },
+                [key("locked")]: { err: 5 } }, job: "ok" };
+        } });
+    assert.deepEqual(asked, { keys: names.map(key), pid: 4242 }, "one call, the wcm keys only, and the pid to bind");
+    assert.equal(job, "ok");
+    for (const name of names) {
+        const outcome = seeded.get(name);
+        if (single[name].value !== undefined) {
+            assert.equal(outcome, single[name].value, name);
+        } else {
+            assert.ok(outcome instanceof m.VcSecretsError, name);
+            assert.deepEqual({ message: outcome.message, toolExitCode: outcome.toolExitCode }, single[name], name);
+        }
+    }
+    assert.equal(seeded.has("vaulted"), false, "a Key Vault secret is not Credential Manager's to read");
+    assert.deepEqual(resolver.resolvedValues, ["the-pat-value"], "a seeded value is already in the redaction list");
+});
+
+// The win32 launch path, driven on any OS: `bindPlatform` says what the bind decision sees, and the
+// batched call is stubbed. The per-name reader is pointed at a PowerShell that does not exist, so a
+// launch that fell back to reading names one by one would fail rather than pass quietly.
+async function launchWithBind(kind, cfg, deps) {
+    return withProcessEnv({ VC_SECRETS_LOCAL_BACKEND: "wcm", VC_SECRETS_POWERSHELL: "vc-no-such-powershell" },
+        () => m.cmdLaunch(kind, "s", cfg, { bindPlatform: "win32", ...deps }));
+}
+
+function bindLaunchCfg(kind) {
+    return m.loadConfig(scopedPaths({ user: {
+        secrets: { one: { backend: "local" }, two: { backend: "local" } },
+        servers: {}, tasks: {},
+        [kind]: { s: { command: process.execPath, args: ["-e", ""],
+            env: { A: "secret:one", B: "secret:two", C: "secret:one", LIT: "literal:x" } } } } }));
+}
+
+for (const kind of ["servers", "tasks"]) {
+    test(`cmdLaunch on win32 (${kind}): one call reads every wcm secret and binds the tree, before the spawn`, async () => {
+        const cfg = bindLaunchCfg(kind);
+        const key = (name) => m.keyFor(name, cfg.secrets[name], cfg);
+        const order = [];
+        const calls = [];
+        let childEnv = null;
+        const handle = await launchWithBind(kind, cfg, {
+            credReadMany: async ({ keys, pid }) => {
+                calls.push({ keys, pid });
+                order.push("bind");
+
+                return { creds: { [key("one")]: { ok: credHex("value-one") }, [key("two")]: { ok: credHex("value-two") } },
+                    job: "ok" };
+            },
+            spawnFn: (cmd, args, opts) => { order.push("spawn"); childEnv = opts.env; return fakeChild(); },
+        });
+        try {
+            assert.deepEqual(calls, [{ keys: [key("one"), key("two")], pid: process.pid }],
+                "one PowerShell call per launch, each name once, binding this process");
+            assert.deepEqual(order, ["bind", "spawn"], "only a process created after the assignment is in the job");
+            assert.equal(childEnv.A, "value-one");
+            assert.equal(childEnv.B, "value-two");
+            assert.equal(childEnv.C, "value-one");
+            assert.equal(childEnv.LIT, "x");
+        } finally {
+            await handle.dispose();
+        }
+    });
+}
+
+test("cmdLaunch on win32: a failed bind says so in one line, and the launch goes ahead", async (t) => {
+    const stderr = [];
+    t.mock.method(fs, "writeSync", (fd, str) => {
+        if (fd !== 2) {
+            throw new Error(`unexpected fs.writeSync(${fd}, ...) in this test`);
+        }
+        stderr.push(str);
+
+        return Buffer.byteLength(str);
+    });
+    const cfg = m.loadConfig(scopedPaths({ user: { secrets: {},
+        servers: { s: { command: process.execPath, args: ["-e", ""], env: { LIT: "literal:x" } } } } }));
+    let spawned = 0;
+    const handle = await launchWithBind("servers", cfg, {
+        credReadMany: async () => ({ creds: {}, job: 5 }),
+        spawnFn: () => { spawned++; return fakeChild(); },
+    });
+    await handle.dispose();
+    assert.equal(spawned, 1, "fail-open: the launch is not refused over the bind");
+    assert.deepEqual(stderr, ["vc-secrets: could not bind the launch's process tree to this launcher (win32 error 5)"
+        + " -- a client stop may leave it running\n"]);
+
+    // A call that failed as a whole bound nothing either, and says why on the same one line; the names it
+    // would have read go through the single read, which meets its own failure -- here, no PowerShell at all.
+    stderr.length = 0;
+    const withSecret = m.loadConfig(scopedPaths({ user: { secrets: { one: { backend: "local" } },
+        servers: { s: { command: process.execPath, args: ["-e", ""], env: { A: "secret:one" } } } } }));
+    await assert.rejects(() => launchWithBind("servers", withSecret, {
+        credReadMany: async () => { throw new m.VcSecretsError("powershell.exe exited 1: first line\r\nsecond line"); },
+        spawnFn: () => { throw new Error("must not spawn"); },
+    }), /vc-no-such-powershell: not found on PATH/);
+    assert.deepEqual(stderr, ["vc-secrets: could not bind the launch's process tree to this launcher"
+        + " (powershell.exe exited 1: first line second line) -- a client stop may leave it running\n"]);
+});
+
+test("cmdLaunch on win32: a bad VC_SECRETS_LOCAL_BACKEND refuses only a launch that has a local secret, at that entry, in the single read's words", async () => {
+    const bogus = { VC_SECRETS_LOCAL_BACKEND: "bogus", VC_SECRETS_POWERSHELL: "vc-no-such-powershell" };
+    const launchBogus = (cfg, deps) => withProcessEnv(bogus,
+        () => m.cmdLaunch("servers", "s", cfg, { bindPlatform: "win32", ...deps }));
+
+    // Literals and Key Vault entries never ask which local backend there is -- before the batched read
+    // existed such a launch ran -- but the tree is still bound, with nothing to read.
+    const literalOnly = m.loadConfig(scopedPaths({ user: { secrets: { vaulted: { backend: "keyvault", vault: "my-vault", secret: "my-secret" } },
+        servers: { s: { command: process.execPath, args: ["-e", ""], env: { LIT: "literal:x" } } } } }));
+    const calls = [];
+    const stubs = { credReadMany: async ({ keys, pid }) => { calls.push({ keys, pid }); return { creds: {}, job: "ok" }; } };
+    const handle = await launchBogus(literalOnly, { ...stubs, spawnFn: () => fakeChild() });
+    await handle.dispose();
+    assert.deepEqual(calls, [{ keys: [], pid: process.pid }], "the bind runs with an empty key list");
+
+    // The same for a Key Vault reference, asked of the batch directly: it is az's to read, not the local store's.
+    calls.length = 0;
+    const { seeded } = await m.makeSecretResolver(literalOnly, bogus).readWcmBatch(
+        [{ name: "vaulted", decl: literalOnly.secrets.vaulted }], { pid: 7, run: stubs.credReadMany });
+    assert.deepEqual(calls, [{ keys: [], pid: 7 }]);
+    assert.equal(seeded.size, 0);
+
+    // A local secret does need it: the launch fails at that entry with what the single read says there, and
+    // the batch has seeded nothing for the resolver to contradict.
+    const local = m.loadConfig(scopedPaths({ user: { secrets: { one: { backend: "local" } },
+        servers: { s: { command: process.execPath, args: ["-e", ""], env: { A: "secret:one" } } } } }));
+    let single = null;
+    await assert.rejects(() => m.makeSecretResolver(local, bogus)("one", local.secrets.one),
+        (e) => { single = e.message; return e instanceof m.VcSecretsError; });
+    assert.match(single, /VC_SECRETS_LOCAL_BACKEND="bogus"/, "the control: the single read refuses it");
+    calls.length = 0;
+    await assert.rejects(() => launchBogus(local, { ...stubs, spawnFn: () => { throw new Error("must not spawn"); } }),
+        (e) => e instanceof m.VcSecretsError && e.message === single);
+    assert.deepEqual(calls, [{ keys: [], pid: process.pid }], "the bind still ran, with nothing to read");
+});
+
+test("cmdLaunch off win32 never makes the bind call", async () => {
+    const cfg = m.loadConfig(scopedPaths({ user: { secrets: {},
+        servers: { s: { command: process.execPath, args: ["-e", ""], env: { LIT: "literal:x" } } } } }));
+    const handle = await m.cmdLaunch("servers", "s", cfg, { bindPlatform: "linux",
+        credReadMany: async () => { throw new Error("must not bind off win32"); }, spawnFn: () => fakeChild() });
+    await handle.dispose();
 });
 
 // Signal 0 says a process exists, and a killed one whose parent never reaps it -- PID 1 of a container
@@ -4163,6 +4583,297 @@ test("cmdLaunch: a second forwarded signal does not lose the first one's escalat
         assert.deepEqual(killed, ["SIGHUP", "SIGHUP"], "the escalation the first signal armed must not outlive the handle");
     });
 
+// stdin relay (POSIX servers). Real processes first: they are the only thing that observes the EOF
+// reaching the launcher rather than the server, which is the whole change.
+
+// A server that echoes its stdin to its stdout. The launcher's own stdout is the client's, so what comes
+// back is what the child wrote there directly, and what went in went through the launcher's pipe.
+test("cmdLaunch: a server's stdin and stdout pass through the launcher byte for byte",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups", timeout: 60_000 },
+    async () => {
+        const configDir = tmpConfigDir({ secrets: {}, servers: {
+            echo: { command: process.execPath, args: ["-e", "process.stdin.pipe(process.stdout)"], env: {} } } });
+        const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "echo"],
+            { env: trustedLauncherEnv(configDir), stdio: ["pipe", "pipe", "pipe"] });
+        let stderr = "";
+        launcher.stderr.on("data", (d) => { stderr += d; });
+        const chunks = [];
+        launcher.stdout.on("data", (d) => chunks.push(d));
+        const exited = new Promise((resolve) => launcher.once("exit", (code, signal) => resolve({ code, signal })));
+        try {
+            // Every byte value, more than once and larger than a pipe buffer (64 KiB): it is not valid
+            // UTF-8, and it cannot be written in one go without backpressure being honoured.
+            const payload = Buffer.alloc(300_000);
+            for (let i = 0; i < payload.length; i++) {
+                payload[i] = i % 256;
+            }
+            launcher.stdin.end(payload);
+            const result = await Promise.race([exited, new Promise((resolve) => setTimeout(resolve, 20_000, "timeout"))]);
+            assert.notEqual(result, "timeout", `the launcher never left after its stdin closed: ${stderr}`);
+            assert.deepEqual(result, { code: 0, signal: null }, stderr);
+            assert.ok(Buffer.concat(chunks).equals(payload), "what the server echoed is what the client sent");
+        } finally {
+            launcher.kill("SIGKILL");
+        }
+    });
+
+// The SDK's server transport has no end handler, so a server like this one never leaves on EOF; the
+// grandchild is the npx-over-node shape, where the thing holding the secrets is not the direct child.
+// The 2 s client window is owned by the arithmetic test on LAUNCH_STDIN_CLOSE_GRACE_MS; the bound here is loose on purpose, to stay off the CI flake edge.
+test("cmdLaunch: a server that ignores stdin EOF, and its grandchild, are torn down by the launcher after EOF",
+    { skip: !CAN_ORPHAN_A_GROUP && "needs POSIX process groups", timeout: 60_000 },
+    async () => {
+        const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-eof-"));
+        tmpDirs.push(dir);
+        const pidFile = path.join(dir, "pids");
+        // No double quote anywhere: a declaration refuses one, for Windows' sake. Written whole in one
+        // call, so a reader never sees the first pid without the second.
+        const script = "const g = require('child_process').spawn(process.execPath, "
+            + "['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });\n"
+            + "require('fs').writeFileSync(process.env.PIDFILE, process.pid + ' ' + g.pid);\n"
+            + "setInterval(() => {}, 1000);\n";
+        const configDir = tmpConfigDir({ secrets: {}, servers: {
+            stubborn: { command: process.execPath, args: ["-e", script], env: { PIDFILE: `literal:${pidFile}` } } } });
+        const launcher = spawn(process.execPath, [LAUNCHER_PATH, "run", "stubborn"],
+            { env: trustedLauncherEnv(configDir), stdio: ["pipe", "ignore", "pipe"] });
+        let stderr = "";
+        launcher.stderr.on("data", (d) => { stderr += d; });
+        const pids = () => {
+            try {
+                const parts = fs.readFileSync(pidFile, "utf8").trim().split(" ").map(Number);
+
+                return parts.length === 2 && parts.every((n) => n > 0) ? parts : null;
+            } catch {
+                return null;
+            }
+        };
+        let started = null;
+        try {
+            started = await waitFor(pids, { timeoutMs: 10_000 });
+            assert.ok(started, `the fixture never wrote its pids: ${stderr}`);
+            const [direct, grandchild] = started;
+            assert.ok(processIsAlive(direct) && processIsAlive(grandchild),
+                `the fixture must be running before stdin closes, or the test proves nothing: ${stderr}`);
+
+            // The client's first step. Its second, a SIGTERM, comes 2 s later -- if the client is alive at all.
+            launcher.stdin.end();
+            const closedAt = Date.now();
+            const gone = await waitFor(() => launcher.exitCode !== null
+                && !processIsAlive(direct) && !processIsAlive(grandchild), { timeoutMs: 6000 });
+            assert.ok(gone, `after ${Date.now() - closedAt} ms the launcher, the server or its grandchild was still running: ${stderr}`);
+            assert.equal(launcher.signalCode, null, "the launcher must leave by its own exit, not be killed from outside");
+        } finally {
+            launcher.kill("SIGKILL");
+            for (const pid of started ?? pids() ?? []) {
+                try {
+                    process.kill(pid, "SIGKILL");
+                } catch { /* already gone */ }
+            }
+        }
+    });
+
+// A server child that has a stdin to relay to. Pid above any the kernel hands out, so the group kill fails
+// and killProcessTree falls back to child.kill, which this records (see launchWithRecordingChild).
+function relayFixture() {
+    const sink = { ended: false, chunks: [] };
+    const childStdin = new Writable({ write(chunk, _enc, done) { sink.chunks.push(chunk); done(); } });
+    childStdin.on("finish", () => { sink.ended = true; });
+    const killed = [];
+    const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1, kill: (s) => killed.push(s), stdin: childStdin });
+    const stdin = new PassThrough();
+
+    return { child, stdin, killed, sink };
+}
+
+async function launchWithRelay(kind, fixture, stdinOverride = fixture.stdin) {
+    const cfg = m.loadConfig(projectPaths({ secrets: {},
+        [kind]: { github: { command: process.execPath, args: ["-e", ""], env: {} } } }));
+    const spawned = [];
+
+    const handle = await m.cmdLaunch(kind, "github", cfg, { trustState: trustedStateFor(cfg), stdin: stdinOverride,
+        spawnFn: (cmd, args, opts) => { spawned.push(opts); return fixture.child; } });
+
+    return { handle, spawned };
+}
+
+const nextTurn = () => new Promise((resolve) => setImmediate(resolve));
+
+test("cmdLaunch: a server is spawned with a piped stdin, and a task keeps inherit",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async () => {
+        const server = relayFixture();
+        const { handle: serverHandle, spawned: serverSpawn } = await launchWithRelay("servers", server);
+        await serverHandle.dispose();
+        assert.deepEqual(serverSpawn[0].stdio, ["pipe", "inherit", "inherit"]);
+
+        const task = relayFixture();
+        const { handle: taskHandle, spawned: taskSpawn } = await launchWithRelay("tasks", task);
+        try {
+            assert.equal(taskSpawn[0].stdio, "inherit", "a task keeps the terminal: Ctrl-C and prompts");
+            task.stdin.end();
+            await nextTurn();
+            assert.equal(task.sink.ended, false, "and nothing is relayed to it");
+            assert.equal(task.stdin.listenerCount("end"), 0, "or listened for on the launcher's stdin");
+        } finally {
+            await taskHandle.dispose();
+        }
+    });
+
+// The only injection point for this is deps.stdin: a real TTY on the launcher's stdin needs a pty, which
+// the suite does not build. The real process.stdin.isTTY read is the same expression on a different object.
+test("cmdLaunch: a server whose launcher stdin is a TTY keeps inherit",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async () => {
+        const fixture = relayFixture();
+        const tty = Object.assign(new PassThrough(), { isTTY: true });
+        const { handle, spawned } = await launchWithRelay("servers", fixture, tty);
+        try {
+            assert.equal(spawned[0].stdio, "inherit");
+            assert.equal(tty.listenerCount("end"), 0);
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: bytes written to a server's launcher stdin reach the child, and EOF ends the child's stdin",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            fixture.stdin.write(Buffer.from([0, 255, 10, 13]));
+            await nextTurn();
+            assert.deepEqual(Buffer.concat(fixture.sink.chunks), Buffer.from([0, 255, 10, 13]));
+            assert.equal(fixture.sink.ended, false);
+            fixture.stdin.end();
+            await nextTurn();
+            assert.equal(fixture.sink.ended, true);
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: a server still running one grace after its stdin closed is torn down, with the server escalation",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            fixture.stdin.end();
+            await nextTurn();
+            t.mock.timers.tick(m.LAUNCH_STDIN_CLOSE_GRACE_MS - 1);
+            assert.deepEqual(fixture.killed, [], "a server that exits on EOF is given the grace");
+            t.mock.timers.tick(1);
+            assert.deepEqual(fixture.killed, ["SIGTERM"]);
+            t.mock.timers.tick(m.LAUNCH_KILL_ESCALATION.servers.afterMs);
+            assert.deepEqual(fixture.killed, ["SIGTERM", "SIGKILL"]);
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("LAUNCH_STDIN_CLOSE_GRACE_MS: the grace and the escalation after it finish inside the client's 2 s stdin-close window", () => {
+    // The window is the MCP SDK's (end stdin, wait 2 s, SIGTERM); the bound is that, not the figure chosen under it.
+    const CLIENT_STDIN_CLOSE_WINDOW_MS = 2000;
+    assert.ok(m.LAUNCH_STDIN_CLOSE_GRACE_MS > 0);
+    assert.ok(m.LAUNCH_STDIN_CLOSE_GRACE_MS + m.LAUNCH_KILL_ESCALATION.servers.afterMs < CLIENT_STDIN_CLOSE_WINDOW_MS);
+});
+
+test("cmdLaunch: a child that closes during the grace ends the launcher and nothing fires afterwards",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const exits = [];
+        t.mock.method(process, "exit", (code) => { exits.push(code); });
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            fixture.stdin.end();
+            await nextTurn();
+            fixture.child.emit("close", 0, null);
+            assert.deepEqual(exits, [0]);
+            t.mock.timers.tick(60_000);
+            assert.deepEqual(fixture.killed, [], "the grace timer is cleared by the close, not left to signal a dead group");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: a signal during the grace tears down once, and its escalation clock is not restarted",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            fixture.stdin.end();
+            await nextTurn();
+            t.mock.timers.tick(m.LAUNCH_STDIN_CLOSE_GRACE_MS / 2);
+            process.emit("SIGHUP", "SIGHUP");
+            t.mock.timers.tick(m.LAUNCH_KILL_ESCALATION.servers.afterMs - 1);
+            assert.deepEqual(fixture.killed, ["SIGHUP"], "the grace timer was stood down by the signal");
+            t.mock.timers.tick(1);
+            assert.deepEqual(fixture.killed, ["SIGHUP", "SIGKILL"], "SIGKILL falls one escalation after the signal, not after the grace");
+            t.mock.timers.tick(60_000);
+            assert.deepEqual(fixture.killed, ["SIGHUP", "SIGKILL"], "and nothing signals the group a third time");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: a signal before the stdin EOF leaves no grace timer behind it",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            process.emit("SIGHUP", "SIGHUP");
+            fixture.stdin.end();
+            await nextTurn();
+            t.mock.timers.tick(60_000);
+            assert.deepEqual(fixture.killed, ["SIGHUP", "SIGKILL"], "one teardown: the signal's, with its own escalation");
+        } finally {
+            await handle.dispose();
+        }
+    });
+
+test("cmdLaunch: dispose detaches the relay and its grace timer",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async (t) => {
+        t.mock.timers.enable({ apis: ["setTimeout"] });
+        const fixture = relayFixture();
+        const endBefore = fixture.stdin.listenerCount("end");
+        const errorBefore = fixture.child.stdin.listenerCount("error");
+        const { handle } = await launchWithRelay("servers", fixture);
+        assert.equal(fixture.stdin.listenerCount("end"), endBefore + 2, "the pipe's own, and the relay's");
+        fixture.stdin.end();
+        await nextTurn();
+        await handle.dispose();
+        t.mock.timers.tick(60_000);
+        assert.deepEqual(fixture.killed, [], "a disposed launch must not signal a child it no longer owns");
+        assert.equal(fixture.stdin.listenerCount("end"), endBefore);
+        assert.equal(fixture.child.stdin.listenerCount("error"), errorBefore);
+    });
+
+test("cmdLaunch: a write to a child that has gone is swallowed, and any other stream error is not",
+    { skip: process.platform === "win32" && "win32 keeps inherit for both" },
+    async () => {
+        const fixture = relayFixture();
+        const { handle } = await launchWithRelay("servers", fixture);
+        try {
+            for (const code of ["EPIPE", "ERR_STREAM_DESTROYED"]) {
+                assert.doesNotThrow(() => fixture.child.stdin.emit("error", Object.assign(new Error(code), { code })), code);
+            }
+            assert.throws(() => fixture.child.stdin.emit("error", Object.assign(new Error("disk on fire"), { code: "EIO" })),
+                /disk on fire/);
+        } finally {
+            await handle.dispose();
+        }
+    });
+
 test("cmdLaunch: the spawn command is looked up against the child's env, so a declared PATH is what is searched", async () => {
     // resolveSpawnCommand only searches on win32, so on any other platform the lookup is a
     // pass-through and its env cannot be observed from the result -- hence the seam. What is asserted is
@@ -4308,7 +5019,7 @@ const CONSUMED_LISTS = { enabled: ["srv"], disabled: [], envKeys: [] };
 
 function consumedFixture(envValue) {
     return {
-        secrets: { ado: { backend: "keyvault", vault: "v", secret: "s" } },
+        secrets: { ado: { backend: "keyvault", vault: "demo-vault", secret: "s" } },
         oauth: { ado: {} },
         servers: { srv: { env: { T: envValue } } },
         tasks: { chore: { env: { T: envValue } } },
@@ -4803,6 +5514,25 @@ function writeStubInstall(label) {
     return dir;
 }
 
+// The registry key the client files this plugin's installs under, DERIVED from the two manifests this
+// repo ships rather than restated: the shim bakes the same string in as a literal (it is installed as a
+// standalone file and cannot read a manifest), so a test that also restated the literal would agree with
+// a stale shim by construction. Deriving it here is what makes a rename of either manifest fail a test.
+const PLUGIN_KEY = (() => {
+    const readJson = (relative) => JSON.parse(fs.readFileSync(fileURLToPath(new URL(relative, import.meta.url)), "utf8"));
+    const pluginName = readJson("./.claude-plugin/plugin.json").name;
+    const marketplaceName = readJson("../../.claude-plugin/marketplace.json").name;
+
+    return `${pluginName}@${marketplaceName}`;
+})();
+
+// An installed_plugins.json holding `records` for this plugin, under the derived key. One helper for every
+// fixture, so none of them can drift from the key the shim reads. `version` is the registry's schema
+// version, a parameter because the schema-mismatch and wrong-type tests need it to be other than 2.
+function shimRegistry(records, version = 2) {
+    return { version, plugins: { [PLUGIN_KEY]: records } };
+}
+
 // A fresh HOME per call so ~/.claude/plugins/installed_plugins.json is exactly what the test wrote —
 // never the real machine's registry.
 // Each `caches` entry materialises one <root>/<marketplace>/<plugin>/<version>/ directory the way a
@@ -4814,7 +5544,7 @@ function runShim(args, { registry, cwd, caches = [] } = {}) {
         fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
         fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify(registry));
     }
-    for (const { client = "claude", marketplace = "ai-tools", version, label, launcher = true } of caches) {
+    for (const { client = "claude", marketplace = PLUGIN_KEY.split("@")[1], version, label, launcher = true } of caches) {
         const dir = path.join(home, `.${client}`, "plugins", "cache", marketplace, "vc-secrets", version);
         fs.mkdirSync(dir, { recursive: true });
         if (launcher) {
@@ -4892,16 +5622,37 @@ test("shim: a cache root that exists but cannot be read is named, not counted as
 test("shim: registry present but the plugin has no records → not installed, exit 1", () => {
     const r = runShim(["doctor"], { registry: { version: 2, plugins: {} } });
     assert.equal(r.status, 1);
-    assert.match(r.stderr, /vc-secrets@ai-tools.*is not installed/);
+    assert.ok(r.stderr.includes(PLUGIN_KEY), `the message must name the derived key ${PLUGIN_KEY}: ${r.stderr}`);
+    assert.match(r.stderr, /is not installed/);
+});
+
+test("shim: a registry filed under the key derived from the manifests resolves (the shim's baked PLUGIN_KEY agrees)", () => {
+    // The shim restates `<plugin>@<marketplace>` as a literal; PLUGIN_KEY here is DERIVED from the two
+    // manifests. A registry filed under the derived key resolving to the stub is what proves the two
+    // agree -- a shim reading a stale key reports the plugin as not installed instead.
+    const stub = writeStubInstall("derived-key");
+    const r = runShim(["doctor"], { registry: shimRegistry([
+        { version: "1.0.0", lastUpdated: "2024-01-01", installPath: stub },
+    ]) });
+
+    assert.match(r.stderr, /STUB-RAN:derived-key/, r.stderr);
+});
+
+test("CANONICAL_DATA_ID is the derived plugin key with every non-alphanumeric dashed", () => {
+    // The rule is documented where install-shim.mjs falls back to this id: `<plugin>@<marketplace>` with
+    // non-alphanumerics dashed. Asserted against the manifests, not against a restated "vc-secrets-ai-tools",
+    // so renaming either manifest without the constant fails here rather than after a release, when an
+    // installed shim's data directory no longer matches the one Claude Code computes.
+    assert.equal(CANONICAL_DATA_ID, PLUGIN_KEY.replace(/[^A-Za-z0-9]/g, "-"));
 });
 
 test("shim: a registry schema version mismatch warns but still runs the resolved install", () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-proj-"));
     tmpDirs.push(projectDir);
     const stub = writeStubInstall("proceed");
-    const registry = { version: 999, plugins: { "vc-secrets@ai-tools": [
+    const registry = shimRegistry([
         { projectPath: projectDir, version: "1.0.0", lastUpdated: "2024-01-01", installPath: stub },
-    ] } };
+    ], 999);
     const r = runShim(["doctor"], { registry, cwd: projectDir });
     assert.match(r.stderr, /schema version 999, this shim was written for 2/);
     assert.match(r.stderr, /STUB-RAN:proceed/);
@@ -4919,9 +5670,9 @@ test("shim: a registry field of the wrong type is described, never printed", () 
     tmpDirs.push(outsideDir);
     const hostile = (installPath, lastUpdated) => ({ projectPath: ["LEAKCANARY-PATH"],
         version: ["LEAKCANARY-VERSION"], lastUpdated, installPath });
-    const registry = { version: ["LEAKCANARY-SCHEMA", "second"], plugins: { "vc-secrets@ai-tools": [
+    const registry = shimRegistry([
         hostile(stubA, "2030-01-01"), hostile(stubB, "2010-01-01"),
-    ] } };
+    ], ["LEAKCANARY-SCHEMA", "second"]);
     const r = runShim(["doctor"], { registry, cwd: outsideDir });
 
     assert.doesNotMatch(r.stderr, /LEAKCANARY/, `no field of the registry may be printed as-is: ${r.stderr}`);
@@ -4944,9 +5695,9 @@ test("shim: a ranking field whose toString is not a function ranks as absent ins
         lastUpdated: (stub, n) => ({ version: "1.0.0", lastUpdated: n === 1 ? { toString: 1 } : "2020-01-01", installPath: stub }),
     };
     for (const [field, make] of Object.entries(cases)) {
-        const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
+        const registry = shimRegistry([
             make(writeStubInstall(`${field}-1`), 1), make(writeStubInstall(`${field}-2`), 2),
-        ] } };
+        ]);
         const r = runShim(["doctor"], { registry, cwd: outsideDir });
 
         assert.doesNotMatch(r.stderr, /TypeError|at .*vc-secrets-shim\.mjs/, `${field}: no raw stack: ${r.stderr}`);
@@ -4960,10 +5711,10 @@ test("shim: cwd matching none of the installs picks the higher VERSION, not the 
     const stubB = writeStubInstall("b");
     const outsideDir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-outside-"));
     tmpDirs.push(outsideDir);
-    const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
+    const registry = shimRegistry([
         { projectPath: "/some/other/path/a", version: "1.2.0", lastUpdated: "2030-01-01", installPath: stubA },
         { projectPath: "/some/other/path/b", version: "1.10.0", lastUpdated: "2010-01-01", installPath: stubB },
-    ] } };
+    ]);
     const r = runShim(["doctor"], { registry, cwd: outsideDir });
 
     // "a" has the later lastUpdated but the lower version — picking it would be exactly the staleness
@@ -5144,6 +5895,75 @@ esac
     assert.equal(calls.length, 1, `expected only the new-key probe, no legacy read or write: ${JSON.stringify(calls)}`);
     assert.ok(!calls.some((c) => c.includes("add-generic-password")),
         "must never write — the value already in the keystore has to survive an unreadable read");
+});
+
+// A `security` stub with a real (file-backed) new entry, which the read-only stubs above cannot give:
+// the first write stores something other than what was handed over (a store that accepted a different
+// value), every later one stores the legacy value faithfully. `deleteExit` is what delete-generic-password
+// answers; 0 removes the entry. Reads of the namespaced key answer 44 (absent) when no entry is stored.
+function tamperingKeychainStub(deleteExit) {
+    return stubBinary("security", `#!/bin/sh
+echo "$@" >> "$SECURITY_CALL_LOG"
+case "$1" in
+  -i)
+    cat > /dev/null
+    if [ -e "$SECURITY_STATE/wrote-once" ]; then printf 'LEGACY-SENTINEL' > "$SECURITY_STATE/entry"; else touch "$SECURITY_STATE/wrote-once"; printf 'TAMPERED' > "$SECURITY_STATE/entry"; fi
+    exit 0 ;;
+  delete-generic-password)
+    if [ ${deleteExit} -eq 0 ]; then rm -f "$SECURITY_STATE/entry"; fi
+    exit ${deleteExit} ;;
+esac
+case "$*" in
+  *"vc-secrets:user:dup"*) if [ -e "$SECURITY_STATE/entry" ]; then cat "$SECURITY_STATE/entry"; exit 0; fi; exit 44 ;;
+  *) echo LEGACY-SENTINEL; exit 0 ;;
+esac
+`);
+}
+
+test("cmdMigrate: a read-back mismatch removes the new entry, so the next run migrates again instead of reporting it present", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-mismatch-"));
+    tmpDirs.push(dir);
+    const logPath = path.join(dir, "security-calls.log");
+    const state = path.join(dir, "state");
+    fs.mkdirSync(state);
+    const binDir = tamperingKeychainStub(0);
+    const user = { secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} };
+    const env = { VC_SECRETS_LOCAL_BACKEND: "keychain", USER: "migrator", SECURITY_CALL_LOG: logPath, SECURITY_STATE: state,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH}` };
+
+    const first = runMigrate({ user, env });
+
+    // Pre-fix the wrong value stayed under the new key: newKeyPresent asks only whether the key exists, so
+    // the second run below said "already present", doctor said OK and a launch ran on a value nobody wrote.
+    assert.equal(first.status, 1, first.stderr);
+    assert.match(first.stderr, /dup: migration failed -- the store returned a different value than was written; the new entry was removed -- the legacy entry is untouched, migrate it by hand/);
+    const calls = fs.readFileSync(logPath, "utf8").trim().split("\n").filter(Boolean);
+    assert.ok(calls.includes("delete-generic-password -a migrator -s vc-secrets:user:dup"), `expected the delete to be issued: ${JSON.stringify(calls)}`);
+    assert.ok(!fs.existsSync(path.join(state, "entry")), "the tampered entry must be gone");
+
+    const second = runMigrate({ user, env });
+
+    assert.equal(second.status, 0, second.stderr);
+    assert.match(second.stderr, /dup: migrated/);
+    assert.doesNotMatch(second.stderr, /already present/);
+});
+
+test("cmdMigrate: a read-back mismatch whose cleanup fails names the entry that holds a wrong value and the command that removes it", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-migrate-mismatch-nodelete-"));
+    tmpDirs.push(dir);
+    const logPath = path.join(dir, "security-calls.log");
+    const state = path.join(dir, "state");
+    fs.mkdirSync(state);
+    const binDir = tamperingKeychainStub(1);
+
+    const r = runMigrate({ user: { secrets: { dup: { backend: "local" } }, servers: {}, tasks: {} },
+        env: { VC_SECRETS_LOCAL_BACKEND: "keychain", USER: "migrator", SECURITY_CALL_LOG: logPath, SECURITY_STATE: state,
+            PATH: `${binDir}${path.delimiter}${process.env.PATH}` } });
+
+    assert.equal(r.status, 1, r.stderr);
+    assert.match(r.stderr, /the new entry could not be removed -- it now holds a wrong value; remove it with `security delete-generic-password -a migrator -s vc-secrets:user:dup`\. The legacy entry is untouched/);
+    assert.doesNotMatch(r.stderr, /the new entry was removed/);
+    assert.doesNotMatch(r.stderr, /TAMPERED/, "a value read back from the store is never echoed");
 });
 
 test("doctor: a secret found only under the legacy key is advised to migrate at user scope, and not at a repository's", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
@@ -5339,7 +6159,7 @@ test("cmdDoctor: a task's name does not mark a same-named server as enabled", ()
     fs.mkdirSync(claudeDir, { recursive: true });
     fs.writeFileSync(path.join(claudeDir, m.CONFIG_NAME), JSON.stringify({
         projectId: "demo",
-        secrets: { "kv-secret": { backend: "keyvault", vault: "v", secret: "s" } },
+        secrets: { "kv-secret": { backend: "keyvault", vault: "demo-vault", secret: "s" } },
         servers: { shared: { command: "true", args: [], env: { KV: "secret:kv-secret" } } },
         tasks: { shared: { command: "true", args: [], env: {} } },
     }));
@@ -5359,6 +6179,78 @@ test("cmdDoctor: a task's name does not mark a same-named server as enabled", ()
     assert.ok(!r.stderr.includes('OK secret "kv-secret"'),
         "the same-named task must not make the opt-in server look enabled/consumed");
     assert.ok(!/FAIL secret "kv-secret"/.test(r.stderr));
+});
+
+// `doctor` as a process, with a stub `az` that records every call. `trusted` seeds the trust file for the
+// repository as written, the way a person who ran `vc-secrets trust` would have it; `user` is the personal
+// file, where the `vaults` grant lives. Pinned to gpg, the one backend doctor does not write-probe.
+function runDoctorWithAz({ user = { secrets: {}, servers: {} }, project, trusted, flags = [] }) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-az-"));
+    tmpDirs.push(dir);
+    const logPath = path.join(dir, "az-calls.log");
+    const binDir = stubBinary("az", '#!/bin/sh\necho "$@" >> "$AZ_CALL_LOG"\necho tok\n');
+    const env = launcherEnv({
+        VC_SECRETS_LOCAL_BACKEND: "gpg", AZ_CALL_LOG: logPath, PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+    });
+    fs.mkdirSync(path.join(env.HOME, ".claude"), { recursive: true });
+    fs.writeFileSync(path.join(env.HOME, ".claude", m.CONFIG_NAME), JSON.stringify(user));
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-doctor-az-repo-"));
+    tmpDirs.push(repo);
+    fs.mkdirSync(path.join(repo, ".claude"));
+    fs.writeFileSync(path.join(repo, ".claude", m.CONFIG_NAME), JSON.stringify(project));
+    if (trusted) {
+        seedTrust(env, repo);
+    }
+    const r = spawnSync(process.execPath, [LAUNCHER_PATH, "doctor", ...flags], { env, cwd: repo, encoding: "utf8" });
+
+    return { ...r, azCalls: fs.existsSync(logPath) ? fs.readFileSync(logPath, "utf8") : "" };
+}
+
+const REPO_KV_TASK_PROJECT = {
+    projectId: "demo",
+    secrets: { kv: { backend: "keyvault", vault: "demo-vault", secret: "pat-secret" } },
+    tasks: { build: { command: "printenv", args: ["V"], env: { V: "secret:kv" } } },
+};
+const KV_TASK_GRANT = { vaults: { "demo-vault": { "pat-secret": { tasks: { build: { command: "printenv", args: ["V"], envKeys: ["V"] } } } } } };
+const NOT_READ = /^SKIP secret "kv" not read -- declared by the repository, and no trusted, authorized consumer uses it$/m;
+
+test("doctor: a repository's Key Vault secret is not read for a task nobody trusted -- az is never invoked", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    // Every task counts as consuming what it references, so before this rule an untrusted repository's task
+    // was enough to make `doctor` run `az` with the vault and secret name the repository chose. --all widens
+    // which of the reader's own secrets are checked and must not widen this.
+    for (const flags of [[], ["--all"]]) {
+        const r = runDoctorWithAz({ project: REPO_KV_TASK_PROJECT, trusted: false, flags });
+        assert.equal(r.azCalls, "", `az must not run: ${r.azCalls}`);
+        assert.match(r.stderr, NOT_READ, r.stderr);
+        assert.doesNotMatch(r.stderr, /secret "kv" resolvable/, r.stderr);
+    }
+});
+
+test("doctor: a trusted task without a vaults grant is not enough either, and the missing block is still reported", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    const r = runDoctorWithAz({ project: REPO_KV_TASK_PROJECT, trusted: true });
+    assert.equal(r.azCalls, "", `az must not run: ${r.azCalls}`);
+    assert.match(r.stderr, NOT_READ, r.stderr);
+    assert.match(r.stderr, /^FAIL task "build" \(project\) wants secret "kv" and is not authorized/m, r.stderr);
+});
+
+test("doctor: a trusted and authorized consumer does get the repository's Key Vault secret read", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    // The positive control: without it a doctor that never read a repository's secret would pass the
+    // two tests above.
+    const r = runDoctorWithAz({ user: { secrets: {}, servers: {}, ...KV_TASK_GRANT }, project: REPO_KV_TASK_PROJECT, trusted: true });
+    assert.match(r.azCalls, /--vault-name demo-vault --name pat-secret/, `az calls: ${r.azCalls}`);
+    assert.match(r.stderr, /^OK secret "kv" resolvable$/m, r.stderr);
+    assert.doesNotMatch(r.stderr, NOT_READ, r.stderr);
+});
+
+test("doctor: a Key Vault secret the user declared is read as before -- the rule is about the repository's declarations", { skip: !CAN_RUN_POSIX_STUB && "needs a POSIX shell, which the stub binary on PATH is written behind" }, () => {
+    const r = runDoctorWithAz({
+        user: { secrets: { kv: { backend: "keyvault", vault: "demo-vault", secret: "pat-secret" } },
+            servers: {}, tasks: { build: { command: "printenv", args: ["V"], env: { V: "secret:kv" } } } },
+        project: { projectId: "demo", secrets: {}, servers: {} },
+        trusted: false,
+    });
+    assert.match(r.azCalls, /--vault-name demo-vault --name pat-secret/, `az calls: ${r.azCalls}`);
+    assert.doesNotMatch(r.stderr, NOT_READ, r.stderr);
 });
 
 // ── regressions from the bot review on PR 210 ──────────────────────────────────────────────────────
@@ -5421,6 +6313,24 @@ test("the probe runs at all — its own imports resolve", () => {
     assert.match(r.stderr + r.stdout, /usage: node vc-secrets-probe\.mjs/);
 });
 
+test("both direct-run gates fire when the plugin is reached through a symlinked directory", { skip: !CAN_SYMLINK && "this machine cannot create a directory link" }, () => {
+    // process.argv[1] stays as typed while import.meta.url is the resolved path. The gates compared the
+    // two after path.resolve alone, so through a linked directory (a marketplace cache entry, a linked
+    // checkout) both were false: the CLI imported, ran nothing and exited 0 with no usage line.
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-linked-run-"));
+    tmpDirs.push(root);
+    const link = path.join(root, "linked-plugin");
+    fs.symlinkSync(path.dirname(fileURLToPath(import.meta.url)), link, LINK_TYPE);
+
+    const probeRun = spawnSync(process.execPath, [path.join(link, "vc-secrets-probe.mjs")], { encoding: "utf8" });
+    assert.match(probeRun.stderr, /usage: node vc-secrets-probe\.mjs/, `probe stderr: ${probeRun.stderr}`);
+    assert.equal(probeRun.status, 2, "a gate that never fires exits 0 having done nothing");
+
+    const launcher = spawnSync(process.execPath, [path.join(link, "vc-secrets.mjs")], { encoding: "utf8" });
+    assert.match(launcher.stderr, /usage: vc-secrets </, `launcher stderr: ${launcher.stderr}`);
+    assert.notEqual(launcher.status, 0, "a gate that never fires exits 0 having done nothing");
+});
+
 // ── regressions from the Codex review ─────────────────────────────────────────────────────────────
 
 test("keychain write: migrate gets a non-interactive shape, set keeps the prompt", () => {
@@ -5478,14 +6388,54 @@ test("a gpg read preserves a trailing newline the stored value really contains",
     }
 });
 
-test("a double quote in command/args/vault/secret is refused — it would break argv quoting on Windows", () => {
+test("a double quote in command/args is refused — it would break argv quoting on Windows", () => {
     const q = 'x" & whoami & rem "';
     assert.throws(() => m.loadConfig(projectPaths({
         secrets: {}, servers: { s: { command: "x", args: [q], env: {} } } })), /double quote/);
     assert.throws(() => m.loadConfig(projectPaths({
         secrets: {}, servers: { s: { command: q, args: [], env: {} } } })), /double quote/);
-    assert.throws(() => m.loadConfig(projectPaths({
-        secrets: { kv: { backend: "keyvault", vault: q, secret: "s" } }, servers: {} })), /double quote/);
+});
+
+const keyvaultDecl = (overrides) => ({ backend: "keyvault", vault: "demo-vault", secret: "demo-secret", ...overrides });
+// loadConfig prefixes the (random) tmp path of the file, which can contain any short value by chance, so
+// "the message does not echo it" is checked against the text after that prefix only.
+const echoes = (e, value) => typeof value === "string" && e.message.slice(e.message.indexOf("vc-secrets.json: ")).includes(value);
+const loadKeyvault = (overrides) => m.loadConfig(projectPaths({ projectId: "proj-x", secrets: { kv: keyvaultDecl(overrides) }, servers: {} }));
+
+test("keyvault vault/secret: names Azure accepts load", () => {
+    for (const vault of ["abc", "demo-vault", "A1b", "a".repeat(24), "a-b-c"]) {
+        assert.equal(loadKeyvault({ vault }).secrets.kv.vault, vault, vault);
+    }
+    for (const secret of ["s", "Demo-Secret-01", "0", "9secret", "a".repeat(127)]) {
+        assert.equal(loadKeyvault({ secret }).secrets.kv.secret, secret, secret);
+    }
+});
+
+test("keyvault vault: a character or shape outside Azure's vault-name rule is refused, without echoing the value", () => {
+    // Each of these would reach `az` as an argument: `/` redirects az's request host, `%` is expanded by
+    // cmd.exe inside the quotes of a .cmd shim, `"` closes those quotes, and the rest are not Azure names.
+    const bad = {
+        percent: "a%PATH%b", slash: "evil.example/x", question: "abc?x", dot: "abc.def", colon: "abc:80", quote: 'abc"def',
+        space: "abc def", leadingDigit: "1demo", leadingHyphen: "-demo", trailingHyphen: "demo-", doubleHyphen: "de--mo",
+        tooShort: "ab", tooLong: "a".repeat(25), notAString: 12345,
+    };
+    for (const [label, vault] of Object.entries(bad)) {
+        assert.throws(() => loadKeyvault({ vault }), (e) => e instanceof m.VcSecretsError
+            && /is not a valid Azure Key Vault vault name/.test(e.message)
+            && !echoes(e, vault), label);
+    }
+});
+
+test("keyvault secret: a character outside Azure's secret-name rule is refused, without echoing the value", () => {
+    const bad = {
+        percent: "a%PATH%b", slash: "a/b", question: "a?b", dot: "a.b", colon: "a:b", quote: 'a"b', space: "a b",
+        underscore: "a_b", tooLong: "a".repeat(128), notAString: 12345,
+    };
+    for (const [label, secret] of Object.entries(bad)) {
+        assert.throws(() => loadKeyvault({ secret }), (e) => e instanceof m.VcSecretsError
+            && /is not a valid Azure Key Vault secret name/.test(e.message)
+            && !echoes(e, secret), label);
+    }
 });
 
 test("a control character in command or in an env key is refused, and the refusal does not echo it", () => {
@@ -6084,6 +7034,30 @@ test("shim: a cache directory holding no launcher is not a candidate", () => {
     assert.match(r.stderr, /STUB-RAN:real/);
 });
 
+test("shim: a same-named plugin from another marketplace is never ranked, however high its version", () => {
+    // The plugin name is not its identity. A `vc-secrets` under another marketplace is another
+    // publisher's code, and ranking it with ours handed it the launch -- and every secret the launcher then
+    // resolves -- the moment its version number was higher.
+    const r = runShim(["doctor"], { caches: [
+        { client: "claude", marketplace: "ai-tools", version: "1.0.0", label: "ours" },
+        { client: "claude", marketplace: "somebody-else", version: "9.9.9", label: "foreign" },
+    ] });
+    assert.match(r.stderr, /STUB-RAN:ours/);
+    assert.doesNotMatch(r.stderr, /STUB-RAN:foreign/);
+});
+
+test("shim: when only another marketplace holds a vc-secrets, the failure names its paths and imports none of them", () => {
+    const r = runShim(["doctor"], { caches: [
+        { client: "claude", marketplace: "somebody-else", version: "9.9.9", label: "foreign-a" },
+        { client: "codex", marketplace: "lookalike", version: "1.0.0", label: "foreign-b" },
+    ] });
+    assert.equal(r.status, 1, r.stderr);
+    assert.doesNotMatch(r.stderr, /STUB-RAN/, "a candidate from another marketplace must never be loaded");
+    assert.ok(r.stderr.includes(`no install of ${PLUGIN_KEY} was found in the plugin cache`), r.stderr);
+    assert.match(r.stderr, /somebody-else[/\\]vc-secrets[/\\]9\.9\.9/, r.stderr);
+    assert.match(r.stderr, /lookalike[/\\]vc-secrets[/\\]1\.0\.0/, r.stderr);
+});
+
 test("shim: caches are searched across clients, and the newest version wins wherever it lives", () => {
     const r = runShim(["doctor"], { caches: [
         { client: "claude", version: "1.0.0", label: "claude-cache" },
@@ -6094,9 +7068,9 @@ test("shim: caches are searched across clients, and the newest version wins wher
 
 test("shim: the registry still wins over the caches, because only it knows per-project installs", () => {
     const stub = writeStubInstall("registry");
-    const registry = { version: 2, plugins: { "vc-secrets@ai-tools": [
+    const registry = shimRegistry([
         { projectPath: "/nowhere", version: "0.0.1", lastUpdated: "2024-01-01", installPath: stub },
-    ] } };
+    ]);
     const r = runShim(["doctor"], { registry, caches: [{ client: "codex", version: "9.9.9", label: "cache" }] });
     assert.match(r.stderr, /STUB-RAN:registry/);
     assert.doesNotMatch(r.stderr, /STUB-RAN:cache/);
@@ -6306,7 +7280,9 @@ const GUARDED_IN_PACKAGE = [
 // grant, no key any client reads, and nothing executes it. That is what separates it from the skill
 // files, and from `vc-secrets-probe.mjs`, which qualifies once the question is "what can an edit to
 // this file do" rather than "who imports it".
-const UNGUARDED_FILES = ["README.md"];
+// `LICENSE` is the repository-root licence copied in so the plugin is licensed where it is distributed
+// from; like the README it is prose that loads nowhere and grants nothing.
+const UNGUARDED_FILES = ["README.md", "LICENSE"];
 
 // Neither guarded nor unguarded-by-decision: they are the subject's own instrument. Listed so the
 // classification below accounts for every tracked file rather than filtering some out of view.
@@ -6585,10 +7561,8 @@ test("shim: a registry record pointing at a vanished install falls back to a hea
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vcs-stale-home-"));
     tmpDirs.push(home);
     fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
-    fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({
-        version: 2,
-        plugins: { "vc-secrets@ai-tools": [{ version: "1.0.0", installPath: path.join(home, "gone") }] },
-    }));
+    fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"),
+        JSON.stringify(shimRegistry([{ version: "1.0.0", installPath: path.join(home, "gone") }])));
     const cacheDir = path.join(home, ".codex", "plugins", "cache", "ai-tools", "vc-secrets", "1.0.0");
     fs.mkdirSync(cacheDir, { recursive: true });
     fs.writeFileSync(path.join(cacheDir, "vc-secrets.mjs"),
@@ -6713,13 +7687,10 @@ test("shim: a stale registry record falls back to a HEALTHY REGISTRY record befo
     fs.writeFileSync(path.join(good, "vc-secrets.mjs"),
         'export async function runCli() { process.stderr.write("STUB-RAN:sibling\\n"); }\n');
     fs.mkdirSync(path.join(home, ".claude", "plugins"), { recursive: true });
-    fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify({
-        version: 2,
-        plugins: { "vc-secrets@ai-tools": [
-            { version: "1.0.0", lastUpdated: "2024-01-01", installPath: good },
-            { version: "2.0.0", lastUpdated: "2024-02-01", installPath: path.join(home, "gone") },
-        ] },
-    }));
+    fs.writeFileSync(path.join(home, ".claude", "plugins", "installed_plugins.json"), JSON.stringify(shimRegistry([
+        { version: "1.0.0", lastUpdated: "2024-01-01", installPath: good },
+        { version: "2.0.0", lastUpdated: "2024-02-01", installPath: path.join(home, "gone") },
+    ])));
     const r = spawnSync(process.execPath, [SHIM_PATH, "doctor"],
         { env: shimEnv(home), cwd: home, encoding: "utf8" });
     assert.match(r.stderr, /STUB-RAN:sibling/);

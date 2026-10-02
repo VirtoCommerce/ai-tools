@@ -1,7 +1,7 @@
 {
   "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"

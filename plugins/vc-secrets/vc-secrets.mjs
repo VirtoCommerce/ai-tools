@@ -116,6 +116,11 @@ const LAUNCHABLE_NAME_RE = /^[A-Za-z0-9._-]+$/;
 const CONTROL_CHAR_RE = /[\u0000-\u001f\u007f-\u009f]/;
 // Azure AD tenant ids are GUIDs, and arrive mixed-case.
 const TENANT_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+// Azure's own rules for a Key Vault name (3-24 characters, starts with a letter, ends with a letter or a
+// digit, hyphens allowed but never two in a row) and for a secret name (1-127 characters of letters,
+// digits and hyphens). The `--` rule is a second test because the charset cannot say it.
+const KEYVAULT_VAULT_NAME_RE = /^[A-Za-z][A-Za-z0-9-]{1,22}[A-Za-z0-9]$/;
+const KEYVAULT_SECRET_NAME_RE = /^[0-9A-Za-z-]{1,127}$/;
 
 function parseReference(value) {
     if (typeof value !== "string" || !REF_PREFIXES.some((prefix) => value.startsWith(prefix))) {
@@ -406,13 +411,33 @@ function authorizationFor(cfg, decl) {
     return null;
 }
 
-// The ONE predicate that decides whether a crossing reference -- a project/local-scoped launchable
-// consuming a secret OR an oauth entry declared by someone else -- is authorized, and if not, what
-// block would authorize it. Both resolveEnvEntries (which refuses an unauthorized launch) and
-// doctorReport's crossing loop (which reports the same finding without launching anything) call
-// this. Splitting it into two bodies is what let an oauth refusal drift out of doctor's report the
-// first time, while the secret refusal stayed covered -- but a single predicate does not by itself
-// stop that from recurring: restoring one kind filter inside the crossing loop reproduces the drift
+// Where the authorization for a reference lives, or null when none is needed. The condition is "the
+// launchable and the declaration it consumes are not both yours": two user-home sides need nothing (you
+// wrote both), and every other pairing goes through authorizationFor. A user-home launchable is NOT
+// exempt on its own -- the merge lets a repository's declaration replace a user-scope one of the same
+// name, so a server you approved can find that the secret behind `secret:pat` is now a Key Vault read the
+// repository chose, paid for by your `az` login. It is authorized exactly as a project launchable would be
+// (the `vaults` / `registrations` block names the consumer by kind and name; no separate block format).
+// Shared by crossingProblem and doctorReport's crossing loop so that the two cannot disagree about
+// which pairs are checked.
+function crossingSource(cfg, launchable, decl, refName) {
+    if (!launchable || !decl || (launchable.home === USER_SCOPE && decl.home === USER_SCOPE)) {
+        return null;
+    }
+    // An oauth declaration already carries its own declaredName (stamped where cfg.oauth is built),
+    // so re-stamping it here is a no-op rather than a correction -- unlike a secret's, which needs it
+    // added because the secret merge does not stamp one. Kept as one uniform call rather than a
+    // branch on the kind, since the two forms cannot produce different results.
+    return authorizationFor(cfg, { ...decl, declaredName: refName });
+}
+
+// The ONE predicate that decides whether a crossing reference -- a launchable consuming a secret OR an
+// oauth entry declared in a home other than its own (or by the repository, for a user-home launchable) --
+// is authorized, and if not, what block would authorize it. Both resolveEnvEntries (which refuses an
+// unauthorized launch) and doctorReport's crossing loop (which reports the same finding without launching
+// anything) call this. Splitting it into two bodies is what let an oauth refusal drift out of doctor's
+// report the first time, while the secret refusal stayed covered -- but a single predicate does not by
+// itself stop that from recurring: restoring one kind filter inside the crossing loop reproduces the drift
 // with this function untouched. What stops it is two tests in vc-secrets.test.mjs, not the shape of
 // this function: "an authorization refusal names the doctor command, and doctor's own report
 // names the same where", and "doctorReport: an oauth crossing is reported, and a
@@ -421,14 +446,7 @@ function authorizationFor(cfg, decl) {
 function crossingProblem(cfg, kind, name, refName, refKind = "secret") {
     const launchable = own(cfg[kind], name);
     const decl = refKind === "oauth" ? own(cfg.oauth, refName) : own(cfg.secrets, refName);
-    if (!launchable || !decl || launchable.home === USER_SCOPE) {
-        return null;
-    }
-    // An oauth declaration already carries its own declaredName (stamped where cfg.oauth is built),
-    // so re-stamping it here is a no-op rather than a correction -- unlike a secret's, which needs it
-    // added because the secret merge does not stamp one. Kept as one uniform call rather than a
-    // branch on refKind, since the two forms cannot produce different results.
-    const source = authorizationFor(cfg, { ...decl, declaredName: refName });
+    const source = crossingSource(cfg, launchable, decl, refName);
     if (source === null) {
         return null;
     }
@@ -591,11 +609,22 @@ function parseConfigFile(file, warnings) {
         if (decl.backend === "keyvault" && (!decl.vault || !decl.secret)) {
             throw new VcSecretsError(`secret "${name}": keyvault backend requires "vault" and "secret"`);
         }
-        // These two reach `az` as arguments, and on Windows `az` is a .cmd shim — see the quoting note in
-        // validateLaunchables. Azure names cannot contain a quote anyway.
-        for (const field of ["vault", "secret"]) {
-            if (typeof decl[field] === "string" && decl[field].includes('"')) {
-                throw new VcSecretsError(`secret "${name}": a double quote in "${field}" is not allowed`);
+        // Both reach `az` as arguments, from a file the repository wrote, so the charset is Azure's own
+        // rather than a blacklist. A `/` in the vault redirects az's request host: it builds
+        // `https://{vault}{suffix}` from the string unvalidated and disables the challenge-domain check, so
+        // the bearer token az minted goes wherever the name points. `%VAR%` is expanded by cmd.exe inside
+        // the quotes of a .cmd shim on Windows (`az` is one), and a quote closes them -- see the quoting
+        // note in validateLaunchables. The message does not echo the value: it is repository-controlled
+        // text bound for a terminal.
+        if (decl.backend === "keyvault") {
+            const vaultOk = typeof decl.vault === "string" && KEYVAULT_VAULT_NAME_RE.test(decl.vault) && !decl.vault.includes("--");
+            if (!vaultOk) {
+                throw new VcSecretsError(`secret "${name}": "vault" is not a valid Azure Key Vault vault name `
+                    + "(3-24 characters: letters, digits and hyphens; starts with a letter, ends with a letter or digit, no two hyphens in a row)");
+            }
+            if (typeof decl.secret !== "string" || !KEYVAULT_SECRET_NAME_RE.test(decl.secret)) {
+                throw new VcSecretsError(`secret "${name}": "secret" is not a valid Azure Key Vault secret name `
+                    + "(1-127 characters: letters, digits and hyphens)");
             }
         }
         validateAuthorized(`secret "${name}"`, decl.authorized);
@@ -902,8 +931,10 @@ const DOCTOR_REMEDY = '; run "vc-secrets doctor" for the block to add';
 //
 // `local` is gated with `project`. The two differ by whether git tracks the file, and telling them apart
 // would mean running git inside the very repository that has not been trusted yet.
-// secrets/oauth/vaults declarations are not gated: they execute nothing, and `authorized` still guards
-// the crossings they make.
+// secrets/oauth/vaults declarations are not gated: they execute nothing. What guards them is the
+// authorization a CONSUMER needs to receive one (crossingProblem) -- the `vaults` / `registrations` /
+// `authorized` block in the user file -- and `doctor` reads a repository's Key Vault secret only for a
+// consumer that has passed both this gate and that authorization.
 
 const TRUST_FILE_NAME = "trust.json";
 const TRUST_SCHEMA_VERSION = 1;
@@ -1274,7 +1305,13 @@ function requireLaunchable(kind, name, cfg) {
 
 // `kind` is "servers" or "tasks". Both are launchables with the same declaration shape; the only
 // difference is who starts them — the MCP client, or a person running `task`.
-async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers") {
+//
+// `prefetch`, when given, is called once, after every reference has passed validation and before the
+// first read, with every secret reference's name and declaration; it returns a Map of what it already
+// read -- a name to its value, or to the error reading it produced -- and the loop takes those instead
+// of calling resolveSecret. An error is thrown where that name's entry is reached, so a launch fails on
+// the same entry, with the same message, as it does without a prefetch. cmdLaunch passes one on Windows.
+async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers", { prefetch } = {}) {
     const server = requireLaunchable(kind, name, cfg);
     // validate every reference BEFORE contacting any backend
     const entries = [];
@@ -1317,6 +1354,12 @@ async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers") {
     }
 
     const rawCache = new Map();
+    if (prefetch !== undefined) {
+        const refs = entries.filter((x) => x.literal === undefined).map((x) => ({ name: x.ref.name, decl: x.decl }));
+        for (const [secretName, outcome] of await prefetch(refs)) {
+            rawCache.set(secretName, outcome);
+        }
+    }
     const jsonCache = new Map();
     const result = {};
     for (const entry of entries) {
@@ -1329,6 +1372,9 @@ async function resolveEnvEntries(name, cfg, resolveSecret, kind = "servers") {
             rawCache.set(ref.name, await resolveSecret(ref.name, decl));
         }
         const raw = rawCache.get(ref.name);
+        if (raw instanceof Error) {
+            throw raw;
+        }
         if (ref.field === null) {
             result[entry.envVar] = raw;
             continue;
@@ -1569,6 +1615,127 @@ $b=New-Object byte[] $n
 [Console]::Out.Write((($b | ForEach-Object { $_.ToString("x2") }) -join ''))
 `;
 
+// Everything a Windows launch needs from PowerShell, in ONE process: every Credential Manager name the
+// launch reads, and the job object that binds the launch's process tree to the launcher.
+//
+// One process because each one costs a powershell.exe start and an Add-Type compile -- the bulk of a wcm
+// read -- and the launch used to pay that once per name, sequentially. The read half is PS_CRED_READ's,
+// per name: the same CredRead declaration, the same blob copied out as hex, which decodeCredBlobHex
+// turns back into the value. What changes is the reporting: a failed CredRead is reported as its raw
+// win32 code instead of an exit status, and readWcmBatch applies PS_CRED_READ's rule to it -- 1168
+// (ERROR_NOT_FOUND) alone is "absent", every other code an unreadable store. Names arrive as a JSON
+// array of keystore keys in VC_SECRETS_NAMES; an empty array is the bind alone. The output is one JSON
+// object, {"creds":{"<key>":{"ok":"<hex>"}|{"err":<win32 code>}},"job":"ok"|<win32 code>}, built by hand
+// rather than with ConvertTo-Json: every key has passed assertKeyShape ([a-z0-9:-]) and every value is
+// hex or an integer, so nothing in it needs escaping.
+//
+// The bind, and why it exists. An MCP client stops a server with child.kill(), which on Windows is
+// TerminateProcess: no handler in the launcher runs. libuv puts the launcher's DIRECT children in a
+// kill-on-close job of its own, but one that lets their descendants slip out of it silently (libuv
+// src/win/process.c, uv__init_global_job_handle), so the processes that hold the secrets -- `npx.cmd`
+// -> cmd.exe -> node, the server -- outlive a launcher killed that way. A job created WITHOUT any
+// breakaway permission, holding the launcher, catches every process created after the assignment: with
+// nested jobs a process escapes only up to the first job that forbids it, and libuv never asks to
+// escape at all (it does not pass CREATE_BREAKAWAY_FROM_JOB). KILL_ON_JOB_CLOSE then ends that whole
+// tree when the job's last handle closes -- and the only handle left is the one duplicated into the
+// launcher, so any end of the launcher, a TerminateProcess included, ends its tree. The duplicate is not
+// inheritable: a child holding one would keep the job open after the launcher died.
+//
+// THE ORDER IS LOAD-BEARING: the handle is duplicated into the launcher BEFORE the launcher is assigned.
+// Assigned first, a failed duplicate would leave this PowerShell process the job's only holder, and its
+// exit -- moments later -- would close the job and KILL_ON_JOB_CLOSE would kill the launcher. Duplicated
+// first, a failed duplicate leaves an empty job that dies harmlessly with this process, and a failed
+// assignment after a good duplicate leaves the launcher holding a handle to a job it is not in, which
+// costs nothing. Either failure is reported as its win32 code and the launch goes on unbound.
+//
+// The reads run before the bind, so a read that throws ends the script before any bind was attempted
+// and the caller's "could not bind" is true. The pid comes from VC_SECRETS_LAUNCHER_PID. The names are
+// parsed into a variable and enumerated with foreach, not wrapped in @(...): Windows PowerShell 5.1
+// emits a parsed array as ONE pipeline object, which @() would wrap into an array holding the array.
+const PS_CRED_READ_MANY = `
+$ErrorActionPreference='Stop'
+[Console]::OutputEncoding=[System.Text.Encoding]::UTF8
+Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class CredManLaunch {
+  [DllImport("advapi32", CharSet=CharSet.Unicode, SetLastError=true)]
+  public static extern bool CredRead(string target, int type, int flags, out IntPtr cred);
+  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
+  public struct CREDENTIAL { public int Flags; public int Type; public string TargetName; public string Comment;
+    public long LastWritten; public int CredentialBlobSize; public IntPtr CredentialBlob; public int Persist;
+    public int AttributeCount; public IntPtr Attributes; public string TargetAlias; public string UserName; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct JOBOBJECT_BASIC_LIMIT_INFORMATION { public long PerProcessUserTimeLimit; public long PerJobUserTimeLimit;
+    public int LimitFlags; public UIntPtr MinimumWorkingSetSize; public UIntPtr MaximumWorkingSetSize; public int ActiveProcessLimit;
+    public UIntPtr Affinity; public int PriorityClass; public int SchedulingClass; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct IO_COUNTERS { public ulong ReadOperationCount; public ulong WriteOperationCount; public ulong OtherOperationCount;
+    public ulong ReadTransferCount; public ulong WriteTransferCount; public ulong OtherTransferCount; }
+  [StructLayout(LayoutKind.Sequential)]
+  public struct JOBOBJECT_EXTENDED_LIMIT_INFORMATION { public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
+    public IO_COUNTERS IoInfo; public UIntPtr ProcessMemoryLimit; public UIntPtr JobMemoryLimit;
+    public UIntPtr PeakProcessMemoryUsed; public UIntPtr PeakJobMemoryUsed; }
+  [DllImport("kernel32", CharSet=CharSet.Unicode, SetLastError=true)]
+  static extern IntPtr CreateJobObject(IntPtr attributes, string name);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool SetInformationJobObject(IntPtr job, int infoClass, ref JOBOBJECT_EXTENDED_LIMIT_INFORMATION info, int size);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern IntPtr OpenProcess(int access, bool inherit, int pid);
+  [DllImport("kernel32")]
+  static extern IntPtr GetCurrentProcess();
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool DuplicateHandle(IntPtr sourceProcess, IntPtr source, IntPtr targetProcess, out IntPtr target,
+    int access, bool inherit, int options);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
+  [DllImport("kernel32", SetLastError=true)]
+  static extern bool CloseHandle(IntPtr handle);
+  const int JobObjectExtendedLimitInformation = 9;
+  const int JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE = 0x2000;
+  const int PROCESS_TERMINATE = 0x0001, PROCESS_DUP_HANDLE = 0x0040, PROCESS_SET_QUOTA = 0x0100;
+  const int DUPLICATE_SAME_ACCESS = 0x2;
+  static int LastError() { int e = Marshal.GetLastWin32Error(); return e == 0 ? -1 : e; }
+  public static int Bind(int pid) {
+    IntPtr job = CreateJobObject(IntPtr.Zero, null);
+    if (job == IntPtr.Zero) { return LastError(); }
+    try {
+      JOBOBJECT_EXTENDED_LIMIT_INFORMATION info = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
+      info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+      if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, ref info, Marshal.SizeOf(info))) { return LastError(); }
+      IntPtr launcher = OpenProcess(PROCESS_DUP_HANDLE | PROCESS_SET_QUOTA | PROCESS_TERMINATE, false, pid);
+      if (launcher == IntPtr.Zero) { return LastError(); }
+      try {
+        IntPtr held;
+        if (!DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)) { return LastError(); }
+        if (!AssignProcessToJobObject(job, launcher)) { return LastError(); }
+        return 0;
+      } finally { CloseHandle(launcher); }
+    } finally { CloseHandle(job); }
+  }
+}
+'@
+$out=New-Object System.Text.StringBuilder
+[void]$out.Append('{"creds":{')
+$sep=''
+$names=ConvertFrom-Json $env:VC_SECRETS_NAMES
+foreach($k in $names){
+  [void]$out.Append($sep+'"'+$k+'":'); $sep=','
+  $ptr=[IntPtr]::Zero
+  if(-not [CredManLaunch]::CredRead($k,1,0,[ref]$ptr)){
+    $e=[System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+    [void]$out.Append('{"err":'+$e+'}'); continue
+  }
+  $c=[System.Runtime.InteropServices.Marshal]::PtrToStructure($ptr,[type][CredManLaunch+CREDENTIAL])
+  $n=$c.CredentialBlobSize
+  $b=New-Object byte[] $n
+  [System.Runtime.InteropServices.Marshal]::Copy($c.CredentialBlob,$b,0,$n)
+  [void]$out.Append('{"ok":"'+(($b | ForEach-Object { $_.ToString("x2") }) -join '')+'"}')
+}
+$j=[CredManLaunch]::Bind([int]$env:VC_SECRETS_LAUNCHER_PID)
+[void]$out.Append('},"job":'+$(if($j -eq 0){'"ok"'}else{$j})+'}')
+[Console]::Out.Write($out.ToString())
+`;
+
 // 1168 is ERROR_NOT_FOUND, and ONLY that may read as "already absent". Exiting 3 for every
 // failure would let logout report success while the refresh token is still in the store —
 // the single outcome logout exists to prevent.
@@ -1704,6 +1871,35 @@ function buildLocalRead(backend, key, env = process.env) {
     // builds its own args without this flag — that is the only place pinentry may appear.
     return { cmd: "gpg", args: ["--quiet", "--batch", "--pinentry-mode", "cancel", "--decrypt", keyToPath(key, env)],
         timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true, keepTrailingNewline: true };
+}
+
+// The launch's one PowerShell call (PS_CRED_READ_MANY): the keys to read, possibly none, and the pid to
+// bind. Every key is shape-checked like any other builder's, and here it also keeps the hand-built
+// JSON the script prints free of anything that would need escaping.
+function buildCredReadMany(keys, pid, env = process.env) {
+    for (const key of keys) {
+        assertKeyShape(key);
+    }
+
+    return { cmd: psCommand(env), args: psArgs(PS_CRED_READ_MANY),
+        extraEnv: { VC_SECRETS_NAMES: JSON.stringify(keys), VC_SECRETS_LAUNCHER_PID: String(pid) },
+        timeoutMs: TIMEOUT_LOCAL_MS, captureStdout: true };
+}
+
+// Runs it and returns the parsed object. A call that fails as a whole -- PowerShell missing, Add-Type
+// refused, a timeout, output that is not the object -- throws a VcSecretsError, and the message never
+// carries the output: on success that holds every value read, hex-encoded.
+async function credReadManyIo({ keys, pid, env = process.env, redactValues = [] }) {
+    const stdout = await runTool(buildCredReadMany(keys, pid, env), { redactValues });
+    let result = null;
+    try {
+        result = JSON.parse(stdout);
+    } catch { /* reported below, without the text */ }
+    if (result === null || typeof result !== "object" || result.creds === null || typeof result.creds !== "object") {
+        throw new VcSecretsError(`${psCommand(env)} did not print the batched read's result`);
+    }
+
+    return result;
 }
 
 function buildLocalWrite(backend, key, env = process.env, { tmp = false, value = undefined } = {}) {
@@ -2091,7 +2287,33 @@ function buildSpawnInvocation(resolved, args) {
         return { cmd: resolved.cmd, args, opts: {} };
     }
     // cmd.exe /d /s /c ""<exe>" "<arg>"…" — verbatim line sidesteps cmd's outer-quote stripping
-    const line = [resolved.cmd, ...args].map((a) => `"${a}"`).join(" ");
+    //
+    // Two things quoting alone does not settle, and both apply only on this branch -- a direct spawn
+    // hands each argument to the program untouched:
+    //  - cmd.exe expands %VAR% inside double quotes, from the CHILD's environment, which is where the
+    //    resolved secrets live; a CR or LF ends the command line there and starts another. None of the
+    //    three can be quoted away, so an argument holding one is refused here and not at load: a
+    //    URL-encoded argument is legitimate on every direct path.
+    //  - The program's own parser (MSVCRT) reads a backslash run before a quote as escaping it, so a
+    //    trailing `\` would swallow the closing quote and run the rest of the line into the argument.
+    //    That run is doubled; `"C:\dir\"` then reaches the program as `C:\dir\`.
+    // The position is named, never the value: an argument can carry a token.
+    //
+    // The command sits on the same line inside its own quotes, so cmd.exe expands a `%` in it from the same
+    // environment. A CR or LF in it is already refused when the declaration loads (CONTROL_CHAR_RE on
+    // `command`), so only the `%` is checked here. "The command" is named and its text is not, as with an
+    // argument's position above.
+    if (resolved.cmd.includes("%")) {
+        throw new VcSecretsError("the command contains %, which cmd.exe interprets inside the quotes of a .cmd/.bat shim -- it cannot be run through one on Windows");
+    }
+    const quoted = args.map((a, i) => {
+        if (/[%\r\n]/.test(a)) {
+            throw new VcSecretsError(`argument ${i + 1} contains %, CR or LF, which cmd.exe interprets inside the quotes of a .cmd/.bat shim -- it cannot be passed through one on Windows`);
+        }
+
+        return `"${a.replace(/\\+$/, (run) => run + run)}"`;
+    });
+    const line = [`"${resolved.cmd}"`, ...quoted].join(" ");
 
     return { cmd: resolved.shell, args: [`/d /s /c "${line}"`], opts: { windowsVerbatimArguments: true } };
 }
@@ -3516,6 +3738,8 @@ async function cmdLogout(serverName, cfg, { deleteEntry = null,
 
 function makeSecretResolver(cfg, env = process.env) {
     const resolvedValues = [];
+    // One copy: readWcmBatch below has to produce exactly what a single read throws.
+    const emptyValueError = (name) => new VcSecretsError(`secret "${name}": backend returned empty value -- run "vc-secrets set ${name}" (or check az login)`);
     const resolver = async (name, decl) => {
         const key = keyFor(name, decl, cfg);
         const backend = decl.backend === "keyvault" ? "keyvault" : detectLocalBackend(process.platform, env);
@@ -3536,12 +3760,83 @@ function makeSecretResolver(cfg, env = process.env) {
             value = decodeCredBlobHex(value).value;
         }
         if (value === "") {
-            throw new VcSecretsError(`secret "${name}": backend returned empty value -- run "vc-secrets set ${name}" (or check az login)`);
+            throw emptyValueError(name);
         }
         resolvedValues.push(value);
         return value;
     };
     resolver.resolvedValues = resolvedValues;
+    // Windows launches only (cmdLaunch's prefetch): every Credential Manager name in `refs` read in the
+    // one PowerShell call that also binds the launch's tree to `pid`. Returns `seeded`, a Map from secret
+    // name to what the resolver above would have returned for it -- the value -- or thrown -- the very
+    // error, built the way runTool and mapResolveError build it from PS_CRED_READ's exit status -- and
+    // `job`: "ok", the bind's win32 code, or, when the call failed as a whole, the reason as a string.
+    // Nothing is seeded then, and every name takes the resolver above, which meets the same failure and
+    // reports it as it always has.
+    //
+    // Each value joins resolvedValues here, before this returns: the later reads in the same launch --
+    // a Key Vault secret, an oauth exchange -- print their tool's stderr through that list.
+    resolver.readWcmBatch = async (refs, { pid, run = credReadManyIo }) => {
+        const wanted = new Map();
+        const localRefs = refs.filter(({ decl }) => decl.backend !== "keyvault");
+        // The local backend is consulted only when a reference needs it, as the resolver above does: a
+        // bad VC_SECRETS_LOCAL_BACKEND must not refuse a launch whose env holds only literals and Key
+        // Vault entries, which ran before the batch existed. When it does throw, nothing is seeded and
+        // the bind still runs with an empty key list; the resolver then raises the error at the first
+        // entry that needs the backend, the same entry and message as without a prefetch.
+        let localBackend = null;
+        if (localRefs.length > 0) {
+            try {
+                localBackend = detectLocalBackend(process.platform, env);
+            } catch (e) {
+                if (!(e instanceof VcSecretsError)) {
+                    throw e;
+                }
+            }
+        }
+        if (localBackend === "wcm") {
+            for (const { name, decl } of localRefs) {
+                wanted.set(name, keyFor(name, decl, cfg));
+            }
+        }
+        let result;
+        try {
+            result = await run({ keys: [...new Set(wanted.values())], pid, env, redactValues: resolvedValues });
+        } catch (e) {
+            if (!(e instanceof VcSecretsError)) {
+                throw e;
+            }
+
+            return { seeded: new Map(), job: e.message };
+        }
+        const cmd = psCommand(env);
+        const seeded = new Map();
+        for (const [name, key] of wanted) {
+            const outcome = Object.hasOwn(result.creds, key) ? result.creds[key] : null;
+            if (typeof outcome?.ok === "string") {
+                const value = decodeCredBlobHex(outcome.ok).value;
+                if (value === "") {
+                    seeded.set(name, emptyValueError(name));
+                    continue;
+                }
+                resolvedValues.push(value);
+                seeded.set(name, value);
+            } else if (Number.isInteger(outcome?.err)) {
+                // PS_CRED_READ's two exits: 1168 is exit 3 with nothing on stderr, any other code exit 1
+                // naming it -- and runTool's message for a non-zero exit, which mapResolveError then
+                // rewrites for exit 3 and passes through for exit 1.
+                const exit = outcome.err === 1168 ? 3 : 1;
+                const stderr = exit === 3 ? "" : `CredRead failed win32err=${outcome.err}`;
+                const raw = Object.assign(new VcSecretsError(`${cmd} exited ${exit}: ${stderr}`), { toolExitCode: exit });
+                seeded.set(name, mapResolveError("wcm", name, raw));
+            }
+            // Anything else -- a key the script did not report -- is left unseeded, and its read goes
+            // through the resolver above.
+        }
+        const job = result.job === "ok" || Number.isInteger(result.job) ? result.job : "the bind reported no result";
+
+        return { seeded, job };
+    };
 
     return resolver;
 }
@@ -3789,7 +4084,20 @@ async function cmdMigrate(cfg) {
                 // its read needs a warm agent, so a cold one would fail a write that in fact succeeded.
                 const stored = await runTool(buildLocalRead(backend, key, process.env), { redactValues: [legacyValue] });
                 if (stored !== legacyValue) {
-                    throw new VcSecretsError("the store returned a different value than was written -- the legacy entry is untouched, migrate it by hand");
+                    // The wrong value is now sitting under the new key, and newKeyPresent asks only whether
+                    // the key EXISTS: left there, the next migrate reports "already present", doctor says OK
+                    // and a launch hands the server a value nobody wrote. This branch is reached only
+                    // after newKeyPresent answered false, so the delete cannot remove an entry that was
+                    // there before this run.
+                    const removeSpec = buildLocalDelete(backend, key, process.env);
+                    try {
+                        await runTool(removeSpec);
+                    } catch {
+                        const command = [removeSpec.cmd, ...removeSpec.args]
+                            .map((x) => (/^[\w.:@/=+-]+$/.test(x) ? x : `'${x.replaceAll("'", "'\\''")}'`)).join(" ");
+                        throw new VcSecretsError(`the store returned a different value than was written, and the new entry could not be removed -- it now holds a wrong value; remove it with \`${command}\`. The legacy entry is untouched`);
+                    }
+                    throw new VcSecretsError("the store returned a different value than was written; the new entry was removed -- the legacy entry is untouched, migrate it by hand");
                 }
             }
             migrated += 1;
@@ -4175,7 +4483,7 @@ async function oauthTenantChecks(cfg, references, { resolveOrgTenant: resolve = 
     return checks;
 }
 
-function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [] }) {
+function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, notRead = [], toolsMissing, wired, configDirOverride, legacyOnly = [], shimContract = null, wiringProblems = [], clientConfigsSeen = [], writeProbe = null, oauthStatus = {}, oauthOversize = {}, tenantChecks = [], childNodes = [], trustFindings = [] }) {
     const lines = [];
     const loadedFiles = Object.entries(cfg.files ?? {}).map(([scope, file]) => `${scope}=${pathForTerminal(file)}`).join(", ");
     if (loadedFiles) {
@@ -4254,6 +4562,9 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
     }
     for (const name of skipped) {
         lines.push(`SKIP secret "${name}" (keyvault) -- no enabled server consumes it; use --all to force`);
+    }
+    for (const name of notRead) {
+        lines.push(`SKIP secret "${name}" not read -- declared by the repository, and no trusted, authorized consumer uses it`);
     }
     if (writeProbe === "ok") {
         // The probe writes a value of exactly WCM_BLOB_LIMIT bytes, so it proves only that the store
@@ -4394,9 +4705,6 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
     for (const [kind, map] of [["servers", cfg.servers], ["tasks", cfg.tasks ?? {}]]) {
         const label = kind === "tasks" ? "task" : "server";
         for (const [name, decl] of Object.entries(map)) {
-            if (decl.home === USER_SCOPE) {
-                continue;   // you wrote both sides; there is no grant to report
-            }
             const reported = new Set();
             for (const value of Object.values(decl.env)) {
                 let ref = null;
@@ -4415,8 +4723,10 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
                 // No branch on ref.kind here either, for the same reason crossingProblem's own
                 // declaredName comment gives: an oauth declaration already carries its own
                 // declaredName, so re-stamping it is a no-op rather than a correction.
-                const source = refDecl === undefined ? null
-                    : authorizationFor(cfg, { ...refDecl, declaredName: ref.name });
+                // crossingSource, not authorizationFor: a user-home launchable consuming a user-home
+                // declaration is "you wrote both sides" and has no grant to report, while one whose
+                // declaration the repository replaced does -- the same split launch makes.
+                const source = crossingSource(cfg, decl, refDecl, ref.name);
                 if (source === null) {
                     continue;
                 }
@@ -4442,8 +4752,8 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, to
             }
         }
     }
-    // A non-user-scope oauth declaration the loop above never named: either nothing references it,
-    // or only a user-scope launchable does (exempt above -- you wrote both sides). Its own
+    // A non-user-scope oauth declaration the loop above never named: nothing references it (a user-home
+    // launchable that does is named above, since the repository's declaration is not yours). Its own
     // authorization is still worth reporting when the block is absent, because that is the report
     // cmdLogin's refusal promises exists -- see the rule stated above authorizationRefusal.
     for (const [oauthName, oauthDecl] of Object.entries(cfg.oauth ?? {})) {
@@ -4608,6 +4918,34 @@ function consumedSecrets(cfg, enableLists, wired) {
     return consumed;
 }
 
+// Whether some launchable that references `secret:<name>` would be allowed to receive it: not refused by
+// the trust gate (`trustProblems` is trustAssessment's map, keyed "<kind>/<name>"; a user-home launchable
+// is never in it) and not refused by the authorization crossingProblem decides. Both calls are the
+// launch's own, so this answers "would a launch read this?" -- which is what `doctor` must ask before it
+// reads a secret the repository chose: a Key Vault read is paid for by the developer's `az` login, and an
+// untrusted or unauthorized consumer is exactly the one whose launch would have been refused first.
+// Every launchable counts as a consumer here, enabled or not; a task is never in an enable list at all.
+function hasTrustedAuthorizedConsumer(cfg, secretName, trustProblems) {
+    for (const kind of LAUNCHABLE_KINDS) {
+        for (const [name, launchable] of Object.entries(cfg[kind] ?? {})) {
+            const references = Object.values(launchable.env).some((value) => {
+                try {
+                    const ref = parseReference(value);
+
+                    return ref?.kind === "secret" && ref.name === secretName;
+                } catch {
+                    return false;   // a malformed reference is its own FAIL in doctorReport
+                }
+            });
+            if (references && !trustProblems.has(`${kind}/${name}`) && crossingProblem(cfg, kind, name, secretName) === null) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 async function cmdDoctor(cfg, flags = []) {
     // An unrecognized flag used to be ignored, so `doctor --al` printed the same SKIP as a run
     // with no flag at all -- output indistinguishable from "checked it and skipped". A diagnostic
@@ -4657,13 +4995,26 @@ async function cmdDoctor(cfg, flags = []) {
         localBackend = detectLocalBackend();
     } catch { /* reported via doctorReport */ }
 
+    // Before the loop below, which needs it: a repository's Key Vault secret is read only on behalf of a
+    // consumer the launch itself would let through.
+    const trust = trustAssessment(cfg);
+
     const resolver = makeSecretResolver(cfg);
     const resolvable = {};
     const skipped = [];
+    const notRead = [];
     const legacyOnly = [];
     for (const [name, decl] of Object.entries(cfg.secrets)) {
         if (decl.backend === "keyvault" && !checkAll && !consumed.has(name)) {
             skipped.push(name);   // opt-in servers must not turn the team's doctor red
+            continue;
+        }
+        // Not gated by --all: that flag widens which of YOUR secrets get checked, and this one is not
+        // yours. `doctor` is not a launch, but it runs `az` with the vault and secret name the repository
+        // wrote, so an untrusted repository whose task names the secret would otherwise get its read
+        // performed -- and its failure text printed -- by the diagnostic alone.
+        if (decl.backend === "keyvault" && decl.home !== USER_SCOPE && !hasTrustedAuthorizedConsumer(cfg, name, trust.problems)) {
+            notRead.push(name);
             continue;
         }
         try {
@@ -4690,8 +5041,10 @@ async function cmdDoctor(cfg, flags = []) {
     resolver.resolvedValues.length = 0;
 
     const backendTools = localBackend === "wcm" ? [psCommand()] : localBackend === "keychain" ? ["security"] : localBackend === "gpg" ? ["gpg"] : [];
-    const needsAz = Object.values(cfg.secrets).some((d) => d.backend === "keyvault")
-        && (checkAll || [...consumed].some((n) => cfg.secrets[n]?.backend === "keyvault"));
+    // A secret doctor declined to read needs no `az`: reporting the tool missing for a read that was never
+    // going to happen would be a FAIL about nothing.
+    const needsAz = Object.entries(cfg.secrets)
+        .some(([name, d]) => d.backend === "keyvault" && !notRead.includes(name) && (checkAll || consumed.has(name)));
     const toolsMissing = [...backendTools, ...(needsAz ? ["az"] : [])].filter((t) => !commandOnPath(t));
 
     // cfg passed, because the probe's own guard is worthless without it: it refuses to run when a
@@ -4733,14 +5086,12 @@ async function cmdDoctor(cfg, flags = []) {
     const references = oauthReferences(cfg);
     const tenantChecks = await oauthTenantChecks(cfg, references);
 
-    const trust = trustAssessment(cfg);
-
     // Only where an oauth reference exists: before the switch no child needs --import at all, and a
     // FAIL about a flag nothing uses would be a diagnostic inventing its own problem.
     const childNodes = childNodeProbes(cfg, references, { refused: trust.problems });
 
     const lines = doctorReport(cfg, {
-        env: process.env, platform: process.platform, enableLists, resolvable, skipped,
+        env: process.env, platform: process.platform, enableLists, resolvable, skipped, notRead,
         toolsMissing, wired, configDirOverride: Boolean(process.env.VC_SECRETS_CONFIG_DIR), legacyOnly,
         shimContract: activeShimContract, wiringProblems, clientConfigsSeen,
         writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings: trust.findings,
@@ -4774,6 +5125,15 @@ const LAUNCH_KILL_ESCALATION = {
     servers: { afterMs: 500, ref: true },
     tasks: { afterMs: 5000, ref: true },
 };
+
+// How long a server's group is given to leave on its own once the client has closed the launcher's stdin,
+// before the launcher tears it down. The client's shutdown is "end stdin, wait 2 s, SIGTERM, wait 2 s,
+// SIGKILL" (see LAUNCH_KILL_ESCALATION), and the point of relaying stdin is to act inside that first 2 s:
+// a launcher that waits for the SIGTERM may never get one (the client died), and a SIGKILL runs nothing.
+// A server that reads stdin to EOF and exits is not hurried -- it has this long, and its close ends the
+// launcher through the ordinary path. What has to fit inside the 2 s is this grace plus the server
+// escalation that follows it (1000 + 500 ms).
+const LAUNCH_STDIN_CLOSE_GRACE_MS = 1000;
 
 // A signal reaches the direct child only. On Windows that leaves a grandchild running: `dnx` spawns
 // dotnet.exe, which survives, orphans, and keeps a lock on the package file it was reading -- so the
@@ -4891,7 +5251,32 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     }
     const startedAt = process.hrtime.bigint();
     const resolver = makeSecretResolver(cfg);
-    const entries = await resolveEnvEntries(name, cfg, resolver, kind);
+    // On win32 the launch's tree is bound to this process with a job object, so that a TerminateProcess of
+    // the launcher -- how an MCP client stops a server there -- ends the server and everything under it;
+    // the reasoning is at PS_CRED_READ_MANY. For servers and tasks alike, as the POSIX "exit" handler below
+    // kills the group for both. It has to happen BEFORE the spawn, because only a process created after the
+    // assignment is in the job, and it rides in the same PowerShell call as the Credential Manager reads,
+    // which resolveEnvEntries makes before its first read -- after validation, so a refused launch starts
+    // no PowerShell at all. With no wcm name to read, the call is the bind alone.
+    //
+    // A bind that fails -- a restricted context can deny the job calls -- leaves the launch where it was
+    // before this existed: it runs, and says once that a client stop may leave its tree behind. Refusing
+    // to launch over it would trade a working server for a guarantee the platform would not give.
+    const prefetch = (deps.bindPlatform ?? process.platform) === "win32"
+        ? async (refs) => {
+            const { seeded, job } = await resolver.readWcmBatch(refs,
+                { pid: process.pid, ...(deps.credReadMany ? { run: deps.credReadMany } : {}) });
+            if (job !== "ok") {
+                // A whole-call failure carries PowerShell's stderr, which can span lines; the warning is one.
+                const why = Number.isInteger(job) ? `win32 error ${job}` : job.replace(/\s*\r?\n\s*/g, " ");
+                fs.writeSync(2, `vc-secrets: could not bind the launch's process tree to this launcher (${why})`
+                    + " -- a client stop may leave it running\n");
+            }
+
+            return seeded;
+        }
+        : undefined;
+    const entries = await resolveEnvEntries(name, cfg, resolver, kind, { prefetch });
     if (process.env.VC_SECRETS_TIMING === "1") {
         const ms = Number(process.hrtime.bigint() - startedAt) / 1e6;
         process.stderr.write(`vc-secrets: resolve phase took ${ms.toFixed(0)} ms\n`);   // budget measurement
@@ -4958,8 +5343,18 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // find a different binary than the one Node then fails to, or does, run.
     const invocation = buildSpawnInvocation(
         (deps.resolveCommand ?? resolveSpawnCommand)(server.command, { env: childEnv }), server.args);
+    // With "inherit" the client's stdin reaches the SERVER, and its EOF reaches only the server: the MCP
+    // SDK's stdio transport has no end handler, so a server holding the event loop (an interval, a socket,
+    // a child) never leaves, and if the client died no SIGTERM ever comes -- the launcher and the detached
+    // group holding the secrets live on. So a server's stdin goes through the launcher, which can act on
+    // the EOF. A task keeps the terminal itself (Ctrl-C, prompts); win32 keeps "inherit" too, where the
+    // group is bound to the launcher another way; and a TTY is a person at a keyboard, not a client that
+    // closes a pipe. The stream is looked up only once the others are ruled out, so a task never touches
+    // process.stdin.
+    const stdin = kind === "servers" && process.platform !== "win32" ? deps.stdin ?? process.stdin : null;
+    const relayStdin = stdin !== null && !stdin.isTTY;
     const child = (deps.spawnFn ?? spawn)(invocation.cmd, invocation.args, {
-        stdio: "inherit",
+        stdio: relayStdin ? ["pipe", "inherit", "inherit"] : "inherit",
         env: childEnv,
         detached: process.platform !== "win32",   // own process group -> we can kill the whole tree
         ...invocation.opts,
@@ -5047,7 +5442,11 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     // The escalation is armed by the FIRST signal only: a second one (a client's SIGINT after its own
     // SIGTERM) re-signals the group but must not restart the clock the first one set.
     let escalationTimer = null;
+    let stdinGraceTimer = null;
     const onSignal = (signal) => {
+        // A signal has already started the teardown the grace timer would start; left armed, it would
+        // signal the group a second time after the first one's escalation has been running.
+        clearTimeout(stdinGraceTimer);
         const timer = killProcessTree(child, signal,
             { escalation: escalationTimer === null ? LAUNCH_KILL_ESCALATION[kind] : null });
         escalationTimer ??= timer;
@@ -5087,10 +5486,39 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
         process.exit(1);
     };
     const onChildClose = (code, signal) => {
+        clearTimeout(stdinGraceTimer);
         process.exit(signal ? 1 : (code ?? 1));   // signal collapse to 1 is accepted
     };
     child.on("error", onChildError);
     child.on("close", onChildClose);
+
+    // The relay. EOF on the launcher's stdin means the client has closed the transport; the child gets
+    // the EOF (end:false: the end and the grace timer start from one place), and a child that does not
+    // leave on it within the grace is torn down through the same path a SIGTERM takes, escalation
+    // included. A child that closes first ends the launcher through onChildClose. A child without a stdin
+    // (the suite's fakes) has nothing to relay to. An unexpected error on either stream is thrown, which
+    // the uncaught-exception path turns into the "exit" handler above killing the group -- loud, and not a
+    // leak.
+    const onChildStdinError = (e) => {
+        // The child went away mid-write; its close is on the way and ends the launcher.
+        if (e?.code !== "EPIPE" && e?.code !== "ERR_STREAM_DESTROYED") {
+            throw e;
+        }
+    };
+    const onStdinEnd = () => {
+        child.stdin.end();
+        // A signal that got here first has begun the teardown and armed the escalation; a grace timer
+        // behind it would only signal the group again.
+        if (escalationTimer === null) {
+            stdinGraceTimer = setTimeout(() => onSignal("SIGTERM"), LAUNCH_STDIN_CLOSE_GRACE_MS);
+        }
+    };
+    const relaying = relayStdin && child.stdin != null;
+    if (relaying) {
+        child.stdin.on("error", onChildStdinError);
+        stdin.on("end", onStdinEnd);
+        stdin.pipe(child.stdin, { end: false });
+    }
 
     // A launch outlives this call in production -- the process exits from the handlers above -- so
     // the handle exists for callers that must end one without ending the process: the suite, and
@@ -5106,6 +5534,12 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
             }
             child.removeListener("error", onChildError);
             child.removeListener("close", onChildClose);
+            clearTimeout(stdinGraceTimer);
+            if (relaying) {
+                stdin.removeListener("end", onStdinEnd);
+                stdin.unpipe(child.stdin);
+                child.stdin.removeListener("error", onChildStdinError);
+            }
             if (renewalTimer !== null) {
                 clearInterval(renewalTimer);
             }
@@ -5488,7 +5922,28 @@ async function runCli(argv, { shimContract } = {}) {
     return main(argv).catch(fail);
 }
 
+// "Was this file started as the program?" -- the gate that keeps importing the module from running its CLI.
+// Node resolves symlinks for import.meta.url but process.argv[1] stays as typed, so a plain
+// path.resolve comparison is false whenever the plugin is reached through a symlinked directory (a
+// marketplace cache entry, a linked checkout) and the CLI then exits 0 having done nothing -- no usage
+// line, no error. The JS realpathSync, not `.native`: it is the resolution Node's own loader applies to
+// the module URL, so the two sides agree. import.meta.main would be simpler but is absent on older Node.
+function isDirectRun(moduleUrl, argv1 = process.argv[1]) {
+    if (!argv1) {
+        return false;
+    }
+    let invoked;
+    try {
+        invoked = fs.realpathSync(argv1);
+    } catch {
+        invoked = path.resolve(argv1);
+    }
+
+    return fileURLToPath(moduleUrl) === invoked;
+}
+
 export {
+    isDirectRun,
     runCli, REQUIRED_SHIM_CONTRACT,
     VcSecretsError, REF_RE, parseReference, parseLiteral, LITERAL_PREFIX, CONFIG_NAME, LOCAL_CONFIG_NAME, KEY_PREFIX,
     SCHEMA_VERSION, SCOPE_ORDER, configPaths, parseConfigFile, loadConfig, keyFor, keyToPath, legacyKeyToPath,
@@ -5498,6 +5953,7 @@ export {
     resolveEnvEntries, detectLocalBackend, redactSecrets, secretsDir, psEncode, psCommand, PS_CRED_READ, PS_CRED_WRITE,
     oversizeMarkerPath, recordOversizeMarker, clearOversizeMarker, readOversizeMarker,
     PS_CRED_DELETE, decodeCredBlobHex, buildLocalRead, buildLocalWrite, buildLocalDelete, deleteEntryIo,
+    PS_CRED_READ_MANY, buildCredReadMany, credReadManyIo,
     probeKeystoreWrite, WRITE_PROBE_NAME, writeProbeValue, WRITE_PROBED_BACKENDS,
     buildKeyvaultRead, TIMEOUT_LOCAL_MS, TIMEOUT_AZ_MS, VALUE_ON_STDIN, SECURITY_LINE_LIMIT, WCM_BLOB_LIMIT,
     COMMAND_ON_STDIN, quoteForSecurityInteractive, writeSecretValue,
@@ -5507,7 +5963,7 @@ export {
     REDIRECT_PATH, MAX_ERROR_PARAMS, closeTabPage, forTerminal, escapeHtml, failedPage, listenForCallback,
     openBrowser, buildBrowserCommand, handleCallback, cmdLogin, cmdLogout, withDeadline, LOGIN_WAIT_MS,
     runTool, resolveSpawnCommand, buildSpawnInvocation, hardenSpawnEnv, commandOnPath, mergeDeclaredEnv,
-    LAUNCH_KILL_ESCALATION,
+    LAUNCH_KILL_ESCALATION, LAUNCH_STDIN_CLOSE_GRACE_MS,
     makeSecretResolver, cmdRun, cmdTask, cmdLaunch, killProcessTree, forwardedSignalsFor, failureLine,
     RENEWAL_TICK_MS,
     validateLaunchables, LEGACY_ENV_VARS, LEGACY_SECRET_ENV_VARS,
@@ -5522,6 +5978,6 @@ export {
     clientNames, clientDescriptor, MIN_VERSION_UNKNOWN, defaultDataHome, defaultShimDir, defaultShimPath,
 };
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+if (isDirectRun(import.meta.url)) {
     runCli(process.argv.slice(2));
 }
