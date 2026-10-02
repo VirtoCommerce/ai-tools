@@ -48,6 +48,9 @@ import {
   assertCatalogReadOnlyRolePermissions, CATALOG_CREATE_ENDPOINT, CATALOG_DELETE_ENDPOINT, CATALOG_BY_ID_ENDPOINT,
   roleBody, accountBody, assertRolePermissions, assertCatalogLinkRolePermissions,
   assertSalesRepReadOnlyRolePermissions,
+  RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION,
+  RETURN_AGENT_REQUIRED_PERMISSIONS, RETURN_AGENT_EXCLUDED_PERMISSIONS, assertReturnAgentRolePermissions,
+  RETURN_AUTHORIZE_ENDPOINT, RETURN_SEARCH_ENDPOINT,
   COPY_ENDPOINT, LISTENTRYLINKS_ENDPOINT, CURRENTUSER_ENDPOINT, LINK_PROBE_VCATALOG_NAME,
   BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION,
   assertBrowseFiltersReadOnlyRolePermissions,
@@ -369,6 +372,28 @@ async function verifyBrowseFilters(account) {
   return ok;
 }
 
+// --- VCST-5883: the return agent reads returns but the decision endpoint refuses it --------------
+// Three proofs. (1) /currentuser carries return:access/read/update and NOT return:authorize,
+// isAdministrator=false. (2) POST /api/return/search → 200 — the account is a working agent, so a
+// later 403 is about the DECISION, not about reaching the module at all. (3) POST authorize on a
+// DUMMY id → 403. A dummy id is deliberate: a real Requested return would be DECIDED if the gate were
+// broken, destroying a fixture. The dummy-id caveat the catalog probe paid for (a handler that
+// short-circuits before the gate) is handled by the verdict: only 403 counts as proof; a 404/400
+// means the handler ran first and the boundary is UNPROVEN, never "fine".
+async function verifyReturnAgentNoAuthorize() {
+  const ok1 = await verifyEffectivePermissions(RETURN_AGENT_ACCOUNT, RETURN_AGENT_REQUIRED_PERMISSIONS, RETURN_AGENT_EXCLUDED_PERMISSIONS,
+    'Return agent (return:read+update, NO return:authorize)');
+  const tok = await loginToken(RETURN_AGENT_ACCOUNT.email, resolvePassword(RETURN_AGENT_ACCOUNT));
+  if (!tok) return false;
+  const h = { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' };
+  const s = await fetch(`${BACK_URL}${RETURN_SEARCH_ENDPOINT}`, { method: 'POST', headers: h, body: JSON.stringify({ take: 1 }) });
+  log(`  ${s.status === 200 ? '✓' : '✗'} POST ${RETURN_SEARCH_ENDPOINT} → ${s.status} (expected 200 — the agent can read returns)`);
+  const dummy = 'AGENT-TEST-nonexistent-return';
+  const a = await fetch(`${BACK_URL}${RETURN_AUTHORIZE_ENDPOINT(dummy)}`, { method: 'POST', headers: h, body: JSON.stringify({ returnId: dummy, items: [] }) });
+  log(`  ${a.status === 403 ? '✓' : '✗'} POST ${RETURN_AUTHORIZE_ENDPOINT('<dummy>')} → ${a.status} (expected 403 — lacks ${RETURN_AGENT_EXCLUDED_PERMISSION})${a.status === 403 ? '' : ' — boundary UNPROVEN'}`);
+  return ok1 && s.status === 200 && a.status === 403;
+}
+
 async function loginToken(email, password) {
   try {
     const res = await fetch(`${BACK_URL}/connect/token`, {
@@ -445,6 +470,10 @@ const FIXTURES = [
     assertPerms: assertBrowseFiltersNoneRolePermissions, excluded: BROWSEFILTERS_NONE_EXCLUDED_PERMISSION,
     verify: () => verifyBrowseFilters(BROWSEFILTERS_NONE_ACCOUNT),
   },
+  {
+    role: RETURN_AGENT_ROLE, account: RETURN_AGENT_ACCOUNT,
+    assertPerms: assertReturnAgentRolePermissions, excluded: RETURN_AGENT_EXCLUDED_PERMISSION, verify: verifyReturnAgentNoAuthorize,
+  },
 ];
 
 // --only <ALIAS[,ALIAS]> scopes seed / teardown / --verify to those accounts
@@ -476,7 +505,7 @@ async function main() {
 
     if (!DRY_RUN && userId && !String(userId).startsWith('dry-')) {
       writeEnvAliasOverride({
-        [account.aliasName]: { _inline: true, platform_id: userId, user_id: userId, role_id: roleId },
+        [account.aliasName]: { _inline: true, platform_id: userId, user_id: userId, role_id: roleId, userName: account.email },
       });
       log(`✓ aliases.${process.env.TEST_ENV || 'vcst'}.json: wrote ${account.aliasName}.platform_id`);
     }

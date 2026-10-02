@@ -1,0 +1,97 @@
+{
+  "_fixture": "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5628, buyer's own returns step 1). TWO lines eligible for return AT THE SAME TIME: different products, different quantities (5 and 3), both delivered today in one shipment.",
+  "_why": "The only fixture that reports 2 of 2 lines eligible. F is the other two-line order and its second line is CANCELLED, so it reports 1 of 2 — which is why qa-instructions.md case 7 (bulk-apply a reason across lines) and the second half of case 9 (an attachment is required PER LINE, not per return) are BLOCKED without this order. The two lines must NOT be interchangeable: with distinct products and distinct quantities a bulk-applied reason can be seen landing on each line independently, and a per-line attachment hint (\"1 line still needs a photo\") can be told apart from a per-return one. Equal quantities would make both undecidable (.claude/rules/test-data.md §SECOND RULE).",
+  "_contract": "Every `_`-prefixed key is FIXTURE METADATA, stripped by the seeder before the POST. Line identity comes from live discovery; delivery dates come from `_deliveryOffsetDays` resolved against seed-time now. There is NO literal date and NO runtime GUID in this file — the created order id, its line item ids and the resolved delivery instants are written to test-data/aliases.<env>.json.",
+  "_seedPhases": "PHASE 1 POST creates the order (the platform ASSIGNS line item ids and IGNORES client-supplied ones, so shipment items cannot be linked at create). PHASE 2 PUT stamps shipments[].items[] with the assigned lineItemId + the inline lineItem object (without the inline object the platform silently drops the shipment item) and the shipment deliveryDate. Line order is NOT preserved by the platform, so lines are matched by SKU, never by index.",
+  "number": "AGENT-TEST-ORD-RET-G",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Completed",
+  "customerName": "AGENT-TEST Buyer",
+  "total": 160,
+  "subTotal": 160,
+  "subTotalWithTax": 160,
+  "shippingTotal": 0,
+  "shippingTotalWithTax": 0,
+  "taxTotal": 0,
+  "items": [
+    {
+      "_role": "lineX",
+      "_note": "Line A — the same role every other returns fixture uses, so G stays comparable to A/B/C/D/E/F. productId/sku/name are placeholders; the seeder live-discovers a real catalog product for the target env and stamps them in (no env-specific SKU in a committed fixture).",
+      "sku": "AGENT-TEST-RET-SKU-1",
+      "productId": "agent-test-ret-prod-1",
+      "catalogId": "agent-test-ret",
+      "name": "AGENT-TEST Returns Line X",
+      "quantity": 5,
+      "price": 20,
+      "productType": "Physical",
+      "currency": "USD"
+    },
+    {
+      "_role": "lineY",
+      "_note": "Line B — the SECOND eligible line. A THIRD distinct product (not lineX's, not the cancelled-line product fixture F uses), and a DIFFERENT quantity from line A. Both differences are load-bearing: same product or same quantity and a PER-LINE rule becomes indistinguishable from a PER-RETURN one.",
+      "sku": "AGENT-TEST-RET-SKU-3",
+      "productId": "agent-test-ret-prod-3",
+      "catalogId": "agent-test-ret",
+      "name": "AGENT-TEST Returns Line Y (second eligible)",
+      "quantity": 3,
+      "price": 20,
+      "productType": "Physical",
+      "currency": "USD"
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    },
+    {
+      "addressType": "Billing",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    }
+  ],
+  "shipments": [
+    {
+      "_shipmentKey": "S1",
+      "_deliveryOffsetDays": 0,
+      "_deliveredByRole": { "lineX": 5, "lineY": 3 },
+      "_note": "ONE shipment delivering BOTH lines today (offset resolved at seed time — never a literal date). One shipment, not two, so both lines sit at exactly the same point in the return window and the only thing that differs between them is the line itself.",
+      "number": "AGENT-TEST-ORD-RET-G-S1",
+      "shipmentMethodCode": "FixedRate",
+      "shipmentMethodOption": "Ground",
+      "currency": "USD",
+      "status": "Delivered",
+      "trackingNumber": "AGENT-TEST-TRK-RET-G-S1",
+      "items": []
+    }
+  ],
+  "inPayments": [
+    {
+      "gatewayCode": "DefaultManualPaymentMethod",
+      "currency": "USD",
+      "customerName": "AGENT-TEST Buyer",
+      "sum": 160,
+      "status": "Paid",
+      "paymentStatus": "Paid",
+      "number": "AGENT-TEST-ORD-RET-G-P1"
+    }
+  ]
+}
