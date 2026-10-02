@@ -185,6 +185,15 @@ environment does not help there; that case wants a git credential helper, not th
 
 ### Signed-in tokens: the `oauth` block
 
+A server that can sign in by itself may not need this. `@azure-devops/mcp -a azcli` takes its token from
+Azure Identity's developer sign-ins — `az login` among them — which keep it fresh themselves, so it
+needs no `oauth` entry and no `vc-secrets login`. What changes is whose token it is: the
+server then holds your developer identity, with every right your account has in Azure DevOps, and the
+sign-in behind it reaches the rest of your Azure account from the same environment. An `oauth` entry
+signs in against an app registration and scopes the declaration names, keeps the refresh token in the
+OS keystore, and asks your consent before a repository's registration is used. Choose `azcli` when the
+ambient identity is acceptable for the agent that will run the server.
+
 An `oauth:<name>` reference names an entry here. It describes the app registration to sign in against,
 and the server process that is meant to hold the token:
 
