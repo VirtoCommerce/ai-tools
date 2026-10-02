@@ -111,12 +111,12 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    observation — and immediately before every capture, so nothing is recorded twice.
 4. **Name the CLI door first:** `npm run kb -- ask "<coordinate> <question>"`. It needs no
    `ToolSearch` hop and no MCP server. The MCP form is `mcp__kb__kb_ask`; the `kb` tools are deferred,
-   so they are loaded with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
+   so they are loaded with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_none,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
 5. **The write step covers every platform-behaviour statement the output makes.** A test verdict
    alone does not count. For each statement:
    - it matched an entry → `confirm`;
    - it contradicted an entry → `dispute`;
-   - the base held nothing → `capture`, with `--deployment <env>`.
+   - no candidate answered it → `none`, then `capture`, with `--deployment <env>`.
    
    Never capture a second copy of something the base already holds.
    **The write step also covers what the run noticed on the side**, not only what its verdicts

@@ -51,10 +51,10 @@ import { pathToFileURL } from 'node:url';
 
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
@@ -118,9 +118,11 @@ export const TOOLS = Object.freeze([
     description: 'Ask the shared knowledge base what is already known about how the Virto Commerce platform BEHAVES. '
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
-      + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
-      + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
-      + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
+      + 'Returns up to 10 CANDIDATE entries (id, subject, question) and the full body, trust label and provenance of '
+      + 'the first three. YOU judge them: if one records the specific fact you asked about, open it with kb_show '
+      + '(that records your pick) and cite its id; if none does, call kb_none, then go find out and kb_capture. '
+      + 'Being about the same page or feature is not an answer. It also says plainly when nothing matched at all '
+      + 'and when the base could NOT be read (conclude nothing; retry) — these never look alike. '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
       + 'and an answer weighed on the wrong one is how this base got its only dispute.',
     inputSchema: {
@@ -131,7 +133,7 @@ export const TOOLS = Object.freeze([
           + 'kb_capture, e.g. vcst_qa, vcptcore_stable. Omit it rather than guess: an absent stand costs nothing, '
           + 'a wrong one is read as fact by everybody after you.'),
         topic: TOPIC,
-        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many entries to open. Default 3.' },
+        top: { type: 'integer', minimum: 1, maximum: 5, description: 'How many of the candidates to open in full. Default 3.' },
       },
       required: ['question'],
     },
@@ -139,7 +141,8 @@ export const TOOLS = Object.freeze([
   {
     name: 'kb_show',
     description: 'Read one knowledge-base entry in full by its id (KB-XXXXXXXX), including its evidence trail and status. '
-      + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id.',
+      + 'Use it on the kb_ask candidate that answers your question — this is how your pick is recorded, so do it even '
+      + 'for one whose body kb_ask already showed — or when a report, ticket or test case cites an id.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -147,6 +150,20 @@ export const TOOLS = Object.freeze([
         topic: TOPIC,
       },
       required: ['id'],
+    },
+  },
+  {
+    name: 'kb_none',
+    description: 'Say that NONE of the candidates kb_ask returned answers your question. This is the base\'s "nobody has '
+      + 'written this down" — recorded so the gap is visible to whoever fills it. Then go find out, and record what you '
+      + 'found with kb_capture. Reads nothing and costs nothing.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ask: str('The ask handle kb_ask printed ("ask handle: …"). Omit it to mean your latest kb_ask.'),
+        topic: TOPIC,
+      },
+      required: [],
     },
   },
   {
@@ -324,6 +341,10 @@ async function callTool(name, args, ctx) {
       const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
+    case 'kb_none': {
+      const r = await none({ env: ctx.env, ask: args?.ask, via: VIA, call: ctx.call, topic: args?.topic });
+      return text(noneLines(r, { prefix: 'kb_none' }), FAILED.has(r.state));
+    }
     case 'kb_capture': {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
@@ -426,8 +447,8 @@ export function createServer({ env = process.env, baseArg = null, ttlMs = 300_00
           capabilities: { tools: { listChanged: false } },
           serverInfo: { name: 'kb', version: serverVersion(env) },
           instructions: 'The shared Virto Commerce knowledge base: what has actually been OBSERVED about how the '
-            + 'platform behaves, with trust and provenance. Ask it before asserting behaviour; capture what you '
-            + 'had to find out yourself.',
+            + 'platform behaves, with trust and provenance. Ask it before asserting behaviour and judge the '
+            + 'candidates it returns (kb_show the one that answers, or kb_none); capture what you had to find out yourself.',
         });
       }
       case 'notifications/initialized':

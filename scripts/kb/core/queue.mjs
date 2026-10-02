@@ -339,7 +339,7 @@ export async function log(record, { env = process.env, who, run } = {}) {
   } catch (err) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
-  if (line.kind === 'ask') await noteAsk(env, line.at, line.q);
+  if (line.kind === 'ask') await noteAsk(env, line.at, line.q, line.matched);
   return { ok: true, path, line };
 }
 
@@ -415,10 +415,13 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
  * costs a later capture its pointer — which is what happened on every flush before this — and must
  * never cost the ask.
  */
-async function noteAsk(env, at, q) {
+async function noteAsk(env, at, q, matched) {
   try {
     const meta = await readMeta(env);
-    const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? '') }].slice(-ASK_MEMORY);
+    // `matched` since two-stage-1: the candidate ids, so a `show` after a flush can still say which
+    // ask it picked from. Ids only, like the ask's own line.
+    const ids = Array.isArray(matched) ? matched.filter((id) => typeof id === 'string') : [];
+    const asks = [...metaAsks(meta), { at: String(at), q: String(q ?? ''), ...(ids.length ? { matched: ids } : {}) }].slice(-ASK_MEMORY);
     await writeFile(metaPath(env), JSON.stringify({ ...meta, asks }), 'utf8');
   } catch { /* the pointer is lost, the ask is not */ }
 }

@@ -176,6 +176,18 @@ export function anchorHit(questionLower, anchorKey, { namespaces } = {}) {
 // AND WHY A COUNT FLOOR IS STILL NEEDED ALONGSIDE IT: coverage alone reintroduces the original
 // defect at the short end -- a one-word question matching one word scores coverage 1.00. MIN_WORDS
 // is the guard that keeps "one shared common word is an answer" dead in every question length.
+//
+// STEP 6 (VCST-6087) RE-OPENED THIS FLOOR AND KEPT IT, and the attempt is recorded so it is not
+// re-run from scratch. The complaint is real: coverage is a ratio over the QUESTION's length, so the
+// same six words of KB-0B27E984 are served on a 10-word question (0.60) and refused on the 16-word
+// one a real agent asked on 2026-09-21 (0.38) -- a more specific question scores worse. The obvious
+// repair, an absolute count (`overlap >= 4`), was built and replayed on the labelled set in
+// `scripts/kb/bench/rank-labelled-set.json` (`node scripts/kb/bench-rank.mjs`): it recovers that row
+// and three more, and it RE-ADMITS §14.4's emblem -- "When sorting a product list by price
+// ascending…" is answered by KB-6D5E2CD1 on five generic words, the very inversion this block was
+// derived from (worst good 4, worst bad 5). Rarity-weighting the words was tried too and is
+// inverted the same way (11.5 good against 18.0 bad). No rule on one score separates the set, which
+// is the finding: "I don't know" needs a judgement over the candidates, not a threshold on them.
 export const MIN_COVERAGE = 0.5;
 export const MIN_WORDS = 2;
 
@@ -185,8 +197,47 @@ export const MIN_WORDS = 2;
  * Every line already in the base came from the no-floor ranker. Without a marker, every future
  * before/after comparison silently mixes two systems and §14.1's numbers stop being reproducible.
  * Bump it whenever a change here would move which entries are returned.
+ *
+ * `floor-1b` (STEP 6): the SAME admission as `floor-1` and a different ORDER -- anchors are weighed
+ * by `anchorWeight`. Which entries clear the floor did not move; which three an agent sees did.
+ *
+ * `two-stage-1` (STEP 6, VCST-6087 Phase 2): `ask` no longer ranks with `scoreRows` and no longer has
+ * a floor. It returns `core/candidates.mjs`'s BM25 list, and the agent judges it. `scoreRows` and
+ * `admissible` below are floor-1b unchanged and serve the capture side and the queued-draft note.
  */
-export const RANKER = 'floor-1';
+export const RANKER = 'two-stage-1';
+
+/**
+ * A PAGE anchor -- a one-segment route such as `/cart` or `/sign-in`.
+ *
+ * It is honest about where somebody stood and says almost nothing about WHICH fact they saw there:
+ * the storefront's whole checkout happens on `/cart`, and fourteen entries carry it. A match on it
+ * means "a question about the cart", which cannot choose between fourteen answers. (Namespace roots
+ * such as `/api` never reach here -- `anchorHit` refuses them.)
+ */
+export const isPageAnchor = (key) => isSingleSegmentPath(key);
+
+/**
+ * What one matched anchor adds to a score, for ORDERING: ANCHOR_BONUS shared by every entry that
+ * carries it, and nothing for a page. Admission is untouched -- any anchor still admits.
+ *
+ * WHY DIVIDE BY CARRIERS. The bonus is large because a coordinate cannot appear in a sentence by
+ * accident -- which is true of the QUESTION and says nothing about how many ENTRIES sit there. A
+ * coordinate on one entry still earns the full 10; one on fourteen earns 0.7, about one word, which
+ * is what it is actually evidence of. Measured before it was chosen: under a flat 10, the fourteen
+ * `/cart` entries outranked the answer to "how is a configurable product line priced … on /cart"
+ * (KB-4B47D094, served for that question on 2026-09-22) and pushed it to #14; under this weight it
+ * is #1, on the live base and on the 109-entry snapshot alike. The square-root variant was tried
+ * and loses both /cart page questions on the snapshot (#6, #4).
+ *
+ * WHY A PAGE GETS NOTHING, rather than merely a divided share: a page is broad by nature, not by
+ * accident of the corpus, so it cannot pick between the entries that stand on it even when there
+ * are two of them. At zero, the entries a page admits are ordered by the words they share with the
+ * question, which is the only evidence left that distinguishes them.
+ */
+export function anchorWeight(key, carriers = 1) {
+  return isPageAnchor(key) ? 0 : ANCHOR_BONUS / Math.max(1, carriers);
+}
 
 /**
  * Is this hit good enough to return, or is the honest answer "the base holds nothing on this"?
@@ -202,6 +253,13 @@ export function admissible(hit) {
   return hit.overlap.length >= MIN_WORDS && hit.coverage >= MIN_COVERAGE;
 }
 
+/** How many of `rows` carry each anchor key. */
+function carriersOf(rows) {
+  const count = new Map();
+  for (const row of rows) for (const key of new Set(row.anchorKeys ?? [])) count.set(key, (count.get(key) ?? 0) + 1);
+  return count;
+}
+
 /**
  * Score every row against one question.
  *
@@ -209,13 +267,21 @@ export function admissible(hit) {
  * REJECTED candidate too: `nearMiss` is what tells a later reader whether the floor is set too
  * high, and whether some entry is phrased so unlike the way people ask that it can never be found.
  *
+ * `weighAnchors: false` scores every anchor a flat ANCHOR_BONUS, as floor-1 did. The capture-side
+ * helpers below ask for it: their orderings were measured under the flat bonus (see their notes)
+ * and STEP 6 measured only the answer side, so moving them would be an unmeasured change.
+ *
  * @returns {Array<{row, score, overlap, anchors, coverage, admissible}>} sorted best first
  */
-export function scoreRows(question, rows) {
+export function scoreRows(question, rows, { weighAnchors = true } = {}) {
   const qTokens = tokenize(question);
   const qSet = new Set(qTokens);
   const qLower = String(question ?? '').toLowerCase();
   const namespaces = namespaceRoots(rows);
+  const carriers = weighAnchors ? carriersOf(rows) : null;
+  const bonus = (keys) => (carriers
+    ? keys.reduce((sum, key) => sum + anchorWeight(key, carriers.get(key)), 0)
+    : keys.length * ANCHOR_BONUS);
 
   const scored = rows.map((row) => {
     const haystack = new Set(tokenize(`${row.subject} ${row.question}`));
@@ -225,9 +291,12 @@ export function scoreRows(question, rows) {
     // the entry would reward a short subject for being short, which is a property of the writing
     // and not of the match.
     const coverage = qSet.size ? overlap.length / qSet.size : 0;
-    const hit = { row, score: overlap.length + anchors.length * ANCHOR_BONUS, overlap, anchors, coverage };
+    const hit = { row, score: overlap.length + bonus(anchors), overlap, anchors, coverage };
     return { ...hit, admissible: admissible(hit) };
-  }).filter((hit) => hit.score > 0);
+  // Kept on whether ANYTHING matched, not on `score > 0`: a page anchor weighs 0, and an entry found
+  // only by one would otherwise vanish here while `admissible` still admits it -- floor-1b changes
+  // the order, never who is in the list.
+  }).filter((hit) => hit.overlap.length > 0 || hit.anchors.length > 0);
 
   // Ties break on trust, then on id -- so the same question against the same base always returns
   // the same order. A ranker whose output wobbles run to run cannot be measured against the log.
@@ -338,7 +407,7 @@ export const RELATED_TOP = 3;
  */
 export function relatedTo(text, rows, { exclude = [], top = RELATED_TOP } = {}) {
   const skip = new Set(exclude);
-  const scored = scoreRows(text, rows).filter((h) => !skip.has(h.row.id) && relatedEnough(h));
+  const scored = scoreRows(text, rows, { weighAnchors: false }).filter((h) => !skip.has(h.row.id) && relatedEnough(h));
   return { hits: scored.slice(0, top), more: Math.max(0, scored.length - top) };
 }
 
@@ -372,7 +441,7 @@ export const NEIGHBOUR_TOP = 3;
  * @returns {{hits: Array, more: number}}
  */
 export function rankNeighbours(rows, text, { top = NEIGHBOUR_TOP } = {}) {
-  const score = new Map(scoreRows(text, rows).map((h) => [h.row.id, h.score]));
+  const score = new Map(scoreRows(text, rows, { weighAnchors: false }).map((h) => [h.row.id, h.score]));
   const ordered = [...rows].sort((a, b) => (score.get(b.id) ?? 0) - (score.get(a.id) ?? 0)
     || a.id.localeCompare(b.id));
   return { hits: ordered.slice(0, top), more: Math.max(0, ordered.length - top) };

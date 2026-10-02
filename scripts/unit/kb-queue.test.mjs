@@ -220,7 +220,7 @@ test('an ANSWERED ask never carries a draft \u2014 the queue is read on the miss
   await withQueue(async (dir, env) => {
     await capture(CAPTURE, opened(), { env, via: 'cli' });
     const r = await ask('what does the Active column on /company/members reflect', opened(), { env, via: 'cli' });
-    assert.equal(r.state, 'answer');
+    assert.equal(r.state, 'candidates');
     assert.equal(r.queued, undefined);
     const line = (await readQueue({ env })).lines.at(-1);
     assert.ok(!('queued' in line));
@@ -240,22 +240,23 @@ test('a queued capture that does NOT clear the floor is not offered either', asy
 
 // ─── one line per operation, outcome included ─────────────────────────────────────────────────
 
-test('an ANSWER, a MISS and an UNREACHABLE each write exactly one line, and say which', () => withQueue(async (dir, env) => {
+test('CANDIDATES, a MISS and an UNREACHABLE each write exactly one line, and say which', () => withQueue(async (dir, env) => {
   await ask('what does the Active column on /company/members reflect', opened(), { env });
   await ask('how do I configure a Kubernetes ingress controller', opened(), { env });
   await ask('anything at all', { reader: null, why: 'no reader' }, { env });
 
   const { lines } = await readQueue({ env });
   assert.equal(lines.length, 3);
-  assert.deepEqual(lines.map((l) => l.state), ['answer', 'miss', 'no-base']);
+  assert.deepEqual(lines.map((l) => l.state), ['candidates', 'miss', 'no-base']);
   assert.deepEqual(lines.map((l) => l.kind), ['ask', 'ask', 'ask']);
   // The miss line must carry the question VERBATIM -- a hashed or redacted question makes the miss
   // panel worthless, and the miss panel is the point of the whole exercise.
   assert.equal(lines[1].q, 'how do I configure a Kubernetes ingress controller');
   assert.deepEqual(lines[1].matched, []);
-  // The answer line records which matched AND which were opened -- two different facts.
-  assert.deepEqual(lines[0].matched, ['KB-27B4CD10']);
-  assert.deepEqual(lines[0].opened, ['KB-27B4CD10']);
+  // The line records which were candidates AND which were opened -- two different facts.
+  assert.equal(lines[0].matched[0], 'KB-27B4CD10');
+  assert.ok(lines[0].opened.includes('KB-27B4CD10'));
+  assert.ok(lines[0].opened.every((id) => lines[0].matched.includes(id)), 'only a candidate can be opened');
 }));
 
 test('a REFUSED capture is logged — it is a ranking miss that did not become a duplicate', () => withQueue(async (dir, env) => {
