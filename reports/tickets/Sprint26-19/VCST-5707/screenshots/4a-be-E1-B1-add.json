@@ -1,0 +1,237 @@
+{
+ "item": "E1-B1-add",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:31:29.692Z",
+ "list": "AGENT-TEST-5707-b1",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 677,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-b1"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Private",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "0303d3a5-1162-472c-8d7a-28570275e567",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 676,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ],
+      "message": "AGENT-TEST 5707 be m1"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 717,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 234,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 216,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 516,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

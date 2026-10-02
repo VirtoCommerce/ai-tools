@@ -1,0 +1,45 @@
+{
+  "ticket": "VCST-6012",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-01",
+  "environment": "https://vcptcore-qa.govirto.com/",
+  "build": {
+    "platform": "3.1072.0",
+    "theme": null,
+    "relevant_modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1030.0-pr-165-1ab4"
+    },
+    "pr_build": "vc-module-pagebuilder PR #165 head 1ab4e68 (open)"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3 for findings 1, 2, 3, 4, 5a (Refresh), 5b, 5c",
+  "baseline_reproduction": "from-qa-bug (VCST-4933 run on 3.1025.0-pr-159; screenshots extracted from commit ffb6846f into screenshots/baseline/)",
+  "checklist_total": 10,
+  "checklist_passed": 9,
+  "checklist_failed": 0,
+  "checklist_partial": 1,
+  "regression_issues": [],
+  "side_effects": [
+    "375px: the AI Assistant FAB (vc-shell ai-agent plugin, added to the stand after the bug was filed) overlaps Rename in Shared Component details; not filed, operator is showing it to the developer first"
+  ],
+  "new_findings_not_filed": [
+    "375px AI Assistant FAB overlaps Rename (BL-UI-004)",
+    "Low: CDK live-announcer text visible after keyboard reorder, page overflows 1080px (NEW-01)"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [
+    "BL-UI-007",
+    "BL-UI-003",
+    "BL-UI-004 (Refresh)"
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "tracker": {
+    "comment_id": "111000"
+  },
+  "evidence": "reports/tickets/Sprint26-19/VCST-6012/verification-report.md",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6012/"
+}

@@ -4092,6 +4092,13 @@
     "id": "",
     "platform_id": ""
   },
+  "SR_UNSERVED_ORG": {
+    "_inline": true,
+    "_notes": "An organization that PROVABLY EXISTS but is NOT served by SR_REP_PRIMARY — the target for the 'rep adds an unserved org to a Customer-scope share' negative (VCST-5707 / vc-module-sales-rep PR #21: adds must be served by the rep, else 'Access denied.' and nothing written). Deliberately the first SR_REP_PAGING org (AGENT-TEST-SR-Paging-01, created by scripts/seed-data/sales-rep/seed-sales-rep.mjs from the PAGING:12 cell in sales-rep/sales-reps.csv) rather than ORG-005 (b2b/organizations.csv, seeded=false): an unserved id and a NONEXISTENT id both return salesRepCustomer=null / organization 'Access denied.' to the rep, so an org whose existence nobody proved makes the negative undecidable — a 'denied' could be not-found. Existence is proven without admin rights: SR_REP_PAGING's own salesRepCustomers lists it. The negative writes nothing when correct, so it does not disturb SR_REP_PAGING's 15-org paging count. Business key = the name below; the runtime GUID lives ONLY in aliases.<env>.json — never in this committed file.",
+    "name": "AGENT-TEST-SR-Paging-01",
+    "id": "",
+    "platform_id": ""
+  },
   "SR_ADMIN_CUSTOMER_ONLY": {
     "file": "sales-rep/admin-users",
     "filter": {

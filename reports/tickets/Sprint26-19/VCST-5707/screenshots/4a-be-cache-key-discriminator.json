@@ -1,0 +1,1657 @@
+{
+ "item": "cache-key-discriminator",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:36:42.133Z",
+ "aggregate": {
+  "b1@de-DE": {
+   "scope=Customer targets=1 qty=": 6
+  },
+  "b2@de-DE": {
+   "scope=AnyoneAnonymous targets=0 qty=": 6
+  },
+  "b3@de-DE": {
+   "scope=Customer targets=1 qty=6": 6
+  },
+  "b1@fr-FR": {
+   "scope=Customer targets=1 qty=": 6
+  },
+  "b2@fr-FR": {
+   "scope=AnyoneAnonymous targets=0 qty=": 6
+  },
+  "b3@fr-FR": {
+   "scope=Customer targets=1 qty=6": 6
+  },
+  "b1@es-ES": {
+   "scope=Customer targets=1 qty=": 6
+  },
+  "b2@es-ES": {
+   "scope=AnyoneAnonymous targets=0 qty=": 6
+  },
+  "b3@es-ES": {
+   "scope=Customer targets=1 qty=6": 6
+  }
+ },
+ "note": "reads with cultureName + different field selection = cache keys never used before (CartAggregateRepository cache key includes language/productsIncludeFields); if fresh entries still show the refused state, it is persisted",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 604,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 538,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 192,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 187,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 203,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 259,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 185,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "de-DE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 174,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 175,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 191,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 223,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "fr-FR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 188,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 184,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 191,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 175,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [],
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 185,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 185,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ items { quantity product { id } } sharingSetting { scope targets { id } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183",
+     "c": "es-ES"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "items": [
+       {
+        "quantity": 6,
+        "product": {
+         "id": "4423a6c7-85fa-4230-aa37-15a930cce963"
+        }
+       }
+      ],
+      "sharingSetting": {
+       "scope": "Customer",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ]
+}

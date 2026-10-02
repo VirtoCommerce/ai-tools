@@ -1,0 +1,302 @@
+{
+ "item": "E10-reader-writes",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:34:52.107Z",
+ "list": "AGENT-TEST-5707-b3",
+ "calls": [
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistItemType!){ removeWishlistItem(command:$c){ id items { id } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "lineItemId": "3e60958f-b88d-46f4-8e85-a19cda3a8cab"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 44
+       }
+      ],
+      "path": [
+       "removeWishlistItem"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "removeWishlistItem": null
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 864,
+   "request": {
+    "query": "mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id items { id } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+      "quantity": 1
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 41
+       }
+      ],
+      "path": [
+       "addWishlistItem"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "addWishlistItem": null
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 211,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "listName": "AGENT-TEST-5707-b3-hijack"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "scope": "Customer",
+      "removeSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ],
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 174,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "removeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "removeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 188,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 3
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 193,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 3
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

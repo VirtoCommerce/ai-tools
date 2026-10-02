@@ -291,3 +291,28 @@ Neither blocks the VCST-4933 work; both make `npm test` red for everyone, which 
   spotted it independently. There is no check that every finding in a lane's return is accounted for in
   `summary.json` by the close-out. A `5d` gate comparing lane-returned findings against
   `bugs_filed ∪ bugs_not_filed` would have caught it.
+
+## 2026-09-24 — found during the VCST-5731 `/qa-test` run
+
+- **`seed-sales-rep-docs.mjs` has no stale-lockout self-heal, so a locked docs rep survives every re-seed.**
+  `seed-sales-rep.mjs` carries a `clearRepStaleLockout` path; the docs seeder does not. It resets the
+  password (`scripts/seed-data/sales-rep/seed-sales-rep-docs.mjs:149`) but never touches `lockoutEnd`, so a
+  rep that has collected failed logins stays unauthenticable across any number of re-seeds **while the
+  seeder reports a clean run**. Hit for real this run: repeated `/connect/token` probes locked
+  `agent-test-sr-docs@example.com`, and `accessFailedCount` had already reset to 0, so a count-only check
+  saw nothing wrong. Cleared by hand with `setLockoutVerified(id, …, false)` + a password reconcile. Same
+  silent-failure shape as REG-2026-08-24-1806. Fix: lift `clearRepStaleLockout` into the shared helper both
+  seeders call.
+- **`/connect/token` without `storeId` returns a misleading failure that reads as a bad password.** The bare
+  password grant answers `400 user_cannot_login_in_store` ("Access denied. You cannot sign in to the current
+  store"); adding `storeId=B2B-store` to the identical request with the identical password returns 200. Two
+  separate agents on this run independently concluded "the stored secret is wrong" from the bare grant, and
+  one of them locked an account proving it. Nothing in the repo's storefront-auth guidance states that the
+  parameter is mandatory for a store-bound contact. Worth a line in
+  `.claude/knowledge/execution/test-data-authoring.md` and, better, a shared `mintStorefrontToken()` helper
+  that supplies `storeId` so no caller can omit it.
+- **`test-data/aliases.vcst.json` declared 45 `SR_*` aliases against an environment where the fixture set had
+  never been seeded.** Every one resolved to nothing. The aliases file is written by the seeders but is not
+  evidence that a seed ever ran *on this env* — and `td:validate:sales-rep` passes on the declaration alone,
+  so nothing catches the gap until a run tries to log in. A liveness probe (`td:reconcile`-style) for the
+  identity fixtures specifically would have turned a failed reachability lane into a pre-flight message.
