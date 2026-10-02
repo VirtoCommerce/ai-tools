@@ -1803,9 +1803,20 @@ test("PS_CRED_READ_MANY duplicates the job into the launcher before assigning th
     // Assigned first, a failed duplicate leaves PowerShell the job's only holder, and its exit closes the
     // job and kills the launcher under KILL_ON_JOB_CLOSE. The duplicate must also not be inheritable: a
     // child holding the job open would outlive the launcher with it.
+    //
+    // The order check reads the first occurrence of each call, so each must occur exactly once: a second
+    // copy, a comment included, would let it compare the wrong one. Counting rather than stripping comments,
+    // because the script is C# inside PowerShell inside a JS string and no comment stripper covers all three.
     const script = m.PS_CRED_READ_MANY;
-    const duplicate = script.indexOf("DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)");
-    const assign = script.indexOf("AssignProcessToJobObject(job, launcher)");
+    const duplicateCall = "DuplicateHandle(GetCurrentProcess(), job, launcher, out held, 0, false, DUPLICATE_SAME_ACCESS)";
+    const assignCall = "AssignProcessToJobObject(job, launcher)";
+    for (const call of [duplicateCall, assignCall]) {
+        assert.equal(script.split(call).length - 1, 1,
+            `${call} occurs exactly once, so a second copy -- a comment included -- cannot make the order check read the wrong one`);
+    }
+
+    const duplicate = script.indexOf(duplicateCall);
+    const assign = script.indexOf(assignCall);
     assert.ok(duplicate >= 0, "the job handle is duplicated into the launcher, non-inheritable");
     assert.ok(assign >= 0, "the launcher is assigned to the job");
     assert.ok(duplicate < assign, "duplicate first, then assign");
@@ -1829,7 +1840,7 @@ const TIMED_OUT = Symbol("timed out");
 
 // One file plays all three roles. Each member connects to the pipe the test owns and says who it is; that
 // connection is its liveness, because a pid can be reused and a connection cannot outlive its process.
-// The grandchild goes through cmd.exe /d /s /c with a verbatim line, as `npx.cmd` does for a real server.
+// The grandchild goes through cmd.exe /d /v:off /s /c with a verbatim line, as `npx.cmd` does for a real server.
 // A fixture ends itself after 180 s, and when the test closes its end of the pipe.
 const JOB_TREE_FIXTURE = String.raw`"use strict";
 const net = require("node:net");
@@ -1854,7 +1865,7 @@ if (role === "parent") {
 } else if (role === "child") {
     join("child");
     const line = '"' + process.execPath + '" "' + __filename + '" grandchild "' + pipe + '"';
-    spawn(process.env.ComSpec || "cmd.exe", ['/d /s /c "' + line + '"'],
+    spawn(process.env.ComSpec || "cmd.exe", ['/d /v:off /s /c "' + line + '"'],
         { stdio: "ignore", windowsHide: true, windowsVerbatimArguments: true });
 } else {
     join("grandchild");
@@ -2589,7 +2600,7 @@ test("resolveSpawnCommand: win32 a pathful .cmd or .bat, in any case, is run thr
         assert.deepEqual(r, { kind: "cmd-shim", cmd: pathful, shell: "C:\\Windows\\System32\\cmd.exe" }, pathful);
         const invocation = m.buildSpawnInvocation(r, ["-y"]);
         assert.equal(invocation.cmd, r.shell);
-        assert.equal(invocation.args[0], `/d /s /c ""${pathful}" "-y""`, "the same verbatim line the bare-name shim gets");
+        assert.equal(invocation.args[0], `/d /v:off /s /c ""${pathful}" "-y""`, "the same verbatim line the bare-name shim gets");
     }
     // cmd.exe is looked up as it is for a bare name, so its absence is the same refusal.
     assert.throws(() => m.resolveSpawnCommand("C:\\x\\y.cmd", { platform: "win32", env: WIN_ENV, existsSync: () => false }),
@@ -2776,7 +2787,7 @@ test("buildSpawnInvocation: verbatim cmd line quotes every token", () => {
     const shell = "C:\\Windows\\System32\\cmd.exe";
     const inv = m.buildSpawnInvocation({ kind: "cmd-shim", cmd: "C:\\Program Files\\nodejs\\npx.cmd", shell }, ["-y", "@azure-devops/mcp@2.8.1"]);
     assert.equal(inv.cmd, shell);
-    assert.deepEqual(inv.args, ['/d /s /c ""C:\\Program Files\\nodejs\\npx.cmd" "-y" "@azure-devops/mcp@2.8.1""']);
+    assert.deepEqual(inv.args, ['/d /v:off /s /c ""C:\\Program Files\\nodejs\\npx.cmd" "-y" "@azure-devops/mcp@2.8.1""']);
     assert.equal(inv.opts.windowsVerbatimArguments, true);
 
     const direct = m.buildSpawnInvocation({ kind: "direct", cmd: "npx" }, ["-y"]);
@@ -2800,7 +2811,7 @@ test("buildSpawnInvocation: a cmd-shim argument ending in a backslash is refused
     }
     // Interior backslashes, and a backslash that is not last, pass through untouched.
     assert.equal(line(["a\\b", "C:\\x", "C:\\dir\\file"]),
-        '/d /s /c ""C:\\nodejs\\npx.cmd" "a\\b" "C:\\x" "C:\\dir\\file""');
+        '/d /v:off /s /c ""C:\\nodejs\\npx.cmd" "a\\b" "C:\\x" "C:\\dir\\file""');
     // A direct spawn hands the argument to the program as it is, so there is nothing to refuse.
     assert.deepEqual(m.buildSpawnInvocation({ kind: "direct", cmd: "npx" }, ["C:\\dir\\"]), { cmd: "npx", args: ["C:\\dir\\"], opts: {} });
 });
@@ -2816,6 +2827,17 @@ test("buildSpawnInvocation: a cmd-shim argument cmd.exe would interpret is refus
     }
     // Legitimate on every direct path: a URL-encoded argument.
     assert.deepEqual(m.buildSpawnInvocation({ kind: "direct", cmd: "npx" }, ["a%20b", "x\ny"]), { cmd: "npx", args: ["a%20b", "x\ny"], opts: {} });
+});
+
+test("buildSpawnInvocation: a .cmd shim runs with delayed expansion off, so !NAME! in an argument stays literal", () => {
+    // A machine with HKCU\Software\Microsoft\Command Processor\DelayedExpansion=1 expands !NAME! even inside
+    // quotes, from the child's environment where the resolved secrets live. The argument is legitimate on
+    // every direct path, so it is passed on unchanged and /v:off on the command line is what keeps it inert.
+    const shim = { kind: "cmd-shim", cmd: "C:\\nodejs\\npx.cmd", shell: "C:\\Windows\\System32\\cmd.exe" };
+    const inv = m.buildSpawnInvocation(shim, ["ok", "!GITHUB_TOKEN!"]);
+
+    assert.ok(inv.args[0].startsWith("/d /v:off /s /c "), "delayed expansion is switched off on the command line");
+    assert.ok(inv.args[0].includes(' "!GITHUB_TOKEN!"'), "the argument is passed through verbatim, quoted");
 });
 
 test("buildSpawnInvocation: a pathful .cmd command holding % is refused without echoing it; a direct spawn takes the same path", () => {
@@ -4228,12 +4250,14 @@ function launch(kind, name, cfg, deps = {}) {
     return m.cmdLaunch(kind, name, cfg, { bindPlatform: "linux", ...deps });
 }
 
-test("every in-process cmdLaunch call in the test files states its bind platform", () => {
+test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers around it) in the test files states its bind platform", () => {
     // Left unset, cmdLaunch binds the launching process to a kill-on-close job on win32 through a real
     // PowerShell -- and here that process is the test runner. Nothing fails on a Linux run, so the
-    // omission only shows on the Windows leg, as a runner that dies with the job. The check is textual:
-    // the call, or the helper that wraps it, must name bindPlatform within its first lines.
-    const callSite = new RegExp("m\\.cmdLaunch\\(", "g");
+    // omission only shows on the Windows leg, as a runner that dies with the job. cmdRun and cmdTask
+    // forward their deps to cmdLaunch and default to none, so they bind the runner exactly as it does.
+    // The check is textual: the call, or the helper that wraps it, must name bindPlatform within its
+    // first lines.
+    const callSite = new RegExp("m\\.(?:cmdLaunch|cmdTask|cmdRun)\\(", "g");
     for (const file of ["./vc-secrets.test.mjs", "./vc-secrets-oauth.test.mjs"]) {
         const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
         for (const hit of source.matchAll(callSite)) {
@@ -6065,7 +6089,7 @@ test("a pinned argv reaches the child exactly as declared, even through the win3
     // A version pin is only worth writing down if it survives to argv — verify each declared token
     // appears intact and in order inside the verbatim cmd.exe line.
     assert.equal(invocation.cmd, "C:\\bin\\cmd.exe");
-    assert.deepEqual(invocation.args, [`/d /s /c ""${resolved.cmd}" ${args.map((a) => `"${a}"`).join(" ")}"`]);
+    assert.deepEqual(invocation.args, [`/d /v:off /s /c ""${resolved.cmd}" ${args.map((a) => `"${a}"`).join(" ")}"`]);
     assert.equal(invocation.opts.windowsVerbatimArguments, true);
 });
 
@@ -9137,7 +9161,7 @@ test("cmdLaunch: the trust file is read only for a gated launch, and an unreadab
 
 test("cmdTask: an untrusted repository task is refused like a server, through the same gate", async () => {
     const cfg = trustCfg({ servers: {}, tasks: { job: TRUST_BASE } });
-    await withProcessEnv(trustEnv(), () => assert.rejects(() => m.cmdTask("job", cfg),
+    await withProcessEnv(trustEnv(), () => assert.rejects(() => m.cmdTask("job", cfg, { bindPlatform: "linux" }),
         /task "job" is declared by .* and is not trusted -- review it, then run "vc-secrets trust" in /));
 });
 

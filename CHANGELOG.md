@@ -8,6 +8,33 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
+
+**Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of
+holding a credential (`node ${VC_SECRETS} run <server>`), and a declared non-MCP command runs the same way
+through `task <name>`. At launch it resolves the
+secrets the declaration names from the OS credential store (Windows Credential Manager, macOS Keychain, gpg on
+Linux) or Azure Key Vault, injects them into the process tree rooted at the declared process, and stays as its
+parent to forward stdio and end the tree on exit. An `oauth` block covers servers that need a delegated token
+(`vc-secrets login`). A repository's declarations launch only after `vc-secrets trust` records them for that
+checkout, and a changed declaration is refused until it is trusted again. Skills: `install` (a version-stable
+shim), `doctor`, `migrate`. What this protects and what it does not: `plugins/vc-secrets/README.md`, "Scope of
+the protection".
+
+**Changed: the licence is stated once, and it is the platform's.** The repository had no `LICENSE` file,
+`"ISC"` in `package.json` (an `npm init` default) and `"TBD-internal"` in every plugin manifest. The platform's
+licence is now committed at the root, and `package.json`, `plugins/vc-fix/package.json` and every
+`plugin.json` say `SEE LICENSE IN LICENSE`. An install copies only `plugins/<name>/`, so `vc-fix`, `vc-perf`
+and `vc-secrets` each ship a copy of the file. The `vc-fix` and `vc-perf` versions are unchanged; an existing
+install receives the new metadata with their next release.
+
+**Verified:** `node --test plugins/vc-secrets/vc-secrets.test.mjs plugins/vc-secrets/vc-secrets-oauth.test.mjs`
+933 tests, 0 failing on Linux, and 0 failing (the skips are platform-gated) on Windows 11 / Node 24 /
+PowerShell 5.1, including the real job-object test that ends a server's whole process tree;
+`npm run context:check` green.
+
+---
+
 ## Tracker comment rounds: a retest of a new build is a new comment — `vc-fix` `0.9.5` — 2026-10-01
 
 Fixes #360. On VCST-5883 a round-2 retest of new builds was amended into round 1's comment, and an edit

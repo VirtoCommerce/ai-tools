@@ -489,7 +489,7 @@ function validateLaunchables(label, map) {
         if (!srv.args.every((a) => typeof a === "string")) {
             throw new VcSecretsError(`${label} "${name}": every args element must be a string`);
         }
-        // On Windows a .cmd/.bat shim is run through `cmd.exe /d /s /c "…"` with verbatim arguments, and
+        // On Windows a .cmd/.bat shim is run through `cmd.exe /d /v:off /s /c "…"` with verbatim arguments, and
         // that line is built by wrapping each element in quotes. An embedded quote would close it and let
         // the rest be read as cmd syntax. Nothing legitimate needs one here, so it is refused at the
         // declaration rather than escaped at the seam.
@@ -2508,7 +2508,7 @@ function buildSpawnInvocation(resolved, args) {
     if (resolved.kind !== "cmd-shim") {
         return { cmd: resolved.cmd, args, opts: {} };
     }
-    // cmd.exe /d /s /c ""<exe>" "<arg>"…" — verbatim line sidesteps cmd's outer-quote stripping
+    // cmd.exe /d /v:off /s /c ""<exe>" "<arg>"…" — verbatim line sidesteps cmd's outer-quote stripping
     //
     // Two things quoting alone does not settle, and both apply only on this branch -- a direct spawn
     // hands each argument to the program untouched:
@@ -2544,7 +2544,13 @@ function buildSpawnInvocation(resolved, args) {
     });
     const line = [`"${resolved.cmd}"`, ...quoted].join(" ");
 
-    return { cmd: resolved.shell, args: [`/d /s /c "${line}"`], opts: { windowsVerbatimArguments: true } };
+    // `/v:off` because delayed expansion can be switched on for every cmd.exe by the registry default
+    // (HKCU\Software\Microsoft\Command Processor\DelayedExpansion), and `!NAME!` is then expanded from the
+    // CHILD's environment -- where the resolved secrets live -- even inside quotes. The switch on the
+    // command line overrides that default. Refusing `!` instead would reject arguments that are legitimate
+    // on every direct path. A shim that runs `setlocal EnableDelayedExpansion` itself is outside what this
+    // switch can cover.
+    return { cmd: resolved.shell, args: [`/d /v:off /s /c "${line}"`], opts: { windowsVerbatimArguments: true } };
 }
 
 // Pure mapping so the advice contract can be unit-tested without spawning real
@@ -5973,15 +5979,15 @@ async function cmdLaunch(kind, name, cfg, deps = {}) {
     };
 }
 
-function cmdRun(serverName, cfg) {
-    return cmdLaunch("servers", serverName, cfg);
+function cmdRun(serverName, cfg, deps = {}) {
+    return cmdLaunch("servers", serverName, cfg, deps);
 }
 
 // The declared-task counterpart of `run`. There is deliberately no verb that takes a command from the
 // caller: a task's argv lives in the declaration, so it is reviewed in a PR like a server's, and the
 // tool still has no way to print a secret or route one into something chosen at the call site.
-function cmdTask(taskName, cfg) {
-    return cmdLaunch("tasks", taskName, cfg);
+function cmdTask(taskName, cfg, deps = {}) {
+    return cmdLaunch("tasks", taskName, cfg, deps);
 }
 
 // The controlling terminal, opened for reading and for writing. Not stdin/stderr: those can be a pipe
