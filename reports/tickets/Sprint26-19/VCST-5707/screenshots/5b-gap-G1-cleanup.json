@@ -1,0 +1,66 @@
+{
+ "item": "G1-cleanup",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "runid": "rmunz9s7y",
+ "capturedAt": "2026-09-30T10:51:13.872Z",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 229,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "85aa5b8e-c01d-4b25-a25f-fdf13a476986"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlist": true
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 528,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "d6d73607-e389-44f1-b5e3-fcc999258148"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlist": true
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "85aa5b8e-c01d-4b25-a25f-fdf13a476986"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": null
+    }
+   }
+  }
+ ]
+}

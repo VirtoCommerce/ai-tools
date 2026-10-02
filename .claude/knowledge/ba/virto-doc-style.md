@@ -528,9 +528,11 @@ moving.
 **The comment carries the guides IN FULL** — `tracker-ops.md` **§5d**: publishing a deliverable to a
 ticket means the deliverable, and a summary plus a repo path is not a delivery. So the size guidance is
 a target for how long a *well-written guide* is (**8–25 lines per audience section, ~120 for the
-comment**), never a licence to truncate one. When the guides genuinely do not fit, **§5d's own escape
-hatch applies: split across comments, one per audience** — never shrink a guide to an abstract, and
-never replace the missing half with a path.
+comment**), never a licence to truncate one. **A long body is still ONE comment** (§5d, and the
+GOLDEN RULE it serves) — never split it across comments, never shrink a guide to an abstract, and never
+replace the missing half with a path. Only when it genuinely will not fit Jira's comment limit does §5d's
+own escape hatch apply: attach the guide as a file to the same ticket and reference that attachment from
+the one comment.
 
 **Do not cite a `reports/ba/` path as though it were a link** (§5d again): a working-tree path resolves
 only for someone with that checkout at that commit, and for an uncommitted file, for nobody. The guide

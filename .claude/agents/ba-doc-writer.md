@@ -85,7 +85,7 @@ follows its audience skeleton in `.claude/knowledge/ba/virto-doc-style.md` verba
 and the matching exemplar in §8 before drafting. The sections below list *what content to cover per
 audience*; the style guide dictates *how it must read*.
 
-**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 
 ### 1. User Flow Improvement Specifications
 For each pain point identified, write a proper **UX Improvement Spec**:
@@ -406,9 +406,8 @@ the verdict** (not versions, which this mode does not print), and `testing-check
 >    confirmation, taken once by the caller.
 > 8. **Compose the guides IN FULL, and never substitute a path for content.**
 >    `.claude/knowledge/execution/tracker-ops.md` **§5d**: a summary plus a repo path is not a delivery, and a
->    working-tree path resolves for nobody but someone holding that checkout. If the body genuinely will
->    not fit, return it split **one comment per audience** (§5d's own escape hatch) rather than shrinking
->    a guide to an abstract. Follow **§5a** for the body dialect and **§5c** for the screenshot carve-out
+>    working-tree path resolves for nobody but someone holding that checkout. A long body is still **ONE
+>    comment** — never split, never shrink a guide to an abstract. Follow **§5a** for the body dialect and **§5c** for the screenshot carve-out
 >    (attach, then wiki-markup reference, whole Jira body then wiki) — those mechanics are owned there, so
 >    read them rather than re-deriving them.
 

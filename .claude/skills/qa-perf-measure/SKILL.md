@@ -78,7 +78,7 @@ expensive mistake available here.
    page, never `/health`, which lies during a restart. The pin of record is
    `vc-deploy-dev@<env-branch>` → `backend/packages.json`.
 3. **Ask the base per coordinate** — for each GraphQL op / endpoint you will measure:
-   `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), e.g. a known N+1 or a no-op
+   `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`), e.g. a known N+1 or a no-op
    precondition. Record hit ids; a miss is not a blocker. Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
 4. **Temporal A/B on one env: read the deploy boundary in UTC and guard-band it.** Misreading a
    `merged_at` `Z` timestamp as a local offset shifted one cut by three hours and counted pre-change

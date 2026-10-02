@@ -205,22 +205,26 @@ WISH-008,wishlists Query — List with Pagination,GraphQL > Wishlist > Queries,H
 [COUNT label=list_wl] data.wishlists.totalCount >= 0
 [DATA label=list_wl] data.wishlists.items is non-null",[ROUNDTRIP label=list_wl] query is deterministic — re-execution returns same totalCount (runner-manual),errors[] non-empty; totalCount negative or missing; items array null,none — read-only,VCST-3228; VCST-21; xAPI; graphql-schema.md — Query.wishlists,Automated
 WISH-009,sharedWishlist Query — Public Access via Platform-Generated Key,GraphQL > Wishlist > Queries,High,BL-GQL-001; BL-GQL-004,ECL-10.2,Not runner-automatable — requires navigating storefront UI ({{FRONT_URL}}/account/lists) to obtain platform-generated <SHARING_KEY> UUID. sharingKey is NOT user-settable via API (custom strings silently ignored — only scope=AnyoneAnonymous triggers platform generation). Kept as Manual until runner gains UI-step primitive.,—,"[NAV] {{FRONT_URL}}/account/lists
-[ACT] click 'Create New List'
-[WAIT] create-list form visible
+[ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+[WAIT] create-list form visible (name and description only — the create dialog has no visibility control; a new list starts Private)
 [ACT] enter a list name
-[ACT] set visibility to 'Shared' / 'Public' (the storefront option that triggers platform scope=AnyoneAnonymous)
-[ACT] click 'Create'
+[ACT] click 'Create list'
 [WAIT] list created and appears in My Lists
-[ACT] open the new list's Share option
-[WAIT] share dialog visible with a public link
+[ACT] open the new list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+[WAIT] the card menu lists Rename / Share / Remove list
+[ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+[WAIT] the Share dialog is visible
+[ACT] select the 'Anyone with link' tab (`[data-test-id=""wishlist-sharing-scope-AnyoneAnonymous""]`)
+[ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+[WAIT] the Share dialog shows a 'Link' field with the public link
 [ASSERT] public link contains a platform-generated UUID segment
-[ACT] copy the UUID segment from the 'Public Link' shown in the share dialog
+[ACT] copy the UUID segment from the 'Link' field shown in the share dialog
 [NAV] {{BACK_URL}}/ui/graphiql
 [GQL] execute query { sharedWishlist(sharingKey: ""<copied UUID>"") { id name items { productId } } } — no Authorization header set
 [READ] response payload","[DOM] share dialog exposes a public link containing a UUID segment {DOC}
 [DATA] sharedWishlist(sharingKey: <copied UUID>) resolves to the created list's id/name/items with no Authorization header required {DOC}
 [ERRORS] errors[] is empty on the anonymous sharedWishlist query {BL}","[API] sharedWishlist query response errors[] is empty
-[CONSOLE] no uncaught JS errors during storefront share flow",sharedWishlist returns null for the platform-generated key; errors[] non-empty on the anonymous query; scope resolves to Organization instead of AnyoneAnonymous; authentication required on a query that should be public,Delete the created wishlist via storefront UI (or removeWishlist mutation once authenticated); discard the copied sharing key — none persisted beyond the session,VCST-3772; VCST-21; xAPI; graphql-schema.md — Query.sharedWishlist; Synced: lifecycle lists/SFL (2026-08-05),Manual
+[CONSOLE] no uncaught JS errors during storefront share flow",sharedWishlist returns null for the platform-generated key; errors[] non-empty on the anonymous query; scope resolves to Organization instead of AnyoneAnonymous; authentication required on a query that should be public,Delete the created wishlist via storefront UI (or removeWishlist mutation once authenticated); discard the copied sharing key — none persisted beyond the session,VCST-3772; VCST-21; xAPI; graphql-schema.md — Query.sharedWishlist; Synced: lifecycle lists/SFL (2026-08-05) Corrected: VCST-5707 (2026-09-29) — Steps only: the create-dialog visibility control was removed (PR vc-frontend #2476); Anyone-with-link is now the Share dialog tab. Stays Manual. Assertions untouched.,Manual
 WISH-010,addWishlistItem — Single Item,GraphQL > Wishlist > Items,Critical,BL-GQL-001; BL-GQL-004,ECL-10.2; ECL-2.1,"Runner-native. Captures a real product GUID from products query (B2B virtual catalog fc596540...), creates wishlist, adds one item, verifies itemsCount increments and product matches.",—,"[AUTH role=ORG_USER]
 [GQL-OP setup_me]
   query { me { id } }
@@ -1023,3 +1027,331 @@ WISH-035,changeWishlist scope=Customer — Org Maintainer (Non-Rep) Denied the R
 [DATA label=readback] data.wishlist.scope = Private {OBSERVED}
 [DATA label=readback] data.wishlist.sharingSetting.sharedWithId is null {OBSERVED}","[API] errors[] is empty in the GraphQL response
 [NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, errors[] non-empty in GraphQL response, 4xx/5xx on /graphql",inline — removeWishlist under ACME_ADMIN's own auth,VCST-5332 · Archetype:SCOPE · Technique:EP,Draft
+WISH-036,changeWishlist Customer scope — add/remove deltas keep a target set,GraphQL > Wishlist > Sharing (VCST-5707),Critical,BL-SR-002,,"Runner-native. Rep = SALES_REP (SR_REP_PRIMARY) serving orgA (AcmeCorp) and orgB (TechFlow). readerA = ACME_BUYER (AcmeCorp member), readerB = SR_REP_EXCLUSIVE_TECHFLOW (TechFlow member). The delta contract of VCST-5707: addSharedWithIds / removeSharedWithIds edit ONE target set under one key; the ticket bug was a second share REPLACING the first so the first customer got 403. changeWishlist and sharedWishlist are on the default /graphql schema.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id), readerA=@td(ACME_BUYER.email), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-DELTA"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}""] message: ""AGENT-TEST-5707 delta"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC add_a]
+[GQL-CAPTURE add_a.data.changeWishlist.sharingSetting.id → KEY]
+[GQL-OP add_b]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgB}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC add_b]
+[AUTH role=ACME_BUYER]
+[GQL-OP a_reads_after_b]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC a_reads_after_b]
+[AUTH role=SALES_REP]
+[GQL-OP remove_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" removeSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC remove_a]
+[AUTH role=ACME_BUYER]
+[GQL-OP a_reads_after_remove]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC a_reads_after_remove]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP b_reads_after_remove]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC b_reads_after_remove]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=add_a] errors[] empty {OBSERVED}
+[COUNT label=add_a] data.changeWishlist.sharingSetting.targets.length = 1 {SPEC}
+[DATA label=add_a] data.changeWishlist.sharingSetting.targets[?id={{orgA}}].id = {{orgA}} {SPEC}
+[ERRORS label=add_b] errors[] empty {OBSERVED}
+[COUNT label=add_b] data.changeWishlist.sharingSetting.targets.length = 2 {OBSERVED}
+[DATA label=add_b] data.changeWishlist.sharingSetting.targets[?id={{orgA}}].id = {{orgA}} {SPEC}
+[DATA label=add_b] data.changeWishlist.sharingSetting.targets[?id={{orgB}}].id = {{orgB}} {SPEC}
+[ERRORS label=a_reads_after_b] errors[] empty {OBSERVED}
+[DATA label=a_reads_after_b] data.sharedWishlist.id = {{LIST_ID}} {SPEC}
+[DATA label=a_reads_after_b] data.sharedWishlist.sharingSetting.isOwner = false {OBSERVED}
+[COUNT label=a_reads_after_b] data.sharedWishlist.sharingSetting.targets.length = 0 {OBSERVED}
+[COUNT label=remove_a] data.changeWishlist.sharingSetting.targets.length = 1 {SPEC}
+[DATA label=remove_a] data.changeWishlist.sharingSetting.targets[?id={{orgA}}] is null {SPEC}
+[DATA label=remove_a] data.changeWishlist.sharingSetting.targets[?id={{orgB}}].id = {{orgB}} {SPEC}
+[DATA label=a_reads_after_remove] data.sharedWishlist is null OR errors[] non-empty {OBSERVED}
+[ERRORS label=b_reads_after_remove] errors[] empty {SPEC}
+[DATA label=b_reads_after_remove] data.sharedWishlist.id = {{LIST_ID}} {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",the second add replaces the first target so readerA (the first customer) gets an error or null on a key it was sent; targets.length is 1 after two adds; removing orgA also revokes orgB; orgA still reads the list after removeSharedWithIds; errors[] non-empty on a valid add,inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:LIFECYCLE · Technique:EG · Test Model VCST-5707 #2/#3 (API leg) · VCST-5925 2.1/2.2 · ticket description repro,Draft
+WISH-037,changeWishlist — adding an unserved organization is refused and nothing is written,GraphQL > Wishlist > Sharing (VCST-5707),Critical,BL-SR-002,,"Runner-native. Rep = SALES_REP serving orgA but NOT the unserved organization (SR_UNSERVED_ORG, which provably exists: it is a paging-fixture org another rep serves). vc-module-sales-rep #21: adds must be served by the rep, else ""Access denied."" and NOTHING is written — including a valid id sent in the same write. The unserved id and a nonexistent id answer identically, so the fixture must be a real organization.","rep=@td(SR_REP_PRIMARY.email), unserved=@td(SR_UNSERVED_ORG.platform_id), orgA=@td(ORG_ACME.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-UNSERVED"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_mixed]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}"", ""{{unserved}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC add_mixed]
+[AUTH role=SALES_REP]
+[GQL-OP readback]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id scope  } }
+[GQL-EXEC readback]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=add_mixed] errors[] non-empty {OBSERVED}
+[DATA label=add_mixed] errors[0].message = Access denied. {OBSERVED}
+[ERRORS label=readback] errors[] empty {OBSERVED}
+[DATA label=readback] data.wishlist.scope = Private {OBSERVED}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","add_mixed succeeds (an organization the rep does not serve was granted access); the valid orgA id was written although the write was refused (partial write, readback scope is not Private); the refusal is an HTTP 5xx instead of an in-band errors[] entry",inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SCOPE · Technique:DT · Test Model VCST-5707 #21 · BL-SR-002 · sales-rep #21 AuthorizeCustomerShareAsync,Draft
+WISH-038,changeWishlist — empty Customer set is rejected with INVALID_OPERATION,GraphQL > Wishlist > Sharing (VCST-5707),Medium,BL-SR-002,,"Runner-native. Rep = SALES_REP serving orgA. A Customer share must always keep at least one target: removing the last one, or switching to Customer with no ids, is refused with INVALID_OPERATION (the generic message ""Error trying to resolve field 'changeWishlist'."" is a separate finding — the code is what is asserted). The storefront disables Save on an empty set; this is the server-side twin.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-EMPTY"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC add_a]
+[GQL-OP remove_last]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" removeSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC remove_last]
+[GQL-OP readback]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id scope sharingSetting { targets { id } } } }
+[GQL-EXEC readback]
+[GQL-OP to_private]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Private"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC to_private]
+[GQL-OP customer_no_ids]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC customer_no_ids]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=add_a] errors[] empty {OBSERVED}
+[ERRORS label=remove_last] errors[] non-empty {OBSERVED}
+[DATA label=remove_last] errors[0].extensions.code = INVALID_OPERATION {OBSERVED}
+[ERRORS label=readback] errors[] empty {OBSERVED}
+[COUNT label=readback] data.wishlist.sharingSetting.targets.length = 1 {SPEC}
+[DATA label=readback] data.wishlist.sharingSetting.targets[?id={{orgA}}].id = {{orgA}} {SPEC}
+[ERRORS label=to_private] errors[] empty {OBSERVED}
+[ERRORS label=customer_no_ids] errors[] non-empty {OBSERVED}
+[DATA label=customer_no_ids] errors[0].extensions.code = INVALID_OPERATION {OBSERVED}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",removing the last target succeeds and leaves an unreachable Customer list; the refusal arrives as HTTP 500 or with a different code; the refused write still removed the target (readback shows zero); switching to Customer with no ids succeeds,inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SILENT · Technique:BVA · Test Model VCST-5707 #8 (API leg) · sales-rep #21 · ECL-14 (generic resolver message noted),Draft
+WISH-039,"sharedWishlist and wishlist(listId) — targeted member reads, untargeted member denied",GraphQL > Wishlist > Sharing (VCST-5707),Critical,BL-SR-002,,"Runner-native. Rep = SALES_REP shares a list with orgA only. readerA = ACME_BUYER (AcmeCorp member, org-scoped grant) is a target; readerB = SR_REP_EXCLUSIVE_TECHFLOW (a TechFlow member serving only TechFlow) is a served-but-NON-target org member. The link path (sharedWishlist) works for a target on the build under test; the list-id path (wishlist(listId)) for a target is VCST-5925 3.1 and is expected to FAIL (""Access denied."") — a finding, kept as the contract states it. Targeted readers must see targets: [] and isOwner false.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), nonTarget=@td(ORG_ACMEWEST.platform_id), readerA=@td(ACME_BUYER.email), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-READS"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP share_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC share_a]
+[GQL-CAPTURE share_a.data.changeWishlist.sharingSetting.id → KEY]
+[AUTH role=ACME_BUYER]
+[GQL-OP target_by_key]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC target_by_key]
+[AUTH role=ACME_BUYER]
+[GQL-OP target_by_list_id]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id name } }
+[GQL-EXEC target_by_list_id]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP non_target_by_key]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC non_target_by_key]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP non_target_by_list_id]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id name } }
+[GQL-EXEC non_target_by_list_id]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=share_a] errors[] empty {OBSERVED}
+[ERRORS label=target_by_key] errors[] empty {OBSERVED}
+[DATA label=target_by_key] data.sharedWishlist.id = {{LIST_ID}} {SPEC}
+[DATA label=target_by_key] data.sharedWishlist.sharingSetting.isOwner = false {OBSERVED}
+[COUNT label=target_by_key] data.sharedWishlist.sharingSetting.targets.length = 0 {OBSERVED}
+[ERRORS label=target_by_list_id] errors[] empty {SPEC}
+[DATA label=target_by_list_id] data.wishlist.id = {{LIST_ID}} {SPEC}
+[DATA label=non_target_by_key] data.sharedWishlist is null OR errors[] non-empty {SPEC}
+[DATA label=non_target_by_list_id] data.wishlist is null OR errors[] non-empty {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","a served but untargeted organization reads the list by key or by list id (BL-SR-002 cross-org leak); the target is denied on the link path; the target is denied on the list-id path although it holds Read by link (VCST-5925 3.1, open); a targeted reader sees the other recipients",inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SCOPE · Technique:DT · Test Model VCST-5707 #11 · VCST-5925 3.1 · KB-AA3C8721 · BL-SR-002,Draft
+WISH-040,"sendCustomerCommunication — one notification per newly added org, member deduplicated",GraphQL > Wishlist > Sharing (VCST-5707),High,BL-SR-002,,"Runner-native. sendCustomerCommunication takes organizationIds (<=1000) and sends ONE notification per member however many of the listed organizations contain them; the sender is excluded (sales-rep #21). The multi-org member fixture (a member of two served organizations) is a FIXTURE-GAP on this stand (MULTI_ORG_TF_BR belongs to an unserved TechFlow duplicate), so member dedup is exercised with the same organization listed twice. Push only (sendEmail:false) so the outbound-mail gap of the stand cannot mask the result. The inbox projection is asynchronous: the read polls.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), msg=AGENT-TEST-5707-DEDUP-{{RUN_ID}}, readerA=@td(ACME_BUYER.email)","[AUTH role=SALES_REP]
+[GQL-OP send_twice]
+  mutation { sendCustomerCommunication(command: { organizationIds: [""{{orgA}}"", ""{{orgA}}""] sendPush: true sendEmail: false title: ""AGENT-TEST-5707 dedupe"" message: ""{{msg}}"" storeId: ""{{STORE_ID}}"" }) { succeeded pushSent emailSent warnings } }
+[GQL-EXEC send_twice]
+[AUTH role=ACME_BUYER]
+[GQL-OP after_inbox]
+  query { pushMessages(first: 50, unreadOnly: false) { totalCount items { id shortMessage } } }
+[GQL-EXEC after_inbox]
+[WAIT until=after_inbox timeout=30 interval=3] data.pushMessages.items[?shortMessage={{msg}}] is non-null","[ERRORS label=send_twice] errors[] empty {OBSERVED}
+[DATA label=send_twice] data.sendCustomerCommunication.succeeded = true {OBSERVED}
+[DATA label=send_twice] data.sendCustomerCommunication.pushSent = true {OBSERVED}
+[DATA label=send_twice] data.sendCustomerCommunication.emailSent = false {OBSERVED}
+[ERRORS label=after_inbox] errors[] empty {OBSERVED}
+[COUNT label=after_inbox] data.pushMessages.items[*?shortMessage={{msg}}].length = 1 {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",the buyer receives the notification twice for one organization listed twice; no push reaches the buyer within the poll window; pushSent is true but no inbox entry appears; the response reports succeeded:false with a warnings entry for a valid organization,none — the call creates one push message addressed to the fixture buyer; the inbox is append-only and the case asserts by its run-unique message text,VCST-5707 · Archetype:REPLAY · Technique:DT · Test Model VCST-5707 #10 (API leg) · sales-rep #21 · BL-NOTIF-003,Draft
+WISH-041,"changeWishlist legacy sharedWithId — replaces a single target, refuses a multi-target list",GraphQL > Wishlist > Sharing (VCST-5707),High,BL-SR-002,,"Runner-native. A released storefront still sends the single sharedWithId. vc-module-sales-rep #21 / VCST-5925 2.3+3.3: on a list with ONE target the legacy field REPLACES it (observed); on a list with two or more targets it is refused in-band (errors[], never a 500) and the set is left untouched. Rep = SALES_REP serving orgA and orgB.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-LEGACY"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP add_ab]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}"", ""{{orgB}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC add_ab]
+[GQL-OP legacy_multi]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" sharedWithId: ""{{orgA}}"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC legacy_multi]
+[GQL-OP after_legacy_multi]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id sharingSetting { targets { id } } } }
+[GQL-EXEC after_legacy_multi]
+[GQL-OP remove_b]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" removeSharedWithIds: [""{{orgB}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC remove_b]
+[GQL-OP legacy_single]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" sharedWithId: ""{{orgB}}"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC legacy_single]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=add_ab] errors[] empty {OBSERVED}
+[COUNT label=add_ab] data.changeWishlist.sharingSetting.targets.length = 2 {OBSERVED}
+[ERRORS label=legacy_multi] errors[] non-empty {SPEC}
+[ERRORS label=after_legacy_multi] errors[] empty {SPEC}
+[COUNT label=after_legacy_multi] data.wishlist.sharingSetting.targets.length = 2 {SPEC}
+[ERRORS label=remove_b] errors[] empty {OBSERVED}
+[COUNT label=remove_b] data.changeWishlist.sharingSetting.targets.length = 1 {OBSERVED}
+[ERRORS label=legacy_single] errors[] empty {OBSERVED}
+[COUNT label=legacy_single] data.changeWishlist.sharingSetting.targets.length = 1 {OBSERVED}
+[DATA label=legacy_single] data.changeWishlist.sharingSetting.targets[?id={{orgB}}].id = {{orgB}} {OBSERVED}
+[DATA label=legacy_single] data.changeWishlist.sharingSetting.targets[?id={{orgA}}] is null {OBSERVED}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",the legacy field silently collapses a two-target set to one (after_legacy_multi shows one target); the refusal is an HTTP 500 rather than errors[]; a legacy write on a single-target list adds instead of replacing and leaves two targets,inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SILENT · Technique:DT · Test Model VCST-5707 #20 · V5 legacy client · VCST-5925 2.3/3.3,Draft
+WISH-042,changeWishlist scope switches leave no stray rows — link grant survives a Customer round-trip,GraphQL > Wishlist > Sharing (VCST-5707),Medium,BL-SR-002,,"Runner-native. VCST-5925 3.4: a stray Customer row must not suppress the link grant after the scope moves Customer -> AnyoneAnonymous -> Customer. Rep shares with orgA, widens to AnyoneAnonymous (readerB, a TechFlow member who was NEVER a target, must now read by the same key), then narrows back to Customer/orgA (readerB must be denied again, readerA must read).","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-SWITCH"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP share_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC share_a]
+[GQL-CAPTURE share_a.data.changeWishlist.sharingSetting.id → KEY]
+[GQL-OP to_anyone]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""AnyoneAnonymous"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC to_anyone]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP b_reads_anyone]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC b_reads_anyone]
+[AUTH role=SALES_REP]
+[GQL-OP back_to_customer]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC back_to_customer]
+[AUTH role=SR_REP_EXCLUSIVE_TECHFLOW]
+[GQL-OP b_reads_customer]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC b_reads_customer]
+[AUTH role=ACME_BUYER]
+[GQL-OP a_reads_customer]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC a_reads_customer]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=share_a] errors[] empty {OBSERVED}
+[ERRORS label=to_anyone] errors[] empty {OBSERVED}
+[DATA label=to_anyone] data.changeWishlist.scope = AnyoneAnonymous {OBSERVED}
+[ERRORS label=b_reads_anyone] errors[] empty {SPEC}
+[DATA label=b_reads_anyone] data.sharedWishlist.id = {{LIST_ID}} {SPEC}
+[ERRORS label=back_to_customer] errors[] empty {OBSERVED}
+[DATA label=back_to_customer] data.changeWishlist.scope = Customer {OBSERVED}
+[DATA label=b_reads_customer] data.sharedWishlist is null OR errors[] non-empty {SPEC}
+[ERRORS label=a_reads_customer] errors[] empty {SPEC}
+[DATA label=a_reads_customer] data.sharedWishlist.id = {{LIST_ID}} {SPEC}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql",after widening to AnyoneAnonymous a never-targeted member is still denied (a stray Customer row suppresses the link grant); after narrowing back to Customer the untargeted member still reads; the target is denied after the round trip,inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SCOPE · Technique:EG · Test Model VCST-5707 #18 · VCST-5925 3.4,Draft
+WISH-043,changeWishlist — addSharedWithIds without scope is ignored with no error,GraphQL > Wishlist > Sharing (VCST-5707),High,BL-SR-002,,"Runner-native. Rep = SALES_REP serving orgA. addSharedWithIds sent WITHOUT scope on a Private list answers HTTP 200 with errors[] empty and writes nothing (observed) — the delta is applied only inside the Customer branch. Whether the server should REJECT it is an open PO question, so the rejection line is a {HYPOTHESIS} and the row is held at Draft; the nothing-written lines are observed.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-NOSCOPE"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP no_scope]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" addSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC no_scope]
+[AUTH role=SALES_REP]
+[GQL-OP readback]
+  query { wishlist(listId: ""{{LIST_ID}}"") { id scope  } }
+[GQL-EXEC readback]
+[AUTH role=SALES_REP]
+[GQL-OP cleanup_remove]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC cleanup_remove]","[ERRORS label=readback] errors[] empty {OBSERVED}
+[DATA label=readback] data.wishlist.scope = Private {OBSERVED}
+[ERRORS label=no_scope] errors[] non-empty {HYPOTHESIS}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","no_scope reports success while writing nothing, so an integration believes it shared the list; the delta is applied to a Private list and grants access without a scope change; readback scope is not Private",inline — removeWishlist under the rep's own auth (LIST_ID); a case that aborts before the last step leaves one AGENT-TEST-5707-* list for the AGENT-TEST- sweep,VCST-5707 · Archetype:SILENT · Technique:EG · Test Model VCST-5707 #25 · SBTM-VCST-5707-2026-09-29 open question · HYPOTHESIS held Draft,Draft
+WISH-044,sharedWishlist — a revoked organization reads an error while a stopped or deleted share returns null,GraphQL > Wishlist > Sharing (VCST-5707),Medium,BL-SR-002,,"Runner-native. Same reader, same key, three different ""no access"" answers: an organization REMOVED from a live share gets an in-band ""Access denied."" error; after Stop sharing (scope Private) and after the list is removed the same key returns data.sharedWishlist null with errors[] empty. The case pins the three signals as observed so a change to any of them is visible; whether they should be uniform is a PO question (ECL-4). Rep shares with orgA and orgB; readerA = ACME_BUYER is the reader whose access is taken away.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email), orgB=@td(ORG_TECHFLOW.platform_id)","[AUTH role=SALES_REP]
+[GQL-OP rep_me]
+  query { me { id } }
+[GQL-EXEC rep_me]
+[GQL-CAPTURE rep_me.data.me.id → REP_ID]
+[GQL-OP create_list]
+  mutation { createWishlist(command: { storeId: ""{{STORE_ID}}"" userId: ""{{REP_ID}}"" listName: ""AGENT-TEST-5707-SIGNAL"" }) { id } }
+[GQL-EXEC create_list]
+[GQL-CAPTURE create_list.data.createWishlist.id → LIST_ID]
+[GQL-OP share_ab]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" addSharedWithIds: [""{{orgA}}"", ""{{orgB}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC share_ab]
+[GQL-CAPTURE share_ab.data.changeWishlist.sharingSetting.id → KEY]
+[AUTH role=ACME_BUYER]
+[GQL-OP read_live]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC read_live]
+[AUTH role=SALES_REP]
+[GQL-OP remove_a]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Customer"" removeSharedWithIds: [""{{orgA}}""] }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC remove_a]
+[AUTH role=ACME_BUYER]
+[GQL-OP read_revoked]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC read_revoked]
+[AUTH role=SALES_REP]
+[GQL-OP stop]
+  mutation { changeWishlist(command: { listId: ""{{LIST_ID}}"" scope: ""Private"" }) { id scope sharingSetting { id scope access isOwner message targets { id name } } } }
+[GQL-EXEC stop]
+[AUTH role=ACME_BUYER]
+[GQL-OP read_stopped]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC read_stopped]
+[AUTH role=SALES_REP]
+[GQL-OP remove_list]
+  mutation { removeWishlist(command: { listId: ""{{LIST_ID}}"" }) }
+[GQL-EXEC remove_list]
+[AUTH role=ACME_BUYER]
+[GQL-OP read_deleted]
+  query { sharedWishlist(sharingKey: ""{{KEY}}"") { id name sharingSetting { scope access isOwner targets { id } } } }
+[GQL-EXEC read_deleted]","[ERRORS label=read_live] errors[] empty {OBSERVED}
+[DATA label=read_live] data.sharedWishlist.id = {{LIST_ID}} {OBSERVED}
+[ERRORS label=read_revoked] errors[] non-empty {OBSERVED}
+[DATA label=read_revoked] errors[0].message = Access denied. {OBSERVED}
+[ERRORS label=read_stopped] errors[] empty {OBSERVED}
+[DATA label=read_stopped] data.sharedWishlist is null {OBSERVED}
+[ERRORS label=read_deleted] errors[] empty {OBSERVED}
+[DATA label=read_deleted] data.sharedWishlist is null {OBSERVED}","[API] errors[] is empty in the GraphQL response
+[NETWORK] no 4xx/5xx on /graphql","a revoked organization still reads the list; a stopped or deleted share answers with an error instead of null (or the reverse), changing what a client can tell apart; the removed list still resolves by its old key",none — the case removes its own list as a step; an abort before that step leaves one AGENT-TEST-5707-SIGNAL list for the AGENT-TEST- sweep,"VCST-5707 · Archetype:PARITY · Technique:EP · Test Model VCST-5707 #28 · ECL-4 · KB-7A9D4927 (key survives Stop, dies on Remove list)",Draft

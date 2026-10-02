@@ -1,0 +1,450 @@
+{
+ "item": "E9-delta-without-scope",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:37:49.310Z",
+ "lists": [
+  "AGENT-TEST-5707-b5",
+  "AGENT-TEST-5707-b6"
+ ],
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 209,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-b5"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81"
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 266,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 255,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 205,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ sharingSetting { id scope message targets { id } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81",
+     "c": "sv-SE"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 238,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "removeSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 200,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ sharingSetting { id scope message targets { id } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81",
+     "c": "da-DK"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 194,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-b6"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "1d99894c-8990-43bb-b95a-7f7b9f220d8d"
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 255,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+      "name": "AGENT-TEST-5707-b6",
+      "scope": "Private",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "96a0b646-6a27-4550-b36d-da63df4e9d6b",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 190,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ sharingSetting { id scope message targets { id } } } }",
+    "variables": {
+     "l": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+     "c": "fi-FI"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "sharingSetting": {
+       "id": "d07060ba-a68e-483d-b56b-6c5329b6f68e",
+       "scope": "Private",
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 232,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+      "addSharedWithIds": [
+       "c00b995b-fc31-430e-89b8-4a8802e9a843"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+      "name": "AGENT-TEST-5707-b6",
+      "scope": "Private",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "837d99a7-48bb-4dc0-9924-ab02df36234f",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 194,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ sharingSetting { id scope message targets { id } } } }",
+    "variables": {
+     "l": "1d99894c-8990-43bb-b95a-7f7b9f220d8d",
+     "c": "nb-NO"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "sharingSetting": {
+       "id": "46ccfa60-8ad0-4b6c-b1c2-c15b7d98e242",
+       "scope": "Private",
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "scope": "Customer",
+      "message": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ sharingSetting { id scope message targets { id } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81",
+     "c": "cs-CZ"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be"
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ]
+}

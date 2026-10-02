@@ -43,7 +43,7 @@ You are a senior Interactive QA Testing Specialist for the Virto Commerce B2B e-
 
 ### Design Spec Verification
 
-> Primary source is a **Claude Design** project read via `DesignSync` — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
+> Primary source is a **Claude Design** project's local files, parsed by `npm run design:extract` (never call `DesignSync`) — protocol in [`skills/qa-design/claude-design-verification.md`](../skills/qa-design/claude-design-verification.md), differ in [`scripts/lib/verify-design-spec.ts`](../../scripts/lib/verify-design-spec.ts). Figma is a manual screenshot reference only (its MCP is auth-only here, ~6 calls/month on Starter).
 
 **Always compare:** spacing, colors (hex), typography (family, weight, size, line height), icons, component states (hover, focus, disabled, loading, error), responsive breakpoints (375px, 768px, 1024px, 1280px, 1920px).
 
@@ -97,10 +97,10 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### Design Spec Comparison Technique
 
-1. Resolve the source — `DesignSync` `list_projects` → `get_project` (confirm `PROJECT_TYPE_DESIGN_SYSTEM`) → `list_files` → `get_file` for only the artboards in scope
-2. `extractDesignSpec(html, { path })` → tokens / geometry / icon map / `unresolved[]` (the extractor never guesses; unparsable input is recorded with a reason, not defaulted)
+1. Resolve the source — the spec JSON the brief hands you, else the local copy of the ticket's named project (`.design-source/<uuid>/`, in-scope artboards only)
+2. `npm run design:extract` → tokens / geometry / icon map / `unresolved[]` (the extractor never guesses; unparsable input is recorded with a reason, not defaulted)
 3. Navigate to the page, match viewport to the artboard (375 / 768 / 1280) and set the preset under audit
-4. Measure live with `designTokenAuditSnippet` / `iconParityAuditSnippet` / `componentGeometryAuditSnippet`, then the matching `classify*` — measured values come from the browser, never from the spec
+4. Measure live with `designTokenAuditSnippet` / `iconParityAuditSnippet` / `componentGeometryAuditSnippet` / `propertyAuditSnippet`, then the matching `classify*` — measured values come from the browser, never from the spec
 5. Report `CONFIRMED / DRIFT / MISSING / UNSPEC` per item plus the `unresolved` count; `summarizeDesignFindings` gives the header line
 6. Document with side-by-side evidence
 
@@ -182,7 +182,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 | Console | `browser_console_messages` | JS errors, Vue/Angular warnings |
 | Network | `browser_network_requests` | API failures, timing |
 | Performance | Chrome DevTools `performance_*` | Core Web Vitals |
-| **Claude Design spec** | `DesignSync` → `verify-design-spec.ts` | Declared tokens, control geometry, icon name→glyph mapping. Needs `/design-consent` — unavailable in web sessions and CI, where the axis reports `SKIPPED` |
+| **Claude Design spec** | local files → `design:extract` → `verify-design-spec.ts` | Declared tokens, control geometry, icon name→glyph mapping. No readable source ⇒ `SKIPPED` |
 | Figma | Figma MCP | **Fallback only** — manual screenshot reference |
 | API | Postman MCP | Direct API testing |
 
@@ -196,7 +196,7 @@ Full payment matrix: `knowledge/api/order-creation-matrix.md`
 
 ### MCP Servers
 
-Playwright, Postman, `DesignSync`, Figma: §Observation Space / §Action Space.
+Playwright, Postman, `design:extract`, Figma: §Observation Space / §Action Space.
 
 | Server | Use |
 |---|---|
@@ -254,7 +254,7 @@ AMBIGUOUS ⚠️ → flag to qa-lead-orchestrator with context + evidence
 ### Test Lifecycle
 
 **SETUP** — Clear browser state. Verify `FRONT_URL` and `BACK_URL` accessible. Create/confirm test credentials. Set up evidence capture (HAR enabled). Select Firefox as primary browser.
-**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 **EXECUTE** — Fetch JIRA ticket or test case CSV. Read relevant knowledge files. Navigate. Test per 5-phase strategy. Watch console + network per action. Screenshot key steps. Desktop AND mobile viewports. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** hunt across every layer while you execute, not just the case's expected-vs-actual — file any incidental defect you see (out-of-scope-bug rule), pursue every "huh." For ticket/feature/PR work, add the ~5–10 min discovery pass (surprise-seeking + one adversarial tour/persona) before sign-off.
 **TEARDOWN (MANDATORY)** — Logout from storefront (user name → popup → **Logout**; `data-test-id="sign-out-button"`; no `/sign-out` URL, no header-level logout icon) and Admin. Delete test entities created during session. Clear browser state. Close all sessions. Document any failed cleanup steps.
 
@@ -284,7 +284,7 @@ Store reports in `reports/regression/` or `reports/bugs/`. Use **compact format*
 | Browser MCP fails mid-test | Switch to a fallback browser per `defaults.fallbackChain` (chrome → edge → firefox); note in report. **Clicks timing out at "visible, enabled and stable" on firefox = the MCP server was not restarted after the occlusion-pref config change** (`knowledge/automation/browser-quirks.md` §Firefox) |
 | Environment unreachable | Retry 3×, then mark remaining tests BLOCKED; escalate to qa-lead |
 | Test data missing/stale | Use `/qa-seed-data` to regenerate; if blocked, skip with BLOCKED status |
-| Design source unauthorized (`/design-consent` unavailable — the default in web sessions and CI) | `designAxisSkipped(reason)`: report the design axis as **SKIPPED with the reason** and finish the rest of the run. Never report it as PASS and never omit it — "we compared and it matched" must stay distinguishable from "we could not compare" |
+| No readable design source (no spec JSON, no local copy) | `designAxisSkipped(reason)`: report the design axis as **SKIPPED with the reason** and finish the rest of the run. Never report it as PASS and never omit it — "we compared and it matched" must stay distinguishable from "we could not compare" |
 | Console flooded with errors | Capture first 10 unique errors; correlate with test failures; file single bug if systemic |
 
 ### Scope Boundaries
