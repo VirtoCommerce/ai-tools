@@ -617,6 +617,55 @@ export function assertBrowseFiltersNoneRolePermissions(permissions = BROWSEFILTE
   });
 }
 
+// ============================================================================
+// RETURNS back-office RBAC fixture (VCST-5883, returns step 2) — an agent who can
+// read and edit a return but can NOT decide it.
+// ============================================================================
+//
+// Permission universe of VirtoCommerce.Return 3.1003.0-pr-27-51fc, read live on vcptcore-qa1
+// 2026-09-29 from GET /api/platform/security/permissions: return:access, return:read, return:create,
+// return:update, return:delete, return:authorize. PR #27 adds POST /api/return/{id}/authorize, and the
+// case under test is that it gates on return:authorize SPECIFICALLY — not on return:update, which is
+// the permission an implementation would most plausibly reuse. So this role HOLDS return:update (the
+// look-alike) and EXCLUDES return:authorize: if the endpoint wrongly checked update, this account
+// would get through, and the case would fail. A role without update would 403 either way and prove
+// nothing about which permission the gate reads (.claude/rules/test-data.md §SECOND RULE).
+//
+// `platform:access` does NOT exist on this build (same finding as the catalog-link fixture), so the
+// Manager account type is what lets it sign in. Same no-hardcode contract: the role id / email are
+// business keys; the runtime user id lands in aliases.<env>.json.
+export const RETURN_AGENT_EXCLUDED_PERMISSION = 'return:authorize';
+export const RETURN_AGENT_EXCLUDED_PERMISSIONS = [RETURN_AGENT_EXCLUDED_PERMISSION];
+export const RETURN_AGENT_REQUIRED_PERMISSIONS = ['return:access', 'return:read', 'return:update'];
+
+export const RETURN_AGENT_ROLE = {
+  role_id: 'AGENT-TEST-Return-Agent-NoAuthorize',
+  role_name: 'AGENT-TEST-Return-Agent-NoAuthorize',
+  description: 'AGENT-TEST back-office role for VCST-5883: can open, read and edit returns (return:access/read/update) but EXCLUDES return:authorize, so the per-line approve/decline endpoint must refuse it. Holds update on purpose — the permission a mis-wired gate would check instead. Safe to delete.',
+  permissions: [...RETURN_AGENT_REQUIRED_PERMISSIONS],
+};
+
+export const RETURN_AGENT_ACCOUNT = {
+  aliasName: 'RETURNS_AGENT_NO_AUTHORIZE',
+  email: 'AGENT-TEST-return-agent-noauth@test.virtocommerce.com',
+  userType: 'Manager',
+  isAdministrator: false,
+  passwordVar: 'RETURNS_AGENT_NO_AUTHORIZE_PASSWORD',
+  passwordFallback: 'Password1!',
+};
+
+/** The decision endpoint the --verify probe calls with the restricted token (dummy id — see the seeder). */
+export const RETURN_AUTHORIZE_ENDPOINT = (id) => `/api/return/${encodeURIComponent(id)}/authorize`;
+export const RETURN_SEARCH_ENDPOINT = '/api/return/search';
+
+export function assertReturnAgentRolePermissions(permissions = RETURN_AGENT_ROLE.permissions) {
+  assertPermissionSet(permissions, {
+    required: RETURN_AGENT_REQUIRED_PERMISSIONS,
+    excluded: RETURN_AGENT_EXCLUDED_PERMISSIONS,
+    label: 'return agent (no authorize)',
+  });
+}
+
 const GUID_RE = /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i;
 /** Scan text for a runtime platform GUID that must never be committed to a spec/fixture. */
 export function findGuidLeaks(text) {

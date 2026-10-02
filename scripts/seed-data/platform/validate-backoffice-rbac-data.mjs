@@ -33,6 +33,7 @@ import {
   BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION, assertBrowseFiltersReadOnlyRolePermissions,
   BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION, assertBrowseFiltersNoneRolePermissions,
   BROWSEFILTERS_READ_PERMISSION,
+  RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION, assertReturnAgentRolePermissions,
   findGuidLeaks,
 } from './backoffice-rbac-specs.mjs';
 
@@ -118,6 +119,9 @@ catch (e) { fail(e.message); }
   else fail(`BrowseFilters roles must differ by exactly ${BROWSEFILTERS_READ_PERMISSION}, they differ by [${diff.join(", ")}]`);
 }
 
+try { assertReturnAgentRolePermissions(); ok(`role "${RETURN_AGENT_ROLE.role_name}" is a return agent (VCST-5883) — holds ${RETURN_AGENT_ROLE.permissions.join(', ')}, excludes ${RETURN_AGENT_EXCLUDED_PERMISSION}`); }
+catch (e) { fail(e.message); }
+
 // 2. no GUID in the spec module (single scan covers both fixtures)
 const specSrc = readFileSync(join(ROOT, 'scripts/seed-data/platform/backoffice-rbac-specs.mjs'), 'utf8');
 const specLeaks = findGuidLeaks(specSrc);
@@ -134,6 +138,7 @@ checkAlias(SALESREP_FULL_ROLE, SALESREP_FULL_ACCOUNT, null); // positive control
 checkAlias(CATALOG_READONLY_ROLE, CATALOG_READONLY_ACCOUNT, CATALOG_READONLY_EXCLUDED_PERMISSION);
 checkAlias(BROWSEFILTERS_READONLY_ROLE, BROWSEFILTERS_READONLY_ACCOUNT, BROWSEFILTERS_READONLY_EXCLUDED_PERMISSION);
 checkAlias(BROWSEFILTERS_NONE_ROLE, BROWSEFILTERS_NONE_ACCOUNT, BROWSEFILTERS_NONE_EXCLUDED_PERMISSION);
+checkAlias(RETURN_AGENT_ROLE, RETURN_AGENT_ACCOUNT, RETURN_AGENT_EXCLUDED_PERMISSION);
 
 console.log(`\n${problems.length ? `FAILED — ${problems.length} problem(s)` : 'OK'}`);
 process.exit(problems.length ? 1 : 0);

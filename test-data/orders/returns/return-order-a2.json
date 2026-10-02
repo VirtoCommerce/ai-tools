@@ -1,0 +1,85 @@
+{
+  "_fixture": "RETURNS_ORDER_A2_PARTIAL_DELIVERY — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5628, buyer's own returns step 1). Returnable quantity is capped by what was DELIVERED (4), not by what was ORDERED (10).",
+  "_contract": "Every `_`-prefixed key is FIXTURE METADATA, stripped by the seeder before the POST. Line identity comes from live discovery; delivery dates come from `_deliveryOffsetDays` resolved against seed-time now. There is NO literal date and NO runtime GUID in this file — the created order id, its line item ids and the resolved delivery instants are written to test-data/aliases.<env>.json.",
+  "_seedPhases": "PHASE 1 POST creates the order (the platform ASSIGNS line item ids and IGNORES client-supplied ones, so shipment items cannot be linked at create). PHASE 2 PUT stamps shipments[].items[] with the assigned lineItemId + the inline lineItem object (without the inline object the platform silently drops the shipment item), the shipment deliveryDate, and any line cancellation.",
+  "number": "AGENT-TEST-ORD-RET-A2",
+  "storeId": "{{STORE_ID}}",
+  "currency": "USD",
+  "status": "Completed",
+  "customerName": "AGENT-TEST Buyer",
+  "total": 200,
+  "subTotal": 200,
+  "subTotalWithTax": 200,
+  "shippingTotal": 0,
+  "shippingTotalWithTax": 0,
+  "taxTotal": 0,
+  "items": [
+    {
+      "_role": "lineX",
+      "_note": "THE line under test. productId/sku/name are placeholders — the seeder live-discovers a real catalog product for the target env and stamps them in (no env-specific SKU in a committed fixture).",
+      "sku": "AGENT-TEST-RET-SKU-1",
+      "productId": "agent-test-ret-prod-1",
+      "catalogId": "agent-test-ret",
+      "name": "AGENT-TEST Returns Line X",
+      "quantity": 10,
+      "price": 20,
+      "productType": "Physical",
+      "currency": "USD"
+    }
+  ],
+  "addresses": [
+    {
+      "addressType": "Shipping",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    },
+    {
+      "addressType": "Billing",
+      "firstName": "AGENT-TEST",
+      "lastName": "Buyer",
+      "line1": "1 Test Way",
+      "city": "New York",
+      "regionName": "New York",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "postalCode": "10001",
+      "phone": "+1-206-555-0100",
+      "email": "{{USER_EMAIL}}"
+    }
+  ],
+  "shipments": [
+    {
+      "_shipmentKey": "S1",
+      "_deliveryOffsetDays": 0,
+      "_deliveredQuantity": 4,
+      "_deliveredRole": "lineX",
+      "_note": "Delivered 4 of lineX, today (offset resolved at seed time — never a literal date).",
+      "number": "AGENT-TEST-ORD-RET-A2-S1",
+      "shipmentMethodCode": "FixedRate",
+      "shipmentMethodOption": "Ground",
+      "currency": "USD",
+      "status": "Delivered",
+      "trackingNumber": "AGENT-TEST-TRK-RET-A2-S1",
+      "items": []
+    }
+  ],
+  "inPayments": [
+    {
+      "gatewayCode": "DefaultManualPaymentMethod",
+      "currency": "USD",
+      "customerName": "AGENT-TEST Buyer",
+      "sum": 200,
+      "status": "Paid",
+      "paymentStatus": "Paid",
+      "number": "AGENT-TEST-ORD-RET-A2-P1"
+    }
+  ]
+}
