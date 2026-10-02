@@ -24,7 +24,7 @@ import { join } from 'node:path';
 
 import {
   FAIL, INCONCLUSIVE, MIN_SAMPLE, NEAR_MISS_REVIEW, NEEDS_READING, NO_DATA, PASS, THRESHOLDS,
-  analyse, captureLoop, dayOf, entryUsage, evidence, indexLookup, misses, nearMisses, parseLogFile,
+  analyse, captureLoop, dayOf, doors, entryUsage, evidence, indexLookup, misses, nearMisses, parseLogFile,
   questionKey, questions, refusals, sessionOf, topics, unhelpful, verdict,
 } from '../kb/core/report-analyse.mjs';
 import {
@@ -1212,4 +1212,26 @@ test('EVERY log read failing falls through to the cache banner — never ok:true
     const html = renderHtml(analyse({ lines: got.lines, rows: got.rows, meta: got.meta }));
     assert.doesNotMatch(html, /No misses in this window\. Either coverage is good/);
   });
+});
+
+// ─── DOORS (VCST-6146): attributed vs unattributed calls, per route ───────────────────────────────
+
+test('the doors panel counts calls per route and how many name their agent', () => {
+  const rows = doors([
+    { kind: 'ask', via: 'mcp', agent: 'qa-frontend-expert' },
+    { kind: 'show', via: 'mcp', agent: 'main' },
+    { kind: 'ask', via: 'cli', agent: 'qa-frontend-expert' },
+    { kind: 'ask', via: 'cli' },
+    { kind: 'confirm', via: 'cli' },
+    { kind: 'session' },
+    { kind: 'reindex' },
+  ]);
+  assert.deepEqual(rows.map((r) => [r.via, r.calls, r.attributed, r.unattributed]), [['cli', 3, 1, 2], ['mcp', 2, 2, 0]]);
+  assert.deepEqual(rows.find((r) => r.via === 'mcp').agents, [{ agent: 'main', n: 1 }, { agent: 'qa-frontend-expert', n: 1 }]);
+});
+
+test('the doors panel is rendered and summarised in the terminal line', () => {
+  const report = analyse({ lines: [{ at: '2026-10-01T09:00:00Z', kind: 'ask', q: 'x', state: 'miss', via: 'cli' }] });
+  assert.match(renderHtml(report), /id="doors"/);
+  assert.match(renderText(report), /doors {10}cli 1 \(1 unattributed\)/);
 });
