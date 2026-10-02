@@ -114,8 +114,8 @@ invocation, but it pulls in reference knowledge rather than executing a test.)
 **And name its counterpart, because a newcomer will otherwise re-derive things the team already
 knows.** `/vc-docs` answers what the platform is *supposed* to do. What it was *observed* to do — on
 a named deployment, with a count of how many people have since confirmed it — lives in a shared,
-public base, and it is a lookup rather than a search: `npm run kb -- ask "<question>"`, or
-`mcp__kb__kb_ask`. Put the coordinate in the question (the page path, the endpoint, the GraphQL
+public base, and it is a lookup rather than a search: `mcp__kb__kb_ask`, or `npm run kb -- ask
+"<question>"` when the `kb` server is not connected. Put the coordinate in the question (the page path, the endpoint, the GraphQL
 operation). Exit 1 means nobody has written it down yet, which is an invitation, not a failure:
 whatever you then find out yourself is worth a `kb_capture` so the next person does not repeat your
 afternoon ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).

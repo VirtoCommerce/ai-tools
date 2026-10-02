@@ -267,7 +267,7 @@ Reclassify each case:
 
 **For STALE cases:**
 1. Read current test case from suite CSV
-   - **KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+   - **KB:** `mcp__kb__kb_ask` with "<coordinate> …" before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 2. Query Context7 for correct current behavior
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs

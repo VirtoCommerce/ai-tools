@@ -62,42 +62,138 @@ const recent = (file, sinceMs) => {
 };
 
 /**
+ * Every transcript touched since `sinceMs`, with who wrote it. Subagents first: they are small, and
+ * most calls that matter are theirs.
+ */
+function* transcripts(dirs, sinceMs, names) {
+  for (const dir of dirs) {
+    if (!existsSync(dir)) continue;
+    let sessions;
+    try { sessions = readdirSync(dir); } catch { continue; }
+    for (const s of sessions) {
+      const sub = join(dir, s, 'subagents');
+      if (!existsSync(sub)) continue;
+      let files;
+      try { files = readdirSync(sub); } catch { continue; }
+      for (const f of files) {
+        if (!f.endsWith('.jsonl')) continue;
+        const path = join(sub, f);
+        if (!recent(path, sinceMs)) continue;
+        let type = null;
+        try { type = JSON.parse(readFileSync(path.replace(/\.jsonl$/, '.meta.json'), 'utf8')).agentType ?? null; } catch { /* no meta */ }
+        yield { path, who: type && names.has(type) ? type : 'other' };
+      }
+    }
+    for (const s of sessions) {
+      if (!s.endsWith('.jsonl')) continue;
+      const path = join(dir, s);
+      if (recent(path, sinceMs)) yield { path, who: 'main' };
+    }
+  }
+}
+
+const readOrNull = (path) => { try { return readFileSync(path, 'utf8'); } catch { return null; } };
+
+/**
  * call id -> 'main' | a known agent name | 'other', for every id found in a transcript touched
  * since `sinceMs`. Ids found nowhere are absent from the map.
  */
 export function resolveCallers(callIds, { dirs, sinceMs = 0, names = knownAgentNames() }) {
   const pending = new Set(callIds.filter((c) => typeof c === 'string' && c));
   const out = new Map();
+  if (!pending.size) return out;
   // Matched as the `tool_use` record's own `"id"` — never as a bare substring, which would also hit
   // any transcript that merely QUOTES the id (a debugging session printing log lines, for one).
-  const take = (text, who) => {
+  for (const { path, who } of transcripts(dirs, sinceMs, names)) {
+    const text = readOrNull(path);
+    if (text === null) continue;
     for (const id of [...pending]) if (text.includes(`"id":"${id}"`)) { out.set(id, who); pending.delete(id); }
-  };
-  for (const dir of dirs) {
-    if (!pending.size || !existsSync(dir)) continue;
-    let sessions;
-    try { sessions = readdirSync(dir); } catch { continue; }
-    // Subagents first: they are small, and most calls that matter are theirs.
-    for (const s of sessions) {
-      const sub = join(dir, s, 'subagents');
-      if (!pending.size) break;
-      if (!existsSync(sub)) continue;
-      for (const f of readdirSync(sub)) {
-        if (!f.endsWith('.jsonl') || !pending.size) continue;
-        const path = join(sub, f);
-        if (!recent(path, sinceMs)) continue;
-        let type = null;
-        try { type = JSON.parse(readFileSync(path.replace(/\.jsonl$/, '.meta.json'), 'utf8')).agentType ?? null; } catch { /* no meta */ }
-        try { take(readFileSync(path, 'utf8'), type && names.has(type) ? type : 'other'); } catch { /* unreadable */ }
-      }
+    if (!pending.size) break;
+  }
+  return out;
+}
+
+// THE CLI DOOR (VCST-6146). A CLI call runs inside a shell tool call and the kb process never sees
+// that tool-use id, so the line carries no `call` — 812 of one week's 916 agent calls were invisible
+// to any per-agent reading. The transcript still holds the call: a `Bash`/`PowerShell` `tool_use`
+// whose command invokes kb with the same verb and the same question or entry id, written just
+// BEFORE the line (the record is the request; the line is written while it runs). That tool-use id
+// becomes the line's `call`, and `agent` follows from the transcript it sits in.
+//
+// Exact, not plausible: the verb must match, the line's key (question, entry id, capture subject)
+// must appear in the command, the command is at most CLI_WINDOW_MS older than the line, and a call
+// is spent once per kb invocation it holds. Anything else — a plain terminal, a key the command does not
+// carry — stays unstamped, as an unresolved MCP call does.
+
+const SHELLS = new Set(['Bash', 'PowerShell']);
+// `npm run -s kb -- ask`, `npm run kb -- show`, `node scripts/kb/kb.mjs confirm` — npm's own flags may
+// sit between `run` and `kb`.
+const KB_VERB = /(?:npm\s+run(?:-script)?(?:\s+-{1,2}[\w-]+)*\s+kb(?:\s+--)?|scripts[\\/]+kb[\\/]+kb\.mjs["']?)\s+(ask|show|capture|confirm|dispute)\b/g;
+// Shell loop syntax, not the words: "for" and "while" are common in a question.
+const LOOP = /\bwhile\s+(?:IFS=|read\b|\[|true\b|:)|\bfor\s+\(?\s*\$?\w+\s+in\b|\bxargs\b|\bForEach-Object\b|\bforeach\s*\(/;
+/** A shell tool call runs for at most ten minutes; nothing older than that wrote the line. */
+export const CLI_WINDOW_MS = 10 * 60 * 1000;
+
+/** Quotes, escapes and whitespace differ between a shell command and the argv kb logged. */
+const flat = (s) => String(s ?? '').replace(/[\\"'`]/g, '').replace(/\s+/g, ' ').trim();
+
+/** The verb a CLI line came from and the text its command must carry; null when it cannot match. */
+export function cliKey(line) {
+  if (!line || line.via !== 'cli' || line.call) return null;
+  const verb = String(line.kind ?? '').replace(/-(invalid|refused)$/, '');
+  const key = verb === 'ask' ? line.q
+    : verb === 'capture' ? line.subject
+      : ['show', 'confirm', 'dispute'].includes(verb) ? line.id : null;
+  const needle = flat(key);
+  return needle ? { verb, needle } : null;
+}
+
+/** Every shell `tool_use` in one transcript that invokes kb: `{ id, atMs, verbs, text }`. */
+export function kbShellCalls(text) {
+  const out = [];
+  for (const raw of String(text).split('\n')) {
+    if (!raw.includes('kb')) continue;
+    let rec;
+    try { rec = JSON.parse(raw); } catch { continue; }
+    const content = rec?.message?.content;
+    if (!Array.isArray(content)) continue;
+    const atMs = Date.parse(rec.timestamp);
+    for (const c of content) {
+      if (c?.type !== 'tool_use' || !SHELLS.has(c.name) || typeof c.input?.command !== 'string') continue;
+      const runs = [...c.input.command.matchAll(KB_VERB)].map((m) => m[1]);
+      // A loop runs its one kb invocation once per item, so it is not spent by count (measured
+      // 2026-10-01: one `while read q; do npm run -s kb -- ask "$q"` wrote 17 lines).
+      const limit = LOOP.test(c.input.command) ? Infinity : runs.length;
+      if (runs.length) out.push({ id: c.id, atMs, verbs: new Set(runs), runs: limit, text: flat(c.input.command) });
     }
-    for (const s of sessions) {
-      if (!pending.size) break;
-      if (!s.endsWith('.jsonl')) continue;
-      const path = join(dir, s);
-      if (!recent(path, sinceMs)) continue;
-      try { take(readFileSync(path, 'utf8'), 'main'); } catch { /* unreadable */ }
+  }
+  return out;
+}
+
+/**
+ * line index -> `{ call, agent }` for every CLI line whose shell call was found. Each line takes the
+ * NEAREST matching call written before it; a call is spent once per kb invocation in its command.
+ */
+export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNames() }) {
+  const out = new Map();
+  const wanted = lines.map((l, i) => ({ i, key: cliKey(l), atMs: Date.parse(l?.at) }))
+    .filter((w) => w.key && Number.isFinite(w.atMs));
+  if (!wanted.length) return out;
+  const calls = [];
+  for (const { path, who } of transcripts(dirs, sinceMs, names)) {
+    const text = readOrNull(path);
+    if (!text?.includes('kb')) continue;
+    for (const c of kbShellCalls(text)) if (Number.isFinite(c.atMs)) calls.push({ ...c, who });
+  }
+  const spent = new Map();
+  for (const w of wanted.sort((a, b) => a.atMs - b.atMs)) {
+    let best = null;
+    for (const c of calls) {
+      if ((spent.get(c.id) ?? 0) >= c.runs || c.atMs > w.atMs || w.atMs - c.atMs > CLI_WINDOW_MS) continue;
+      if (!c.verbs.has(w.key.verb) || !c.text.includes(w.key.needle)) continue;
+      if (!best || c.atMs > best.atMs) best = c;
     }
+    if (best) { spent.set(best.id, (spent.get(best.id) ?? 0) + 1); out.set(w.i, { call: best.id, agent: best.who }); }
   }
   return out;
 }
@@ -114,13 +210,18 @@ export function stampCallers(lines, resolved) {
 export function stampCallersFromTranscripts(lines, { env = process.env, cwd = process.cwd(), names } = {}) {
   try {
     const calls = lines.filter((l) => l?.call && !l.agent).map((l) => l.call);
-    if (!calls.length) return lines;
+    const cli = lines.some((l) => cliKey(l));
+    if (!calls.length && !cli) return lines;
     const oldest = Math.min(...lines.map((l) => Date.parse(l?.at)).filter(Number.isFinite));
-    const sinceMs = Number.isFinite(oldest) ? oldest - 10 * 60 * 1000 : 0;
+    const sinceMs = Number.isFinite(oldest) ? oldest - CLI_WINDOW_MS : 0;
     const dirs = env.KB_TRANSCRIPTS_DIR
       ? [env.KB_TRANSCRIPTS_DIR]
       : [...new Set([transcriptDirFor(cwd), transcriptDirFor(REPO_ROOT)])];
-    return stampCallers(lines, resolveCallers(calls, { dirs, sinceMs, names: names ?? knownAgentNames() }));
+    const known = names ?? knownAgentNames();
+    const stamped = stampCallers(lines, resolveCallers(calls, { dirs, sinceMs, names: known }));
+    if (!cli) return stamped;
+    const found = resolveCliCalls(stamped, { dirs, sinceMs, names: known });
+    return stamped.map((l, i) => (found.has(i) && !l.agent ? { ...l, ...found.get(i) } : l));
   } catch {
     return lines;
   }

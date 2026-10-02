@@ -109,9 +109,13 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    per case costs a call per case and mostly returns misses that teach the agent the base is empty.
    There the read fires on **deviation**: a FAIL, a BLOCKED step, an unexpected result, an incidental
    observation — and immediately before every capture, so nothing is recorded twice.
-4. **Name the CLI door first:** `npm run kb -- ask "<coordinate> <question>"`. It needs no
-   `ToolSearch` hop and no MCP server. The MCP form is `mcp__kb__kb_ask`; the `kb` tools are deferred,
-   so they are loaded with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
+4. **Name the MCP door first:** `mcp__kb__kb_ask`. The `kb` tools are deferred, so they are loaded
+   with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
+   The CLI, `npm run kb -- ask "<coordinate> <question>"`, is the fallback when the `kb` server is not
+   connected (fresh clone before a restart, CI, shell-only work). **Why MCP first** (VCST-6146): an MCP
+   call carries its tool-use id, so the log can say which agent asked. In one week (25 Sep – 1 Oct
+   2026), 812 of 916 agent calls came through the CLI and named nobody. CLI calls are now matched
+   back to their shell tool call at push time (`scripts/kb/core/caller.mjs`), but that is a repair.
 5. **The write step covers every platform-behaviour statement the output makes.** A test verdict
    alone does not count. For each statement:
    - it matched an entry → `confirm`;
@@ -145,7 +149,7 @@ Read step — unscripted work (a ticket, an investigation, an exploratory charte
 
 ```
 N. **Ask the base for this run's coordinates** — for each page path / GraphQL operation / endpoint in
-   scope: `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit ids; a
+   scope: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a
    miss is not a blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
 
@@ -153,7 +157,7 @@ Read step — scripted suite execution, inside the per-case loop:
 
 ```
 N. **On a deviation, ask before you classify it** — a FAIL, BLOCKED, unexpected result or incidental
-   observation: `npm run kb -- ask "<coordinate> <what you saw>"` (MCP: `mcp__kb__kb_ask`). A hit
+   observation: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). A hit
    that records this as known behaviour is cited in the result; a miss is not a blocker and does not
    stop the next deviation being asked. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
