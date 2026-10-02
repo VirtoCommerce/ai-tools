@@ -323,7 +323,11 @@
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
     "kb:install": "node scripts/kb/install-mcp.mjs",
     "models:check": "npx tsx scripts/maintenance/check-test-models.ts",
-    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts"
+    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts",
+    "seed:push-audience": "node scripts/seed-data/push-messages/seed-push-audience.mjs",
+    "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
+    "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
+    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs"
   },
   "repository": {
     "type": "git",

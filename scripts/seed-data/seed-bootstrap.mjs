@@ -78,6 +78,7 @@ const TEARDOWN_STEPS = [
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', args: ['--teardown'] },
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
   // Contract pricing before the org graph: the contract binds the AcmeCorp organisation and owns a
   // buyer contact inside it, so it must release both before company-users deletes them.
@@ -150,6 +151,10 @@ const STEPS = [
   // existing product for an existing organisation and creates its own dedicated buyer inside it.
   // Optional — it needs VirtoCommerce.Contracts deployed.
   { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', required: false, priority: 106 },
+  // Push Messages audience-builder fixture (VCST-5944): a two-level org tree + an Employee holding a
+  // login. Needs nothing but the member graph, so it sits just after the org/address steps. OPTIONAL —
+  // the fixture is only meaningful where the PushMessages module is deployed.
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', required: false, priority: 107 },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
