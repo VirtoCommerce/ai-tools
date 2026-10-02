@@ -1,29 +1,32 @@
 {
- "runId": "REG-2026-09-30-1536",
+ "runId": "REG-2026-10-01-1243",
  "status": "completed",
- "startedAt": "2026-09-30T15:36:33.000Z",
- "selection": "004",
+ "startedAt": "2026-10-01T12:43:22.000Z",
+ "windowStart": "2026-10-01T12:43:22.000Z",
+ "selection": "083c,083d",
  "env": "vcst",
  "scoped": true,
- "purpose": "/qa-test VCST-2945 --iterate (delta re-test) row R: SRCH-014..SRCH-023 on theme 2.59.0-pr-2501-3a82. Scoped regression, not C1 (no case written/changed). Delegated: --no-promote.",
- "preflightNote": "Catalog 3.1046.0-pr-909-2839 / XCatalog 3.1022.0-pr-113-f4a8 / Platform 3.1074.0-pr-3125-c3b8 / theme 2.59.0-pr-2501-3a82. Cases write B2B-store barcode settings: run serially, restore defaults in Cleanup.",
+ "purpose": "/qa-test VCST-5957 4c C1 exact set: 16 new Draft + 3 REPAIR + 10 RE-BASE. Delegated: --no-promote.",
+ "preflightNote": "Theme 2.59.0-pr-2524-3069 / Loyalty 3.1009.0-pr-18-4411 / Platform 3.1075.0. Deadline cases seed via seed-missions-deadline.mjs (real order on LOY_PERSONAL_NOORG, accepted) and teardown per case: run deadline consumers serially. MSN_DL set valid until 2026-10-01T23:49:08Z.",
  "suites": [
   {
-   "id": "004",
-   "name": "Search Core",
-   "file": "regression/suites/Frontend/search/004-search-core.csv",
+   "id": "083c",
+   "name": "Loyalty Missions Storefront",
+   "file": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
    "status": "done",
    "lane": "browser",
-   "ids": "SRCH-014..SRCH-023",
-   "pass": 10,
-   "fail": 0,
-   "blocked": 0,
-   "skipped": 0,
-   "browser": "playwright-chrome",
-   "startedAt": "2026-09-30T15:37:30.730Z",
-   "finishedAt": "2026-09-30T15:50:34.785Z"
+   "ids": "MSNF-088..MSNF-102,MSNF-034,MSNF-035,MSNF-087,MSNF-019,MSNF-024,MSNF-027,MSNF-078,MSNF-060",
+   "browser": "playwright-chrome"
+  },
+  {
+   "id": "083d",
+   "name": "Loyalty Missions E2E",
+   "file": "regression/suites/Frontend/loyalty/083d-loyalty-missions-e2e.csv",
+   "status": "done",
+   "lane": "browser",
+   "ids": "MSN-E2E-009,MSN-E2E-001,MSN-E2E-002,MSN-E2E-003,MSN-E2E-006,MSN-E2E-008",
+   "browser": "playwright-chrome"
   }
  ],
- "windowStart": "2026-09-30T15:36:33.000Z",
- "finishedAt": "2026-09-30T15:50:34.786Z"
+ "finishedAt": "2026-10-01T13:46:00.000Z"
 }

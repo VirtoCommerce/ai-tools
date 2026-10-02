@@ -237,6 +237,7 @@
     "layout:list": "npx tsx scripts/layout/layout-runner.ts --list --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
     "layout:author:check": "node scripts/layout/author-reference-suite.mjs --check",
+    "design:extract": "npx tsx scripts/layout/design-spec-extract.ts",
     "verify:multi-env": "npx tsx scripts/test-cases/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/test-cases/verify-multi-env-filters.ts --write-report",
     "bundle:check": "npx tsx scripts/hotfix/bundle-version-check.ts",

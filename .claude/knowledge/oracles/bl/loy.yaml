@@ -256,6 +256,9 @@ rules:
       ref: "Introspect the loyalty GraphQL surface and read a settled ledger entry: the entry (or a sibling query reachable by the same caller) MUST carry the id of the granting mission alongside the order reference. Then place one order that satisfies two or more missions and confirm each grant is separately identifiable. Not satisfied by an entry that carries only an order reference, because one order legitimately produces several entries."
     violation_signal: "The ledger row exposes only an order reference (`type` / `orderId` / `orderNumber`) and no entity id; a single order yields multiple grant rows that cannot be told apart except by amount; a test or a customer asking \"which mission paid these points?\" has no query that answers it. Downstream symptom: every assertion about one entity's contribution degrades to a total, and any such assertion silently measures co-settling entities as well."
     status: ACTIVE
+    verified:
+      date: 2026-10-01
+      by: REG-2026-10-01-1243
   - id: BL-LOY-016
     title: A mission goal measures the ORDER TOTAL — shipping and tax included, net of discount
     rule: "An `OrderValueGoal`'s progress MUST accrue the order's grand total — merchandise plus shipping plus tax, net of any discount — as the measure of a customer's spend toward the goal. A spend target is a promise about total spend, not about goods alone: shipping and tax the customer actually pays count toward it, and a discount that reduces what the customer actually spent correspondingly reduces progress."
@@ -307,6 +310,9 @@ rules:
       ref: "(a) *Within a scope* — place TWO qualifying orders against a target-2 `OrderCountGoal`: `currentValue` must reach exactly 2 (not 4) and the mission must complete once; re-read the points history repeatedly and confirm an identical entry set with no duplicate row ids. (b) *Across a scope change* — with the store calculating per organization, have one buyer who belongs to two organizations complete the same mission under each: expect (and assert the product's actual intent for) two progress records and two grants. (c) *The unconditional clause* — confirm that no single order appears as a contribution to the same mission under more than one owner."
     violation_signal: "`currentValue` advancing by more than the order's own contribution; two ledger rows for one mission completion under ONE owner; a re-read producing a larger entry set; one order contributing to the same mission under two owners. **Not a violation of this rule but its declared cost:** the same mission granted once per owner scope a customer traverses."
     status: ACTIVE
+    verified:
+      date: 2026-10-01
+      by: REG-2026-10-01-1243
   - id: BL-LOY-019
     title: A cancelled order's mission contribution and its granted reward MUST be reversed
     rule: "When an order that contributed to a mission is cancelled, rejected or refunded, its contribution MUST be withdrawn from that mission's progress, and any reward the contribution triggered MUST be deducted from the customer's balance with a reversing ledger entry. Points are money: an accrual that survives the cancellation of the purchase that earned it is an unbounded grant, and a customer can farm it by ordering and cancelling."

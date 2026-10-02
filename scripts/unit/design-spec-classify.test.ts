@@ -244,7 +244,7 @@ test("an empty expectation set is SKIPPED + WARN, never PASS", () => {
 
 test("designAxisSkipped marks every axis SKIPPED + WARN and carries the reason", () => {
   const findings = designAxisSkipped("design source unauthorized (/design-login unavailable)");
-  assert.equal(findings.length, 4);
+  assert.equal(findings.length, 5);
   for (const f of findings) {
     assert.equal(f.verdict, "SKIPPED");
     assert.equal(f.severity, "WARN");
@@ -285,6 +285,7 @@ function specWith(icons: DesignSpec["icons"], over: Partial<DesignSpec> = {}): D
     strokeScales: [],
     arrowFamily: [],
     divergences: [],
+    changes: [],
     unresolved: [],
     ...over,
   };
