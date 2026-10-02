@@ -1,0 +1,658 @@
+{
+ "item": "E-b3-setup-baseline",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:34:48.991Z",
+ "list": "AGENT-TEST-5707-b3",
+ "ownerReadDistribution": {
+  "Customer/targets=1": 12
+ },
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 627,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-b3"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183"
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 3580,
+   "request": {
+    "query": "mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+      "quantity": 2
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "addWishlistItem": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 264,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ],
+      "message": "AGENT-TEST 5707 be E4 message"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 267,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 229,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 207,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 208,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 175,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "35985d99-6919-46ad-8f24-9f28452bc183"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ]
+}

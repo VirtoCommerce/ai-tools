@@ -344,7 +344,7 @@ PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/false
 [ROUNDTRIP label=inbox_off] totalCount after set_track_off does not increase
 [CONSOLE] no JS errors","set_track_on returns 4xx/5xx, inbox empty despite seeded message, inbox_off shows additional messages added after tracking disabled, HTTP 401 for xAPI call (storeId missing)","[AUTH role=ADMIN]
 [REST PUT /api/push-message/{{TRACKED_MSG_ID}}/tracking/false]",COV-2026-06-09-push GAP-006 | Behavior:push.track-new.add-only,Automated
-PUSH-031,"Admin — Push Message Targeting Variants: Organization via memberIds, Member via memberQuery",Admin > Push Messages > Targeting,High,BL-NOTIF-001 BL-NOTIF-003,ECL-7.3,"Admin account accessible; @td(PUSH_ORG_API.name) exists with exactly one member, @td(PUSH_RECIPIENT_API.email) (npm run seed:b2b). The REST PushMessage model has no targetOrganizationIds or userGroups field (unknown properties are dropped), so targeting goes through memberIds (an organization id expands to its members) and memberQuery. Sends two Sent messages: irrevocable, isolated by the dedicated API recipient and its organization.","back_url={{BACK_URL}}, org=@td(PUSH_ORG_API.platform_id), recipient=@td(PUSH_RECIPIENT_API.email)","--- ADMIN: send one message per targeting shape ---
+PUSH-031,"Admin — Push Message Targeting Variants: Organization via memberIds, Member via memberQuery",Admin > Push Messages > Targeting,High,BL-NOTIF-001 BL-NOTIF-003,ECL-7.3,"Admin account accessible; @td(PUSH_ORG_API.name) exists with exactly one member, @td(PUSH_RECIPIENT_API.email) (npm run seed:b2b). The REST PushMessage model has no targetOrganizationIds or userGroups field (unknown properties are dropped), so targeting goes through memberIds (an organization id expands to its members, and since PushMessages PR #28 recursively to every company under it; @td(PUSH_ORG_API.name) has no child company, so it still resolves to its one member - recursion itself is PUSH-052) and memberQuery. The memberQuery is the exact-field phrase emails:""<email>"" because a bare hyphenated phrase is full-text split into OR-ed tokens: on vcptcore_qa1 the former phrase agent-test-push-api previewed 74 recipients, not 1, and as a Sent message it would have gone to all of them irrevocably. Sends two Sent messages: irrevocable, isolated by the dedicated API recipient and its organization.","back_url={{BACK_URL}}, org=@td(PUSH_ORG_API.platform_id), recipient=@td(PUSH_RECIPIENT_API.email)","--- ADMIN: send one message per targeting shape ---
 [AUTH role=ADMIN]
 [REST-OP create_org_target]
 POST /api/push-message
@@ -355,7 +355,7 @@ Body: {""topic"": ""AGENT-TEST-target-org"", ""shortMessage"": ""AGENT-TEST-org-
 [REST-OP create_query_target]
 POST /api/push-message
 Content-Type: application/json
-Body: {""topic"": ""AGENT-TEST-target-query"", ""shortMessage"": ""AGENT-TEST-query-targeting"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberQuery"": ""agent-test-push-api""}
+Body: {""topic"": ""AGENT-TEST-target-query"", ""shortMessage"": ""AGENT-TEST-query-targeting"", ""status"": ""Sent"", ""startDate"": ""2026-01-01T00:00:00Z"", ""memberQuery"": ""emails:\""@td(PUSH_RECIPIENT_API.email)\""""}
 [REST-EXEC create_query_target]
 [REST-CAPTURE create_query_target.body.id → QUERY_MSG_ID]
 --- RECIPIENT (xAPI): both messages reach the one member ---
@@ -369,7 +369,7 @@ Body: {""topic"": ""AGENT-TEST-target-query"", ""shortMessage"": ""AGENT-TEST-qu
 [DATA label=create_query_target] body.status = Sent
 [ERRORS label=inbox] errors[] empty
 [DATA label=inbox] data.pushMessages.items[?id={{ORG_MSG_ID}}].id is non-null
-[DATA label=inbox] data.pushMessages.items[?id={{QUERY_MSG_ID}}].id is non-null","[ADMIN] POST /api/push-message/search-recipients for each message returns exactly one recipient, the API recipient (the organization has one member; the query matches one member)","a message id missing from the recipient's inbox after the 30s wait (organization id not expanded to its members, or memberQuery matched nobody); search-recipients totalCount 0; HTTP 4xx on create",none — a Sent message cannot be deleted (push.irrevocable); isolated by the dedicated API recipient and its organization,COV-2026-06-09-push GAP-007 | Behavior:push.recipients.per-user | verified live vcst 2026-09-29 (organization id and memberQuery each resolved to 1 recipient),Automated
+[DATA label=inbox] data.pushMessages.items[?id={{QUERY_MSG_ID}}].id is non-null","[ADMIN] POST /api/push-message/search-recipients for each message returns exactly one recipient, the API recipient (the organization has one member; the query matches one member)","a message id missing from the recipient's inbox after the 30s wait (organization id not expanded to its members, or memberQuery matched nobody); search-recipients totalCount 0; HTTP 4xx on create",none — a Sent message cannot be deleted (push.irrevocable); isolated by the dedicated API recipient and its organization,COV-2026-06-09-push GAP-007 | Behavior:push.recipients.per-user | verified live vcst 2026-09-29 (organization id and memberQuery each resolved to 1 recipient) | memberQuery re-pointed 2026-09-30 (VCST-5944) from a bare hyphenated phrase to the exact-field form emails:<email> in quotes; the new phrase is not re-run against PUSH_RECIPIENT_API,Automated
 PUSH-032,Admin API — A Draft Created with a Future startDate Keeps Status Draft,E2E > Push Messages > Scheduled Delivery,High,BL-NOTIF-003,ECL-14.3,"Deterministic gate: create a scheduled message with a FUTURE startDate (2099) and confirm it persists with that exact startDate and stays status=Draft — i.e. it is NOT prematurely delivered/Sent at create time (BL-NOTIF-003). The downstream auto-delivery at startDate needs a multi-minute scheduler wait the browserless runner cannot poll — that [WAIT] + recipient-receipt confirmation is a documented manual cross-layer check. Admin account accessible; ORG_USER storefront account (storeId=B2B-store); scheduler active.","back_url={{BACK_URL}}, store_id={{STORE_ID}}, org_user_id=@td(PUSH_RECIPIENT_API.platform_id)","--- ADMIN ---
 [AUTH role=ADMIN]
 [REST-OP create_scheduled]
@@ -539,3 +539,154 @@ PUSH-41,"A Share Targeting an Organization Reaches Every Member's Inbox, Not Onl
 [ERRORS label=after_buyer2] errors[] empty {SPEC}","[ADMIN] POST /api/push-message/search around the share timestamp shows memberIds including both ACME_BUYER and ACME_BUYER2's platform ids (or the organization id itself, per suite convention in PUSH-031's targetOrganizationIds) — resolves whether org-wide fan-out is real (runner-manual)
 [EVIDENCE] verify whether data.pushMessages.totalCount increased relative to baseline_buyer1 — same discovery caveat as PUSH-39
 [EVIDENCE] verify whether data.pushMessages.totalCount increased relative to baseline_buyer2 — if ONLY buyer1 moves and buyer2 does not, the share is reaching a single contact rather than the organization, contradicting VCST-5332's org-scoped sharing model","only one of the two buyers' totalCount moves (single-contact fan-out, not organization-wide — the risk this case targets), errors[] non-empty on either recipient's read",none — inline cleanup removes the shared list under the rep's own auth,"VCST-5332 | Deprecated 2026-09-29: premise contradicted — sharing a list sends no push; the push is the separate sendCustomerCommunication call (sr.list-share.notify-separate, KB-A98E467C), covered by 050m SR-GQL-042..056",Deprecated
+PUSH-052,"Audience Preview — A Selected Company Resolves Recursively, Skips People Without a Login and Counts Each Person Once",API > Push Messages > Audience Preview,Critical,,ECL-7.3,"Fixtures seeded by npm run seed:push-audience (registered on vcptcore_qa1 only; a stock environment has no company with a child, so the case is undecidable there). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify. Requires PushMessages with POST /api/push-message/preview-recipients (3.1006.0-pr-28 or later). Read-only: preview-recipients computes an audience and writes nothing. The tree is built so wrong implementations give different numbers: parent company 3 (a non-recursive expansion gives 1, one blind to the login gate gives 4), child company 2.","back_url={{BACK_URL}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.platform_id), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.platform_id), nologin_contact=@td(PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN.platform_id)","--- ADMIN: preview five audiences (memberIds only) ---
+[AUTH role=ADMIN]
+[REST-OP prev_parent]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_PARENT_ORG.platform_id)""],""skip"":0,""take"":10}
+[REST-EXEC prev_parent]
+[REST-OP prev_child]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_CHILD_ORG.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_child]
+[REST-OP prev_nologin]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_nologin]
+[REST-OP prev_both]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_PARENT_ORG.platform_id)"",""@td(PUSH_AUDIENCE_CHILD_ORG.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_both]
+[REST-OP prev_page2]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_PARENT_ORG.platform_id)""],""skip"":2,""take"":2}
+[REST-EXEC prev_page2]","[ERRORS label=prev_parent] HTTP 200
+[DATA label=prev_parent] body.totalCount = 3
+[DATA label=prev_parent] body.companiesExpanded = 2
+[DATA label=prev_parent] body.results.length = 3
+[ERRORS label=prev_child] HTTP 200
+[DATA label=prev_child] body.totalCount = 2
+[DATA label=prev_child] body.companiesExpanded = 1
+[ERRORS label=prev_nologin] HTTP 200
+[DATA label=prev_nologin] body.totalCount = 0
+[ERRORS label=prev_both] HTTP 200
+[DATA label=prev_both] body.totalCount = 3
+[ERRORS label=prev_page2] HTTP 200
+[DATA label=prev_page2] body.totalCount = 3
+[DATA label=prev_page2] body.results.length = 1",[ADMIN] the same numbers appear as the estimate headline in the New push message blade when the same company is picked (PUSH-045),parent totalCount 1 (company not expanded into the company under it) or 4 (a person with no login counted); prev_both 5 (a person in both selected companies counted twice); prev_nologin above 0; results.length differing from totalCount when take covers the audience; prev_page2 returning more than the 1 remaining row,none - read-only,"VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe (parent 3, child 2, no-login contact 0, parent+child 3) | Archetype:BOUNDARY | Technique:DT | Promoted: REG-2026-09-30-push5944 (2026-09-30)",Automated
+PUSH-053,Audience Preview — Everyone (membertype:Contact) Leaves Out an Employee Who Holds a Login; List and Query Combine as a Union Without Double Counting,API > Push Messages > Audience Preview,High,,ECL-7.3,"Fixtures seeded by npm run seed:push-audience (registered on vcptcore_qa1 only; a stock environment has no company with a child, so the case is undecidable there). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify. Requires PushMessages with POST /api/push-message/preview-recipients (3.1006.0-pr-28 or later). Read-only: preview-recipients computes an audience and writes nothing. The Employee holds a working login and sits OUTSIDE the company tree. That Everyone (membertype:Contact) excludes an Employee is a DECLARED product decision, not a defect: if it flips, confirm the decision before rewriting the case.","back_url={{BACK_URL}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.platform_id), employee_email=@td(PUSH_AUDIENCE_EMPLOYEE.email), parent_contact_email=@td(PUSH_AUDIENCE_PARENT_CONTACT.email)","--- ADMIN: Everyone vs Employee ---
+[AUTH role=ADMIN]
+[REST-OP prev_everyone]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""membertype:Contact"",""memberIds"":[],""skip"":0,""take"":500}
+[REST-EXEC prev_everyone]
+[REST-OP prev_employees]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""membertype:Employee"",""memberIds"":[],""skip"":0,""take"":10}
+[REST-EXEC prev_employees]
+--- ADMIN: list plus conditions ---
+[REST-OP prev_union]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""emails:\""@td(PUSH_AUDIENCE_EMPLOYEE.email)\"""",""memberIds"":[""@td(PUSH_AUDIENCE_PARENT_ORG.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_union]
+[REST-OP prev_overlap]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""emails:\""@td(PUSH_AUDIENCE_PARENT_CONTACT.email)\"""",""memberIds"":[""@td(PUSH_AUDIENCE_PARENT_ORG.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_overlap]","[ERRORS label=prev_everyone] HTTP 200
+[DATA label=prev_everyone] body.totalCount > 3
+[DATA label=prev_everyone] body.results.length = body.totalCount
+[NULL label=prev_everyone] body.results[?memberId=@td(PUSH_AUDIENCE_EMPLOYEE.platform_id)].memberName
+[ERRORS label=prev_employees] HTTP 200
+[DATA label=prev_employees] body.results[?memberId=@td(PUSH_AUDIENCE_EMPLOYEE.platform_id)].memberName = Push Employee
+[ERRORS label=prev_union] HTTP 200
+[DATA label=prev_union] body.totalCount = 4
+[ERRORS label=prev_overlap] HTTP 200
+[DATA label=prev_overlap] body.totalCount = 3","[ADMIN] in the New push message blade, Everyone shows Show generated query = membertype:Contact (PUSH-044)","the Employee present in the Everyone rows (query no longer membertype:Contact, or type filter dropped); prev_everyone rows fewer than totalCount (paging cap reached: the case then proves nothing about absence); prev_union 3 (query half ignored) or 5+; prev_overlap 4 (a person selected twice - once in the company, once by the query - counted twice)",none - read-only,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe (company + Employee query 4; company + own member query 3) | Archetype:PARITY | Technique:DT | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-054,Audience Preview — A Phrase the Index Cannot Parse Is Refused with HTTP 400; Valid Phrases and an Unknown Field Still Answer 200,API > Push Messages > Audience Preview,High,,ECL-14.1,"Fixtures seeded by npm run seed:push-audience (registered on vcptcore_qa1 only; a stock environment has no company with a child, so the case is undecidable there). Requires PushMessages with POST /api/push-message/preview-recipients (3.1006.0-pr-28 or later). Read-only: preview-recipients computes an audience and writes nothing. An unknown field (junkfield:xyz) is NOT an error: it parses and matches nobody. The 400 body is plain text, not JSON.",back_url={{BACK_URL}},"--- ADMIN: malformed phrases ---
+[AUTH role=ADMIN]
+[REST-OP bad_quote]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""emails:\""a"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC bad_quote]
+[REST-OP bad_parens]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""((("",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC bad_parens]
+[REST-OP bad_star]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""*:*"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC bad_star]
+--- ADMIN: phrases that must still resolve ---
+[REST-OP ok_junk]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""junkfield:xyz"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC ok_junk]
+[REST-OP ok_range]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""createddate:[2026-01-01 TO]"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC ok_range]
+[REST-OP ok_negation]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""!membertype:Organization"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC ok_negation]
+[REST-OP ok_or]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":""membertype:Contact OR membertype:Employee"",""memberIds"":[],""skip"":0,""take"":0}
+[REST-EXEC ok_or]","[ERRORS label=bad_quote] HTTP 400
+[DATA label=bad_quote] body matches /cannot be parsed/
+[ERRORS label=bad_parens] HTTP 400
+[DATA label=bad_parens] body matches /cannot be parsed/
+[ERRORS label=bad_star] HTTP 400
+[DATA label=bad_star] body matches /cannot be parsed/
+[ERRORS label=ok_junk] HTTP 200
+[DATA label=ok_junk] body.totalCount = 0
+[ERRORS label=ok_range] HTTP 200
+[DATA label=ok_range] body.totalCount > 0
+[ERRORS label=ok_negation] HTTP 200
+[DATA label=ok_negation] body.totalCount > 0
+[ERRORS label=ok_or] HTTP 200
+[DATA label=ok_or] body.totalCount > 0","[ADMIN] the same phrase typed in Advanced query shows an em-dash headline, holds Save and Send, and fires no POST/PUT /api/push-message (PUSH-048)","a malformed phrase answering 200 with a count (the estimate would promise recipients the send job cannot resolve) or 500; a valid phrase (range, negation, OR) answering 400; junkfield:xyz answering 400 instead of 200 with 0",none - read-only,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe (400 text 'The member query ... cannot be parsed. (Parameter memberQuery)') | Archetype:SILENT | Technique:EG | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-055,Audience Preview vs Delivery — The Previewed Count Equals the Recipient Rows Created by the Send (Irreversible Send),API > Push Messages > Audience Preview,Critical,,ECL-14.3,"Fixtures seeded by npm run seed:push-audience (registered on vcptcore_qa1 only; a stock environment has no company with a child, so the case is undecidable there). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify. Requires PushMessages with POST /api/push-message/preview-recipients (3.1006.0-pr-28 or later). Read-only: preview-recipients computes an audience and writes nothing. THIS CASE SENDS: a Sent push message cannot be modified or deleted, so it stays for good. It is addressed to the child company only (2 dedicated fixture people that no other case reads), because previewing the same audience already proves counting and only the preview-equals-delivered claim needs a real send.","back_url={{BACK_URL}}, child_org=@td(PUSH_AUDIENCE_CHILD_ORG.platform_id)","--- ADMIN: preview the audience ---
+[AUTH role=ADMIN]
+[REST-OP prev_child]
+POST /api/push-message/preview-recipients
+Content-Type: application/json
+Body: {""memberQuery"":"""",""memberIds"":[""@td(PUSH_AUDIENCE_CHILD_ORG.platform_id)""],""skip"":0,""take"":0}
+[REST-EXEC prev_child]
+[REST-CAPTURE prev_child.body.totalCount → PREVIEW_COUNT]
+--- ADMIN: send to the same audience (irreversible) ---
+[REST-OP send_child]
+POST /api/push-message
+Content-Type: application/json
+Body: {""topic"":""AGENT-TEST-audience-preview-eq-delivered"",""shortMessage"":""AGENT-TEST-audience-preview-eq-delivered-body"",""status"":""Sent"",""startDate"":""2026-01-01T00:00:00Z"",""memberIds"":[""@td(PUSH_AUDIENCE_CHILD_ORG.platform_id)""]}
+[REST-EXEC send_child]
+[REST-CAPTURE send_child.body.id → SENT_MSG_ID]
+[WAIT seconds=20]
+--- ADMIN: read the recipient rows the send job created ---
+[REST-OP delivered]
+POST /api/push-message/search-recipients
+Content-Type: application/json
+Body: {""messageId"": ""{{SENT_MSG_ID}}"", ""take"": 10}
+[REST-EXEC delivered]","[ERRORS label=prev_child] HTTP 200
+[DATA label=prev_child] body.totalCount = 2
+[ERRORS label=send_child] HTTP 200
+[DATA label=send_child] body.status = Sent
+[ERRORS label=delivered] HTTP 200
+[DATA label=delivered] body.totalCount = {{PREVIEW_COUNT}}
+[DATA label=delivered] body.totalCount = 2",[STOREFRONT] a child contact's bell shows AGENT-TEST-audience-preview-eq-delivered-body (PUSH-050 does this through the UI),delivered totalCount differing from the previewed count in either direction (the estimate and the send job resolve the audience differently); no recipient rows 20s after the send (send job not run or slower than the wait: poll before calling it a defect),none - a Sent message cannot be deleted (push.irrevocable); isolated by the audience fixture company that no other case reads,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe (previewed 1 -> sent -> search-recipients totalCount 1) | Archetype:PARITY | Technique:FLOW | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated

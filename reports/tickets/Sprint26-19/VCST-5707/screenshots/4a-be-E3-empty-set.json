@@ -1,0 +1,485 @@
+{
+ "item": "E3-empty-set",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:32:18.862Z",
+ "lists": [
+  "AGENT-TEST-5707-b1",
+  "AGENT-TEST-5707-b2"
+ ],
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "scope": "Customer",
+      "removeSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 192,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 175,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ],
+      "removeSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 200,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id scope } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-b2"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "Private"
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 245,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "Customer"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "6213b323-d387-48cc-bad1-fbdf264fffe2",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "Customer",
+      "addSharedWithIds": []
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 220,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Private",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "e30e8da6-33dd-4e58-81b2-708d55b498f0",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 214,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "AnyoneAnonymous"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 217,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "Customer"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 190,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

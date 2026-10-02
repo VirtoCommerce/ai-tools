@@ -1,0 +1,33 @@
+# name: returns
+# category: returns
+# role: ORG_USER
+# purpose: Cursor-paginated list of the CALLER'S OWN returns for a store -- ReturnConnection
+#   { totalCount pageInfo { hasNextPage hasPreviousPage startCursor endCursor } edges items }.
+#   Supports keyword, sort, statuses[] and startDate/endDate filters.
+# required-vars: STORE_ID (String)
+# optional-vars: FIRST (Int), STATUSES (list of String, e.g. ["Cancelled"]), KEYWORD (String),
+#   SORT (String), START_DATE (DateTime), END_DATE (DateTime)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-030 (050o-graphql-returns.csv)
+# runner-note: VCST-5628. statuses filter genuinely narrows server-side (confirmed live 2026-09-25:
+#   statuses:["Cancelled"] returned only Cancelled rows against an account with 39 mixed returns).
+
+query {
+  returns(storeId: "{{STORE_ID}}", first: 5, statuses: ["Cancelled"]) {
+    totalCount
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+    items {
+      id
+      number
+      status
+      createdDate
+      itemsQuantity
+    }
+  }
+}

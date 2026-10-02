@@ -1,7 +1,7 @@
 // Unit tests for `isCanonicalHeader` / `describeHeaderMismatch` in
 // scripts/test-cases/append-test-cases-to-suite.ts.
 //
-// WHY THE GUARD IS SHARED. `parseSuite` maps fields POSITIONALLY, so on one of the 11 surviving
+// WHY THE GUARD IS SHARED. `parseSuite` maps fields POSITIONALLY, so on one of the 10 surviving
 // legacy 11-column suites the legacy `Steps` lands in `Test_Data` and `Expected Result` lands in
 // `Steps`. A consumer that then reads a column by name scores confidently-derived nonsense, and
 // nothing downstream can tell. The comparison was duplicated across six call sites in four files.
@@ -91,15 +91,15 @@ test("surrounding whitespace in header cells is tolerated", () => {
 
 // ---- the corpus invariant --------------------------------------------------------
 
-test("exactly 11 suite CSVs fail the predicate — it got neither stricter nor weaker", () => {
+test("exactly 10 suite CSVs fail the predicate — it got neither stricter nor weaker", () => {
   // Pinned so the refactor that extracted this guard from six inline copies is provably
   // behaviour-preserving. If a header is migrated this number drops and the test is updated
   // deliberately; a change in either direction from a refactor is a bug.
   const failing = allSuiteCsvs().filter((f) => !isCanonicalHeader(readFileSync(f, "utf-8")));
   assert.equal(
     failing.length,
-    11,
-    `expected 11 legacy-header suites, found ${failing.length}: ${failing.map((f) => f.split("/").pop()).join(", ")}`,
+    10,
+    `expected 10 legacy-header suites, found ${failing.length}: ${failing.map((f) => f.split("/").pop()).join(", ")}`,
   );
 });
 
