@@ -20,6 +20,8 @@ rules:
         ref: "`vc-module-profile-experience-api` `MemberAggregateRootBase.cs` (address comparer + `IsDuplicateAddress`), `CheckDuplicateAddressQueryHandler.cs` (delegates to the same method), `OrganizationAggregate.cs` / `ContactAggregate.cs` (no override — inherit the shared logic)."
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Profile/Mutations/updateMemberAddresses.md (published) — documents the mutation shape only; no dedup semantics
+    scope:
+      code_ref: vc-module-profile-experience-api:src/VirtoCommerce.ProfileExperienceApiModule.Data/Aggregates/MemberAggregateRootBase.cs#IsDuplicateAddress
     check:
       kind: manual
       ref: |-

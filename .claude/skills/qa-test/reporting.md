@@ -85,7 +85,10 @@ rate via
 Markdown, never wiki markup; outcome-first, evidence referenced not inlined
 (`.claude/knowledge/execution/tracker-ops.md` §5a). **Post it with `npm run tracker:comment` and record the
 id in `summary.json.tracker.comment_id`; every later write this run makes to the ticket AMENDS that
-comment, never a second one** (`tracker-ops.md` §0):
+comment, never a second one** (`tracker-ops.md` §0). **Every post and amend passes
+`--artifact "<build.deployed of the component under test>"`** — the value `1b` probed this round, never
+`declared`. That is what lets a retest of a NEW build post a new comment instead of being folded into
+the old one (§0 rule 5):
 
 ```
 QA Complete — [X] cases, [Y] passed, [Z] failed.
@@ -337,8 +340,8 @@ exactly as it is at 5-file and 5-status, and a subagent never posts it unprompte
 **The posting mechanics are `tracker-ops.md`'s, not this step's** — read §5a/§5c/§5d **before** the first
 API call, not after the first failure. §2 **Comment** for the endpoint (Jira `addCommentToJiraIssue`,
 Azure Boards the work-item comments REST endpoint); **§5d** for what a delivery is — *the guides in full,
-in the body*, with a split across comments (one per audience) as the only legal response to a body that
-does not fit, and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
+in the body*, ONE comment however long (never a split across comments; a body that genuinely does not
+fit is attached to the ticket and referenced from that one comment), and never a `reports/ba/` path standing in for content a reader cannot reach; **§5a** for
 the body dialect (Markdown for Jira, HTML for Azure — never Jira wiki markup) and **§5c** for its one
 carve-out: a screenshot needs an attachment plus a **wiki-markup** reference, which makes the whole Jira
 body wiki. §5c also records the three ADF dead ends, so do not re-probe them.

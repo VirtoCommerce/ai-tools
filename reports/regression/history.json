@@ -2943,5 +2943,37 @@
     "pass_rate": 100,
     "duration_minutes": 11.75,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-01-1243",
+    "date": "2026-10-01",
+    "suiteId": "083c",
+    "suiteName": "Loyalty Missions Storefront",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 23,
+    "passed": 7,
+    "failed": 9,
+    "blocked": 6,
+    "skipped": 1,
+    "pass_rate": 43.75,
+    "duration_minutes": 46.55,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-01-1243",
+    "date": "2026-10-01",
+    "suiteId": "083d",
+    "suiteName": "Loyalty Missions E2E",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 6,
+    "passed": 3,
+    "failed": 0,
+    "blocked": 3,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 13.4,
+    "mode": "interactive"
   }
 ]

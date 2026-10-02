@@ -1,34 +1,53 @@
 # Stage 3 — triage, verdict, and the human-readable report
 
-## Triage
+## Triage — `qa-triage-results ticket`, then `vc-fix:qa-investigate`
 
-Merge the runner results and the exploratory findings, then dedupe them. **Dedupe by defect class,
-not by surface** — two lanes seeing one defect is one finding with two pieces of evidence. Classify
-each finding:
+The chain is fixed: **triage → investigate → `qa-bug`.** Each link has one owner, and no link is done by
+hand.
 
-| Class | Goes to |
+1. **The input is the checklist.** At the Stage 2 join every exploratory and visual finding became a row with a
+   verdict in `testing-checklist.md`. **Dedupe there, by defect class rather than by surface**: two lanes that
+   saw one defect make one row with two pieces of evidence.
+2. **Invoke the `qa-triage-results` skill with `ticket <TICKET> --verify`**
+   ([`../../commands/qa-triage-results.md`](../../commands/qa-triage-results.md) §Usage, its *Ticket mode* paragraph). It collects
+   the FAIL / BLOCKED / NOT-RUN rows (`npm run triage:collect -- --ticket <TICKET>`) and classifies them with
+   the regression classifier. Phase 4 then sends **every** real-bug candidate to the layer's QA expert, whose
+   brief makes it invoke `vc-fix:qa-investigate` ahead of `qa-bug`. Each one returns `REPRODUCED` /
+   `NOT_REPRODUCED` plus an evidence package.
+3. **Apply what it returns** ([`../qa-triage-results/routing-and-fix.md`](../qa-triage-results/routing-and-fix.md)
+   §Ticket mode):
+
+| Returned class | Goes to |
 |---|---|
-| **Product bug** | `/vc-fix:qa-bug` (below) |
-| **Test defect** — a wrong checklist item, stale data, a wrong oracle | fixed in `testing-checklist.md` and re-run once, or noted in `verdict.md` |
+| **Confirmed bug** (`REAL_BUG`, `REPRODUCED`) | `/vc-fix:qa-bug` with its package (below) |
+| **`needs-review`** (did not reproduce; `vc-fix` missing; or the Skill tool refuses `vc-fix:qa-investigate` — an install that predates its unlock: tell the user to run `/plugin update`) | a line in `verdict.md`, never filed |
+| **Test defect** — a wrong checklist item, stale data, a wrong oracle | fixed in `testing-checklist.md` by you and re-run once, or noted in `verdict.md` |
 | **Env / flaky / known** | the item's Result note, with the evidence that says so. When it stopped a check, also a line under *Not tested, and why* |
 | **By design** | `kb` (confirm or capture) and a line in `verdict.md`. Never a bug |
 
-Before calling a finding a product bug, check the back office for the value it depends on and query
-VirtoOZ for the documented behaviour ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules →
+A visual finding's effect on the verdict is set by
+[`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §3: a `BL-UI` FAIL blocks, an a11y FAIL on a
+functional ticket is filed standalone, and `vs. DESIGN` drift only advises.
+
+Before calling a finding a product bug, the investigation must check the back office for the value it
+depends on and query VirtoOZ for the documented behaviour ([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules →
 *Product context*). Severity follows `/qa-defect`.
 
 ## Bugs — through `/vc-fix:qa-bug`, one at a time
 
-Call `/vc-fix:qa-bug "<one-line defect>"` once per product bug. Give it, **as file paths**:
-- the evidence (screenshots, HAR, console/network lines)
+Call `/vc-fix:qa-bug "<one-line defect>"` once per **confirmed** bug. Give it, **as file paths**:
+- **the `vc-fix:qa-investigate` package** (`evidence-index.md`, `root-cause.md`, screenshots, HAR,
+  console/network lines). Say that the bug is already reproduced and investigated, so `qa-bug` reuses the
+  package for its reproduction and its 4-layer validation and does not dispatch a second repro
+  ([`../qa-triage-results/routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §The `/qa-bug` brief)
 - the checklist item id or charter item it came from
 - the ledger ids of the data involved
 - the build versions from Step 0
 - `found-by:agent-testing <ticket-key>` — left out only for a bug the user brought in, which `qa-bug` then
   records as a human's (`.claude/knowledge/execution/tracker-ops.md` §Labels on bugs Claude files)
 
-`qa-bug` then does what this flow must not do by hand: duplicate check, 4-layer validation, source and
-log research, owning-repo resolution (the `/qa-fix` handoff block), and the report file. **Cite the
+`qa-bug` then does what this flow must not do by hand: the duplicate check, the 4-layer validation (from the
+package), owning-repo resolution (the `/qa-fix` handoff block) and the report file. **Cite the
 path `qa-bug` returns.** Never move or rewrite its report. **Its tracker-ticket step runs only on the user's yes**, asked once per
 bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
@@ -48,6 +67,7 @@ functional ticket.
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
   - `path: "FAST_GROUNDED"`, `flow: "feature-test"`
   - `regression: null` (C1 never runs here)
+  - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)
   - `discovery` — the exploratory lane
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
@@ -58,6 +78,8 @@ functional ticket.
   Then run `npm run summary:validate`; it must report no new finding. Run it again after the last
   write-back (comment id, page link, kb ids).
 - **`testing-checklist.md`** — the Result column filled in by you, the only writer.
+- **`triage-report.md`** and the `evidence-*/` investigation packages — written by `qa-triage-results`
+  ticket mode, never by hand.
 - **`verdict.md`** — **≤60 lines, in this order, nothing else:**
 
 ```markdown
@@ -85,7 +107,8 @@ Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPP
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
 contradicted, a scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its
 evidence, and an UNVERIFIED node the exploratory session established. A DRIFT that holds and whose
-route `TM-018` flags as unfiled is a bug: it goes through `/vc-fix:qa-bug` like any other, and the key
+route `TM-018` flags as unfiled is a bug: it reaches triage as a FAIL row
+([`context-wave.md`](context-wave.md) §Wave 3) and goes through investigate → `/vc-fix:qa-bug` like any other, and the key
 or path that returns becomes the finding's proposed route. They are handed to the next
 `/qa-test-mind-map update --from <TICKET>`, never applied here
 ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-docs-map).
@@ -114,7 +137,8 @@ private page reaches no one. Never describe the page as private in the comment o
 
 Ask once: *"Post the verdict comment to <TICKET>?"* On yes:
 - post it per [`../qa-test/reporting.md`](../qa-test/reporting.md) §5-report.2 (`npm run tracker:comment`),
-  then write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends it
+  with `--artifact "<build.deployed>"`, then write the returned id into `summary.json.tracker.comment_id` —
+  a same-build re-run amends it; a re-run on a NEW build posts a new comment ([`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0 rule 5)
 - it is **one** comment, amended and never appended to, per
   [`../../knowledge/execution/tracker-ops.md`](../../knowledge/execution/tracker-ops.md) §0
 - screenshots go **inline**, verified from `renderedBody` ([`../../rules/reports.md`](../../rules/reports.md) §5.0)

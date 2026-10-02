@@ -18,6 +18,8 @@ rules:
         ref: module README §Order statistics ("both `period` bounds are inclusive and compared as UTC instants… there is no server-side date truncation"); live probe 2026-07-23.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics.md (published) — example uses aliased period/comparison blocks and a bound-less period returning firstOrderDate as 'customer since'
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/Statistics/CustomerOrderStatisticsService.cs#BuildQuery
     check:
       kind: manual
       ref: Same range requested as an aliased `period` and inside a `comparison` → identical aggregate, one DB pass; a bounded `period` vs a no-bound `period` on the same customer → all-time count ≥ bounded count.
@@ -37,6 +39,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/overview.md (published) — POST /graphql/sales-rep requires a bearer token and is scoped to the store and membership of the caller
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepOrders.md (published) — returns the orders the sales representative created for their customers
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/SalesRepOrganizationAccessService.cs#GetVisibleOrganizationIdsAsync
     check:
       kind: manual
       ref: "*Half (a):* `salesRepCustomer`/`salesRepCustomerOrderStatistics` for an unserved org resolves null/empty (mirrors 050m SR-GQL-016/023); a per-org **locked** membership excludes that org while unlocked orgs still resolve; anonymous → auth error. *Half (b) — the CONTRAST is the test, and it is literal-free:* on ONE rep token in ONE window, `salesRepOrders` returns strictly fewer orders than `salesRepCustomerOrders`, and `salesRepCustomerOrders` returns **more than one distinct `customerId`** (a creator-scoped surface returns exactly one). Rep A's **statistics** still exclude rep B's orders in a shared org."
@@ -52,6 +56,8 @@ rules:
         ref: module README §Order statistics comparison; live probe 2026-07-23.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics.md (published) — comparison(current, previous) returns totalChange, totalChangePercent, countChange, countChangePercent
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Schemas/StatisticsFieldHelper.cs#Percent
     check:
       kind: manual
       ref: "Customer with orders only in the current period, none in the previous → `totalChange.amount` = current total, `totalChangePercent` = null, `countChangePercent` = null. (Live-confirmed 2026-07-23: `totalChange.amount=816`, `totalChangePercent=null`.)"
@@ -67,6 +73,8 @@ rules:
         ref: module README (Money "converted to `currencyCode` → store default → platform primary"); live probe 2026-07-23.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerOrderStatistics.md (published) — currencyCode argument is the reporting currency; response example echoes currencyCode with localized formattedAmount
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Services/SalesRepCurrencyResolver.cs#ResolveCurrencyCodeAsync
     check:
       kind: manual
       ref: 'Pass `currencyCode:"EUR"` → response `currencyCode:"EUR"`, `formattedAmount` uses the € symbol; omit → store default. (Live-confirmed 2026-07-23: EUR echoed, `€816.00`.) Assert the echoed code + symbol, **not** a specific converted amount (FX rate is env-dependent — vcst-qa EUR ≈ 1.0).'
@@ -80,6 +88,8 @@ rules:
     source:
       - kind: code
         ref: "vc-module-sales-rep `RepOrderScopeQueryExtensions.ApplyRepScope` (default `includeCancelled=false` → filters `!IsPrototype && !IsCancelled`); `CustomerOrderStatisticsService.BuildQuery` calls it with no `includeCancelled` argument, so the exclusion is unconditional regardless of any status filter. Contrast `SalesRepOrderStatusService.BuildQuery`, which passes `includeCancelled: true` for the list scope (BL-SR-009)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/Statistics/RepOrderScopeQueryExtensions.cs#ApplyRepScope
     check:
       kind: manual
       ref: A customer with a genuinely cancelled order (`IsCancelled=true`) → every statistics figure excludes it under any filter, including `filter:"Cancelled"`. A customer with a `Status`-only cancelled-looking order (`IsCancelled=false`) → the baseline/all-status figure INCLUDES it.
@@ -101,6 +111,8 @@ rules:
         ref: VCST-5648 (Cancelled) — dev confirms non-empty guard applies to dated windows as well; empty carts never counted as active
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCartFilterRules.md (published) — cart statistics filter rule 'active-carts' discovered with a localizedName
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/Statistics/CustomerCartStatisticsService.cs#BuildQuery
     check:
       kind: manual
       ref: Rep with active carts across served orgs → the `active-carts` period returns selected/unselected item quantities. A customer's carts in a currency other than the requested `currencyCode` contribute nothing to the figures (not converted, not merged).
@@ -116,6 +128,8 @@ rules:
         ref: module README §My customers; live probe 2026-07-23.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerCounts.md (published) — returns how many customers the rep is assigned plus ordering/new customers over requested date ranges, scoped to the rep
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Schemas/SalesRepCustomerCountsType.cs#SalesRepCustomerCountsType
     check:
       kind: manual
       ref: "Rep serving 5 orgs → `assignedCustomers=5`; a month's `orderingCustomers`/`newCustomers` ≤ 5. (Live-confirmed 2026-07-23: 5 / 4 / 5.)"
@@ -131,6 +145,8 @@ rules:
         ref: module README §Top sellers; live probe 2026-07-23.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepTopSellers.md (published) — ranks best sellers by units (default) or revenue over a period; omit organizationId for cross-customer; filter restricts to category subtree
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Queries/SalesRepTopSellersQueryHandler.cs#Handle
     check:
       kind: manual
       ref: "`take:5` → ≤5 rows; `take:15` → ≤10 rows, no error (live-confirmed 2026-07-23: clamped); `by-units` vs `by-revenue` re-rank; category filter narrows the set; row identity from snapshot even if the catalog product changed."
@@ -148,6 +164,8 @@ rules:
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepOrderFilterRules.md (published) — named filters for orders list and order statistics, each with name and localizedName
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepCustomerFilterRules.md (published) — customer filter rules ship a single 'all' rule
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Services/SalesRepOrderFilterRuleResolver.cs#ApplyListFilterAsync
     check:
       kind: manual
       ref: "`filter:\"BOGUS\"` on `salesRepOrders` → `totalCount:0` while baseline (no filter) > 0 (live-confirmed 2026-07-23: 0 vs 8); discovery returns localized names. **Contrast:** the identical raw field:value term *narrows* `salesRepCustomerOrders` instead of failing closed, and no filter-rule discovery query exists for that surface (querying one is a schema error) — both are correct under this Rule's stated scope. Re-confirmed by paired probes in one window on the same token."
@@ -163,6 +181,8 @@ rules:
         ref: module README §Sort rules, which scopes itself in its own opening words — "The **orders, customers and top-sellers** lists are ordered by a single, optional named sort rule" — plus its §Customer orders ("Unlike the rule-based lists above, these two follow **X-Order's** shape … `sort` takes index field expressions"); `SalesRepOrdersQueryHandler` resolves via `_sortRuleResolver.ApplySortAsync(...)`, whereas `SalesRepCustomerOrdersQueryHandler.BuildSearchCriteria` assigns `criteria.Sort = request.Sort.EmptyToNull() ?? DefaultSort` with no resolver call and no discovery-query type in existence for it; live probe 2026-07-23; re-triangulated 2026-09-03.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepTopSellerSortRules.md (published) — ranking options by-units and by-revenue discovered with localizedName
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Sorts/SortRuleResolverBase.cs#ResolveSortRuleAsync
     check:
       kind: manual
       ref: "Unknown sort name → default order, no error (live 2026-07-23: `totalCount` unchanged); `recent:asc`/`by-units:asc` → error `code=ARGUMENT`; `total:asc`/`name:desc`/`ytd-purchases:asc` → 200, reversed order; `customerSalesReps(sort:\"name:asc\")` → 200 (accepts plain sort). **Contrast, paired controls in one window:** a raw index-field expression *reorders* `salesRepCustomerOrders` while the same expression is *ignored* by `salesRepOrders` (which resolves names only); a legacy rule name sent to `salesRepCustomerOrders` produces neither that rule's ordering nor the default; and an unsupported direction that returns `code=ARGUMENT` on `salesRepOrders` returns 200 unchanged on `salesRepCustomerOrders`. No sort-rule discovery query exists for that surface."
@@ -184,6 +204,8 @@ rules:
         ref: VCST-5304 (Done) — when logged in as a Sales Rep (role), the account left rail gets a separate 'Sales Rep hub' widget
       - kind: resolution
         ref: VCST-5494 (Done) — rep with no org membership was redirected from My customers; fixed so rep-facing hub pages are reachable
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/routes.ts#guardSalesRep
     check:
       kind: manual
       ref: Rep with `sales-rep:access` + module enabled → hub/my-customers/customer-profile render, including the empty "No customers found" state for a rep with **zero** org memberships; **any non-rep account lacking `sales-rep:access`** — a low-privilege buyer, **or a privileged non-rep** (e.g. an org maintainer holding org user-CRUD permissions and `platform:security:loginOnBehalf`, but not `sales-rep:access`) — is redirected, no `salesRep*` query issued; `SalesRep.Enabled=false` → hub/list/profile unreachable and rail section absent (mirrors 089 SR-FE-003). The buyer-facing `/company/sales-reps` page stays org-gated regardless.
@@ -197,6 +219,8 @@ rules:
     source:
       - kind: code
         ref: "vc-frontend PR #2395 (\"Filter-aware empty states… distinguish 'nothing matches this filter/search' from 'no data'\")."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/pages/my-customers.vue
     check:
       kind: manual
       ref: A narrowing filter/search with zero matches → "nothing matches" state (with reset affordance), distinct from the no-data-at-all state.
@@ -236,6 +260,8 @@ rules:
         ref: "`vc-module-sales-rep` `SalesRepController.cs` (`dev`, `api/sales-rep`) — per-endpoint `[Authorize]` map (`CustomerModule…Permissions.Read/Create/Update/Delete` + `Platform…Permissions.SecurityCreate/Update/Delete`); `useSalesRepPermissions/index.ts` (frontend UI gate — CRUD subset, no account-ops class); `ModuleConstants.cs` (`sales-rep:access` = rep definition only). VCST-5293."
       - kind: doc
         ref: platform/user-guide/docs/sales-rep/managing-sales-reps.md (published) — admins view, add, edit, block and delete sales reps; no permission requirements stated
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Web/Controllers/Api/SalesRepController.cs#SalesRepController
     check:
       kind: manual
       ref: a back-office Manager (`isAdministrator=false`) **without `customer:read`** gets the menu entry hidden and `POST /api/sales-rep/search` → 302 → AccessDenied; a Manager with **`customer:read` only** opens the app and lists reps (search → 200) but Add/Delete/Save are hidden and `POST`/`PUT /api/sales-rep` → **403**; block/unblock/reset-password succeed only with `platform:security:update` (independent of `customer:update`).
@@ -251,6 +277,8 @@ rules:
         ref: "`vc-module-sales-rep` `LayoutService.GetLayoutAsync`/`BuildNameParts` (keys the customer-preference lookup on `[PreferenceName, scope, storeId?]` under the resolved `userId`); `SalesRepLayoutQuery.Map` (`UserId = context.GetCurrentUserId()`)."
       - kind: ac
         ref: VCST-5367 (Done) — story 'drag and drop and save layout' for hub and customer profile; layout saved in member dynamic properties
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/LayoutService.cs#BuildNameParts
     check:
       kind: manual
       ref: Query `salesRepLayout` with a fresh `scope` → `null` (SR-GQL-099/103/116). Save under one `storeId`, query under a different `storeId`/omitted → `null`, not the saved doc (SR-GQL-104). Two different authenticated reps querying the same `scope` each resolve only their own document, never the other's (SR-GQL-102).
@@ -264,6 +292,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `SaveLayoutCommandHandler.Handle` (builds a brand-new `Layout` from only `request.SchemaVersion`/`request.Regions` — the prior stored value is never read or merged)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Commands/SaveLayoutCommandHandler.cs#Handle
     check:
       kind: manual
       ref: Save a document containing two regions; save again with only one region → reload resolves only that region; the omitted region and its blocks are gone, not carried over from the prior save (SR-GQL-107).
@@ -277,6 +307,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `LayoutBlock`/`LayoutRegion` (plain properties, no reordering logic); `LayoutService.SaveLayoutAsync`/`GetLayoutAsync` (verbatim JSON serialize/deserialize, no transform)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/LayoutService.cs#SaveLayoutAsync
     check:
       kind: manual
       ref: Save a region with blocks in a specific order and one block `hidden:true`; reload → same order, same hidden flags (SR-GQL-100/108/109/115).
@@ -290,6 +322,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `LayoutService.SaveLayoutAsync` (sets `layout.ModifiedDate = DateTime.UtcNow` before persisting); `SaveLayoutCommandHandler.Handle` (returns the same `layout` instance it just saved)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/LayoutService.cs#SaveLayoutAsync
     check:
       kind: manual
       ref: Save a document; the mutation response's regions/blocks match what was sent and `modifiedDate` is a fresh UTC timestamp; an immediate follow-up `salesRepLayout` query returns an identical document (SR-GQL-106/115).
@@ -303,6 +337,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `LayoutService` `_serializerSettings` (`DateParseHandling.None`); `SalesRepLayoutSettingType` (`Value` typed `AnyValueGraphType`, a scalar passthrough)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/LayoutService.cs#_serializerSettings
     check:
       kind: manual
       ref: Save a setting `value` as a number, a boolean, and a date-formatted string; reload each → same JSON type as sent, same value (SR-GQL-111).
@@ -316,6 +352,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `InputSalesRepLayoutType`/`SalesRepLayoutQuery` (`Scope`/region id typed `StringGraphType`, no enum/validator); `LayoutService.BuildNameParts` (raw string concatenation, no allow-list check)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.Data/Services/LayoutService.cs#BuildNameParts
     check:
       kind: manual
       ref: Query/save with a `scope` (or `region.id`) value no known surface/region uses → HTTP 200; read resolves `null`; write creates a new, independent document, never the "real" surface's (SR-GQL-105/114).
@@ -329,6 +367,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `SalesRepLayoutQuery.Map` (`UserId = context.GetCurrentUserId()`); `LayoutService.GetLayoutAsync`/`SaveLayoutAsync` (`ArgumentException.ThrowIfNullOrEmpty(userId)`) — consistent with the domain's established anonymous-access contract (BL-SR-002)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Extensions/ResolveFieldContextAuthorizationExtensions.cs#EnsureAuthenticatedAsync
     check:
       kind: manual
       ref: Call both operations without an Authorization header → HTTP 200, the field's `data` is `null`, `errors[0].extensions.code` denotes an authorization failure; the same calls with a valid rep session succeed (SR-GQL-101/112).
@@ -342,6 +382,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `InputSalesRepLayoutType` (`Scope`/`SchemaVersion` non-null); mirrored output shape in `SalesRepLayoutBlockType`/`SalesRepLayoutSettingType` (`Hidden`/`Settings` non-null; `Value` a scalar `AnyValueGraphType`)."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Schemas/InputSalesRepLayoutType.cs#InputSalesRepLayoutType
     check:
       kind: manual
       ref: Omit `scope`/`schemaVersion`/`hidden`/`settings` in turn → the mutation fails with a structured validation error before any persistence (SR-GQL-113); an empty `settings:[]` is accepted (SR-GQL-110); `settings[].value` sent as an array or object → rejected with a structured error (SR-GQL-117).
@@ -355,6 +397,8 @@ rules:
     source:
       - kind: code
         ref: "`vc-module-sales-rep` `SalesRepLayoutQuery`/`SaveLayoutCommand` (only `Scope`/`StoreId`/`UserId` fields — no customer/organization id anywhere in the layout schema); live-confirmed bidirectionally on the storefront, with the mutation payload inspected and carrying no organization/customer id."
+    scope:
+      code_ref: vc-module-sales-rep:src/VirtoCommerce.SalesRep.ExperienceApi/Queries/SalesRepLayoutQuery.cs#SalesRepLayoutQuery
     check:
       kind: manual
       ref: "Save a `customerProfile` layout while viewing one served customer; open a different served customer's profile → the same arrangement renders, confirmed in **both directions** (a save while viewing customer A renders on customer B, and a save while viewing B renders on A); inspecting the `saveSalesRepLayout` mutation payload shows no organization/customer id field anywhere in the request (SR-CP-042; draft/edit-mode carry-over: SR-CP-043)."
@@ -370,6 +414,8 @@ rules:
         ref: "module composable governing the edit draft (`save()` as the sole mutation call site; reorder/hide actions touch only the draft) — consistent with BL-SR-015 (account-scoped key) and BL-SR-016 (full-document replace). Live-confirmed: save→reload returned the arrangement exactly; a second save fully replaced the first save's state with no leftovers; Cancel and Reset each issued zero network requests; the arrangement survived a full sign-out/sign-in."
       - kind: ac
         ref: VCST-5367 (Done) — story 'drag and drop and save layout'; layout stored on the member, i.e. account-scoped
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/composables/useSalesRepLayout.ts#useSalesRepLayout
     check:
       kind: manual
       ref: Perform a drag/hide/reorder without saving, then reload → the pre-change arrangement still renders; Save once → exactly one save call is issued; a reload and a fresh sign-in both then show the saved arrangement; Cancel and Reset both complete with zero save calls.
@@ -383,6 +429,8 @@ rules:
     source:
       - kind: other
         ref: "module load-path reconciliation logic (pure function reconciling persisted blocks against the registry). Live-confirmed: two unregistered block types received by the client rendered nowhere; two registered blocks missing from a planted document were appended after the document's survivors; blocks planted in the wrong region were re-homed to their registry region (leaving that region empty); a subsequent save purged the unknown types and reset every block to its registry region, and reload showed no oscillation."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/layout/document.ts#reconcileLayout
     check:
       kind: manual
       ref: Plant a document containing an unregistered block type → received by the client but rendered nowhere, no console error, no gap in the layout; plant a document omitting a registered type → it appears, appended after the document's survivors; plant a document placing a registered block in the wrong region → it renders in its registry region, not the document's; save afterward and reload → the unknown type is gone and every block sits in its registry region.
@@ -396,6 +444,8 @@ rules:
     source:
       - kind: other
         ref: "module composable distinguishing a `null` result from a fetch failure. Live-confirmed: a never-saved rep's surface loaded registry defaults with Edit enabled and no alert."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/composables/useSalesRepLayout.ts#useSalesRepLayout
     check:
       kind: manual
       ref: Load a layout-driven surface for a (user, scope, storeId) combination that was never saved → registry defaults render, Edit is enabled, no error/alert appears.
@@ -409,6 +459,8 @@ rules:
     source:
       - kind: other
         ref: module layout-surface component (per-column, distinct drag-group identifiers). Live-confirmed both directions as no-ops.
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/components/layout-surface.vue
     check:
       kind: manual
       ref: Attempt to drag a wide-column widget into the rail column, and a rail-column widget into the wide column → both attempts are no-ops; neither widget changes column.
@@ -422,6 +474,8 @@ rules:
     source:
       - kind: other
         ref: 'module layout-region component (park-only toggle for stat cards) and hidden-items tray component (button-only widget restore). Live-confirmed: no dismiss control on a stat card; drag in/out of the parked zone both worked, landing at drop position (vs. keyboard append); widget dismiss→tray→restore confirmed; a parked card is absent from the page outside edit mode and appears under a "hidden" grouping in edit mode, including across a persisted hidden state.'
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/components/layout-stats.vue
     check:
       kind: manual
       ref: Confirm a stat card renders no dismiss control; drag a stat card into and out of the parked zone — both work, and the drop lands at the drop position, not appended; a widget's dismiss control hides it, and it can only be restored from the hidden-items tray; outside edit mode a parked/hidden item is absent from the page; in edit mode it appears under a "hidden" grouping; the parked/hidden state survives a reload.
@@ -435,6 +489,8 @@ rules:
     source:
       - kind: other
         ref: "module keyboard-sort composable (`moved`/`edge` signal payloads carry position; `parked`/`restored` carry only an id). Live-confirmed: eight verbatim announcement strings captured across grab/move/edge/park/restore/drop; Escape correctly restored on all three regions and a neutral-area click also restored correctly. The same live pass also found a **pointer press on another draggable block while a grab is live silently ends the grab without restoring the pre-grab position and without an announcement**, committing the in-progress move by accident — a confirmed violation of this Rule, tracked as a separate defect rather than reflected as intended behavior."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/composables/useKeyboardSort.ts#useKeyboardSort
     check:
       kind: manual
       ref: Grab a block via keyboard, move with arrow keys → announcements include position; drive a block to an edge → the edge announcement is distinct; park then restore via keyboard → announcements omit position; end a grab via Escape → the pre-grab position is restored and the cancellation announced; end a grab via any other interaction (e.g. a pointer action on another block) → the pre-grab position must still be restored and the cancellation still announced.
@@ -448,6 +504,8 @@ rules:
     source:
       - kind: other
         ref: "module composable's save guard (client-side only — the backend has no concurrency guard of its own; each save is an independent full replace, per BL-SR-016). Live-confirmed: a rapid double-trigger on the Save control produced exactly one save mutation call; the specific guard mechanism (composable guard vs. a disabled control swallowing the second click) could not be isolated from the UI alone, so this Rule is stated as the observable **outcome**, not the mechanism."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/composables/useSalesRepLayout.ts#save
     check:
       kind: manual
       ref: Rapidly trigger Save twice in immediate succession → exactly one save mutation call is observed.
@@ -461,11 +519,14 @@ rules:
     source:
       - kind: other
         ref: "module layout-surface component (mounts a block's component only when currently visible) and the shared page-level statistics composable feeding every stat card regardless of hidden state. Live-confirmed: hiding and saving a widget dropped exactly that widget's own operations from the reload trace against a positive control; hiding and saving a stat card left the page-level statistics query firing with an unchanged request shape."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/composables/useStatDataNeeds.ts#useStatDataNeeds
     check:
       kind: manual
       ref: Hide a widget and save, then reload → none of that widget's own data queries appear in the reload's network trace (checked against a positive control with the widget visible); hide a stat card and save, then reload → the page-level statistics query still fires with an unchanged request shape. A tray-only restore without a reload is served from cache and does not exercise this — the check must cross a reload.
     violation_signal: A hidden widget's query still fires; a hidden stat card causes the page-level statistics query to change scope, drop a parameter, or stop firing.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[code] vc-frontend@203908b:client-app/modules/sales-rep/composables/useStatDataNeeds.ts#useStatDataNeeds (:46-54) outside edit mode returns statDataNeeds(scope, current.visible), and layout/stat-data-needs.ts#orderStatisticsFlags turns those needs into @include flags on the statistics query, so hiding a stat card does shrink the query; this contradicts the clause 'hiding a card does not shrink that query's scope or omit it' (the queries are also held until the layout has settled). No human source decides it (the in-code comment cites VCST-5647, which only asks that unrendered fields not be requested), re-run the check"
   - id: BL-SR-032
     title: The rail region mounts only while it holds at least one visible block, and unmounts structurally (not just visually) when empty
     rule: The narrow rail column is not rendered at all when it has no visible blocks — the main column then runs full width — and mounts as soon as at least one block becomes visible in it. This is a structural mount/unmount, not a visual collapse; the unmounted state persists across a reload.
@@ -474,6 +535,8 @@ rules:
     source:
       - kind: other
         ref: "module layout-surface component (mount of the rail region gated on the count of currently-visible rail blocks). Live-confirmed: with the rail's only blocks hidden and saved, the rail element was absent from the page after reload and the main column ran full width; restoring one block remounted the rail."
+    scope:
+      code_ref: vc-frontend:client-app/modules/sales-rep/components/layout-surface.vue
     check:
       kind: manual
       ref: Hide every block in the rail and save, then reload → the rail element is absent from the page (not merely empty or zero-width), and the main column occupies the full width; restore one block to the rail → the rail element reappears.

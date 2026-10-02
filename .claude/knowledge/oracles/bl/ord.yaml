@@ -21,6 +21,8 @@ rules:
         ref: vc-module-order `PaymentFlowService.cs` — `CaptureAllowedPaymentStatuses => [Authorized, Paid]`, `RefundAllowedPaymentStatuses => [Paid, PartiallyRefunded, Refunded]` (Voided excluded); shipment status enum = New / Pick & Pack / Ready to Send / Send (no "Delivered").
       - kind: doc
         ref: platform/user-guide/docs/order-management/managing-documents.md (published) — refunds can be issued for payments/orders with Paid status; capture is an action on the PaymentIn document.
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Services/PaymentFlowService.cs#CaptureAllowedPaymentStatuses
     check:
       kind: manual
       ref: In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
@@ -32,6 +34,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Handlers/AdjustInventoryOrderChangedEventHandler.cs#GetReleaseRequests
     check:
       kind: manual
       ref: Enable flag → cancel order → check FFC inventory (should increase). Disable flag → cancel order → inventory unchanged.
@@ -58,6 +62,8 @@ rules:
     source:
       - kind: doc
         ref: platform/user-guide/docs/order-management/managing-documents.md (published) — refunds can be issued for Paid payments, full or partial, with amount, message and reason.
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Validators/PaymentRequestValidator.cs#PaymentRequestValidator
     check:
       kind: manual
       ref: Attempt refund on "Authorized" (not captured) payment → rejected. Capture $100 → refund $30 → remaining refundable = $70. Refund another $80 → rejected (exceeds remaining). Void a payment → refund button absent.
@@ -75,6 +81,8 @@ rules:
         ref: VP-8617 (Done) — fixed duplicate order numbers generated across users and stores; expected each order number to be unique.
       - kind: doc
         ref: platform/user-guide/docs/order-management/settings.md (published) — order number/template settings are managed per store.
+    scope:
+      code_ref: vc-module-core:src/VirtoCommerce.CoreModule.Data/Services/SequenceNumberGeneratorService.cs#ShouldResetCounter
     check:
       kind: manual
       ref: Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
@@ -97,6 +105,8 @@ rules:
         ref: platform/user-guide/docs/order-management/managing-documents.md (published) — refunds are issued from Paid payments; capture is performed from the PaymentIn widget.
       - kind: resolution
         ref: VP-2355 (Done) — fixed a paid gateway payment staying Paid after order cancellation; expected status Refunded.
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Services/PaymentFlowService.cs#RefundAllowedPaymentStatuses
     check:
       kind: manual
       ref: For each illegal transition, attempt via API → expect 400/422 error. In Admin, verify buttons only show valid next states.
@@ -115,6 +125,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Core/ModuleConstants.cs#ShipmentStatus
     check:
       kind: manual
       ref: For each illegal transition, attempt via API → expect error. In Admin, verify available actions match current state. Tracking number required for `Send` transition.
@@ -134,6 +146,8 @@ rules:
         ref: platform/user-guide/docs/order-management/settings.md (published) — General settings let administrators define order, shipment and payment statuses.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Order/queries/orderStatuses.md (published) — order statuses are returned as localized key/value dictionary items.
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Core/ModuleConstants.cs#OrderStatus
     check:
       kind: manual
       ref: Open Admin → Orders → any order → the Status dropdown lists the deployment's configured `Order.Status` dictionary values, with `Processing` among the selectable options. Set an `AGENT-TEST-` order to `Processing` → Save → reopen → status persists as `Processing` in the editable Status control. Confirm the settable set matches Settings → Orders → General settings → order status dictionary.
@@ -151,6 +165,8 @@ rules:
         ref: VP-4321 (Done) — fixed audit/change-log records written from background jobs recording an unknown user instead of the real actor.
       - kind: doc
         ref: platform/user-guide/docs/order-management/settings.md (published) — General settings include enabling order change logging.
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Handlers/LogChangesOrderChangedEventHandler.cs#GetChangedEntryOperationLogs
     check:
       kind: manual
       ref: "Place order → authorize → capture → ship → deliver. Open order change log in Admin → every transition recorded with correct actor and timestamps. Verify via API: `GET /api/order/customerOrders/{id}/changes` returns full history."
@@ -164,6 +180,8 @@ rules:
     source:
       - kind: code
         ref: "vc-module-order #497 `DefaultCustomerOrderTotalsCalculator.CalculateTotals` + `OrderTotal.cs`; vc-module-x-order #43 `CustomerOrderAggregate.OrderTotals` / `CustomerOrderType.cs:179`; live-verified 2026-06-22 on the environment. Covered by suites 075b/083b."
+    scope:
+      code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Services/DefaultCustomerOrderTotalsCalculator.cs#CalculateTotals
     check:
       kind: manual
       ref: Single-currency USD order → `order { orderTotals { isDefaultTotalCurrency total{currency{code}} } }` → exactly 1 entry, USD, `isDefaultTotalCurrency=true`. Mixed (USD + PTS) order → exactly 2 entries, exactly one `isDefaultTotalCurrency=true`, each subTotal = sum of its-currency lines. REST GET without `WithOrderTotals` → `orderTotals` null.

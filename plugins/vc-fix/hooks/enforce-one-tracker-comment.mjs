@@ -25,12 +25,19 @@ import { resolve } from "node:path";
 
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
+// Every Atlassian server id: a claude.ai connector registers as mcp__<uuid>__…, and
+// addOrEditJiraIssueComment / addCommentToJiraIssue{commentId} EDIT (issue #360).
+const TOOL = /^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$/;
+// Same default as scripts/tracker/round-guard.mjs ROUND_HOURS_DEFAULT — a plugin hook cannot import it.
+const ROUND_HOURS = Number(process.env.TRACKER_ROUND_HOURS) > 0 ? Number(process.env.TRACKER_ROUND_HOURS) : 12;
+const isStale = (iso) => { const t = Date.parse(iso ?? ""); return Number.isFinite(t) && (Date.now() - t) / 3_600_000 >= ROUND_HOURS; };
+
 try {
   const event = JSON.parse(readFileSync(0, "utf8"));
   const tool = event.tool_name ?? "";
 
   // Jira via MCP is the only path this hook can see. The helper script guards itself.
-  if (!/^mcp__atlassian__addCommentToJiraIssue$/.test(tool)) process.exit(0);
+  if (!TOOL.test(tool)) process.exit(0);
 
   const ticket = event.tool_input?.issueIdOrKey;
   if (!ticket) process.exit(0);
@@ -40,6 +47,30 @@ try {
 
   const entry = ledger[ticket];
   if (!entry) process.exit(0);
+
+  // An EDIT through the MCP (commentId present) is not a second comment. It is allowed
+  // within a round; editing a ledger comment older than ROUND_HOURS is probably a new
+  // round folded into the old one — VCST-5883 — and an edit notifies nobody.
+  const editId = event.tool_input?.commentId;
+  if (editId) {
+    if (String(editId) !== String(entry.comment_id)) process.exit(0);
+    // Same over-block stance as a post: an edit from a provably different session is presumed
+    // to be a new round too (a same-day retest of a new build) — round-guard.mjs OTHER_RUN_AMEND.
+    const editRun = event.session_id ?? process.env.CLAUDE_SESSION_ID ?? null;
+    const otherRun = Boolean(editRun && entry.run_id && entry.run_id !== "local" && entry.run_id !== editRun);
+    if (!isStale(entry.posted_at) && !otherRun) process.exit(0);
+    const why =
+      (otherRun && !isStale(entry.posted_at)
+        ? `Comment ${editId} on ${ticket} was posted by another session (${entry.posted_at}) — is this a new round? `
+        : `Comment ${editId} on ${ticket} is from ${entry.posted_at} (older than ${ROUND_HOURS} h) — is this a new round? `) +
+      `An edit notifies nobody. A retest of a NEW build is a new comment (tracker-ops.md §0 rule 5). ` +
+      `A correction of the same round: say so to the operator and edit through the REST recipe in tracker-ops.md §0a.`;
+    process.stdout.write(JSON.stringify({ decision: "block", reason: why }));
+    process.exit(0);
+  }
+
+  // No artifact is visible here, so age is the round signal: an old comment means a new round.
+  if (isStale(entry.posted_at)) process.exit(0);
 
   // "per run" = per Claude Code session, so a genuinely NEW run gets its own comment.
   //
@@ -61,9 +92,10 @@ try {
     `watcher again, and leaves them to work out which version is current.\n\n` +
     `AMEND that comment instead — new evidence, a retraction, a severity change and a formatting ` +
     `fix are all edits:\n` +
+    `(A retest of a NEW build is not an edit — it is a new round and gets a new comment, rule 5.)\n` +
     `  REST PUT /rest/api/3/issue/${ticket}/comment/${entry.comment_id} (Jira), or PATCH the\n` +
-    `  work item's /comments/{id} endpoint (Azure Boards) — recipe in tracker-ops.md §0a. The\n` +
-    `  Atlassian MCP exposes no edit tool, which is exactly why corrections became new comments.\n\n` +
+    `  work item's /comments/{id} endpoint (Azure Boards) — recipe in tracker-ops.md §0a, or this\n` +
+    `  same MCP tool with commentId: ${entry.comment_id} where the connector supports it.\n\n` +
     `A genuinely separate comment needs the OPERATOR to ask for one, for a reason they state (§0).\n` +
     `If you cannot authenticate for the edit, you do NOT fall back to a new comment: say so and\n` +
     `hand the operator the corrected body.`;

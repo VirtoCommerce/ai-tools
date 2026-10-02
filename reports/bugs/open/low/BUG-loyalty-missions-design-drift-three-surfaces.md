@@ -1,6 +1,7 @@
 # Missions UI diverges from the approved design in three places — missing order-modal banner, mobile grid instead of a carousel, 6 px card banner — **P3**
 
 ## Status: CONFIRMED (spec + live + source)
+**Re-checked 2026-10-01 (VCST-5957, theme 2.59.0-pr-2524-3069):** #1 order-modal banner STILL MISSING; #2 mobile carousel STILL a grid (not re-measured for dots); #3 card banner SUPERSEDED — now 208 px against the new 210 px design.
 **Found by:** `/qa-design VCST-5346` (2026-08-28) · `vs. DESIGN` axis against project `e3742011-b4ef-4cd0-a419-722e09833d37`
 **Tracker:** VCST-5833 (Subtask of VCST-5346)
 **Archetype:** `PARITY`

@@ -20,6 +20,8 @@ rules:
         ref: platform/deployment-on-cloud/docs/store-configuration.md (published) — shipping methods configure fixed rates per shipping type such as ground or air
       - kind: doc
         ref: platform/developer-guide/docs/Fundamentals/Shipments/new-shipping-method-registration.md (published) — custom shipping method implements CalculateRates and is registered via the shipping methods registrar
+    scope:
+      code_ref: vc-module-shipping:src/VirtoCommerce.ShippingModule.Data/FixedRateShippingMethod.cs#CalculateRates
     check:
       kind: manual
       ref: "Confirm options derive from the delivery address, not billing. Default install (Fixed Rate): Ground/Air appear at their configured flat rates regardless of destination. Store with a zone/address-aware provider: changing to an out-of-zone address removes uncovered methods and updates rates; an uncovered zone blocks checkout with a message."
@@ -35,6 +37,8 @@ rules:
         ref: platform/user-guide/docs/shipping/managing-shipping-methods.md (published) — BOPIS shipping method is configured with admin-defined pickup locations shown to customers selecting in-store pickup
       - kind: doc
         ref: platform/user-guide/docs/x-pickup/overview.md (published) — xPickup lets customers choose a pickup point from available locations during checkout
+    scope:
+      code_ref: vc-frontend:client-app/shared/checkout/composables/useCheckout.ts#isValidCheckout
     check:
       kind: manual
       ref: Select BOPIS → prompted to choose pickup location from list → no shipping address form shown → billing address still required → order placed with pickup location in order details.
@@ -48,6 +52,8 @@ rules:
     source:
       - kind: doc
         ref: platform/user-guide/docs/marketing/promotion-rules.md (published) — free-shipping threshold = cart subtotal-at-least condition combined with a 100%-off shipping reward
+    scope:
+      code_ref: vc-module-marketing:src/VirtoCommerce.MarketingModule.Core/Model/Promotions/Conditions/CartConditions/ConditionCartSubtotalLeast.cs#IsSatisfiedBy
     check:
       kind: manual
       ref: Cart = $90 → standard shipping = $10. Add item ($20) → cart = $110 → shipping = $0 (free). Apply coupon reducing total to $95 → free shipping removed, shipping = $10 again.
@@ -59,6 +65,8 @@ rules:
     priority: P1-data
     trust: INFERRED
     source: []
+    scope:
+      code_ref: vc-module-x-cart:src/VirtoCommerce.XCart.Core/Validators/CartShipmentValidator.cs
     check:
       kind: manual
       ref: Select "Express $15" → go to payment step → go back to shipping → "Express $15" still selected. Edit address (same zone) → method and rate persist. Edit address (different zone) → method deselected with notification.
