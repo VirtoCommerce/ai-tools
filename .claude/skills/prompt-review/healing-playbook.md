@@ -31,6 +31,7 @@ If yes, or unsure, it is `PROPOSE`. Two corollaries decide most edge cases:
 | H14 | Delegation defect (agent type, lane, tools, missing fact, doc-first brief, callee that writes) | Fix the brief. | PROPOSE |
 | H15 | Caller mismatch, or a wrong **invocation/argument** (not a path) | Fix the caller or the prompt — whichever is newer is usually right (`git log`). | PROPOSE |
 | H16 | Missing README / ROUTING row | Add the row, matching neighbours. | SAFE |
+| H17 | Rule × instance defect (G2): not carried, lossy paraphrase, or an instance the rule forbids | State the rule once; declare any exception **at the rule** with its scope; replace each restatement with a cite by heading (keep a one-line imperative where a brief is built, H4b shape). Which way an incompatibility resolves (widen the rule or narrow the task) is the user's call. | PROPOSE |
 
 ## H11 — Moving down a tier
 
