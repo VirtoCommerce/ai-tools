@@ -204,7 +204,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 56,
+      "testCount": 75,
       "estimatedMinutes": 20,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1603,7 +1603,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 35,
+      "testCount": 44,
       "estimatedMinutes": 21,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1615,7 +1615,7 @@
       "customerApplicability": "universal",
       "clickDriven": true,
       "lanes": {
-        "machine": 34,
+        "machine": 43,
         "browser": 0,
         "manual": 1
       }

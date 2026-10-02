@@ -1,0 +1,278 @@
+{
+ "item": "G2c-add-unserved-denied",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "runid": "rmunz9s7y",
+ "capturedAt": "2026-09-30T10:55:37.545Z",
+ "lists": [
+  "AGENT-TEST-5707-g5",
+  "AGENT-TEST-5707-g3"
+ ],
+ "calls": [
+  {
+   "who": "rep2",
+   "path": "/graphql/sales-rep",
+   "http": 200,
+   "ms": 214,
+   "request": {
+    "query": "{ salesRepCustomers(storeId: \"B2B-store\", first:50) { totalCount items { organizationId organizationName } } }",
+    "variables": {},
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "salesRepCustomers": {
+      "totalCount": 4,
+      "items": [
+       {
+        "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+       },
+       {
+        "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+       },
+       {
+        "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+        "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+       },
+       {
+        "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 557,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-g5"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "5f59ed86-21c3-4a08-92c6-84d69398d458",
+      "name": "AGENT-TEST-5707-g5",
+      "scope": "Private",
+      "description": null,
+      "sharingSetting": {
+       "id": "767ff7ee-61e8-4dfd-b437-e3968931234d",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 688,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "5f59ed86-21c3-4a08-92c6-84d69398d458",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "875c44c8-9cac-44e1-9993-648ad439805d"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 292,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "5f59ed86-21c3-4a08-92c6-84d69398d458"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "5f59ed86-21c3-4a08-92c6-84d69398d458",
+      "name": "AGENT-TEST-5707-g5",
+      "scope": "Private",
+      "description": null,
+      "sharingSetting": {
+       "id": "3f7fb5be-0bd6-4ef6-8dc2-7d4118702012",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 229,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "5f59ed86-21c3-4a08-92c6-84d69398d458",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04",
+       "875c44c8-9cac-44e1-9993-648ad439805d"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "5f59ed86-21c3-4a08-92c6-84d69398d458"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "5f59ed86-21c3-4a08-92c6-84d69398d458",
+      "name": "AGENT-TEST-5707-g5",
+      "scope": "Private",
+      "description": null,
+      "sharingSetting": {
+       "id": "d70a70e5-9004-404b-80a1-454f7ff11f26",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "1d903bf1-eedc-436f-a384-6ea6c23fbef1",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "875c44c8-9cac-44e1-9993-648ad439805d"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  }
+ ]
+}
