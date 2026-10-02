@@ -1730,7 +1730,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P2",
-      "testCount": 18,
+      "testCount": 22,
       "estimatedMinutes": 13,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1744,7 +1744,7 @@
       ],
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 15,
+        "machine": 19,
         "browser": 0,
         "manual": 0,
         "deprecated": 3
@@ -2327,7 +2327,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P2",
-      "testCount": 22,
+      "testCount": 32,
       "estimatedMinutes": 18,
       "agent": "qa-backend-expert",
       "tags": [
