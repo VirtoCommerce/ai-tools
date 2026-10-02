@@ -263,15 +263,15 @@ Shared list accessible to both User A and User B","url={{FRONT_URL}},user={{USER
 [DOM] Product details (name and price) match across both users",[CONSOLE] no uncaught JS errors,New product not visible to User B; changes not syncing between users; shared list showing stale data,none,Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05) | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 B2C-LIST-025,Shared List - Remove Shared Access,B2C Features > Shared Lists,Medium,BL-B2B-002,ECL-14.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Shared list with User B having access; User A is list owner","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in as User A (list owner)
-2. [NAV] Open the shared list settings
-3. [ACT] Change list visibility from Shared to Private
-4. [ACT] Save changes
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens
+3. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+4. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`); if the 'Stop sharing this list?' confirmation appears, click 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`)
 5. [ACT] Click user name in top header → click Logout in popup (BL-AUTH-007; data-testid=""main-layout.top-header.account-menu.sign-out-button"")
 6. [NAV] Log in as User B
 7. [NAV] Navigate to /account/lists
 8. [ASSERT] Verify the list is NO longer visible to User B","[STATE] After changing to Private: list removed from User B's view
 [DOM] User B's lists page does not show the now-private list
-[STATE] List still accessible to User A (owner)",[CONSOLE] no uncaught JS errors,List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too,none,Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05) | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
+[STATE] List still accessible to User A (owner)",[CONSOLE] no uncaught JS errors,List still visible to User B after making private; access revocation not taking effect; list disappearing for owner too,none,Coverage Gap Analysis; Synced: lifecycle lists/SFL (2026-08-05); Blocked: live verify needs an org-capable login (ORG_USER at failed-attempt count 3) — sharing/org surfaces unverified on a customer account (2026-08-05) | Promoted: REG-2026-08-25-1128 (2026-08-26) Corrected: VCST-5707 (2026-09-29) — Steps only: the combined Edit/List settings visibility dropdown was split into Rename / Share / Remove list (PR vc-frontend #2476); a visibility change is now the Share dialog Private tab (+ Stop sharing confirmation where an audience is lost). Assertions untouched.,Automated
 B2C-LIST-026,Shared List - Shared Indicator Displayed,B2C Features > Shared Lists,Medium,BL-B2B-002,,"[PRE:SIGNIN_AS:USER_DEFAULT]
 User has both shared and private lists","url={{FRONT_URL}},user={{USER_EMAIL}},password={{USER_PASSWORD}}","1. [NAV] Log in and navigate to /account/lists
 2. [ASSERT] Verify shared lists have a shared indicator (icon or badge or label)
@@ -389,17 +389,17 @@ User logged in, no precondition on existing lists. Discovered live 2026-08-05 (p
 [NETWORK] no createWishlist mutation is sent while the 26-char validation error is showing (client-side gate)",25-character name is truncated or rejected (boundary enforced on the wrong side); 26-character name is silently accepted or silently truncated instead of showing the validation error; error text differs from 'This field must not contain more than 25 characters',delete the created 25-character-name list,"Coverage Gap Analysis; Verified: live selector pass (2026-08-05) — boundary discovered live, not from spec/docs | Promoted: REG-2026-08-25-1128 (2026-08-26)",Automated
 B2C-LIST-040,Publish List to a Customer — rep shares a list with scope Customer,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 Signed in as a sales rep that serves at least one customer organization, with at least one own list holding >=1 in-stock item. Requires VirtoCommerce.SalesRep >= 3.1001.0-pr-8 and the XCart customer-wishlist-sharing-scope build.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = the FIRST organization returned by the share dialog's customer picker (live-discover — never hardcode an org name, the picker contains duplicates); list = any own list with >=1 in-stock item","1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Edit'
-3. [ACT] in the 'List settings' dialog set 'Sharing options' to 'Customer'
-4. [ASSERT] verify a searchable customer picker, a 'Link' field and a 'Message' field appear; verify NO 'Send via' channel group is rendered (VCST-5724 removed it — every share now always notifies both channels)
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens
+3. [ACT] in the Share dialog select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+4. [ASSERT] verify a searchable customer picker (`[data-test-id=""wishlist-share-customer-select""]`), a 'Link' field and a 'Message' field appear; verify NO 'Send via' channel group is rendered (VCST-5724 removed it — every share now always notifies both channels)
 5. [ACT] select customer_a and type a distinctive message (no channel controls exist to set)
-6. [ACT] click Save
-7. [ASSERT] verify the list card shows a 'Shared with customer' scope badge","[DOM] the 'Sharing options' dropdown offers exactly Private / Anyone (readonly) / Organization / Customer {OBSERVED}
-[DOM] selecting 'Customer' reveals the Link field and a searchable customer combobox that filters as you type {OBSERVED}
+6. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+7. [ASSERT] verify the list card shows a customer-scope share status badge","[DOM] the 'Who can access' tab strip offers exactly the Private / Anyone / Organization / Customer scopes (`wishlist-sharing-scope-*`) {OBSERVED}
+[DOM] selecting 'Customer' reveals the Link field and a searchable customer picker that filters as you type {OBSERVED}
 [DOM] selecting a customer reveals the Message field; no 'Send via' channel group is rendered anywhere in the dialog — the fieldset holding it was deleted, not merely hidden (VCST-5724) {OBSERVED}
 [NETWORK] the save issues ChangeWishlist with scope='Customer' and a non-empty sharedWithId, and sendCustomerCommunication with sendEmail:true, sendPush:true hardcoded — not read from any UI control since none exists {OBSERVED}
 [DOM] the list card scope badge reads 'Shared with customer' after save {OBSERVED}","[CONSOLE] no uncaught JS errors
-[NETWORK] all /graphql calls return 200 with an empty errors[]",'Customer' is absent from the scope dropdown (feature not deployed); the customer picker does not filter; ChangeWishlist omits sharedWithId or sends scope!='Customer'; the badge does not change after save; a 'Send via' channel group unexpectedly still renders (VCST-5724 not actually deployed/reverted),set the list's sharing scope back to Private,"VCST-5332; verified live vcptcore-qa 2026-08-07, theme 2.55.0-pr-2405-c9c7, SalesRep 3.1001.0-pr-8-a07e; Corrected: VCST-5724 (2026-08-20) — 'Send via' channel-group assertion inverted to absent (fieldset deleted by PR #2438); both-channels-hardcoded network assertion added Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[NETWORK] all /graphql calls return 200 with an empty errors[]",'Customer' is absent from the scope tab strip (feature not deployed); the customer picker does not filter; ChangeWishlist omits sharedWithId or sends scope!='Customer'; the badge does not change after save; a 'Send via' channel group unexpectedly still renders (VCST-5724 not actually deployed/reverted),set the list's sharing scope back to Private,"VCST-5332; verified live vcptcore-qa 2026-08-07, theme 2.55.0-pr-2405-c9c7, SalesRep 3.1001.0-pr-8-a07e; Corrected: VCST-5724 (2026-08-20) — 'Send via' channel-group assertion inverted to absent (fieldset deleted by PR #2438); both-channels-hardcoded network assertion added Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — RE-BASE (mixed row). Steps repaired to the Share dialog (PR #2476); control nouns dropdown/combobox -> tab strip/picker. Value lines deliberately UNCHANGED for the run to judge: badge text 'Shared with customer' and the ChangeWishlist sharedWithId payload (the change moves both: 'Shared with N customers', addSharedWithIds).",Reviewed
 B2C-LIST-041,Publish List to a Customer — API: sendCustomerCommunication still rejects sendEmail:false + sendPush:false server-side,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 VCST-5724 deleted the UI's Email/Push checkboxes entirely, so the at-least-one-channel rule can no longer be exercised through the storefront form. The backend contract is UNCHANGED (verified live against vcst-qa /graphql + vc-module-sales-rep source, 2026-08-20): InputSendCustomerCommunicationType still declares sendEmail/sendPush as required booleans, and SendCustomerCommunicationCommandHandler.ValidateRequest still throws 'At least one delivery channel must be selected.' when both are false — the rule is now unreachable from the UI but still enforced at the API. PROPOSED RELOCATION: this case belongs in regression/suites/Backend/graphql/050m-graphql-sales-rep.csv as a GraphQL-layer case; left here as Draft pending human confirmation of the move.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = the first organization returned by the share dialog's customer picker (live-discover); a list the rep owns,"1. [API] authenticate as SALES_REP and obtain the sales-rep-scoped bearer token
 2. [API] discover an owned list id and a served customer_a organization id via GraphQL (myWishlists / salesRepCustomers)
@@ -409,15 +409,15 @@ VCST-5724 deleted the UI's Email/Push checkboxes entirely, so the at-least-one-c
 [API] no partial send occurs — the response is a rejection, not a partial success with a warning {SPEC}
 [STATE] the list's sharedWithId / notification history is unchanged by the rejected call {SPEC}","[CONSOLE] n/a (API-only case)
 [NETWORK] HTTP 200 with the error carried in-band in the GraphQL errors[] array, not as an HTTP 4xx",the mutation succeeds despite both channels being false (server-side validation removed/regressed since 2026-08-20); a 5xx instead of an in-band GraphQL error; the error message no longer names the at-least-one-channel rule,"none — read-only API call, no share committed","VCST-5332 review finding #5 -> follow-up story; Corrected: VCST-5724 (2026-08-20) — UI path removed by PR #2438, rewritten as a direct GraphQL case since the rule is confirmed still enforced server-side; PROPOSED RELOCATION to Backend/graphql/050m-graphql-sales-rep.csv, left Draft here pending human confirmation Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
-B2C-LIST-042,Publish List to a Customer — customer combobox persists on reopen; NO channel controls exist anywhere in the dialog,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
+B2C-LIST-042,Publish List to a Customer — selected customers persist on reopen; NO channel controls exist anywhere in the dialog,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A list already shared with a customer via B2C-LIST-040, with a known message text. VCST-5724 deleted the Email/Push checkboxes and their fieldset entirely (PR #2438), so the original 'do the channel checkboxes reflect what was sent' premise no longer applies — this case now asserts channel-group absence plus the still-relevant scope/combobox persistence. Message-persistence status (previously reported not-persisted at all, per the VCST-5332 follow-up story as of 2026-08-07) is UNCHANGED by this PR and its current state is UNCONFIRMED post-deploy — re-verify live rather than assuming the prior finding still holds.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; the message text used when the list was shared,"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the already-shared list's 'Edit' dialog
-3. [ASSERT] verify 'Sharing options' still reads 'Customer' and the previously selected customer is shown by name in the combobox
+2. [ACT] open the already-shared list's Share dialog (kebab menu `[data-test-id=""wishlist-card-menu-button""]` -> 'Share')
+3. [ASSERT] verify the 'Specific customers' tab is preselected and the previously selected customer is listed by name in the recipients list (`[data-test-id=""wishlist-sharing-recipients""]`)
 4. [ASSERT] verify the Message textarea is ABSENT on an unchanged-customer reopen (isNewTarget=false gates it)
-5. [ASSERT] verify NO 'Send via' group, Email checkbox, or Push checkbox is rendered anywhere in the dialog, regardless of scroll/expand state","[DOM] the reopened 'List settings' dialog keeps 'Sharing options' on 'Customer' and renders the customer combobox holding the previously selected organization name as its value, not an empty placeholder {OBSERVED}
+5. [ASSERT] verify NO 'Send via' group, Email checkbox, or Push checkbox is rendered anywhere in the dialog, regardless of scroll/expand state","[DOM] the reopened Share dialog keeps the 'Specific customers' tab selected and lists the previously selected organization by name in its recipients list, not an empty picker {OBSERVED}
 [DOM] no 'Send via' label, Email checkbox, or Push checkbox exists in the reopened dialog under any state — the fieldset was deleted from the component, not merely hidden by a condition {OBSERVED}
 [DOM] the reopened dialog does NOT render the 'Message' textarea when it opens on its current, unchanged customer — isNewTarget=false gates it, so the message-persistence question is unreachable by this route and is neither confirmed nor refuted {OBSERVED}","[CONSOLE] no uncaught JS errors
-[NETWORK] the wishlist read returns the persisted sharing state","any Email/Push checkbox or 'Send via' label renders on reopen (dead markup left behind, or the deletion was reverted); the customer combobox is empty/placeholder on reopen instead of showing the prior organization name",none — read-only inspection of an existing share,"VCST-5332 review findings #4 + #6 -> follow-up story; Corrected: VCST-5724 (2026-08-20) — channel-checkbox-persistence premise invalidated by their deletion (PR #2438); combobox-persistence assertion retained; message-persistence re-flagged as unconfirmed pending live re-verification Verified: VCST-5724 (2026-08-20, REG-2026-08-20-1409, theme 2.56.0-pr-2438-ef16). Assertion 3 corrected: it asserted the Message textarea RENDERS on reopen, which B2C-LIST-052 refuted live. Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[NETWORK] the wishlist read returns the persisted sharing state","any Email/Push checkbox or 'Send via' label renders on reopen (dead markup left behind, or the deletion was reverted); the recipients list is empty on reopen instead of showing the prior organization name",none — read-only inspection of an existing share,"VCST-5332 review findings #4 + #6 -> follow-up story; Corrected: VCST-5724 (2026-08-20) — channel-checkbox-persistence premise invalidated by their deletion (PR #2438); combobox-persistence assertion retained; message-persistence re-flagged as unconfirmed pending live re-verification Verified: VCST-5724 (2026-08-20, REG-2026-08-20-1409, theme 2.56.0-pr-2438-ef16). Assertion 3 corrected: it asserted the Message textarea RENDERS on reopen, which B2C-LIST-052 refuted live. Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — RE-BASE (mixed row). Steps/nouns repaired to the Share dialog. The line 'Message textarea ABSENT on unchanged-customer reopen' is left UNCHANGED for the run: the change persists and returns the message on reopen (sharingSetting.message), so it is expected to fail and be resolved at 5-triage. The Title still says combobox.",Reviewed
 B2C-LIST-043,Publish List to a Customer — re-sharing to a second customer discloses that the first loses access,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A list already shared with customer_a, and the rep serves at least two distinct customer organizations. The data model is one list to one customer (sharedWithId is a scalar), so re-sharing revokes the previous recipient.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a and customer_b = two DISTINCT organizations from the rep's customer picker (verify they are distinct orgs, not two identically-named entries)","1. [NAV] {{FRONT_URL}}/account/lists
 2. [ACT] open the already-shared list's 'Edit' dialog
@@ -458,12 +458,12 @@ A list shared with organization A. Signed in as an account that is neither the l
 [NETWORK] no /graphql response returns the wishlist payload to the unauthorized caller","any list content renders for a non-recipient (name, items, subtotal or even the item count) — a BL-SR-002 cross-org leak; the page renders a blank shell instead of an explicit access-denied state",none — read-only,VCST-5332; BL-SR-002 negative control; verified live vcptcore-qa 2026-08-07 | Promoted: REG-2026-08-25-1128 (2026-08-26),Automated
 B2C-LIST-047,Publish List to a Customer — a failed notification is surfaced to the rep,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A customer organization with no reachable notification recipient (for example an org whose only member is the sending rep). Behaviour NOT yet implemented as of 2026-08-07 — carved out of the VCST-5332 review into its own story; expected to FAIL until that story ships.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; a served organization with zero effective recipients (see the SR_REP_ONLY_ORG fixture concept in test-data/aliases.json),"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] share a list with the zero-recipient organization, message filled, both channels checked
-3. [ACT] click Save
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`); select the zero-recipient organization and fill the message (no channel controls exist — both channels are always used)
+3. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 4. [ASSERT] verify the rep is told the notification did not reach anyone","[DOM] a visible warning or error tells the rep that no recipient was notified — the dialog does not close as a plain success
 [NETWORK] sendCustomerCommunication returns succeeded:false with warnings[] and the UI renders that warnings[] content
 [STATE] the share itself may still commit, but its notification outcome is never reported as success","[CONSOLE] no uncaught JS errors
-[NETWORK] the mutation returns HTTP 200 with an empty GraphQL errors[] — failure is signalled IN-BAND via succeeded:false, so generic error handling will not catch it","sendCustomerCommunication returns {succeeded:false, pushSent:false, emailSent:false, warnings:['NoRecipients']} and the UI shows no toast, no warning and nothing at all — the dialog closes as a success and the rep believes the customer was emailed and pushed (observed on vcptcore-qa 2026-08-07)",set the list's sharing scope back to Private,"VCST-5332 review incidental finding (silent notification failure) -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression) VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned.",Draft
+[NETWORK] the mutation returns HTTP 200 with an empty GraphQL errors[] — failure is signalled IN-BAND via succeeded:false, so generic error handling will not catch it","sendCustomerCommunication returns {succeeded:false, pushSent:false, emailSent:false, warnings:['NoRecipients']} and the UI shows no toast, no warning and nothing at all — the dialog closes as a success and the rep believes the customer was emailed and pushed (observed on vcptcore-qa 2026-08-07)",set the list's sharing scope back to Private,"VCST-5332 review incidental finding (silent notification failure) -> follow-up story; observed FAILING live vcptcore-qa 2026-08-07 — stays Draft (advance coverage for the follow-up story, not a 5332 regression) VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned. Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog + channel checkboxes replaced by the Share dialog (PR #2476, VCST-5724). Assertions untouched (still expected to FAIL until the notification-outcome story ships; fixture SR_REP_ONLY_ORG unprovisioned).",Draft
 B2C-LIST-048,Publish List to a Customer — API: sendCustomerCommunication with sendEmail:true/sendPush:false still routes per-channel,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 VCST-5724 deleted the UI's Email/Push checkboxes, so the email-only partition can no longer be selected through the storefront form — sendCustomerCommunication is now ALWAYS called with sendEmail:true, sendPush:true from the UI. The per-channel routing logic itself is UNCHANGED server-side (SendCustomerCommunicationCommandHandler dispatches push and email independently, verified live against vc-module-sales-rep source 2026-08-20), so this case now drives the mutation directly to keep that contract covered. Requires a served org with a reachable, email-capable member (NOT a rep-only org — a zero-recipient org yields warnings:['NoRecipients'] and masks the per-channel result; see B2C-LIST-047). PROPOSED RELOCATION: regression/suites/Backend/graphql/050m-graphql-sales-rep.csv; left here as Draft pending human confirmation of the move.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker that has >=1 emailable member besides the rep (live-discover — never hardcode an org name, the picker contains duplicates)","1. [API] authenticate as SALES_REP and obtain the sales-rep-scoped bearer token
 2. [API] POST /graphql sendCustomerCommunication directly with organizationId=customer_a, sendEmail:true, sendPush:false, a distinctive message
@@ -485,9 +485,9 @@ Same fixture as B2C-LIST-048. VCST-5724 removed the UI's push-only partition the
 [NETWORK] /graphql 200 with an empty errors[] — failure is signalled IN-BAND via succeeded:false, so assert on the payload",emailSent:true while sendEmail was false; pushSent:false while sendPush was true; the push carries the default template text instead of the rep's typed message; succeeded:false with no distinguishing warning,set the list's sharing scope back to Private,"VCST-5332 AC1 per-channel routing; sibling receipt story VCST-5331 (Done); Corrected: VCST-5724 (2026-08-20) — UI path removed (PR #2438), rewritten as a direct GraphQL case; PROPOSED RELOCATION to Backend/graphql/050m-graphql-sales-rep.csv, left Draft here pending human confirmation Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
 B2C-LIST-050,Publish List to a Customer — a failed/no-recipient notification still grants the recipient org working access (silent grant),B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 Requires a member of the recipient organization who is NOT the sales rep and NOT the list owner, able to sign in to the storefront, PLUS the zero-recipient organization fixture concept used by B2C-LIST-047. VCST-5724 hardcoded sendEmail:true/sendPush:true with no UI opt-out, so 'zero channels selected' (the original B2C-LIST-041 manipulation) is no longer reachable — this case now forces a failed/no-recipient notification via a zero-recipient org instead, and asserts the OTHER half from B2C-LIST-047: that IF the notification fails, the access grant itself is still sound and the Link is a working, correctly-scoped entry point. Keep both 047 and this case — 047 asserts the failure is surfaced to the rep; this asserts the grant is unaffected by that failure.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = a served zero-recipient organization (same fixture concept as B2C-LIST-047); recipient = a member of customer_a who is neither the rep nor the list owner, if one exists — otherwise inspect the grant via GetMe/GraphQL rather than a live recipient login; the shared-list URL copied from the dialog's 'Link' field","1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's 'Edit' dialog, set 'Sharing options' to 'Customer' and select customer_a (the zero-recipient org)
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select customer_a (the zero-recipient org)
 3. [ASSERT] verify the 'Link' field is populated and copy its URL
-4. [ACT] click Save
+4. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 5. [ASSERT] verify sendCustomerCommunication reports succeeded:false / a non-empty warnings[] (per B2C-LIST-047) — the notification did not reach anyone
 6. [ACT] sign out and sign in as recipient (or another reachable member of customer_a), confirming the active organization is customer_a
 7. [NAV] the copied shared-list URL
@@ -498,7 +498,7 @@ Requires a member of the recipient organization who is NOT the sales rep and NOT
 [STATE] access is granted by the sharedWithId scope, not by notification success — the recipient reaches the list despite the notification having failed {SPEC}
 [DOM] the shared list does not appear under the recipient's own /account/lists — the link is the only entry point {OBSERVED}","[CONSOLE] no uncaught JS errors on either side
 [NETWORK] the recipient's /graphql wishlist read returns 200 with an empty errors[] and a populated wishlist payload {OBSERVED}
-[NETWORK] no 403 for a member of the organization the list was actually shared with","the recipient gets a 403 or an empty state even though their active organization IS the one the list was shared with (the grant did not take effect, or access is gated on notification success instead of on sharedWithId); the Link field is empty for a share to a zero-recipient org; the link resolves for a member of a DIFFERENT organization (BL-SR-002 cross-org leak — see B2C-LIST-046); the list unexpectedly appears in the recipient's own list index",set the list's sharing scope back to Private,"VCST-5332 — the silent-grant half of review finding #5: the customer gains working access despite a failed notification. Prior CONFIRMED evidence (vcptcore-qa 2026-08-07) used a zero-channel share, which VCST-5724 removed; Corrected: VCST-5724 (2026-08-20) — manipulation switched to a zero-recipient organization (see B2C-LIST-047) so the grant/notify-independence claim survives the channel-checkbox removal; re-verify live with the new route VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned.",Draft
+[NETWORK] no 403 for a member of the organization the list was actually shared with","the recipient gets a 403 or an empty state even though their active organization IS the one the list was shared with (the grant did not take effect, or access is gated on notification success instead of on sharedWithId); the Link field is empty for a share to a zero-recipient org; the link resolves for a member of a DIFFERENT organization (BL-SR-002 cross-org leak — see B2C-LIST-046); the list unexpectedly appears in the recipient's own list index",set the list's sharing scope back to Private,"VCST-5332 — the silent-grant half of review finding #5: the customer gains working access despite a failed notification. Prior CONFIRMED evidence (vcptcore-qa 2026-08-07) used a zero-channel share, which VCST-5724 removed; Corrected: VCST-5724 (2026-08-20) — manipulation switched to a zero-recipient organization (see B2C-LIST-047) so the grant/notify-independence claim survives the channel-checkbox removal; re-verify live with the new route VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned. Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog + Sharing options dropdown replaced by the Share dialog tab strip. Assertions untouched (fixture SR_REP_ONLY_ORG unprovisioned).",Draft
 B2C-LIST-051,Shared list — a multi-org recipient is 403'd while signed in under a different one of THEIR OWN organizations,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 Requires a recipient who is a member of at least TWO organizations the rep can select, is NOT the list owner and NOT the rep. The owner bypass is the trap this case exists to avoid: the list OWNER opens the link successfully under ANY active org, so running this as the rep proves nothing — it must be a genuine non-owner. Distinct from B2C-LIST-046, which denies a user with NO membership in the recipient org at all; here the user DOES have access, just under a different active organization.","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; recipient = a non-owner member of >=2 rep-selectable organizations (the working vcptcore-qa account is recorded on VCST-5332 — never hardcode a personal email or password in this suite); org_X = the organization the list is shared with; org_Y = another organization the SAME recipient belongs to. Match org_X by GUID, not by name — the customer picker contains genuinely distinct organizations with identical display names","1. [ACT] as the rep, share a list with org_X and copy the Link; record the sharedWithId the ChangeWishlist mutation sent
 2. [ACT] sign in as recipient and read the active organization id from GetMe / pageContext; confirm it equals the recorded sharedWithId when org_X is active
@@ -515,9 +515,9 @@ Requires a recipient who is a member of at least TWO organizations the rep can s
 B2C-LIST-052,"Shared List Appears in the Customer's Own Lists, Flagged Recommended by Rep",B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SALES_REP]
 Rep serves at least one customer organization with a reachable, notifiable member. This case shares with AT LEAST ONE notification channel enabled — distinct from B2C-LIST-050's zero-channel 'silent grant' share, which found the shared list does NOT surface in the recipient's own /account/lists. State from B2C-LIST-040 (rep opens a list's Edit dialog, sets Sharing options to Customer, selects a served organization).","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker with >=1 notifiable member (live-discover — never hardcode an org name, the picker contains duplicates); recipient = a member of customer_a who is neither the rep nor the list owner","1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open a list's 'Edit' dialog, set 'Sharing options' to 'Customer', select customer_a
-3. [ACT] leave at least one of the 'Email' / 'Push notification' checkboxes CHECKED
-4. [ACT] click 'Save'
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select customer_a
+3. [ACT] (no channel controls exist any more — both channels are always used; nothing to tick)
+4. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 5. [ACT] sign out and sign in as recipient, confirming the active organization is customer_a
 6. [NAV] {{FRONT_URL}}/account/lists
 7. [ASSERT] verify whether the shared list appears among the recipient's own lists
@@ -525,12 +525,12 @@ Rep serves at least one customer organization with a reachable, notifiable membe
 [DOM] the shared list's card carries a visible marker identifying it as recommended by the sales rep {SPEC}
 [STATE] the rep-recommendation marker appears ONLY on rep-shared lists, never on a list the recipient created themselves {SPEC}","[API] the recipient's own-lists query returns the rep-shared list with sharedWithId matching the recipient's active organization, errors[] empty {OBSERVED}
 [CONSOLE] no uncaught JS errors on /account/lists
-[NETWORK] /graphql 200 with an empty errors[]","the shared list is absent from the recipient's own /account/lists index (matches B2C-LIST-050's zero-channel finding — but that case deliberately used zero channels; if this ALSO reproduces with a channel selected, VCST-5335 AC1 is unimplemented for the normal path and should be filed as a new bug, not folded into B2C-LIST-050); the list appears but carries no distinguishing rep-recommendation marker, indistinguishable from a self-created list",set the list's sharing scope back to Private,"VCST-5335 (Story AC1: ""See this list in my shopping lists with the sign it was recommended by my Rep""); VCST-5332 (parent/duplicate story). CAUTION: B2C-LIST-050 in this same suite found — for a ZERO-CHANNEL share — that the shared list does NOT appear in the recipient's own /account/lists (link-only access). This case deliberately uses a channel-selected share to test AC1 under the documented happy path; a repeat of B2C-LIST-050's finding here is a NEW, unreported gap, not something 050 already covers.",Draft
+[NETWORK] /graphql 200 with an empty errors[]","the shared list is absent from the recipient's own /account/lists index (matches B2C-LIST-050's zero-channel finding — but that case deliberately used zero channels; if this ALSO reproduces with a channel selected, VCST-5335 AC1 is unimplemented for the normal path and should be filed as a new bug, not folded into B2C-LIST-050); the list appears but carries no distinguishing rep-recommendation marker, indistinguishable from a self-created list",set the list's sharing scope back to Private,"VCST-5335 (Story AC1: ""See this list in my shopping lists with the sign it was recommended by my Rep""); VCST-5332 (parent/duplicate story). CAUTION: B2C-LIST-050 in this same suite found — for a ZERO-CHANNEL share — that the shared list does NOT appear in the recipient's own /account/lists (link-only access). This case deliberately uses a channel-selected share to test AC1 under the documented happy path; a repeat of B2C-LIST-050's finding here is a NEW, unreported gap, not something 050 already covers. Corrected: VCST-5707 (2026-09-29) — RE-BASE. Steps repaired to the Share dialog; the expectation (shared list appears in the recipient's own Lists with a rep marker, VCST-5335 AC1) is UNCHANGED and is expected to fail on the build (observed 0 own lists) — a finding, not a case to flip.",Draft
 B2C-LIST-053,Customer Opens a Shared List From the In-App Push Notification and Adds an Item to Cart,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SALES_REP]
 State from B2C-LIST-052 (a list shared with customer_a with at least one notification channel enabled, containing >=1 in-stock item) — the recipient has NOT yet interacted with the notification. Requires the storefront's in-app 'Notifications' icon in the main nav icon bar (per sitemap.md — opens a dropdown, shows an unread-count badge; no dedicated inbox page link is documented, so this case discovers the entry point live rather than assuming a fixed selector).",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker with >=1 notifiable member (live-discover); recipient = a member of customer_a who is neither the rep nor the list owner,"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open a list's 'Edit' dialog, set 'Sharing options' to 'Customer', select customer_a, leave 'Push notification' CHECKED
-3. [ACT] click 'Save'
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select customer_a (push is always sent — no channel checkbox exists)
+3. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 4. [ACT] sign out and sign in as recipient, confirming the active organization is customer_a
 5. [ACT] click the 'Notifications' icon/button in the main nav icon bar
 6. [WAIT] the notifications dropdown opens
@@ -544,11 +544,11 @@ State from B2C-LIST-052 (a list shared with customer_a with at least one notific
 [DOM] the opened list renders the same rep-recommendation banner and per-item 'Add to cart' controls verified via the direct Link in B2C-LIST-044 {SPEC}
 [STATE] the cart line count increments after 'Add to cart' on an in-stock item reached through the notification path {SPEC}","[API] the push-message payload delivered for this share carries a URL/deep-link resolving to the shared list, mirroring the xAPI push-delivery contract exercised in 050l {SPEC}
 [NETWORK] the add-to-cart action issues the addItem mutation with errors[] empty {OBSERVED}
-[CONSOLE] no uncaught JS errors opening the notification or the list",no notification entry appears for the share within a reasonable wait (a delivery/projection gap — 050l PUSH-027 notes per-recipient projection can be asynchronous); the notification text has no clickable list-name link; clicking the link 404s or lands on a generic page instead of the list; add-to-cart fails from this entry path though the SAME list works via the direct Link (B2C-LIST-044),remove the added line from the cart; set the list's sharing scope back to Private,"VCST-5335 (Story AC2: push notification naming the list and rep, clickable to open and edit the list); distinct from B2C-LIST-044 (opens via the direct Link field, not the in-app notification) and 050l PUSH-027 (xAPI-only delivery proof, no storefront UI click-through)",Draft
+[CONSOLE] no uncaught JS errors opening the notification or the list",no notification entry appears for the share within a reasonable wait (a delivery/projection gap — 050l PUSH-027 notes per-recipient projection can be asynchronous); the notification text has no clickable list-name link; clicking the link 404s or lands on a generic page instead of the list; add-to-cart fails from this entry path though the SAME list works via the direct Link (B2C-LIST-044),remove the added line from the cart; set the list's sharing scope back to Private,"VCST-5335 (Story AC2: push notification naming the list and rep, clickable to open and edit the list); distinct from B2C-LIST-044 (opens via the direct Link field, not the in-app notification) and 050l PUSH-027 (xAPI-only delivery proof, no storefront UI click-through) Corrected: VCST-5707 (2026-09-29) — RE-BASE. Steps repaired to the Share dialog; the expectation (push entry names the list and the rep, VCST-5335 AC2) is UNCHANGED and is expected to fail (observed: the push carries note + link only) — a finding, not a case to flip.",Draft
 B2C-LIST-054,Customer Edits a Rep-Shared List — Removed Item Persists After Reload,B2C Features > Lists > Sales Rep sharing,High,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SALES_REP]
 State from B2C-LIST-044 (a list shared with a customer organization the signed-in account belongs to, holding >=2 items — at least one to remove and at least one to remain, so this edit does not also drive the list into its empty state). This case performs the edit AS THE RECIPIENT throughout — VCST-5335 confirms lists shared with a customer 'can be edited' by that customer, not only by the rep.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = an organization from the share dialog's customer picker (live-discover); recipient = a member of customer_a who is neither the rep nor the list owner,"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open a list's 'Edit' dialog, set 'Sharing options' to 'Customer', select customer_a, leave a channel checked, click 'Save'
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`), select customer_a and click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 3. [ACT] sign out and sign in as recipient, confirming the active organization is customer_a
 4. [NAV] the shared list (via /account/lists or the copied Link, whichever entry point the environment currently surfaces)
 5. [ASSERT] record the current item count and SKUs on the list
@@ -560,79 +560,926 @@ State from B2C-LIST-044 (a list shared with a customer organization the signed-i
 [STATE] after a full page reload, the removed item remains absent and the item count still reflects the removal — the edit is server-persisted, not a client-only optimistic state {SPEC}
 [DOM] the remaining item(s) and the rep-recommendation banner are unaffected by the edit {SPEC}","[API] the edit issues a wishlist item-removal mutation scoped to the shared list's id, returning errors[] empty {OBSERVED}
 [API] a subsequent read of the same list (post-reload) reflects the removal — the mutation is round-tripped, not merely reflected client-side {OBSERVED}
-[CONSOLE] no uncaught JS errors during the edit or the reload","the remove control is disabled or hidden for the recipient (edit permission not actually granted to the customer, contradicting the ticket's own 'Lists can be edited' note); the item reappears after reload (edit not persisted server-side); a 403/permission error is returned on the removal mutation; the rep-recommendation banner or remaining items are lost as a side effect of the edit",re-add the removed item to the list (or have the rep re-share a fresh copy) to restore state for future runs; set the list's sharing scope back to Private,"VCST-5335 (Story description: ""Lists can be edited""); VCST-5332 (parent story — review findings there are unrelated to editability)",Draft
+[CONSOLE] no uncaught JS errors during the edit or the reload","the remove control is disabled or hidden for the recipient (edit permission not actually granted to the customer, contradicting the ticket's own 'Lists can be edited' note); the item reappears after reload (edit not persisted server-side); a 403/permission error is returned on the removal mutation; the rep-recommendation banner or remaining items are lost as a side effect of the edit",re-add the removed item to the list (or have the rep re-share a fresh copy) to restore state for future runs; set the list's sharing scope back to Private,"VCST-5335 (Story description: ""Lists can be edited""); VCST-5332 (parent story — review findings there are unrelated to editability) Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog + channel checkbox replaced by the Share dialog. Assertions untouched.",Draft
 B2C-LIST-055,Publish List to a Customer — org maintainer without sales-rep:access has no Customer scope,B2C Features > Lists > Sales Rep sharing,Critical,BL-SR-002,ECL-7.2,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:ACME_ADMIN]
 1. ACME_ADMIN (USR-001, AcmeCorp / ORG-001, org role 'Organization maintainer') holds no sales-rep:access permission.
 2. ACME_ADMIN owns >=1 own list containing >=1 item, reachable from My Lists.","front_url={{FRONT_URL}}, admin=@td(ACME_ADMIN.email) / @td(ACME_ADMIN.password) — org maintainer, no sales-rep:access; list = any own list with >=1 item","1. [NAV] {{FRONT_URL}}/account/lists
 2. [WAIT] My Lists page loaded with >=1 own list belonging to ACME_ADMIN
-3. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Edit'
-4. [WAIT] 'List settings' dialog opens
-5. [ACT] open the 'Sharing options' dropdown without selecting an option
-6. [ASSERT] snapshot the full set of options the dropdown renders, and whether any customer-picker control is present elsewhere in the dialog","[DOM] verify whether the 'Sharing options' dropdown still offers the scopes a maintainer legitimately holds — Private, the public 'Anyone (readonly)' link, and Organization {OBSERVED}
-[DOM] verify whether 'Customer' is absent from the 'Sharing options' dropdown's rendered option set {OBSERVED}
-[DOM] verify whether no searchable customer picker, 'Message' field, or 'Send via' group mounts anywhere in the 'List settings' dialog for this user {OBSERVED}
+3. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+4. [WAIT] the 'Share “<list name>”' dialog opens
+5. [ACT] read the 'Who can access' tab strip without selecting a tab
+6. [ASSERT] snapshot the full set of scope tabs (`wishlist-sharing-scope-*`) the strip renders, and whether any customer-picker control is present elsewhere in the dialog","[DOM] verify whether the 'Who can access' tab strip still offers the scopes a maintainer legitimately holds — Private, Anyone with link (AnyoneAnonymous) and Organization {OBSERVED}
+[DOM] verify whether 'Customer' (the 'Specific customers' tab) is absent from the tab strip's rendered scope set {OBSERVED}
+[DOM] verify whether no searchable customer picker, 'Message' field, or 'Send via' group mounts anywhere in the Share dialog for this user {OBSERVED}
 [REL] verify whether the option set rendered to ACME_ADMIN equals the rep's set from B2C-LIST-040 minus exactly 'Customer' — no other scope gained or lost {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
-[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5332 · Archetype:SCOPE · Technique:EP; Verified: live vcst-qa 2026-09-02 (Platform 3.1063.0 · SalesRep 3.1006.0 · theme 2.57.0-pr-2396-80d1) — ACME_ADMIN List-settings scopes = Private / Anyone (readonly) / Organization; rep control on the same env + same dialog shows those three PLUS Customer,Draft
+[NETWORK] no 4xx/5xx on /graphql","Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5332 · Archetype:SCOPE · Technique:EP; Verified: live vcst-qa 2026-09-02 (Platform 3.1063.0 · SalesRep 3.1006.0 · theme 2.57.0-pr-2396-80d1) — ACME_ADMIN List-settings scopes = Private / Anyone (readonly) / Organization; rep control on the same env + same dialog shows those three PLUS Customer Corrected: VCST-5707 (2026-09-29) — Steps + control nouns: Edit / List settings / Sharing options dropdown replaced by the Share dialog tab strip. Intent (a maintainer is offered every scope except Customer) unchanged.,Draft
 B2C-LIST-058,Publish List to a Customer — reopening on the SAME customer shows no Message field and sends no notification,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A list already shared with customer_a via B2C-LIST-040, reopened WITHOUT changing the selected customer (isNewTarget stays false). Live-characterization case for VCST-5724: the component's isNewTarget gate is unchanged by this PR, so the Message field and notify call should behave exactly as before — this case captures that behavior post-deploy rather than assuming it.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; the list and customer_a from B2C-LIST-040,"1. [ACT] start capturing network requests (clear the request log)
 2. [NAV] {{FRONT_URL}}/account/lists
-3. [ACT] open the already-shared list's 'Edit' dialog WITHOUT changing the selected customer
+3. [ACT] open the already-shared list's Share dialog (kebab menu `[data-test-id=""wishlist-card-menu-button""]` -> 'Share') WITHOUT changing the selected customers
 4. [ASSERT] verify the Message textarea is absent
-5. [ASSERT] verify the Save control is DISABLED while nothing has changed (nothing to click); then make the form dirty by another field (e.g. Description) and Save
+5. [ASSERT] verify the 'Share' button (`[data-test-id=""wishlist-sharing-save-button""]`) is DISABLED while nothing has changed (the old make-the-form-dirty-via-Description path no longer exists — Description lives in the Rename dialog, which sends only its own fields)
 6. [ASSERT] inspect the capture: verify no sendCustomerCommunication mutation was issued
-7. [ASSERT] verify ChangeWishlist is also not re-issued for an unchanged sharedWithId (or, if it is, it carries the same value as before)","[DOM] no 'Message' textarea (`[data-test-id=""wishlist-share-message-input""]`) renders when the dialog opens on its current, unchanged customer {OBSERVED}
-[NETWORK] no sendCustomerCommunication call fires when the target customer did not change — neither on the disabled-Save path nor after the form is made dirty by an unrelated field, where only ChangeWishlist + a GetWishlists refetch are issued {OBSERVED}
+7. [ASSERT] verify ChangeWishlist is also not re-issued for an unchanged customer set (or, if it is, it carries the same value as before)","[DOM] no 'Message' textarea (`[data-test-id=""wishlist-share-message-input""]`) renders when the dialog opens on its current, unchanged customer {OBSERVED}
+[NETWORK] no sendCustomerCommunication call fires when the target customer did not change — on the disabled-Share path {OBSERVED}
 [STATE] the list's sharing scope and sharedWithId are unchanged after this no-op save {SPEC}
-[DOM] the Save control is DISABLED on an unchanged-customer reopen, so no duplicate notification is reachable by clicking through {OBSERVED}","[CONSOLE] no uncaught JS errors
-[NETWORK] no unexpected /graphql 4xx/5xx",a Message textarea unexpectedly renders on an unchanged-customer reopen; sendCustomerCommunication fires despite isNewTarget being false; the sharedWithId or scope changes from this no-op save,none — read-only inspection plus a no-op save,"VCST-5724 (2026-08-20) — gap case authored during Step 3 test-case repair; confirmed live by the qa-frontend-expert run on the same deploy; tags promoted to {OBSERVED} Verified: VCST-5724 (2026-08-20, REG-2026-08-20-1409, theme 2.56.0-pr-2438-ef16). Both hypothesis lines confirmed live; steps 5–6 rewritten because Save is disabled when nothing changed. Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[DOM] the 'Share' button is DISABLED on an unchanged-customer reopen, so no duplicate notification is reachable by clicking through {OBSERVED}","[CONSOLE] no uncaught JS errors
+[NETWORK] no unexpected /graphql 4xx/5xx",a Message textarea unexpectedly renders on an unchanged-customer reopen; sendCustomerCommunication fires despite isNewTarget being false; the sharedWithId or scope changes from this no-op save,none — read-only inspection plus a no-op save,"VCST-5724 (2026-08-20) — gap case authored during Step 3 test-case repair; confirmed live by the qa-frontend-expert run on the same deploy; tags promoted to {OBSERVED} Verified: VCST-5724 (2026-08-20, REG-2026-08-20-1409, theme 2.56.0-pr-2438-ef16). Both hypothesis lines confirmed live; steps 5–6 rewritten because Save is disabled when nothing changed. Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — RE-BASE (mixed row). Steps repaired to the Share dialog; the unreachable dirty-via-Description clause dropped. The line 'no Message textarea on unchanged reopen' is left UNCHANGED for the run: the change persists the message and shows it on reopen (sharingSetting.message) — expected to fail, resolved at 5-triage. Message persistence is covered by the new VCST-5707 cases.",Reviewed
 B2C-LIST-059,"Publish List to a Customer — a store with no email-capable recipient surfaces a localized warning, never a raw code, on every share",B2C Features > Lists > Sales Rep sharing,High,BL-SR-013,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A served customer organization that has no reachable email-capable member and/or a store missing the SalesRepMessageEmailNotification template (see the B2C-LIST-047 zero-recipient fixture concept). Since VCST-5724 removed the ability to opt out of Email, this warning class now fires on EVERY share to such an org, not only on an email-only selection — raising its exposure.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = a served org with no reachable email recipient,"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's 'Edit' dialog and set 'Sharing options' to 'Customer'
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
 3. [ACT] select customer_a and type a message
-4. [ACT] click Save
+4. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 5. [ASSERT] verify the rep sees a human-readable, localized warning that the email leg did not reach anyone
 6. [ASSERT] inspect the rendered text for a raw warning code or an unresolved i18n key","[NETWORK] sendCustomerCommunication returns succeeded:false with warnings[] containing an EmailUnavailable/EmailNoRecipients-class code {SPEC}
 [DOM] the UI surfaces a localized sentence describing the failure — never the bare warning code (e.g. 'EmailUnavailable') and never a raw `sales_rep.communication.warnings.*`-shaped key {BL}
 [DOM] no success toast is shown (absent) while succeeded:false — the dialog does not silently close as if it succeeded {SPEC}","[CONSOLE] no uncaught JS errors
-[NETWORK] /graphql 200 with empty errors[] (failure is in-band via succeeded:false)","the raw warning code (e.g. 'EmailUnavailable', 'EmailNoRecipients') is shown verbatim to the rep; an unresolved i18n key renders instead of localized text; the dialog closes as an unqualified success while succeeded:false and warnings[] is non-empty",set the list's sharing scope back to Private,"BL-SR-013; VCST-5724 (2026-08-20) — this warning class is now reachable on every share to an email-unreachable org, since VCST-5724 hardcoded sendEmail:true with no opt-out VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned.",Draft
+[NETWORK] /graphql 200 with empty errors[] (failure is in-band via succeeded:false)","the raw warning code (e.g. 'EmailUnavailable', 'EmailNoRecipients') is shown verbatim to the rep; an unresolved i18n key renders instead of localized text; the dialog closes as an unqualified success while succeeded:false and warnings[] is non-empty",set the list's sharing scope back to Private,"BL-SR-013; VCST-5724 (2026-08-20) — this warning class is now reachable on every share to an email-unreachable org, since VCST-5724 hardcoded sendEmail:true with no opt-out VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned. Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog replaced by the Share dialog. Assertions untouched (fixture SR_REP_ONLY_ORG unprovisioned).",Draft
 B2C-LIST-060,Publish List to a Customer dialog — no raw i18n key or orphan channel label under de/fr/es/ru after the 14-locale key deletion,B2C Features > Lists > Sales Rep sharing,High,BL-SR-013,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 VCST-5724 deleted the `sales_rep.list_sharing.share_channels_label` / `share_email_label` / `share_push_label` keys from all 14 locale files (client-app/modules/sales-rep/locales/*.json, confirmed in PR #2438 diff) alongside removing the fieldset that used them. This module has two OPEN bugs of exactly this failure class: BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md and BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md (a key deleted/missing from one locale but referenced elsewhere renders the raw key, not a fallback).","rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; a list with an existing or new customer-scope share; locales de, fr, es, ru via {{FRONT_URL}}/<locale>/...","1. [NAV] {{FRONT_URL}}/de/account/lists (full page load, not the in-page language switcher — see BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md for why that distinction matters)
-2. [ACT] open a list's 'Edit' dialog and set 'Sharing options' to 'Customer', select a customer
-3. [ASSERT] read every visible label in the dialog (Sharing options, Link, Message, default title/message copy) — none may render a raw `sales_rep.list_sharing.*`-shaped string
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select a customer
+3. [ASSERT] read every visible label in the dialog (Who can access tabs, Link, Customers, Message, recipients, default title/message copy) — none may render a raw `sales_rep.list_sharing.*`-shaped string
 4. [ASSERT] confirm NO leftover 'Send via' / 'Email' / 'Push notification' label renders anywhere in the dialog under this locale
 5. [NAV] repeat steps 1-4 for {{FRONT_URL}}/fr/account/lists
 6. [NAV] repeat steps 1-4 for {{FRONT_URL}}/es/account/lists
 7. [NAV] repeat steps 1-4 for {{FRONT_URL}}/ru/account/lists","[DOM] every dialog label under de/fr/es/ru is a localized human-readable string, never a raw i18n key shaped like 'sales_rep.list_sharing.share_channels_label' {BL}
 [DOM] no orphaned 'Send via' / 'Email' / 'Push notification' (or their de/fr/es/ru translations) text node exists anywhere in the DOM of the sharing dialog under any of the four locales — confirms the deleted keys have no surviving reference in vc-frontend templates {SPEC}
 [DOM] the default share title/message strings ('share_default_title', 'share_default_message') still render as localized text, not a raw key, in all four locales — these keys were NOT touched by this PR {SPEC}","[CONSOLE] no missing-translation-key console warning
-[NETWORK] no failed locale-file requests (200 on every locale JSON)",any raw `sales_rep.list_sharing.share_channels_label`/`share_email_label`/`share_push_label`-shaped key renders instead of being absent entirely (a stray template reference to a now-deleted key — same failure class as BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md and BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md); an orphaned English or partially-translated 'Send via' label appears under a non-English locale,"set the list's sharing scope back to Private (once, after the last locale pass)","BL-SR-013; VCST-5724 (2026-08-20); reports/bugs/open/BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md; reports/bugs/open/BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md — same defect class, different keys Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[NETWORK] no failed locale-file requests (200 on every locale JSON)",any raw `sales_rep.list_sharing.share_channels_label`/`share_email_label`/`share_push_label`-shaped key renders instead of being absent entirely (a stray template reference to a now-deleted key — same failure class as BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md and BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md); an orphaned English or partially-translated 'Send via' label appears under a non-English locale,"set the list's sharing scope back to Private (once, after the last locale pass)","BL-SR-013; VCST-5724 (2026-08-20); reports/bugs/open/BUG-SalesRep-DE-raw-i18n-keys-account-sidebar.md; reports/bugs/open/BUG-SalesRep-nav-link-raw-i18n-key-fr-es.md — same defect class, different keys Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog replaced by the Share dialog. Intent (no raw sales_rep.list_sharing.* key or orphan channel label under de/fr/es/ru) unchanged; it now also covers the keys the change adds.",Reviewed
 B2C-LIST-061,Publish List to a Customer — a failed/no-recipient notification does not roll back the persisted share,B2C Features > Lists > Sales Rep sharing,High,BL-NOTIF-003,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 A served customer organization with no reachable notification recipient (same zero-recipient fixture concept as B2C-LIST-047/050). Since VCST-5724 removed channel opt-out, this org now ALWAYS produces a failed/partial notification on share — making the grant/notify transactional-independence question load-bearing on every such share, not an edge case reachable only by unchecking boxes.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; customer_a = a served zero-recipient org,"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's 'Edit' dialog, set 'Sharing options' to 'Customer', select customer_a
-3. [ACT] click Save
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select customer_a
+3. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
 4. [ASSERT] verify sendCustomerCommunication reports succeeded:false / warnings non-empty (per B2C-LIST-047)
 5. [ACT] reload {{FRONT_URL}}/account/lists (full page reload, not client-side nav)
 6. [ASSERT] verify the list's sharing scope is STILL 'Customer' with sharedWithId=customer_a — the failed notification did not roll back the ChangeWishlist commit","[NETWORK] ChangeWishlist commits scope='Customer' and sharedWithId=customer_a independently of the sendCustomerCommunication outcome {BL}
 [STATE] after a full page reload, the list card / list-detail still shows the 'Shared with customer' scope badge — the persisted state survived the notification failure {BL}
 [NETWORK] no compensating mutation reverts the scope after a failed sendCustomerCommunication {SPEC}","[CONSOLE] no uncaught JS errors
-[NETWORK] /graphql 200 with empty errors[] on both mutations",the scope silently reverts to its prior value after reload (an implicit rollback tied to notification failure); the list disappears from 'Shared with customer' state entirely; ChangeWishlist itself errors out when sendCustomerCommunication is expected to fail,set the list's sharing scope back to Private,"BL-NOTIF-003 (analogous: notification failure must not block/roll back the primary transaction); VCST-5724 (2026-08-20) — this scenario is now reachable on every zero-recipient share, not only a deliberately-zero-channel one VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned.",Draft
+[NETWORK] /graphql 200 with empty errors[] on both mutations",the scope silently reverts to its prior value after reload (an implicit rollback tied to notification failure); the list disappears from 'Shared with customer' state entirely; ChangeWishlist itself errors out when sendCustomerCommunication is expected to fail,set the list's sharing scope back to Private,"BL-NOTIF-003 (analogous: notification failure must not block/roll back the primary transaction); VCST-5724 (2026-08-20) — this scenario is now reachable on every zero-recipient share, not only a deliberately-zero-channel one VCST-5724 (2026-08-20): stays Draft — BLOCKED, fixture SR_REP_ONLY_ORG not provisioned. Corrected: VCST-5707 (2026-09-29) — Steps only: Edit dialog replaced by the Share dialog. Assertions untouched (fixture SR_REP_ONLY_ORG unprovisioned).",Draft
 B2C-LIST-056,Publish List to a Customer — Message length cap is still enforced after the fieldset removal,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 VCST-5724 removed the surrounding <fieldset> and channel controls but left the Message VcTextarea's counter/max-length binding untouched (messageMaxLength = NOTIFICATION_MESSAGE_LIMIT - sharingLink.length - SEPARATOR.length, unchanged in the PR diff). This case reads the counter's OWN rendered max rather than hardcoding a number, per the no-hardcode test-data rule.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; a list being newly shared with customer_a (isNewTarget=true so the Message field renders),"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's 'Edit' dialog, set 'Sharing options' to 'Customer', select a NEW customer_a
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select a NEW customer_a
 3. [ACT] read the Message textarea's rendered character-counter max (e.g. 'n/N') via browser_evaluate on `[data-test-id=""wishlist-share-message-input""]` — capture N, do not hardcode it
 4. [ACT] type exactly N characters into the Message field
 5. [ASSERT] verify all N characters are accepted and the counter reads 'N/N'
 6. [ACT] attempt to type one more character (N+1 total)
 7. [ASSERT] verify the (N+1)th character is rejected/not appended — the field stays capped at N","[DOM] the Message textarea's visible counter and its actual stored value both read exactly N after typing N characters {OBSERVED}
 [DOM] typing an (N+1)th character leaves it absent from the stored value — the cap is enforced client-side, not merely visually truncated at submit {OBSERVED}
-[MATH] N = NOTIFICATION_MESSAGE_LIMIT - sharingLink.length - SEPARATOR.length (N shrinks for a longer sharing link, confirming the cap is link-length-aware, not a flat constant) {SPEC}",[CONSOLE] no uncaught JS errors,the field accepts more than N characters (cap silently removed alongside the fieldset refactor); the counter and the actual enforced limit disagree; the max is a flat constant that does not shrink for a longer sharing link,set the list's sharing scope back to Private (or leave uncommitted if the dialog is cancelled instead of saved),"ECL-7.2; VCST-5724 (2026-08-20) — messageMaxLength binding unchanged by the PR diff, this case guards against a regression introduced by the surrounding refactor Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[MATH] N = NOTIFICATION_MESSAGE_LIMIT - sharingLink.length - SEPARATOR.length (N shrinks for a longer sharing link, confirming the cap is link-length-aware, not a flat constant) {SPEC}",[CONSOLE] no uncaught JS errors,the field accepts more than N characters (cap silently removed alongside the fieldset refactor); the counter and the actual enforced limit disagree; the max is a flat constant that does not shrink for a longer sharing link,set the list's sharing scope back to Private (or leave uncommitted if the dialog is cancelled instead of saved),"ECL-7.2; VCST-5724 (2026-08-20) — messageMaxLength binding unchanged by the PR diff, this case guards against a regression introduced by the surrounding refactor Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — RE-BASE (mixed row). Steps repaired to the Share dialog. The [MATH] line (N = NOTIFICATION_MESSAGE_LIMIT - link - separator, link-length-aware) is UNCHANGED for the run: the change states a flat 250 cap (backend 1024), which would contradict it — resolved at 5-triage.",Reviewed
 B2C-LIST-057,Publish List to a Customer dialog — reduced form has no orphaned label association or broken tab order after the fieldset removal,B2C Features > Lists > Sales Rep sharing,Medium,BL-SR-002,ECL-7.2,"[PRE:SIGNIN_AS:SALES_REP]
 VCST-5724 deleted the <fieldset> holding the VcLabel + two VcCheckbox controls entirely (not just hidden) along with their SCSS. This case checks that the deletion left no dangling `for`/`aria-describedby`/`aria-labelledby` reference and no keyboard-trap or skipped-focus gap where the fieldset used to sit.",rep={{SALES_REP_EMAIL}} / [AUTH role=SALES_REP]; a list being newly shared with a NEW customer_a (isNewTarget=true so Message renders and the removed fieldset's former position is exercised),"1. [NAV] {{FRONT_URL}}/account/lists
-2. [ACT] open the list's 'Edit' dialog, set 'Sharing options' to 'Customer', select a NEW customer_a so the Message field renders
+2. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`) and click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`) — the 'Share “<list name>”' dialog (`[data-test-id=""share-wishlist-modal""]`) opens; select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`) and select a NEW customer_a so the Message field renders
 3. [ACT] `browser_snapshot` / `browser_evaluate`: scan the dialog's DOM for any element with `aria-describedby`, `aria-labelledby`, or a `for` attribute whose target id does not resolve to an existing element
-4. [ACT] focus the customer combobox, then press Tab repeatedly through the dialog
-5. [ASSERT] verify focus moves customer combobox -> Message textarea -> dialog action buttons, with no dead stop, no focus trap, and no landing on an invisible/removed element
+4. [ACT] focus the customer picker (`[data-test-id=""wishlist-share-customer-select""]`), then press Tab repeatedly through the dialog
+5. [ASSERT] verify focus moves customer picker -> (any recipient-row controls) -> Message textarea -> dialog action buttons, with no dead stop, no focus trap, and no landing on an invisible/removed element
 6. [ACT] run an automated a11y scan (axe-core) scoped to the open dialog","[DOM] every for/aria-describedby/aria-labelledby id referenced in the dialog resolves to an existing element — no dangling reference is present {OBSERVED}
-[STATE] Tab order through the dialog is customer combobox -> Message textarea -> action buttons with no skipped/trapped focus at the position the deleted fieldset used to occupy {OBSERVED}
-[DOM] the axe-core scan reports zero new violations visible in the scoped dialog report (label, aria-* attribute-value, or tabindex classes) {OBSERVED}",[CONSOLE] no uncaught JS errors,an `aria-describedby`/`aria-labelledby`/`for` attribute still references the deleted VcLabel or checkbox ids; Tab order skips or freezes at the removed fieldset's former position; axe-core reports a new label/aria violation inside the dialog,set the list's sharing scope back to Private,"BL-SR-002; VCST-5724 (2026-08-20) — a11y regression check for the wholesale fieldset deletion in PR #2438 Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409.",Reviewed
+[STATE] Tab order through the dialog is customer picker -> (any recipient-row controls) -> Message textarea -> action buttons with no skipped/trapped focus at the position the deleted fieldset used to occupy {OBSERVED}
+[DOM] the axe-core scan reports zero new violations visible in the scoped dialog report (label, aria-* attribute-value, or tabindex classes) {OBSERVED}",[CONSOLE] no uncaught JS errors,an `aria-describedby`/`aria-labelledby`/`for` attribute still references the deleted VcLabel or checkbox ids; Tab order skips or freezes at the removed fieldset's former position; axe-core reports a new label/aria violation inside the dialog,set the list's sharing scope back to Private,"BL-SR-002; VCST-5724 (2026-08-20) — a11y regression check for the wholesale fieldset deletion in PR #2438 Promoted: VCST-5724 (2026-08-20) Draft->Reviewed, green under REG-2026-08-20-1409. Corrected: VCST-5707 (2026-09-29) — Steps + nouns: Edit dialog / customer combobox replaced by the Share dialog / multi-select picker with a recipients list between picker and Message. Intent (no dangling reference, no dead stop) unchanged.",Reviewed
+B2C-LIST-062,"[JOURNEY] Rep shares one list with two customers, buyer opens it, rep stops and re-shares",B2B Lists & Shared > Sales Rep sharing > VCST-5707,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep = SR_REP_PRIMARY serving AcmeCorp and TechFlow. readerA = ACME_BUYER (AcmeCorp member), readerB = SR_REP_EXCLUSIVE_TECHFLOW (TechFlow member). The chain crosses screens and sessions, so this is ONE continuous journey (Frontend Journey Exception). Each reader signs in once per visit (readerA twice in this journey, at most one attempt each) (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id), readerA=@td(ACME_BUYER.email), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","--- SCREEN: Create list ---
+1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-J1'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-J1' list card is visible on /account/lists
+7. [ASSERT] the list card shows the 'Private' status
+--- SCREEN: Share dialog ---
+8. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+9. [WAIT] the card menu lists Rename / Share / Remove list
+10. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+11. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+12. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+13. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+14. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+15. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 journey'
+16. [ASSERT] the recipients list (`[data-test-id=""wishlist-sharing-recipients""]`) reads 'Recipients · 2' with one row per organization
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+18. [WAIT] the success toast is visible
+19. [ASSERT] the toast reads 'List shared with 2 customers.'
+--- SCREEN: Card and link ---
+20. [ASSERT] the list card status reads 'Shared with 2 customers'
+21. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+22. [WAIT] the card menu lists Rename / Share / Remove list
+23. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+24. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+25. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+26. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+27. [WAIT] the Share dialog has closed
+--- SCREEN: Recipient A ---
+28. [ACT] click the user name in the top header
+29. [WAIT] the account-menu popup is visible
+30. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+31. [WAIT] the signed-out storefront is visible
+32. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+33. [WAIT] the signed-in header is visible
+34. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+35. [WAIT] the shared-list page settles (readerA)
+36. [ASSERT] the page heading is the list name 'AGENT-TEST-5707-J1' and the banner 'Recommended by your sales representative' is shown
+--- SCREEN: Recipient B ---
+37. [ACT] click the user name in the top header
+38. [WAIT] the account-menu popup is visible
+39. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+40. [WAIT] the signed-out storefront is visible
+41. [ACT] sign in as readerB (@td(SR_REP_EXCLUSIVE_TECHFLOW.email); ONE attempt — the account locks on repeated failures)
+42. [WAIT] the signed-in header is visible
+43. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+44. [WAIT] the shared-list page settles (readerB)
+45. [ASSERT] the same list renders for readerB under the same key
+--- SCREEN: Stop sharing ---
+46. [ACT] click the user name in the top header
+47. [WAIT] the account-menu popup is visible
+48. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+49. [WAIT] the signed-out storefront is visible
+50. [ACT] sign in as the rep (@td(SR_REP_PRIMARY.email); ONE attempt — the account locks on repeated failures)
+51. [WAIT] the signed-in header is visible
+52. [NAV] {{FRONT_URL}}/account/lists
+53. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+54. [WAIT] the card menu lists Rename / Share / Remove list
+55. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+56. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+57. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+58. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+59. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+60. [ACT] click 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`)
+61. [WAIT] the Share dialog has closed
+62. [ASSERT] the list card status reads 'Private'
+--- SCREEN: Re-share ---
+63. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+64. [WAIT] the card menu lists Rename / Share / Remove list
+65. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+66. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+67. [ASSERT] the recipients list is empty and the Message field reads 0/250 (recipients and message are not restored)
+68. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+69. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+70. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+71. [WAIT] the success toast is visible
+72. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+73. [WAIT] the card menu lists Rename / Share / Remove list
+74. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+75. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+76. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+77. [ASSERT] the Link value equals the LINK read before Stop sharing
+78. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+79. [WAIT] the Share dialog has closed
+--- SCREEN: Recipient A again ---
+80. [ACT] click the user name in the top header
+81. [WAIT] the account-menu popup is visible
+82. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+83. [WAIT] the signed-out storefront is visible
+84. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+85. [WAIT] the signed-in header is visible
+86. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+87. [WAIT] the shared-list page settles (readerA)
+88. [ASSERT] readerA reads the list again through the revived link","[DOM] after Share the toast reads 'List shared with 2 customers.' and the card status reads 'Shared with 2 customers' {SPEC}
+[DOM] readerA's /shared-list/<key> page shows the heading 'AGENT-TEST-5707-J1' and the banner 'Recommended by your sales representative' {SPEC}
+[NAV] readerB, a member of the second targeted organization, opens the same key and the list renders (no /403 'Access denied') {SPEC}
+[STATE] after 'Stop sharing' the card status reads 'Private' and the reopened Share dialog shows no recipients and an empty message {OBSERVED}
+[STATE] the re-share issues the SAME key: the Link value after re-share equals the Link value before Stop sharing {OBSERVED}
+[NAV] after re-sharing to AcmeCorp only, readerA reads the list again through the original link {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the toast counts recipients that were not persisted; a targeted buyer lands on /403 'Access denied' for a link the rep sent; Stop sharing leaves the card 'Shared with 2 customers'; re-share mints a different key or silently restores the old recipients; a mid-journey sign-in drops the session and the link opens the home page,"remove the AGENT-TEST-5707-J1 list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:SILENT · Technique:FLOW · Journey L1-L9 · Test Model VCST-5707 #1 · KB-7A9D4927 (same key revived),Draft
+B2C-LIST-063,Sales Rep list sharing — adding a second customer keeps the first customer's access,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp and TechFlow; readerA = ACME_BUYER. The ticket's repro: share with A, then add B in a second save (previously the second save replaced A and A's link returned 403). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-ADD'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-ADD' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+20. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+21. [ASSERT] the recipients list reads 'Recipients · 2'
+22. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+23. [WAIT] the success toast is visible
+24. [ASSERT] the toast reads 'List saved. Now shared with 2 customers.'
+25. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+26. [WAIT] the card menu lists Rename / Share / Remove list
+27. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+28. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+29. [ASSERT] both AcmeCorp and TechFlow are listed in the recipients list
+30. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+31. [WAIT] the Share dialog has closed
+32. [ACT] click the user name in the top header
+33. [WAIT] the account-menu popup is visible
+34. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+35. [WAIT] the signed-out storefront is visible
+36. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+37. [WAIT] the signed-in header is visible
+38. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+39. [WAIT] the shared-list page settles (readerA)
+40. [ASSERT] readerA (first customer) still reads the list","[DOM] after the second save the toast reads 'List saved. Now shared with 2 customers.' and the reopened Share dialog lists both organizations under 'Recipients · 2' {OBSERVED}
+[NAV] readerA opens the original link and the list renders with its heading 'AGENT-TEST-5707-ADD' — no /403 'Access denied' {SPEC}
+[NETWORK] the second save's ChangeWishlist request adds only the new organization (addSharedWithIds holds TechFlow alone, no removeSharedWithIds) {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the second save replaces the first customer so readerA lands on /403 'Access denied' (the ticket's Watermelon / Purple Pink bug); the reopened dialog lists only the newest customer; the toast counts 1 while 2 are shown,"remove the AGENT-TEST-5707-ADD list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:LIFECYCLE · Technique:EG · Test Model VCST-5707 #2 · ticket description repro,Draft
+B2C-LIST-064,Sales Rep list sharing — removing one recipient revokes only that customer,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp and TechFlow; readerA = ACME_BUYER, readerB = SR_REP_EXCLUSIVE_TECHFLOW. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id), readerA=@td(ACME_BUYER.email), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-RM'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-RM' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+14. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+15. [WAIT] the success toast is visible
+16. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+17. [WAIT] the card menu lists Rename / Share / Remove list
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+19. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+20. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+21. [ACT] click the remove control on the AcmeCorp recipient row (`[data-test-id=""wishlist-sharing-remove-recipient-@td(ORG_ACME.platform_id)""]`)
+22. [ASSERT] the recipients list reads 'Recipients · 1' and shows TechFlow only
+23. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+24. [WAIT] the success toast is visible
+25. [ACT] click the user name in the top header
+26. [WAIT] the account-menu popup is visible
+27. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+28. [WAIT] the signed-out storefront is visible
+29. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+30. [WAIT] the signed-in header is visible
+31. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+32. [WAIT] the shared-list page settles (readerA (removed customer))
+33. [ASSERT] readerA no longer reads the list
+34. [ACT] click the user name in the top header
+35. [WAIT] the account-menu popup is visible
+36. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+37. [WAIT] the signed-out storefront is visible
+38. [ACT] sign in as readerB (@td(SR_REP_EXCLUSIVE_TECHFLOW.email); ONE attempt — the account locks on repeated failures)
+39. [WAIT] the signed-in header is visible
+40. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+41. [WAIT] the shared-list page settles (readerB (remaining customer))
+42. [ASSERT] readerB still reads the list","[DOM] after removing the AcmeCorp row the recipients list reads 'Recipients · 1' and names TechFlow {SPEC}
+[NAV] readerA (the removed customer) lands on the /403 'Access denied' page with no list name, item row or Subtotal element {OBSERVED}
+[NAV] readerB (the remaining customer) reads the list with the heading 'AGENT-TEST-5707-RM' {SPEC}
+[NETWORK] the save's ChangeWishlist request carries removeSharedWithIds with the AcmeCorp id only and no addSharedWithIds {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",removing one customer revokes both; the removed customer keeps reading the list through the old link; the remaining customer is denied; the row disappears in the dialog but the request removes nothing,"remove the AGENT-TEST-5707-RM list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:SCOPE · Technique:ST · Test Model VCST-5707 #3 · VCST-5925 2.1,Draft
+B2C-LIST-065,Sales Rep list sharing — renaming a shared list leaves its sharing intact,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp. The Rename dialog holds name and description only and each dialog sends only its own fields (PR vc-frontend #2476). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-RN'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-RN' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 rename'
+14. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+15. [WAIT] the success toast is visible
+16. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+17. [WAIT] the card menu lists Rename / Share / Remove list
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+19. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+20. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+21. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+22. [WAIT] the Share dialog has closed
+23. [ACT] start capturing network requests (clear the request log)
+24. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+25. [WAIT] the card menu lists Rename / Share / Remove list
+26. [ACT] click 'Rename' (`[data-test-id=""wishlist-card-edit-menu-item""]`)
+27. [WAIT] the Rename dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+28. [ASSERT] the dialog shows the List name field and the description field only, with no sharing controls
+29. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-RN2'
+30. [ACT] click 'Save' (`[data-test-id=""wishlist-settings-save-button""]`)
+31. [WAIT] the 'AGENT-TEST-5707-RN2' list card is visible on /account/lists
+32. [ASSERT] the captured ChangeWishlist request carries the list name and no sharing fields
+33. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+34. [WAIT] the card menu lists Rename / Share / Remove list
+35. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+36. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+37. [ASSERT] the 'Specific customers' tab is selected, AcmeCorp is still listed, and the Message field holds the saved message
+38. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+39. [ASSERT] the Link value equals the LINK read before the rename","[DOM] the Rename dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) renders the List name field and the description field only — no 'Who can access' tab strip {OBSERVED}
+[NETWORK] the Rename save's ChangeWishlist request carries listName / description and does not carry scope, sharedWithId, addSharedWithIds, removeSharedWithIds or message {SPEC}
+[STATE] the reopened Share dialog keeps the 'Specific customers' tab, the AcmeCorp recipient, the saved message and the same Link value {OBSERVED}
+[DOM] the list card status still reads 'Shared with 1 customer' after the rename {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","renaming silently un-shares the list (card returns to 'Private'); the rename request carries scope / targets and wipes the recipients, the message or the key; the reopened Share dialog is empty after a rename","remove the AGENT-TEST-5707-RN list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway","VCST-5707 · Archetype:SILENT · Technique:EG · Test Model VCST-5707 #4 · PR #2476 ""each dialog sends only its fields""",Draft
+B2C-LIST-066,Sales Rep list sharing — customer picker lists exactly the rep's served customers,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp, TechFlow, BuildRight and AcmeWest; the unserved organization @td(SR_UNSERVED_ORG.name) exists but is not served by this rep. The picker reads ONE page of 100 served customers and filters client-side (PR #2476). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), unserved=@td(SR_UNSERVED_ORG.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-PK'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-PK' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] open the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [WAIT] the picker options are visible
+14. [ASSERT] the options include AcmeCorp (@td(ORG_ACME.name)) and TechFlow (@td(ORG_TECHFLOW.name))
+15. [ASSERT] the options do not include @td(SR_UNSERVED_ORG.name)
+16. [ACT] type '@td(ORG_TECHFLOW.name)' into the picker search box
+17. [ASSERT] the options narrow to organizations whose name matches the typed text
+18. [ASSERT] the network capture shows the customer list was requested with first: 100 and no further page request","[DOM] the picker options (`[data-test-id=""wishlist-share-customer-select""]`) include the AcmeCorp and TechFlow organization names and every other organization the rep serves {SPEC}
+[DOM] the picker options (`[data-test-id=""wishlist-share-customer-select""]`) do not include the text '@td(SR_UNSERVED_ORG.name)', an organization the rep does not serve {SPEC}
+[DOM] typing an organization name narrows the visible options to matching names {SPEC}
+[NETWORK] the salesRepCustomers request behind the picker asks for first: 100 {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the picker offers an organization the rep does not serve; a served organization is missing; the search box filters nothing; the picker silently truncates at fewer than the served count,"remove the AGENT-TEST-5707-PK list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:SCOPE · Technique:EP · Test Model VCST-5707 #5 · BL-SR-002,Draft
+B2C-LIST-067,Sales Rep list sharing — message boundary 250 and persistence on reopen,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp. The Message field shows a 0/250 counter (design attachment 83041, PR #2476: storefront max 250, backend 1024). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-MSG'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-MSG' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] read the Message field's counter max (0/N) and keep N
+14. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with exactly N characters
+15. [ASSERT] the counter reads N/N
+16. [ACT] type one more character into the Message field
+17. [ASSERT] the (N+1)th character is not appended and the counter still reads N/N
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+19. [WAIT] the success toast is visible
+20. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+21. [WAIT] the card menu lists Rename / Share / Remove list
+22. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+23. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+24. [ASSERT] the Message field holds all N characters
+25. [ACT] clear the Message field and fill it with 5 space characters
+26. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+27. [WAIT] the success toast is visible
+28. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+29. [WAIT] the card menu lists Rename / Share / Remove list
+30. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+31. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+32. [ASSERT] record whether the Message field is empty or holds the spaces","[DOM] the Message counter's max N equals 250 {SPEC}
+[DOM] after typing N characters the counter of the Message field (`[data-test-id=""wishlist-share-message-input""]`) reads 250/250 and an extra character is rejected client-side (the field value stays 250 characters) {SPEC}
+[STATE] after Share and reopen the Message field holds the same 250 characters {SPEC}
+[STATE] a whitespace-only message is not persisted as text: the reopened Message field is empty {HYPOTHESIS}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the counter allows more than its max; the saved message is lost on reopen (VCST-5728 class); the reopened message differs from what was typed; a whitespace-only message is stored and later sent as a blank notification,"remove the AGENT-TEST-5707-MSG list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:BOUNDARY · Technique:BVA · Test Model VCST-5707 #6 · design 83041 · VCST-5728,Draft
+B2C-LIST-068,Sales Rep list sharing — reopening Share shows current recipients and card status,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp and TechFlow. Recipient rows show the organization name and a city/region subtitle; the card status counts recipients. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-RO'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-RO' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+14. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 reopen'
+15. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+16. [WAIT] the success toast is visible
+17. [ASSERT] the list card status reads 'Shared with 2 customers'
+18. [ACT] reload the page (full reload)
+19. [WAIT] the 'AGENT-TEST-5707-RO' list card is visible on /account/lists
+20. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+21. [WAIT] the card menu lists Rename / Share / Remove list
+22. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+23. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+24. [ASSERT] the 'Specific customers' tab is preselected
+25. [ASSERT] the recipients list (`[data-test-id=""wishlist-sharing-recipients""]`) reads 'Recipients · 2' with the name and the city/region subtitle on each row
+26. [ASSERT] the Message field holds 'AGENT-TEST-5707 reopen'","[DOM] the list card status reads 'Shared with 2 customers' after the save and after a full page reload {SPEC}
+[DOM] the reopened Share dialog preselects the 'Specific customers' tab and shows 'Recipients · 2' with both organization names {OBSERVED}
+[DOM] each row of the recipients list (`[data-test-id=""wishlist-sharing-recipients""]`) shows a city/region subtitle under the organization name {SPEC}
+[STATE] the Message field holds the message saved with the share (not empty) {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the reopened dialog shows no recipients so the rep re-adds and re-notifies them; the card counts a different number from the dialog; the saved message is empty after a reload; recipient rows carry no subtitle to tell duplicate names apart,"remove the AGENT-TEST-5707-RO list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:STALE · Technique:EP · Test Model VCST-5707 #7 · sales-rep #21 targets · UIP-REFRESH,Draft
+B2C-LIST-069,Sales Rep list sharing — emptying recipients disables Save; Clear all can be undone,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp. Emptying the recipients does NOT stop sharing: Save is disabled with a hint; the way out is changing the scope. The API refusal of an empty set is covered in suite 050h. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-EMP'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-EMP' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] click 'Clear all' (`[data-test-id=""wishlist-sharing-clear-recipients-button""]`)
+20. [ASSERT] the recipients list is replaced by 'Cleared · 1' with an 'Undo' control (`[data-test-id=""wishlist-sharing-restore-recipients-button""]`)
+21. [ASSERT] the field hint reads 'An empty list does not stop sharing — change who can access instead.'
+22. [ASSERT] the 'Share' button (`[data-test-id=""wishlist-sharing-save-button""]`) is disabled
+23. [ACT] click 'Undo' (`[data-test-id=""wishlist-sharing-restore-recipients-button""]`)
+24. [ASSERT] the AcmeCorp row is back and the 'Share' button is enabled
+25. [ACT] click 'Clear all' (`[data-test-id=""wishlist-sharing-clear-recipients-button""]`)
+26. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+27. [WAIT] the Share dialog has closed
+28. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+29. [WAIT] the card menu lists Rename / Share / Remove list
+30. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+31. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+32. [ASSERT] AcmeCorp is still listed (cancelling after Clear all changed nothing)","[DOM] after 'Clear all' the panel reads 'Cleared · 1', an 'Undo' button is shown and the 'Share' button is disabled {SPEC}
+[DOM] the hint reads 'An empty list does not stop sharing — change who can access instead.' {OBSERVED}
+[STATE] 'Undo' restores the AcmeCorp row and enables 'Share' again {SPEC}
+[STATE] cancelling after 'Clear all' leaves the persisted share unchanged: AcmeCorp is still listed on reopen {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",Clear all followed by Share stops the share silently or saves an unreachable Customer list; Share stays enabled on an empty set; Undo does not restore the row; cancelling persists the emptied set,"remove the AGENT-TEST-5707-EMP list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:SILENT · Technique:BVA · Test Model VCST-5707 #8 · PR #2476 empty-set rule,Draft
+B2C-LIST-070,Sales Rep list sharing — recipient notification names the organisation (AC1),B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves TechFlow; readerB = SR_REP_EXCLUSIVE_TECHFLOW (a TechFlow member). AC1 requires the ORGANIZATION NAME in the notification the customer receives. Expected to FAIL on the build under test (title and body carry no organization name) — a finding, kept as the AC states it. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgB=@td(ORG_TECHFLOW.platform_id), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-N1'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-N1' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 notify'
+14. [ACT] start capturing network requests (clear the request log)
+15. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+16. [WAIT] the success toast is visible
+17. [ASSERT] the captured sendCustomerCommunication request lists exactly one organization id
+18. [ACT] click the user name in the top header
+19. [WAIT] the account-menu popup is visible
+20. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+21. [WAIT] the signed-out storefront is visible
+22. [ACT] sign in as readerB (@td(SR_REP_EXCLUSIVE_TECHFLOW.email); ONE attempt — the account locks on repeated failures)
+23. [WAIT] the signed-in header is visible
+24. [ACT] click the 'Notifications' icon in the main nav icon bar
+25. [WAIT] the notifications dropdown is visible
+26. [ASSERT] the newest entry is the rep's share notification","[DOM] the newest entry in the 'Notifications' dropdown contains the text '@td(ORG_TECHFLOW.name)' {SPEC}
+[NETWORK] the sendCustomerCommunication request's title or message contains the organization name {SPEC}
+[DOM] the notification entry contains the shared-list link and the rep's note 'AGENT-TEST-5707 notify' {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the notification reads 'A new list from your sales representative' with no organization name anywhere (AC1 unmet); the entry carries no link; readerB gets the notification twice,"remove the AGENT-TEST-5707-N1 list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:FALLBACK · Technique:EP · Test Model VCST-5707 #9 · AC1 · SBTM-VCST-5707-2026-09-29 (no org name in push),Draft
+B2C-LIST-071,Sales Rep list sharing — shared list appears in the recipient buyer's own Lists,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER. VCST-5335 AC1: the customer sees the list in their own shopping lists with a sign that a rep recommended it. Expected to FAIL on the build under test (the buyer's own lists show none — KB-AA3C8721, open bug), kept as the story states it. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-OWN'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-OWN' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] click the user name in the top header
+16. [WAIT] the account-menu popup is visible
+17. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+18. [WAIT] the signed-out storefront is visible
+19. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+20. [WAIT] the signed-in header is visible
+21. [NAV] {{FRONT_URL}}/account/lists
+22. [WAIT] the lists page settles
+23. [ASSERT] a card named 'AGENT-TEST-5707-OWN' is present among readerA's own lists
+24. [ASSERT] that card carries the 'Shared with me' status","[DOM] the count of cards named 'AGENT-TEST-5707-OWN' on readerA's /account/lists (count = 1) {SPEC}
+[DOM] the card carries the 'Shared with me' status marker {SPEC}
+[STATE] lists readerA created themselves carry no such marker {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the shared list is absent from the recipient's own /account/lists so the buyer can reach it only through the link (VCST-5335 AC1 unmet); the card appears with no recommendation marker,"remove the AGENT-TEST-5707-OWN list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:FALLBACK · Technique:EP · Test Model VCST-5707 #12 · VCST-5335 AC1 · KB-AA3C8721,Draft
+B2C-LIST-072,Sales Rep list sharing — Stop sharing asks for confirmation; Cancel keeps access,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER. AC3 (drift noted): the shipped confirmation says 'this list', not 'this page'. Buttons are Cancel and Stop sharing. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-CNF'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-CNF' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+20. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+21. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+22. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+23. [ASSERT] the body reads 'Everyone the list is shared with will lose access. You can share it again at any time.'
+24. [ASSERT] the buttons are 'Cancel' (`[data-test-id=""stop-sharing-cancel-button""]`) and 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`) and focus starts on 'Cancel'
+25. [ACT] click 'Cancel' (`[data-test-id=""stop-sharing-cancel-button""]`)
+26. [WAIT] the confirmation has closed
+27. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+28. [WAIT] the Share dialog has closed
+29. [ASSERT] the list card status still reads 'Shared with 1 customer'
+30. [ACT] click the user name in the top header
+31. [WAIT] the account-menu popup is visible
+32. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+33. [WAIT] the signed-out storefront is visible
+34. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+35. [WAIT] the signed-in header is visible
+36. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+37. [WAIT] the shared-list page settles (readerA)
+38. [ASSERT] readerA still reads the list","[DOM] the confirmation titled 'Stop sharing this list?' shows the body 'Everyone the list is shared with will lose access. You can share it again at any time.' with 'Cancel' and 'Stop sharing' buttons, focus on 'Cancel' {OBSERVED}
+[STATE] after 'Cancel' the card status still reads 'Shared with 1 customer' {OBSERVED}
+[NAV] readerA still reads the list through the original link after the cancelled Stop sharing {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",no confirmation appears before an audience is removed; Cancel still revokes the share; focus starts on the destructive button; the copy contradicts what the button does,"remove the AGENT-TEST-5707-CNF list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:LIFECYCLE · Technique:ST · Test Model VCST-5707 #13 · AC3 (copy drift noted: this list vs this page),Draft
+B2C-LIST-073,Sales Rep list sharing — after Stop sharing the recipient is denied access immediately,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Critical,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER. Revocation must be immediate through the cached link and through the buyer's own lists (VCST-5925 3.2 resurrection trap). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-STP'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-STP' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+20. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+21. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+22. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+23. [ACT] click 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`)
+24. [WAIT] the Share dialog has closed
+25. [ASSERT] the list card status reads 'Private'
+26. [ACT] click the user name in the top header
+27. [WAIT] the account-menu popup is visible
+28. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+29. [WAIT] the signed-out storefront is visible
+30. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+31. [WAIT] the signed-in header is visible
+32. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+33. [WAIT] the shared-list page settles (readerA after Stop sharing)
+34. [ASSERT] no list content is rendered
+35. [ACT] reload the page (full reload)
+36. [WAIT] the page settles
+37. [ASSERT] still no list content is rendered
+38. [NAV] {{FRONT_URL}}/account/lists
+39. [WAIT] the lists page settles
+40. [ASSERT] no card named 'AGENT-TEST-5707-STP' is present","[NAV] readerA opening the old link after Stop sharing sees no list name, no product row and no Subtotal element — an access-denied or not-found state, not the list {SPEC}
+[STATE] a full reload of the same URL still renders no list content {SPEC}
+[DOM] readerA's own /account/lists holds no card named 'AGENT-TEST-5707-STP' {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the revoked buyer still reads the list through the cached link or a reload; the list survives in the buyer's own lists after Stop sharing; the page renders a blank shell instead of an explicit denied state,"remove the AGENT-TEST-5707-STP list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway","VCST-5707 · Archetype:STALE · Technique:ST · Test Model VCST-5707 #14 · AC3 ""will lose access"" · VCST-5925 3.2",Draft
+B2C-LIST-074,Sales Rep list sharing — scope change confirms only when an audience is lost,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp. Confirmation is required ONLY where an audience is lost: not on the first share from Private, not on recipient changes inside one scope, not when the left scope has no recipients. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-DT'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-DT' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ASSERT] no confirmation dialog appeared for the first share from Private
+16. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+17. [WAIT] the card menu lists Rename / Share / Remove list
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+19. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+20. [ACT] click the remove control on the AcmeCorp recipient row (`[data-test-id=""wishlist-sharing-remove-recipient-@td(ORG_ACME.platform_id)""]`)
+21. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+22. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+23. [WAIT] the success toast is visible
+24. [ASSERT] no confirmation dialog appeared for a recipient change inside the Specific customers scope
+25. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+26. [WAIT] the card menu lists Rename / Share / Remove list
+27. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+28. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+29. [ACT] select the 'My organization' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Organization""]`)
+30. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+31. [WAIT] the 'Change who can access?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+32. [ASSERT] the body reads 'Everyone the list is shared with now will lose access.' with 'Cancel' and 'Change access' buttons
+33. [ACT] click 'Change access' (`[data-test-id=""stop-sharing-confirm-button""]`)
+34. [WAIT] the Share dialog has closed
+35. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+36. [WAIT] the card menu lists Rename / Share / Remove list
+37. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+38. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+39. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+40. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+41. [ASSERT] no confirmation dialog appeared when leaving My organization, which has no recipients
+42. [WAIT] the Share dialog has closed","[DOM] no confirmation dialog (`[data-test-id=""stop-sharing-modal""]`) appears on the first share from Private or on a recipient change inside one scope {SPEC}
+[DOM] Specific customers -> My organization opens 'Change who can access?' with the body 'Everyone the list is shared with now will lose access.' and the buttons 'Cancel' / 'Change access' {OBSERVED}
+[DOM] My organization -> Private (a scope with no recipients) opens no confirmation dialog: `[data-test-id=""stop-sharing-modal""]` is absent after 'Share' {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a confirmation nags on a save that loses no audience; a scope change that drops recipients saves without asking; the wrong variant (Stop sharing vs Change access) is shown for the transition,"remove the AGENT-TEST-5707-DT list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:LIFECYCLE · Technique:DT · Test Model VCST-5707 #15 · PR #2476 §Stopping a share,Draft
+B2C-LIST-075,Sales Rep list sharing — re-sharing after stop reuses the same link,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp and TechFlow; readerA = ACME_BUYER. Only Remove list kills the key (no key rotation — KB-7A9D4927, reported as a finding candidate, not asserted as a defect). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), orgB=@td(ORG_TECHFLOW.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-RS'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-RS' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 reshare'
+14. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+15. [WAIT] the success toast is visible
+16. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+17. [WAIT] the card menu lists Rename / Share / Remove list
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+19. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+20. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+21. [ACT] select the 'Private' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Private""]`)
+22. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+23. [WAIT] the 'Stop sharing this list?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+24. [ACT] click 'Stop sharing' (`[data-test-id=""stop-sharing-confirm-button""]`)
+25. [WAIT] the Share dialog has closed
+26. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+27. [WAIT] the card menu lists Rename / Share / Remove list
+28. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+29. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+30. [ASSERT] the recipients list is empty and the Message field reads 0/250
+31. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+32. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+33. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+34. [WAIT] the success toast is visible
+35. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+36. [WAIT] the card menu lists Rename / Share / Remove list
+37. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+38. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+39. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+40. [ASSERT] the Link value equals the LINK read before Stop sharing
+41. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+42. [WAIT] the Share dialog has closed
+43. [ACT] click the user name in the top header
+44. [WAIT] the account-menu popup is visible
+45. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+46. [WAIT] the signed-out storefront is visible
+47. [ACT] sign in as readerA (the earlier recipient) (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+48. [WAIT] the signed-in header is visible
+49. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+50. [WAIT] the shared-list page settles (readerA after re-share to TechFlow only)
+51. [ASSERT] readerA is denied","[STATE] after Stop sharing the reopened Share dialog shows no recipients and an empty message: neither is silently restored {OBSERVED}
+[REL] Link value after the re-share = LINK value before Stop sharing {OBSERVED}
+[NAV] readerA (an earlier recipient, not in the new audience) opening the recycled link lands on the /403 'Access denied' page with no list content {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",re-share silently restores the old recipients or message; the earlier recipient reads the list again through the recycled key; the link value changes although only Remove list should retire a key,"remove the AGENT-TEST-5707-RS list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:LIFECYCLE · Technique:ST · Test Model VCST-5707 #16 · AC4 · VCST-5925 2.4 · KB-7A9D4927,Draft
+B2C-LIST-076,Sales Rep list sharing — Anyone with link is readable anonymously,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+No organization is targeted: the 'Anyone with link' tab issues a readable link (design attachment 83044). The anonymous read happens after Logout. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.",rep=@td(SR_REP_PRIMARY.email),"1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-ANY'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-ANY' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Anyone with link' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-AnyoneAnonymous""]`)
+12. [ASSERT] a 'Link' field with a copy control (`[data-test-id=""wishlist-sharing-copy-link-button""]`) is shown
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+20. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+21. [WAIT] the Share dialog has closed
+22. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+23. [WAIT] the card menu lists Rename / Share / Remove list
+24. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+25. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+26. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+27. [WAIT] the Share dialog has closed
+28. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+29. [WAIT] the card menu lists Rename / Share / Remove list
+30. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+31. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+32. [ASSERT] the Link value equals the LINK read before the second save
+33. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+34. [WAIT] the Share dialog has closed
+35. [ACT] click the user name in the top header
+36. [WAIT] the account-menu popup is visible
+37. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+38. [WAIT] the signed-out storefront is visible
+39. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+40. [WAIT] the shared-list page settles (anonymous session)
+41. [ASSERT] the list renders without a sign-in","[DOM] the Anyone with link tab shows a 'Link' field with a copy control (`[data-test-id=""wishlist-sharing-copy-link-button""]`) {SPEC}
+[STATE] a second save without changes keeps the same Link value {SPEC}
+[NAV] an anonymous session opening the link sees the heading 'AGENT-TEST-5707-ANY' rendered read-only, with no /403 'Access denied' {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the anonymous link is unreadable without a session; the link value changes on every save so earlier copies die; the copy control is missing,"remove the AGENT-TEST-5707-ANY list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:SCOPE · Technique:EP · Test Model VCST-5707 #17 · design 83044 · VC-LIST-001 (share URL location),Draft
+B2C-LIST-077,Sales Rep list sharing — only the list owner is offered Share,B2B Lists & Shared > Sales Rep sharing > VCST-5707,High,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER is a target-org member, not the owner. A non-owner Write member (R-coowner) is a FIXTURE-GAP and is not covered here. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-OWN2'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-OWN2' list card is visible on /account/lists
+7. [ACT] click the 'AGENT-TEST-5707-OWN2' list card name link
+8. [WAIT] the list-details page is visible
+9. [ASSERT] a 'Share' button is offered to the owner in the list-details header
+10. [NAV] {{FRONT_URL}}/account/lists
+11. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+12. [WAIT] the card menu lists Rename / Share / Remove list
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+14. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+15. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+16. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+18. [WAIT] the success toast is visible
+19. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+20. [WAIT] the card menu lists Rename / Share / Remove list
+21. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+22. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+23. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+24. [ACT] click 'Cancel' (`[data-test-id=""wishlist-sharing-cancel-button""]`)
+25. [WAIT] the Share dialog has closed
+26. [ACT] click the user name in the top header
+27. [WAIT] the account-menu popup is visible
+28. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+29. [WAIT] the signed-out storefront is visible
+30. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+31. [WAIT] the signed-in header is visible
+32. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+33. [WAIT] the shared-list page settles (readerA)
+34. [ASSERT] the recipient page offers no 'Share' button and no 'Rename' control","[DOM] the owner's list-details header shows the 'Share' button {SPEC}
+[DOM] readerA's recipient page renders the list but no 'Share' button and no 'Rename' or 'Remove list' control {SPEC}
+[STATE] the count of 'Share' buttons on readerA's recipient page (count = 0) and of Share entries in any kebab menu readerA sees for this list (count = 0) {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a non-owner is offered the Share dialog and can change the audience; the owner's Share button is missing from the list-details page; the recipient page shows Rename or Remove list,"remove the AGENT-TEST-5707-OWN2 list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway","VCST-5707 · Archetype:SCOPE · Technique:DT · Test Model VCST-5707 #23 · PR #2476 ""Sharing is offered to the list's owner only""",Draft
+B2C-LIST-078,Sales Rep list sharing — Customer to Anyone with link confirmation copy matches the effect on access,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER. Moving Customer -> Anyone with link WIDENS the audience, so a confirmation that says everyone loses access is false. The assertion keeps the AC3 intent (the copy must describe the effect); expected to FAIL on the build under test — a finding, not a case to flip. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-CPY'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-CPY' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+14. [WAIT] the success toast is visible
+15. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+16. [WAIT] the card menu lists Rename / Share / Remove list
+17. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+18. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+19. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+20. [ACT] select the 'Anyone with link' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-AnyoneAnonymous""]`)
+21. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+22. [WAIT] the 'Change who can access?' confirmation (`[data-test-id=""stop-sharing-modal""]`) is visible
+23. [ASSERT] record the body text of the confirmation
+24. [ACT] click 'Change access' (`[data-test-id=""stop-sharing-confirm-button""]`)
+25. [WAIT] the Share dialog has closed
+26. [ACT] click the user name in the top header
+27. [WAIT] the account-menu popup is visible
+28. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+29. [WAIT] the signed-out storefront is visible
+30. [ACT] sign in as readerA (the former recipient) (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+31. [WAIT] the signed-in header is visible
+32. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+33. [WAIT] the shared-list page settles (readerA)
+34. [ASSERT] readerA still reads the list through the same link
+35. [ACT] click the user name in the top header
+36. [WAIT] the account-menu popup is visible
+37. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+38. [WAIT] the signed-out storefront is visible
+39. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+40. [WAIT] the shared-list page settles (anonymous session)
+41. [ASSERT] an anonymous session reads the list through the same link","[DOM] the confirmation body for a Customer -> Anyone with link change does not claim that everyone the list is shared with 'will lose access' {SPEC}
+[NAV] readerA (the former recipient) still reads the list through the same link after 'Change access' {OBSERVED}
+[NAV] an anonymous session reads the list through the same link after 'Change access' {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",the confirmation says 'Everyone the list is shared with now will lose access.' while the audience actually grows to everyone with the link; the rep is misled into believing the recipients were revoked,"remove the AGENT-TEST-5707-CPY list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:LIFECYCLE · Technique:DT · Test Model VCST-5707 #24 · AC3 intent · SBTM-VCST-5707-2026-09-29 suspected defect 2,Draft
+B2C-LIST-079,Sales Rep list sharing — a message-only edit saves and notifies nobody,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves AcmeCorp; readerA = ACME_BUYER. By design the notification goes to NEWLY ADDED organizations only (hint: 'New recipients get this in their notification.'), so a message-only edit sends nothing. The case records that behaviour and what the rep is told. Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgA=@td(ORG_ACME.platform_id), readerA=@td(ACME_BUYER.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-MO'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-MO' list card is visible on /account/lists
+7. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+8. [WAIT] the card menu lists Rename / Share / Remove list
+9. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+10. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+11. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+12. [ACT] select AcmeCorp (@td(ORG_ACME.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+13. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 first'
+14. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+15. [WAIT] the success toast is visible
+16. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+17. [WAIT] the card menu lists Rename / Share / Remove list
+18. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+19. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+20. [ACT] read the 'Link' field value of the open Share dialog and keep it as LINK
+21. [ACT] start capturing network requests (clear the request log)
+22. [ACT] fill the Message field (`[data-test-id=""wishlist-share-message-input""]`) with 'AGENT-TEST-5707 second'
+23. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+24. [WAIT] the success toast is visible
+25. [ASSERT] the toast reads 'List saved. Now shared with 1 customer.'
+26. [ASSERT] the captured requests hold one ChangeWishlist and no sendCustomerCommunication
+27. [ACT] click the user name in the top header
+28. [WAIT] the account-menu popup is visible
+29. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+30. [WAIT] the signed-out storefront is visible
+31. [ACT] sign in as readerA (@td(ACME_BUYER.email); ONE attempt — the account locks on repeated failures)
+32. [WAIT] the signed-in header is visible
+33. [NAV] the copied shared-list URL ({{FRONT_URL}}/shared-list/<key>)
+34. [WAIT] the shared-list page settles (readerA)
+35. [ASSERT] the updated message 'AGENT-TEST-5707 second' is shown to readerA on the shared list","[DOM] the Message field carries the hint 'New recipients get this in their notification.' {OBSERVED}
+[NETWORK] a message-only save issues one ChangeWishlist with the new message and zero sendCustomerCommunication calls {SPEC}
+[DOM] the toast after the message-only save reads 'List saved. Now shared with 1 customer.' {OBSERVED}
+[DOM] readerA's shared-list page shows the updated message 'AGENT-TEST-5707 second' {OBSERVED}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a message-only edit re-notifies every existing recipient; the edited message is lost so recipients keep reading the old one; the toast claims a notification went out when none did,"remove the AGENT-TEST-5707-MO list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:REPLAY · Technique:DT · Test Model VCST-5707 #26 · PR #2476 · REPLAY archetype,Draft
+B2C-LIST-080,Sales Rep list sharing — notification language follows the sender's UI locale,B2B Lists & Shared > Sales Rep sharing > VCST-5707,Medium,BL-SR-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SALES_REP]
+Rep serves TechFlow; readerB = SR_REP_EXCLUSIVE_TECHFLOW. The oracle is UNSETTLED: today the notification is composed from the SENDER's UI language; whether it should follow the RECIPIENT's is a question for the PO — held as {HYPOTHESIS}. The rep switches the storefront to German by a full page load of {{FRONT_URL}}/de/account/lists (not the in-page switcher, see B2C-LIST-060). Readers sign in ONCE per session (org-scoped accounts lock on repeated failures). The Share dialog is offered to the list owner only.","rep=@td(SR_REP_PRIMARY.email), orgB=@td(ORG_TECHFLOW.platform_id), readerB=@td(SR_REP_EXCLUSIVE_TECHFLOW.email)","1. [NAV] {{FRONT_URL}}/account/lists
+2. [ACT] click 'Create list' (`[data-test-id=""create-wishlist-button""]`)
+3. [WAIT] the New List dialog (`[data-test-id=""add-or-update-wishlist-modal""]`) is visible
+4. [ACT] fill the List name field (`[data-test-id=""wishlist-name-input""]`) with 'AGENT-TEST-5707-LOC'
+5. [ACT] click 'Create list' (`[data-test-id=""wishlist-settings-save-button""]`)
+6. [WAIT] the 'AGENT-TEST-5707-LOC' list card is visible on /account/lists
+7. [NAV] {{FRONT_URL}}/de/account/lists
+8. [WAIT] the German lists page is visible
+9. [ACT] open the list's kebab menu (`[data-test-id=""wishlist-card-menu-button""]`)
+10. [WAIT] the card menu lists Rename / Share / Remove list
+11. [ACT] click 'Share' (`[data-test-id=""wishlist-card-share-menu-item""]`)
+12. [WAIT] the Share dialog (`[data-test-id=""share-wishlist-modal""]`) is visible
+13. [ACT] select the 'Specific customers' tab in the 'Who can access' strip (`[data-test-id=""wishlist-sharing-scope-Customer""]`)
+14. [ACT] select TechFlow (@td(ORG_TECHFLOW.name)) in the customer picker (`[data-test-id=""wishlist-share-customer-select""]`)
+15. [ACT] start capturing network requests (clear the request log)
+16. [ACT] click 'Share' (`[data-test-id=""wishlist-sharing-save-button""]`)
+17. [WAIT] the success toast is visible
+18. [ASSERT] record the title, message and cultureName of the sendCustomerCommunication request
+19. [ACT] click the user name in the top header
+20. [WAIT] the account-menu popup is visible
+21. [ACT] click 'Logout' in the popup (BL-AUTH-007, data-testid=""main-layout.top-header.account-menu.sign-out-button"")
+22. [WAIT] the signed-out storefront is visible
+23. [ACT] sign in as readerB (@td(SR_REP_EXCLUSIVE_TECHFLOW.email); ONE attempt — the account locks on repeated failures)
+24. [WAIT] the signed-in header is visible
+25. [ACT] click the 'Notifications' icon in the main nav icon bar
+26. [WAIT] the notifications dropdown is visible
+27. [ASSERT] record the language of the newest entry","[NETWORK] the sendCustomerCommunication request from a German-locale rep carries a German title and cultureName de-DE {OBSERVED}
+[DOM] the notification readerB receives is written in readerB's own storefront language rather than the sender's {HYPOTHESIS}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql",a buyer browsing in English receives the rep's German notification; the notification language changes with the rep's UI language instead of the recipient's,"remove the AGENT-TEST-5707-LOC list as the rep (kebab -> 'Remove list' (`[data-test-id=""wishlist-card-remove-menu-item""]`) -> Delete), even if the case aborted midway",VCST-5707 · Archetype:FALLBACK · Technique:EP · Test Model VCST-5707 #27 · {HYPOTHESIS} pending PO · held Draft,Draft

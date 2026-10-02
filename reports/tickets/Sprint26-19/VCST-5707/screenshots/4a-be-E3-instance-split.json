@@ -1,0 +1,1564 @@
+{
+ "item": "E3-instance-split",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:34:07.883Z",
+ "aggregate": {
+  "rep wishlist(b1)": {
+   "17906816 -> Customer/targets=0": 10,
+   "17906816 -> Customer/targets=1": 4
+  },
+  "rep wishlist(b2)": {
+   "17906816 -> Customer": 11,
+   "17906816 -> AnyoneAnonymous": 3
+  },
+  "anon sharedWishlist(b2 key)": {
+   "17906816 -> AnyoneAnonymous/Read/": 14
+  },
+  "tf sharedWishlist(b1 key)": {
+   "17906816 -> Read/": 14
+  }
+ },
+ "note": "instance = first 8 hex of the load-balancer affinity cookie value set on each response (no cookie sent back)",
+ "calls": [
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "28322a16-95d2-4a86-9d93-ecdc732121be"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "662b68b2-1431-4986-89dc-f4118aecdad5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "sharingSetting": {
+       "scope": "AnyoneAnonymous",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "http": 200,
+   "instance": "17906816",
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id sharingSetting { scope access } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "sharingSetting": {
+       "scope": "Customer",
+       "access": "Read"
+      }
+     }
+    }
+   }
+  }
+ ]
+}
