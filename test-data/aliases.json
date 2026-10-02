@@ -8848,5 +8848,84 @@
       "org": "org"
     },
     "_notes": "050l recipient in its own org; its cases self-seed their message (PUSH_MSG_SEED). Replaces TECHFLOW_ADMIN."
+  },
+  "OTP_LOCKOUT_USER_1": {
+    "_inline": true,
+    "_notes": "VCST-5748 DESTRUCTIVE lockout fixture — consumer: suite 105 — wrong codes lock the account at the platform threshold. Customer contact + account on {{STORE_ID}}, lockoutEnabled true, emailConfirmed true. Isolation is per ACCOUNT: exactly ONE case may use this alias per run (a second case would read the first one's failed-attempt count). The case leaves it LOCKED for the platform lockout window; re-seed before the next run, never between a lockout observation and its audit. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS a locked account: unlock + accessFailedCount 0); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-lockout-1@yopmail.com",
+    "userName": "agent-test-otp-lockout-1@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_LOCKOUT_USER_2": {
+    "_inline": true,
+    "_notes": "VCST-5748 DESTRUCTIVE lockout fixture — consumer: suite 105 — OTP and password share one failed-attempt counter. Customer contact + account on {{STORE_ID}}, lockoutEnabled true, emailConfirmed true. Isolation is per ACCOUNT: exactly ONE case may use this alias per run (a second case would read the first one's failed-attempt count). The case leaves it LOCKED for the platform lockout window; re-seed before the next run, never between a lockout observation and its audit. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS a locked account: unlock + accessFailedCount 0); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-lockout-2@yopmail.com",
+    "userName": "agent-test-otp-lockout-2@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_BLOCKED_USER": {
+    "_inline": true,
+    "_notes": "VCST-5748 DESTRUCTIVE block fixture — consumer: suite 105 OTP-028 — an administrator-blocked account receives no sign-in code. Customer contact + account on {{STORE_ID}}, lockoutEnabled true, emailConfirmed true. Its OWN account: OTP-028 locks it (POST /users/{id}/lock) and unblocks it in Cleanup, so no other case depends on the order the cases run in or on that cleanup succeeding. If a run aborted before Cleanup, re-seed to re-arm it. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS the account: unlock + accessFailedCount 0 + status Approved); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-blocked@yopmail.com",
+    "userName": "agent-test-otp-blocked@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "STORE_ID",
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_NO_STORE_CONTACT": {
+    "_inline": true,
+    "_notes": "VCST-5748 store-rule fixture — consumer: suite 105 — a contact of another store is refused (email2). Customer contact whose security account has NO storeId (none existed on vcptcore_qa1 2026-09-29). Not destructive, but a grant attempt with a code may count a failed attempt. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS a locked account: unlock + accessFailedCount 0); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape check: --verify-only. Business keys committed here; runtime ids (id = contact, user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-nostore@yopmail.com",
+    "userName": "agent-test-otp-nostore@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "storeId_env": "",
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_TRUSTED_STORE_CONTACT": {
+    "_inline": true,
+    "_notes": "VCST-5748 store-rule fixture (ours, replaces a borrowed manual account). Customer contact + account whose storeId is resolved LIVE at seed time to the first store in {{STORE_ID}}.trustedGroups (New-super on vcptcore_qa1) — never transcribed. Expected POST /api/otp/request on {{STORE_ID}}: succeeded true. On an env where {{STORE_ID}} trusts no store the seeder skips it and the case is not decidable there. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS the account: unlock + accessFailedCount 0 + passwordExpired false + password re-set); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape + /api/otp/request probe: --verify-only. Business keys committed here; runtime ids (id = contact, empty for a back-office account; user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-trusted@yopmail.com",
+    "userName": "agent-test-otp-trusted@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_FOREIGN_STORE_CONTACT": {
+    "_inline": true,
+    "_notes": "VCST-5748 store-rule fixture (ours, replaces a sales-rep fixture). Customer contact + account on storeId AGENT-TEST-OTP-FOREIGN-STORE — an id that exists on no env, so it can never be {{STORE_ID}}, never be trusted by it, and never gain an OTP configuration of its own; the seeder refuses to run if a store with that id ever appears. Expected POST /api/otp/request on {{STORE_ID}}: error.code user_cannot_login_in_store (DetailedErrors on). LIMIT: it models \"a store that is not ours\", not \"a real sibling store that exists\" — the refusal reason is the same store rule either way. Seeded by scripts/seed-data/auth/seed-otp-signin.mjs (idempotent; re-running RE-ARMS the account: unlock + accessFailedCount 0 + passwordExpired false + password re-set); teardown: node scripts/seed-data/auth/seed-otp-signin.mjs --teardown; guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs; live shape + /api/otp/request probe: --verify-only. Business keys committed here; runtime ids (id = contact, empty for a back-office account; user_id = security account) ONLY in aliases.<env>.json.",
+    "email": "agent-test-otp-foreign@yopmail.com",
+    "userName": "agent-test-otp-foreign@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "password_var": "DEFAULT_TEST_PASSWORD",
+    "userType": "Customer",
+    "isAdministrator": false,
+    "id": "",
+    "user_id": ""
+  },
+  "OTP_INPUTS": {
+    "json": "auth/otp-inputs",
+    "fields": {
+      "unknownEmail": "unknownEmail",
+      "invalidEmails": "invalidEmails",
+      "malformedCodes": "malformedCodes",
+      "unknownStoreId": "unknownStoreId",
+      "missingParamBodies": "missingParamBodies"
+    },
+    "notes": "VCST-5748 env-independent OTP request inputs (test-data/auth/otp-inputs.json). Scalars are reachable by dotted path too: invalid.tooLong255, boundary.maxLength254, codes.spacedPaste, missingParamBodies.grant_no_code, ... unknownEmail is a GENERATOR directive (random-data uniqueEmail), not an address. Guard: node scripts/seed-data/auth/validate-otp-signin-data.mjs."
   }
 }

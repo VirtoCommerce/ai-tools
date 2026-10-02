@@ -1,0 +1,133 @@
+{
+  "ticket": "VCST-5748",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": "cross-layer story (platform + module + storefront), more than one domain"
+  },
+  "layer": "cross-layer",
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "diff: new module + platform grant extension + storefront form; no ui-kit / token-layer files"
+    ],
+    "skipped": []
+  },
+  "verdict": "PASS_WITH_NOTES",
+  "date": "2026-09-29",
+  "timing": {
+    "started_at": "2026-09-29T14:40:00Z",
+    "finished_at": null,
+    "reachability_minutes": 6,
+    "$timing_note": "Run spanned three builds (rounds 1-3) and two deploys, the ingress route and a DetailedErrors switch; finished_at stays null until the pending fix is verified."
+  },
+  "environment": "https://vcptcore-qa1-storefront.govirto.com",
+  "build": {
+    "platform": "3.1075.0-pr-3114-8668",
+    "theme": "2.59.0-pr-2477-dcf7-dcf7aa95",
+    "relevant_modules": {
+      "VirtoCommerce.OTP": "3.1000.0-pr-1-11d6"
+    },
+    "deployed": {
+      "platform": "3.1075.0-pr-3114-8668",
+      "relevant_modules": {
+        "VirtoCommerce.OTP": "3.1000.0-pr-1-11d6"
+      }
+    },
+    "deploy_prs": [
+      "vc-deploy-dev#6652",
+      "vc-deploy-dev#6669",
+      "vc-deploy-dev#6674 (ingress route /api/otp)",
+      "vc-deploy-dev#6683 (PasswordLogin__DetailedErrors=false, temporary — revert)"
+    ]
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "auth",
+    "path": ".claude/knowledge/domain/auth.md",
+    "rev": 1,
+    "generated": "2026-09-29",
+    "built_in_run": true,
+    "build_outcome": "BUILT",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "skipped": "no in-testing transition from 'Ready for test' (available: Cancelled, On hold, Need fixes, Finish test)",
+      "actor": "qa-lead"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "skipped": "operator: hold for the pending developer fix",
+      "actor": "qa-lead"
+    }
+  ],
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-5748-otp-sign-in-guide.md",
+      "reports/tickets/Sprint26-19/VCST-5748/testing-checklist.md",
+      "reports/ba/test-models/VCST-5748-2026-09-29.md",
+      "reports/exploratory/SBTM-VCST-5748-2026-09-29.md"
+    ],
+    "amended": [
+      "tracker comment 110975"
+    ],
+    "comment_posted": true,
+    "refusal": null
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "finding": "A blocked account still receives a sign-in code; with DetailedErrors=false the customer then sees 'That code didn't work.'",
+      "severity": "Medium",
+      "reason": "Agreed with the developer, fix pending; operator: no ticket",
+      "draft": null
+    },
+    {
+      "finding": "The code is reusable until it expires (~6-9 min) — contradicts 'One-Time Password' (ECL-4.3)",
+      "severity": "Medium",
+      "reason": "Follows from the stateless design; PO/dev decision; operator: no ticket",
+      "draft": null
+    },
+    {
+      "finding": "OTP notification has no sender (From empty) and the subject ends with a line break",
+      "severity": "Low",
+      "reason": "below severity floor",
+      "draft": null
+    },
+    {
+      "finding": "Code-field hint copy (agreed text: 'Enter or paste the code. On mobile, tap it above your keyboard.'); ru 'email' vs 'Электронная почта'",
+      "severity": "Low",
+      "reason": "below severity floor",
+      "draft": null
+    }
+  ],
+  "$comment": "Verdict is PROVISIONAL — holding for the developer fix \"no code for a blocked account\" (agreed 2026-10-01); re-verify before the closing status hop. Report: tracker comment 110974; checklist, model and SBTM report under the paths in documentation.files. Excluded by the operator: request-rate throttling (platform-wide), UX-prototype differences (new design planned), mailbox delivery (qa1 SMTP), expired-password redirect (same as password sign-in). Not covered: homepage login section. Env left: OtpSignIn.Enabled=true on B2B-store; PasswordLogin__DetailedErrors=false on vcptcore-qa1 (vc-deploy-dev#6683, revert); 7 agent-test-otp-* accounts incl. one Administrator (teardown: npm run seed:otp-signin:teardown); USER/USER2/MULTI_ORG passwords re-set to their existing values.",
+  "regression": {
+    "c1": {
+      "suites": [
+        "104",
+        "105"
+      ],
+      "ids": [],
+      "run_id": null,
+      "pass_rate": null,
+      "skipped_reason": "C1 not run yet — the 28 Draft cases (OTP-001..028) were authored after the checklist rounds; run /qa-regression 104,105 --no-promote after the pending fix is deployed"
+    }
+  },
+  "new_cases_authored": 28
+}

@@ -21,6 +21,7 @@ import {
 } from "./lib/suite-caps.ts";
 import {
   BudgetLedger,
+  ExclusiveGroups,
   runLanePool,
   type LaneKind,
   type PoolSlot,
@@ -110,6 +111,7 @@ export interface SuiteConfig {
   runner?: string;
   runnerCommand?: string;
   preferredBrowser?: string;
+  exclusiveGroup?: string;
   /** Derived at manifest-sync time: the suite clicks, so it must never land on firefox. */
   clickDriven?: boolean;
 }
@@ -135,6 +137,7 @@ for (const suite of manifest.suites) {
     runner: suite.runner,
     runnerCommand: suite.runnerCommand,
     preferredBrowser: suite.preferredBrowser,
+    exclusiveGroup: suite.exclusiveGroup,
     clickDriven: suite.clickDriven,
   };
 }
@@ -982,6 +985,7 @@ async function main() {
     testCount: config.testCount,
     estimatedMinutes: config.estimatedMinutes,
     preferredBrowser: config.preferredBrowser,
+    exclusiveGroup: config.exclusiveGroup,
     browserDenyList: browserDenyListFor(config, manifest),
     config,
   }));
@@ -1027,6 +1031,9 @@ async function main() {
 
   // --- Dispatch: one continuous-refill pool per lane, all three concurrently -------
 
+  // ONE lock set for all three pools: a group's members can land in different lanes.
+  const exclusiveGroups = new ExclusiveGroups();
+
   const runLane = async (lane: LaneKind, concurrency: number) => {
     const suites = byLane[lane];
     if (suites.length === 0) return;
@@ -1042,6 +1049,7 @@ async function main() {
     const outcomes = await runLanePool<SuiteResult>({
       suites,
       slots: slotsFor(lane, concurrency),
+      groups: exclusiveGroups,
       canDispatch: (suite) => {
         if (!metered) return { ok: true };
         const entry = byId.get(suite.id);

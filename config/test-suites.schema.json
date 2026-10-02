@@ -57,6 +57,11 @@
           "agent": { "type": "string" },
           "tags": { "type": "array", "items": { "type": "string" } },
           "preferredBrowser": { "type": "string" },
+          "exclusiveGroup": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Suites sharing this value mutate the same shared state (e.g. a store-wide setting) and must never run at the same time. The CI pools share one group lock, so two members are never in flight together in any lane; batching gives each member its own session, and the interactive orchestrator dispatches a group's members one after another. It isolates members from EACH OTHER only — a suite outside the group still runs beside them."
+          },
           "browserRequirementReason": { "type": "string" },
           "storefrontProfile": {
             "type": "array",

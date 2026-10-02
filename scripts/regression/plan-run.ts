@@ -119,6 +119,7 @@ function main(): void {
     testCount: s.testCount,
     estimatedMinutes: s.estimatedMinutes,
     preferredBrowser: s.preferredBrowser,
+    exclusiveGroup: s.exclusiveGroup,
     browserDenyList: browserDenyListFor(s, manifest),
   }));
 
@@ -154,6 +155,8 @@ function main(): void {
             timeoutMinutes: s.timeoutMinutes,
             browserDenyList: s.browserDenyList,
             preferredBrowser: s.preferredBrowser,
+            /** Never in flight together with another suite of this group — run them one after another. */
+            exclusiveGroup: s.exclusiveGroup,
           })),
         })),
       capAnomalies: plan.capAnomalies,
@@ -182,6 +185,7 @@ function main(): void {
       estimatedMinutes: s.estimatedMinutes,
       ...(s.preferredBrowser ? { preferredBrowser: s.preferredBrowser } : {}),
       ...(s.browserDenyList.length ? { browserDenyList: s.browserDenyList } : {}),
+      ...(s.exclusiveGroup ? { exclusiveGroup: s.exclusiveGroup } : {}),
     })));
     const saved = lane.suites.length - batches.length;
     if (saved <= 0) continue;
@@ -203,8 +207,9 @@ function main(): void {
     for (const s of orderLpt(lane.suites)) {
       const deny = s.browserDenyList.length > 0 ? `  NOT ON ${s.browserDenyList.join(",")}` : "";
       const pref = s.preferredBrowser ? `  REQUIRES ${s.preferredBrowser}` : "";
+      const excl = s.exclusiveGroup ? `  EXCLUSIVE ${s.exclusiveGroup}` : "";
       console.log(
-        `  ${s.id.padEnd(8)}${String(s.estimatedMinutes + "m").padStart(6)}  ${String(s.cases).padStart(4)} cases  ${s.description.slice(0, 44).padEnd(46)}${pref}${deny}`,
+        `  ${s.id.padEnd(8)}${String(s.estimatedMinutes + "m").padStart(6)}  ${String(s.cases).padStart(4)} cases  ${s.description.slice(0, 44).padEnd(46)}${pref}${deny}${excl}`,
       );
     }
   }

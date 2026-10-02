@@ -1,0 +1,193 @@
+"ID","Title","Section","Priority","Business_Rule","Edge_Case_Refs","Preconditions","Test_Data","Steps","Assertions","Cross_Layer_Checks","Failure_Signals","Cleanup","References","Automation_Status"
+OTP-018,OTP grant — the same code cannot sign in twice,Auth > OTP Sign-In > API,High,,ECL-4.3,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled and a non-expired password
+admin credentials resolve","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code
+[CAPTURE] firstToken = access_token of the first grant
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code - the SAME code again, immediately
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with firstToken (the first session itself stays valid)","[STATUS] The request answers 200 with succeeded=true {OBSERVED}
+[STATUS] The first grant answers 200 {OBSERVED}
+[BODY] The first grant carries access_token {OBSERVED}
+[STATUS] The second grant with the same code answers 400 {SPEC}
+[BODY] The second response carries error invalid_grant and NO access_token - the same refusal as a wrong or expired code {SPEC}
+[STATUS] currentuser with firstToken answers 200 and identifies the account {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","KNOWN GAP (VCST-5748, round 2): the build issues a second token for the used code (code stays valid ~6-9 min; Identity Email provider does not consume it) - expected to FAIL until the product invalidates on use or the wording is changed; do NOT flip the expectation. 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",Reset the failed-attempt counter of {{USER_EMAIL}}: request a fresh code and grant with it once (a successful grant zeroes the counter; once the product consumes a code on use the repeat grant above records a failed attempt on this SHARED persona),VCST-5748 · Archetype:REPLAY · Technique:ST,Draft
+OTP-019,OTP grant — wrong codes lock the account at the platform threshold,Auth > OTP Sign-In > API > Lockout,High,BL-AUTH-003,ECL-4.2,"Re-arm the disposable account FIRST: node scripts/seed-data/auth/seed-otp-signin.mjs --verify (re-arms the disposable account: unlock + failed-attempt count 0)
+@td(OTP_LOCKOUT_USER_1.email) is used by THIS case only (no other case shares it); OtpSignIn.Enabled is on for {{STORE_ID}}; platform lockout threshold N is the IdentityOptions:Lockout failed-attempt limit (observed 5, 120 s lock on vcptcore_qa1)
+Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On)","email=@td(OTP_LOCKOUT_USER_1.email), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_LOCKOUT_USER_1.email)""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_1.email)"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_1.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[CAPTURE] N = the platform lockout threshold (observed 5)
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_1.email), code=wrongCode - repeated N times, recording every response
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_1.email), code=wrongCode - attempt N+1
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_1.email), code=code - the CORRECT code while the account is locked
+[WAIT] lockoutSecondsRemaining seconds (from the lockout answer)
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_1.email), code=code - the correct code after the lock expired
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer token and body {""userName"":""@td(OTP_LOCKOUT_USER_1.email)"",""startDate"":""<T0>"",""take"":50,""sort"":""createdDate:desc""}
+[WAIT] poll the search up to 90s until the locked row appears (the writer is buffered)","[STATUS] Attempts 1..N-1 answer 400 invalid_grant with code invalid_code {OBSERVED}
+[BODY] After N wrong codes the account is locked: attempt N+1 answers code user_is_temporary_locked_out with lockoutSecondsRemaining > 0 {OBSERVED}
+[BODY] The correct code is refused while locked - no access_token {OBSERVED}
+[STATUS] After lockoutSecondsRemaining has elapsed the correct code (still inside its lifetime) signs in with 200 {SPEC}
+[BODY] The attempt on which the lock engages is reported with a lockout code or invalid_code - record which, no attempt returns a token {SPEC}
+[BODY] The sign-in log has signInType=OTP rows for the account: wrong codes with failureReason InvalidCode, the locked attempt with failureReason LockedOut {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape
+[ADMIN] Security > Sign-in log shows the OTP rows for the account","More than N wrong codes without a lock (guessing is free); a locked account signs in with the right code; the lock never expires; lockout rows missing or typed Password; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected","Leave the account for the next run: it is re-armed by node scripts/seed-data/auth/seed-otp-signin.mjs --verify (re-arms the disposable account: unlock + failed-attempt count 0) BEFORE the next lockout run, never between a lockout observation and its audit",VCST-5748 · Archetype:BOUNDARY · Technique:BVA,Draft
+OTP-020,OTP and password share one failed-attempt counter,Auth > OTP Sign-In > API > Lockout,High,BL-AUTH-003,ECL-4.2,"Re-arm the disposable account FIRST: node scripts/seed-data/auth/seed-otp-signin.mjs --verify (re-arms the disposable account: unlock + failed-attempt count 0)
+@td(OTP_LOCKOUT_USER_2.email) is used by THIS case only (a different account from the lockout case) and has password {{DEFAULT_TEST_PASSWORD}}; threshold N as in the lockout case (observed 5)
+OtpSignIn.Enabled is on for {{STORE_ID}}","email=@td(OTP_LOCKOUT_USER_2.email), password={{DEFAULT_TEST_PASSWORD}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_LOCKOUT_USER_2.email)""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_LOCKOUT_USER_2.email)"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_LOCKOUT_USER_2.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[CAPTURE] wrongPassword = {{DEFAULT_TEST_PASSWORD}} with a suffix appended
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=password, username=@td(OTP_LOCKOUT_USER_2.email), password=wrongPassword, storeId={{STORE_ID}} - attempt 1
+[HTTP] the same password grant with wrongPassword - attempt 2
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_2.email), code=wrongCode - attempt 3
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_2.email), code=wrongCode - attempt 4
+[HTTP] the password grant with wrongPassword - attempt 5 (3 password + 2 code failures = N, neither type reaches N alone)
+[HTTP] POST /connect/token grant_type=password with the CORRECT password {{DEFAULT_TEST_PASSWORD}}
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_LOCKOUT_USER_2.email), code=code - the CORRECT code","[STATUS] Attempts 1..4 are refused with 400 and no token {OBSERVED}
+[BODY] After 3 password + 2 code failures (N=5 in total) the account is locked: the correct password is refused with a lockout error and no access_token {OBSERVED}
+[BODY] The correct code is refused too, with user_is_temporary_locked_out and lockoutSecondsRemaining > 0 {OBSERVED}
+[STATE] Lockout was reached by the COMBINED count: neither 3 password failures nor 2 code failures alone can lock it, so a locked account proves one shared counter {SPEC}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","The account is still open after N mixed failures (separate counters - an attacker doubles their guesses); the password path locks but the code path does not (or vice versa); 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",Leave the account locked for its window; re-arm with node scripts/seed-data/auth/seed-otp-signin.mjs --verify (re-arms the disposable account: unlock + failed-attempt count 0) before the next run,VCST-5748 · Archetype:PARITY · Technique:DT,Draft
+OTP-021,OTP request — Resend issues a code and the previous code's validity is defined,Auth > OTP Sign-In > API,Medium,,ECL-4.3,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled
+admin credentials resolve","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[CAPTURE] t1 = current UTC time
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""} - the Resend, a few seconds later
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and body {""keyword"":""{{USER_EMAIL}}"",""take"":10,""sort"":""createdDate:desc""}
+[WAIT] poll up to 90s until two OtpSignInEmailNotification messages to {{USER_EMAIL}} created after T0 are present
+[CAPTURE] code1 and code2 = the 6-digit values in those two messages, oldest first; sameCode = whether code1 equals code2
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code2","[STATUS] Both requests answer 200 with succeeded=true {OBSERVED}
+[BODY] Two OtpSignInEmailNotification messages exist, one per request {OBSERVED}
+[STATUS] The code from the latest message signs in with 200 {OBSERVED}
+[STATE] Record sameCode: inside one time window a resend yields the SAME code (observed; open PO question - the UI says ""New code sent."" while nothing new was issued); if the codes differ, record whether code1 is still accepted {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","The resend sends no message; the latest code is refused; a 5xx on the second request; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",none (the successful grant resets the failed-attempt counter),VCST-5748 · Archetype:LIFECYCLE · Technique:ST,Draft
+OTP-022,OTP grant — a code requested before the store setting is switched off is refused,Auth > OTP Sign-In > API,High,,,"OtpSignIn.Enabled is on for {{STORE_ID}} at the start; {{USER_EMAIL}} is a contact of {{STORE_ID}}; admin credentials resolve
+Runs ALONE: this case flips a store-wide setting (shared with the storefront setting-off case), so no other OTP case runs on {{STORE_ID}} meanwhile","email={{USER_EMAIL}}, store={{STORE_ID}}, setting=OtpSignIn.Enabled on->off on {{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+--- SCREEN: Admin ---
+[ACT] Open Stores > {{STORE_ID}} > Settings widget > 'OTP Sign-In' > 'General' in the admin (blade only - never a REST PUT of the whole store)
+[ACT] Turn 'Enable OTP sign-in' off
+[SAVE] Save the store blade
+[WAIT] poll POST /api/otp/request for {{USER_EMAIL}} every 15s up to 3 minutes until it answers error.code otp_disabled (store settings are cached)
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code - the code requested BEFORE the switch
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with body {""userName"":""{{USER_EMAIL}}"",""startDate"":""<T0>"",""take"":20,""sort"":""createdDate:desc""}","[BODY] The request after the switch answers error.code otp_disabled {OBSERVED}
+[STATUS] The pre-switch code is refused with 400 and code otp_disabled {OBSERVED}
+[BODY] The refusal carries no access_token {OBSERVED}
+[BODY] The sign-in log has a signInType=OTP row with failureReason OtpDisabled {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape
+[ADMIN] Stores > Settings > OTP Sign-In shows the setting off after Save","The pre-switch code still signs in after the setting is off; the setting change never reaches the request path within 3 minutes; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected","Turn OtpSignIn.Enabled back ON for {{STORE_ID}} in the same admin blade and Save - even if the case aborted midway
+Poll POST /api/otp/request until it answers succeeded=true again (confirms the restore propagated)",VCST-5748 · Archetype:CONFIG · Technique:ST,Draft
+OTP-023,OTP — a contact of a trusted-group store signs in to B2B-store,Auth > OTP Sign-In > API,High,,,"OtpSignIn.Enabled is on for {{STORE_ID}}; @td(OTP_TRUSTED_STORE_CONTACT.email) is a Customer contact whose store is in {{STORE_ID}} trustedGroups and is NOT locked (seeded by seed-otp-signin.mjs - if lockoutEnd is in the future re-arm with npm run seed:otp-signin:rearm; BLOCKED on an environment where {{STORE_ID}} trusts no store)
+admin credentials resolve","email=@td(OTP_TRUSTED_STORE_CONTACT.email), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer token
+[CAPTURE] trusted = the trustedGroups array of the store
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(OTP_TRUSTED_STORE_CONTACT.email) with the admin Bearer token
+[CAPTURE] homeStore = storeId of that account
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_TRUSTED_STORE_CONTACT.email)""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""@td(OTP_TRUSTED_STORE_CONTACT.email)"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to @td(OTP_TRUSTED_STORE_CONTACT.email) created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=@td(OTP_TRUSTED_STORE_CONTACT.email), code=code
+[HTTP] GET {{BACK_URL}}/api/platform/security/currentuser with the access_token","[STATE] The fixture is decidable: homeStore is in trusted and differs from {{STORE_ID}} {SPEC}
+[STATUS] The request answers 200 with succeeded=true {OBSERVED}
+[STATUS] The grant answers 200 with access_token {OBSERVED}
+[BODY] currentuser identifies the account and its storeId equals homeStore (the buyer keeps their home store) {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","user_cannot_login_in_store for a contact of a trusted store (the password path allows it); the token carries a different store; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",none (read-only apart from a code email and a successful grant),VCST-5748 · Archetype:SCOPE · Technique:DT,Draft
+OTP-024,OTP — a contact of another store is refused and no code is sent,Auth > OTP Sign-In > API,High,,,"OtpSignIn.Enabled is on for {{STORE_ID}}; the two fixture contacts exist (seeded by seed-otp-signin.mjs): one on a store that is not {{STORE_ID}} and not trusted by it, one whose account has no store
+PasswordLogin:DetailedErrors is true on the target environment (the distinct refusal code is visible; with it off the answer is masked and the email-count assertions still hold)","email=@td(OTP_FOREIGN_STORE_CONTACT.email), email2=@td(OTP_NO_STORE_CONTACT.email), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+--- SCREEN: one pass per account (email, then email2) ---
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token, body {""keyword"":""<account>"",""take"":20}
+[CAPTURE] before = number of OtpSignInEmailNotification messages to the account
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""<account>""}
+[WAIT] 20s for any notification to be journaled
+[HTTP] POST the journal search again
+[CAPTURE] after = the same count
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email=<account>, code=a 6-digit string that was never issued - the grant side of the store rule","[BODY] The request is refused with error.code user_cannot_login_in_store and succeeded=false (a masked answer when DetailedErrors is off) {OBSERVED}
+[STATE] after equals before: NO sign-in email is sent to a contact of another store or to an account with no store {OBSERVED}
+[STATUS] The grant answers 400 and carries no access_token {SPEC}
+[BODY] The grant never signs the account into {{STORE_ID}} {SPEC}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","A token for a store the contact may not enter; a code email created for a foreign contact; 200 succeeded=true for a refused account; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",none (the single grant attempt may count one failed attempt on a non-shared fixture account),VCST-5748 · Archetype:SCOPE · Technique:DT,Draft
+OTP-025,"OTP email — subject, code and sender of the notification",Auth > OTP Sign-In > API,Medium,,,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}}; admin credentials resolve
+The store has an email address configured (Stores > store > General > Email)","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] msg = the whole OtpSignInEmailNotification journal message (from, subject, body, status)
+[HTTP] GET {{BACK_URL}}/api/stores/{{STORE_ID}} with the admin Bearer token
+[CAPTURE] storeEmail = the store email address","[BODY] msg.subject is exactly ""Your sign-in code"" with no trailing whitespace or line break {OBSERVED}
+[BODY] msg.body contains the 6-digit code inside <strong>...</strong> {OBSERVED}
+[BODY] msg.from is set and equals storeEmail - the same sender a store password-reset email carries {SPEC}
+[BODY] msg is addressed to {{USER_EMAIL}} {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","KNOWN GAP (VCST-5748, round 2): from is empty on the OTP notification (the platform default sender is used) and the subject ends with a line break (Low; observed on 3.1075.0-pr-3114 / OTP 3.1000.0-pr-1) - expected to FAIL on those two assertions until fixed. Notification status Error when SMTP is off is NOT a failure of this case.",none,VCST-5748 · Archetype:FALLBACK · Technique:EP,Draft
+OTP-026,Sign-in log - OTP success and wrong code are recorded with signInType OTP and the real failure reason,Auth > OTP Sign-In > API,Medium,,,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled
+Sign-in log recording is enabled (Settings > Platform > Sign In Log > Record sign-in attempts = On); admin credentials resolve
+The lockout row is asserted in the lockout case (it owns the disposable account that locks); this case keeps its shared persona away from the threshold","email={{USER_EMAIL}}, store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/notifications/journal with the admin Bearer token and JSON body {""keyword"":""{{USER_EMAIL}}"",""take"":5,""sort"":""createdDate:desc""}
+[WAIT] poll that call up to 90s until an OtpSignInEmailNotification message to {{USER_EMAIL}} created after T0 appears (SMTP may be off - the message is journaled either way)
+[CAPTURE] code = the 6-digit value inside <strong>...</strong> in that message body
+[CAPTURE] wrongCode = a 6-digit string that differs from code (change its last digit)
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=wrongCode
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded): grant_type=otp_email, scope=offline_access, storeId={{STORE_ID}}, email={{USER_EMAIL}}, code=code
+[HTTP] POST {{BACK_URL}}/api/platform/security/sign-in-log/search with the admin Bearer token and body {""userName"":""{{USER_EMAIL}}"",""startDate"":""<T0>"",""take"":20,""sort"":""createdDate:desc""}
+[WAIT] poll the search up to 90s until both rows appear (the writer is buffered - one immediate read is not evidence of absence)","[BODY] The wrong-code row has signInType=""OTP"", succeeded=false and failureReason InvalidCode {OBSERVED}
+[BODY] The success row has signInType=""OTP"", succeeded=true and an empty failureReason {OBSERVED}
+[BODY] Neither row is typed Password {OBSERVED}
+[BODY] Both rows carry createdDate, ipAddress and userAgent {OBSERVED}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape
+[ADMIN] Security > Sign-in log lists both rows with type OTP","OTP attempts typed Password or untyped; the failure reason lost or generic; a row missing after 90s; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",none (the successful grant resets the failed-attempt counter),VCST-5748 · Archetype:SILENT · Technique:EP,Draft
+OTP-027,"OTP API - missing parameters and an unknown store return their documented codes, never a 500",Auth > OTP Sign-In > API,Medium,BL-AUTH-017,,"OtpSignIn.Enabled is on for {{STORE_ID}}; {{USER_EMAIL}} is a contact of {{STORE_ID}} with lockout enabled
+Run the request_* bodies first, then the grant_* bodies (the grant_* bodies carry a deliberately wrong code against a shared persona: confirm the handler refuses on the missing parameter before touching the code)
+The disabled-store answer (otp_disabled) is asserted in the setting-off cases","store=@td(OTP_INPUTS.unknownStoreId), body=@td(OTP_INPUTS.missingParamBodies), email={{USER_EMAIL}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","--- SCREEN: request endpoint ---
+[HTTP] POST {{BACK_URL}}/api/otp/request with body missingParamBodies.request_no_storeId
+[HTTP] POST {{BACK_URL}}/api/otp/request with body missingParamBodies.request_no_email
+[HTTP] POST {{BACK_URL}}/api/otp/request with body {""storeId"":""<unknownStoreId>"",""email"":""{{USER_EMAIL}}""}
+[HTTP] POST {{BACK_URL}}/api/otp/request with a malformed JSON body ({""storeId"":)
+--- SCREEN: token endpoint ---
+[HTTP] POST {{BACK_URL}}/connect/token (form-encoded) with missingParamBodies.grant_no_code
+[HTTP] the same with grant_no_storeId
+[HTTP] the same with grant_no_email
+[HTTP] the same grant with storeId=<unknownStoreId>, email={{USER_EMAIL}}, code=000000","[STATUS] Each request body with a missing field answers 400, not 500 {OBSERVED}
+[STATUS] The malformed JSON body answers 400 and the response carries no stack trace {OBSERVED}
+[BODY] The unknown store answers error.code store_not_found {OBSERVED}
+[BODY] Each grant with a missing parameter answers 400 and carries no access_token {OBSERVED}
+[BODY] No response body contains an exception type name or a stack trace {SPEC}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","Any 500; a stack trace in a body; a missing-parameter grant that reaches code verification and counts a failed attempt on the persona; 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected","Complete one successful OTP grant for {{USER_EMAIL}} (request, read the code from the journal, exchange it) - it resets any failed attempt a grant body above may have counted",VCST-5748 · Archetype:BOUNDARY · Technique:EP,Draft
+OTP-028,OTP request — an administrator-blocked account receives no sign-in code,Auth > OTP Sign-In > API,High,BL-AUTH-003,,"OtpSignIn.Enabled is on for {{STORE_ID}}; @td(OTP_BLOCKED_USER.email) is a Customer contact of {{STORE_ID}} and is NOT locked (its own disposable account - no other case uses it; if lockoutEnd is in the future a previous run aborted before Cleanup: re-arm with npm run seed:otp-signin:rearm first - BLOCKED otherwise)
+admin credentials resolve","email=@td(OTP_BLOCKED_USER.email), user_id=@td(OTP_BLOCKED_USER.user_id), store={{STORE_ID}}, admin={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}","[AUTH] POST {{BACK_URL}}/connect/token (grant_type=password, username={{ADMIN_EMAIL}}, password={{ADMIN_PASSWORD}}) to obtain an admin Bearer token
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/@td(OTP_BLOCKED_USER.user_id)/lock with the admin Bearer token (the administrator block)
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/@td(OTP_BLOCKED_USER.email) with the admin Bearer token
+[CAPTURE] lockoutEnd of the account
+[HTTP] POST the notification journal search for the account
+[CAPTURE] before = number of OtpSignInEmailNotification messages
+[CAPTURE] T0 = current UTC time, taken immediately before the code is requested
+[HTTP] POST {{BACK_URL}}/api/otp/request, no Authorization header, JSON body {""storeId"":""{{STORE_ID}}"",""email"":""@td(OTP_BLOCKED_USER.email)""}
+[WAIT] 30s for any notification to be journaled
+[HTTP] POST the notification journal search again
+[CAPTURE] after = the same count","[STATE] The account is blocked: lockoutEnd is in the future {OBSERVED}
+[STATE] after equals before: NO sign-in code is sent to an administrator-blocked account, whatever PasswordLogin:DetailedErrors says {SPEC}
+[BODY] The request is refused (succeeded=false) or answered with the masked outcome, but never creates a message {SPEC}","[NETWORK] no unexpected 5xx on the endpoint under test
+[API] response body is valid JSON with the documented error shape","KNOWN GAP (VCST-5748, round 2): the build still sends the code to a blocked account (the customer then enters it and sees ""That code didn't work."" with no explanation; agreed with the developer 2026-10-01, fix pending) - expected to FAIL on the message-count assertion until fixed; do NOT flip the expectation. 4xx/5xx other than the asserted one, empty or malformed response body, an access_token where a refusal is expected",ALWAYS unblock: POST {{BACK_URL}}/api/platform/security/users/@td(OTP_BLOCKED_USER.user_id)/unlock and confirm lockoutEnd is empty - even if the case aborted midway,VCST-5748 · Archetype:LIFECYCLE · Technique:ST,Draft
