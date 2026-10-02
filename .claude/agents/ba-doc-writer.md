@@ -85,7 +85,7 @@ follows its audience skeleton in `.claude/knowledge/ba/virto-doc-style.md` verba
 and the matching exemplar in §8 before drafting. The sections below list *what content to cover per
 audience*; the style guide dictates *how it must read*.
 
-**KB:** `mcp__kb__kb_ask` with "<coordinate> …" before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 
 ### 1. User Flow Improvement Specifications
 For each pain point identified, write a proper **UX Improvement Spec**:

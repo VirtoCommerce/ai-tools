@@ -95,20 +95,27 @@ function* transcripts(dirs, sinceMs, names, only = null) {
   }
 }
 
-const readOrNull = (path) => { try { return readFileSync(path, 'utf8'); } catch { return null; } };
+/**
+ * A transcript reader that reads each file once per `cache` — one push holds one cache across its
+ * queue files and across the MCP and CLI passes, which read the same transcripts.
+ */
+const reader = (cache = new Map()) => (path) => {
+  if (!cache.has(path)) { try { cache.set(path, readFileSync(path, 'utf8')); } catch { cache.set(path, null); } }
+  return cache.get(path);
+};
 
 /**
  * call id -> 'main' | a known agent name | 'other', for every id found in a transcript touched
  * since `sinceMs`. Ids found nowhere are absent from the map.
  */
-export function resolveCallers(callIds, { dirs, sinceMs = 0, names = knownAgentNames() }) {
+export function resolveCallers(callIds, { dirs, sinceMs = 0, names = knownAgentNames(), read = reader() }) {
   const pending = new Set(callIds.filter((c) => typeof c === 'string' && c));
   const out = new Map();
   if (!pending.size) return out;
   // Matched as the `tool_use` record's own `"id"` — never as a bare substring, which would also hit
   // any transcript that merely QUOTES the id (a debugging session printing log lines, for one).
   for (const { path, who } of transcripts(dirs, sinceMs, names)) {
-    const text = readOrNull(path);
+    const text = read(path);
     if (text === null) continue;
     for (const id of [...pending]) if (text.includes(`"id":"${id}"`)) { out.set(id, who); pending.delete(id); }
     if (!pending.size) break;
@@ -124,26 +131,50 @@ export function resolveCallers(callIds, { dirs, sinceMs = 0, names = knownAgentN
 // becomes the line's `call`, and `agent` follows from the transcript it sits in.
 //
 // Exact, not plausible: only the transcripts of the session that wrote the line are read (its queue
-// sidecar records them, `metaTranscripts` in queue.mjs), the verb must match, the line's key
-// (question, entry id, capture subject) must appear in the command, the line must fall between the
-// call and its result (and at most CLI_WINDOW_MS after the call), and a call is spent once per kb
-// invocation it holds. Anything
-// else — a plain terminal, a key the command does not carry — stays unstamped, as an unresolved MCP
-// call does.
+// sidecar records them, `metaTranscripts` in queue.mjs); the verb must match; the line's key
+// (question, entry id, capture subject) must be a WHOLE argument of the command, never a substring
+// of a longer one ("GET /cart" is not "GET /cart totals"); the line must fall inside the call's run;
+// a call is spent once per kb invocation it holds; and when calls of two DIFFERENT callers fit
+// equally — two subagents asking the same question at once — the line is left unstamped rather
+// than given to the nearer one. Anything else — a plain terminal, a key the command does not carry —
+// stays unstamped, as an unresolved MCP call does.
 
 const SHELLS = new Set(['Bash', 'PowerShell']);
-// `npm run -s kb -- ask`, `npm run kb -- show`, `node scripts/kb/kb.mjs confirm` — npm's own flags may
-// sit between `run` and `kb`.
-const KB_VERB = /(?:npm\s+run(?:-script)?(?:\s+-{1,2}[\w-]+)*\s+kb(?:\s+--)?|scripts[\\/]+kb[\\/]+kb\.mjs["']?)\s+(ask|show|capture|confirm|dispute)\b/g;
+// `npm run -s kb -- ask`, `npm -s run kb -- show`, `node scripts/kb/kb.mjs confirm` — npm's own flags
+// may sit before `run`, between `run` and `kb`, and after `kb`.
+const NPM_FLAGS = String.raw`(?:\s+-{1,2}[\w-]+)*`;
+const KB_VERB = new RegExp(
+  String.raw`(?:npm${NPM_FLAGS}\s+run(?:-script)?${NPM_FLAGS}\s+kb${NPM_FLAGS}|scripts[\\/]+kb[\\/]+kb\.mjs["']?)\s+(ask|show|capture|confirm|dispute)\b`,
+  'g',
+);
 // Shell loop syntax, not the words: "for" and "while" are common in a question. So it is tested on
-// the command with its quoted strings removed, and a bash loop must reach its `do`.
-const LOOP = /\b(?:for|while|until)\b[^;\n]*[;\n]\s*do\b|\bxargs\b|\bForEach-Object\b|\bforeach\s*\(/;
+// the command with its quoted strings removed; a bash loop must reach its `do`, and the PowerShell
+// forms are `for (`, `while (`, `foreach (`, `do {`, `ForEach-Object` and `| % {`.
+const LOOP = /\b(?:for|while|until)\b[^;\n]*[;\n]\s*do\b|\b(?:for|while|foreach)\s*\(|\bdo\s*\{|\bxargs\b|\bForEach-Object\b|\|\s*%\s*\{/i;
 const unquoted = (s) => s.replace(/"(?:[^"\\]|\\.)*"|'[^']*'/g, '""');
-/** A shell tool call runs for at most ten minutes; nothing older than that wrote the line. */
+/**
+ * How long after its call a line may be written. A foreground shell call is capped at ten minutes;
+ * one run in the background (`run_in_background`) returns at once and keeps running for up to its
+ * own `timeout`, two hours at most.
+ */
 export const CLI_WINDOW_MS = 10 * 60 * 1000;
+export const BACKGROUND_WINDOW_MS = 2 * 60 * 60 * 1000;
 
-/** Quotes, escapes and whitespace differ between a shell command and the argv kb logged. */
-const flat = (s) => String(s ?? '').replace(/[\\"'`]/g, '').replace(/\s+/g, ' ').trim();
+/** Quotes, escapes and runs of spaces differ between a shell command and the argv kb logged. */
+const flatLines = (s) => String(s ?? '').replace(/[\\"'`]/g, '').replace(/[ \t\r]+/g, ' ');
+const flat = (s) => flatLines(s).replace(/\s+/g, ' ').trim();
+
+// What may follow a whole argument: the end, a new line, a flag, or a shell operator / redirection.
+const AFTER_ARG = /^(?:$|\n|\s*(?:--|[;&|)<>]|\d[<>]))/;
+
+/** Whether `text` (a `flatLines` command) holds `needle` as a whole argument, not inside a longer one. */
+export function carries(text, needle) {
+  for (let i = text.indexOf(needle); i !== -1; i = text.indexOf(needle, i + 1)) {
+    if (i > 0 && !/\s/.test(text[i - 1])) continue;
+    if (AFTER_ARG.test(text.slice(i + needle.length, i + needle.length + 16))) return true;
+  }
+  return false;
+}
 
 /** The verb a CLI line came from and the text its command must carry; null when it cannot match. */
 export function cliKey(line) {
@@ -164,32 +195,55 @@ const END_SLACK_MS = 1000;
 
 /**
  * Every shell `tool_use` in one transcript that invokes kb: `{ id, atMs, endMs, verbs, runs, text }`.
- * `endMs` is its `tool_result`'s time, or Infinity while it has none: a line written after the call
- * returned was not written by it (a later `!` command asking the same question, say), and that holds
- * across pushes with no state kept between them.
+ * `endMs` is the last moment a line can be the call's: its `tool_result`, or — for a call run in the
+ * background, whose result comes back at once — its own timeout. A line written after that was not
+ * written by it (a later `!` command asking the same question, say), which holds across pushes with
+ * no state kept between them.
+ *
+ * Two passes, so a flush does not parse every tool output in the session: the first parses only
+ * shell `tool_use` records that mention kb, the second only the `tool_result` records of those ids.
  */
 export function kbShellCalls(text) {
+  const rows = String(text).split('\n');
   const out = [];
-  const ends = new Map();
-  for (const raw of String(text).split('\n')) {
-    const result = raw.includes('"tool_result"');
-    if (!result && !raw.includes('kb')) continue;
+  for (const raw of rows) {
+    if (!raw.includes('kb') || !(raw.includes('"name":"Bash"') || raw.includes('"name":"PowerShell"'))) continue;
     let rec;
     try { rec = JSON.parse(raw); } catch { continue; }
     const content = rec?.message?.content;
     if (!Array.isArray(content)) continue;
     const atMs = Date.parse(rec.timestamp);
     for (const c of content) {
-      if (c?.type === 'tool_result' && typeof c.tool_use_id === 'string' && Number.isFinite(atMs)) ends.set(c.tool_use_id, atMs);
       if (c?.type !== 'tool_use' || !SHELLS.has(c.name) || typeof c.input?.command !== 'string') continue;
       const runs = [...c.input.command.matchAll(KB_VERB)].map((m) => m[1]);
+      if (!runs.length) continue;
       // A loop runs its one kb invocation once per item, so it is not spent by count (measured
       // 2026-10-01: one `while read q; do npm run -s kb -- ask "$q"` wrote 17 lines).
       const limit = LOOP.test(unquoted(c.input.command)) ? Infinity : runs.length;
-      if (runs.length) out.push({ id: c.id, atMs, verbs: new Set(runs), runs: limit, text: flat(c.input.command) });
+      const background = c.input.run_in_background === true;
+      const timeout = Number(c.input.timeout);
+      const window = background
+        ? Math.min(Number.isFinite(timeout) && timeout > 0 ? timeout : BACKGROUND_WINDOW_MS, BACKGROUND_WINDOW_MS)
+        : CLI_WINDOW_MS;
+      out.push({ id: c.id, atMs, background, window, verbs: new Set(runs), runs: limit, text: flatLines(c.input.command) });
     }
   }
-  for (const c of out) c.endMs = ends.has(c.id) ? ends.get(c.id) + END_SLACK_MS : Infinity;
+  const ends = new Map();
+  if (out.length) {
+    const ids = out.filter((c) => !c.background).map((c) => c.id);
+    for (const raw of rows) {
+      if (!raw.includes('"tool_result"') || !ids.some((id) => raw.includes(id))) continue;
+      let rec;
+      try { rec = JSON.parse(raw); } catch { continue; }
+      const atMs = Date.parse(rec.timestamp);
+      for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
+        if (c?.type === 'tool_result' && typeof c.tool_use_id === 'string' && Number.isFinite(atMs)) ends.set(c.tool_use_id, atMs);
+      }
+    }
+  }
+  for (const c of out) {
+    c.endMs = !c.background && ends.has(c.id) ? ends.get(c.id) + END_SLACK_MS : c.atMs + c.window;
+  }
   return out;
 }
 
@@ -198,7 +252,7 @@ export function kbShellCalls(text) {
  * NEAREST matching call written before it; a call is spent once per kb invocation in its command.
  * `sessions` are the transcript ids of the session that wrote the lines; none means no match.
  */
-export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNames(), sessions = [] }) {
+export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNames(), sessions = [], read = reader() }) {
   const out = new Map();
   const only = new Set(sessions);
   if (!only.size) return out;
@@ -207,19 +261,20 @@ export function resolveCliCalls(lines, { dirs, sinceMs = 0, names = knownAgentNa
   if (!wanted.length) return out;
   const calls = [];
   for (const { path, who } of transcripts(dirs, sinceMs, names, only)) {
-    const text = readOrNull(path);
+    const text = read(path);
     if (!text?.includes('kb')) continue;
     for (const c of kbShellCalls(text)) if (Number.isFinite(c.atMs)) calls.push({ ...c, who });
   }
   const spent = new Map();
   for (const w of wanted.sort((a, b) => a.atMs - b.atMs)) {
-    let best = null;
-    for (const c of calls) {
-      if ((spent.get(c.id) ?? 0) >= c.runs || c.atMs > w.atMs || w.atMs > c.endMs || w.atMs - c.atMs > CLI_WINDOW_MS) continue;
-      if (!c.verbs.has(w.key.verb) || !c.text.includes(w.key.needle)) continue;
-      if (!best || c.atMs > best.atMs) best = c;
-    }
-    if (best) { spent.set(best.id, (spent.get(best.id) ?? 0) + 1); out.set(w.i, { call: best.id, agent: best.who }); }
+    const fits = calls.filter((c) => (spent.get(c.id) ?? 0) < c.runs && c.atMs <= w.atMs && w.atMs <= c.endMs
+      && c.verbs.has(w.key.verb) && carries(c.text, w.key.needle));
+    if (!fits.length) continue;
+    // Two different callers both fit: which one wrote the line cannot be told, so neither is named.
+    if (new Set(fits.map((c) => c.who)).size > 1) continue;
+    const best = fits.reduce((a, b) => (b.atMs > a.atMs ? b : a));
+    spent.set(best.id, (spent.get(best.id) ?? 0) + 1);
+    out.set(w.i, { call: best.id, agent: best.who });
   }
   return out;
 }
@@ -233,21 +288,25 @@ export function stampCallers(lines, resolved) {
  * Stamp a batch of queue lines in place of the push. Never throws.
  * `KB_TRANSCRIPTS_DIR` overrides where transcripts are looked for (tests, unusual layouts).
  * `sessions` — the transcript ids the queue file's sidecar recorded — scopes the CLI match.
+ * `cache` lets one push read each transcript once across all its queue files.
  */
-export function stampCallersFromTranscripts(lines, { env = process.env, cwd = process.cwd(), names, sessions = [] } = {}) {
+export function stampCallersFromTranscripts(lines, { env = process.env, cwd = process.cwd(), names, sessions = [], cache = new Map() } = {}) {
   try {
     const calls = lines.filter((l) => l?.call && !l.agent).map((l) => l.call);
     const cli = sessions.length > 0 && lines.some((l) => cliKey(l));
     if (!calls.length && !cli) return lines;
     const oldest = Math.min(...lines.map((l) => Date.parse(l?.at)).filter(Number.isFinite));
-    const sinceMs = Number.isFinite(oldest) ? oldest - CLI_WINDOW_MS : 0;
+    // A transcript is read when it was touched since the earliest moment a call could have started:
+    // a background call may have begun up to BACKGROUND_WINDOW_MS before the oldest line.
+    const sinceMs = Number.isFinite(oldest) ? oldest - (cli ? BACKGROUND_WINDOW_MS : CLI_WINDOW_MS) : 0;
     const dirs = env.KB_TRANSCRIPTS_DIR
       ? [env.KB_TRANSCRIPTS_DIR]
       : [...new Set([transcriptDirFor(cwd), transcriptDirFor(REPO_ROOT)])];
     const known = names ?? knownAgentNames();
-    const stamped = stampCallers(lines, resolveCallers(calls, { dirs, sinceMs, names: known }));
+    const read = reader(cache);
+    const stamped = stampCallers(lines, resolveCallers(calls, { dirs, sinceMs, names: known, read }));
     if (!cli) return stamped;
-    const found = resolveCliCalls(stamped, { dirs, sinceMs, names: known, sessions });
+    const found = resolveCliCalls(stamped, { dirs, sinceMs, names: known, sessions, read });
     return stamped.map((l, i) => (found.has(i) && !l.agent ? { ...l, ...found.get(i) } : l));
   } catch {
     return lines;

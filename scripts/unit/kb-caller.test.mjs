@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  CLI_WINDOW_MS, cliKey, kbShellCalls, knownAgentNames, resolveCallers, resolveCliCalls, stampCallers,
+  CLI_WINDOW_MS, carries, cliKey, kbShellCalls, knownAgentNames, resolveCallers, resolveCliCalls, stampCallers,
   stampCallersFromTranscripts, transcriptDirFor,
 } from '../kb/core/caller.mjs';
 
@@ -155,6 +155,84 @@ test('a line written after its call returned is not that call\'s, in this push o
   }
 });
 
+function withTwoAgents(calls, fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-caller-two-'));
+  try {
+    const sub = join(dir, 'sess-1', 'subagents');
+    mkdirSync(sub, { recursive: true });
+    for (const [file, type, records] of calls) {
+      writeFileSync(join(sub, `${file}.jsonl`), records.join('\n'));
+      writeFileSync(join(sub, `${file}.meta.json`), JSON.stringify({ agentType: type }));
+    }
+    return fn(dir);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('a question is matched as a whole argument, never as the start of a longer one', () => withTwoAgents([
+  ['agent-a', 'qa-frontend-expert', [shell('toolu_A', 0, 'npm run kb -- ask "GET /cart"')]],
+  ['agent-b', 'vc-fix:qa-frontend-expert', [shell('toolu_B', 1, 'npm run kb -- ask "GET /cart totals" --topic t')]],
+], (dir) => {
+  const r = resolveAt(dir, [cli(2, 'ask', { q: 'GET /cart' }), cli(3, 'ask', { q: 'GET /cart totals' })]);
+  assert.deepEqual(r.get(0), { call: 'toolu_A', agent: 'qa-frontend-expert' });
+  assert.deepEqual(r.get(1), { call: 'toolu_B', agent: 'vc-fix:qa-frontend-expert' });
+}));
+
+test('two different callers asking the same thing at once: the line names neither', () => withTwoAgents([
+  ['agent-a', 'qa-frontend-expert', [shell('toolu_A', 0, 'npm run kb -- ask "same"')]],
+  ['agent-b', 'vc-fix:qa-frontend-expert', [shell('toolu_B', 1, 'npm run kb -- ask "same"')]],
+], (dir) => {
+  assert.equal(resolveAt(dir, [cli(2, 'ask', { q: 'same' })]).size, 0);
+}));
+
+test('whole-argument matching: flags, operators, redirections and new lines end an argument', () => {
+  assert.equal(carries('npm run kb -- ask GET /cart --topic x', 'GET /cart'), true);
+  assert.equal(carries('npm run kb -- ask GET /cart 2>&1 | head', 'GET /cart'), true);
+  assert.equal(carries('npm run kb -- ask GET /cart && echo', 'GET /cart'), true);
+  assert.equal(carries('while read q; do x; done <<EOF\nGET /cart\nGET /orders\nEOF', 'GET /cart'), true);
+  // A `\`-continued line, as flatLines leaves it (measured on a 2026-09-29 capture).
+  assert.equal(carries('kb.mjs capture --subject Coupon codes collide \n   --question q', 'Coupon codes collide'), true);
+  assert.equal(carries('npm run kb -- ask GET /cart totals', 'GET /cart'), false);
+  assert.equal(carries('npm run kb -- ask XGET /cart', 'GET /cart'), false);
+  assert.equal(carries('npm run kb -- show KB-10', 'KB-1'), false);
+});
+
+test('a background call returns at once but keeps writing until its own timeout', () => {
+  const result = (id, s) => JSON.stringify({ timestamp: iso(s), message: { content: [{ type: 'tool_result', tool_use_id: id }] } });
+  const bg = (id, s, command, timeout) => JSON.stringify({
+    timestamp: iso(s), message: { content: [{ type: 'tool_use', id, name: 'Bash', input: { command, run_in_background: true, ...(timeout ? { timeout } : {}) } }] },
+  });
+  const dir = mkdtempSync(join(tmpdir(), 'kb-caller-bg-'));
+  try {
+    writeFileSync(join(dir, 'sess-1.jsonl'), [bg('toolu_BG', 0, 'npm run kb -- ask "slow one"', 20 * 60 * 1000), result('toolu_BG', 1)].join('\n'));
+    assert.equal(resolveAt(dir, [cli(15 * 60, 'ask', { q: 'slow one' })]).get(0).call, 'toolu_BG', 'after its result, inside its timeout');
+    assert.equal(resolveAt(dir, [cli(21 * 60, 'ask', { q: 'slow one' })]).size, 0, 'past its timeout');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('npm flags before `run` and after `kb` are recognised', () => {
+  const verbsOf = (command) => kbShellCalls(shell('t', 0, command)).flatMap((c) => [...c.verbs]);
+  assert.deepEqual(verbsOf('npm -s run kb -- ask "q"'), ['ask']);
+  assert.deepEqual(verbsOf('npm run kb --silent -- show KB-1'), ['show']);
+  assert.deepEqual(verbsOf('npm run kbx -- ask "q"'), []);
+});
+
+test('the transcript cache is read through: a cached text is used instead of the disk', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kb-caller-cache-'));
+  try {
+    const path = join(dir, 'sess-1.jsonl');
+    writeFileSync(path, '');
+    const cache = new Map([[path, shell('toolu_CACHED', 0, 'npm run kb -- ask "cached"')]]);
+    const out = stampCallersFromTranscripts([cli(1, 'ask', { q: 'cached' })], { env: { KB_TRANSCRIPTS_DIR: dir }, names: NAMES, sessions: ['sess-1'], cache });
+    assert.equal(out[0].call, 'toolu_CACHED');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('a loop is shell syntax outside quotes, never "for … in" inside a question', () => {
   const limit = (command) => kbShellCalls(shell('t', 0, command))[0].runs;
   assert.equal(limit('npm run kb -- ask "discount for items in cart"'), 1);
@@ -162,6 +240,11 @@ test('a loop is shell syntax outside quotes, never "for … in" inside a questio
   assert.equal(limit('for q in a b; do npm run kb -- ask "$q"; done'), Infinity);
   assert.equal(limit('while IFS= read -r q\ndo npm run -s kb -- ask "$q"; done < qs.txt'), Infinity);
   assert.equal(limit('foreach ($q in $qs) { npm run kb -- ask $q }'), Infinity);
+  assert.equal(limit('$qs | % { npm run kb -- ask $_ }'), Infinity);
+  assert.equal(limit('for ($i = 0; $i -lt 3; $i++) { npm run kb -- ask $qs[$i] }'), Infinity);
+  assert.equal(limit('while ($q = $r.ReadLine()) { npm run kb -- ask $q }'), Infinity);
+  assert.equal(limit('do { npm run kb -- ask $q } until ($done)'), Infinity);
+  assert.equal(limit('npm run kb -- ask "for (i) in the cart, do {nothing}"'), 1);
 });
 
 test('a sub-agent CLI call is stamped with the Bash tool-use id and that sub-agent', () => withShellTranscripts((dir) => {

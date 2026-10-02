@@ -788,9 +788,11 @@ async function flushOnce({
   // WHO CALLED, derived from this machine's transcripts before anything leaves it (`core/caller.mjs`).
   // Before the secret gate, so the stamped line is the one the gate judges.
   // A CLI line is matched only inside the transcripts its own session recorded (`metaTranscripts`).
+  // One cache for the whole push, so each transcript is read once however many files are swept.
+  const transcriptCache = new Map();
   for (const f of loaded) {
     const sessions = f.session ? metaTranscripts(await readMeta(env, f.session)) : [];
-    f.lines = stampCallersFromTranscripts(f.lines, { env, sessions });
+    f.lines = stampCallersFromTranscripts(f.lines, { env, sessions, cache: transcriptCache });
   }
 
   // THE SECRET GATE, before anything leaves the machine. Over the whole line, payload included:
