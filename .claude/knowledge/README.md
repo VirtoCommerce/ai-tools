@@ -100,7 +100,7 @@ row is the file's own opening line, so a wrong row is fixed in that file, not he
 | [`configurable-products.md`](./domain/configurable-products.md) | What "configurable products" (product-configuration sections attached to a catalog product — Product / Text / File sections, each optionally… |
 | [`domain-map.md`](./domain/domain-map.md) | Fill-in shape for .claude/knowledge/domain/<name>.md. |
 | [`inventory.md`](./domain/inventory.md) | What "inventory & product availability" IS — the mechanism by which a product/variation becomes shown-as-available and purchasable, across Admin… |
-| [`loyalty-missions.md`](./domain/loyalty-missions.md) | What the Loyalty & Missions feature IS — actors, the two independent accrual paths (LoyaltyProgramHandler earn/redeem vs LoyaltyMissionLogicService… |
+| [`loyalty-missions.md`](./domain/loyalty-missions.md) | What the Loyalty & Missions feature IS: actors, the two independent accrual paths (LoyaltyProgramHandler earn/redeem vs LoyaltyMissionLogicService… |
 | [`mobile-navigation.md`](./domain/mobile-navigation.md) | Three personas are mapped separately (§3 anonymous, §4 personal customer, §5 company member) because the drawer is not one tree with rows toggled on… |
 | [`page-builder.md`](./domain/page-builder.md) | What the Page Builder / CMS-authoring domain IS and where its surfaces are — the native drag-and-drop page composer… |
 | [`products.md`](./domain/products.md) | Storefront product types + xAPI fields. |

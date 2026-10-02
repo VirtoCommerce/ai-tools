@@ -473,6 +473,34 @@ async function deleteMissions(ids) {
   await api('DELETE', `/api/loyalty-missions?${idsParam(ids)}`, null, { expectStatus: [200, 204] });
 }
 
+/** Published -> Archived, the one legal transition on a Published mission (missions-specs ALLOWED_TRANSITION). */
+async function archiveMission(m) {
+  const full = await api('GET', `/api/loyalty-missions/${m.id}`, null, { expectStatus: [200] });
+  await api('PUT', '/api/loyalty-missions', { ...full, status: 'Archived' }, { expectStatus: [200, 204] });
+}
+
+/**
+ * Retire ONE mission: delete it when the platform allows, archive it when it does not.
+ *
+ * Per mission, never in a batch: `DELETE /api/loyalty-missions` 500s on a RESTRICT foreign key once a
+ * mission has mission transactions (any order that advanced it), and the bulk delete is atomic — one
+ * consumed mission in the batch leaves EVERY mission in it intact (kb KB-608F7C05). A consumed per-case
+ * mission is exactly what a finished 083d run leaves behind, so the old batch call made the sweep throw
+ * on the first run after any real execution. A Published mission is immutable except Published ->
+ * Archived, and an Archived mission is off the customer query, so archiving is the retirement path for
+ * the consumed ones. Returns 'deleted' | 'archived' | 'kept'.
+ */
+async function retireMission(m) {
+  try {
+    await deleteMissions([m.id]);
+    return 'deleted';
+  } catch (e) {
+    if (String(m.status) !== 'Published') { log(`  ⚠ ${m.name} (${m.status}) could not be deleted and cannot be archived: ${String(e.message).slice(0, 160)}`); return 'kept'; }
+    await archiveMission(m);
+    return 'archived';
+  }
+}
+
 /**
  * Remove E2E missions from previous runs. Age-floored so a 083d execution running beside this one is
  * never torn down underneath itself — the same guard, for the same reason, as the ephemeral loyalty
@@ -483,6 +511,9 @@ async function sweepStaleMissions({ all = false, maxAgeHours = MAX_AGE_HOURS, ex
   const doomed = [];
   const spared = [];
   for (const m of live) {
+    // Archived is terminal: it cannot be edited, it is off the customer page, and if it could have
+    // been deleted it would not have been archived. Re-trying it every run only re-proves the 500.
+    if (String(m.status) === 'Archived') continue;
     const rid = runIdFromName(m.name);
     if (rid && rid === exceptRunId) continue;
     const age = runIdAgeHours(rid, now);
@@ -493,9 +524,11 @@ async function sweepStaleMissions({ all = false, maxAgeHours = MAX_AGE_HOURS, ex
   }
   if (spared.length) log(`  – sparing ${spared.length} mission(s) younger than ${maxAgeHours}h: ${spared.map((s) => s.name).join(', ')}`);
   if (!doomed.length) { log('  – no stale E2E missions to sweep'); return 0; }
-  if (DRY_RUN) { log(`  [DRY] would delete ${doomed.length} stale mission(s): ${doomed.map((m) => m.name).join(', ')}`); return doomed.length; }
-  await deleteMissions(doomed.map((m) => m.id));
-  log(`  ✗ swept ${doomed.length} stale E2E mission(s)`);
+  if (DRY_RUN) { log(`  [DRY] would retire ${doomed.length} stale mission(s) (delete, or archive when consumed): ${doomed.map((m) => m.name).join(', ')}`); return doomed.length; }
+  const outcome = { deleted: [], archived: [], kept: [] };
+  for (const m of doomed) outcome[await retireMission(m)].push(m.name);
+  log(`  ✗ swept ${doomed.length} stale E2E mission(s): ${outcome.deleted.length} deleted, ${outcome.archived.length} archived (consumed — DELETE refused)${outcome.kept.length ? `, ${outcome.kept.length} KEPT` : ''}`);
+  verbose(`archived: ${outcome.archived.join(', ') || 'none'}`);
   return doomed.length;
 }
 
@@ -729,13 +762,45 @@ const CART_FIELDS = `
  * Build the exact cart the case will place, read what the platform made of it, then empty it again.
  *
  * The cart is named, not the default one, so a probe can never leave anything in the cart the case
- * itself opens. It is cleared before AND after: before, because a crashed earlier run may have left
- * lines in it; after, because a case that signs in to a non-empty cart is a case debugging someone
- * else's state.
+ * itself opens. It is cleared before (a crashed earlier run may have left lines in it) and DELETED
+ * after — emptying is not enough. The probe is an untyped (`type: null`) cart, and an untyped cart
+ * COMPETES with `default` for the same (customerId, storeId, currency) whether or not it holds lines
+ * (carts/cart-hygiene-specs.mjs): xAPI then resolves reads and writes to different carts and
+ * `npm run carts:check` exits 1 on the account. The delete runs in a `finally`, so a probe that
+ * trips one of the guards below is removed too, and it is VERIFIED — a probe that survives fails the seed.
  */
 async function measureCart(token, userId, currency, productId, { units, coupon = null }) {
   const ctx = { storeId: STORE_ID, userId, cartName: PROBE_CART_NAME, currencyCode: currency, cultureName: 'en-US', cartType: null };
   const clear = () => customerGql(token, 'mutation($c:InputClearCartType!){ clearCart(command:$c){ id } }', { c: ctx });
+  try {
+    return await measureProbeCart(token, userId, currency, productId, { units, coupon }, clear);
+  } finally {
+    await deleteProbeCarts(userId);
+  }
+}
+
+/**
+ * Delete every probe cart on the account, by NAME, through the admin REST API (a storefront token is
+ * refused there — kb KB-7DA9B0B7), and verify the search no longer returns one. Name-scoped, so it
+ * never touches `default` or any cart a case owns.
+ */
+async function deleteProbeCarts(userId) {
+  const find = async () => ((await api('POST', '/api/carts/search', { customerId: userId, take: 100 }, { expectStatus: [200, 201] }))?.results || [])
+    .filter((c) => String(c.name || '') === PROBE_CART_NAME);
+  const probes = await find();
+  if (!probes.length) return;
+  await api('DELETE', `/api/carts?${idsParam(probes.map((c) => c.id))}`, null, { expectStatus: [200, 204, 404] });
+  const left = await find();
+  if (left.length) {
+    throw new Error(
+      `probe cart "${PROBE_CART_NAME}" survived its delete on account ${userId} (${left.map((c) => c.id).join(', ')}). `
+      + 'An untyped cart competes with default, so leaving it would fail carts:check and every checkout case on this account.',
+    );
+  }
+}
+
+async function measureProbeCart(token, userId, currency, productId, { units, coupon = null }, clear) {
+  const ctx = { storeId: STORE_ID, userId, cartName: PROBE_CART_NAME, currencyCode: currency, cultureName: 'en-US', cartType: null };
   await clear();
   await customerGql(token, 'mutation($c:InputAddItemType!){ addItem(command:$c){ id } }', { c: { ...ctx, productId, quantity: units } });
   if (coupon) {
@@ -1592,7 +1657,9 @@ async function teardown() {
   });
   log(acctResidual === 0 ? '  ✓ per-case account teardown verified — zero residue' : `  ⚠ per-case account teardown incomplete — ${acctResidual} still present`);
   const residual = await verifyRemoved(async () => {
-    const live = await allE2EMissions();
+    // An Archived mission is retired (a consumed mission cannot be deleted — see retireMission), so it
+    // is not residue; anything still Published/Draft past the floor is.
+    const live = (await allE2EMissions()).filter((m) => String(m.status) !== 'Archived');
     return SWEEP_ALL ? live.map((m) => m.id) : live.filter((m) => (runIdAgeHours(runIdFromName(m.name)) ?? 0) > MAX_AGE_HOURS).map((m) => m.id);
   });
   log(residual === 0 ? '  ✓ mission teardown verified — zero residue' : `  ⚠ mission teardown incomplete — ${residual} still present`);
