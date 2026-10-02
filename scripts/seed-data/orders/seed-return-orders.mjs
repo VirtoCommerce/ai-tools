@@ -2,8 +2,9 @@
 /**
  * seed-return-orders.mjs — returnable-quantity order fixtures for VCST-5628 (buyer's own returns, step 1).
  *
- * Seven customer orders belonging to ONE B2B buyer, each isolating one input of the returnable-quantity
- * computation. The spec table, the expectations and every drift guard live in orders-specs.mjs
+ * Customer orders belonging to ONE B2B buyer, each isolating one input of the returnable-quantity
+ * computation — plus ADM073, the dedicated disposable order of the legacy Admin SPA suite 073 (rebuilt,
+ * returns first, whenever a previous run left a return on it that still holds units). The spec table, the expectations and every drift guard live in orders-specs.mjs
  * (RETURN_ORDER_FIXTURES); this file is the thin resolve-tokens -> POST -> PUT that provisions them.
  *
  * WHY A SEPARATE SEEDER FROM seed-order-states.mjs: that seeder sets orderStatus/shipmentStatus and
@@ -42,7 +43,7 @@ import {
   RETURN_ALLOWED_STATUS, RETURN_DISALLOWED_STATUS,
   LINE_ROLE_X, LINE_ROLE_CANCELLED, LINE_ROLE_Y, deliveredTotalFor,
   returnOrderNumber, resolveTokens, applyReturnCatalogItems, finalizeReturnOrderBody,
-  buildReturnPhase2Body, diagnoseSeededOrder, deliveryDateFor,
+  buildReturnPhase2Body, diagnoseSeededOrder, deliveryDateFor, returnHoldsUnits,
 } from './orders-specs.mjs';
 
 const loadFixture = (rel) => JSON.parse(readFileSync(join(ROOT, 'test-data', rel), 'utf8'));
@@ -117,12 +118,57 @@ async function assertPolicyMatchesDesign(token) {
   return p;
 }
 
+/**
+ * Every order carrying EXACTLY this number, newest first. A keyword search is a prefix match, so
+ * "AGENT-TEST-ORD-RET-D" also returns the nine AGENT-TEST-ORD-RET-DEC-* orders of the decisions seeder
+ * and "…-A" returns "…-ADM073" (measured on vcptcore-qa1 2026-10-02). Two consequences, both fixed here:
+ * the old `take: 5` missed the exact D behind the DEC ones, and its fall-back to "the first hit" handed
+ * ANOTHER fixture's order to this one's diagnosis — which then reports a mismatch and deletes it.
+ */
+async function exactOrders(number) {
+  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 100 });
+  return (found?.results || []).filter((o) => o.number === number);
+}
+
 /** Find the seeded order by its deterministic number (full body, not the search projection). */
 async function findOrder(number) {
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
-  const hit = (found?.results || []).find((o) => o.number === number) || (found?.results || [])[0];
+  const [hit, ...dupes] = await exactOrders(number);
   if (!hit?.id) return null;
+  // A duplicate is residue of an earlier run that could not find its own order (the take/fallback bug
+  // above) — this seeder's own AGENT-TEST order, never referenced by the overlay, which always names the
+  // newest. Remove it with its returns rather than leave two orders behind one number.
+  for (const d of dupes) {
+    log(`  ${number}: removing duplicate ${d.id} (created ${d.createdDate}) — keeping the newest ${hit.id}`);
+    await deleteOrderWithReturns(d);
+  }
   return api('GET', `/api/order/customerOrders/${hit.id}`);
+}
+
+/** Every return whose orderId is this order, paged (a disposable order accumulates them run after run). */
+async function returnsForOrder(orderId) {
+  const out = [];
+  for (let skip = 0; ; skip += 50) {
+    const r = await api('POST', '/api/return/search', { orderId, skip, take: 50 });
+    const page = r?.results || [];
+    out.push(...page.filter((x) => x.orderId === orderId));
+    if (page.length < 50) break;
+  }
+  return out;
+}
+
+/**
+ * Delete a fixture order AND the returns made against it, returns first. Deleting only the order
+ * leaves its returns behind with an EMPTY Order number and Customer in the Admin returns grid — which
+ * is exactly the data that fails suite 073's "no empty column" assertions (RET-016/021).
+ */
+async function deleteOrderWithReturns(order) {
+  const rets = await returnsForOrder(order.id);
+  for (let i = 0; i < rets.length; i += 20) {
+    const ids = rets.slice(i, i + 20).map((r) => `ids=${encodeURIComponent(r.id)}`).join('&');
+    await api('DELETE', `/api/return?${ids}`, null, { expectStatus: [200, 204] });
+  }
+  if (rets.length) log(`    ${DRY_RUN ? '[DRY] would delete' : 'deleted'} ${rets.length} return(s) made against ${order.number}`);
+  await api('DELETE', `/api/order/customerOrders?ids=${order.id}`, null, { expectStatus: [200, 204] });
 }
 
 async function ensureOrder(spec, buyer, productsByRole, rolesBySku, windowDays, now) {
@@ -130,9 +176,14 @@ async function ensureOrder(spec, buyer, productsByRole, rolesBySku, windowDays, 
   const existing = await findOrder(number);
   if (existing) {
     const d = diagnoseSeededOrder(spec, existing, rolesBySku, { windowDays, now, ownerId: buyer.id });
-    if (d.ok) { log(`  ${number} exists and still matches the spec → ${existing.id}`); return { id: existing.id, order: existing, rebuilt: false }; }
-    log(`  ${number} rebuilding — ${d.problems.length} mismatch(es): ${d.problems[0]}`);
-    await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
+    // A disposable order (spec.rebuildWhenHeld) that still matches the spec is nonetheless EXHAUSTED
+    // when a previous run left a return on it that holds units — the picker would offer less than the
+    // spec says. Rebuild it rather than hand the next run a drained fixture.
+    const held = spec.rebuildWhenHeld ? (await returnsForOrder(existing.id)).filter(returnHoldsUnits) : [];
+    if (held.length) d.problems.unshift(`${held.length} return(s) on it still hold units (${held.slice(0, 3).map((r) => `${r.number} ${r.status}`).join(', ')}) — exhausted`);
+    if (!d.problems.length) { log(`  ${number} exists and still matches the spec → ${existing.id}`); return { id: existing.id, order: existing, rebuilt: false }; }
+    log(`  ${number} rebuilding — ${d.problems.length} problem(s): ${d.problems[0]}`);
+    await deleteOrderWithReturns(existing);
   }
 
   // ---- phase 1: create (no shipment items — the platform assigns the line item ids) ----
@@ -170,24 +221,24 @@ async function teardown() {
   const specs = RETURN_ORDER_FIXTURES.filter((s) => !ONLY || s.key === ONLY || s.alias === ONLY);
   if (ONLY && !specs.length) throw new Error(`--only ${ONLY} matches no returns fixture`);
   log(`TEARDOWN — deleting only ${specs.map((s) => returnOrderNumber(s.key)).join(', ')}`);
+  const deletedOrderIds = [];
   for (const spec of specs) {
     const number = returnOrderNumber(spec.key);
-    const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
-    for (const o of (found?.results || [])) {
-      if (o.number !== number) continue;
-      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
+    for (const o of await exactOrders(number)) {
+      await deleteOrderWithReturns(o);
+      deletedOrderIds.push(o.id);
       log(`  deleted ${number}`);
     }
   }
+  // Zero residue means the orders AND the returns made against them — a return outliving its order is
+  // the empty-Order-number row the Admin returns grid then shows.
   const residue = await verifyRemoved(async () => {
     let n = 0;
-    for (const spec of specs) {
-      const r = await api('POST', '/api/order/customerOrders/search', { keyword: returnOrderNumber(spec.key), take: 5 });
-      n += (r?.results || []).filter((o) => o.number === returnOrderNumber(spec.key)).length;
-    }
+    for (const spec of specs) n += (await exactOrders(returnOrderNumber(spec.key))).length;
+    for (const id of deletedOrderIds) n += (await returnsForOrder(id)).length;
     return n;
   });
-  if (residue) log(`  ⚠ ${residue} AGENT-TEST-ORD-RET-* order(s) still present after teardown`);
+  if (residue) log(`  ⚠ ${residue} AGENT-TEST-ORD-RET-* order(s)/return(s) still present after teardown`);
   else log('Teardown complete — zero residue.');
 }
 

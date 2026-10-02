@@ -222,7 +222,7 @@
     "name": "1\" Steel Freight Car Bolt, Grade 5, 1/2\"-13 Dia/Thread Size, 300 PK",
     "cancelledProductId": "dd94df2ef6524b66941ac3aeb407e0ff",
     "cancelledSku": "19T356",
-    "seededAt": "2026-10-01T18:32:31.534Z",
+    "seededAt": "2026-10-02T05:36:46.374Z",
     "lineYProductId": "c8848c9626af485095412e232558e2b9",
     "lineYSku": "20H927"
   },
@@ -456,5 +456,23 @@
     "returnLineAReturnLineItemId": "d42b15fe-170b-4c99-8743-187221ea77a8",
     "lineAReturnableAfterSeed": 0,
     "seededAt": "2026-10-01T21:43:23.121Z"
+  },
+  "RETURNS_ORDER_ADMIN_073": {
+    "id": "805d7e4f-c228-42d8-ae75-eaeb722e00b7",
+    "number": "AGENT-TEST-ORD-RET-ADM073",
+    "lineXItemId": "05df3b97-1594-4f69-b8a1-0f61448c3588",
+    "lineAItemId": "05df3b97-1594-4f69-b8a1-0f61448c3588",
+    "lineASku": "20J012",
+    "lineAOrderedQuantity": 20,
+    "lineADeliveredQuantity": 20,
+    "lineBItemId": "aaf8e5ba-1f78-49f0-83cb-c0ff5ed729c1",
+    "lineBSku": "20H927",
+    "lineBOrderedQuantity": 25,
+    "lineBDeliveredQuantity": 25,
+    "seededAt": "2026-10-02T05:34:49.884Z",
+    "deliveryDates": {
+      "S1": "2026-10-02T05:34:49.884Z"
+    },
+    "windowDaysAtSeed": 30
   }
 }

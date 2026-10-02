@@ -19,11 +19,13 @@ import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parse as parseCsv } from 'csv-parse/sync';
 import {
   ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES,
   validateFixtureShape, findGuidLeaks, GUID_RE,
   RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
   validateReturnFixtureSet, validateReturnFixtureShape,
+  suiteRowsConsuming, orderedFor, LINE_ROLE_X, LINE_ROLE_Y,
 } from './orders-specs.mjs';
 import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
@@ -112,6 +114,23 @@ console.log('\n[4] Returns fixtures (VCST-5628) — spec table coherence + the d
     if (shapeOk) ok(`${spec.alias} (${spec.fixtureFile}) — body valid, matches the spec, no literal date, no GUID`);
     else ps.forEach((p) => fail(`${spec.alias}: ${p}`));
   }
+}
+
+// 4b. A disposable fixture a whole suite drains (consumedBySuite) must be DEEPER than the suite. The
+// floor is DERIVED from the suite CSV — one unit per row that references the alias — never transcribed,
+// so a case added to the suite raises it and this check fails loud instead of the suite running dry.
+console.log('\n[4b] Suite-consumed returns fixtures — each line deeper than the rows that drain it');
+for (const spec of RETURN_ORDER_FIXTURES.filter((f) => f.consumedBySuite)) {
+  const rel = spec.consumedBySuite;
+  if (!existsSync(join(ROOT, rel))) { fail(`${spec.alias}: consumedBySuite ${rel} does not exist`); continue; }
+  let rows;
+  try { rows = parseCsv(readFileSync(join(ROOT, rel), 'utf8'), { columns: true, skip_empty_lines: true }); } catch (e) { fail(`${spec.alias}: ${rel} does not parse (${e.message})`); continue; }
+  const consumers = suiteRowsConsuming(spec.alias, rows.map((r) => ({ id: r.ID, text: Object.values(r).join('\n') })));
+  if (!consumers.length) { fail(`${spec.alias}: no row of ${rel} references @td(${spec.alias}.…) — the fixture is consumed by nobody, or the suite went back to live-discovering an order`); continue; }
+  const roles = [LINE_ROLE_X, LINE_ROLE_Y].filter((role) => orderedFor(spec, role) !== undefined);
+  const shallow = roles.filter((role) => orderedFor(spec, role) < consumers.length);
+  if (shallow.length) fail(`${spec.alias}: ${shallow.map((r) => `${r} ordered ${orderedFor(spec, r)}`).join(', ')} < ${consumers.length} consuming rows in ${rel} — one pass of the suite can drain it`);
+  else ok(`${spec.alias} — ${consumers.length} rows of ${rel} consume it; lines ordered ${roles.map((r) => orderedFor(spec, r)).join(' / ')} (each >= ${consumers.length})`);
 }
 
 console.log('\n[5] aliases.json — returns aliases registered, no runtime GUID pinned in the committed base');

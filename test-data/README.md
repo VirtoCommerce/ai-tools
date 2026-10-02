@@ -418,7 +418,7 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 > `scripts/seed-data/orders/orders-specs.mjs` (confirm live on first run).
 
 > **VCST-5628 — the RETURNS half is no longer deferred.** `npm run seed:returns`
-> (`scripts/seed-data/orders/seed-return-orders.mjs`) provisions eight orders that isolate each input of
+> (`scripts/seed-data/orders/seed-return-orders.mjs`) provisions the orders that isolate each input of
 > the returnable-quantity computation: `RETURNS_ORDER_A_HAPPY`, `..._A2_PARTIAL_DELIVERY`,
 > `..._B_OUTSIDE_WINDOW`, `..._C_NOT_DELIVERED`, `..._D_STATUS_NOT_ALLOWED`, `..._E_SPLIT_DELIVERY`,
 > `..._F_CANCELLED_LINE`, `..._G_TWO_ELIGIBLE_LINES`, plus `RETURNS_LINE_X` for the shared products under
@@ -433,6 +433,16 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 > `.lineASku`/`.lineBSku` and the ordered/delivered quantities beside them). The products and the
 > quantities DIFFER deliberately: make them equal and a per-line rule becomes indistinguishable from a
 > per-return one, so `td:validate:orders` FAILS if they ever collapse.
+>
+> **`RETURNS_ORDER_ADMIN_073` (key `ADM073`) belongs to suite 073 alone** — the legacy Admin SPA
+> "Add new return" > "Customer orders" picker. Every 073 case picks it by typing
+> `@td(RETURNS_ORDER_ADMIN_073.number)` into the picker search; before it, 073 took "the first order in
+> the list" and made returns against real orders of human testers. Completed, fully delivered today, two
+> lines ordered 20 and 25. `td:validate:orders` §[4b] derives the depth floor from the suite (one unit per
+> 073 row that references the alias) and FAILS if either line is shallower. Unlike A..G it is
+> `rebuildWhenHeld`: `npm run seed:returns -- --only ADM073` rebuilds it whenever a return on it is not
+> Cancelled (an earlier run's Cleanup was skipped), and every rebuild or teardown in this seeder now
+> deletes an order's returns BEFORE the order, so none is left with an empty Order number in the grid.
 >
 > **These fixtures AGE.** The feature keys on the shipment's `DeliveryDate` against the store's return
 > window (`returnPolicy(storeId).windowDays`, 30 on B2B-store), with **no fallback to the order date**.

@@ -480,7 +480,59 @@ export const RETURN_ORDER_FIXTURES = [
     expect: { isReturnable: true, returnableQuantity: 5, deliveredTotal: 5, orderedQuantity: 5, ineligibilityReason: null },
     expectLineY: { isReturnable: true, returnableQuantity: 3, deliveredTotal: 3, orderedQuantity: 3, ineligibilityReason: null },
   },
+  {
+    key: 'ADM073',
+    alias: 'RETURNS_ORDER_ADMIN_073',
+    fixtureFile: 'orders/returns/return-order-adm073.json',
+    purpose: 'The DEDICATED disposable order of the legacy Admin SPA returns suite 073 ("Add new return" > '
+      + '"Customer orders" picker > "Make return"). Before it, 073 live-discovered "the first order not '
+      + 'prefixed AGENT-TEST-ORD-RET-" in the picker and so made returns against REAL orders of human '
+      + 'testers. Completed, fully delivered today, TWO eligible lines with a deep quantity each, so every '
+      + '073 case that creates a return can run in one pass even if some Cleanup steps are skipped.',
+    orderStatus: RETURN_ALLOWED_STATUS,
+    // Sized from the suite, not guessed: td:validate:orders counts the 073 rows that consume this alias
+    // and FAILS when either line is ordered fewer units than that. The picker's default Quantity is the
+    // line's full returnable quantity, so a case whose Cleanup was skipped can hold a whole line — the
+    // second line is the margin for that, and the depth covers the cases that type a quantity of 1.
+    // The two quantities DIFFER so a "clamped back to N" reading (RET-013) names which line's N it was.
+    lineX: { ordered: 20 },
+    lineY: { ordered: 25 },
+    shipments: [{
+      key: 'S1', offsetDays: 0, hasDeliveryDate: true, status: 'Delivered',
+      deliveredByRole: { [LINE_ROLE_X]: 20, [LINE_ROLE_Y]: 25 },
+    }],
+    expect: { isReturnable: true, returnableQuantity: 20, deliveredTotal: 20, orderedQuantity: 20, ineligibilityReason: null },
+    expectLineY: { isReturnable: true, returnableQuantity: 25, deliveredTotal: 25, orderedQuantity: 25, ineligibilityReason: null },
+    // A run of 073 leaves returns on this order. Cancelled ones hold nothing; any OTHER status holds
+    // units, and an order whose units are held is an exhausted fixture, not a valid one. The seeder
+    // therefore rebuilds it (deleting its returns first, so none is orphaned with an empty Order number)
+    // when any return on it is not Cancelled. A..G are never rebuilt for that reason: other suites
+    // create returns on them on purpose.
+    rebuildWhenHeld: true,
+    consumedBySuite: 'regression/suites/Backend/returns/073-returns.csv',
+  },
 ];
+
+/** The one fixture suite 073 consumes (see its spec row). */
+export const ADMIN_073_KEY = 'ADM073';
+
+/** Return statuses that hold NO units of the order line. Every other status holds what it requests. */
+export const RETURN_STATUSES_HOLDING_NOTHING = Object.freeze(['Cancelled']);
+
+/**
+ * The ids of the suite rows that consume `alias` (PURE). Each such row may create one return, so the
+ * count is the per-line unit floor a `consumedBySuite` fixture must clear. `rows` = `[{ id, text }]`,
+ * `text` being the row's joined cells.
+ */
+export function suiteRowsConsuming(alias, rows) {
+  const needle = `@td(${alias}.`;
+  return rows.filter((r) => String(r.text || '').includes(needle)).map((r) => r.id);
+}
+
+/** True when a live return on the fixture order still holds units of its lines (PURE). */
+export function returnHoldsUnits(ret) {
+  return !RETURN_STATUSES_HOLDING_NOTHING.includes(ret?.status);
+}
 
 /** The @td() aliases the returns family owns: one per order, plus the shared line-X product alias. */
 export const RETURN_LINE_X_ALIAS = 'RETURNS_LINE_X';
@@ -626,6 +678,24 @@ export function validateReturnFixtureSet(fixtures = RETURN_ORDER_FIXTURES, { win
         }
       }
     }
+  }
+
+  // ADM073 — suite 073's dedicated order. Its question is CAPACITY, not a returnable-quantity rule: two
+  // lines eligible at once, fully delivered (so the picker's N is the line quantity), no cancelled line.
+  // Its depth against the suite is checked in validate-orders-data.mjs, which reads the suite CSV.
+  const adm = byKey[ADMIN_073_KEY];
+  if (adm) {
+    if (!adm.lineY) P('ADM073: needs a SECOND eligible line — it is the margin for a 073 case whose Cleanup was skipped');
+    if (adm.cancelledLine) P('ADM073: must not carry a cancelled line — a line the picker offers 0 of is no capacity');
+    if (adm.orderStatus !== RETURN_ALLOWED_STATUS) P(`ADM073: order status must be "${RETURN_ALLOWED_STATUS}"`);
+    for (const role of [LINE_ROLE_X, LINE_ROLE_Y]) {
+      const ordered = orderedFor(adm, role);
+      if (ordered === undefined) continue;
+      if (deliveredTotalFor(adm, role) !== ordered) P(`ADM073: ${role} delivered ${deliveredTotalFor(adm, role)} != ordered ${ordered} — the fixture must be FULLY delivered`);
+    }
+    if (adm.lineY && adm.lineX.ordered === adm.lineY.ordered) P('ADM073: both lines ordered the same quantity — a "clamped back to N" reading can no longer tell which line it was');
+    if (!adm.rebuildWhenHeld) P('ADM073: must be rebuildWhenHeld — an exhausted 073 order would otherwise survive every re-seed');
+    if (!adm.consumedBySuite) P('ADM073: must name consumedBySuite, so its depth is checked against the suite that drains it');
   }
 
   // ── The window relationship. This is what a date LITERAL would silently break. ──
