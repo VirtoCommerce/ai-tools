@@ -2340,15 +2340,19 @@ test("cmdDoctor: a resolver that threw is never recorded as a secret that was ne
     // doctorReport's fallback branch prints "run vc-secrets set <name> (local) or check az login
     // (keyvault)" -- the advice for a secret nobody configured. A throw is a different event, and an
     // error carrying no message arrived at that branch through `false`, sending the developer to
-    // repair a configuration that may be correct.
-    const repo = doctorRepo({ projectId: "proj-x", secrets: { tok: { backend: "local" } } });
+    // repair a configuration that may be correct. Both kinds of throw are driven: a fix for the
+    // message-less one must not send an error that has a message down the same branch.
+    const repo = doctorRepo({ projectId: "proj-x", secrets: { tok: { backend: "local" }, pat: { backend: "local" } } });
     seedTrust(repo.env, repo.root);
-    const resolver = Object.assign(async () => { throw new Error(); }, { resolvedValues: [] });
+    const resolver = Object.assign(async (name) => {
+        throw name === "tok" ? new Error() : new Error("resolver-sentinel-reason");
+    }, { resolvedValues: [] });
 
     const { text } = await runDoctor(repo, { resolver });
 
     assert.match(text, /FAIL secret "tok" not resolvable -- the resolver threw without naming a reason/, text);
-    assert.doesNotMatch(text, /vc-secrets set tok/, `a throw must not be reported as the absent-secret case:\n${text}`);
+    assert.match(text, /FAIL secret "pat" not resolvable -- resolver-sentinel-reason/, text);
+    assert.doesNotMatch(text, /vc-secrets set (tok|pat)/, `a throw must not be reported as the absent-secret case:\n${text}`);
 });
 
 test("cmdDoctor: the write probe is actually wired to the report, not merely available", async () => {
@@ -4254,7 +4258,9 @@ test("doctorReport: an oauth crossing is reported, and a launchable naming both 
     // Named after the rule, not the crossingProblem call site: "an authorization refusal names the
     // doctor command, and doctor's own report names the same where" reaches the oauth crossing
     // only through its FAIL lines, whose `where` point 3 also produces -- so it leaves the
-    // authorized `INFO` line and the kind-keyed dedup unpinned.
+    // authorized `INFO` line and the kind-keyed dedup unpinned. Both are honest value-mutants,
+    // injected as a value, never a throw, so the surrounding catch cannot absorb it -- each with its
+    // own positive control.
 
     // 1a: an authorized oauth crossing gets its own INFO line, exactly as a secret's does. A guard of
     // `if (ref.kind !== "oauth")` around the INFO push leaves the whole suite green without this.
