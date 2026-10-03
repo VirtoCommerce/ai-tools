@@ -3389,7 +3389,6 @@ function forTerminal(value, limit = 200) {
     // "?" and not U+FFFD: the replacement has to survive the console this is sanitising FOR. The
     // replacement character is itself non-ASCII, so on the code page that turned an em dash into
     // mojibake it would arrive as mojibake too -- a sanitiser producing the thing it exists to remove.
-    // Caught by the guard over printable literals, on its own author.
     const flattened = String(value).replace(/[\u0000-\u001f\u007f-\u009f]/g, "?");
 
     return flattened.length > limit ? `${flattened.slice(0, limit)}...` : flattened;
@@ -3916,12 +3915,12 @@ async function cmdLogin(serverName, cfg, {
     }
 }
 
-// Ported from the source's cmdLogout (mcpw.js). Unlike cmdLogin, this verb carries NO
-// authorization/policy gate: minting a credential is the privileged act, removing one is not, and
-// refusing a removal on policy would leave the refresh token on disk — the one outcome logout exists to
-// prevent. The one refusal it does make is the namespace's: a repository's entry lives under a projectId
-// the repository chose, which may be another project's, and removing that sign-in is not removing the
-// person's own. The remedy is the trust a person gives the checkout, after which the removal runs.
+// Unlike cmdLogin, this verb carries NO authorization/policy gate: minting a credential is the privileged
+// act, removing one is not, and refusing a removal on policy would leave the refresh token on disk — the
+// one outcome logout exists to prevent. The one refusal it does make is the namespace's: a repository's
+// entry lives under a projectId the repository chose, which may be another project's, and removing that
+// sign-in is not removing the person's own. The remedy is the trust a person gives the checkout, after
+// which the removal runs.
 async function cmdLogout(serverName, cfg, { deleteEntry = null,
     backend = detectLocalBackend(),
     acquireLock = null, now = Date.now,
@@ -4842,8 +4841,7 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
             lines.push(`INFO ${varName} present in ${where} -- still required until the vc-secrets switch lands`);
         } else {
             // Naming what was inspected, not which clients exist. A message that says it looked for three
-            // clients while reading two files is a false statement inside the diagnostic whose falsehood this
-            // change exists to remove.
+            // clients while reading two files is a false statement inside the diagnostic.
             lines.push(`INFO ${varName} present in ${where} -- no MCP config was inspected, so whether the switch has landed is unknown`);
         }
     }
@@ -5277,7 +5275,9 @@ function hasTrustedAuthorizedConsumer(cfg, secretName, trustProblems) {
     return false;
 }
 
-async function cmdDoctor(cfg, flags = []) {
+// deps: the suite drives doctor in-process -- it otherwise performs real keystore io, reads the
+// developer's own client configs, and exits the process on a FAIL.
+async function cmdDoctor(cfg, flags = [], deps = {}) {
     // An unrecognized flag used to be ignored, so `doctor --al` printed the same SKIP as a run
     // with no flag at all -- output indistinguishable from "checked it and skipped". A diagnostic
     // that silently drops what it doesn't understand reports a state that was never checked.
@@ -5285,6 +5285,7 @@ async function cmdDoctor(cfg, flags = []) {
     if (unknown.length > 0) {
         throw new VcSecretsError(`doctor: unknown argument "${unknown[0]}" (expected only ${DOCTOR_FLAGS.join(", ")})`);
     }
+    const env = deps.env ?? process.env;
     const checkAll = flags.includes("--all");
     // .claude/vc-secrets.json's directory anchors both files: settings.local.json is its sibling,
     // .mcp.json is one directory above. No project declaration -> nothing to anchor on, so both
@@ -5301,14 +5302,14 @@ async function cmdDoctor(cfg, flags = []) {
     const clientConfigsSeen = [];
     const wired = readWiredServers(
         claudeDir ? path.join(claudeDir, "..", ".mcp.json") : null,
-        path.join(process.env.HOME || os.homedir(), ".claude.json"),
+        path.join(env.HOME || os.homedir(), ".claude.json"),
         claudeDir ? path.dirname(claudeDir) : null,
         wiringProblems,
         clientConfigsSeen);
     // The other clients' configs, in their resolvable form. These are NOT clients.json's configFiles:
     // those are display templates for a human ("<repo>/.mcp.json") and handing one to fs is the mistake
     // that contract exists to prevent. The two lists agree by review, which is why this comment is here.
-    const home = process.env.HOME || os.homedir();
+    const home = env.HOME || os.homedir();
     const projectRoot = claudeDir ? path.dirname(claudeDir) : null;
     const elsewhere = readWiredElsewhere([
         projectRoot ? path.join(projectRoot, ".cursor", "mcp.json") : null,
@@ -5323,7 +5324,7 @@ async function cmdDoctor(cfg, flags = []) {
 
     let localBackend = null;
     try {
-        localBackend = detectLocalBackend();
+        localBackend = "backend" in deps ? deps.backend : detectLocalBackend();
     } catch { /* reported via doctorReport */ }
 
     // Before the loop below, which needs it: a repository's Key Vault secret is read only on behalf of a
@@ -5336,7 +5337,7 @@ async function cmdDoctor(cfg, flags = []) {
     const readState = () => {
         if (trustStateRead === null) {
             try {
-                trustStateRead = { state: readTrustState(process.env) };
+                trustStateRead = { state: readTrustState(env) };
             } catch (e) {
                 trustStateRead = { error: e };
             }
@@ -5368,7 +5369,7 @@ async function cmdDoctor(cfg, flags = []) {
     }
     const namespaceNotRead = [];
 
-    const resolver = makeSecretResolver(cfg);
+    const resolver = deps.resolver ?? makeSecretResolver(cfg);
     const resolvable = {};
     const skipped = [];
     const notRead = [];
@@ -5404,7 +5405,7 @@ async function cmdDoctor(cfg, flags = []) {
             // so advising it there would send the reader to a verb that does nothing for this name.
             if (decl.backend === "local" && localBackend !== null && decl.scope === USER_SCOPE) {
                 try {
-                    if ((await readLegacyLocalValue(localBackend, name, process.env)) !== null) {
+                    if ((await (deps.readLegacyLocalValue ?? readLegacyLocalValue)(localBackend, name, env)) !== null) {
                         legacyOnly.push(name);
                     }
                 } catch { /* a broken legacy probe doesn't change this secret's own FAIL */ }
@@ -5418,7 +5419,7 @@ async function cmdDoctor(cfg, flags = []) {
     // going to happen would be a FAIL about nothing.
     const needsAz = Object.entries(cfg.secrets)
         .some(([name, d]) => d.backend === "keyvault" && !notRead.includes(name) && (checkAll || consumed.has(name)));
-    const toolsMissing = [...backendTools, ...(needsAz ? ["az"] : [])].filter((t) => !commandOnPath(t));
+    const toolsMissing = [...backendTools, ...(needsAz ? ["az"] : [])].filter((t) => !(deps.commandOnPath ?? commandOnPath)(t));
 
     // Under the user scope when this checkout is not trusted for the repository's namespace: the probe
     // writes and deletes its key, and the repository's projectId may name another project's.
@@ -5444,7 +5445,7 @@ async function cmdDoctor(cfg, flags = []) {
     // a SECOND FAIL for that one cause plus a cleanup warning about an entry that was never written.
     const writeProbe = localBackend === null || backendTools.some((t) => toolsMissing.includes(t))
         ? null
-        : await probeKeystoreWrite({ backend: localBackend, cfg, namespaceTrusted: probeNamespaceTrusted() });
+        : await (deps.probeKeystoreWrite ?? probeKeystoreWrite)({ backend: localBackend, cfg, namespaceTrusted: probeNamespaceTrusted() });
 
     // Read, never exchanged: proving a token is refreshable would rotate the refresh token as a side
     // effect of a diagnostic -- and Entra rotates on use, which signs out every session but one.
@@ -5459,7 +5460,7 @@ async function cmdDoctor(cfg, flags = []) {
         // cannot measure what an access entry WOULD weigh -- and an entry that exceeded the ceiling
         // was never stored, so there is nothing in the keystore to measure either. The marker a
         // failed write left behind is the only place this fact survives.
-        const marker = readOversizeMarker(oauthEntryKeys(name, decl, cfg).access);
+        const marker = readOversizeMarker(oauthEntryKeys(name, decl, cfg).access, env);
         if (marker) {
             oauthOversize[name] = marker;
         }
@@ -5469,29 +5470,29 @@ async function cmdDoctor(cfg, flags = []) {
             // "user". Drop it and a project-scope entry throws before the read ever reaches the
             // keystore; caught below, but reported as an opaque "Cannot read properties of undefined"
             // instead of the sign-in state a developer could act on.
-            oauthStatus[name] = oauthStatusFrom(await oauthLaunchDeps(name, decl, cfg).readCache());
+            oauthStatus[name] = oauthStatusFrom(await (deps.oauthLaunchDeps ?? oauthLaunchDeps)(name, decl, cfg).readCache());
         } catch (e) {
             oauthStatus[name] = e?.message ?? "unreadable";
         }
     }
 
     const references = oauthReferences(cfg);
-    const tenantChecks = await oauthTenantChecks(cfg, references);
+    const tenantChecks = await (deps.oauthTenantChecks ?? oauthTenantChecks)(cfg, references);
 
     // Only where an oauth reference exists: before the switch no child needs --import at all, and a
     // FAIL about a flag nothing uses would be a diagnostic inventing its own problem.
-    const childNodes = childNodeProbes(cfg, references, { refused: trust.problems });
+    const childNodes = (deps.childNodeProbes ?? childNodeProbes)(cfg, references, { refused: trust.problems });
 
     const lines = doctorReport(cfg, {
-        env: process.env, platform: process.platform, enableLists, resolvable, skipped, notRead,
-        toolsMissing, wired, configDirOverride: Boolean(process.env.VC_SECRETS_CONFIG_DIR), legacyOnly,
+        env, platform: process.platform, enableLists, resolvable, skipped, notRead,
+        toolsMissing, wired, configDirOverride: Boolean(env.VC_SECRETS_CONFIG_DIR), legacyOnly,
         shimContract: activeShimContract, wiringProblems, clientConfigsSeen,
         writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings, namespaceNotRead,
     });
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
-    fs.writeSync(2, lines.join("\n") + "\n");
+    (deps.write ?? ((text) => fs.writeSync(2, text)))(lines.join("\n") + "\n");
     if (lines.some((l) => l.startsWith("FAIL"))) {
-        process.exit(1);
+        (deps.exit ?? process.exit)(1);
     }
 }
 
@@ -5530,8 +5531,6 @@ const LAUNCH_STDIN_CLOSE_GRACE_MS = 1000;
 // A signal reaches the direct child only. On Windows that leaves a grandchild running: `dnx` spawns
 // dotnet.exe, which survives, orphans, and keeps a lock on the package file it was reading -- so the
 // NEXT run fails with "the process cannot access the file" instead of the clean timeout it deserved.
-// Measured on Windows while building the previous launcher, where it cost a manual taskkill
-// between attempts; this package inherits the finding, not the experiment.
 //
 // SYNCHRONOUS on the win32 branch on purpose: a caller that kills and exits on the next line races its
 // own teardown, and an async spawn loses. The POSIX path needs no such care -- kill(2) has been
