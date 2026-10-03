@@ -6,6 +6,7 @@
 # removed 2026-09-19; the churn it prevented is real regardless, so these rules stay.)
 .claude/** text eol=lf
 plugins/vc-fix/** text eol=lf
+plugins/vc-secrets/** text eol=lf
 
 # Regression suite CSVs must stay CRLF end-to-end: the GraphQL runner's csv-parse
 # (relax_column_count: false) fails on mixed line endings inside multi-line quoted cells

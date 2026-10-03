@@ -57,6 +57,22 @@ jobs:
         run: npm ci --no-audit --no-fund || npm install --no-audit --no-fund
       - name: Unit suite
         run: npm test
+      # `npm test` globs scripts/unit/** only, so nothing above reaches the vc-secrets suite. Explicit
+      # paths, not a glob: a glob that matches nothing runs zero tests and goes green. Explicit paths are
+      # not enough on their own either -- Node 22 exits 0 when only SOME of several path arguments are
+      # missing, so a renamed test file would leave the other one passing and the step green. The loop
+      # fails the step and names the file, and only then does `node --test` run, on the same list, which is
+      # defined once. Runs after a red `npm test` too, so that one failing suite does not hide the result
+      # of the other.
+      - name: vc-secrets suite
+        if: ${{ !cancelled() }}
+        shell: bash
+        run: |
+          files="plugins/vc-secrets/vc-secrets.test.mjs plugins/vc-secrets/vc-secrets-oauth.test.mjs"
+          for file in $files; do
+            test -f "$file" || { echo "vc-secrets test file not found: $file" >&2; exit 1; }
+          done
+          node --test $files
       # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +
       # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all
       # .mjs proves nothing about that change — a claim made, and wrongly relied on, in this very PR.
