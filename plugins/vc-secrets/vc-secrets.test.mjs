@@ -623,9 +623,7 @@ test("an oauth declaration is stamped with the scope, the home and its kind", ()
     assert.equal(cfg.oauth.ado.scope, "project");
     assert.equal(cfg.oauth.ado.kind, "oauth");
     // Stamped here rather than added by a call site, unlike a secret's. Dropping it makes
-    // authorizationFor's pointer read `oauth."undefined"` -- measured, that reddens this test and
-    // "a user-scope oauth declaration is authorized on the declaration, as a secret is", and
-    // nothing else.
+    // authorizationFor's pointer read `oauth."undefined"`.
     assert.equal(cfg.oauth.ado.declaredName, "ado");
 });
 
@@ -1729,7 +1727,7 @@ test("childNodeVersionIo: probes the command it is given, and PATH node only by 
 test("isNodeCommand: only a binary named node, so a wrapper is never mistaken for one", () => {
     // `npx`, a .bin shim and `dnx` all reach a node the declaration cannot name -- npx resolves its
     // own, and dnx runs no node at all. Answering true for those would put the declared path into a
-    // message claiming it was probed, which is the false claim this whole change removes.
+    // message claiming it was probed.
     // Real install layouts, not invented ones: a distro node, a locally installed one, an `n`-style
     // versioned tree ($N_PREFIX/n/versions/node/<version>/bin/node -- nvm spells it differently, under
     // $NVM_DIR with a `v` prefix), and the Windows installer's path. A fixture that looks like a
@@ -2317,13 +2315,13 @@ test("cmdDoctor: a resolver that threw is never recorded as a secret that was ne
 
 test("cmdDoctor: the write probe is actually wired to the report, not merely available", () => {
     // Both halves were tested and the seam between them was not: replacing the probe call in
-    // cmdDoctor with a literal null would leave the suite green, which is the whole of what that
-    // commit added. Source-inspected because cmdDoctor performs real keystore io.
+    // cmdDoctor with a literal null would leave the suite green. Source-inspected because cmdDoctor
+    // performs real keystore io.
     // STRIP_COMMENTS first, and it is load-bearing rather than tidiness: `.match` takes the FIRST
     // textual hit, so `// const writeProbe = await probeKeystoreWrite(...)` left above a live
-    // `const writeProbe = null;` satisfies every assertion below while the probe is unwired -- a
-    // mutant measured byte-identical to the green baseline. Same rule as where STRIP_COMMENTS is
-    // declared; the match is confined to the cmdDoctor body for the reason given in the test above.
+    // `const writeProbe = null;` satisfies every assertion below while the probe is unwired. Same rule
+    // as where STRIP_COMMENTS is declared; the match is confined to the cmdDoctor body for the reason
+    // given in the test above.
     const body = strippedBodyOf("async function cmdDoctor");
     const call = body.match(/const writeProbe = [\s\S]*?;/);
     assert.ok(call, "cmdDoctor must compute writeProbe");
@@ -3682,7 +3680,7 @@ test("childNodeProbes: each launchable is judged by its own command, on either p
     }, tasks: { own: { command: "/usr/local/bin/node", env: {} } } };
     // A task and a server may carry the same name -- validateLaunchables runs per map and enforces no
     // uniqueness across them -- so `kind` is load-bearing in the dedup key. Keyed on the name alone,
-    // the task below is silently dropped from the report, which is this commit's own defect class.
+    // the task below is silently dropped from the report.
     const refs = [
         { kind: "servers", launchableName: "own" }, { kind: "servers", launchableName: "wrapped" },
         { kind: "servers", launchableName: "windows" }, { kind: "tasks", launchableName: "own" },
@@ -4166,9 +4164,7 @@ test("doctorReport: an oauth crossing is reported, and a launchable naming both 
     // Named after the rule, not the crossingProblem call site: "an authorization refusal names the
     // doctor command, and doctor's own report names the same where" reaches the oauth crossing
     // only through its FAIL lines, whose `where` point 3 also produces -- so it leaves the
-    // authorized `INFO` line and the kind-keyed dedup unpinned. Both are honest value-mutants,
-    // injected as a value, never a throw, so the surrounding catch cannot absorb it -- each with its
-    // own positive control.
+    // authorized `INFO` line and the kind-keyed dedup unpinned.
 
     // 1a: an authorized oauth crossing gets its own INFO line, exactly as a secret's does. A guard of
     // `if (ref.kind !== "oauth")` around the INFO push leaves the whole suite green without this.
@@ -5299,7 +5295,7 @@ test("cmdLaunch: a second forwarded signal does not lose the first one's escalat
     });
 
 // stdin relay (POSIX servers). Real processes first: they are the only thing that observes the EOF
-// reaching the launcher rather than the server, which is the whole change.
+// reaching the launcher rather than the server.
 
 // A server that echoes its stdin to its stdout. The launcher's own stdout is the client's, so what comes
 // back is what the child wrote there directly, and what went in went through the launcher's pipe.
@@ -5960,11 +5956,9 @@ test("an npm rc-file pointer is refused when declared, and kept when inherited",
 test("buildChildEnv: the inherited injection vectors are dropped, not extended", () => {
     // Asserting only that NODE_OPTIONS ends up composed is a TAUTOLOGY: this function assigns
     // that variable last, so the assertion holds even if the inherited environment is copied
-    // wholesale. Measured -- a mutation replacing sanitizeEnv(base) with a plain spread survived
-    // the earlier form of this test in mcpw.test.js. The claim worth making is about the
-    // SIBLING vectors, which nothing downstream overwrites: an inherited LD_PRELOAD reaching the
-    // child is the same arbitrary-code execution inside the credential holder that the carve-out
-    // promises to keep closed.
+    // wholesale. The claim worth making is about the SIBLING vectors, which nothing downstream
+    // overwrites: an inherited LD_PRELOAD reaching the child is the same arbitrary-code execution
+    // inside the credential holder that the carve-out promises to keep closed.
     // A rooted POSIX path resolves against the current DRIVE on Windows, so the path and the URL
     // it must become are both stated per platform rather than computed -- computing the
     // expectation with pathToFileURL would assert nothing about the transformation.
@@ -6020,8 +6014,7 @@ test("childNodeSupportsImport: a version it cannot read is refused, not assumed 
 test("childNodeVersionIo: an inherited NODE_OPTIONS does not break the probe", () => {
     // The poison goes in process.env, not in the injected argument, and that is the whole point:
     // without the fix the spawn inherits the real environment, so a bogus value passed as an
-    // ARGUMENT would be ignored and the probe would succeed either way — the first version of this
-    // test in mcpw.test.js asserted nothing for exactly that reason.
+    // ARGUMENT would be ignored and the probe would succeed either way.
     //
     // With an inherited NODE_OPTIONS node rejects, the probe reads empty and the launcher refuses a
     // server that would have started. Measured: --version exits before any preload runs, so an
@@ -6049,17 +6042,15 @@ test("PRELOAD_PATH is anchored beside the launcher module, never against argv[1]
     //
     // A same-directory equality check cannot tell the two mechanisms apart: this test file lives
     // beside vc-secrets.mjs, so under `node --test` argv[1] (this file's own path) already
-    // resolves to the same directory an import.meta.url anchor would -- measured, an
-    // argv[1]-anchored mutant left that equality green. So the fixture is a launcher entered from
-    // somewhere ELSE: an entry script written to a fresh tmp dir that imports vc-secrets.mjs and
-    // reports its PRELOAD_PATH, exactly as vc-secrets-shim.mjs does in production.
+    // resolves to the same directory an import.meta.url anchor would. So the fixture is a launcher
+    // entered from somewhere ELSE: an entry script written to a fresh tmp dir that imports
+    // vc-secrets.mjs and reports its PRELOAD_PATH, exactly as vc-secrets-shim.mjs does in production.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-argv-"));
     tmpDirs.push(dir);
     const entry = path.join(dir, "elsewhere.mjs");
     // A file URL, not the path: an ESM specifier is a URL, so on Windows the drive letter reads as a
     // protocol. The separators survive only because JSON.stringify escapes them -- say so, or the next
-    // reader concludes the escaping is the bug. On POSIX path and URL coincide, which is why the path
-    // form survived here unnoticed until the suite first ran on Windows.
+    // reader concludes the escaping is the bug. On POSIX path and URL coincide.
     fs.writeFileSync(entry, `
         import * as m from ${JSON.stringify(pathToFileURL(LAUNCHER_PATH).href)};
         process.stdout.write(m.PRELOAD_PATH);
@@ -6119,7 +6110,7 @@ test("two servers naming different secrets get different values", async () => {
     assert.deepEqual(asked, ["sp-a", "sp-b"]);
 });
 
-// ── regressions from the pre-push review ───────────────────────────────────────────────────────────
+// ── regressions: keystore absence and declaration loading ──────────────────────────────────────────
 
 // Puts an executable stub earlier on PATH than the real binary, so a backend read can be made to fail
 // in a chosen way without touching any real credential store.
@@ -7078,7 +7069,7 @@ test("doctor: a Key Vault secret the user declared is read as before -- the rule
     assert.doesNotMatch(r.stderr, NOT_READ, r.stderr);
 });
 
-// ── regressions from the bot review on PR 210 ──────────────────────────────────────────────────────
+// ── regressions: reference parsing, wiring detection and direct-run gates ──────────────────────────
 
 test("doctorReport: a malformed secret: reference is a FAIL, not a 'treated as a literal' warning", () => {
     // `secret:ado_pat` (underscore) does not match REF_RE, so parseReference THROWS and the launch dies.
@@ -7173,7 +7164,7 @@ test("both direct-run gates fire under --preserve-symlinks-main through a symlin
     assert.notEqual(launcher.status, 0, "a gate that never fires exits 0 having done nothing");
 });
 
-// ── regressions from the Codex review ─────────────────────────────────────────────────────────────
+// ── regressions: keystore writes, declaration validation and install-shim ─────────────────────────
 
 test("keychain write: migrate gets a non-interactive shape, set keeps the prompt", () => {
     // With no value the prompt is right: `set` has a human at the TTY and the plaintext never passes
@@ -7714,12 +7705,12 @@ test("manifests: the shared identity fields cannot drift", () => {
     const claude = JSON.parse(fs.readFileSync(CLAUDE_MANIFEST, "utf8"));
     for (const p of [CURSOR_MANIFEST, CODEX_MANIFEST]) {
         const other = JSON.parse(fs.readFileSync(p, "utf8"));
-        // `description` is here for a measured reason, not for tidiness. It used to be free per
-        // manifest, and the long copies -- the Claude manifest and the marketplace card -- drifted into
-        // a closed enumeration of the env-value kinds, "secret: or literal:", which stayed behind when
-        // `oauth:` became a third. The Cursor and Codex copies were the ones that stayed correct,
-        // precisely because they enumerate nothing. Comparing the files to each other pins no literal:
-        // the expected value is read from a sibling, so this cannot become a transcribed constant.
+        // `description` used to be free per manifest, and the long copies -- the Claude manifest and
+        // the marketplace card -- drifted into a closed enumeration of the env-value kinds, "secret: or
+        // literal:", which stayed behind when `oauth:` became a third. The Cursor and Codex copies were
+        // the ones that stayed correct, precisely because they enumerate nothing. Comparing the files
+        // to each other pins no literal: the expected value is read from a sibling, so this cannot
+        // become a transcribed constant.
         for (const key of ["name", "version", "homepage", "repository", "license", "description"]) {
             assert.equal(other[key], claude[key], `${p}: ${key}`);
         }
@@ -7728,8 +7719,8 @@ test("manifests: the shared identity fields cannot drift", () => {
 
 test("manifests: the marketplace card repeats the manifest description exactly", () => {
     // The fourth copy, and the one a customer reads BEFORE installing -- so a wrong claim here is the
-    // most expensive of the four. It has already gone wrong once: a review found the card asserting an
-    // isolation property the code does not have. It lives outside this package, which is why the three
+    // most expensive of the four. It has already gone wrong once: the card asserted an isolation
+    // property the code does not have. It lives outside this package, which is why the three
     // manifests agreeing with each other is not enough to catch it.
     const claude = JSON.parse(fs.readFileSync(CLAUDE_MANIFEST, "utf8"));
     const card = JSON.parse(fs.readFileSync(MARKETPLACE, "utf8"));
@@ -7813,8 +7804,7 @@ test("readWiredElsewhere: another client's config counts as both seen and wired"
     fs.writeFileSync(bare, JSON.stringify({ mcpServers: { other: { command: "npx", args: ["x"] } } }));
 
     const seen = [];
-    // The third argument and the name assertion are what changed: this returns SERVER NAMES, because
-    // the set it feeds is also read as has(serverName). The `seen` half is untouched.
+    // This returns SERVER NAMES, because the set it feeds is also read as has(serverName).
     const wired = m.readWiredElsewhere([cursorCfg, bare, path.join(dir, "absent.toml")], seen);
     assert.deepEqual([...wired], ["github"], "only the server in the file that routes through the launcher");
     assert.deepEqual(seen, [cursorCfg, bare], "both existing files were inspected; the absent one was not");
@@ -8157,9 +8147,9 @@ test("guard: every vc-secrets module that can reach a token is blocked, in every
             ["apply_patch", { tool_name: "apply_patch", tool_input: { command: `*** Begin Patch\n*** Update File: plugins/vc-secrets/${module}\n*** End Patch` } }],
             // The two shapes a workspace rooted AT the package produces, which is the ordinary way to
             // work on it. They are also the only ones that exercise the `^` half of the anchor:
-            // `./x` matches through the slash in `./`, never through `^`. Measured before they were
-            // added -- removing `^` alone left the whole suite green, so the half of the anchor whose
-            // absence is this file's recorded historical bug was pinned by nothing.
+            // `./x` matches through the slash in `./`, never through `^`. Without these two, removing `^`
+            // alone would leave the whole suite green, so the half of the anchor whose absence is this
+            // file's recorded historical bug would be pinned by nothing.
             ["bare", { tool_name: "Write", tool_input: { file_path: module } }],
             ["bare-in-patch", { tool_name: "apply_patch", tool_input: { command: `*** Begin Patch\n*** Update File: ${module}\n*** End Patch` } }],
         ]) {
@@ -8281,17 +8271,16 @@ test("guard: the installed shim keeps its reinstall remedy, and the source copy 
 test("guard: every file this package ships is classified -- guarded or deliberately not", () => {
     // The enumeration is every file in the package directory, walked from disk, and the absence of any
     // filter on it is not a preference: three different filters have each hidden a file that belonged
-    // here, and each is named below. The rounds are not counted -- that would be one more number to go
-    // stale, which is the class this comment is about. A hand-kept list cannot report the file somebody
-    // adds beside it. A filtered walk is worse: it reports a confident,
-    // complete-looking answer about the part it can see. This test has twice been that walk -- first
-    // filtering to `.mjs`, which hid `hooks/hooks.json`, an off switch one key wide; then skipping
-    // dot-directories as "manifests rather than package code", which hid `.cursor-plugin/plugin.json`,
-    // the file that POINTS at a guarded registration and is cheaper to repoint than the registration
-    // is to edit. Then the same question in its "is it prose?" form put five skill files under "the
-    // documentation", and every one of those clauses was false for them. Each filter answered "what
-    // KIND of file is this?" where the criterion asks what an edit to it can DO -- and the next filter
-    // of that shape would hide the next one.
+    // here, and each is named below. A hand-kept list cannot report the file somebody adds beside it.
+    // A filtered walk is worse: it reports a confident, complete-looking answer about the part it can
+    // see. This test has twice been that walk -- first filtering to `.mjs`, which hid
+    // `hooks/hooks.json`, an off switch one key wide; then skipping dot-directories as "manifests
+    // rather than package code", which hid `.cursor-plugin/plugin.json`, the file that POINTS at a
+    // guarded registration and is cheaper to repoint than the registration is to edit. Then the same
+    // question in its "is it prose?" form put five skill files under "the documentation", and every
+    // one of those clauses was false for them. Each filter answered "what KIND of file is this?" where
+    // the criterion asks what an edit to it can DO -- and the next filter of that shape would hide the
+    // next one.
     //
     // If this ever fails on a file nobody added, read it as the package having grown untracked scratch
     // beside its own code, and say so -- do not answer it by filtering the file out, which is how both
@@ -8337,8 +8326,7 @@ test("readWiredElsewhere: a knob name is not a wiring marker", () => {
     tmpDirs.push(dir);
     // The knob has to sit in `command` or `args` to reach WIRED_MARKER_RE at all: wiredNamesInJson
     // builds its fields from those two and never looks at `env`. An earlier fixture put it in `env`,
-    // so the test passed whatever the pattern did -- measured, deleting the `(?![A-Z_])` lookahead
-    // reddened nothing in the whole suite while the false positive it prevents went unguarded.
+    // so the test passed whatever the pattern did.
     const cfgPath = path.join(dir, "mcp.json");
     fs.writeFileSync(cfgPath, JSON.stringify({
         mcpServers: { github: { command: "npx", args: ["-y", "srv", "--trace=VC_SECRETS_TIMING"] } },
@@ -8569,11 +8557,11 @@ test("README: the trust probe names both causes, since it cannot distinguish the
 // instances of, and it reaches every message in the listed modules -- `fail()` writes each of them
 // with the same raw `fs.writeSync(2, ...)` that cmdDoctor's report uses.
 //
-// Ported from the source's own guard. It exists here because a hand-rolled sweep of the same class,
-// written the same day, missed a live message: a scanner carrying quote state ACROSS lines
-// desynchronised on a quote inside a regex literal and reported the region as code, so the sweep and
-// its verification -- the same function -- agreed on a wrong answer. Per-line state cannot drift that
-// way; it costs false positives on an apostrophe in a comment, which is the safe direction.
+// Ported from the source's own guard. It exists here because a hand-rolled sweep of the same class
+// missed a live message: a scanner carrying quote state ACROSS lines desynchronised on a quote inside
+// a regex literal and reported the region as code, so the sweep and its verification -- the same
+// function -- agreed on a wrong answer. Per-line state cannot drift that way; it costs false
+// positives on an apostrophe in a comment, which is the safe direction.
 //
 // Two blind spots, both measured to have no instance today. The comment skip fires on any two
 // adjacent slashes at closed quote state, so a regex literal spelling one -- `/^https?:\/\//` --
@@ -8597,7 +8585,6 @@ function nonAsciiInEmittedLiterals(source) {
             if (quote !== null && ch === "\\") {
                 // An ESCAPE can smuggle a non-ASCII character past a scanner that only looks at the
                 // bytes of the source: `\\u2014` is six ASCII characters here and an em dash at runtime.
-                // Found by a mutation that used exactly that form and survived.
                 const escaped = /^\\(?:u\{([0-9a-fA-F]+)\}|u([0-9a-fA-F]{4})|x([0-9a-fA-F]{2}))/
                     .exec(line.slice(i));
                 if (escaped) {

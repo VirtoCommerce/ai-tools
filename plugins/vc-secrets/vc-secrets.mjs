@@ -3389,7 +3389,6 @@ function forTerminal(value, limit = 200) {
     // "?" and not U+FFFD: the replacement has to survive the console this is sanitising FOR. The
     // replacement character is itself non-ASCII, so on the code page that turned an em dash into
     // mojibake it would arrive as mojibake too -- a sanitiser producing the thing it exists to remove.
-    // Caught by the guard over printable literals, on its own author.
     const flattened = String(value).replace(/[\u0000-\u001f\u007f-\u009f]/g, "?");
 
     return flattened.length > limit ? `${flattened.slice(0, limit)}...` : flattened;
@@ -3916,12 +3915,12 @@ async function cmdLogin(serverName, cfg, {
     }
 }
 
-// Ported from the source's cmdLogout (mcpw.js). Unlike cmdLogin, this verb carries NO
-// authorization/policy gate: minting a credential is the privileged act, removing one is not, and
-// refusing a removal on policy would leave the refresh token on disk — the one outcome logout exists to
-// prevent. The one refusal it does make is the namespace's: a repository's entry lives under a projectId
-// the repository chose, which may be another project's, and removing that sign-in is not removing the
-// person's own. The remedy is the trust a person gives the checkout, after which the removal runs.
+// Unlike cmdLogin, this verb carries NO authorization/policy gate: minting a credential is the privileged
+// act, removing one is not, and refusing a removal on policy would leave the refresh token on disk — the
+// one outcome logout exists to prevent. The one refusal it does make is the namespace's: a repository's
+// entry lives under a projectId the repository chose, which may be another project's, and removing that
+// sign-in is not removing the person's own. The remedy is the trust a person gives the checkout, after
+// which the removal runs.
 async function cmdLogout(serverName, cfg, { deleteEntry = null,
     backend = detectLocalBackend(),
     acquireLock = null, now = Date.now,
@@ -4842,8 +4841,7 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
             lines.push(`INFO ${varName} present in ${where} -- still required until the vc-secrets switch lands`);
         } else {
             // Naming what was inspected, not which clients exist. A message that says it looked for three
-            // clients while reading two files is a false statement inside the diagnostic whose falsehood this
-            // change exists to remove.
+            // clients while reading two files is a false statement inside the diagnostic.
             lines.push(`INFO ${varName} present in ${where} -- no MCP config was inspected, so whether the switch has landed is unknown`);
         }
     }
@@ -5530,8 +5528,6 @@ const LAUNCH_STDIN_CLOSE_GRACE_MS = 1000;
 // A signal reaches the direct child only. On Windows that leaves a grandchild running: `dnx` spawns
 // dotnet.exe, which survives, orphans, and keeps a lock on the package file it was reading -- so the
 // NEXT run fails with "the process cannot access the file" instead of the clean timeout it deserved.
-// Measured on Windows while building the previous launcher, where it cost a manual taskkill
-// between attempts; this package inherits the finding, not the experiment.
 //
 // SYNCHRONOUS on the win32 branch on purpose: a caller that kills and exits on the next line races its
 // own teardown, and an async spawn loses. The POSIX path needs no such care -- kill(2) has been

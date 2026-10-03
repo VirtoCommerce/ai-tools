@@ -181,9 +181,13 @@ environment does not help there; that case wants a git credential helper, not th
   reviewable text rather than a surface this tool can defend. A control character (a newline, a tab,
   an escape) in `command` or in an `env` key is refused when the declaration loads: nothing
   legitimate needs one there, and the trust review, the refusal lines and `doctor` all print them. An `args` element may hold one -- a multi-line `sh -c` script is fine, except through a `.cmd`/`.bat` shim on Windows, where an
-  argument or the command holding a CR or LF (or a `%`) is refused at launch because `cmd.exe` would act on it, and so is
+  argument holding a CR, LF or `%`, or a command holding a `%`, is refused at launch because `cmd.exe` would act on it, and so is
   an argument ending in a backslash, which such a shim cannot pass on unchanged --
   and the review prints `args` as JSON, so a control byte in one is an escape and not a terminal command.
+  A `!` is not refused: the shim's line runs under `cmd.exe /v:off`, which keeps `!NAME!` literal even
+  where delayed expansion is on by default. A `.cmd` that turns it on itself (`setlocal
+  EnableDelayedExpansion`) is outside that switch, and may expand `!NAME!` in an argument from the
+  environment that holds the resolved secrets.
 - `projectId` is **declared, never derived.** A git worktree has a different path from its main
   checkout, so a path-derived identity would hide the secrets you already set. It may appear in the
   project or the local file; if in both, they must agree. `user` is reserved.
