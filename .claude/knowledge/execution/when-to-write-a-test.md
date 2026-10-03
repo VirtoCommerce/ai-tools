@@ -39,7 +39,9 @@ after that the drift guards, `context:check` and the other gates are what run on
   2026-10-01 (§The committed corpus below). Changing a function that a committed test covers means
   updating that test, never adding a new file beside it.
 - **Missing coverage still goes in the guard** (RULE 3), not into a committed unit test.
-- **Exempt:** `/qa-fix` G2 reproductions in product repos (RULE 4).
+- **Exempt:** `/qa-fix` G2 reproductions in product repos (RULE 4), and `plugins/vc-secrets/` — executable
+  credential-handling code whose behaviour no guard checks; its suites (`vc-secrets.test.mjs`,
+  `vc-secrets-oauth.test.mjs`) are committed and run in CI.
 
 ### Writing the temporary test — derivation, never declaration
 
