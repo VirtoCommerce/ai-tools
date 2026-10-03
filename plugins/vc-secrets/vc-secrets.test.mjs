@@ -2299,37 +2299,75 @@ test("probeKeystoreWrite: a failing cleanup does not turn a good write into a ba
     assert.equal(status, "ok", "the probe's verdict is about the write, not the cleanup");
 });
 
-test("cmdDoctor: a resolver that threw is never recorded as a secret that was never set", () => {
+// cmdDoctor driven in-process through its `deps` seam. The repository is found the way a run finds it, the
+// environment's HOME and XDG_CONFIG_HOME are fixtures (the developer's own ~/.claude.json and trust file are
+// never read), the report is captured instead of written to stderr, and `exit` records instead of ending the
+// run. Every collaborator that reaches the keystore, the network or a child process is stubbed by default;
+// a test overrides the ones its case is about.
+function doctorEnv() {
+    return launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "keychain" });
+}
+
+function doctorRepo(project) {
+    const env = doctorEnv();
+    const root = namespaceRepo(project);
+
+    return { env, root, cfg: m.loadConfig(m.configPaths(env, root)) };
+}
+
+async function runDoctor({ cfg, env }, deps = {}) {
+    let text = "";
+    let exitCode = null;
+    await m.cmdDoctor(cfg, [], {
+        env,
+        backend: "keychain",
+        commandOnPath: () => true,
+        resolver: Object.assign(async () => "value", { resolvedValues: [] }),
+        readLegacyLocalValue: async () => null,
+        probeKeystoreWrite: async () => null,
+        oauthLaunchDeps: () => ({ readCache: async () => ({ state: "absent" }) }),
+        oauthTenantChecks: async () => [],
+        childNodeProbes: () => [],
+        write: (chunk) => { text += chunk; },
+        exit: (code) => { exitCode = code; },
+        ...deps,
+    });
+
+    return { text, exitCode };
+}
+
+test("cmdDoctor: a resolver that threw is never recorded as a secret that was never set", async () => {
     // doctorReport's fallback branch prints "run vc-secrets set <name> (local) or check az login
     // (keyvault)" -- the advice for a secret nobody configured. A throw is a different event, and an
     // error carrying no message arrived at that branch through `false`, sending the developer to
-    // repair a configuration that may be correct. Source-inspected because cmdDoctor performs real
-    // keystore io. Comments stripped before the cmdDoctor body is sliced (see strippedBodyOf), and the
-    // match is confined to that body: across the whole file it would accept the same assignment in any
-    // other function.
-    const assign = strippedBodyOf("async function cmdDoctor").match(/resolvable\[name\] = (?!true)[\s\S]*?;/);
-    assert.ok(assign, "the failure branch's assignment moved");
-    assert.doesNotMatch(assign[0], /\bfalse\b/,
-        `a throw must not be recorded as the absent-secret case: ${assign[0]}`);
+    // repair a configuration that may be correct.
+    const repo = doctorRepo({ projectId: "proj-x", secrets: { tok: { backend: "local" } } });
+    seedTrust(repo.env, repo.root);
+    const resolver = Object.assign(async () => { throw new Error(); }, { resolvedValues: [] });
+
+    const { text } = await runDoctor(repo, { resolver });
+
+    assert.match(text, /FAIL secret "tok" not resolvable -- the resolver threw without naming a reason/, text);
+    assert.doesNotMatch(text, /vc-secrets set tok/, `a throw must not be reported as the absent-secret case:\n${text}`);
 });
 
-test("cmdDoctor: the write probe is actually wired to the report, not merely available", () => {
+test("cmdDoctor: the write probe is actually wired to the report, not merely available", async () => {
     // Both halves were tested and the seam between them was not: replacing the probe call in
-    // cmdDoctor with a literal null would leave the suite green. Source-inspected because cmdDoctor
-    // performs real keystore io.
-    // STRIP_COMMENTS first, and it is load-bearing rather than tidiness: `.match` takes the FIRST
-    // textual hit, so `// const writeProbe = await probeKeystoreWrite(...)` left above a live
-    // `const writeProbe = null;` satisfies every assertion below while the probe is unwired. Same rule
-    // as where STRIP_COMMENTS is declared; the match is confined to the cmdDoctor body for the reason
-    // given in the test above.
-    const body = strippedBodyOf("async function cmdDoctor");
-    const call = body.match(/const writeProbe = [\s\S]*?;/);
-    assert.ok(call, "cmdDoctor must compute writeProbe");
-    assert.match(call[0], /probeKeystoreWrite\(/, `writeProbe is not computed from the probe: ${call[0]}`);
-    assert.match(call[0], /cfg/, "and must hand it the config, or the probe's own guard checks nothing");
-    const doctorCall = body.match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
-    assert.ok(doctorCall, "the doctorReport call site moved");
-    assert.match(doctorCall[0], /\bwriteProbe\b/, "and must pass it to doctorReport");
+    // cmdDoctor with a literal null would leave the suite green. The probe also has to be handed the
+    // config, or its own guard against a declared secret of the probe's name checks nothing.
+    const repo = doctorRepo({ projectId: "proj-x", secrets: {} });
+    const seen = [];
+    const probeKeystoreWrite = async (options) => {
+        seen.push(options);
+
+        return { oversize: false, message: "probe-sentinel-message" };
+    };
+
+    const { text } = await runDoctor(repo, { probeKeystoreWrite });
+
+    assert.equal(seen.length, 1, "the probe runs once");
+    assert.equal(seen[0].cfg, repo.cfg, "and is handed the config itself");
+    assert.match(text, /FAIL keychain refused a write -- .*probe-sentinel-message/, text);
 });
 
 test("probeKeystoreWrite: a declared secret of the probe's name is not overwritten", () => {
@@ -3766,23 +3804,45 @@ test("childNodeProbes: on win32 a declared PATH replaces the inherited one whate
     assert.deepEqual(seen.env, { path: "C:\\declared\\bin" }, "one spelling, and it is the declaration's");
 });
 
-test("cmdDoctor: the oauth checks are wired to the report, not merely available", () => {
+// A repository declaring a project-scope sign-in `ado` that the server `ado` reads, trusted for this
+// checkout: the namespace gate would otherwise keep doctor from reading the sign-in at all.
+function doctorOauthRepo() {
+    const repo = doctorRepo({
+        projectId: "proj-x",
+        oauth: { ado: OAUTH_DECL },
+        servers: { ado: { command: process.execPath, args: ["-e", ""], env: { ADO_TOKEN: "oauth:ado" } } },
+    });
+    seedTrust(repo.env, repo.root);
+
+    return repo;
+}
+
+test("cmdDoctor: the oauth checks are wired to the report, not merely available", async () => {
     // Both halves tested and the seam between them not: computing oauthStatus and forgetting to pass
-    // it leaves every test above green while doctor reports nothing. Source-inspected because
-    // cmdDoctor performs real keystore io -- a behavioural test here would need a live backend.
-    // Comments stripped, then the cmdDoctor body sliced: `.match` takes the FIRST textual hit, so a
-    // commented-out `// const lines = doctorReport(cfg, { oauthStatus, ... });` above a live call that
-    // omits the keys would satisfy every assertion below.
-    const call = strippedBodyOf("async function cmdDoctor").match(/const lines = doctorReport\(cfg, \{[\s\S]*?\}\);/);
-    assert.ok(call, "the doctorReport call site moved");
-    for (const key of ["oauthStatus", "tenantChecks", "childNodes"]) {
-        assert.match(call[0], new RegExp(`\\b${key}\\b`), `${key} is computed but never passed`);
-    }
+    // it leaves every test above green while doctor reports nothing. Each of the three results is a
+    // distinct line, so a dropped one is a missing line.
+    const repo = doctorOauthRepo();
+    const deps = {
+        oauthLaunchDeps: () => ({ readCache: async () => ({ state: "valid" }) }),
+        oauthTenantChecks: async () => [{ name: "ado", org: "tenant-check-org", declared: OAUTH_TENANT_ID,
+            applicable: true, bound: null }],
+        childNodeProbes: () => [{ launchableName: "child-probe-sentinel", command: "node", declared: true, version: "v1.0.0" }],
+    };
+
+    const { text } = await runDoctor(repo, deps);
+
+    assert.match(text, /OK oauth "ado" \(project\) signed in/, `oauthStatus is computed but never passed:\n${text}`);
+    assert.match(text, /could not determine the tenant of organisation "tenant-check-org"/,
+        `tenantChecks is computed but never passed:\n${text}`);
+    assert.match(text, /FAIL the node that runs "child-probe-sentinel"/, `childNodes is computed but never passed:\n${text}`);
 });
 
 test("cmdDoctor: nothing on the doctor path can exchange a token", () => {
     // Pinned as a property of the code rather than of one run: proving a token is refreshable would
     // rotate the refresh token as a side effect of a diagnostic, and the rotation is irreversible.
+    // Stays a source test deliberately: it is a negative property of every path, and a spy sees only
+    // the calls made through it -- a direct oauth.exchange(...) added to cmdDoctor or readCache would
+    // bypass any injected double and leave a behaviour test green.
     // The negative guards read RAW source: a comment stripper cuts at a `//` inside a string literal (a
     // URL, say) and would hide a real call after it, and a comment mentioning `exchange(` costs a
     // false failure at worst. Only the positive `readCache()` match reads stripped source, because a
@@ -3805,25 +3865,55 @@ test("cmdDoctor: nothing on the doctor path can exchange a token", () => {
 test("oauthTenantChecks: driven by the declaration, preferring the reference once one exists", () => {
     // The reference appears only with the switch, and a tenant-binding mistake is worth catching at
     // SETUP -- otherwise the one check that turns it into a named finding stays dormant through
-    // exactly the phase where someone would fix it cheaply. Source-inspected for the property that a
-    // behavioural test cannot pin on its own: THIS is the loop cmdDoctor calls, not a lookalike.
-    // Comments stripped before the slice; the call site is looked for in the cmdDoctor body alone.
+    // exactly the phase where someone would fix it cheaply. Source-inspected for the shape of the loop
+    // itself; that cmdDoctor calls THIS function, not a lookalike, is the test below.
+    // Comments stripped before the slice.
     const body = strippedBodyOf("async function oauthTenantChecks");
     assert.notEqual(body, "", "oauthTenantChecks moved");
     assert.match(body, /Object\.entries\(cfg\.oauth/, "the tenant loop must be driven by the declaration");
     assert.match(body, /references\.find/, "and still prefer the reference once one exists");
-    assert.match(strippedBodyOf("async function cmdDoctor"), /const tenantChecks = await oauthTenantChecks\(cfg, references\)/,
-        "cmdDoctor must call this function, not a private copy of its loop");
 });
 
-test("cmdDoctor: the oauth status read passes cfg through to oauthLaunchDeps, not a two-argument call", () => {
+test("cmdDoctor: the tenant checks it reports come from oauthTenantChecks, not a private copy of its loop", async () => {
+    // A private copy of the loop in cmdDoctor would still print tenant lines, and would drift from the
+    // function the tests above pin. So the printed tenant line must be the one this function returned.
+    const repo = doctorOauthRepo();
+    const calls = [];
+    const oauthTenantChecks = async (...args) => {
+        calls.push(args);
+
+        return [{ name: "ado", org: "tenant-split-sentinel", declared: OAUTH_TENANT_ID, applicable: true, bound: null }];
+    };
+
+    const { text } = await runDoctor(repo, { oauthTenantChecks });
+
+    assert.match(text, /could not determine the tenant of organisation "tenant-split-sentinel"/,
+        `the reported tenant line is not the one oauthTenantChecks returned:\n${text}`);
+    assert.equal(calls.length, 1, "called once");
+    assert.equal(calls[0][0], repo.cfg, "with the config itself");
+    assert.deepEqual(calls[0][1], m.oauthReferences(repo.cfg), "and the oauth references");
+    assert.ok(calls[0][1].length > 0, "the fixture must carry a reference, or the argument proves nothing");
+});
+
+test("cmdDoctor: the oauth status read passes cfg through to oauthLaunchDeps, not a two-argument call", async () => {
     // A two-argument call is legal here too (cfg is a plain positional with no runtime
     // default), so a copy of the source's single-project call would compile and run for a user-scope
     // entry and throw for a project-scope one -- caught by cmdDoctor's own try/catch, but reported as
     // an opaque "Cannot read properties of undefined" instead of the sign-in state a developer could
     // act on.
-    const body = strippedBodyOf("async function cmdDoctor");
-    assert.match(body, /oauthLaunchDeps\(name, decl, cfg\)/,
+    const repo = doctorOauthRepo();
+    const calls = [];
+    const oauthLaunchDeps = (...args) => {
+        calls.push(args);
+
+        return { readCache: async () => ({ state: "valid" }) };
+    };
+
+    await runDoctor(repo, { oauthLaunchDeps });
+
+    assert.equal(calls.length, 1, "one entry, one read");
+    assert.equal(calls[0][0], "ado");
+    assert.equal(calls[0][2], repo.cfg,
         "the oauth status loop must pass cfg -- oauthEntryKeys needs it to build the namespaced key");
 });
 
@@ -11030,10 +11120,22 @@ test("probeKeystoreWrite: the keychain value is sized for the key the probe wrot
         "the fixture must make the two keys differ, or this test cannot see the sizing");
 });
 
-test("cmdDoctor: the write probe is told whether this checkout is trusted for the namespace it would write in", () => {
-    const call = strippedBodyOf("async function cmdDoctor").match(/const writeProbe = [\s\S]*?;/);
-    assert.ok(call, "cmdDoctor must compute writeProbe");
-    assert.match(call[0], /namespaceTrusted:\s*probeNamespaceTrusted\(\)/, call[0]);
+test("cmdDoctor: the write probe is told whether this checkout is trusted for the namespace it would write in", async () => {
+    // The probe writes and deletes its key, and the repository's projectId may name another project's
+    // namespace: an untrusted checkout must be probed under the user key, a trusted one under its own.
+    const repo = doctorRepo({ projectId: "proj-x" });
+    const trustedFlags = [];
+    const probeKeystoreWrite = async ({ namespaceTrusted }) => {
+        trustedFlags.push(namespaceTrusted);
+
+        return null;
+    };
+
+    await runDoctor(repo, { probeKeystoreWrite });
+    seedTrust(repo.env, repo.root);
+    await runDoctor(repo, { probeKeystoreWrite });
+
+    assert.deepEqual(trustedFlags, [false, true], "untrusted checkout first, then the same one once trusted");
 });
 
 test("doctor: the write probe goes under the user key in a checkout not trusted for its namespace, and under the project key once trusted",
