@@ -608,7 +608,7 @@ test("cacheStatus: a rollback landing inside the token's own lifetime is caught 
     // The case the wall clock alone cannot see, and the whole reason the anchor exists. The host
     // slept and came back half an hour behind: an hour of real time has passed, so the token is
     // spent, but the wall clock reports only thirty minutes of it. Before the anchor this read
-    // `valid` and the launcher handed over a dead token — measured, not argued.
+    // `valid` and the launcher handed over a dead token.
     const spent = statusAfter(cacheAt(0), 3600_000, { clockElapsed: 1800_000 });
     assert.equal(spent.state, "needs-refresh");
     // And the wall clock alone still says it is fine, which is what makes the case discriminating.
@@ -908,9 +908,9 @@ test("acquireLock: on a path, a socket a killed holder left behind is reclaimed"
 });
 
 test("acquireLock: losing the reclaim race waits, it does not kill the launch", async () => {
-    // The branch a previous draft got wrong. An EADDRINUSE on the RE-bind is an ordinary
-    // contended outcome; escaping the try makes it an unhandled rejection, which the launcher's
-    // run path turns into process.exit — so the server never starts at all.
+    // An EADDRINUSE on the RE-bind is an ordinary contended outcome; escaping the try makes it an
+    // unhandled rejection, which the launcher's run path turns into process.exit — so the server
+    // never starts at all.
     const got = await cache.acquireLock("/tmp/vc-secrets-dev-proj-azure-mcp.lock", {
         bind: async () => { throw inUse(); },
         probe: async () => false,
@@ -957,9 +957,7 @@ test("the margin covers the tick, the exchange, the skew allowance and both keys
 // bind is permitted, both an abstract AND a filesystem unix-socket bind are EPERM. So reusing
 // socketTest here would answer "can bind" and every lockTest case would then fail EPERM, reading as
 // a regression rather than a sandbox restriction — a probe of the wrong privilege answers
-// confidently either way. This exact defect has already been fixed once in this file, in the
-// OTHER direction: socketTest's own probe was adapted FROM a unix-domain-socket probe TO a TCP
-// one, because at the time this file had no lock-file tests to gate at all.
+// confidently either way.
 let lockBindProbe = null;
 function canBindLocks() {
     lockBindProbe ??= new Promise((resolve) => {
@@ -999,10 +997,10 @@ lockTest("acquireLock: a second acquisition while held reports the holder, not n
     await first.release();
 });
 
-// The same rule at the package's third server. It was found by a review pass reading the fix for the
-// second one, and it hung under measurement before the shared teardown reached it -- which is the
-// whole argument for one teardown rather than three: with this site defective the suite was fully
-// green, because a test named for a rule still only observes the server its body constructs.
+// The same rule at the package's third server. It hung under measurement before the shared
+// teardown reached it -- which is the whole argument for one teardown rather than three: with this
+// site defective the suite was fully green, because a test named for a rule still only observes the
+// server its body constructs.
 lockTest("a teardown does not wait on a peer that only connected -- the refresh lock", async () => {
     const p = cache.lockPathFor("teardown-" + process.pid, "proj", { platform: process.platform, env: process.env });
     const held = await cache.acquireLock(p);
@@ -1325,8 +1323,8 @@ test("oauthLaunchDeps.writeCache: a renewal that issues no new refresh token lea
     // a sign-in that nothing had invalidated — a session lost to a renewal that SUCCEEDED.
     //
     // ADAPTED assertion: the source asserted the bare entry name ["oauth-azure-mcp-access"].
-    // `write` here receives the full three-segment keystore key oauthEntryKeys produces (Part
-    // B3 — never a bare entry name), so the value that must appear is LAUNCH_KEYS.access.
+    // `write` here receives the full three-segment keystore key oauthEntryKeys produces, so the
+    // value that must appear is LAUNCH_KEYS.access.
     const written = [];
     // A throwaway XDG_CONFIG_HOME although this test asserts nothing about markers: writeCache
     // clears the oversize marker on the success path this test drives, so without an env here the
@@ -1498,11 +1496,11 @@ test("oauthLaunchDeps.writeCache: a failed ACCESS write is a warning, not a lost
 });
 
 // ---------------------------------------------------------------------------------------------
-// New coverage this task adds (not a port): acquireTokenLock had no DIRECT test in the source —
-// every source case drove it through cmdLogin/cmdLogout instead. cmdLogin and cmdLogout are now
-// both ported (Tasks 14/15), and a handful of their own tests exercise this loop too — but
-// without these seven, acquireTokenLock would still have no coverage of its own that survives a
-// change to either verb's wiring.
+// New coverage (not a port): acquireTokenLock had no DIRECT test in the source — every source
+// case drove it through cmdLogin/cmdLogout instead. cmdLogin and cmdLogout are now both ported,
+// and a handful of their own tests exercise this loop too — but without these seven,
+// acquireTokenLock would still have no coverage of its own that survives a change to either
+// verb's wiring.
 // ---------------------------------------------------------------------------------------------
 
 test("acquireTokenLock: a clean acquisition returns the lock, without waiting or logging", async () => {
@@ -1559,19 +1557,19 @@ test("acquireTokenLock: an error that is not a refused bind is not laundered int
 });
 
 // ---------------------------------------------------------------------------------------------
-// Review fix round: acquireTokenLock's OWN wait was completely unpinned. Measured by the
-// reviewer: lowering MAX_LOCK_POLLS from 64 to 1 left the whole suite green. Root cause: every
-// test above drives a FROZEN clock or a small, controlled number of attempts, so none of them
-// can tell "the deadline ended the wait" apart from "the poll cap ended the wait". The first two
-// tests below close that gap, driving an ADVANCING clock; the other two pin the classification and
-// the log line, for which a frozen clock is the right instrument. All four drive acquireTokenLock
-// DIRECTLY — no vehicle needed, it is exported and callable on its own.
+// acquireTokenLock's OWN wait was completely unpinned. Lowering MAX_LOCK_POLLS from 64 to 1 left
+// the whole suite green. Root cause: every test above drives a FROZEN clock or a small, controlled
+// number of attempts, so none of them can tell "the deadline ended the wait" apart from "the poll
+// cap ended the wait". The first two tests below close that gap, driving an ADVANCING clock; the
+// other two pin the classification and the log line, for which a frozen clock is the right
+// instrument. All four drive acquireTokenLock DIRECTLY — no vehicle needed, it is exported and
+// callable on its own.
 // ---------------------------------------------------------------------------------------------
 
 test("acquireTokenLock: the poll cap is a backstop, not the terminator of the wait", async () => {
     // Under an advancing clock the LOCK_WAIT_MS deadline must be what ends the wait; the poll cap
     // must never fire first. Must go red when MAX_LOCK_POLLS is lowered enough to end the loop
-    // before the deadline is reached (measured: 64 -> 1 does this).
+    // before the deadline is reached.
     let elapsed = 0;
     const result = await m.acquireTokenLock({
         acquireLock: async () => cache.HELD_BY_OTHER,
@@ -1750,10 +1748,10 @@ lockTest("tokenLockFor: user scope keys the lock on USER_SCOPE, ignoring cfg.pro
 });
 
 // ---------------------------------------------------------------------------------------------
-// Review fix round: the restored keychain line-length refusal (buildLocalWrite's `security -i`
-// stdinCommand branch) and its EAGER check in writeSecretValue, before any process is spawned.
-// security(1) reads that command line into a fixed buffer and, past the limit, SPLITS rather
-// than refusing: the first half stores a TRUNCATED value and the tail runs as a second command.
+// The restored keychain line-length refusal (buildLocalWrite's `security -i` stdinCommand
+// branch) and its EAGER check in writeSecretValue, before any process is spawned. security(1)
+// reads that command line into a fixed buffer and, past the limit, SPLITS rather than refusing:
+// the first half stores a TRUNCATED value and the tail runs as a second command.
 // ---------------------------------------------------------------------------------------------
 
 test("buildLocalWrite(keychain).stdinCommand: composes up to the line limit, refuses one byte past it", () => {
@@ -1820,7 +1818,7 @@ test("writeSecretValue: an oversize keychain value is refused before the runner 
 
 // ---------------------------------------------------------------------------------------------
 // The callback surface -- the loopback listener, handleCallback, the two HTML pages,
-// and the browser opener. Ported from the launcher's own suite (source ranges resolved 2026-09-11).
+// and the browser opener. Ported from the launcher's own suite.
 // ---------------------------------------------------------------------------------------------
 
 // The opener probe is injected rather than left to the real PATH. With a real `commandOnPath` the
@@ -2372,15 +2370,15 @@ function loginDeps(overrides = {}) {
         // against any other invocation of this tool running on this machine.
         acquireLock: async () => { lock.push("acquire"); return { release: async () => { lock.push("release"); } }; },
         // Same reason as acquireLock, and it was missed here once at a real cost: the default is
-        // the REAL deleteEntryIo, so a test whose refresh write fails cleared a developer's
-        // live sign-in out of the actual keystore. From a GREEN run -- a delete that succeeds
-        // looks like nothing at all. Measured 2026-08-20: both oauth entries for the affected
-        // server were present before the run and gone after, with every other test still passing.
+        // the REAL deleteEntryIo, so a test whose refresh write fails cleared a developer's live
+        // sign-in out of the actual keystore. From a GREEN run -- a delete that succeeds looks
+        // like nothing at all. Both oauth entries for the affected server were present before the
+        // run and gone after, with every other test still passing.
         removeEntry: async (name) => { removed.push(name); },
-        // Injected for exactly the reason removeEntry is, and it was written down there first: the
-        // default WRITES and DELETES a file under the developer's own config directory, and both
-        // halves run on ordinary paths -- `clear` on every successful login. Left to default, every
-        // login test would litter a real machine from a green run.
+        // Injected for exactly the reason removeEntry is: the default WRITES and DELETES a file
+        // under the developer's own config directory, and both halves run on ordinary paths --
+        // `clear` on every successful login. Left to default, every login test would litter a real
+        // machine from a green run.
         oversize: { record: (key, info) => { marked.push([key, info]); }, clear: (key) => { cleared.push(key); } },
         // Injected for the reason the others are: the default reads the developer's own trust file.
         trustState: trustedFor(LOGIN_CFG),
@@ -4869,9 +4867,9 @@ test("vc-secrets-probe: a backend tool's multi-line failure is still a launcher 
 });
 
 test("classifyProbeFailure: a launcher line followed by a server death is the server's failure", () => {
-    // Both measured against the previous whole-stream scan. "channel client refused" can only be
-    // printed by a launcher whose server is already RUNNING, and the timing line is emitted on the
-    // success path -- so blaming either for a crash reintroduces the conflation, reversed.
+    // "channel client refused" can only be printed by a launcher whose server is already RUNNING,
+    // and the timing line is emitted on the success path -- so blaming either for a crash
+    // reintroduces the conflation, reversed.
     // "Segmentation fault" is a SHELL's message and was unreachable here: the probe spawns the
     // launcher directly and the launcher spawns the server with no shell, so nothing in this pipeline
     // can print it. Replaced with a line the runtime really does emit on its way down.
