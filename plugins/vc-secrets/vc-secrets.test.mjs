@@ -15,7 +15,7 @@ import * as cache from "./vc-secrets-cache.mjs";
 import * as clients from "./clients.mjs";
 import * as t from "./hooks/targets.mjs";
 import { CANONICAL_DATA_ID } from "./scripts/shim-path.mjs";
-import { stripComments, codeOnly, launcherSource } from "./test-support.mjs";
+import { stripComments, codeOnly, callArguments, launcherSource } from "./test-support.mjs";
 
 const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -4400,20 +4400,31 @@ function launch(kind, name, cfg, deps = {}) {
     return m.cmdLaunch(kind, name, cfg, { bindPlatform: "linux", ...deps });
 }
 
-test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers around it) in the test files states its bind platform", () => {
+test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers around it) in the test sources states its bind platform", () => {
     // Left unset, cmdLaunch binds the launching process to a kill-on-close job on win32 through a real
     // PowerShell -- and here that process is the test runner. Nothing fails on a Linux run, so the
     // omission only shows on the Windows leg, as a runner that dies with the job. cmdRun and cmdTask
     // forward their deps to cmdLaunch and default to none, so they bind the runner exactly as it does.
-    // The check is textual: the call, or the helper that wraps it, must name bindPlatform within its
-    // first lines.
-    const callSite = new RegExp("m\\.(?:cmdLaunch|cmdTask|cmdRun)\\(", "g");
-    for (const file of ["./vc-secrets.test.mjs", "./vc-secrets-oauth.test.mjs"]) {
-        const source = fs.readFileSync(new URL(file, import.meta.url), "utf8");
+    // The platform must be a literal INSIDE the call's own arguments: a comment, `bindPlatform:
+    // undefined`, or a literal belonging to the next statement leaves the bind on its win32 default.
+    // Every test source is scanned -- the *.test.mjs files and test-support.mjs, walked, so a file
+    // split off later is covered on arrival. Two residuals, stated rather than left to be found: a
+    // helper that spreads caller deps AFTER its literal (`launch`) can still be overridden by its
+    // caller, and a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
+    // satisfies the match without reaching cmdLaunch.
+    const callSite = /m\.(?:cmdLaunch|cmdTask|cmdRun)\(/g;
+    const root = fileURLToPath(new URL("./", import.meta.url));
+    const walk = (dir, prefix = "") => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        (e.isDirectory() ? walk(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
+    const files = walk(root).filter((f) => f.endsWith(".test.mjs") || f === "test-support.mjs");
+    assert.ok(files.includes("vc-secrets.test.mjs") && files.includes("vc-secrets-oauth.test.mjs"), files.join(","));
+    for (const file of files) {
+        const source = stripComments(fs.readFileSync(path.join(root, file), "utf8"));
+        const blanked = codeOnly(source);
         for (const hit of source.matchAll(callSite)) {
             const where = `${file}:${source.slice(0, hit.index).split("\n").length}`;
-            assert.match(source.slice(hit.index, hit.index + 120), /bindPlatform/,
-                `${where} launches in-process without saying whether the bind runs`);
+            const args = callArguments(source, hit.index + hit[0].length, blanked);
+            assert.match(args, /bindPlatform:\s*"[^"]+"/, `${where} launches in-process without a literal bind platform`);
         }
     }
 });

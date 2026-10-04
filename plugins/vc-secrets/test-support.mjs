@@ -207,6 +207,37 @@ export function codeOnly(src) {
     return scanSource(src, true);
 }
 
+// The text between the `(` that `openIndex` follows and its matching `)`, for a call found in
+// `stripped` (a stripComments result, so line numbers still match the source). Parentheses are counted
+// on the codeOnly view of the same text, where a string, template or regex literal is blanks and so
+// cannot hold one; the arguments are sliced from `stripped` itself. The two have the same length
+// (blanking replaces characters one for one), which is what lets one index serve both. A caller
+// scanning many calls in one file passes `blanked` so the view is made once, not once per call.
+// A call written inside a template literal's text (a script a test writes out and runs) is blanks in
+// that view, its closing `)` with it, so the count would run on past the literal. That call is read
+// as the code it is: the view is rebuilt from the text that follows it.
+export function callArguments(stripped, openIndex, blanked = codeOnly(stripped)) {
+    if (blanked.length !== stripped.length) {
+        throw new Error("callArguments needs the stripComments result: codeOnly of it must have the same length");
+    }
+    const inLiteral = blanked[openIndex - 1] !== "(";
+    const view = inLiteral ? codeOnly(stripped.slice(openIndex)) : blanked;
+    const offset = inLiteral ? openIndex : 0;
+    let depth = 1;
+    for (let i = inLiteral ? 0 : openIndex; i < view.length; i += 1) {
+        if (view[i] === "(") {
+            depth += 1;
+        } else if (view[i] === ")") {
+            depth -= 1;
+            if (depth === 0) {
+                return stripped.slice(openIndex, offset + i);
+            }
+        }
+    }
+
+    throw new Error(`no closing parenthesis for the call opened before index ${openIndex}`);
+}
+
 // The launcher is the entry file plus everything under lib/. A test that reads the launcher as text
 // reads all of it: a check scoped to the entry passes on a thin entry and covers nothing.
 export function launcherSourceFiles() {
