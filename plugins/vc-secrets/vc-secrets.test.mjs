@@ -2951,7 +2951,7 @@ test("runCli hardens the spawn environment of this very process before it dispat
     // hardened after dispatch, the first spawn has already happened.
     const body = m.runCli.toString().replace(STRIP_COMMENTS, "");
     const hardened = body.indexOf("hardenSpawnEnv(process.env, process.platform)");
-    const dispatched = body.indexOf("main(argv)");
+    const dispatched = body.search(/\bmain\(argv\b/);
     assert.ok(hardened >= 0, "runCli must call hardenSpawnEnv(process.env, process.platform)");
     assert.ok(dispatched > hardened, "and before main(argv) dispatches");
 });
@@ -3242,6 +3242,34 @@ test("doctorReport: a shim at contract 1 is told to reinstall, and the line name
     assert.ok(lines.includes("WARN the installed shim speaks contract 1, this launcher expects 2 -- re-run the vc-secrets install skill"),
         lines.join("\n"));
     assert.equal(m.REQUIRED_SHIM_CONTRACT, 2);
+});
+
+const EMPTY_DECL = { secrets: {}, servers: {} };
+
+test("cmdDoctor: a shim contract it is handed reaches the report", async () => {
+    // The contract arrives as a value through deps, so the report is a function of its inputs; a
+    // module-level slot written by runCli would carry one caller's contract into the next.
+    const { text } = await runDoctor(doctorRepo(EMPTY_DECL), { shimContract: 1 });
+    assert.match(text, /WARN the installed shim speaks contract 1, this launcher expects 2/);
+});
+
+test("cmdDoctor: with no shim contract it says nothing about the shim", async () => {
+    const { text } = await runDoctor(doctorRepo(EMPTY_DECL));
+    assert.doesNotMatch(text, /installed shim speaks contract/);
+});
+
+test("runCli: the contract the shim passes reaches doctor through main", () => {
+    // Through the real entry, because the wiring under test is runCli -> main -> cmdDoctor and
+    // cmdDoctor ends its process. Pinned to gpg, the one backend doctor does not write-probe, and the
+    // declaration is empty, so nothing reads or writes a credential store; HOME is a fixture.
+    const env = launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg" });
+    const root = namespaceRepo(EMPTY_DECL);
+    const script = `import(${JSON.stringify(pathToFileURL(LAUNCHER_PATH).href)})`
+        + `.then((m) => m.runCli(["doctor"], { shimContract: 1 }));`;
+    const run = spawnSync(process.execPath, ["--input-type=module", "-e", script],
+        { cwd: root, env, encoding: "utf8", timeout: 30_000 });
+    assert.equal(run.signal, null, `doctor did not finish: ${run.stderr}`);
+    assert.match(run.stderr, /installed shim speaks contract 1, this launcher expects 2/, run.stderr);
 });
 
 // ── oauth verdicts, the tenant check, and the child node floor ──────────────────────────────────

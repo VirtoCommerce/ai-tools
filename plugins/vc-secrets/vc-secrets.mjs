@@ -5486,7 +5486,7 @@ async function cmdDoctor(cfg, flags = [], deps = {}) {
     const lines = doctorReport(cfg, {
         env, platform: process.platform, enableLists, resolvable, skipped, notRead,
         toolsMissing, wired, configDirOverride: Boolean(env.VC_SECRETS_CONFIG_DIR), legacyOnly,
-        shimContract: activeShimContract, wiringProblems, clientConfigsSeen,
+        shimContract: deps.shimContract ?? null, wiringProblems, clientConfigsSeen,
         writeProbe, oauthStatus, oauthOversize, tenantChecks, childNodes, trustFindings, namespaceNotRead,
     });
     // sync write: stderr is async on a POSIX pipe and on a Windows console, and process.exit drops pending writes
@@ -6213,7 +6213,6 @@ function fail(e) {
 // reported so a stale shim says so itself -- the failure it would otherwise cause (an old pointer to a
 // launcher whose entry contract moved) surfaces as a missing export, which reads like a broken install.
 const REQUIRED_SHIM_CONTRACT = 2;
-let activeShimContract = null;
 
 // TOML bare keys are [A-Za-z0-9_-]+; anything else must be a quoted key, or the dots in the name
 // become table separators.
@@ -6290,7 +6289,7 @@ async function cmdEmitConfig(cfg, argv) {
 const VERBS = ["run", "task", "set", "unlock", "login", "logout", "doctor", "migrate", "emit-config", "trust", "untrust"];
 const USAGE = `usage: vc-secrets <${VERBS.join("|")}> [name]`;
 
-async function main(argv) {
+async function main(argv, { shimContract } = {}) {
     const [command, arg] = argv;
     // Usage and the diagnostic must survive a machine with no declarations at all: `doctor` is what
     // you reach for when nothing works, so it reports the missing file as a FAIL instead of dying on
@@ -6345,7 +6344,7 @@ async function main(argv) {
         return;
     }
     if (command === "doctor") {
-        await cmdDoctor(cfg, argv.slice(1));
+        await cmdDoctor(cfg, argv.slice(1), { shimContract });
         return;
     }
     if (command === "migrate") {
@@ -6381,14 +6380,11 @@ function hardenSpawnEnv(env, platform) {
 // the gate at the bottom, because when the shim runs it is argv[1], not this file. Two entry paths
 // diverging is how the wrapped and unwrapped invocations start behaving differently.
 async function runCli(argv, { shimContract } = {}) {
-    if (typeof shimContract === "number") {
-        activeShimContract = shimContract;
-    }
     hardenSpawnEnv(process.env, process.platform);
     process.on("uncaughtException", fail);
     process.on("unhandledRejection", fail);
 
-    return main(argv).catch(fail);
+    return main(argv, { shimContract: typeof shimContract === "number" ? shimContract : undefined }).catch(fail);
 }
 
 // "Was this file started as the program?" -- the gate that keeps importing the module from running its CLI.
