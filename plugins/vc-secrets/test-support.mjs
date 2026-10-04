@@ -1,5 +1,6 @@
-// Helpers shared by this package's test files. Not a test file itself (the runner's glob is
-// `*.test.mjs`), and outside lib/, so the declarations guard leaves it writable like the tests.
+// Helpers shared by this package's test files. Not a test file itself: it declares no tests, and the CI
+// step does not name it. (Node's default `node --test` discovery may still load it and finds nothing to
+// run.) It sits outside lib/, so the declarations guard leaves it writable like the tests.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

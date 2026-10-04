@@ -74,22 +74,27 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // this package, the fastest way to get a guard switched off wholesale.
 //
 // The directory-scoped names get the package-rooted case a second way: a relative path is also tested
-// joined onto every root the hook can find (see the loop below) -- the payload's `cwd`, each entry of its
-// `workspace_roots`, and the hook process's own working directory. What each client documents:
+// joined onto every root the payload names (see the loop below) -- its `cwd` and each entry of its
+// `workspace_roots`. What each client documents:
 //   - Claude Code: `cwd` in the common input fields, "Current working directory when the hook is
 //     invoked", and "Handlers run in the current directory with Claude Code's environment". Whether
 //     `file_path` is absolute on Write/Edit is not established here, and nothing below depends on it.
 //   - Cursor: `workspace_roots` in the common schema, "The list of root folders in the workspace"; `cwd`
-//     in the `preToolUse` example (the absolute `"/project"`) but not in the common schema. Project
-//     hooks "Run from the project root", user hooks "Run from ~/.cursor/".
+//     in the `preToolUse` example (the absolute `"/project"`) but not in the common schema.
 //   - Codex: `cwd`, "Working directory for the session", and "Commands run with the session `cwd` as
 //     their working directory". Not established whether it is absolute, nor that it is the directory
 //     an `apply_patch` header is relative to.
 // Every root is tried and any match refuses. A wrong root can only add refusals (a package-shaped wrong
-// root is the accepted false positive), so the extra forms only widen -- which is why the hook's own directory is consulted although no
-// client promises it is the workspace. What remains: a Cursor USER hook sending neither `cwd` nor
-// `workspace_roots` runs from ~/.cursor/, so a bare relative path is matched only as sent, and in a
-// package-rooted workspace EVERY directory-scoped name goes uncovered.
+// root is the accepted false positive), so the extra forms only widen.
+//
+// The hook process's own working directory is NOT a root, and that is a decision. The plugin's hook
+// command (`node "./hooks/guard-declarations.mjs"`) resolves relative to the plugin directory, so a
+// plugin-installed hook can run from inside the package -- package-shaped by construction -- and would
+// then refuse ordinary files in every repository, which is how a guard gets switched off. Where a
+// client does run hooks from the workspace (Claude Code and Codex, per the quotes above) that directory
+// equals `cwd` and adds nothing. What remains: a client that sends neither `cwd` nor `workspace_roots`
+// leaves a bare relative path matched only as sent, and in a package-rooted workspace EVERY
+// directory-scoped name (the scoped list and `lib/`) goes uncovered.
 const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|probe|teardown))?|guard-declarations|install-shim|shim-path)\.mjs$/i;
 // The same package, scoped to its directory rather than matched by file. `clients.*`, `targets.mjs`,
 // `hooks.json`, `plugin.json`, `SKILL.md` and `openai.yaml` are names half the repositories on this
@@ -233,23 +238,14 @@ if (!targets.readable) {
 }
 
 // A relative path names a file relative to the client's working directory, and a directory-scoped
-// pattern cannot see the package in it. It is completed with every root available: the payload's `cwd`,
-// each string entry of its `workspace_roots`, and this process's own working directory. Each joined form
-// is tested alongside the sent one, and any match refuses, so a wrong root can only add refusals. The
+// pattern cannot see the package in it. It is completed with every root the payload names: its `cwd` and
+// each string entry of its `workspace_roots`. Each joined form is tested alongside the sent one, and any match refuses, so a wrong root can only add refusals. The
 // joined form is built from the normalised path and not from `raw`: joined raw, a drive-relative
 // `C:..\x` leaves its `C:` inside a segment (`<root>/C:..`), the stream cut reduces that to `C`, and
 // the climb out of `<root>` is lost.
-const ownDirectory = () => {
-    try {
-        return process.cwd();
-    } catch {
-        return null; // the working directory was deleted under the process
-    }
-};
 const roots = [
     input?.cwd,
     ...(Array.isArray(input?.workspace_roots) ? input.workspace_roots : []),
-    ownDirectory(),
 ].filter((root) => typeof root === "string" && root !== "");
 const isAbsolute = (p) => p.startsWith("/") || /^[A-Za-z]:\//.test(p);
 

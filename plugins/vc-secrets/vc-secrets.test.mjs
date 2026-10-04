@@ -8286,8 +8286,8 @@ const UNGUARDED_FILES = ["README.md", "LICENSE"];
 // filtering some out of view.
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs"];
 
-// The guard also completes a relative path with its own process's working directory, so these two
-// helpers name one explicitly: a bare-name 0-assertion must not depend on where the suite is run from.
+// The guard does not use its own process's working directory as a root, and these two helpers still name
+// one explicitly, so no result depends on where the suite is run from.
 const NEUTRAL_GUARD_CWD = os.tmpdir();
 
 function runGuardOn(filePath, toolName = "Write") {
@@ -8382,9 +8382,8 @@ test("guard: a name this package does not own is guarded inside the package and 
     // a guard gets switched off. Both halves are asserted, because only the pair expresses "scoped":
     // blocked under the package directory, allowed without it. The cost is real and it does not land on
     // the harmless half: a workspace rooted AT this package sends these bare, and the bare form is
-    // uncovered only when no usable root completes it -- no payload `cwd`, no
-    // `workspace_roots`, and a hook not spawned from inside the package (the next tests pin the
-    // completion). It then covers none of the scoped list, nor the `lib/` modules, which are
+    // uncovered only when no usable root completes it -- no payload `cwd` and no
+    // `workspace_roots` (the next tests pin the completion). It then covers none of the scoped list, nor the `lib/` modules, which are
     // directory-scoped the same way and have their own test. The launcher and the hook itself stay
     // covered there, being file-matched, so the gap is every directory-scoped name. Stated as the list
     // rather than as a count, because a count written in prose goes stale the next time the list grows
@@ -8451,7 +8450,7 @@ test("guard: a relative path is resolved against the payload's cwd before it is 
     }
 });
 
-test("guard: with no payload cwd, workspace_roots and the hook's own directory complete a relative path", () => {
+test("guard: with no payload cwd, workspace_roots complete a relative path, and the hook's own directory does not", () => {
     const pkg = "/home/dev/ai-tools/plugins/vc-secrets";
     const write = (extra, file_path = "lib/keystore.mjs", spawnCwd) =>
         runGuardWith({ tool_name: "Write", ...extra, tool_input: { file_path } }, spawnCwd);
@@ -8468,15 +8467,19 @@ test("guard: with no payload cwd, workspace_roots and the hook's own directory c
     const odd = write({ workspace_roots: [42, null, {}, "", [pkg]] });
     assert.equal(odd.status, 0, "non-string entries: ignored");
     assert.equal(odd.stderr, "", "and nothing thrown");
-    // The hook's own working directory: a package-shaped path, so the file system, not a payload field,
-    // is what places the hook inside the package.
+    // The hook's own working directory is NOT a root. The plugin's hook command resolves relative to the
+    // plugin directory, so a hook can be running from a package-shaped path while the workspace is any
+    // other repository; treating that directory as a root refused ordinary files there.
     const base = fs.mkdtempSync(path.join(os.tmpdir(), "guard-own-cwd-"));
     try {
         const inside = path.join(base, "plugins", "vc-secrets");
         fs.mkdirSync(inside, { recursive: true });
-        assert.equal(write({}, "lib/keystore.mjs", inside).status, 2, "spawned from inside the package");
-        assert.equal(write({}, "lib/keystore.test.mjs", inside).status, 0, "tests stay writable");
-        assert.equal(write({}, "lib/keystore.mjs", base).status, 0, "spawned from a directory that is not the package");
+        const elsewhere = { workspace_roots: ["/home/u/some-js-app"] };
+        for (const file of ["src/lib/util.mjs", "lib/index.mjs", "clients.json", ".claude/skills/review/SKILL.md"]) {
+            assert.equal(write(elsewhere, file, inside).status, 0, `${file}: another repository, hook spawned from the package`);
+        }
+        assert.equal(write({ workspace_roots: [pkg] }, "lib/keystore.mjs", inside).status, 2,
+            "still covered through the payload's own roots");
     } finally {
         fs.rmSync(base, { recursive: true, force: true });
     }
