@@ -1,4 +1,4 @@
-// Bottom layer: path and terminal-text helpers every other layer shares; imports from no other lib/ module.
+// Bottom layer: path, JSON-error-reason and terminal-text helpers; imports from no other lib/ module.
 
 import fs from "node:fs";
 import path from "node:path";

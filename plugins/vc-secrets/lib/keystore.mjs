@@ -1,4 +1,4 @@
-// Keystore layer: local and Key Vault secret backends and the resolver; imports only from lower layers.
+// Keystore layer: key naming, local and Key Vault backends, resolver, migrate; imports only from lower layers.
 
 import fs from "node:fs";
 import os from "node:os";

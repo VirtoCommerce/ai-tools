@@ -1,4 +1,4 @@
-// OAuth checks layer: status and tenant checks doctor reports; imports only from lower layers.
+// OAuth checks layer: OAuth status, organisation-flag and tenant checks; imports only from lower layers.
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 

@@ -1,4 +1,4 @@
-// Doctor layer: the diagnostic report, keystore write probe, doctor verb; imports only from lower layers.
+// Doctor layer: diagnostic report, wiring readers, write probe, doctor verb; imports only from lower layers.
 
 import fs from "node:fs";
 import os from "node:os";
