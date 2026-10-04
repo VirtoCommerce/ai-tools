@@ -2969,7 +2969,37 @@ test("stripComments: removes comments and only comments", () => {
     assert.ok(!/\bimport\b/.test(codeOnly('const a = "import";')), "a string's text is not code");
     assert.ok(!/\bimport\b/.test(codeOnly("const a = /import/;")), "a regex's text is not code");
     assert.equal(codeOnly('import x from "./a.mjs"; // c'), 'import x from "./a.mjs"; ', "a module specifier is kept");
+    assert.equal(codeOnly('import "./a.mjs"; // c'), 'import "./a.mjs"; ', "a side-effect import's specifier is kept");
     assert.equal(codeOnly("const a = `l1\nl2`;"), "const a = `  \n  `;", "blanking keeps newlines");
+});
+
+const LIB_LAYERS = ["util", "spawn", "config", "keystore", "trust", "oauth-token", "oauth-login", "oauth-checks", "launch", "doctor", "cli"];
+
+// The package modules lib/ may depend on: exactly the ones the launcher depended on before the split.
+// Listed, not walked: a walk would admit vc-secrets-probe.mjs, which imports the entry, and so a cycle
+// lib -> probe -> entry -> lib. A new dependency is an edit to this list, made on purpose.
+const LIB_SIBLINGS = new Set(["vc-secrets-error.mjs", "clients.mjs", "scripts/shim-path.mjs", "vc-secrets-cache.mjs",
+    "vc-secrets-oauth.mjs", "vc-secrets-target.mjs", "vc-secrets-teardown.mjs"]);
+
+test("lib: every layer exists, is listed, and depends only on layers below it", () => {
+    // Bottom-up. Checked on every module specifier the code names -- static, re-export, side-effect
+    // or dynamic, either quote -- because a dependency spelled differently is still a dependency.
+    // Read through codeOnly, so `--import "${x}"` inside a template is text, not a dependency.
+    const libDir = fileURLToPath(new URL("./lib/", import.meta.url));
+    const files = fs.readdirSync(libDir).filter((f) => f.endsWith(".mjs") && !f.endsWith(".test.mjs")).map((f) => f.slice(0, -4)).sort();
+    assert.deepEqual(files, [...LIB_LAYERS].sort(), "a lib/ module is missing from LIB_LAYERS, or a listed one is gone");
+    const siblings = LIB_SIBLINGS;
+    for (const layer of LIB_LAYERS) {
+        const source = codeOnly(fs.readFileSync(path.join(libDir, `${layer}.mjs`), "utf8"));
+        assert.doesNotMatch(source, /\bimport\s*\(/, `lib/${layer}.mjs: no dynamic import`);
+        for (const [, , spec] of source.matchAll(/\b(?:from|import)\s*(["'])([^"']+)\1/g)) {
+            const below = /^\.\/([^/]+)\.mjs$/.exec(spec);
+            const ok = spec.startsWith("node:")
+                || (spec.startsWith("../") && siblings.has(spec.slice(3)))
+                || (below !== null && LIB_LAYERS.indexOf(below[1]) >= 0 && LIB_LAYERS.indexOf(below[1]) < LIB_LAYERS.indexOf(layer));
+            assert.ok(ok, `lib/${layer}.mjs depends on "${spec}", which is not node:, a package sibling, or a layer below it`);
+        }
+    }
 });
 
 test("runCli hardens the spawn environment of this very process before it dispatches anything", () => {
@@ -8271,6 +8301,18 @@ const GUARDED_IN_PACKAGE = [
     "skills/migrate/SKILL.md",
     "skills/install/agents/openai.yaml",
     "skills/migrate/agents/openai.yaml",
+    // The launcher, split by layer; matched by directory -- LIB_RE.
+    "lib/util.mjs",
+    "lib/spawn.mjs",
+    "lib/config.mjs",
+    "lib/keystore.mjs",
+    "lib/trust.mjs",
+    "lib/oauth-token.mjs",
+    "lib/oauth-login.mjs",
+    "lib/oauth-checks.mjs",
+    "lib/launch.mjs",
+    "lib/doctor.mjs",
+    "lib/cli.mjs",
 ];
 
 // Outside the set, and down to one. `README.md` is prose for people: no frontmatter, no permission
