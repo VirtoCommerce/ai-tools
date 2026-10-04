@@ -8286,8 +8286,8 @@ const UNGUARDED_FILES = ["README.md", "LICENSE"];
 // filtering some out of view.
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs"];
 
-// The guard also completes a relative path with its own process's working directory, so every spawn
-// here names one explicitly: a result must not depend on where the suite happens to be run from.
+// The guard also completes a relative path with its own process's working directory, so these two
+// helpers name one explicitly: a bare-name 0-assertion must not depend on where the suite is run from.
 const NEUTRAL_GUARD_CWD = os.tmpdir();
 
 function runGuardOn(filePath, toolName = "Write") {
@@ -8382,10 +8382,11 @@ test("guard: a name this package does not own is guarded inside the package and 
     // a guard gets switched off. Both halves are asserted, because only the pair expresses "scoped":
     // blocked under the package directory, allowed without it. The cost is real and it does not land on
     // the harmless half: a workspace rooted AT this package sends these bare, and the bare form is
-    // uncovered only when no root is available to complete it with -- no payload `cwd`, no
+    // uncovered only when no usable root completes it -- no payload `cwd`, no
     // `workspace_roots`, and a hook not spawned from inside the package (the next tests pin the
-    // completion). It then covers none of the scoped list. The launcher and the hook itself stay
-    // covered there, being file-matched, so the gap is exactly the scoped list. Stated as the list
+    // completion). It then covers none of the scoped list, nor the `lib/` modules, which are
+    // directory-scoped the same way and have their own test. The launcher and the hook itself stay
+    // covered there, being file-matched, so the gap is every directory-scoped name. Stated as the list
     // rather than as a count, because a count written in prose goes stale the next time the list grows
     // and reads exactly as right as it did before.
     for (const scoped of GUARDED_IN_PACKAGE) {
@@ -8459,6 +8460,11 @@ test("guard: with no payload cwd, workspace_roots and the hook's own directory c
     assert.equal(write({ workspace_roots: ["/home/dev/other-repo"] }).status, 0, "no root is the package");
     assert.equal(write({ workspace_roots: [pkg] }, "lib/keystore.test.mjs").status, 0, "tests stay writable");
     assert.equal(write({ workspace_roots: pkg }).status, 0, "not an array: ignored");
+    // A payload that is JSON `null` has no fields to read roots from; it must still exit 0 like any
+    // payload with nothing to inspect, not die on the property access.
+    const nullPayload = runGuardWith(null);
+    assert.equal(nullPayload.status, 0, "a JSON null payload");
+    assert.equal(nullPayload.stderr, "", "and nothing thrown");
     const odd = write({ workspace_roots: [42, null, {}, "", [pkg]] });
     assert.equal(odd.status, 0, "non-string entries: ignored");
     assert.equal(odd.stderr, "", "and nothing thrown");

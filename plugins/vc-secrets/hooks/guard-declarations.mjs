@@ -85,8 +85,8 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 //   - Codex: `cwd`, "Working directory for the session", and "Commands run with the session `cwd` as
 //     their working directory". Not established whether it is absolute, nor that it is the directory
 //     an `apply_patch` header is relative to.
-// Every root is tried and any match refuses. A wrong root yields a path that matches nothing, so the
-// extra forms can only add refusals -- which is why the hook's own directory is consulted although no
+// Every root is tried and any match refuses. A wrong root can only add refusals (a package-shaped wrong
+// root is the accepted false positive), so the extra forms only widen -- which is why the hook's own directory is consulted although no
 // client promises it is the workspace. What remains: a Cursor USER hook sending neither `cwd` nor
 // `workspace_roots` runs from ~/.cursor/, so a bare relative path is matched only as sent, and in a
 // package-rooted workspace EVERY directory-scoped name goes uncovered.
@@ -164,7 +164,7 @@ const LIB_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?lib\/[^/]+(?<!\.test)\.mjs$/i;
 // pattern can begin a match at a one-letter segment, so any match the old form had lay in the segments
 // after it, which the new form still contains. One approximation: a drive-relative path on ANOTHER
 // drive (`d:lib\x`) is rooted onto the given root, not onto that drive's own current directory --
-// a wrong root matches nothing, so this too only widens.
+// a wrong root can only add refusals, so this too only widens.
 function normalisedPath(raw) {
     let filePath = raw.replace(/\\/g, "/").replace(/^[A-Za-z]:(?=[^/])/, "").split("/")
         .map((segment) => {
@@ -247,8 +247,8 @@ const ownDirectory = () => {
     }
 };
 const roots = [
-    input.cwd,
-    ...(Array.isArray(input.workspace_roots) ? input.workspace_roots : []),
+    input?.cwd,
+    ...(Array.isArray(input?.workspace_roots) ? input.workspace_roots : []),
     ownDirectory(),
 ].filter((root) => typeof root === "string" && root !== "");
 const isAbsolute = (p) => p.startsWith("/") || /^[A-Za-z]:\//.test(p);
