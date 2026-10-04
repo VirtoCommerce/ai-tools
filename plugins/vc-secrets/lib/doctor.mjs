@@ -1,3 +1,5 @@
+// Doctor layer: the diagnostic report, keystore write probe, doctor verb; imports only from lower layers.
+
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -491,7 +493,7 @@ function doctorReport(cfg, { env, platform, enableLists, resolvable, skipped, no
     // A non-user-scope oauth declaration the loop above never named: nothing references it (a user-home
     // launchable that does is named above, since the repository's declaration is not yours). Its own
     // authorization is still worth reporting when the block is absent, because that is the report
-    // cmdLogin's refusal promises exists -- see the rule stated above authorizationRefusal.
+    // cmdLogin's refusal promises exists -- see the rule stated above authorizationRefusal (lib/config.mjs).
     for (const [oauthName, oauthDecl] of Object.entries(cfg.oauth ?? {})) {
         if (oauthDecl.home === USER_SCOPE) {
             continue;

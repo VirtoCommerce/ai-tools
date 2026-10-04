@@ -479,7 +479,7 @@ socketTest("httpsPostForm: a connection dropped after the headers REJECTS, it do
 // vc-secrets-cache.mjs — two keystore entries, their expiry check, and the cross-process refresh
 // lock. Ported from the upstream launcher's cache module and its suite: `c.` below becomes `cache.`,
 // `m.McpwError` becomes `m.VcSecretsError`. `entryNames` has no test here — the source's own is
-// not ported, because `oauthEntryKeys()` in vc-secrets.mjs already fills that role for this
+// not ported, because `oauthEntryKeys()` in lib/oauth-token.mjs already fills that role for this
 // package, and a second incompatible name generator would be the defect.
 // ---------------------------------------------------------------------------------------------
 
@@ -775,7 +775,7 @@ test("lockPathFor: a filesystem path on darwin, outside the secrets directory", 
     // by that repository's own permissions.deny patterns matching that substring — a rule that
     // lives in a repository this package does not ship to, so that half of the check is not
     // carried over verbatim. The INVARIANT behind it is not void, though: this package has its
-    // own secretsDir() (vc-secrets.mjs), where the gpg-encrypted blobs actually live, and a lock
+    // own secretsDir() (lib/keystore.mjs), where the gpg-encrypted blobs actually live, and a lock
     // file must not fall inside it.
     const p = cache.lockPathFor("azure-mcp", "proj", { platform: "darwin", userInfo: () => ({ uid: 1000 }) });
     assert.equal(p[0], "/");
@@ -1756,9 +1756,9 @@ lockTest("tokenLockFor: user scope keys the lock on USER_SCOPE, ignoring cfg.pro
 // ---------------------------------------------------------------------------------------------
 
 test("buildLocalWrite(keychain).stdinCommand: composes up to the line limit, refuses one byte past it", () => {
-    // The limit mirrors SECURITY_LINE_LIMIT in vc-secrets.mjs — declared with the stdin-composition
-    // constants near COMMAND_ON_STDIN, not next to the buildLocalWrite branch that enforces it
-    // (not exported, so restated here -- same discipline as the lock tests' locally-declared
+    // The limit mirrors SECURITY_LINE_LIMIT in lib/keystore.mjs -- declared at the top of that module
+    // beside WCM_BLOB_LIMIT, not next to the buildLocalWrite branch that enforces it (restated here
+    // rather than read through its re-export -- same discipline as the lock tests' locally-declared
     // backoff constants above: pin the value the guard actually enforces, not a re-export of it).
     //
     // The boundary is DERIVED, not hardcoded: the composed overhead (the account, the key, and
@@ -2706,9 +2706,9 @@ test("cmdLogin: the redirect_uri is the registered localhost URI, with the bound
     // `http://localhost` under Mobile and desktop applications — and ignores the port only for
     // that host. Either mismatch is AADSTS50011.
     //
-    // So if a change to vc-secrets.mjs makes this fail, fix vc-secrets.mjs — do not update the
-    // expectation. This string is not a mirror of the code; it is what an administrator configured
-    // in Entra.
+    // So if a change to the launcher makes this fail (the URI is composed in cmdLogin, in
+    // lib/oauth-login.mjs), fix the launcher -- do not update the expectation. This string is not a
+    // mirror of the code; it is what an administrator configured in Entra.
     let seenUri = null;
     const { deps } = loginDeps({
         listen: async () => ({ port: 45678, next: async () => ({ code: "c" }), close: async () => {} }),

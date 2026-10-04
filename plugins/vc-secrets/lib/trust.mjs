@@ -1,3 +1,5 @@
+// Trust layer: the trust gate for namespaced declarations, trust/untrust verbs; imports only from lower layers.
+
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline";

@@ -1,3 +1,5 @@
+// OAuth checks layer: status and tenant checks doctor reports; imports only from lower layers.
+
 import { VcSecretsError } from "../vc-secrets-error.mjs";
 
 import { parseReference } from "./config.mjs";
@@ -160,7 +162,7 @@ async function oauthTenantChecks(cfg, references, { resolveOrgTenant: resolve = 
         // line: "nothing launches it" (no consumer at all -- there is no argv to read in the first
         // place) is a different fact from "a consumer exists but its token is not for Azure DevOps"
         // (nothing for resolveOrgTenant to check), and both differ again from "a consumer exists, is
-        // ADO-scoped, and its argv could not be read" (the WARN doctorReport prints below).
+        // ADO-scoped, and its argv could not be read" (the WARN doctorReport prints, in lib/doctor.mjs).
         const applicable = hasConsumer && adoScoped;
         const org = applicable ? organisationFromArgs(cfg[consumerKind][consumerName].args) : null;
         const check = { name, org, declared: decl.tenantId, applicable, bound: null };

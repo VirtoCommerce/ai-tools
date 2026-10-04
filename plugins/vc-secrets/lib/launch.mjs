@@ -1,3 +1,5 @@
+// Launch layer: channel, child env, process-tree kill, run/task/launch verbs; imports only from lower layers.
+
 import { spawn, spawnSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -159,11 +161,11 @@ async function createChannel({ name, scopeKey, nonce, onRefusal = () => {}, chmo
     };
 }
 
-// The preload side of the same channel, entered inside the child via NODE_OPTIONS=--import. It
-// must be resolved beside THIS file, never against process.argv[1]: the launcher is normally
-// entered through vc-secrets-shim.mjs, so argv[1] is the shim in the plugin DATA dir while the
-// preload sits beside this module in the versioned plugin CACHE -- anchoring on argv[1] yields a
-// path that exists, is wrong, and produces a child that starts fine and never renews.
+// The preload side of the same channel, entered inside the child via NODE_OPTIONS=--import.
+// It must be resolved from THIS module's own URL -- one directory up, in the package root -- never against
+// process.argv[1]: the launcher is normally entered through vc-secrets-shim.mjs, so argv[1] is the shim in
+// the plugin DATA dir while the preload sits in the package root of the versioned plugin CACHE -- anchoring
+// on argv[1] yields a path that exists, is wrong, and produces a child that starts fine and never renews.
 const PRELOAD_PATH = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "vc-secrets-preload.mjs");
 
 function buildChildEnv(base, { token, envVar, channelPath, nonce, preloadPath, targetPackage, binName }) {
@@ -450,13 +452,13 @@ const LAUNCH_STDIN_CLOSE_GRACE_MS = 1000;
 // own teardown, and an async spawn loses. The POSIX path needs no such care -- kill(2) has been
 // delivered on return.
 //
-// Two follow-up timers exist, and they serve different callers. The default is unref'd, so it can never
-// hold a process open: it is for a caller that stays alive after the kill. Every caller here except
-// cmdLaunch exits on the next line and takes that timer with it, so for them it is inert. cmdLaunch is
-// the caller whose survival is the point -- it passes LAUNCH_KILL_ESCALATION for its kind, ref'd, because a
-// direct child that traps the signal keeps the launcher running and nothing else would end it. The
-// "exit" handler in cmdLaunch covers every way the launcher leaves ON ITS OWN; only the ref'd timer makes
-// it leave.
+// Two follow-up timers exist, and they serve different callers. The default is unref'd, so it
+// can never hold a process open: it is for a caller that stays alive after the kill. Every caller
+// except cmdLaunch -- the three in vc-secrets-probe.mjs -- exits on the next line and takes that
+// timer with it, so for them it is inert. cmdLaunch is the caller whose survival is the point
+// -- it passes LAUNCH_KILL_ESCALATION for its kind, ref'd, because a direct child that traps
+// the signal keeps the launcher running and nothing else would end it. The "exit" handler in
+// cmdLaunch covers every way the launcher leaves ON ITS OWN; only the ref'd timer makes it leave.
 //
 // The child must have been spawned DETACHED, or `-child.pid` names a group it is not in: usually
 // absent, but a recycled pid makes it someone else's, and that group takes the SIGKILL follow-up.

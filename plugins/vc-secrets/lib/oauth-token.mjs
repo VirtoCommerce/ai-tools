@@ -1,3 +1,5 @@
+// OAuth token layer: token entries, the refresh lock and renewal; imports only from lower layers.
+
 import fs from "node:fs";
 import os from "node:os";
 

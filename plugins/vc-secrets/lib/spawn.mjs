@@ -1,3 +1,5 @@
+// Process layer: child spawning, env sanitising and command resolution; imports only from lower layers.
+
 import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";

@@ -1,3 +1,5 @@
+// Bottom layer: path and terminal-text helpers every other layer shares; imports from no other lib/ module.
+
 import fs from "node:fs";
 import path from "node:path";
 
@@ -45,12 +47,12 @@ function pathPresent(p, what) {
     }
 }
 
-// A JSON.parse failure is the one error in these readers whose message carries FILE CONTENT. V8
-// builds it out of a window of the source around the error position, in three shapes: a window with
-// text elided on both sides, a window anchored at the start, and -- for an input short enough -- the
-// whole text. Every file parsed through here is one a credential sits in: .mcp.json and
-// settings.local.json carry env blocks, and the config file carries the secrets map. The messages
-// reach `doctor`, whose output is what a developer pastes into an issue.
+// A JSON.parse failure is the one error in the JSON readers (config.mjs parseConfigFile;
+// doctor.mjs readEnableLists, readWiredServers; trust.mjs readTrustState) whose message carries FILE CONTENT. V8
+// builds it out of a window of the source around the error position, in three shapes: a window with text elided on
+// both sides, a window anchored at the start, and -- for an input short enough -- the whole text. Every file parsed
+// through here is one a credential sits in: .mcp.json and settings.local.json carry env blocks, and the config
+// file carries the secrets map. The messages reach `doctor`, whose output is what a developer pastes into an issue.
 //
 // So the reason is rebuilt from the part that is provably content-free -- the positional triple,
 // which is digits -- rather than filtered out of V8's prose. A filter has to anticipate every shape

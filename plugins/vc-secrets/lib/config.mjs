@@ -1,3 +1,5 @@
+// Config layer: declaration schema, reference grammar and config loading; imports only from lower layers.
+
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -267,9 +269,9 @@ function validateAuthorized(label, authorized) {
 // the repository's projectId claim, and only the trust record, keyed by the root, pins it. A sign-in is
 // not namespaced that way: the token it mints is not confined to one project, so it cannot stand in for
 // a per-project grant the way a namespaced keystore entry can.
-// Every lookup below reads parsed JSON, except the registrations outer level, which the merge rebuilds
-// null-prototype while canonicalising its keys — the client level under it is still parsed JSON, which is
-// where `own` earns its place. And a
+// Every lookup below and in lib/trust.mjs reads parsed JSON, except the registrations
+// outer level, which the merge rebuilds null-prototype while canonicalising its keys — the
+// client level under it is still parsed JSON, which is where `own` earns its place. And a
 // launchable may legally be named `toString` or `constructor` (LAUNCHABLE_NAME_RE allows both). A plain
 // bracket read would return the inherited builtin instead of undefined, which then reaches
 // shapeDifferences as an object with no envKeys and throws where a refusal belongs. Measured: one such

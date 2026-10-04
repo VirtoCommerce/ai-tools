@@ -1,3 +1,5 @@
+// OAuth login layer: the browser callback flow and login/logout verbs; imports only from lower layers.
+
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import http from "node:http";
@@ -332,7 +334,7 @@ async function cmdLogin(serverName, cfg, {
             // local-scope launchable already names the entry (crossingProblem's own comment); and the
             // loop below it otherwise, for a declaration nothing references or that only a user-scope
             // launchable does. Either way naming the command here is true. Enforced by the rule
-            // stated above authorizationRefusal.
+            // stated above authorizationRefusal (lib/config.mjs).
             throw new VcSecretsError(`"vc-secrets login ${serverName}" is not authorized -- the app`
                 + ` registration it names must be acknowledged at ${source.where} in`
                 + ` ${CONFIG_HINT_PATH}${DOCTOR_REMEDY}`);

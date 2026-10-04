@@ -1,3 +1,5 @@
+// CLI layer: prompts, set/unlock/emit-config verbs, the entry point runCli; imports only from lower layers.
+
 import fs from "node:fs";
 
 import { VcSecretsError } from "../vc-secrets-error.mjs";
@@ -366,9 +368,9 @@ function hardenSpawnEnv(env, platform) {
     return env;
 }
 
-// The single entry point, used both by direct invocation below and by the shim -- which cannot rely on
-// the gate at the bottom, because when the shim runs it is argv[1], not this file. Two entry paths
-// diverging is how the wrapped and unwrapped invocations start behaving differently.
+// The single entry point, used both by the direct-run gate in vc-secrets.mjs and by the shim -- which
+// cannot rely on that gate, because when the shim runs it is argv[1], not vc-secrets.mjs. Two entry
+// paths diverging is how the wrapped and unwrapped invocations start behaving differently.
 async function runCli(argv, { shimContract } = {}) {
     hardenSpawnEnv(process.env, process.platform);
     process.on("uncaughtException", fail);

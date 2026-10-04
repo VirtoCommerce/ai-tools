@@ -3569,9 +3569,9 @@ test("oauthReferences: a reference inside a task is found, not only inside serve
 // ── oauthTenantChecks: which consumer answers for an entry, and whether it is even worth asking ────
 //
 // A real Azure DevOps MCP scope: the App ID GUID (a public Microsoft resource identifier, not a
-// client identifier -- see the constant's own comment in vc-secrets.mjs) plus offline_access, which
-// a REAL declaration needs to get a refresh token at all (README.md) -- loadConfig itself does not
-// check for it, so its absence here would not make this fixture invalid, only unrealistic.
+// client identifier -- see the constant's own comment in lib/oauth-checks.mjs) plus offline_access,
+// which a REAL declaration needs to get a refresh token at all (README.md) -- loadConfig itself does
+// not check for it, so its absence here would not make this fixture invalid, only unrealistic.
 const ADO_SCOPES = ["499b84ac-1321-427f-aa17-267ca6975798/.default", "offline_access"];
 
 test("oauthTenantChecks: a task-only consumer's organisation is read from its own args", async () => {
