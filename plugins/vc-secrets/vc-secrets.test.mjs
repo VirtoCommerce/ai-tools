@@ -15,6 +15,7 @@ import * as cache from "./vc-secrets-cache.mjs";
 import * as clients from "./clients.mjs";
 import * as t from "./hooks/targets.mjs";
 import { CANONICAL_DATA_ID } from "./scripts/shim-path.mjs";
+import { stripComments, codeOnly, launcherSource } from "./test-support.mjs";
 
 const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -2923,14 +2924,15 @@ test("cmdRun: unknown server → exit 1, single-line stderr without stack", () =
 // Source-text assertions below read a function body, and a body carries comments. Matching the raw
 // text lets a comment stand in for the code it describes: `// was: spawnSyncProcess = spawnSync` and
 // `// killProcessTree(child, signal)` each satisfied the guard for the thing they replaced.
-const STRIP_COMMENTS = /\/\/[^\n]*|\/\*[\s\S]*?\*\//g;
+// `stripComments` (test-support.mjs) is the one stripper: string-, template- and regex-literal-aware,
+// and checked against a JavaScript parser's own comment ranges.
 
 // The launcher with its comments removed, and a body sliced out of THAT. Order is the point: a body is
 // cut at the first "\n}\n" after its name, so slicing the raw text first lets a comment that mentions the
 // name -- or a block comment holding a column-0 brace -- move the cut, and stripping afterwards only
 // tidies what was already mis-cut. Every source-inspecting test below slices through these two.
 function strippedLauncherSource() {
-    return fs.readFileSync(LAUNCHER_PATH, "utf8").replace(STRIP_COMMENTS, "");
+    return stripComments(launcherSource());
 }
 
 function strippedBodyOf(name, source = strippedLauncherSource()) {
@@ -2942,6 +2944,34 @@ function strippedBodyOf(name, source = strippedLauncherSource()) {
     return source.slice(start, end);
 }
 
+test("stripComments: removes comments and only comments", () => {
+    // The source-text tests above and below match on stripped text, so a stripper that cuts too little
+    // lets a comment satisfy a match, and one that cuts too much hides code behind a "comment" that was
+    // really a literal. Every case here is a construct that has to survive or die on its own.
+    // The regex cases are the ones a string-only stripper gets wrong: a quote or a `//` inside a regex
+    // literal opens a string or a comment that swallows the rest of the file.
+    const cases = [
+        ["a URL in a string survives", 'const u = "http://x"; // c', 'const u = "http://x"; '],
+        ["a regex of slashes survives whole", "const r = /\\/\\//g; // c", "const r = /\\/\\//g; "],
+        ["a regex holding both quotes survives", "const q = /[\"']/; // c", "const q = /[\"']/; "],
+        ["a slash after `return` opens a regex", "return /\\/\\//.test(x); // c", "return /\\/\\//.test(x); "],
+        ["a slash between operands divides", "a / b // c", "a / b "],
+        ["a template keeps a // inside it", "const t = `a // b`; // c", "const t = `a // b`; "],
+        ["a template nested in an expression of a template", "const t = `x ${`y // ${z}`} // w`; // c", "const t = `x ${`y // ${z}`} // w`; "],
+        ["a comment inside an expression of a template is a comment", "const t = `${a /* c */ + b}`;", "const t = `${a  + b}`;"],
+        ["a block comment leaves its newlines", "a /* x\ny\nz */ b", "a \n\n b"],
+    ];
+    for (const [name, source, expected] of cases) {
+        assert.equal(stripComments(source), expected, name);
+    }
+    // codeOnly is the same scan with every literal blanked, so a word inside a literal is not a token.
+    assert.ok(!/\bimport\b/.test(codeOnly("const a = `--import \"${x}\"`;")), "a template's text is not code");
+    assert.ok(!/\bimport\b/.test(codeOnly('const a = "import";')), "a string's text is not code");
+    assert.ok(!/\bimport\b/.test(codeOnly("const a = /import/;")), "a regex's text is not code");
+    assert.equal(codeOnly('import x from "./a.mjs"; // c'), 'import x from "./a.mjs"; ', "a module specifier is kept");
+    assert.equal(codeOnly("const a = `l1\nl2`;"), "const a = `  \n  `;", "blanking keeps newlines");
+});
+
 test("runCli hardens the spawn environment of this very process before it dispatches anything", () => {
     // The two halves are tested alone -- hardenSpawnEnv's result above, the resolver's cwd rule in its
     // own tests -- and nothing else exercises the call between them: it runs once, from the entry point,
@@ -2949,7 +2979,7 @@ test("runCli hardens the spawn environment of this very process before it dispat
     // pinned on the source, comments stripped and the call required in full, because a comment naming it
     // or a call on a copy of the env would each leave the win32 cwd lookup open. The order matters too:
     // hardened after dispatch, the first spawn has already happened.
-    const body = m.runCli.toString().replace(STRIP_COMMENTS, "");
+    const body = stripComments(m.runCli.toString());
     const hardened = body.indexOf("hardenSpawnEnv(process.env, process.platform)");
     const dispatched = body.search(/\bmain\(argv\b/);
     assert.ok(hardened >= 0, "runCli must call hardenSpawnEnv(process.env, process.platform)");
@@ -2993,7 +3023,7 @@ test("the win32 default is spawnSync, since a kill-then-exit caller loses the ra
     // return — is invisible to a seam: an injected spy is called synchronously either way. Match the
     // BINDING, not the parameter name: the name reads `spawnSyncProcess` whatever the default is, so
     // /spawnSyncProcess/ alone passes against `= spawn`, which is the defect this test is named for.
-    assert.match(m.killProcessTree.toString().replace(STRIP_COMMENTS, ""), /spawnSyncProcess = spawnSync\b/);
+    assert.match(stripComments(m.killProcessTree.toString()), /spawnSyncProcess = spawnSync\b/);
 });
 
 test("killProcessTree on posix signals the process GROUP, not the child", () => {
@@ -3035,12 +3065,12 @@ test("cmdLaunch calls the extracted helper rather than keeping its own copy", ()
     // satisfied by a comment naming the helper, so the assertion would survive the call site being
     // put back — the one thing this test exists to notice.
     const source = m.cmdLaunch.toString();
-    const body = source.replace(STRIP_COMMENTS, "");
+    const body = stripComments(source);
     assert.match(body, /killProcessTree\(/);
     assert.doesNotMatch(body, /function killProcessTree/, "a shadowing local definition is not delegation");
     // Absence is checked on the RAW source on purpose: over-stripping can only turn a match into a
-    // loud miss, but it turns a doesNotMatch into a silent pass — a re-inlined kill hidden behind a
-    // string literal the stripper mistook for a comment.
+    // loud miss, but it turns a doesNotMatch into a silent pass — a re-inlined kill hidden behind
+    // text the stripper mistook for a comment.
     assert.doesNotMatch(source, /taskkill/);
 });
 
@@ -3875,11 +3905,11 @@ test("cmdDoctor: nothing on the doctor path can exchange a token", () => {
     // Stays a source test deliberately: it is a negative property of every path, and a spy sees only
     // the calls made through it -- a direct oauth.exchange(...) added to cmdDoctor or readCache would
     // bypass any injected double and leave a behaviour test green.
-    // The negative guards read RAW source: a comment stripper cuts at a `//` inside a string literal (a
-    // URL, say) and would hide a real call after it, and a comment mentioning `exchange(` costs a
+    // The negative guards read RAW source: a stripper that misreads a literal cuts at the `//` inside it
+    // (a URL, say) and would hide a real call after it, and a comment mentioning `exchange(` costs a
     // false failure at worst. Only the positive `readCache()` match reads stripped source, because a
     // comment could satisfy it.
-    const raw = fs.readFileSync(LAUNCHER_PATH, "utf8");
+    const raw = launcherSource();
     const stripped = strippedLauncherSource();
     // Both halves of the path, because the risk lives in the half cmdDoctor CALLS: making readCache
     // exchange on needs-refresh -- which is what ensureFreshToken does -- would leave a test that only
@@ -8240,9 +8270,10 @@ const GUARDED_IN_PACKAGE = [
 // from; like the README it is prose that loads nowhere and grants nothing.
 const UNGUARDED_FILES = ["README.md", "LICENSE"];
 
-// Neither guarded nor unguarded-by-decision: they are the subject's own instrument. Listed so the
-// classification below accounts for every tracked file rather than filtering some out of view.
-const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs"];
+// Neither guarded nor unguarded-by-decision: they are the subject's own instrument, and the helper
+// module they share. Listed so the classification below accounts for every tracked file rather than
+// filtering some out of view.
+const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs"];
 
 function runGuardOn(filePath, toolName = "Write") {
     return spawnSync(process.execPath, [GUARD_HOOK_PATH], {
@@ -8316,6 +8347,7 @@ test("guard: the package's own test files stay writable", () => {
     for (const testFile of [
         "plugins/vc-secrets/vc-secrets.test.mjs",
         "plugins/vc-secrets/vc-secrets-oauth.test.mjs",
+        "plugins/vc-secrets/test-support.mjs",
         "/home/dev/ai-tools/plugins/vc-secrets/vc-secrets.test.mjs",
     ]) {
         assert.equal(runGuardOn(testFile, "Edit").status, 0, `${testFile}: tests are how this package is worked on`);
@@ -8737,24 +8769,24 @@ test("every string literal these modules can print is ASCII", () => {
     // a new em dash in any thrown message reaches a console that may not be UTF-8. The source measured
     // one arriving as mojibake; the narrow guard that replaced it only looked at one function's output.
     //
-    // The list is every module in this package that can reach a terminal -- each one that throws or
-    // prints, plus the error type they all throw. Resolved by measuring both, not by memory, which is
-    // how clients.mjs (four thrown messages) was missing from the first version.
+    // Every module of this package is covered, the ones that can reach a terminal and the ones that
+    // carry no printable literal today: the first message added to a quiet module is then already
+    // checked.
     //
     // It is WIDER than the source's, deliberately. The source lists only what its launcher loads, and
     // that costs it nothing because it has no counterpart to the shim or the install and hook scripts.
     // Here those three print through the same raw fs.writeSync(2, ...) the rule is argued from, and
     // the shim prints on an MCP server's stderr when a launch fails -- the moment a developer is least
     // able to read mojibake.
-    for (const name of ["vc-secrets.mjs", "vc-secrets-oauth.mjs", "vc-secrets-cache.mjs",
-        "vc-secrets-error.mjs", "vc-secrets-probe.mjs", "clients.mjs", "vc-secrets-shim.mjs",
-        "vc-secrets-target.mjs", "vc-secrets-preload.mjs", "scripts/install-shim.mjs",
-        // Carries no printable literal today. Listed anyway, so membership means "a module of
-        // this package" and not "a module somebody remembered prints" -- the first message added
-        // to it is then already covered.
-        "vc-secrets-teardown.mjs",
-        "hooks/guard-declarations.mjs"]) {
-        const source = fs.readFileSync(fileURLToPath(new URL(`./${name}`, import.meta.url)), "utf8");
+    const root = fileURLToPath(new URL("./", import.meta.url));
+    const walk = (dir, prefix = "") => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        (e.isDirectory() ? walk(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
+    // Walked, not listed: a list covers the modules somebody remembered, and the next module -- a
+    // lib/ file above all -- would print mojibake with this test green.
+    const modules = walk(root).filter((f) => f.endsWith(".mjs") && !f.endsWith(".test.mjs") && f !== "test-support.mjs");
+    assert.ok(modules.includes("vc-secrets.mjs") && modules.length >= 12, `walk found ${modules.length}`);
+    for (const name of modules) {
+        const source = fs.readFileSync(path.join(root, name), "utf8");
         assert.deepEqual(nonAsciiInEmittedLiterals(source), [], `non-ASCII in a printable literal of ${name}`);
     }
 });

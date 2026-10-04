@@ -1,6 +1,7 @@
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import * as m from "./vc-secrets.mjs";              // the launcher
+import { stripComments, launcherSource } from "./test-support.mjs";
 import * as oauth from "./vc-secrets-oauth.mjs";     // the protocol
 import * as cache from "./vc-secrets-cache.mjs";     // entries, expiry, the lock
 import * as target from "./vc-secrets-target.mjs";   // the preload's target matcher
@@ -3519,54 +3520,6 @@ const channelTest = (name, fn) => test(name, async (t) => {
 // preload -- because that is the layer this block owns. The preload-level tests below (against
 // startRawSocketFixture, and the five re-pointed at the real channel) are the integration half.
 
-// Strips comments from a function's toString() before a source-text assertion matches it, so a
-// comment or a disabled line quoting the same identifier cannot satisfy the match. Not a full
-// parser: it tracks string/template literals, so a "//" or "/*" inside one is left alone, which
-// covers every function in this file as written today. Known gaps it does NOT handle: a regex
-// literal containing a quote character (read as an unterminated string), and a backtick nested
-// inside a template literal's `${}` expression (read as closing the outer template).
-function stripComments(src) {
-    let out = "";
-    let i = 0;
-    while (i < src.length) {
-        const two = src.slice(i, i + 2);
-        if (two === "//") {
-            const nl = src.indexOf("\n", i);
-            if (nl < 0) {
-                break;
-            }
-            i = nl;
-            continue;
-        }
-        if (two === "/*") {
-            const end = src.indexOf("*/", i + 2);
-            i = end < 0 ? src.length : end + 2;
-            continue;
-        }
-        const ch = src[i];
-        if (ch === '"' || ch === "'" || ch === "`") {
-            out += ch;
-            i += 1;
-            while (i < src.length && src[i] !== ch) {
-                if (src[i] === "\\") {
-                    out += src[i] + (src[i + 1] ?? "");
-                    i += 2;
-                    continue;
-                }
-                out += src[i];
-                i += 1;
-            }
-            out += src[i] ?? "";
-            i += 1;
-            continue;
-        }
-        out += ch;
-        i += 1;
-    }
-
-    return out;
-}
-
 // A raw client for the real channel's wire protocol: one JSON greeting line out, then whatever
 // comes back. Used only by the tests below that drive createChannel directly.
 function connectAndGreet(channelPath, { nonce }) {
@@ -4965,11 +4918,12 @@ test("a child killProcessTree signals is spawned detached, and its parent handle
     // no handler the parent dies and orphans the tree that detached was adopted to let it kill.
     // The launcher names its list, because it is also what dispose() removes; the probe takes the same
     // list from forwardedSignalsFor, so the two cannot disagree about which signals they install for.
-    for (const [file, installs] of [
-        ["vc-secrets-probe.mjs", /for \(const signal of forwardedSignalsFor\(\)\)\s*\{\s*process\.on\(/],
-        ["vc-secrets.mjs", /for \(const signal of forwardedSignals\)\s*\{\s*process\.on\(/],
+    for (const [file, read, installs] of [
+        ["vc-secrets-probe.mjs", () => fs.readFileSync(fileURLToPath(new URL("./vc-secrets-probe.mjs", import.meta.url)), "utf8"),
+            /for \(const signal of forwardedSignalsFor\(\)\)\s*\{\s*process\.on\(/],
+        ["the launcher", launcherSource, /for \(const signal of forwardedSignals\)\s*\{\s*process\.on\(/],
     ]) {
-        const source = stripComments(fs.readFileSync(fileURLToPath(new URL(`./${file}`, import.meta.url)), "utf8"));
+        const source = stripComments(read());
         assert.match(source, /detached: process\.platform !== "win32"/, `${file} must spawn detached`);
         // `process.on`, not merely the loop: cmdLaunch's dispose() REMOVES the same handlers with a
         // loop spelled identically to the one that installs them, so a match on the loop alone is
