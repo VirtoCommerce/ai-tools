@@ -8286,16 +8286,20 @@ const UNGUARDED_FILES = ["README.md", "LICENSE"];
 // filtering some out of view.
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs"];
 
+// The guard also completes a relative path with its own process's working directory, so every spawn
+// here names one explicitly: a result must not depend on where the suite happens to be run from.
+const NEUTRAL_GUARD_CWD = os.tmpdir();
+
 function runGuardOn(filePath, toolName = "Write") {
     return spawnSync(process.execPath, [GUARD_HOOK_PATH], {
         input: JSON.stringify({ tool_name: toolName, tool_input: { file_path: filePath } }),
-        encoding: "utf8", env: { ...process.env },
+        encoding: "utf8", env: { ...process.env }, cwd: NEUTRAL_GUARD_CWD,
     });
 }
 
-function runGuardWith(payload) {
+function runGuardWith(payload, spawnCwd = NEUTRAL_GUARD_CWD) {
     return spawnSync(process.execPath, [GUARD_HOOK_PATH], {
-        input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env },
+        input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env }, cwd: spawnCwd,
     });
 }
 
@@ -8378,11 +8382,12 @@ test("guard: a name this package does not own is guarded inside the package and 
     // a guard gets switched off. Both halves are asserted, because only the pair expresses "scoped":
     // blocked under the package directory, allowed without it. The cost is real and it does not land on
     // the harmless half: a workspace rooted AT this package sends these bare, and the bare form is
-    // uncovered exactly when the client sends no `cwd` to complete it with (the next tests pin the
-    // completion). The ones it then stops covering are `hooks/targets.mjs` and the registrations -- the
-    // off switches. The launcher and the hook itself stay covered there, being file-matched, so the gap
-    // is exactly the scoped list. Stated as the list rather than as a count, because a count written
-    // in prose goes stale the next time the list grows and reads exactly as right as it did before.
+    // uncovered only when no root is available to complete it with -- no payload `cwd`, no
+    // `workspace_roots`, and a hook not spawned from inside the package (the next tests pin the
+    // completion). It then covers none of the scoped list. The launcher and the hook itself stay
+    // covered there, being file-matched, so the gap is exactly the scoped list. Stated as the list
+    // rather than as a count, because a count written in prose goes stale the next time the list grows
+    // and reads exactly as right as it did before.
     for (const scoped of GUARDED_IN_PACKAGE) {
         assert.equal(runGuardOn(`plugins/vc-secrets/${scoped}`).status, 2, `${scoped}: inside the package`);
         // The installed copy, in the layout `vc-secrets-shim.mjs` measured and encodes --
@@ -8445,10 +8450,40 @@ test("guard: a relative path is resolved against the payload's cwd before it is 
     }
 });
 
+test("guard: with no payload cwd, workspace_roots and the hook's own directory complete a relative path", () => {
+    const pkg = "/home/dev/ai-tools/plugins/vc-secrets";
+    const write = (extra, file_path = "lib/keystore.mjs", spawnCwd) =>
+        runGuardWith({ tool_name: "Write", ...extra, tool_input: { file_path } }, spawnCwd);
+    assert.equal(write({ workspace_roots: [pkg] }).status, 2, "workspace_roots");
+    assert.equal(write({ workspace_roots: ["/home/dev/other-repo", pkg] }).status, 2, "multiroot: any root can be the package");
+    assert.equal(write({ workspace_roots: ["/home/dev/other-repo"] }).status, 0, "no root is the package");
+    assert.equal(write({ workspace_roots: [pkg] }, "lib/keystore.test.mjs").status, 0, "tests stay writable");
+    assert.equal(write({ workspace_roots: pkg }).status, 0, "not an array: ignored");
+    const odd = write({ workspace_roots: [42, null, {}, "", [pkg]] });
+    assert.equal(odd.status, 0, "non-string entries: ignored");
+    assert.equal(odd.stderr, "", "and nothing thrown");
+    // The hook's own working directory: a package-shaped path, so the file system, not a payload field,
+    // is what places the hook inside the package.
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), "guard-own-cwd-"));
+    try {
+        const inside = path.join(base, "plugins", "vc-secrets");
+        fs.mkdirSync(inside, { recursive: true });
+        assert.equal(write({}, "lib/keystore.mjs", inside).status, 2, "spawned from inside the package");
+        assert.equal(write({}, "lib/keystore.test.mjs", inside).status, 0, "tests stay writable");
+        assert.equal(write({}, "lib/keystore.mjs", base).status, 0, "spawned from a directory that is not the package");
+    } finally {
+        fs.rmSync(base, { recursive: true, force: true });
+    }
+});
+
 test("guard: a drive-relative Windows path is read as relative to the client's cwd", () => {
     // `C:lib\x` is lib\x under drive C's current directory. Read as a stream suffix it became the
     // segment `C`, which no pattern matches -- an allow for a path naming a guarded file.
     const pkg = "C:\\repo\\plugins\\vc-secrets";
+    // The case that tells the cwd form built from the sent path from one built from the raw path:
+    // joined raw, `C:..` stays inside a segment and the climb out of lib\ is lost.
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: "C:\\repo\\plugins\\vc-secrets\\lib",
+        tool_input: { file_path: "C:..\\clients.mjs" } }).status, 2, "climbing out of lib to a scoped name");
     for (const p of ["C:lib\\keystore.mjs", "C:clients.mjs", "C:hooks\\targets.mjs", "d:lib\\keystore.mjs"]) {
         assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg, tool_input: { file_path: p } }).status, 2, p);
     }

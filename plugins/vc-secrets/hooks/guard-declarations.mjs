@@ -9,7 +9,7 @@
 // launcher, so the launcher's whole export surface is one line away from a file nobody was watching.
 //
 // The names this package cannot claim on a whole machine -- `clients.*`, `hooks/targets.mjs`, the
-// client manifests and the skill files -- are guarded only INSIDE the package directory, a smaller
+// client manifests, the skill files and the `lib/` modules -- are guarded only INSIDE the package directory, a smaller
 // guarantee than the rest, stated as such where it is implemented. (`hooks-cursor.json` is in that
 // group for a different reason: it travels with `hooks.json`, not because the name is contested.)
 //
@@ -74,18 +74,22 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // this package, the fastest way to get a guard switched off wholesale.
 //
 // The directory-scoped names get the package-rooted case a second way: a relative path is also tested
-// joined onto the payload's `cwd` (see the loop below). What each client documents as sending:
-//   - Cursor: `preToolUse` input carries `cwd` (its example is the absolute `"/project"`); the common
-//     fields add `workspace_roots`, which this guard does not read.
-//   - Claude Code: the common input fields carry `cwd`, "Current working directory when the hook is
-//     invoked", and it follows a `cd`. Whether `file_path` is absolute on Write/Edit is not established
-//     here, and nothing below depends on it.
-//   - Codex: the common fields list `cwd`, "Working directory for the session". Not established whether
-//     it is absolute, nor that it is the directory an `apply_patch` header is relative to.
-// None of them says `cwd` is present on every payload. A client or version that sends none leaves the
-// scoped names uncovered in a package-rooted workspace -- an accepted residual, because the alternative
-// is the hook process's own working directory, which is the client's choice of spawn directory and is
-// documented by none of the three.
+// joined onto every root the hook can find (see the loop below) -- the payload's `cwd`, each entry of its
+// `workspace_roots`, and the hook process's own working directory. What each client documents:
+//   - Claude Code: `cwd` in the common input fields, "Current working directory when the hook is
+//     invoked", and "Handlers run in the current directory with Claude Code's environment". Whether
+//     `file_path` is absolute on Write/Edit is not established here, and nothing below depends on it.
+//   - Cursor: `workspace_roots` in the common schema, "The list of root folders in the workspace"; `cwd`
+//     in the `preToolUse` example (the absolute `"/project"`) but not in the common schema. Project
+//     hooks "Run from the project root", user hooks "Run from ~/.cursor/".
+//   - Codex: `cwd`, "Working directory for the session", and "Commands run with the session `cwd` as
+//     their working directory". Not established whether it is absolute, nor that it is the directory
+//     an `apply_patch` header is relative to.
+// Every root is tried and any match refuses. A wrong root yields a path that matches nothing, so the
+// extra forms can only add refusals -- which is why the hook's own directory is consulted although no
+// client promises it is the workspace. What remains: a Cursor USER hook sending neither `cwd` nor
+// `workspace_roots` runs from ~/.cursor/, so a bare relative path is matched only as sent, and in a
+// package-rooted workspace EVERY directory-scoped name goes uncovered.
 const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|probe|teardown))?|guard-declarations|install-shim|shim-path)\.mjs$/i;
 // The same package, scoped to its directory rather than matched by file. `clients.*`, `targets.mjs`,
 // `hooks.json`, `plugin.json`, `SKILL.md` and `openai.yaml` are names half the repositories on this
@@ -93,8 +97,8 @@ const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|pro
 // have nothing to do with us. `hooks-cursor.json` is the exception inside the exception: nothing else
 // uses that name, and it is here because it travels with `hooks.json` -- keeping the pair in one pattern
 // beats a third pattern for one file. Scoping covers the checkout and, through the version segment
-// below, the installed copy; it gives up the package-rooted workspace unless the client sends a `cwd`
-// to complete the path with, which is the trade the paragraph above makes in the other direction.
+// below, the installed copy; it gives up the package-rooted workspace unless a root completes the path
+// (the paragraph above), which is the trade that paragraph makes in the other direction.
 //
 // `clients.json` is here because `clients.mjs` reads it at module-evaluation time, so it arrives in the
 // launcher's process as data the guarded module acts on. The hook registrations because either one turns
@@ -152,12 +156,15 @@ const LIB_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?lib\/[^/]+(?<!\.test)\.mjs$/i;
 //
 // A drive letter followed by a non-slash (`C:lib\keystore.mjs`) is a drive-RELATIVE path: it names a
 // file relative to that drive's current directory. The stream cut below would read its colon as a
-// stream separator and reduce the first segment to `C`, a path no pattern matches -- an allow for a
-// path naming a guarded file. So the drive prefix is dropped first and the path is read as relative,
-// which the cwd completion in the loop below then roots. Drive-absolute `C:/...`, a bare `C:` and a
-// stream suffix (`trust.json::$DATA`, `..:x`) are untouched: the lookahead wants a non-slash after
-// the colon and the rewrite is anchored at the start. It can only widen what is refused, since the
-// form it replaces began with a one-letter segment no pattern can match.
+// stream separator and reduce the first segment to `C`, dropping the rest of that segment -- an allow
+// for a path naming a guarded file. So the drive prefix is dropped first and the path is read as
+// relative, which the root completion in the loop below then roots. Drive-absolute `C:/...`, a bare
+// `C:` and a stream suffix (`trust.json::$DATA`, `..:x`) are untouched: the lookahead wants a non-slash
+// after the colon and the rewrite is anchored at the start. It can only widen what is refused: no
+// pattern can begin a match at a one-letter segment, so any match the old form had lay in the segments
+// after it, which the new form still contains. One approximation: a drive-relative path on ANOTHER
+// drive (`d:lib\x`) is rooted onto the given root, not onto that drive's own current directory --
+// a wrong root matches nothing, so this too only widens.
 function normalisedPath(raw) {
     let filePath = raw.replace(/\\/g, "/").replace(/^[A-Za-z]:(?=[^/])/, "").split("/")
         .map((segment) => {
@@ -226,16 +233,29 @@ if (!targets.readable) {
 }
 
 // A relative path names a file relative to the client's working directory, and a directory-scoped
-// pattern cannot see the package in it. It is completed with the payload's cwd when the client sends
-// one, and tested in BOTH forms, which can only widen what is refused. The cwd form is built from the
-// normalised path and not from `raw`: joined raw, a drive-relative `C:..\x` leaves its `C:` inside a
-// segment (`<cwd>/C:..`), the stream cut reduces that to `C`, and the climb out of `<cwd>` is lost.
-const cwd = typeof input.cwd === "string" && input.cwd !== "" ? input.cwd : null;
+// pattern cannot see the package in it. It is completed with every root available: the payload's `cwd`,
+// each string entry of its `workspace_roots`, and this process's own working directory. Each joined form
+// is tested alongside the sent one, and any match refuses, so a wrong root can only add refusals. The
+// joined form is built from the normalised path and not from `raw`: joined raw, a drive-relative
+// `C:..\x` leaves its `C:` inside a segment (`<root>/C:..`), the stream cut reduces that to `C`, and
+// the climb out of `<root>` is lost.
+const ownDirectory = () => {
+    try {
+        return process.cwd();
+    } catch {
+        return null; // the working directory was deleted under the process
+    }
+};
+const roots = [
+    input.cwd,
+    ...(Array.isArray(input.workspace_roots) ? input.workspace_roots : []),
+    ownDirectory(),
+].filter((root) => typeof root === "string" && root !== "");
 const isAbsolute = (p) => p.startsWith("/") || /^[A-Za-z]:\//.test(p);
 
 for (const raw of targets.paths) {
     const sent = normalisedPath(raw);
-    const forms = cwd !== null && !isAbsolute(sent) ? [sent, normalisedPath(`${cwd}/${sent}`)] : [sent];
+    const forms = isAbsolute(sent) ? [sent] : [...new Set([sent, ...roots.map((root) => normalisedPath(`${root}/${sent}`))])];
     for (const filePath of forms) {
         // Covers all three homes: <repo>/.claude/vc-secrets.json, its .local. sibling, and
         // ~/.claude/vc-secrets.json

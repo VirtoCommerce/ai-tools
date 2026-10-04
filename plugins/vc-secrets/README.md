@@ -718,16 +718,18 @@ command that then runs. An edit to any of them changes what an agent may do; an 
 misinforms a reader.
 
 Some guarded names are guarded **only inside the package directory**: `clients.mjs`, `clients.json`,
-`hooks/targets.mjs`, the hook registrations, the client manifests and the skill files. Those names
-belong to half the repositories on any machine and this hook runs in all of them, so claiming them
-outright would refuse edits in projects that have never heard of vc-secrets. The cost is a workspace
+`hooks/targets.mjs`, the hook registrations, the client manifests, the skill files and the `lib/` modules.
+Those names belong to half the repositories on any machine and this hook runs in all of them, so claiming
+them outright would refuse edits in projects that have never heard of vc-secrets. The cost is a workspace
 rooted at the package itself, where they arrive with no directory in front of them. A relative path is
-therefore also tested joined onto the `cwd` the client sends with the tool call (Cursor, Claude Code and
-Codex each document one), which covers that workspace — and the `lib/` modules, which are guarded by
-directory the same way. A client or version that sends no `cwd` is the accepted residual, and it is worth
-being plain about which half that leaves open: the `lib/` modules, `hooks/targets.mjs` and the
-registrations, the off switches. The launcher's entry file and the hook itself stay covered there, being
-matched by file.
+therefore also tested joined onto each root the hook can find: the `cwd` in the payload, each entry of its
+`workspace_roots`, and the hook process's own working directory. A wrong root matches nothing, so the extra
+forms can only add refusals. What each client documents: Claude Code and Codex document `cwd` in the hook
+input; Cursor shows `cwd` in its examples and documents `workspace_roots`; Codex does not document what
+the path in an `apply_patch` header is relative to. The residual is a Cursor *user* hook, which runs from
+`~/.cursor/` and may send neither field: with no root available, **every** directory-scoped name above is
+matched only as sent, so a bare relative path to any of them is not caught in a package-rooted workspace.
+The launcher's entry file and the hook itself stay covered there, being matched by file.
 
 One off switch **inside this repository** is knowingly out of reach: `.claude-plugin/marketplace.json`
 at the repo root — not in this package — is what makes the package a plugin at all, and its name is not
