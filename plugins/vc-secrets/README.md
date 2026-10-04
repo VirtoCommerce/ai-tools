@@ -721,9 +721,13 @@ Some guarded names are guarded **only inside the package directory**: `clients.m
 `hooks/targets.mjs`, the hook registrations, the client manifests and the skill files. Those names
 belong to half the repositories on any machine and this hook runs in all of them, so claiming them
 outright would refuse edits in projects that have never heard of vc-secrets. The cost is a workspace
-rooted at the package itself, where they arrive with no directory in front of them — and it is worth
-being plain about which half that leaves open: `hooks/targets.mjs` and the registrations, the off
-switches. The launcher and the hook itself stay covered there, being matched by file.
+rooted at the package itself, where they arrive with no directory in front of them. A relative path is
+therefore also tested joined onto the `cwd` the client sends with the tool call (Cursor, Claude Code and
+Codex each document one), which covers that workspace — and the `lib/` modules, which are guarded by
+directory the same way. A client or version that sends no `cwd` is the accepted residual, and it is worth
+being plain about which half that leaves open: the `lib/` modules, `hooks/targets.mjs` and the
+registrations, the off switches. The launcher's entry file and the hook itself stay covered there, being
+matched by file.
 
 One off switch **inside this repository** is knowingly out of reach: `.claude-plugin/marketplace.json`
 at the repo root — not in this package — is what makes the package a plugin at all, and its name is not

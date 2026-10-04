@@ -8293,6 +8293,12 @@ function runGuardOn(filePath, toolName = "Write") {
     });
 }
 
+function runGuardWith(payload) {
+    return spawnSync(process.execPath, [GUARD_HOOK_PATH], {
+        input: JSON.stringify(payload), encoding: "utf8", env: { ...process.env },
+    });
+}
+
 test("guard: every vc-secrets module that can reach a token is blocked, in every payload shape", () => {
     // Named for the rule and not for a module: a title naming one file reads as a pin on the rule and
     // is not one, so the module added next year arrives outside every test's subject.
@@ -8371,11 +8377,12 @@ test("guard: a name this package does not own is guarded inside the package and 
     // claiming those names would refuse edits in repositories that have never heard of us, which is how
     // a guard gets switched off. Both halves are asserted, because only the pair expresses "scoped":
     // blocked under the package directory, allowed without it. The cost is real and it does not land on
-    // the harmless half: a workspace rooted AT this package sends these bare, and the ones it then stops
-    // covering are `hooks/targets.mjs` and the registrations -- the off switches. The launcher and the
-    // hook itself stay covered there, being file-matched, so the gap is exactly the scoped list.
-    // Stated as the list rather than as a count, because a count written in prose goes stale the next
-    // time the list grows and reads exactly as right as it did before.
+    // the harmless half: a workspace rooted AT this package sends these bare, and the bare form is
+    // uncovered exactly when the client sends no `cwd` to complete it with (the next tests pin the
+    // completion). The ones it then stops covering are `hooks/targets.mjs` and the registrations -- the
+    // off switches. The launcher and the hook itself stay covered there, being file-matched, so the gap
+    // is exactly the scoped list. Stated as the list rather than as a count, because a count written
+    // in prose goes stale the next time the list grows and reads exactly as right as it did before.
     for (const scoped of GUARDED_IN_PACKAGE) {
         assert.equal(runGuardOn(`plugins/vc-secrets/${scoped}`).status, 2, `${scoped}: inside the package`);
         // The installed copy, in the layout `vc-secrets-shim.mjs` measured and encodes --
@@ -8390,6 +8397,66 @@ test("guard: a name this package does not own is guarded inside the package and 
         assert.equal(runGuardOn(scoped).status, 0, `${scoped}: bare -- the stated gap, not an oversight`);
         assert.equal(runGuardOn(`some-other-project/${scoped}`).status, 0, `${scoped}: somebody else's`);
     }
+});
+
+test("guard: lib/ modules are guarded inside the package, by directory, and nowhere else", () => {
+    // Short names are the price of the split's readability, and a short name is not this package's to
+    // claim machine-wide -- so lib/ is matched by directory, like the scoped list above.
+    for (const p of [
+        "plugins/vc-secrets/lib/keystore.mjs",
+        "/home/dev/ai-tools/plugins/vc-secrets/lib/keystore.mjs",
+        "plugins\\vc-secrets\\lib\\keystore.mjs",
+        "/home/u/.claude/plugins/cache/ai-tools/vc-secrets/0.3.0/lib/keystore.mjs",
+    ]) {
+        assert.equal(runGuardOn(p).status, 2, p);
+    }
+    assert.equal(runGuardOn("lib/keystore.mjs").status, 0, "a bare lib/ path with no cwd is somebody else's");
+    assert.equal(runGuardOn("other-repo/lib/keystore.mjs").status, 0, "a lib/ outside the package");
+    // The trade LIB_RE makes, pinned rather than discovered: a lib/ under any directory named
+    // vc-secrets (with one optional segment) is refused, in a repository that is not this one too.
+    assert.equal(runGuardOn("/home/dev/vc-secrets/src/lib/util.mjs").status, 2, "accepted false positive");
+    // Tests split along lib/ live beside it and must stay writable, or work on the package stops.
+    assert.equal(runGuardOn("plugins/vc-secrets/lib/keystore.test.mjs", "Edit").status, 0);
+});
+
+test("guard: a relative path is resolved against the payload's cwd before it is matched", () => {
+    const pkg = "/home/dev/ai-tools/plugins/vc-secrets";
+    for (const rel of ["lib/keystore.mjs", "clients.mjs", "hooks/targets.mjs", "hooks/hooks.json"]) {
+        assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg, tool_input: { file_path: rel } }).status, 2, rel);
+    }
+    assert.equal(runGuardWith({ tool_name: "apply_patch", cwd: pkg,
+        tool_input: { command: "*** Begin Patch\n*** Update File: lib/keystore.mjs\n*** End Patch" } }).status, 2, "patch header");
+    assert.equal(runGuardWith({ tool_name: "apply_patch", cwd: "/home/dev/ai-tools/plugins/other",
+        tool_input: { command: "*** Begin Patch\n*** Update File: ../vc-secrets/lib/keystore.mjs\n*** End Patch" } }).status, 2,
+    "climbing into the package from a sibling");
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: "C:\\Users\\dev\\ai-tools\\plugins\\vc-secrets",
+        tool_input: { file_path: "lib\\keystore.mjs" } }).status, 2, "windows cwd");
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: "/home/dev/other-repo",
+        tool_input: { file_path: "clients.mjs" } }).status, 0, "same name, another repository");
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg,
+        tool_input: { file_path: "lib/keystore.test.mjs" } }).status, 0, "tests stay writable");
+    for (const cwd of [undefined, "", 42]) {
+        assert.equal(runGuardWith({ tool_name: "Write", cwd, tool_input: { file_path: "clients.mjs" } }).status, 0,
+            `cwd ${JSON.stringify(cwd)}: nothing to resolve against, matched as sent`);
+    }
+    // An absolute path is never re-rooted: cwd only completes a path that is relative.
+    for (const abs of ["/tmp/clients.mjs", "/clients.mjs"]) {
+        assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg, tool_input: { file_path: abs } }).status, 0, abs);
+    }
+});
+
+test("guard: a drive-relative Windows path is read as relative to the client's cwd", () => {
+    // `C:lib\x` is lib\x under drive C's current directory. Read as a stream suffix it became the
+    // segment `C`, which no pattern matches -- an allow for a path naming a guarded file.
+    const pkg = "C:\\repo\\plugins\\vc-secrets";
+    for (const p of ["C:lib\\keystore.mjs", "C:clients.mjs", "C:hooks\\targets.mjs", "d:lib\\keystore.mjs"]) {
+        assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg, tool_input: { file_path: p } }).status, 2, p);
+    }
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: "C:\\repo\\plugins\\other",
+        tool_input: { file_path: "C:..\\vc-secrets\\lib\\x.mjs" } }).status, 2, "climbing into the package");
+    assert.equal(runGuardOn("C:vc-secrets.mjs").status, 2, "file-matched, no cwd needed");
+    assert.equal(runGuardWith({ tool_name: "Write", cwd: pkg, tool_input: { file_path: "C:lib\\x.test.mjs" } }).status, 0,
+        "tests stay writable");
 });
 
 test("guard: the pattern is machine-wide, and a same-named file in an unrelated repo is refused", () => {
