@@ -8628,6 +8628,33 @@ test("guard: every file this package ships is classified -- guarded or deliberat
         + "then add it to one");
 });
 
+test("ci: the workflow runs every test file in this package, through the quoted glob", () => {
+    // The step runs `node --test "$pattern"`. A test file the pattern does not reach -- a different
+    // suffix, or a dot-directory, which Node's glob skips -- never runs in CI while every local run of
+    // it passes. test-support.mjs imports node:test for the shared test wrappers and is not a test
+    // file; it is the one exemption, by name.
+    //
+    // Residual: a file that registers tests only through `import "node:test"` or through a
+    // test-support.mjs re-export is not detected here. By convention only `*.test.mjs` files declare
+    // tests.
+    const repo = fileURLToPath(new URL("../../", import.meta.url));
+    const workflow = fs.readFileSync(path.join(repo, ".github/workflows/unit-tests.yml"), "utf8");
+    const pattern = /^\s*pattern="([^"]+)"$/m.exec(workflow)?.[1];
+    assert.equal(pattern, "plugins/vc-secrets/**/*.test.mjs", "the glob changed");
+    assert.match(workflow, /^\s*node --test "\$pattern"$/m, "the glob must reach node quoted");
+    const globbed = new Set(fs.globSync(pattern, { cwd: repo }).map((p) => p.split(path.sep).join("/")));
+    const root = path.join(repo, "plugins/vc-secrets");
+    const walk = (dir, prefix = "") => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+        (e.isDirectory() ? walk(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
+    const all = walk(root);
+    const registers = all.filter((f) => /\.m?js$/.test(f) && f !== "test-support.mjs"
+        && /\bfrom\s*["']node:test["']/.test(fs.readFileSync(path.join(root, f), "utf8")));
+    assert.ok(registers.length >= 2, registers.join(","));
+    for (const f of [...registers, ...all.filter((x) => x.endsWith(".test.mjs"))]) {
+        assert.ok(globbed.has(`plugins/vc-secrets/${f}`), `${f} declares tests but the CI glob will not run it`);
+    }
+});
+
 test("targetsFrom: a patch that names no file is unreadable, like any other write that yields no path", () => {
     // fromPathFields already calls this case unreadable; fromPatch returned readable:true
     // unconditionally, so an upstream header-spelling change would degrade to silence rather than to
