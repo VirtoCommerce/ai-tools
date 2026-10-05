@@ -49,6 +49,7 @@ skills/
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
 ├── qa-deploy-pr/                    # [QA Methodology]  Deploy a change's CI prerelease artifacts to the test env
+├── qa-env-upgrade/                  # [QA Methodology]  Upgrade an env to the latest releases (one deploy PR)
 ├── qa-review-oracles/               # [QA Methodology]  Oracle review: BL sync from human sources, ECL triangulation
 ├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
@@ -136,6 +137,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder) |
 | `/qa-hotfix-check` | Deliver an already-released hotfix onto the deployed stable + regression envs; verify live, transition tickets, bump bundles | SKILL.md (env wiring + deploy-poll + verification + transition) |
 | `/qa-deploy-pr` | Gather all fresh CI prerelease artifacts a change produced (modules + platform + vc-frontend) and deploy them together to the test env in one manifest update; dry-run by default, `--apply` opens a gated deploy PR, `--verify` polls live state. Never merges | SKILL.md |
+| `/qa-env-upgrade` | Bring a deployed env up to the latest released modules + platform and the newest green theme alpha; asks only where no release exists; one deploy PR, never merges | SKILL.md (orchestration) + reference.md (statuses, rationale); core scripts/deploy/vc-deploy.ts upgrade |
 
 ### Oracle Maintenance
 

@@ -3,7 +3,7 @@ Verify VCST bugs in **Ready for test** on their PR build, before the fix PR is m
 ## 0. Setup
 ### 0a. Operator and preflight (run first, every run)
 - **Operator** = the Atlassian account this Cowork is connected as: `atlassianUserInfo` → `accountId` + display name. Use it wherever this prompt says "the operator". Never hardcode a person.
-- **Project root** = the connected folder that holds the operator's `ai-tools` clone. Find it in the device shell with `ls -d $HOME/mnt/*/scripts/deploy/deploy-pr-artifact.ts`. Exactly one hit → its folder is `$ROOT` (`$HOME/mnt/<folder>`). None or several → stop the run with `BLOCKED — project root not found`. **Never run git inside it.**
+- **Project root** = the connected folder that holds the operator's `ai-tools` clone. Find it in the device shell with `ls -d $HOME/mnt/*/scripts/deploy/vc-deploy.ts`. Exactly one hit → its folder is `$ROOT` (`$HOME/mnt/<folder>`). None or several → stop the run with `BLOCKED — project root not found`. **Never run git inside it.**
 - **Preflight**, report each failing line and stop the run if any fails:
   - `$ROOT/.env.local` has `GITHUB_FIX_BUGS_TOKEN` and `GIT_TOKEN` (check with `grep -c`, never print the values);
   - `$ROOT/node_modules` exists (`npm install` was run on that computer);
@@ -42,7 +42,7 @@ Load all `mcp__remote-devices__Claude_Browser__` tools with one ToolSearch call.
 - **Deploy check, with the repo's `/qa-deploy-pr` core in the device shell:**
   ```
   cd $ROOT
-  NODE_USE_ENV_PROXY=1 TEST_ENV=vcst node --experimental-transform-types --no-warnings scripts/deploy/deploy-pr-artifact.ts <KEY> --pr=<owner/repo#N> --env=vcst [--verify]
+  NODE_USE_ENV_PROXY=1 TEST_ENV=vcst node --experimental-transform-types --no-warnings scripts/deploy/vc-deploy.ts pr <KEY> --pr=<owner/repo#N> --env=vcst [--verify]
   ```
   - Use this command, not `npm run`/`tsx`: node_modules carries the Windows esbuild. The Jira lookup inside the script fails from here, which is fine because `--pr` is explicit.
   - `--verify` gives the branch pin. Confirm "live" with the `/api/platform/modules` browser fetch above.
