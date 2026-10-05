@@ -119,7 +119,7 @@ export function featuresOf(prep, { parsed, candidates }) {
   const s2 = Math.max(0, ...candidates.slice(1).map((c) => c.sentence?.score ?? 0));
   return {
     conceptCoverage,
-    margin: second ? (top.fused - second.fused) / top.fused : 1,
+    margin: !second ? 1 : top.fused > 0 ? (top.fused - second.fused) / top.fused : 0,
     agreement: [top.sentence.rank, top.anchors.rank, top.concepts.rank].filter((r) => r === 1).length / 3,
     coordMatch: top.anchors.hits.length ? 1 : 0,
     coordMissed: parsed.coords.length && !top.anchors.hits.length ? 1 : 0,
@@ -183,7 +183,7 @@ function separating(cands, i, vocab) {
  * @returns {{verdict:'answer'|'ambiguous'|'none', p:number, features:object, entries:object[],
  *            candidates:object[], parsed:object, concepts:string[]}}
  *   `entries` is what the verdict hands over: one candidate for `answer`, the headlines for
- *   `ambiguous`, none for `none`. `concepts` are, for `none`, the nearest concepts the base holds.
+ *   `ambiguous`, none for `none`. `concepts` are, for `none`, the question's own concepts -- which no entry carries.
  */
 export function decide(prep, ranker, question, { retrieval = null, bodies = null } = {}) {
   const found = retrieval ?? retrieve(prep, question, { fusion: ranker.fusion });
@@ -197,8 +197,10 @@ export function decide(prep, ranker, question, { retrieval = null, bodies = null
   const listed = verdict === 'answer' ? r.candidates.slice(0, 1)
     : verdict === 'ambiguous' ? r.candidates.slice(0, AMBIGUOUS_TOP) : [];
   const entries = listed.map((c, i) => ({ ...c, separating: verdict === 'ambiguous' ? separating(listed, i, prep.vocab) : null }));
-  const near = r.parsed.concepts.length ? r.parsed.concepts
-    : [...new Set(r.candidates.slice(0, 3).flatMap((c) => c.row.concepts ?? []))].slice(0, 3);
+  // `none` happens only when NO channel found a candidate, concepts included -- so the question's own
+  // concepts are, by construction, concepts no entry is filed under. Said as that, never as "nearest
+  // concepts the base holds": that is the one thing they are not.
+  const near = r.parsed.concepts.slice(0, 3);
   return { verdict, p, features: f, entries, candidates: r.candidates, parsed: r.parsed, concepts: verdict === 'none' ? near : [] };
 }
 

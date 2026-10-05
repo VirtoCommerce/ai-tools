@@ -75,10 +75,15 @@ export function prepareVocabulary(json) {
   return { concepts, phrases, ancestors, anchors };
 }
 
-/** Read `vocabulary.json` from a base; absent is an empty vocabulary, never an error. */
+/** Read `vocabulary.json` from a base; absent, unreadable or malformed is an empty vocabulary, never an error. */
 export async function readVocabulary(reader) {
-  const r = await reader.readIndex('vocabulary.json');
-  return r.ok ? JSON.parse(r.text) : { concepts: [] };
+  let r;
+  try { r = await reader.readIndex('vocabulary.json'); } catch { return { concepts: [] }; }
+  if (!r?.ok) return { concepts: [] };
+  try {
+    const v = JSON.parse(r.text);
+    return Array.isArray(v?.concepts) ? v : { concepts: [] };
+  } catch { return { concepts: [] }; }
 }
 
 /** A concept and every ancestor of it. */

@@ -57,6 +57,16 @@ export function hitLines(hit) {
 /** Said wherever a repair ran: the next command from the same shell will be mangled the same way. */
 const MSYS_NOTE = `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`;
 
+/** What this session captured and has not published, said wherever the base certified no answer. */
+function queuedLines(queued) {
+  if (!(queued ?? []).length) return [];
+  return [
+    `  you captured this yourself earlier in THIS session and it is not published yet —`
+      + ` it is not in the base and nobody else can see it:`,
+    ...queued.map((q) => `    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`),
+  ];
+}
+
 export function askLines(r, { prefix = 'kb ask' } = {}) {
   // A verdict ranker's `ambiguous` (VCST-6122 Decision 1a): the headlines, then the handle the pick
   // or the `none` must carry so the log can pair them with THIS ask.
@@ -65,10 +75,11 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
       ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
       ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
       ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show or kb_none)`] : []),
+      ...queuedLines(r.queued),
     ];
   }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
-  if (r.verdict === 'none' && r.concepts?.length) lines.push(`  nearest concepts the base does hold: ${r.concepts.join(', ')}`);
+  if (r.verdict === 'none' && r.concepts?.length) lines.push(`  your question maps to concepts nothing in the base is filed under: ${r.concepts.join(', ')}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -88,11 +99,7 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // work, and the reader is the one party who can judge it. Named as a DRAFT and kept out of the
   // hit list: it carries no trust, no confirmations and no provenance a second person could check,
   // and the state stays `miss` because the base really does hold nothing yet.
-  if (r.state === 'miss' && (r.queued ?? []).length) {
-    lines.push(`  you captured this yourself earlier in THIS session and it is not published yet —`
-      + ` it is not in the base and nobody else can see it:`);
-    for (const q of r.queued) lines.push(`    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`);
-  }
+  if (r.state === 'miss') lines.push(...queuedLines(r.queued));
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
 }
@@ -137,7 +144,7 @@ export function verdictLines(v, { prefix = 'kb ask' } = {}) {
   }
   return [
     `${prefix}: ${HEADLINE.miss}`,
-    ...(v.concepts?.length ? [`  nearest concepts the base does hold: ${v.concepts.join(', ')}`] : []),
+    ...(v.concepts?.length ? [`  your question maps to concepts nothing in the base is filed under: ${v.concepts.join(', ')}`] : []),
   ];
 }
 

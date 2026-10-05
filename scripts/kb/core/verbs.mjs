@@ -441,8 +441,30 @@ async function queuedHere(question, { env }) {
 // be read or does not have the shape `decide` needs is treated as absent: the fallback is the ranker
 // that was running yesterday, never a half-configured one.
 
-/** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). */
-export async function loadVerdictRanker(reader) {
+// PER-PROCESS CACHES. The MCP server lives for a whole session and asks many times; without these it
+// fetched ranker.json (a 404 on every base without one, which is every base today), rebuilt the
+// retrieval index and re-read up to ten bodies on EVERY ask. A short TTL keeps a base update visible
+// within a minute; a CLI process asks once and never sees a hit, which is fine.
+const CACHE_TTL_MS = 60_000;
+const cached = new Map();
+async function remember(key, make, { now = Date.now() } = {}) {
+  const hit = cached.get(key);
+  if (hit && now - hit.at < CACHE_TTL_MS) return hit.value;
+  const value = await make();
+  cached.set(key, { at: now, value });
+  return value;
+}
+/** Cheap identity of a loaded index: the same rows in the same order yield the same retrieval prep. */
+const rowsKey = (rows) => `${rows.length}:${rows.map((r) => r.id).join(',')}`;
+/** For tests: forget everything cached. */
+export const clearVerdictCaches = () => cached.clear();
+
+/** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). Cached per base. */
+export async function loadVerdictRanker(reader, { locator = null } = {}) {
+  return locator ? remember(`ranker\0${locator}`, () => readVerdictRanker(reader)) : readVerdictRanker(reader);
+}
+
+async function readVerdictRanker(reader) {
   let read;
   try { read = await reader.readIndex('ranker.json'); } catch { return null; }
   if (!read?.ok) return null;
@@ -466,14 +488,16 @@ const featureLine = (f) => Object.fromEntries(MODEL_FEATURES.map((k) => [k, roun
  */
 async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
   const rows = retrievable(cat.rows);
-  const prep = prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader)));
+  const loc = String(opened.locator ?? '');
+  const prep = await remember(`prep\0${loc}\0${rowsKey(rows)}`,
+    async () => prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader))));
   const found = retrieve(prep, question, { fusion: ranker.fusion });
   const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
-  const parsed = new Map(await Promise.all(head.map(async (c) => {
+  const parsed = new Map(await Promise.all(head.map(async (c) => [c.row.id, await remember(`entry\0${loc}\0${c.row.path}`, async () => {
     const r = await opened.reader.readEntry(c.row.path);
-    if (!r.ok) return [c.row.id, null];
-    try { return [c.row.id, parseEntry(r.text, c.row.path)]; } catch { return [c.row.id, null]; }
-  })));
+    if (!r.ok) return null;
+    try { return parseEntry(r.text, c.row.path); } catch { return null; }
+  })])));
   const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
   const d = decide(prep, ranker, question, { retrieval: found, bodies });
   const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
@@ -491,8 +515,11 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
     const headlines = d.entries.map((c) => ({
       id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
     }));
-    const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp }, { env });
-    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], rows: cat.rows.length, ...repair };
+    // No headline is certified, so the agent may be about to go and find out: name what this session
+    // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
+    const queued = await queuedHere(question, { env });
+    const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
   }
   const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
   const queued = await queuedHere(question, { env });
@@ -534,7 +561,7 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
     return { state: cat.state, why: cat.why, hits: [], ...repair };
   }
 
-  const verdictRanker = await loadVerdictRanker(opened.reader);
+  const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator });
   if (verdictRanker) {
     return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
   }

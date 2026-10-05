@@ -32,8 +32,8 @@ const withSurfaces = (appliesTo, surfaces) => [
   ...surfaceItems(surfaces),
 ];
 const card = (p) => ({
-  questions: p.questions.map((text) => ({ text: String(text).trim() })),
-  concepts: p.concepts.map((id) => ({ id })),
+  questions: (p.questions ?? []).map((text) => String(text).trim()).filter(Boolean).map((text) => ({ text })),
+  concepts: (p.concepts ?? []).map((id) => ({ id })),
 });
 
 /** What is wrong with one card, as messages; empty when it may be written. */
@@ -71,6 +71,7 @@ export function migrate(files, plans, vocabulary) {
   const superseded = [];
   const problems = [];
   const seen = new Set();
+  const minted = new Set(); // every child id this run creates, across plans
 
   for (const plan of plans) {
     const parent = byId.get(plan.id);
@@ -101,7 +102,8 @@ export function migrate(files, plans, vocabulary) {
       const subject = String(child.subject ?? '').trim();
       if (!subject) { problems.push(`${where}: no subject`); return; }
       const id = mintId(subject);
-      if (byId.has(id) || ids.includes(id)) { problems.push(`${where}: id ${id} is already taken`); return; }
+      if (byId.has(id) || minted.has(id)) { problems.push(`${where}: id ${id} is already taken`); return; }
+      minted.add(id);
       problems.push(...cardProblems(where, child, concepts));
       for (const a of child.anchors ?? []) if (!parentAnchors.has(a)) problems.push(`${where}: anchor "${a}" is not one of the parent's`);
       if (!String(child.body ?? '').trim()) problems.push(`${where}: empty body`);

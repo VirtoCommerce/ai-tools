@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// `node scripts/kb/merge-entries.mjs --base <checkout> --plans <file> [--apply]` (VCST-6122).
+// `node scripts/kb/merge-entries.mjs --base <checkout> --plans <file> [--stamp | --apply]` (VCST-6122).
 //
 // Merges entries that state the SAME fact into one survivor -- the "one entry, one fact" rule read
 // from the other side: a split (migrate-schema2) turns one entry holding two facts into two; a merge
@@ -22,6 +22,10 @@ import { join } from 'node:path';
 
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
 import { buildIndex, buildRow } from './core/index-build.mjs';
+import { entryHash } from './core/migrate-schema2.mjs';
+
+/** Every entry id a plan reads, survivor first. */
+const idsOf = (p) => (p.survivor ? [p.survivor, ...(p.absorbed ?? [])] : [p.id]);
 
 const key = (o) => JSON.stringify(o);
 const union = (a, b, by) => {
@@ -34,9 +38,22 @@ export function merge(files, plans) {
   const byId = new Map();
   for (const [path, text] of files) {
     const { data, body } = parseEntry(text, path);
-    byId.set(String(data.id), { path, data, body });
+    byId.set(String(data.id), { path, data, body, text });
   }
   const problems = [];
+  // A plan is written from one version of each entry it reads, and a merged body is built FROM those
+  // versions: applied to a newer entry it would silently drop whatever changed since (a confirm, a
+  // dispute, a corrected anchor). `basedOn` (id -> entryHash, written by --stamp) is required, and a
+  // stale one refuses the run, as migrate-schema2 does.
+  for (const p of plans) {
+    for (const id of idsOf(p)) {
+      const e = byId.get(id);
+      if (!e) continue; // reported below as "not in the base"
+      const want = p.basedOn?.[id];
+      if (!want) problems.push(`${id}: the plan carries no basedOn for it; run --stamp right after writing the plan`);
+      else if (want !== entryHash(e.text)) problems.push(`${id}: the entry changed since the plan was written (basedOn ${want}), re-plan it`);
+    }
+  }
   const next = new Map(); // id -> { data, body } as it will be written
   const touched = new Set();
   const get = (id) => next.get(id) ?? byId.get(id);
@@ -106,7 +123,16 @@ function main() {
   const args = process.argv.slice(2);
   const base = args[args.indexOf('--base') + 1];
   const planFiles = args.flatMap((a, i) => (a === '--plans' ? [args[i + 1]] : []));
-  if (args.indexOf('--base') < 0 || !planFiles.length) throw new Error('usage: --base <local checkout> --plans <file> [--plans <file>] [--apply]');
+  if (args.indexOf('--base') < 0 || !planFiles.length) throw new Error('usage: --base <local checkout> --plans <file> [--plans <file>] [--stamp | --apply]');
+  if (args.includes('--stamp')) {
+    for (const f of planFiles) {
+      const plans = JSON.parse(readFileSync(f, 'utf8'));
+      for (const p of plans) p.basedOn = Object.fromEntries(idsOf(p).map((id) => [id, entryHash(readFileSync(join(base, 'entries', `${id}.md`), 'utf8'))]));
+      writeFileSync(f, `${JSON.stringify(plans, null, 1)}\n`);
+      console.log(`stamped ${plans.length} plan(s) in ${f} from ${base}`);
+    }
+    return;
+  }
   if (/^https?:/i.test(base)) throw new Error('--base must be a local checkout');
   const files = new Map(readdirSync(join(base, 'entries')).filter((n) => n.endsWith('.md'))
     .map((n) => [`entries/${n}`, readFileSync(join(base, 'entries', n), 'utf8').replace(/\r\n/g, '\n')]));
