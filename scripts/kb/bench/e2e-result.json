@@ -854,5 +854,125 @@
    ]
   }
  },
- "testNote": "logs300 test split opened once on 2026-10-05 (.test-openings.jsonl). Not relabelled after opening. Of the six wrong M4 reliances, four picked an entry that also states the asked fact but is missing from expect (L-122 KB-0E177E02, L-158 and L-186 KB-4B889114, L-290 KB-1D53A1BE): probable label gaps, reported, not applied."
+ "testNote": "logs300 test split opened once on 2026-10-05 (.test-openings.jsonl). Not relabelled after opening. Of the six wrong M4 reliances, four picked an entry that also states the asked fact but is missing from expect (L-122 KB-0E177E02, L-158 and L-186 KB-4B889114, L-290 KB-1D53A1BE): probable label gaps, reported, not applied.",
+ "merged-logs300-devcal-floor1": {
+  "base": "vcst-6122-schema2@062c845",
+  "bodyChecked": {
+   "picksPrecision": [
+    104,
+    108
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    100,
+    121
+   ],
+   "resolvedPartial": [
+    4,
+    27
+   ],
+   "resolvedAll": [
+    104,
+    148
+   ],
+   "shownNonPartial": [
+    102,
+    121
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 783,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-173",
+     "kind": "target",
+     "relied": "KB-1E9580BB",
+     "expect": [
+      "KB-6AF43C39"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  }
+ },
+ "merged-logs300-devcal-verdict": {
+  "base": "vcst-6122-schema2@062c845",
+  "bodyChecked": {
+   "picksPrecision": [
+    108,
+    109
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    55,
+    56
+   ],
+   "resolvedNonPartial": [
+    105,
+    121
+   ],
+   "resolvedPartial": [
+    3,
+    27
+   ],
+   "resolvedAll": [
+    108,
+    148
+   ],
+   "shownNonPartial": [
+    115,
+    121
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 390,
+   "baseAnswers": [
+    5,
+    5
+   ],
+   "wrong": [
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  }
+ }
 }

@@ -460,6 +460,29 @@ Opened once, same protocol, both rankers.
   next gate, merging the overlapping entries, and a fresh held-out set from the logs written after
   today.
 
+## Merged base + exhaustive labels (2026-10-05)
+
+`scripts/kb/merge-entries.mjs` folded 21 entries that state the same fact as another into 17
+survivors on `vcst-6122-schema2` (`dc24ad1`; 389 active; every rewritten body passed an independent
+loss/invention check, 4 after correction; 13 contradictions listed in the base under
+`migration/merge/`). Every label set was remapped to the survivors and relabelled EXHAUSTIVELY
+(every entry that states the fact; 90 rows gained entries; operator decisions on the approved sets
+in `relabel-proposals-2026-10-05.json`). Then the same end-to-end run, logs300 dev + calibration:
+
+| body-checked, 204 rows | floor-1 | **M4** | gate |
+|---|---|---|---|
+| picks precision | 104/108 (96%) | **108/109 (99%)** | >= 95% |
+| controls end in `none` | 56/56 | 55/56 (98%) | >= 90% |
+| targets resolved, non-partial | 100/121 (83%) | **105/121 (87%)** | >= 80% |
+| right entry shown, non-partial | 102/121 | 115/121 | -- |
+| mean `ask` tokens | 783 | **390** | <= 400 |
+
+- With the duplicates gone and the labels exhaustive, M4 beats floor-1 on precision, resolution and
+  recall at half the payload; its one wrong reliance is a control (`L-246`).
+- **Not a gate.** The merges were found partly through wrong picks on these very rows and on the
+  test split, so this set is no longer held out for the base as it now stands. The gate needs a
+  fresh set: asks logged after 2026-10-05, labelled exhaustively from the start.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
