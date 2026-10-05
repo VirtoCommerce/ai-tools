@@ -1,0 +1,406 @@
+{
+ "about": "VCST-6122 wave2 held-out set (2026-10-05): the 43 live asks of VCST-6122-wave2, labelled by the operator in wave2-to-label.json; every row is split test (held out: the ranker was frozen before the wave).",
+ "snapshot": "vcst-6122-schema2@52b3683",
+ "targets": [
+  {
+   "id": "W2-03",
+   "q": "What happens in the cart when a customer applies an invalid or expired coupon code?",
+   "expect": [
+    "KB-35F20D97",
+    "KB-8264632C"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 3"
+  },
+  {
+   "id": "W2-04",
+   "q": "Which price does the storefront show when a product has prices in several price lists assigned to the same catalog?",
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 4"
+  },
+  {
+   "id": "W2-06",
+   "q": "Which shipping methods does the checkout page offer and how is the shipping cost calculated?",
+   "expect": [
+    "KB-6AA0D7FB",
+    "KB-50EBEEE9"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 6"
+  },
+  {
+   "id": "W2-07",
+   "q": "On the storefront order history page, which order statuses are shown to the customer and how are they labelled?",
+   "expect": [
+    "KB-1205B62A"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 7"
+  },
+  {
+   "id": "W2-08",
+   "q": "What roles can a company administrator assign to a new member when inviting a colleague on the storefront?",
+   "expect": [
+    "KB-B769C7B1"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 8"
+  },
+  {
+   "id": "W2-09",
+   "q": "How does a configurable product page validate required sections before add to cart, via the configurationSections of the product query?",
+   "expect": [
+    "KB-0C163966"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 9"
+  },
+  {
+   "id": "W2-10",
+   "q": "GraphQL addCoupon mutation: what does the cart return for the applied coupon and its discount?",
+   "expect": [
+    "KB-E7790BF6"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 10"
+  },
+  {
+   "id": "W2-16",
+   "q": "How is a gift item from a promotion shown in the cart line items?",
+   "expect": [
+    "KB-C4346EB2"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 16"
+  },
+  {
+   "id": "W2-18",
+   "q": "Can a customer add a new delivery address during checkout, and is it saved to the address book?",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 18"
+  },
+  {
+   "id": "W2-21",
+   "q": "GraphQL mutation inviteUser: what does it return when the email is already registered?",
+   "expect": [
+    "KB-BAEBCDA7"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 21"
+  },
+  {
+   "id": "W2-25",
+   "q": "What does the order confirmation page /checkout/completed show after placing an order?",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 25"
+  },
+  {
+   "id": "W2-26",
+   "q": "Can a customer request a return for a delivered order and what happens to order status?",
+   "expect": [
+    "KB-67D0AB31"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 26"
+  },
+  {
+   "id": "W2-27",
+   "q": "Which members does the company members page /company/members list, and can the current user see themselves?",
+   "expect": [
+    "KB-02238DE5"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 27"
+  },
+  {
+   "id": "W2-28",
+   "q": "Do automatic promotions reprice the cart immediately after changeCartItemQuantity?",
+   "expect": [
+    "KB-35A09C64"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 28"
+  },
+  {
+   "id": "W2-29",
+   "q": "which payment methods are available at checkout and how does a card payment with the sandbox test card behave",
+   "expect": [
+    "KB-535FF3AC",
+    "KB-7F535D52"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 29"
+  },
+  {
+   "id": "W2-30",
+   "q": "POST /api/pricing/evaluate - how are price lists selected by pricing assignment priority and date range?",
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 30"
+  },
+  {
+   "id": "W2-32",
+   "q": "When a user belongs to several organizations, how does switching organization work and what changes after the switch?",
+   "expect": [
+    "KB-8BE777BB",
+    "KB-B5B57F41"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 32"
+  },
+  {
+   "id": "W2-35",
+   "q": "What does the loyalty points history page in the account show for each transaction?",
+   "expect": [
+    "KB-29037452"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 35"
+  },
+  {
+   "id": "W2-37",
+   "q": "Can a company member be deleted from the organization, and what happens to their account and orders?",
+   "expect": [
+    "KB-9912A219"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 37"
+  },
+  {
+   "id": "W2-38",
+   "q": "Which cart totals (subtotal, discount total, tax) are shown after a percentage discount is applied?",
+   "expect": [
+    "KB-D4A064A5",
+    "KB-C55BBF2E"
+   ],
+   "partial": true,
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 38"
+  },
+  {
+   "id": "W2-39",
+   "q": "Is the Place order button disabled until a payment method and shipping method are selected?",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 39"
+  },
+  {
+   "id": "W2-40",
+   "q": "Does an organization-specific price list override the default price for users of that organization in the cart?",
+   "expect": [
+    "KB-ADFD93AB"
+   ],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 40"
+  }
+ ],
+ "controls": [
+  {
+   "id": "W2-01",
+   "q": "What does the storefront search page show when a query returns no products?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 1"
+  },
+  {
+   "id": "W2-02",
+   "q": "searchProducts GraphQL query: how are facet filters combined and what do the term facet counts represent?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 2"
+  },
+  {
+   "id": "W2-05",
+   "q": "Does the product detail page show Out of stock or hide the Add to cart button when available quantity is zero?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 5"
+  },
+  {
+   "id": "W2-11",
+   "q": "What does the GraphQL query products return in price.actual and price.list for a tier price with quantity 10?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 11"
+  },
+  {
+   "id": "W2-12",
+   "q": "What does the GraphQL mutation initializePayment return and what happens to the order status after payment?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 12"
+  },
+  {
+   "id": "W2-15",
+   "q": "When a product has variations, which variation is preselected on the product page and how does the price change on switching?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 15"
+  },
+  {
+   "id": "W2-17",
+   "q": "How are loyalty points earned after an order is placed and when do they appear in the balance?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 17"
+  },
+  {
+   "id": "W2-19",
+   "q": "How does the inventory module compute availableQuantity with reserved quantity and fulfillment centers for the storefront?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 19"
+  },
+  {
+   "id": "W2-20",
+   "q": "POST /api/order/customerOrders/search what filters and response fields does it support",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 20"
+  },
+  {
+   "id": "W2-22",
+   "q": "On /cart page, what happens when quantity is changed to zero or above available stock?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 22"
+  },
+  {
+   "id": "W2-23",
+   "q": "Can a customer redeem loyalty points at checkout, and how is the order total reduced?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 23"
+  },
+  {
+   "id": "W2-24",
+   "q": "Does the catalog search at /catalog sort by relevance by default and does sort by price use indexed price or displayed price?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 24"
+  },
+  {
+   "id": "W2-31",
+   "q": "Admin order blade: how are order totals (subtotal, tax, shipping, discount, total) calculated and displayed?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 31"
+  },
+  {
+   "id": "W2-33",
+   "q": "Can two coupons be applied to one cart at the same time?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 33"
+  },
+  {
+   "id": "W2-34",
+   "q": "GraphQL mutation addOrUpdateCartShipment: what happens when the selected shipping method is no longer available for the cart?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 34"
+  },
+  {
+   "id": "W2-36",
+   "q": "What payment statuses can an order payment have and how does capturing or refunding a payment change the order?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 36"
+  },
+  {
+   "id": "W2-41",
+   "q": "Order details page in the account: is there a reorder button and what does it do with unavailable items?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 41"
+  },
+  {
+   "id": "W2-42",
+   "q": "POST /api/invitations: is the invitation link single-use and does it expire?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 42"
+  },
+  {
+   "id": "W2-43",
+   "q": "Admin order blade: can an operator edit line item quantities or add a shipment after the order is placed, and which fields become read-only for Completed orders?",
+   "expect": [],
+   "source": "wave2",
+   "split": "test",
+   "cite": "wave2-to-label.json row 43"
+  }
+ ],
+ "contested": [
+  {
+   "id": "W2-13",
+   "q": "GraphQL operation searchOrders / orders query: what does it return for a B2B user regarding organization orders versus own orders?",
+   "note": "contested: KB-02238DE5 states the UI scope (only own orders) while Q asks the searchOrders GraphQL response; inferring API from UI is the sufficiency question under measurement."
+  },
+  {
+   "id": "W2-14",
+   "q": "What happens when a blocked member tries to sign in to the storefront?",
+   "note": "contested: blocked has three meanings in the base (contact status, membership lock, account lockout; KB-06409954 vs KB-97170665): KB-B5B57F41 under one reading, KB-4B889114 under another; needs a live check."
+  }
+ ]
+}

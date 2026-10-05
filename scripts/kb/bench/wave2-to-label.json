@@ -1,5 +1,5 @@
 {
- "about": "Wave VCST-6122-wave2 (2026-10-01): 43 asks by six Sonnet-class agents against vcst-6122-schema2 with ranker verdict-1; every ask ended ambiguous and was closed by kb_show or kb_none BY HANDLE (log/20261001-b01b5d39.jsonl on the branch). DRAFT FOR LABELLING: the operator fills expect (the entries that answer, or [] when the base holds nothing) before any row joins a labelled set.",
+ "about": "Wave VCST-6122-wave2 (2026-10-01): 43 asks by six Sonnet-class agents against vcst-6122-schema2 with ranker verdict-1; every ask ended ambiguous and was closed by kb_show or kb_none BY HANDLE (log/20261001-b01b5d39.jsonl on the branch). LABELLED by the operator on 2026-10-05 from Claude-drafted proposals: expect = the entries that answer ([] = the base holds nothing), partial = answers only part of Q, contested rows carry expect null and stay out of every metric.",
  "totals": {
   "relied": 20,
   "noneDirect": 14,
@@ -29,8 +29,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "Only barcode-specific empty states are recorded (KB-71011C1F 'No products found for barcode <value>'); no entry states the keyword /search?q= zero-result view."
   },
   {
    "n": 2,
@@ -56,8 +56,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-041DF407 only covers stale deleted-product docs inflating term_facets; no entry states how facet filters combine (AND/OR) or what a facet count means in general."
   },
   {
    "n": 3,
@@ -83,8 +83,11 @@
    ],
    "agent": "relied KB-35F20D97",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-35F20D97",
+    "KB-8264632C"
+   ],
+   "labelNote": "KB-35F20D97: addCoupon 'answers HTTP 200 ... APPENDS the code' with isAppliedSuccessfully=false; KB-8264632C gives the cart-page side (validateCoupon first, 'This code does not match any active coupons')."
   },
   {
    "n": 4,
@@ -110,8 +113,10 @@
    ],
    "agent": "relied KB-6D5E2CD1",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "labelNote": "KB-6D5E2CD1: among matching assignments 'priority, higher wins' (20000 beat 1), gated by scope, date window and condition."
   },
   {
    "n": 5,
@@ -137,8 +142,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No entry states the PDP rendering for a zero-stock product; KB-191B1B4C only notes out-of-stock variations in the panel have disabled quantity controls."
   },
   {
    "n": 6,
@@ -164,8 +169,11 @@
    ],
    "agent": "relied KB-6AA0D7FB",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-6AA0D7FB",
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "KB-6AA0D7FB: FixedRate prices per option via '.Ground.Rate and .Air.Rate' store settings (unset = 0); KB-50EBEEE9 lists 'Fixed Rate (Ground) $150.00 and Fixed Rate (Air)' on checkout."
   },
   {
    "n": 7,
@@ -191,8 +199,11 @@
    ],
    "agent": "relied KB-DB7B6317",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-1205B62A"
+   ],
+   "labelNote": "KB-1205B62A names the storefront status chips 'New, Processing, Pending, Cancelled, Completed, Payment required and Ready for pickup' (Shipped unstyled); KB-DB7B6317 only says labels differ without listing them.",
+   "partial": true
   },
   {
    "n": 8,
@@ -218,8 +229,11 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-B769C7B1"
+   ],
+   "labelNote": "KB-B769C7B1: the storefront offers 'only a subset ... 3 of the ~15' roles, whatever GET /api/members/customers/invite/roles returns, but does not name them.",
+   "partial": true
   },
   {
    "n": 9,
@@ -245,8 +259,11 @@
    ],
    "agent": "relied KB-0C163966",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-0C163966"
+   ],
+   "labelNote": "KB-0C163966: a required section shows 'Complete all required options to finalize your selection' and offers no way to add; it does not describe the configurationSections query mechanism, and its add-control claim is disputed by KB-F78ED1CC.",
+   "partial": true
   },
   {
    "n": 10,
@@ -272,8 +289,10 @@
    ],
    "agent": "relied KB-E7790BF6",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-E7790BF6"
+   ],
+   "labelNote": "KB-E7790BF6: the code lands in cart.coupons as CouponType {code, isAppliedSuccessfully} and the reward in cart.discounts whose 'coupon' field carries the code."
   },
   {
    "n": 11,
@@ -297,8 +316,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No candidate states tier (minQuantity) price behaviour in price.actual/price.list."
   },
   {
    "n": 12,
@@ -322,8 +341,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-78638393 is about authorizePayment on CyberSource, a different mutation; no entry states what initializePayment returns. (operator overrode the draft)"
   },
   {
    "n": 13,
@@ -348,7 +367,8 @@
    "agent": "none",
    "offList": [],
    "expect": null,
-   "labelNote": ""
+   "labelNote": "contested: KB-02238DE5 states the UI scope (only own orders) while Q asks the searchOrders GraphQL response; inferring API from UI is the sufficiency question under measurement.",
+   "contested": true
   },
   {
    "n": 14,
@@ -375,7 +395,8 @@
    "agent": "relied KB-4B889114",
    "offList": [],
    "expect": null,
-   "labelNote": ""
+   "labelNote": "contested: blocked has three meanings in the base (contact status, membership lock, account lockout; KB-06409954 vs KB-97170665): KB-B5B57F41 under one reading, KB-4B889114 under another; needs a live check.",
+   "contested": true
   },
   {
    "n": 15,
@@ -401,8 +422,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-DEBE1CED says the master PDP picker never makes it purchasable; no entry states which variation is preselected. (operator overrode the draft)"
   },
   {
    "n": 16,
@@ -428,8 +449,10 @@
    ],
    "agent": "relied KB-C4346EB2",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-C4346EB2"
+   ],
+   "labelNote": "States the gift is not a cart table row but sits in a pre-checked '+ Add a gift' panel below the product table, and becomes an isGift:true $0 order line."
   },
   {
    "n": 17,
@@ -453,8 +476,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No body says how or when earned points post to the balance; KB-EDDBBE75 only says balances change 'through the earn and redeem handling on orders', with no timing."
   },
   {
    "n": 18,
@@ -478,8 +501,11 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "Answers only the first half: with no saved address 'the select a shipping address control opens a New address dialog'; nothing says whether it is saved to the address book.",
+   "partial": true
   },
   {
    "n": 19,
@@ -505,8 +531,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-25388E6C is about UCP search_products and non-main fulfillment centers; no entry states the reserved-quantity arithmetic. (operator overrode the draft)"
   },
   {
    "n": 20,
@@ -530,8 +556,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No candidate lists the filters or response fields of POST /api/order/customerOrders/search; hits only mention it as an anchor."
   },
   {
    "n": 21,
@@ -555,8 +581,10 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-BAEBCDA7"
+   ],
+   "labelNote": "States re-inviting an address that already has an account is refused: 'inviteUser returns succeeded:false with DuplicateUserName AND DuplicateEmail'."
   },
   {
    "n": 22,
@@ -580,8 +608,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "Only UCP over-stock entries exist; nothing describes the storefront /cart behaviour for quantity 0 or above stock."
   },
   {
    "n": 23,
@@ -605,8 +633,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-D842824E is about mixed-currency order totals; no entry describes redeeming points at checkout. (operator overrode the draft)"
   },
   {
    "n": 24,
@@ -630,8 +658,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No body states the /catalog default sort or whether price sort uses indexed or displayed price; KB-D9B90536 covers only malformed sort arguments."
   },
   {
    "n": 25,
@@ -657,8 +685,10 @@
    ],
    "agent": "relied KB-50EBEEE9",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "States /checkout/completed shows 'Order <number> has been successfully submitted.' plus a 'Show order' link to /account/orders/<order-guid>."
   },
   {
    "n": 26,
@@ -684,8 +714,11 @@
    ],
    "agent": "relied KB-67D0AB31",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-67D0AB31"
+   ],
+   "labelNote": "Shows the order page offers a 'Request return' button and shows no return status, but does not say what happens to the order's status after a return.",
+   "partial": true
   },
   {
    "n": 27,
@@ -711,8 +744,11 @@
    ],
    "agent": "relied KB-02238DE5",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-02238DE5"
+   ],
+   "labelNote": "States /company/members renders 'the full roster - every colleague's name, email and role', but does not say whether the current user sees themselves.",
+   "partial": true
   },
   {
    "n": 28,
@@ -738,8 +774,10 @@
    ],
    "agent": "relied KB-35A09C64",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-35A09C64"
+   ],
+   "labelNote": "States 'Promotions are re-evaluated on every storefront cart read', so the cart returned by a quantity mutation reflects the current promotions."
   },
   {
    "n": 29,
@@ -767,8 +805,11 @@
    "offList": [
     "KB-C7E16C35"
    ],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-535FF3AC",
+    "KB-7F535D52"
+   ],
+   "labelNote": "KB-535FF3AC lists the offered methods from availablePaymentMethods (and says the set differs per deployment), and KB-7F535D52 says a CyberSource sandbox test card 'can authorize cleanly to Processing, or be held for review'; the agent's KB-C7E16C35 covers only list order."
   },
   {
    "n": 30,
@@ -794,8 +835,10 @@
    ],
    "agent": "relied KB-3FCB032F",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "labelNote": "KB-6D5E2CD1 states both levers asked about: 'the date window -- setting endDate to a past instant ... fall straight back to the next-best pricelist' and 'priority, higher wins'; the agent's KB-3FCB032F covers priority only."
   },
   {
    "n": 31,
@@ -821,8 +864,8 @@
    ],
    "agent": "relied KB-1B18B821",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-0DD47BD1 says the totals agree across surfaces, not how they are calculated. (operator overrode the draft)"
   },
   {
    "n": 32,
@@ -848,8 +891,11 @@
    ],
    "agent": "relied KB-8BE777BB",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-8BE777BB",
+    "KB-B5B57F41"
+   ],
+   "labelNote": "KB-8BE777BB describes the account-menu Organizations listbox switch and what changes (theme swaps, cart badge clears, header blanks until reload), and KB-B5B57F41 adds that 'Switching organization persists organizationId server-side'."
   },
   {
    "n": 33,
@@ -875,8 +921,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-8264632C only says a cart can hold several codes; no entry states whether two coupons apply rewards at once. (operator overrode the draft)"
   },
   {
    "n": 34,
@@ -900,8 +946,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No candidate describes addOrUpdateCartShipment's behaviour when the selected shipping method stops being available; the shipping entries cover only FixedRate pricing and how the order page projects the shipment."
   },
   {
    "n": 35,
@@ -927,8 +973,11 @@
    ],
    "agent": "relied KB-29037452",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-29037452"
+   ],
+   "labelNote": "KB-29037452 states what a row shows ('Redeemed rows show the points amount unsigned', direction 'only by the Type column', 'no per-row running balance') but does not list every column, such as date or order.",
+   "partial": true
   },
   {
    "n": 36,
@@ -954,8 +1003,8 @@
    ],
    "agent": "relied KB-ADA91F7B",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "KB-DB7B6317 is about order statuses; no entry lists payment statuses or refund effects. (operator overrode the draft)"
   },
   {
    "n": 37,
@@ -983,8 +1032,11 @@
    "offList": [
     "KB-4A8606CA"
    ],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-9912A219"
+   ],
+   "labelNote": "KB-9912A219 answers the deletion and account half: storefront Delete 'removes the organization membership and nothing else', and the security account survives with its role; it says nothing about the member's orders.",
+   "partial": true
   },
   {
    "n": 38,
@@ -1010,8 +1062,12 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-D4A064A5",
+    "KB-C55BBF2E"
+   ],
+   "labelNote": "KB-D4A064A5 gives the shown totals after a 10% discount ('discountTotal and CartType.total are rounded to currency precision (30.00 and 269.97)'), and KB-C55BBF2E adds that the subtotal stays at list price and 'tax is recomputed on the discounted base'; neither gives a concrete tax figure.",
+   "partial": true
   },
   {
    "n": 39,
@@ -1037,8 +1093,10 @@
    ],
    "agent": "relied KB-50EBEEE9",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "KB-50EBEEE9: 'Place order stays disabled with 'Complete all required information to proceed.' until shipping address + delivery method + payment method are all set'."
   },
   {
    "n": 40,
@@ -1064,8 +1122,10 @@
    ],
    "agent": "relied KB-ADFD93AB",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [
+    "KB-ADFD93AB"
+   ],
+   "labelNote": "KB-ADFD93AB shows an organization's group gating a pricelist: the contact 'was served a pricelist gated on UserGroupsContains 'store-acme'' while an anonymous caller got the ungated list; this was observed on the served price rather than specifically in the cart."
   },
   {
    "n": 41,
@@ -1089,8 +1149,8 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No candidate mentions a reorder control or how unavailable items are handled; KB-67D0AB31 lists what the order detail page renders without any reorder button, but it never states that one is absent."
   },
   {
    "n": 42,
@@ -1116,8 +1176,8 @@
    ],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No entry states whether an organization invitation link is single-use or expires; KB-BAEBCDA7 covers only the missing cancel/resend controls, and KB-06FE6C8D is about OTP codes, not invitations."
   },
   {
    "n": 43,
@@ -1141,8 +1201,16 @@
    "opened": [],
    "agent": "none",
    "offList": [],
-   "expect": null,
-   "labelNote": ""
+   "expect": [],
+   "labelNote": "No entry covers editing line-item quantities, adding a shipment, or which fields go read-only on Completed orders; KB-4D26A022 only says an existing shipment's items are allocated by hand with 'an Add item button'."
   }
- ]
+ ],
+ "labelled": {
+  "by": "operator, from Claude drafts",
+  "at": "2026-10-05",
+  "targets": 22,
+  "partial": 9,
+  "controls": 19,
+  "contested": 2
+ }
 }

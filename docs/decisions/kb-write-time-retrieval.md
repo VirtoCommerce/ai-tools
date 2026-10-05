@@ -361,6 +361,39 @@ pushed once, to the branch only (`52b3683`, 95 lines; none reached main).
 - The rows are drafted for labelling in `scripts/kb/bench/wave2-to-label.json`; no row joins a
   labelled set before the operator fills `expect`.
 
+## Gate re-run on wave2 (2026-10-05) -- FAIL; the judgement, not retrieval, is what fails
+
+The operator labelled the 43 wave2 rows (Claude drafted, the operator confirmed or overrode):
+22 targets (9 partial), 19 controls, 2 contested and kept out (`W2-13`: a UI fact offered for a
+GraphQL question; `W2-14`: "blocked" means three different things in the base). The set is
+`scripts/kb/bench/rank-labelled-set.wave2.json`, all `split: test`, opened once. The frozen M4
+configuration ran unchanged; a Sonnet-class subagent picked from `items.txt` and confirmed on the
+body. Full record: `scripts/kb/bench/wave2-gate-result.json`.
+
+| AC line | M4 test (33) | **wave2, body-checked** | wave2, pick only | the live agents | gate |
+|---|---|---|---|---|---|
+| picks precision | 18/19 | **8/9 (89%)** | 11/15 (73%) | 14/19 (74%) | >= 95% -- **fail** |
+| a control answered by the base | 0 | 0 | 0 | 0 | 0 -- pass |
+| controls end in `none` | 9/9 | 19/19 | 18/19 | 17/19 | >= 90% -- pass |
+| targets resolved, non-partial | 17/22 | **7/13 (54%)** | 9/13 (69%) | 10/13 (77%) | >= 80% -- **fail** |
+| a right entry among the headlines (non-partial) | -- | 12/13 | 12/13 | -- | -- |
+| mean `ask` payload, tokens | 387 | 379 | 379 | -- | <= 400 -- pass |
+
+- **Retrieval holds; the agent's decision does not.** The right entry was shown for 12 of 13
+  non-partial targets, but the body-checked agent relied on 7. It said `none` with the answer on the
+  list five times and rejected a right pick on the body three times. The live agents, with a real task
+  around the question, resolved more (10/13) and were wrong more (5 of 19). The strict-vs-safe trade
+  M4 described is the whole result on real questions; no agent configuration measured clears both lines.
+- **Real questions are wider than the bench's.** 9 of 22 targets are answered only in part (a
+  question asks two things, the base holds one), and partial targets resolve 1/9 body-checked. The
+  bench rows were written one fact at a time; wave2 asks were not.
+- **The one wrong reliance (`W2-16`, `KB-75BD84BE` for `KB-C4346EB2`) is probably a label gap:**
+  the question does not say storefront, and the picked entry states how the UCP cart shows the
+  same gift. Reported, not relabelled -- the set is opened once.
+- **`floor-1` stays.** A lower threshold cannot help: the base never answered alone (max p 0.91 against
+  0.957), so every line above is the agent's. The next lever is the agent contract (what an
+  `ambiguous` list must make easy to accept) and partial answers, not the ranker.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
