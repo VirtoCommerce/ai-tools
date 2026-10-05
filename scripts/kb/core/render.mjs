@@ -74,7 +74,7 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
     return [
       ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
       ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
-      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show or kb_none)`] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, or as --ask on the CLI)`] : []),
       ...queuedLines(r.queued),
     ];
   }
@@ -119,8 +119,11 @@ export function excerpt(body, max = EXCERPT_CHARS) {
  * every ask; the full rule belongs in the MCP tool description, paid once per session. M4 measured a
  * Sonnet-class agent on exactly this text -- changing it changes what the gate measured.
  */
-export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. kb_show <id> the one most likely to state your fact, '
-  + 'then rely on it only if its body does; if none could, kb_none. Same topic is not an answer.';
+// BOTH DOORS ARE NAMED (exits.mjs, PLAN §5.1): `kb_show` / `kb_none` exist only on the MCP server and
+// `npm run kb -- show|none` only on the CLI, so naming one is a dead end for the reader with the other.
+export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open the one most likely to state your fact '
+  + '(kb_show <id>, or `npm run kb -- show <id> --ask <handle>`) and rely on it only if its body does; '
+  + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
 
 /**
  * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit

@@ -428,7 +428,7 @@ async function noteLine(env, line) {
     const addTx = newTx && !known.includes(newTx);
     if (!ask && !addTx) return;
     const next = { ...meta };
-    if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? '') }].slice(-ASK_MEMORY);
+    if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) }].slice(-ASK_MEMORY);
     if (addTx) next.transcripts = [...known, newTx].slice(-TRANSCRIPT_MEMORY);
     await writeFile(metaPath(env), JSON.stringify(next), 'utf8');
   } catch { /* the pointer is lost, the line is not */ }

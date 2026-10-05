@@ -474,7 +474,15 @@ async function readVerdictRanker(reader) {
     const n = Array.isArray(m?.features) ? m.features.length : -1;
     const shaped = typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
       && [m.mean, m.std, m.weights].every((a) => Array.isArray(a) && a.length === n && a.every(Number.isFinite))
-      && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer));
+      && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer))
+      // A std of 0 divides every feature into NaN and turns every ask ambiguous; a fusion or rerank
+      // that is present but not the shape `retrieve` / `rerankByBodies` read throws on every ask.
+      // Both are "malformed", so both fall back to floor-1 like any other unreadable ranker.
+      && m.std.every((s) => s > 0)
+      && (r.fusion === undefined || (r.fusion && typeof r.fusion === 'object' && typeof r.fusion.method === 'string'
+        && r.fusion.weights && typeof r.fusion.weights === 'object' && Object.values(r.fusion.weights).every(Number.isFinite)))
+      && (r.rerank === undefined || r.rerank === null
+        || (typeof r.rerank === 'object' && Number.isFinite(r.rerank.k) && r.rerank.k >= 0 && Number.isFinite(r.rerank.lambda)));
     return shaped ? r : null;
   } catch { return null; }
 }
@@ -537,7 +545,11 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
 export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
   const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
-  const target = named ?? (handle ? null : asks.at(-1) ?? null);
+  // WITHOUT A HANDLE, ONLY AN OPEN QUESTION: the latest ask, and only if it ended `ambiguous`. A none
+  // pinned to an ask the base answered, or to a miss, is a false label in the very data M6
+  // recalibrates on; recorded unpaired, it is merely unpaired.
+  const latest = asks.at(-1) ?? null;
+  const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
   const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
   if (written.disabled) return { state: 'disabled', why: written.why };
   if (!written.ok) return { state: 'unreachable', why: written.why };
@@ -545,6 +557,7 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
     state: 'recorded',
     ...(target ? { after: target.at, q: target.q } : {}),
     ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
   };
 }
 
@@ -761,9 +774,9 @@ export function askAbout(asks, { text, anchors = [] }) {
  */
 async function sessionAsks({ env }) {
   const byAt = new Map();
-  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? ''), state: a.state ?? null });
   const { lines } = await readQueue({ env });
-  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? ''), state: l.state ?? null });
   return [...byAt.values()];
 }
 

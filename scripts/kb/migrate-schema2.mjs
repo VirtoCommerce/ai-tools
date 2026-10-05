@@ -44,7 +44,9 @@ function main() {
     }
     return;
   }
-  const read = (rel) => readFileSync(join(flags.base, rel), 'utf8');
+  // LF in, LF out: a Windows checkout with autocrlf hands back CRLF, and mixing it with the LF
+  // frontmatter stringifyFrontmatter writes would rewrite every file, changed or not.
+  const read = (rel) => readFileSync(join(flags.base, rel), 'utf8').replace(/\r\n/g, '\n');
   const files = new Map(readdirSync(join(flags.base, 'entries')).filter((n) => n.endsWith('.md'))
     .map((n) => [`entries/${n}`, read(`entries/${n}`)]));
   const plans = flags.plans.flatMap((p) => JSON.parse(readFileSync(p, 'utf8')));
