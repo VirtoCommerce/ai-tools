@@ -434,6 +434,32 @@ scores it like `ambiguous`. Same Sonnet-class picker, same body check, for both.
   on floor-1 the bodies are already in the payload, so the check changes little.
 - Next: open the logs300 test split ONCE as the gate.
 
+## logs300 test gate (2026-10-05) -- FAIL on precision; M4 matches floor-1 on accuracy at 40% of the cost
+
+Opened once, same protocol, both rankers.
+
+| body-checked, test (76 rows) | floor-1 | M4 | gate |
+|---|---|---|---|
+| picks precision | 37/42 (88%) | **38/44 (86%)** | >= 95% -- **fail** |
+| controls end in `none` | 20/21 | 19/21 (90%) | >= 90% -- pass |
+| targets resolved, non-partial | 33/41 (80%) | 34/41 (83%) | >= 80% -- pass |
+| right entry shown, non-partial | 36/41 | 38/41 | -- |
+| mean `ask` tokens | 978 | **391** | <= 400 -- pass |
+
+- **The dev + calibration pass did not hold on test.** On test the two rankers are equal on accuracy
+  (within one row each way); M4 keeps its cost advantage (2.5x fewer tokens) and shows the right entry
+  slightly more often.
+- **Four of M4's six wrong reliances picked an entry that states the asked fact too, but is missing
+  from `expect`**: L-122 (`KB-0E177E02`), L-158 and L-186 (`KB-4B889114`), L-290 (`KB-1D53A1BE`).
+  With them the line would read 42/44. Not applied: the split is opened once, and a relabel after
+  opening is what the rule exists to prevent. The defect is in the labelling protocol -- labellers
+  named THE answer, not EVERY entry that states it -- and in the base, which holds several
+  overlapping entries on one fact (three on the `/company/members` Active column).
+- Two errors are real: controls L-110 and L-287, relied on an entry that shares the topic.
+- `floor-1` stays. Next: an exhaustive "every entry that states it" pass over all labels before the
+  next gate, merging the overlapping entries, and a fresh held-out set from the logs written after
+  today.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
