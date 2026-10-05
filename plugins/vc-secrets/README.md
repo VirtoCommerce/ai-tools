@@ -725,11 +725,12 @@ rooted at the package itself, where they arrive with no directory in front of th
 therefore also tested joined onto each root the payload names: its `cwd` and each entry of its
 `workspace_roots`. A wrong root can only add refusals (a package-shaped wrong root is the accepted false
 positive), so the extra forms only widen. What each client documents: Claude Code and Codex document `cwd`
-in the hook input; Cursor shows `cwd` in its examples and documents `workspace_roots`; Codex does not
-document what the path in an `apply_patch` header is relative to. The hook's own working directory is
-deliberately not a root: the plugin's hook command resolves relative to the plugin directory, so a
-plugin-installed hook can run from inside the package and would refuse ordinary files in every
-repository, while where a client runs hooks from the workspace it equals `cwd` anyway. The residual is a
+in the hook input; Cursor shows `cwd` in its examples and documents `workspace_roots`; what the path in
+a Codex `apply_patch` header is relative to is not established. The hook's own working directory is
+deliberately not a root: the Cursor registration's command is relative (`./hooks/...`), so it works only
+when run from the plugin directory, which is package-shaped, and taking that directory as a root would
+refuse ordinary files in every repository. Claude Code's registration uses `${CLAUDE_PLUGIN_ROOT}`
+instead, and where a client runs hooks from the workspace it equals `cwd` anyway. The residual is a
 client that sends neither field: with no usable root, **every** directory-scoped name above is matched
 only as sent, so a bare relative path to any of them is not caught in a package-rooted workspace.
 The launcher's entry file and the hook itself stay covered there, being matched by file.

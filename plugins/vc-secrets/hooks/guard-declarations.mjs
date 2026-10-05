@@ -87,14 +87,15 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // Every root is tried and any match refuses. A wrong root can only add refusals (a package-shaped wrong
 // root is the accepted false positive), so the extra forms only widen.
 //
-// The hook process's own working directory is NOT a root, and that is a decision. The plugin's hook
-// command (`node "./hooks/guard-declarations.mjs"`) resolves relative to the plugin directory, so a
-// plugin-installed hook can run from inside the package -- package-shaped by construction -- and would
-// then refuse ordinary files in every repository, which is how a guard gets switched off. Where a
-// client does run hooks from the workspace (Claude Code and Codex, per the quotes above) that directory
-// equals `cwd` and adds nothing. What remains: a client that sends neither `cwd` nor `workspace_roots`
-// leaves a bare relative path matched only as sent, and in a package-rooted workspace EVERY
-// directory-scoped name (the scoped list and `lib/`) goes uncovered.
+// The hook process's own working directory is NOT a root, and that is a decision. The Cursor
+// registration's command is relative (`./hooks/guard-declarations.mjs`), so it works only when run from
+// the plugin directory, which is package-shaped by construction: taking that directory as a root would
+// refuse ordinary files in every repository, which is how a guard gets switched off. Claude Code's
+// registration uses `${CLAUDE_PLUGIN_ROOT}` instead. Where a client does run hooks from the workspace
+// (Claude Code and Codex, per the quotes above) that directory equals `cwd` and adds nothing. What
+// remains: a client that sends neither `cwd` nor `workspace_roots` leaves a bare relative path matched
+// only as sent, and in a package-rooted workspace EVERY directory-scoped name (the scoped list and
+// `lib/`) goes uncovered.
 const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|probe|teardown))?|guard-declarations|install-shim|shim-path)\.mjs$/i;
 // The same package, scoped to its directory rather than matched by file. `clients.*`, `targets.mjs`,
 // `hooks.json`, `plugin.json`, `SKILL.md` and `openai.yaml` are names half the repositories on this
@@ -239,10 +240,10 @@ if (!targets.readable) {
 
 // A relative path names a file relative to the client's working directory, and a directory-scoped
 // pattern cannot see the package in it. It is completed with every root the payload names: its `cwd` and
-// each string entry of its `workspace_roots`. Each joined form is tested alongside the sent one, and any match refuses, so a wrong root can only add refusals. The
-// joined form is built from the normalised path and not from `raw`: joined raw, a drive-relative
-// `C:..\x` leaves its `C:` inside a segment (`<root>/C:..`), the stream cut reduces that to `C`, and
-// the climb out of `<root>` is lost.
+// each string entry of its `workspace_roots`. Each joined form is tested alongside the sent one, and any
+// match refuses, so a wrong root can only add refusals. The joined form is built from the normalised
+// path and not from `raw`: joined raw, a drive-relative `C:..\x` leaves its `C:` inside a segment
+// (`<root>/C:..`), the stream cut reduces that to `C`, and the climb out of `<root>` is lost.
 const roots = [
     input?.cwd,
     ...(Array.isArray(input?.workspace_roots) ? input.workspace_roots : []),

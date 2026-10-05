@@ -70,7 +70,8 @@ export {
     emitConfig, cmdEmitConfig,
 } from "./lib/cli.mjs";
 
-// Re-exported so the test file reaches them through the namespace import it already uses.
+// Re-exported so the test files and test-fixtures.mjs reach them through the namespace import they
+// already use.
 export {
     VcSecretsError,
 } from "./vc-secrets-error.mjs";

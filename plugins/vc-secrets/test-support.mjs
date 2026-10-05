@@ -1,9 +1,10 @@
 // Helpers shared by this package's test files: the source scanners (stripComments, codeOnly,
 // callArguments), the launcher source readers, the one tmpDirs list with its after() cleanup, and the
 // node:test wrappers socketTest, lockTest and channelTest with the bind probes that gate them and
-// stubChannelPath, the socket path they bind. Not a test file itself: it declares no tests, and the CI step
-// does not name it. (Node's default `node --test` discovery may still load it and finds nothing to run.) It
-// sits outside lib/, so the declarations guard leaves it writable like the tests.
+// stubChannelPath, the socket path the channel probe and the stub channels bind. Not a test file itself:
+// it declares no tests, and the CI step does not name it. (Node's default `node --test` discovery may
+// still load it and finds nothing to run.) It sits outside lib/, so the declarations guard leaves it
+// writable like the tests.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,8 +54,9 @@ function regexAllowedAfter(out) {
 // again, nested to any depth, and a regex literal. `blank` replaces the content of each literal with
 // spaces, newlines kept, and keeps its delimiters (a regex keeps its flags); a quoted string directly
 // after `from` or `import` is a module specifier and is the one literal left alone.
-// Not a parser: a `/` is read as a regex or a division from the previous token alone, so a regex after
-// `)` (`if (x) /re/.test(y)`) or a division after `++` (`i++ / 2`) is read the wrong way round.
+// Not a parser: a `/` is read as a regex or a division from the previous token alone, so some shapes are
+// read the wrong way round, for example a regex after `)` (`if (x) /re/.test(y)`), or a division after
+// `++` (`i++ / 2`), after `}`, or after a keyword-named property (`x.of / 2`).
 function scanSource(src, blank) {
     let out = "";
     const hide = (text) => (blank ? text.replace(/[^\n]/g, " ") : text);
@@ -200,8 +202,9 @@ function scanSource(src, blank) {
 // matches a stripped body cannot be satisfied by a comment or a disabled line quoting the same
 // identifier. Understands `//` and block comments, quoted strings, template literals with nested
 // `${}` expressions, and regex literals (decided from the previous token, so see scanSource for the
-// two shapes it reads wrongly). A shebang line is kept. Not a parser, so a change to it is checked by
-// comparing its output with the comment ranges a JavaScript parser reports for every module here.
+// shapes it reads wrongly, for example a regex after `)` or a division after `++`). A shebang line is
+// kept. Not a parser, and its parity with one is a procedure, not a standing check: after changing it,
+// compare its output with the comment ranges a JavaScript parser reports for every module here.
 export function stripComments(src) {
     return scanSource(src, false);
 }

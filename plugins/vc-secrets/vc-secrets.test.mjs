@@ -78,8 +78,9 @@ test("cmdRun: unknown server → exit 1, single-line stderr without stack", () =
 // Source-text assertions below read a function body, and a body carries comments. Matching the raw
 // text lets a comment stand in for the code it describes: `// was: spawnSyncProcess = spawnSync` and
 // `// killProcessTree(child, signal)` each satisfied the guard for the thing they replaced.
-// `stripComments` (test-support.mjs) is the one stripper: string-, template- and regex-literal-aware,
-// and checked against a JavaScript parser's own comment ranges.
+// `stripComments` (test-support.mjs) is the one stripper: string-, template- and regex-literal-aware.
+// Its parity with a parser is a procedure, not a standing check: after changing it, compare its
+// output with a JavaScript parser's own comment ranges.
 
 // The launcher with its comments removed, and a body sliced out of THAT. Order is the point: a body is
 // cut at the first "\n}\n" after its name, so slicing the raw text first lets a comment that mentions the
@@ -165,9 +166,10 @@ test("the shim in this package declares the contract the launcher requires", () 
 });
 
 test("runCli: the contract the shim passes reaches doctor through main", () => {
-    // Through the real entry, because the wiring under test is runCli -> main -> cmdDoctor and
-    // cmdDoctor ends its process. Pinned to gpg, the one backend doctor does not write-probe, and the
-    // declaration is empty, so nothing reads or writes a credential store; HOME is a fixture.
+    // Through the real entry, because the wiring under test is runCli -> main -> cmdDoctor, and a direct
+    // cmdDoctor call would skip what runCli adds: its process-wide handlers and hardenSpawnEnv. Pinned to
+    // gpg, the one backend doctor does not write-probe, and the declaration is empty, so nothing reads or
+    // writes a credential store; HOME is a fixture.
     const env = launcherEnv({ VC_SECRETS_LOCAL_BACKEND: "gpg" });
     const root = namespaceRepo(EMPTY_DECL);
     const script = `import(${JSON.stringify(pathToFileURL(LAUNCHER_PATH).href)})`
@@ -2214,9 +2216,10 @@ test("guard: with no payload cwd, workspace_roots complete a relative path, and 
     const odd = write({ workspace_roots: [42, null, {}, "", [pkg]] });
     assert.equal(odd.status, 0, "non-string entries: ignored");
     assert.equal(odd.stderr, "", "and nothing thrown");
-    // The hook's own working directory is NOT a root. The plugin's hook command resolves relative to the
-    // plugin directory, so a hook can be running from a package-shaped path while the workspace is any
-    // other repository; treating that directory as a root refused ordinary files there.
+    // The hook's own working directory is NOT a root. The Cursor registration's command is relative
+    // (`./hooks/...`), so it works only when run from the plugin directory, which is package-shaped,
+    // while the workspace is any other repository; treating that directory as a root refused ordinary
+    // files there. Claude Code's registration uses `${CLAUDE_PLUGIN_ROOT}` instead.
     const base = fs.mkdtempSync(path.join(os.tmpdir(), "guard-own-cwd-"));
     try {
         const inside = path.join(base, "plugins", "vc-secrets");
@@ -2582,7 +2585,8 @@ test("every string literal these modules can print is ASCII", () => {
     //
     // Every module of this package is covered, the ones that can reach a terminal and the ones that
     // carry no printable literal today: the first message added to a quiet module is then already
-    // checked.
+    // checked. The *.test.mjs files, test-support.mjs and test-fixtures.mjs are excluded: they print to
+    // no user's terminal.
     //
     // It is WIDER than the source's, deliberately. The source lists only what its launcher loads, and
     // that costs it nothing because it has no counterpart to the shim or the install and hook scripts.
