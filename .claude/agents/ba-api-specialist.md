@@ -48,7 +48,7 @@ The Postman MCP handles auth (uses `POSTMAN_API_KEY` from environment); prefer i
 **From Postman (local file fallback):**
 - Parse collection v2.1 JSON; extract folders, requests, pre-request scripts, tests, environment refs.
 
-**ASK — before the first live check of each endpoint / GraphQL operation in scope:** `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record hit ids; a miss is not a blocker.
+**ASK — before the first live check of each endpoint / GraphQL operation in scope:** `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a miss is not a blocker.
 
 **From Platform health endpoint:**
 - `GET {api_base_url}/health` — JSON with Modules, Cache, Redis, SQL Server status. Confirms the target platform is reachable and lists installed module versions before deeper analysis. (Note: this is `/health`, NOT `/api/platform/healthcheck`.)

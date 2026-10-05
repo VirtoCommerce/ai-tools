@@ -1,0 +1,9 @@
+{
+  "name": "vc-secrets",
+  "description": "Runs a declared process with its secrets resolved at launch, so no plaintext token sits in an MCP config, a settings env block or a .env file.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/VirtoCommerce/ai-tools",
+  "repository": "https://github.com/VirtoCommerce/ai-tools",
+  "license": "SEE LICENSE IN LICENSE",
+  "skills": "./skills/"
+}

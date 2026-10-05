@@ -35,7 +35,7 @@ Investigate a suspected bug using a structured 5-phase process: Reproduce → Is
 3. **Reproduce the bug:**
    - If a JIRA ticket is provided, fetch details via Atlassian MCP
    - Extract exact URL, user action, expected vs actual behavior
-   - **Ask the base what that surface was OBSERVED doing** — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), with the page path / endpoint / GraphQL operation as the coordinate. An entry that already describes the "actual" is the by-design alternative step 6 must rule out, handed to you for free
+   - **Ask the base what that surface was OBSERVED doing** — `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`), with the page path / endpoint / GraphQL operation as the coordinate. An entry that already describes the "actual" is the by-design alternative step 6 must rule out, handed to you for free
    - Attempt reproduction using the appropriate browser (Playwright MCP) on the resolved env
    - Try at least 3 reproduction attempts before declaring "cannot reproduce"
 
