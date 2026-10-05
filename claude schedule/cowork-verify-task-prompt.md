@@ -30,7 +30,7 @@ Load all `mcp__remote-devices__Claude_Browser__` tools with one ToolSearch call.
 - **Deploy check, with the repo's `/qa-deploy-pr` core in the device shell:**
   ```
   cd $HOME/mnt/vc-mcp-testing-module
-  NODE_USE_ENV_PROXY=1 TEST_ENV=vcst node --experimental-transform-types --no-warnings scripts/deploy/deploy-pr-artifact.ts <KEY> --pr=<owner/repo#N> --env=vcst [--verify]
+  NODE_USE_ENV_PROXY=1 TEST_ENV=vcst node --experimental-transform-types --no-warnings scripts/deploy/vc-deploy.ts pr <KEY> --pr=<owner/repo#N> --env=vcst [--verify]
   ```
   - Use this command, not `npm run`/`tsx`: node_modules carries the Windows esbuild. The Jira lookup inside the script fails from here, which is fine because `--pr` is explicit.
   - `--verify` gives the branch pin. Confirm "live" with the `/api/platform/modules` browser fetch above.

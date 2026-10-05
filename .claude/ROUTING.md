@@ -30,7 +30,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
 | **Deploy a PR's prerelease artifacts to a test env** | `/qa-deploy-pr <ticket-key> [--apply] [--verify]` | Command |
-| **Upgrade an env to the latest released modules + platform** | `/qa-env-upgrade <env>` | Command |
+| **Upgrade an env to the latest released modules + platform** | `/qa-env-upgrade <env>` | Skill |
 | **Check a stable bundle for missed hotfixes** | `/qa-bundle-check vN \| <package.json-url>` | Command |
 | **Release a hotfix into stable bundles** | `/qa-hotfix VCST-XXXX [bundles] [--dry-run]` | Command |
 | **Deliver a released hotfix onto the deployed envs** | `/qa-hotfix-check VCST-XXXX [--envs=…] [--dry-run]` | Command |
