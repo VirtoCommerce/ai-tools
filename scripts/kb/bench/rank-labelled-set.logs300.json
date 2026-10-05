@@ -2724,6 +2724,50 @@
    "partial": true,
    "exhaustiveNote": "Added KB-F78ED1CC because it states the master's category card renders 'N variations' plus 'From $X'; no candidate gives the i18n key or the singular form.",
    "wasControl": true
+  },
+  {
+   "id": "L-088",
+   "q": "vcst B2B-store cart taxTotal 0 fixed rate tax provider taxType product",
+   "expect": [
+    "KB-3E408000"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "resolved by a live check 2026-10-05",
+   "note": "3E408000 says two active providers on vcst B2B-store give taxTotal 0, while 1B18B821/5F7C8FC4 record FixedRate as inactive on the same store, and product taxType is not covered."
+  },
+  {
+   "id": "L-019",
+   "q": "GET /api/order/customerOrders/{id} — what does a configurable product line item's configurationItems array persist (sectionId, sectionName, productId, customText, price)?",
+   "expect": [
+    "KB-4105EEBE"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "resolved by a live check 2026-10-05",
+   "note": "exhaustive relabel 2026-10-05: Added KB-59E4B5FC, which states the REST order configurationItems persist productId, sku, quantity, customText but lose sectionId, contradicting KB-4105EEBE's sectionId and sectionName presence."
+  },
+  {
+   "id": "L-036",
+   "q": "tax provider FixedRateTaxProvider store B2B-store taxTotal 0 cart",
+   "expect": [
+    "KB-3E408000"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "resolved by a live check 2026-10-05",
+   "note": "exhaustive relabel 2026-10-05: Added KB-5F7C8FC4, which states that B2B-store's FixedRateTaxProvider is isActive false and that zero tax is specific to that store; this contradicts KB-3E408000's FixedRate isActive true, so the label is contested."
+  },
+  {
+   "id": "L-134",
+   "q": "is coupon code case-sensitive Query.validateCoupon",
+   "expect": [
+    "KB-A3004A3B"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "resolved by a live check 2026-10-05",
+   "note": "exhaustive relabel 2026-10-05: Expect unchanged but marked contested: KB-A3004A3B says validation is case-insensitive while KB-35F20D97 says 'matching is case-sensitive'."
   }
  ],
  "controls": [
@@ -3422,14 +3466,6 @@
    "note": "Only A0FFEA0A states a non-owned list (Organization scope) appears in the recipient's wishlists() with isOwner false; if Q means the Customer share, D1DF95A5/2F64A447/2A9084BA instead state it is absent, so the label depends on the reading."
   },
   {
-   "id": "L-088",
-   "q": "vcst B2B-store cart taxTotal 0 fixed rate tax provider taxType product",
-   "expect": [
-    "KB-3E408000"
-   ],
-   "note": "3E408000 says two active providers on vcst B2B-store give taxTotal 0, while 1B18B821/5F7C8FC4 record FixedRate as inactive on the same store, and product taxType is not covered."
-  },
-  {
    "id": "L-172",
    "q": "can a shopper apply two coupon codes to one cart",
    "expect": [
@@ -3448,25 +3484,6 @@
    "note": "8646A9CB says detailed errors are on, 9AF5645D records vcptcore_qa1 with them off and contrasts on vs off for OTP only; Q names no deployment and the password-grant effect is not stated."
   },
   {
-   "id": "L-019",
-   "q": "GET /api/order/customerOrders/{id} — what does a configurable product line item's configurationItems array persist (sectionId, sectionName, productId, customText, price)?",
-   "expect": [
-    "KB-4105EEBE",
-    "KB-59E4B5FC"
-   ],
-   "note": "exhaustive relabel 2026-10-05: Added KB-59E4B5FC, which states the REST order configurationItems persist productId, sku, quantity, customText but lose sectionId, contradicting KB-4105EEBE's sectionId and sectionName presence."
-  },
-  {
-   "id": "L-036",
-   "q": "tax provider FixedRateTaxProvider store B2B-store taxTotal 0 cart",
-   "expect": [
-    "KB-3E408000",
-    "KB-1B18B821",
-    "KB-5F7C8FC4"
-   ],
-   "note": "exhaustive relabel 2026-10-05: Added KB-5F7C8FC4, which states that B2B-store's FixedRateTaxProvider is isActive false and that zero tax is specific to that store; this contradicts KB-3E408000's FixedRate isActive true, so the label is contested."
-  },
-  {
    "id": "L-107",
    "q": "how do you add a configurable product to the cart on the storefront",
    "expect": [
@@ -3476,15 +3493,6 @@
     "KB-0C163966"
    ],
    "note": "exhaustive relabel 2026-10-05: Added KB-98A231B6 (configurable products keep a real Add to cart button), KB-4B47D094 (createConfiguredLineItem then addItem with configurationSections) and KB-0C163966 (stepper is the add control), which contradicts KB-F78ED1CC, so contested."
-  },
-  {
-   "id": "L-134",
-   "q": "is coupon code case-sensitive Query.validateCoupon",
-   "expect": [
-    "KB-A3004A3B",
-    "KB-35F20D97"
-   ],
-   "note": "exhaustive relabel 2026-10-05: Expect unchanged but marked contested: KB-A3004A3B says validation is case-insensitive while KB-35F20D97 says 'matching is case-sensitive'."
   },
   {
    "id": "L-154",
