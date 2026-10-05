@@ -95,7 +95,9 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // (Claude Code and Codex, per the quotes above) that directory equals `cwd` and adds nothing. What
 // remains: a client that sends neither `cwd` nor `workspace_roots` leaves a bare relative path matched
 // only as sent, and in a package-rooted workspace EVERY directory-scoped name (the scoped list and
-// `lib/`) goes uncovered.
+// `lib/`) goes uncovered. So does each of them reached through the package directory under another
+// name -- a symlink or junction, a renamed copy, an 8.3 short name -- whatever roots the payload names,
+// since each pattern needs the literal segment `vc-secrets`.
 const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|probe|teardown))?|guard-declarations|install-shim|shim-path)\.mjs$/i;
 // The same package, scoped to its directory rather than matched by file. `clients.*`, `targets.mjs`,
 // `hooks.json`, `plugin.json`, `SKILL.md` and `openai.yaml` are names half the repositories on this

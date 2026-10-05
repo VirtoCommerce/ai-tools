@@ -735,7 +735,11 @@ client that sends neither field: with no usable root, **every** directory-scoped
 only as sent, so a bare relative path to any of them is not caught in a package-rooted workspace.
 A drive-relative path on a drive other than the root's (`D:lib\keystore.mjs` under a `C:` root) is
 rooted onto that root, because the payload does not carry the other drive's current directory, so a
-guarded file reached that way is not caught either.
+guarded file reached that way is not caught either. Nor is one reached through the package directory
+under another name — a symlink or junction, a renamed copy, an 8.3 short name — whatever roots the
+payload names, since each of these names is matched only below a directory literally called
+`vc-secrets`; the plugin cache and a checkout are named that way, and so is a Cursor local install
+unless its directory was renamed.
 The launcher's entry file and the hook itself stay covered there, being matched by file.
 
 One off switch **inside this repository** is knowingly out of reach: `.claude-plugin/marketplace.json`
