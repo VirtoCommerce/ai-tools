@@ -17,7 +17,7 @@ disagree, the code is what runs — fix whichever is wrong, in the same commit.
 | `DUPLICATE` | Id pinned in both sources | none — fix by hand |
 | `DEP_CONFLICT` | a non-optional dependency would be below its required version in the end state | not bumped |
 | `PLATFORM_FLOOR` | target needs a newer platform than the end state has | not bumped |
-| `COUPLED` | `XCMS` + `PageBuilderModule` must move together (`upgrade/checks.ts` `COUPLED`) | not bumped |
+| `COUPLED` | `XCMS` + `PageBuilderModule` must move together (`scripts/deploy/upgrade/checks.ts` `COUPLED`) | not bumped |
 | `BLOCKED_ASSET` | target not downloadable anonymously (zip, blob or ghcr image) | not bumped |
 
 ## Why the rules are what they are

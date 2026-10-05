@@ -1,6 +1,6 @@
 ---
 name: qa-env-upgrade
-description: "[QA Methodology] Upgrade a deployed environment to the LATEST RELEASED modules + platform and the newest GREEN dev alpha of the storefront theme. Compares the env's vc-deploy-dev backend/packages.json with VirtoCommerce/vc-modules modules_v3.json (modules) and the latest vc-platform release (platform), and theme/artifact.json with the newest vc-frontend dev alpha whose Theme CI run is green; moves PR/alpha pins to the release that contains them and ASKS only where no release does; prints ONE table; asks once before opening ONE deploy PR. Use when asked to bring an env up to date / 'обновить стенд до последних релизов'. Read-only until the operator's yes; never merges — a human merges to deploy."
+description: "[QA Methodology] Bring a deployed environment up to the latest released modules + platform and the newest green dev alpha of the storefront theme, as ONE deploy PR on vc-deploy-dev that a human merges. Use when asked to bring an env up to date / 'обновить стенд до последних релизов'. Not for hotfix delivery (/qa-hotfix-check) or a ticket's PR builds (/qa-deploy-pr). Read-only until the operator's yes; never merges."
 argument-hint: "<env>"
 disable-model-invocation: true
 ---
@@ -20,12 +20,14 @@ Out of scope: adding or removing modules, hotfix delivery (`/qa-hotfix-check`), 
 PR builds (`/qa-deploy-pr`).
 
 **Deterministic core: `npm run deploy:upgrade`** (`scripts/deploy/vc-deploy.ts upgrade`; flags and exit
-codes in its `upgrade/cli.ts` header). The script does every comparison, check and edit. This skill
+codes in its `scripts/deploy/upgrade/cli.ts` header). The script does every comparison, check and edit. This skill
 asks, shows, and relays — **it never re-derives a version, a status or a check by hand**, and never
 edits the manifest itself. Status meanings and why each rule exists: [`reference.md`](reference.md).
 
-**Safety contract.** Steps 1–4 only read. Step 5 is the only write, and only after the operator's yes.
-Never merge, never force-push, never touch a branch other than the named env's.
+**Safety contract.** Steps 1–4 write nothing outside the scratchpad. Step 5 is the only outward write,
+and only after the operator's yes. Never merge, never force-push. The only branch created is a new
+`env-upgrade-*` branch (on `vc-deploy-dev`, or your fork); the PR targets the named env's branch, which
+nothing writes until a human merges.
 
 Requires `GIT_TOKEN` (read on VirtoCommerce repos) and an authenticated `gh` (writes use its keyring
 token; without write on `vc-deploy-dev` the script uses a fork, else prints web-edit links).
@@ -43,18 +45,21 @@ Exit 2 → show the error and stop (missing env file, branch not found, token, r
 
 ## 2. Questions — one per feature group
 
-For each entry of `questions` (≤4 per `AskUserQuestion` call): header = the group `key`; the question
-shows every `lines[]` entry verbatim (pins, PR links and state, the release — or, for the theme, the
-green dev alpha — it would become, DOWNGRADE where flagged). Options, the recommended one first and
-labelled *(Recommended)* per the group's `recommended` (a group with a DOWNGRADE is never recommended
-*Replace*):
+For each entry of `questions` (≤4 per `AskUserQuestion` call): header = the group `key` cut to 12
+chars (the tool's limit — an untracked group's key is a module Id); the question names the full `key`
+and shows every `lines[]` entry verbatim (pins, PR links and state, the release — or, for the theme,
+the green dev alpha — it would become, DOWNGRADE where flagged). Options, the recommended one first
+and labelled *(Recommended)* per the group's `recommended`:
 
 - *Keep the PR/alpha builds* → `"keep"`
 - *Replace with release* (a theme-only group: *Replace with the green dev alpha*) → `"replace"`
-- *Decide per module* → ask one follow-up per component, record `{ "<component>": "keep" | "replace" }`
+- *Decide per module* — only when `components[]` has more than one entry → one follow-up per
+  `components[]` entry, record `{ "<component>": "keep" | "replace" }`. A `lines[]` entry that reads
+  "stays as is" is shown, never asked: it is not in `components[]` and the script rejects it.
 
 Write the answers to `<scratchpad>/env-upgrade-<env>.decisions.json` as
-`{ "<key>": "keep" | "replace" | { … } }`. No questions → skip the file.
+`{ "<full key>": "keep" | "replace" | { … } }`. No questions → write `{}` (a group not listed is
+KEEP; steps 3 and 5 always pass `--decisions`).
 
 ## 3. Table
 
@@ -83,7 +88,7 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions> --apply \
 ```
 
 - exit 0 → the PR is open and carries exactly the edited files: report its URL and the merge note below.
-- exit 1 → the message names one of these (mapping: `upgrade/cli.ts` APPLY):
+- exit 1 → the message names one of these (mapping: `scripts/deploy/upgrade/cli.ts` APPLY):
   - **nothing to change** — nothing written; the env is up to date.
   - **stale** ("changed on `<branch>` since the plan") — nothing written; offer to restart from step 1.
   - **no write path** (web-edit links) — no file committed (a fork or an empty branch may remain);
@@ -93,7 +98,7 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions> --apply \
   - **branch pushed, PR not opened** — WRITTEN: hand the compare URL over to open it.
   - **PR opened, but its files could not be verified / it does not carry or also touches files** —
     WRITTEN: the `✅ PR` line is printed first; relay that URL and say it must be reviewed before merge.
-- exit 2 → nothing was written (tool error, STOP or bad input — every exit-2 path in `cli.ts` comes
+- exit 2 → nothing was written (tool error, STOP or bad input — every exit-2 path in `scripts/deploy/upgrade/cli.ts` comes
   before the first write): relay the error.
 
 **Merge note:** a human merges; the merge triggers the deploy. Right after it the env can serve the
