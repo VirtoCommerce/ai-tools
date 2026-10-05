@@ -26,6 +26,17 @@ import { resolve, isAbsolute, dirname } from "node:path";
 
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
+/** Claude Code expands `${VAR}` and `${VAR:-default}` in `.mcp.json` args before it starts a server
+ *  (code.claude.com/docs/en/mcp.md), from the same process environment this hook inherits — so a
+ *  per-session `--secrets …/.env.playwright.${TEST_ENV:-vcst}` resolves here to the file the servers
+ *  read. An unset `${VAR}` with no default stays literal, as Claude Code leaves it. */
+const expandVars = (s) =>
+  s.replace(/\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g, (whole, name, fallback) => {
+    const value = process.env[name];
+    if (fallback !== undefined) return value ? value : fallback;
+    return value !== undefined ? value : whole;
+  });
+
 /** The `--secrets` path in the nearest `.mcp.json` that declares one, from ROOT upwards —
  *  the servers may be declared by a parent workspace's `.mcp.json`, not only the repo's. */
 function declaredSecretsFile() {
@@ -35,7 +46,10 @@ function declaredSecretsFile() {
       for (const server of Object.values(mcp.mcpServers ?? {})) {
         const args = server.args ?? [];
         const i = args.indexOf("--secrets");
-        if (i !== -1 && args[i + 1]) return isAbsolute(args[i + 1]) ? args[i + 1] : resolve(ROOT, args[i + 1]);
+        if (i !== -1 && args[i + 1]) {
+          const file = expandVars(args[i + 1]);
+          return isAbsolute(file) ? file : resolve(ROOT, file);
+        }
       }
     } catch {
       /* no (readable) .mcp.json at this level — keep walking */
