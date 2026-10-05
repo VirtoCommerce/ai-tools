@@ -1,5 +1,7 @@
 // scripts/deploy/lib/manifest.ts — minimal-diff editing of vc-deploy-dev's backend/packages.json and
 // theme/artifact.json. Shared by `vc-deploy.ts pr` and `vc-deploy.ts upgrade`.
+import { readPins } from '../upgrade/pins.ts';
+import type { Pin } from '../upgrade/pins.ts';
 
 export const THEME_URL_RE = /https?:\/\/[^\s"'<>]*vc-theme[^\s"'<>]*\.zip/i;
 
@@ -255,4 +257,127 @@ export function editPackagesText(origText: string, origJson: any, modules: Targe
 export function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
   const m = THEME_URL_RE.exec(text);
   return m ? { text: text.replace(m[0], newUrl), from: m[0] } : { text, from: null };
+}
+
+// ── upgrade edits (vc-deploy.ts upgrade) ────────────────────────────────────────────────────────
+// Same contract as the surgery above: edit the RAW text, keep EOL and indentation, and return null
+// on any shape that is not recognised. Unlike `pr`, `upgrade` never falls back to a reserialize —
+// a null STOPs the apply (draft §7: "keep line endings, indentation and odd whitespace exactly").
+export type ManifestEditMode = 'release-bump' | 'blob-bump' | 'promote' | 'platform';
+export interface ManifestChange { id: string; to: string; mode: ManifestEditMode }
+
+const GH_SOURCE_RE = /"Name"\s*:\s*"[^"]*github[^"]*"/i;
+const BLOB_SOURCE_RE = /"Name"\s*:\s*"AzureBlob"|"ServiceUri"\s*:\s*"[^"]*vc3prerelease/;
+const setVersion = (l: string, v: string) => l.replace(/("Version"\s*:\s*")[^"]*(")/, (_m, a, b) => a + v + b);
+
+/** Change the "Version" of the one GithubReleases entry whose "Id" is `id`. */
+export function bumpGhReleaseText(text: string, id: string, version: string): string | null {
+  const { lines, eol } = splitLines(text);
+  const gh = sourceBlockRange(lines, GH_SOURCE_RE);
+  if (!gh) return null;
+  const idRe = new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`);
+  const hits = lines.map((l, i) => (i >= gh[0] && i <= gh[1] && idRe.test(l) ? i : -1)).filter((i) => i >= 0);
+  if (hits.length !== 1) return null;
+  const at = hits[0];
+  if (/"Version"\s*:/.test(lines[at])) { lines[at] = setVersion(lines[at], version); return lines.join(eol); }
+  const field = indentOf(lines[at]);
+  for (const step of [1, -1]) {
+    for (let i = at + step; i >= 0 && i < lines.length && !/^[ \t]*[{}[\]]/.test(lines[i]) && indentOf(lines[i]) === field; i += step) {
+      if (/"Version"\s*:/.test(lines[i])) { lines[i] = setVersion(lines[i], version); return lines.join(eol); }
+    }
+  }
+  return null;
+}
+
+/** Remove the one AzureBlob entry owned by `id` (by "Id" or by a "BlobName": "<id>_<digit>…"). */
+export function removeBlobEntryText(text: string, id: string): string | null {
+  const { lines, eol } = splitLines(text);
+  const blob = sourceBlockRange(lines, BLOB_SOURCE_RE);
+  if (!blob) return null;
+  const own = new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_\\d|"Id"\\s*:\\s*"${escRe(id)}"`, 'i');
+  const hits = lines.map((l, i) => (i > blob[0] && i < blob[1] && own.test(l) ? i : -1)).filter((i) => i >= 0);
+  if (hits.length === 0) return null;
+  let open = -1, close = -1;
+  if (/^[ \t]*\{.*\}[ \t]*,?[ \t]*$/.test(lines[hits[0]])) {          // single-line entry
+    if (hits.length !== 1) return null;
+    open = close = hits[0];
+  } else {
+    for (let i = hits[0]; i > blob[0]; i--) if (/^[ \t]*\{[ \t]*$/.test(lines[i])) { open = i; break; }
+    for (let i = hits[0]; i < blob[1]; i++) if (/^[ \t]*\},?[ \t]*$/.test(lines[i])) { close = i; break; }
+    if (open < 0 || close < 0 || hits.some((h) => h < open || h > close)) return null; // two entries own it → don't guess
+  }
+  const hadComma = /,[ \t]*$/.test(lines[close]);
+  lines.splice(open, close - open + 1);
+  if (!hadComma) {                                                       // it was the last element
+    for (let i = open - 1; i >= 0; i--) {
+      if (!/\S/.test(lines[i])) continue;
+      if (/\},[ \t]*$/.test(lines[i])) lines[i] = lines[i].replace(/,([ \t]*)$/, '$1');
+      break;
+    }
+  }
+  return lines.join(eol);
+}
+
+/** Insert `{ "Id", "Version" }` as the FIRST element of GithubReleases.Modules, indented like its siblings. */
+export function insertGhReleaseText(text: string, id: string, version: string): string | null {
+  const { lines, eol } = splitLines(text);
+  const gh = sourceBlockRange(lines, GH_SOURCE_RE);
+  if (!gh) return null;
+  let modAt = -1;
+  for (let i = gh[0] + 1; i < gh[1]; i++) if (/"Modules"\s*:\s*\[/.test(lines[i])) { modAt = i; break; }
+  if (modAt < 0 || /\]/.test(lines[modAt].replace(/"(?:\\.|[^"\\])*"/g, '""'))) return null; // one-line array → unknown shape
+  const unit = detectIndentUnit(lines);
+  let first = modAt + 1;
+  while (first < gh[1] && !/\S/.test(lines[first])) first++;
+  const empty = /^[ \t]*\][ \t]*,?[ \t]*$/.test(lines[first]);
+  const brace = empty ? indentOf(lines[modAt]) + unit : indentOf(lines[first]);
+  const field = !empty && /^[ \t]*\{[ \t]*$/.test(lines[first]) ? indentOf(lines[first + 1]) : brace + unit;
+  lines.splice(first, 0, `${brace}{`, `${field}"Id": "${id}",`, `${field}"Version": "${version}"`, `${brace}}${empty ? '' : ','}`);
+  return lines.join(eol);
+}
+
+export function editUpgradeText(text: string, changes: ManifestChange[]): { text: string } | { error: string } {
+  let t: string | null = text;
+  const fail = (c: ManifestChange) => ({ error: `${c.id} (${c.mode} → ${c.to}): manifest shape not recognised — no minimal edit possible` });
+  for (const c of changes) {
+    if (c.mode === 'platform') t = bumpPlatformText(t!, c.to, c.to);
+    else if (c.mode === 'release-bump') t = bumpGhReleaseText(t!, c.id, c.to);
+    else if (c.mode === 'blob-bump') t = upsertBlobEntry(t!, c.id, `${c.id}_${c.to}.zip`);
+    else continue;
+    if (t == null) return fail(c);
+  }
+  // Promotions are inserted at the top in reverse Id order, so they end up ascending.
+  for (const c of changes.filter((x) => x.mode === 'promote').sort((a, b) => (a.id < b.id ? 1 : -1))) {
+    t = removeBlobEntryText(t!, c.id); if (t == null) return fail(c);
+    t = insertGhReleaseText(t, c.id, c.to); if (t == null) return fail(c);
+  }
+  return { text: t! };
+}
+
+/** Problems with `newText`, compared BY VALUE (never `!==` on arrays — bc0701f5): the pin set equals
+ *  the original plus exactly `changes`, no Id sits in two places, and no other top-level key or
+ *  source header moved. [] means the edit is exactly what was approved. */
+export function verifyUpgradeEdit(origText: string, newText: string, changes: ManifestChange[]): string[] {
+  let a: any, b: any;
+  try { a = JSON.parse(origText); b = JSON.parse(newText); } catch (e: any) { return [`result does not parse: ${e.message}`]; }
+  const problems: string[] = [];
+  const before = new Map(readPins(a).pins.map((p) => [p.id, p]));
+  const afterRead = readPins(b), after = new Map(afterRead.pins.map((p) => [p.id, p]));
+  if (afterRead.duplicates.length) problems.push(`Id in two places: ${afterRead.duplicates.join(', ')}`);
+  const want = new Map<string, Pin>(before);
+  for (const c of changes) {
+    if (c.mode === 'platform') continue;
+    want.set(c.id, { id: c.id, version: c.to, source: c.mode === 'blob-bump' ? 'AzureBlob' : 'GithubReleases' });
+  }
+  for (const id of new Set([...want.keys(), ...after.keys()])) {
+    const w = want.get(id), g = after.get(id);
+    if (!g) problems.push(`${id}: missing after the edit`);
+    else if (!w) problems.push(`${id}: added by the edit`);
+    else if (g.version !== w.version || g.source !== w.source) problems.push(`${id}: expected ${w.version} (${w.source}), got ${g.version} (${g.source})`);
+  }
+  const strip = (j: any) => ({ ...j, Sources: (j.Sources ?? []).map((s: any) => ({ ...s, Modules: undefined })) });
+  const platform = changes.find((c) => c.mode === 'platform')?.to;
+  const expectTop = strip({ ...a, ...(platform ? { PlatformVersion: platform, ...('PlatformImageTag' in a ? { PlatformImageTag: platform } : {}) } : {}) });
+  if (JSON.stringify(expectTop) !== JSON.stringify(strip(b))) problems.push('a top-level key or a source header changed');
+  return problems;
 }
