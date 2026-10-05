@@ -67,9 +67,12 @@ function warnOnce(testEnv) {
   if (!existsSync('.env.local')) return;
   const own = parse(readFileSync(envFile));
   const local = parse(readFileSync('.env.local'));
+  const suffix = `_${testEnv.toUpperCase()}`;
   for (const key of ENV_OWNED) {
-    if (own[key] && local[key] && own[key] !== local[key]) {
-      console.warn(`[env] .env.local sets ${key}=${local[key]}, overriding ${envFile} (${own[key]}) — .env.local loads last for every TEST_ENV.`);
+    // A `KEY_<ENV>` anywhere is promoted over .env.local, so the override never takes effect.
+    const pinned = own[key + suffix] || local[key + suffix] || process.env[key + suffix];
+    if (!pinned && own[key] && local[key] && own[key] !== local[key]) {
+      console.warn(`[env] .env.local sets ${key}=${local[key]}, overriding ${envFile} (${own[key]}) — .env.local loads last for every TEST_ENV. Move it out, or pin ${key}${suffix}= in ${envFile}.`);
     }
   }
 }
