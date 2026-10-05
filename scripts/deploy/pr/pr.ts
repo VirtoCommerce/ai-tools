@@ -76,7 +76,9 @@
  */
 
 import { OWNER, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
-import { accountPermission, canWrite, commitViaGh, createPr, createRef, ensureFork, fetchFile, getToken, gh, ghJson, ghUser, refSha, setToken } from '../lib/github.ts';
+import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
+import { DeliverError, deliverPr } from '../lib/deliver.ts';
+import type { DeliverResult } from '../lib/deliver.ts';
 import { THEME_URL_RE, countChangedLines, editPackagesText, editThemeText, pinnedModule, tagOf } from '../lib/manifest.ts';
 import type { Target } from '../lib/manifest.ts';
 import { getAdminToken, liveModules, platformHealthy } from '../lib/live.ts';
@@ -397,14 +399,7 @@ export async function runPr(args: string[]): Promise<void> {
   }
 
   // ── APPLY (gated write; DIRECT same-repo PR when the account has write, else a fork PR) ──
-  const me = flag('fork-owner') || ghUser();
-  if (!me) fail('Could not resolve the GitHub account — is `gh` authenticated? (run `gh auth status`).');
-  const perm = accountPermission(c.deployOwner, c.deployRepo, me);
-  const direct = canWrite(perm);
-  const baseSha = refSha(c.deployOwner, c.deployRepo, c.branch);
-  if (!baseSha) fail(`Could not read ${c.deployOwner}/${c.deployRepo}@${c.branch} head — check the branch name for env "${env}".`);
-  // Match the vc-ci "<TICKET>-<branch>-deployment" convention (e.g. VCST-5505-vcst-qa-deployment).
-  const headBranch = `${key || 'deploy'}-${c.branch}-deployment`;
+  const headBranch = `${key || 'deploy'}-${c.branch}-deployment`; // vc-ci "<TICKET>-<branch>-deployment" convention
   const body = [
     `Deploy ${bundle.length} PR artifact(s) to **${env}** (\`${c.branch}\`) for QA verification.`, '',
     ...rows.map((r) => `- \`${r.target.kind === 'module' ? r.target.id : r.target.kind}\`: ${r.current} → ${r.proposed}${r.target.source.startsWith('PR') ? ` (${r.target.source})` : ''}`),
@@ -413,53 +408,28 @@ export async function runPr(args: string[]): Promise<void> {
     '', '**DO NOT MERGE until reviewed.** Revert this pin after the change is verified on the env.',
   ].join('\n');
 
-  let writeOwner: string, headSpec: string;
-  if (direct) {
-    writeOwner = c.deployOwner; headSpec = headBranch;
-    console.log(`\n[apply] direct (perm=${perm}) on ${c.deployOwner}/${c.deployRepo} — branch ${headBranch} → ${c.branch}`);
-  } else {
-    console.log(`\n[apply] account "${me}" has no write (perm=${perm}) on ${c.deployOwner}/${c.deployRepo} — forking`);
-    if (!(await ensureFork(c.deployOwner, c.deployRepo, me))) { console.error('[deploy-pr] Could not create/find your fork.'); return handoff(); }
-    try { gh(['api', '--method', 'POST', `repos/${me}/${c.deployRepo}/merge-upstream`, '-f', `branch=${c.branch}`]); } catch { /* fork may already be current */ }
-    writeOwner = me; headSpec = `${me}:${headBranch}`;
+  const files = [
+    ...(pkgTouched ? [{ path: c.packagesPath, text: newPkgText }] : []),
+    ...(newThemeText ? [{ path: c.themePath, text: newThemeText }] : []),
+  ];
+  let r: DeliverResult;
+  try { r = await deliverPr({ coords: c, headBranch, title, body, files, forkOwner: flag('fork-owner'), log: asJson ? undefined : (l) => console.log(l) }); }
+  catch (e) { if (e instanceof DeliverError) fail(e.message); throw e; }
+  if (r.kind === 'handoff') { console.error(`[deploy-pr] ${r.reason}`); return handoff(); }
+  if (r.kind === 'stale') fail(`unexpected stale result for ${r.path}`); // pr mode passes no snapshot
+  if (r.kind === 'partial') {
+    console.error(`[deploy-pr] ⚠ PARTIAL commit — the branch is now in an inconsistent state (push rights?).`);
+    for (const p of r.committed) console.error(`  ${p}: committed`);
+    for (const p of r.failed) console.error(`  ${p}: FAILED`);
+    console.error(`[deploy-pr] Inspect/fix directly on ${r.writeOwner}/${c.deployRepo}@${r.headBranch}, or delete that branch and re-run:`);
+    console.error(`  ${r.compareUrl}`);
+    throw new Exit(1);
   }
-  const branchSha = direct ? baseSha : (refSha(me, c.deployRepo, c.branch) || baseSha);
-  // Surface (not silently resolve) a concurrent run: if this deterministic branch already existed
-  // before we touched it, someone else's in-flight/prior --apply may already have a commit here —
-  // our writes below will overwrite it without a merge. Warn loudly rather than clobber quietly.
-  const headExistedBefore = refSha(writeOwner, c.deployRepo, headBranch) !== null;
-  const compareUrl = `https://github.com/${c.deployOwner}/${c.deployRepo}/compare/${c.branch}...${headSpec.replace(':', '%3A')}?expand=1`;
-  if (!createRef(writeOwner, c.deployRepo, headBranch, branchSha)) { console.error('[deploy-pr] Could not create the deployment branch.'); return handoff(); }
-  if (headExistedBefore && !asJson) {
-    console.log(`\n⚠ Branch ${writeOwner}/${c.deployRepo}@${headBranch} already existed before this run.`);
-    console.log(`  Possible concurrent /qa-deploy-pr run for the same ticket+env — the commits below will`);
-    console.log(`  overwrite whatever is currently on that branch (no merge). If unsure, stop and compare first:`);
-    console.log(`  ${compareUrl}`);
-  }
-  let pkgOk = true, themeOk = true;
-  if (pkgTouched) pkgOk = commitViaGh(writeOwner, c.deployRepo, c.packagesPath, newPkgText, headBranch, `${title}`);
-  if (newThemeText) themeOk = commitViaGh(writeOwner, c.deployRepo, c.themePath, newThemeText, headBranch, `${title}`);
-  const anyCommitted = (pkgTouched && pkgOk) || (newThemeText && themeOk);
-  const allCommitted = (!pkgTouched || pkgOk) && (!newThemeText || themeOk);
-  if (!allCommitted) {
-    if (anyCommitted) {
-      // A real commit already landed on headBranch — do NOT call handoff() (it implies nothing was
-      // written). Report the partial, inconsistent branch state explicitly so it can't be missed.
-      console.error(`[deploy-pr] ⚠ PARTIAL commit — the branch is now in an inconsistent state (push rights?).`);
-      if (pkgTouched) console.error(`  packages.json: ${pkgOk ? 'committed' : 'FAILED'}`);
-      if (newThemeText) console.error(`  theme/artifact.json: ${themeOk ? 'committed' : 'FAILED'}`);
-      console.error(`[deploy-pr] Inspect/fix directly on ${writeOwner}/${c.deployRepo}@${headBranch}, or delete that branch and re-run:`);
-      console.error(`  ${compareUrl}`);
-      throw new Exit(1);
-    }
-    console.error('[deploy-pr] A commit failed (push rights?).');
-    return handoff();
-  }
-  const pr = createPr(c.deployOwner, c.deployRepo, c.branch, headSpec, title, body);
-  if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, account: me, direct, perm, headBranch, bundle, pr, compareUrl, applied: true }, null, 2)); throw new Exit(0); }
-  console.log(`\n✅ Committed to ${writeOwner}/${c.deployRepo}@${headBranch} (${pkgMinimal ? 'minimal diff' : 'reserialized'})`);
+  const pr = r.kind === 'pr' ? { ok: true, url: r.url, note: r.note } : { ok: false, note: r.note };
+  if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, account: r.account, direct: r.direct, perm: r.perm, headBranch: r.headBranch, bundle, pr, compareUrl: r.compareUrl, applied: true }, null, 2)); throw new Exit(0); }
+  console.log(`\n✅ Committed to ${r.direct ? c.deployOwner : r.account}/${c.deployRepo}@${r.headBranch} (${pkgMinimal ? 'minimal diff' : 'reserialized'})`);
   if (pr.ok) console.log(`✅ PR ${pr.note}: ${pr.url}\n   A human reviews + merges it to deploy. NEVER auto-merged.`);
-  else { console.log(`⚠ PR not opened (${pr.note}) — the branch is pushed; open it:\n   ${compareUrl}`); }
+  else { console.log(`⚠ PR not opened (${pr.note}) — the branch is pushed; open it:\n   ${r.compareUrl}`); }
   console.log(`\nAfter merge, confirm live:  npm run deploy:pr -- ${key || ''} --env=${env} --verify`);
   console.log(`Revert the pin after verification (this is a temporary QA repin).`);
   throw new Exit(0);

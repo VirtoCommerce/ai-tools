@@ -57,12 +57,14 @@ export function createRef(owner: string, repo: string, branch: string, sha: stri
   try { gh(['api', '--method', 'POST', `repos/${owner}/${repo}/git/refs`, '-f', `ref=refs/heads/${branch}`, '-f', `sha=${sha}`]); return true; }
   catch (e: any) { return /already exists|Reference already exists/i.test(String(e.stderr || e.message || e)); }
 }
-export function commitViaGh(owner: string, repo: string, path: string, text: string, branch: string, message: string): boolean {
+export interface Author { name: string; email: string }
+export function commitViaGh(owner: string, repo: string, path: string, text: string, branch: string, message: string, author?: Author): boolean {
   let sha: string | null = null;
   try { sha = ghApi(`repos/${owner}/${repo}/contents/${enc(path)}?ref=${encodeURIComponent(branch)}`).sha ?? null; } catch { /* new file */ }
   const args = ['api', '--method', 'PUT', `repos/${owner}/${repo}/contents/${enc(path)}`, '-f', `message=${message}`, '-f', `content=${Buffer.from(text, 'utf8').toString('base64')}`, '-f', `branch=${branch}`];
   if (sha) args.push('-f', `sha=${sha}`);
-  try { gh(args); return true; } catch (e: any) { console.error('[deploy-pr] commit failed:', String(e.stderr || e.message || e).slice(0, 240)); return false; }
+  if (author) for (const who of ['author', 'committer']) args.push('-f', `${who}[name]=${author.name}`, '-f', `${who}[email]=${author.email}`);
+  try { gh(args); return true; } catch (e: any) { console.error('[vc-deploy] commit failed:', String(e.stderr || e.message || e).slice(0, 240)); return false; }
 }
 export function createPr(owner: string, repo: string, base: string, head: string, title: string, body: string): { ok: boolean; url?: string; note: string } {
   try { const url = gh(['pr', 'create', '--repo', `${owner}/${repo}`, '--base', base, '--head', head, '--title', title, '--body', body]).trim(); return { ok: true, url, note: 'opened' }; }
@@ -72,3 +74,28 @@ export function createPr(owner: string, repo: string, base: string, head: string
     return { ok: false, note: msg.slice(0, 240) };
   }
 }
+export interface GhCli {
+  user(): string | null;
+  permission(owner: string, repo: string, me: string): string;
+  refSha(owner: string, repo: string, branch: string): string | null;
+  ensureFork(owner: string, repo: string, me: string): Promise<boolean>;
+  mergeUpstream(me: string, repo: string, branch: string): void;
+  createRef(owner: string, repo: string, branch: string, sha: string): boolean;
+  fileText(owner: string, repo: string, path: string, ref: string): Promise<string | null>;
+  commit(owner: string, repo: string, path: string, text: string, branch: string, message: string, author?: Author): boolean;
+  createPr(owner: string, repo: string, base: string, head: string, title: string, body: string): { ok: boolean; url?: string; note: string };
+}
+export const realGhCli: GhCli = {
+  user: ghUser,
+  permission: accountPermission,
+  refSha,
+  ensureFork,
+  mergeUpstream: (me, repo, branch) => { try { gh(['api', '--method', 'POST', `repos/${me}/${repo}/merge-upstream`, '-f', `branch=${branch}`]); } catch { /* fork may already be current */ } },
+  createRef,
+  fileText: async (owner, repo, path, ref) => {
+    const j = await ghJson(`https://api.github.com/repos/${owner}/${repo}/contents/${enc(path)}?ref=${encodeURIComponent(ref)}`);
+    return j?.content ? Buffer.from(j.content, 'base64').toString('utf8') : null;
+  },
+  commit: commitViaGh,
+  createPr,
+};
