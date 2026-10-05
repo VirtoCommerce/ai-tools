@@ -259,42 +259,6 @@
    ]
   },
   {
-   "id": "T-active-plain",
-   "q": "what does the storefront members Active column reflect?",
-   "expect": [
-    "KB-27B4CD10"
-   ],
-   "source": "existing",
-   "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
-   "split": "test",
-   "expectPre": [
-    "KB-27B4CD10",
-    "KB-4B889114"
-   ],
-   "expectPreMerge": [
-    "KB-27B4CD10",
-    "KB-4B889114"
-   ]
-  },
-  {
-   "id": "T-active-route",
-   "q": "What does the Active column on the storefront /company/members page reflect — the user account status or the organization membership/contact status?",
-   "expect": [
-    "KB-27B4CD10"
-   ],
-   "source": "existing",
-   "cite": "PLAN §14.4 known GOOD (floor-1's labelled set, kb-floor.test.mjs)",
-   "split": "test",
-   "expectPre": [
-    "KB-27B4CD10",
-    "KB-4B889114"
-   ],
-   "expectPreMerge": [
-    "KB-27B4CD10",
-    "KB-4B889114"
-   ]
-  },
-  {
    "id": "W-S1",
    "q": "What does GraphQL products query return for a product without prices?",
    "expect": [
@@ -1332,20 +1296,6 @@
    ]
   },
   {
-   "id": "P-BAEBCDA7-1",
-   "q": "I sent a company invite to the wrong email address; how can I cancel it or send it again?",
-   "expect": [
-    "KB-BAEBCDA7"
-   ],
-   "source": "paraphrase",
-   "cite": "KB-BAEBCDA7, written from its claim only (sonnet, customer voice)",
-   "support": "There is no cancel control and no resend control for an outstanding organization invitation, on either surface.",
-   "split": "dev",
-   "expectPre": [
-    "KB-BAEBCDA7"
-   ]
-  },
-  {
    "id": "P-BAEBCDA7-2",
    "q": "If I remove a pending invitee from the company member list, can I then invite that same email again?",
    "expect": [
@@ -1370,23 +1320,6 @@
     "KB-DA14E8B7"
    ],
    "exhaustiveNote": "Added KB-4A8606CA, which states the address stays permanently taken so the person can never be invited again."
-  },
-  {
-   "id": "P-4D082C89-1",
-   "q": "Right after my company invites a colleague, how does that person appear in the member list before they finish signing up?",
-   "expect": [
-    "KB-BBBC4225",
-    "KB-D8FDFA6F"
-   ],
-   "source": "paraphrase",
-   "cite": "KB-4D082C89, written from its claim only (sonnet, customer voice)",
-   "support": "On the storefront roster the row shows the literal name 'Invite sent' with an empty real name, the chosen role, the email lowercased, and status 'Invited'",
-   "split": "dev",
-   "relabelled": "2026-09-30 after the baseline run: KB-D8FDFA6F: the invited row shows \"Invite sent\" in place of the name, with a green Active tick",
-   "expectPre": [
-    "KB-4D082C89",
-    "KB-D8FDFA6F"
-   ]
   },
   {
    "id": "P-4D082C89-2",
@@ -1445,18 +1378,33 @@
    ]
   },
   {
-   "id": "P-66089074-2",
-   "q": "When a guest signs in and their basket is combined with their account basket, why is no merge request visible in the browser traffic?",
+   "id": "C-cart-payments",
+   "q": "allowCartPayment availablePaymentMethods cart GraphQL",
+   "source": "existing",
+   "cite": "run B, session ada88a13 (PLAN §22.8 #3)",
+   "split": "test",
    "expect": [
-    "KB-B4490B0B"
+    "KB-535FF3AC",
+    "KB-94C2ADCC"
    ],
-   "source": "paraphrase",
-   "cite": "KB-66089074, written from its claim only (sonnet, practitioner voice)",
-   "support": "The guest-to-signed-in cart merge happens server-side during sign-in, so no explicit mergeCart call need appear in the network log.",
-   "split": "calibration",
-   "expectPre": [
-    "KB-66089074"
-   ]
+   "partial": true,
+   "wasControl": true,
+   "exhaustiveNote": "Added KB-535FF3AC (availablePaymentMethods returns the store's active methods, and the set differs per deployment) and KB-94C2ADCC (allowCartPayment gateways render the cart card form only for signed-in users); partial because neither defines the allowCartPayment field itself."
+  },
+  {
+   "id": "C-smoke-path",
+   "q": "What is known about the storefront smoke path on virtostart — homepage, catalog browse, cart, checkout (/cart, /checkout), and the GraphQL operations behind them?",
+   "source": "existing",
+   "cite": "log 2026-09-22 13:45 session c34caad0, miss; confirmed no-answer by the operator 2026-09-28",
+   "split": "dev",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-ADA16454",
+    "KB-98A231B6"
+   ],
+   "partial": true,
+   "wasControl": true,
+   "exhaustiveNote": "Added KB-50EBEEE9 (checkout lives on /cart and there is no /checkout route), KB-ADA16454 (/checkout/review redirects to /cart unless multistep is on) and KB-98A231B6 (the add-to-cart stepper sends updateCartQuantity); partial because none covers the homepage or catalog browse, and none was observed on virtostart."
   }
  ],
  "controls": [
@@ -1475,25 +1423,11 @@
    "split": "calibration"
   },
   {
-   "id": "C-cart-payments",
-   "q": "allowCartPayment availablePaymentMethods cart GraphQL",
-   "source": "existing",
-   "cite": "run B, session ada88a13 (PLAN §22.8 #3)",
-   "split": "test"
-  },
-  {
    "id": "C-order-by-number",
    "q": "order(number:) query CustomerOrderType withPrices",
    "source": "existing",
    "cite": "run B, session ada88a13 (PLAN §22.8 #4)",
    "split": "test"
-  },
-  {
-   "id": "C-smoke-path",
-   "q": "What is known about the storefront smoke path on virtostart — homepage, catalog browse, cart, checkout (/cart, /checkout), and the GraphQL operations behind them?",
-   "source": "existing",
-   "cite": "log 2026-09-22 13:45 session c34caad0, miss; confirmed no-answer by the operator 2026-09-28",
-   "split": "dev"
   },
   {
    "id": "C-bopis-pickup",
@@ -1984,6 +1918,66 @@
    "expectPre": [
     "KB-001183CF"
    ]
+  },
+  {
+   "id": "T-active-plain",
+   "q": "what does the storefront members Active column reflect?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-90B0D8F5",
+    "KB-06409954",
+    "KB-D080516B",
+    "KB-BBBC4225"
+   ],
+   "note": "operator accepted 2026-10-05: Added the entries that state what the badge reads (97170665, D8FDFA6F, 90B0D8F5, BBBC4225 say lock then statusInOrganization; 06409954 says contact status; D080516B gives the membership-status labels); contested because 27B4CD10 says isLockedInOrganization ? Locked : contact.status while 90B0D8F5/D8FDFA6F show the badge following statusInOrganization, not contact.status."
+  },
+  {
+   "id": "T-active-route",
+   "q": "What does the Active column on the storefront /company/members page reflect — the user account status or the organization membership/contact status?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-90B0D8F5",
+    "KB-D080516B",
+    "KB-BBBC4225",
+    "KB-82111688"
+   ],
+   "note": "operator accepted 2026-10-05: Added entries stating the column reflects membership/contact status plus the membership lock, not the account (97170665, D8FDFA6F, 90B0D8F5, D080516B, BBBC4225, 82111688); contested on contact.status vs statusInOrganization as the field read."
+  },
+  {
+   "id": "P-BAEBCDA7-1",
+   "q": "I sent a company invite to the wrong email address; how can I cancel it or send it again?",
+   "expect": [
+    "KB-BAEBCDA7",
+    "KB-4A8606CA",
+    "KB-DA14E8B7",
+    "KB-D080516B"
+   ],
+   "note": "operator accepted 2026-10-05: Added KB-4A8606CA (a wrong-address invitation cannot be undone in the UI), KB-DA14E8B7 (re-inviting the address is refused as a duplicate) and KB-D080516B (revokeOrganizationInvite sets Deleted, which can be re-invited); contested because D080516B's revoke-and-re-invite path contradicts BAEBCDA7's claim that an invitation cannot be cancelled or resent."
+  },
+  {
+   "id": "P-4D082C89-1",
+   "q": "Right after my company invites a colleague, how does that person appear in the member list before they finish signing up?",
+   "expect": [
+    "KB-BBBC4225",
+    "KB-D8FDFA6F",
+    "KB-27B4CD10",
+    "KB-DA14E8B7"
+   ],
+   "note": "operator accepted 2026-10-05: Added KB-27B4CD10 (a never-completed invitation renders as Active) and KB-DA14E8B7 (the pending row shows the 'Invite sent' placeholder name); contested because BBBC4225 says the status reads Invited while D8FDFA6F and 27B4CD10 say it reads Active."
+  },
+  {
+   "id": "P-66089074-2",
+   "q": "When a guest signs in and their basket is combined with their account basket, why is no merge request visible in the browser traffic?",
+   "expect": [
+    "KB-B4490B0B",
+    "KB-9139A1A3",
+    "KB-EF478346"
+   ],
+   "note": "operator accepted 2026-10-05: Added KB-9139A1A3 (the guest-to-signed-in merge happens server-side, so no explicit mergeCart call need show) and KB-EF478346 (vc-frontend calls mergeCart only when the guest cart has items); contested because EF478346 says the client issues mergeCart while the other two say the merge happens server-side."
   }
  ],
  "unrecovered": "§22.14 labels SIX targets; two of them (the 8-word row served at coverage 0.63 and the 12-word row served at 0.82) are given only as a length and a coverage, with neither the question nor the entry named, and the throwaway scripts that held them were deleted. They are NOT reconstructed here. The three 9f98d03f rows above were added instead, each labelled by the operator rather than inferred.",
