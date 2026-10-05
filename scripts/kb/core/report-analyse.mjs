@@ -1076,6 +1076,32 @@ export function topics(lines) {
   return { rows, untopiced, topiced: lines.length - untopiced };
 }
 
+/**
+ * WHO CALLED, per door (VCST-6146): how many agent calls came through `mcp` and `cli`, and how many
+ * of each carry an `agent` (`core/caller.mjs` stamps it at push time). `unattributed` is the share
+ * no per-agent reading can speak for — before the CLI matcher existed it was 812 of 916 calls in one
+ * week, all of them `cli`. Lines without a `via` (`reindex`, `session`, `flush`) are not calls.
+ */
+export function doors(lines) {
+  const by = new Map();
+  for (const l of lines) {
+    if (l.via !== 'mcp' && l.via !== 'cli') continue;
+    const row = by.get(l.via) ?? { via: l.via, calls: 0, attributed: 0, agents: new Map() };
+    row.calls += 1;
+    if (typeof l.agent === 'string' && l.agent) {
+      row.attributed += 1;
+      row.agents.set(l.agent, (row.agents.get(l.agent) ?? 0) + 1);
+    }
+    by.set(l.via, row);
+  }
+  return [...by.values()]
+    .map((r) => ({
+      via: r.via, calls: r.calls, attributed: r.attributed, unattributed: r.calls - r.attributed,
+      agents: [...r.agents.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([agent, n]) => ({ agent, n })),
+    }))
+    .sort((a, b) => a.via.localeCompare(b.via));
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -1147,6 +1173,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     // window to apply; a missing `days` or `at` means the same.
     reach: reach(real, { since: windowStart(meta) }),
     topics: topics(real),
+    doors: doors(real),
   };
   return {
     meta: {

@@ -1,0 +1,117 @@
+{
+ "item": "step3a2-coowner-update-qty",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-30T11:51:54.085Z",
+ "calls": [
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 569,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "9be028cb-d399-4d8b-8740-471bd2246586"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "name": "AGENT-TEST-5707-co1-ren",
+      "scope": "Organization",
+      "description": "co-owner edit",
+      "items": [
+       {
+        "id": "a11b5a17-8b60-4e55-890f-15f59a157ab6",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "eb12fba1-b522-4cf8-b637-8a49213e2eb9",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 650,
+   "request": {
+    "query": "mutation($c:InputUpdateWishlistItemsType!){ updateWishListItems(command:$c){ id items { id quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "items": [
+       {
+        "lineItemId": "a11b5a17-8b60-4e55-890f-15f59a157ab6",
+        "quantity": 5
+       }
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "updateWishListItems": {
+      "id": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "items": [
+       {
+        "id": "a11b5a17-8b60-4e55-890f-15f59a157ab6",
+        "quantity": 5
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 189,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "9be028cb-d399-4d8b-8740-471bd2246586"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "name": "AGENT-TEST-5707-co1-ren",
+      "scope": "Organization",
+      "description": "co-owner edit",
+      "items": [
+       {
+        "id": "a11b5a17-8b60-4e55-890f-15f59a157ab6",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 5
+       }
+      ],
+      "sharingSetting": {
+       "id": "eb12fba1-b522-4cf8-b637-8a49213e2eb9",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

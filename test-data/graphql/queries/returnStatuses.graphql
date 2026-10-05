@@ -1,0 +1,23 @@
+# name: returnStatuses
+# category: returns
+# role: ORG_USER
+# purpose: Localized status dictionary as a flat KeyValueType list (LocalizedSettingResponseType.items
+#   { key value }) -- a DIFFERENT vocabulary source from the new flow's own ReturnStatus.cs constants,
+#   not a relabeling of the same set (D3, .claude/knowledge/domain/returns.md). Includes the legacy
+#   dictionary value "New" and the legacy typo spelling "Canceled" alongside the new flow's "Cancelled".
+# required-vars: (none)
+# optional-vars: CULTURE_NAME (String)
+# last-validated: 2026-09-25
+# known-issues: vocabulary set differs from ReturnStatus.cs (AwaitingDelivery/Received exist in source,
+#   not in this dictionary) -- a documented, open disagreement, not something a case should assert
+#   either side of beyond the statuses this feature can actually reach (Draft/Requested/Cancelled)
+# used-by: RET-GQL-011 (050o-graphql-returns.csv)
+
+query {
+  returnStatuses {
+    items {
+      key
+      value
+    }
+  }
+}

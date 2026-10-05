@@ -1,0 +1,45 @@
+{
+ "item": "step3d-coowner-remove-list",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-30T11:55:53.362Z",
+ "calls": [
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "60e2ba89-cc95-4268-a68c-567c5fcc4a71"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlist": true
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name description customerId customerName items { id quantity } sharingSetting { id scope isOwner access } } }",
+    "variables": {
+     "l": "60e2ba89-cc95-4268-a68c-567c5fcc4a71"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": null
+    }
+   }
+  }
+ ]
+}

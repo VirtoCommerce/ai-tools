@@ -53,7 +53,7 @@ behind every step, the rationalization table and the red flags are in
 4. **Domain slug.** Take the candidate from the ticket's components and summary, then check it with
    `npm run bl:extract -- --has-domain <slug>`.
 5. **Ask the base for this run's coordinates.** For each page path, GraphQL operation and endpoint the
-   ticket names, run `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record the
+   ticket names, run `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record the
    hit ids; a miss is not a blocker. Rule: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules →
    *Product context*.
 

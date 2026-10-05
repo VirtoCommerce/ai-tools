@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   BudgetLedger,
+  ExclusiveGroups,
   orderLpt,
   runLanePool,
   simulateBatchBarrierMakespan,
@@ -420,4 +421,53 @@ test("no slots configured defers everything rather than hanging", async () => {
 test("an empty suite list is a no-op", async () => {
   const outcomes = await runLanePool<void>({ suites: [], slots: [{ id: "1" }], run: async () => {} });
   assert.deepEqual(outcomes, []);
+});
+
+test("two suites of one exclusiveGroup are never in flight together, even with free slots", async () => {
+  let inFlight = 0;
+  let peakGroup = 0;
+  const order: string[] = [];
+  const outcomes = await runLanePool<void>({
+    suites: [
+      { id: "104", lane: "browser", estimatedMinutes: 60, exclusiveGroup: "otp" },
+      { id: "105", lane: "browser", estimatedMinutes: 40, exclusiveGroup: "otp" },
+      { id: "free", lane: "browser", estimatedMinutes: 30 },
+    ],
+    slots: [{ id: "1" }, { id: "2" }, { id: "3" }],
+    run: async (suite) => {
+      order.push(suite.id);
+      if (suite.exclusiveGroup) peakGroup = Math.max(peakGroup, ++inFlight);
+      await new Promise((r) => setTimeout(r, 5));
+      if (suite.exclusiveGroup) inFlight--;
+    },
+  });
+  assert.equal(peakGroup, 1, "the group must be serialised");
+  assert.deepEqual(order.slice(0, 2), ["104", "free"], "a held group does not block other suites");
+  assert.ok(outcomes.every((o) => !o.deferredReason), "a waiting member is dispatched later, never deferred");
+});
+
+test("one shared ExclusiveGroups serialises a group ACROSS concurrently running lane pools", async () => {
+  const groups = new ExclusiveGroups();
+  let inFlight = 0;
+  let peak = 0;
+  const run = async (suite: SchedulableSuite) => {
+    if (suite.exclusiveGroup) peak = Math.max(peak, ++inFlight);
+    await new Promise((r) => setTimeout(r, 5));
+    if (suite.exclusiveGroup) inFlight--;
+  };
+  const [browser, fastpath] = await Promise.all([
+    runLanePool<void>({ suites: [{ id: "104", lane: "browser", estimatedMinutes: 60, exclusiveGroup: "otp" }], slots: [{ id: "b1" }], run, groups }),
+    runLanePool<void>({ suites: [{ id: "105", lane: "fastpath", estimatedMinutes: 40, exclusiveGroup: "otp" }], slots: [{ id: "f1" }], run, groups }),
+  ]);
+  assert.equal(peak, 1, "members in different lanes must still never overlap");
+  assert.ok([...browser, ...fastpath].every((o) => !o.deferredReason), "the waiting lane waits — it never defers");
+});
+
+test("simulateMakespan serialises an exclusiveGroup instead of predicting it in parallel", () => {
+  const free = simulateMakespan([{ estimatedMinutes: 60 }, { estimatedMinutes: 40 }], 3).makespanMinutes;
+  const grouped = simulateMakespan(
+    [{ estimatedMinutes: 60, exclusiveGroup: "otp" }, { estimatedMinutes: 40, exclusiveGroup: "otp" }],
+    3,
+  ).makespanMinutes;
+  assert.deepEqual([free, grouped], [60, 100]);
 });

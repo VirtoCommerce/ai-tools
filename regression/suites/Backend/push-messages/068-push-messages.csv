@@ -19,7 +19,7 @@ PUSH-002,Draft Management — Validation on Empty Fields (Negative),Admin > Push
 [WAIT] 'New push message' blade opens
 [ACT] leave 'Message' empty
 [ACT] leave 'Topic' empty
-[ACT] leave 'Recipients list' empty","[FORM] toolbar 'Save' and 'Send' are disabled while 'Message' is empty
+[ACT] leave the Audience builder untouched, with no audience chosen","[FORM] toolbar 'Save' and 'Send' are disabled while 'Message' is empty
 [FORM] the 'New push message' blade remains open and no message is created
 [DOM] the 'Message' field label carries the required marker '*'","[NETWORK] no POST request fired to create endpoint (or POST returns 400)
 [CONSOLE] no JS errors during validation trigger","Save proceeds with empty fields, no validation error shown, 500 error on save attempt",none,C385366,Not Automated
@@ -311,3 +311,181 @@ PUSH-037,Storefront — Notification Link Navigates to Linked Entity (Order / Qu
 [DOM] target entity page loads with entity details visible (order number, quote ID, or shipment details)
 [DOM] entity referenced in notification matches the entity displayed on the target page","[NETWORK] no 4xx on navigation to linked entity (linked entity must exist)
 [CONSOLE] no JS errors during link click or navigation","Link navigates to /catalog or other non-entity page (wrong entity scope), 404 on entity page, entity page blank, entity ID in URL does not match notification content",Sign out; no data mutation,COV-2026-06-09-push GAP-013,validated
+PUSH-042,Audience Builder — The Four Audience Modes Are Offered With Their Captions,Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens","[DOM] the audience builder offers exactly four modes: 'Everyone', 'Specific people or companies', 'Match by conditions', 'Advanced query'
+[DOM] each mode carries its caption: 'All registered customers', 'Pick them from a list', 'Build a rule from customer data', 'Write the search query by hand'
+[DOM] no free-text 'Enter recipients query' textbox is the only way to define an audience (the pre-builder control is gone)",[CONSOLE] no JS errors,a mode missing or renamed; the old single 'Enter recipients query' textbox still the only audience control,none - nothing saved,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | the old behaviour is push.compose.recipients-by-query | Archetype:RENDER | Technique:EP | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-043,Audience Builder — Reopen Mode Is Derived From the Stored Phrase (Non-Representable Phrase Reopens as Advanced Query),Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
+[ACT] choose the mode 'Advanced query'
+[ACT] type the phrase membertype:Employee AND (status:Approved OR status:New) in the raw phrase textarea — parentheses make it non-representable by the condition builder
+[WAIT] the estimate headline settles
+[SAVE] click 'Save'
+[WAIT] success confirmation visible
+[ACT] click left menu 'Drafts' and open the saved AGENT-TEST- draft
+[WAIT] 'Push message details' blade opens","[FORM] the blade reopens in the mode 'Advanced query', because the stored phrase cannot be expressed as condition rows
+[FORM] the raw phrase textarea holds membertype:Employee AND (status:Approved OR status:New) unchanged
+[REL] estimate after reopen == estimate shown before Save
+[NEG] 'Back to conditions' is NOT offered for this phrase (it appears only while the typed phrase is condition-representable)
+[DOC] the mode is DERIVED from the stored member query on load, not persisted — a builder-representable phrase such as membertype:Employee therefore reopens in 'Match by conditions' by design, which is why this case uses a non-representable one",[CONSOLE] no JS errors,the draft reopens in 'Everyone' or 'Match by conditions'; the phrase is lost or rewritten; estimate blank,"Delete the draft: left menu 'Drafts', tick its AGENT-TEST- row checkbox, click 'Delete selected'",VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | reopen-in-producing-mode | Archetype:PARITY | Technique:ST | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-044,Audience Builder — Everyone Emits the Fixed Phrase membertype:Contact,Admin > Push Messages > Audience Builder,Medium,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] choose the mode 'Everyone'
+[ACT] open 'Show generated query'","[DOM] the generated query reads exactly membertype:Contact
+[DOM] the estimate headline is a whole number greater than zero
+[DOM] a deliberate product decision, not a defect: an Employee holding a login is not counted (the API case PUSH-053 proves it by rows)",[CONSOLE] no JS errors,a different phrase generated; estimate em-dash for a valid fixed phrase,none - nothing saved,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | PUSH-053 is the deterministic proof | Archetype:FALLBACK | Technique:EP | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-045,"Audience Builder — Picking a Company Includes Everyone Under It: Badges, Emails and the Estimate (3 for the Parent, 2 for the Child)",Admin > Push Messages > Audience Builder,Critical,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] choose the mode 'Specific people or companies'
+[ACT] open the picker and search for the audience fixture company @td(PUSH_AUDIENCE_PARENT_ORG.name)
+[WAIT] picker options render
+[ACT] pick @td(PUSH_AUDIENCE_PARENT_ORG.name)
+[WAIT] the estimate headline settles
+[ACT] remove the parent company chip and pick @td(PUSH_AUDIENCE_CHILD_ORG.name)
+[WAIT] the estimate headline settles
+[ACT] remove the chip and pick the person @td(PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN.name)
+[WAIT] the estimate headline settles","[DOM] every picker option carries a 'Person' or 'Company' badge, and every 'Person' option carries the member's email (a 'Company' option shows one only when that organization has an email on record)
+[DOM] with the parent company picked the estimate headline is 3 (1 would mean the company under it was not entered; 4 would mean a person with no login was counted)
+[DOM] with the child company picked the estimate headline is 2
+[DOM] with only the no-login person picked the estimate headline is 0","[API] POST /api/push-message/preview-recipients returns totalCount 3 / 2 / 0 for the same three selections (PUSH-052)
+[NETWORK] no 4xx/5xx
+[CONSOLE] no JS errors",estimate 1 or 4 for the parent; estimate differing from the API preview for the same selection; options without a badge or without an email,none - nothing saved,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | PUSH-052 is the API twin | Archetype:BOUNDARY | Technique:DT | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-046,"Audience Builder — Match by Conditions: Custom Conditions, ALL/ANY, Add Condition, Edit as Query and Starter Audiences",Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] choose the mode 'Match by conditions'
+[WAIT] the 'Start from a common audience' chips are visible
+[ACT] click the chip 'Custom conditions'
+[WAIT] a Match ALL/ANY toggle, one condition row and 'Add condition' appear
+[ACT] in the condition row choose field 'Customer type', the equality operator and the value 'Employee'
+[WAIT] the estimate headline settles
+[ACT] click 'Add condition'
+[WAIT] a second, empty condition row is rendered below the first
+[ACT] switch the Match toggle from ALL to ANY
+[WAIT] the estimate headline settles
+[ACT] click 'Edit as query'
+[WAIT] the raw phrase textarea is shown with the generated phrase","[DOM] the 'Custom conditions' chip reveals the Match ALL/ANY toggle, condition rows (field, operator, value) and 'Add condition'
+[DOM] with Customer type equal to Employee the estimate headline is at least 1 (the fixture Employee holds a login)
+[DOM] 'Edit as query' turns the rule into its generated query text, containing membertype:Employee or the equivalent Employee condition
+[DOM] the 'Start from a common audience' chips are present",[CONSOLE] no JS errors,'Custom conditions' reveals nothing; the toggle missing; Edit as query shows a phrase that does not correspond to the rule; estimate 0 with the Employee fixture seeded,none - nothing saved,"VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | wildcard operators (starts with / ends with / contains) are provider-dependent and are deliberately not asserted here - they returned 0 under ElasticAppSearch and return real counts under ElasticSearch8 (stand switched 2026-09-30), so a count assertion would be a provider assertion | Archetype:RENDER | Technique:EP | Promoted: REG-2026-09-30-push5944 (2026-09-30)",Automated
+PUSH-047,Audience Builder — An Unfinished Condition Row Shows a Hint and Blocks Save Until It Is Deleted,Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
+[ACT] choose the mode 'Match by conditions' and click the chip 'Custom conditions'
+[WAIT] a Match ALL/ANY toggle and one empty condition row appear
+[ACT] in the first condition row choose field 'Customer type', the equality operator and the value 'Employee' — a COMPLETE condition must already exist, otherwise the rule reads 'No conditions set' and an empty row is ignored instead of flagged
+[WAIT] the estimate headline settles
+[ACT] click 'Add condition'
+[WAIT] a second, empty condition row is rendered
+[ACT] leave the second row without a value
+[WAIT] the hint appears on the incomplete row
+[ACT] attempt to click toolbar 'Save'
+[WAIT] the blade stays open and does not save
+[ACT] delete the incomplete condition row
+[WAIT] the hint disappears","[DOM] the red hint 'This condition has no value.' is visible on the incomplete row
+[FORM] toolbar 'Save' is held (aria-disabled) and the click is refused
+[FORM] after deleting the row the hint is gone and 'Save' is enabled again
+[REL] estimate with the incomplete row == the estimate from the complete condition alone (the incomplete row does not narrow the audience)
+[NEG] no POST or PUT /api/push-message request is sent while the row is incomplete","[NETWORK] no POST or PUT /api/push-message fires while the row is incomplete
+[CONSOLE] no JS errors",Save proceeds with an empty value; no hint; Save stays held after the row is deleted; a POST/PUT fires,none - nothing saved,"VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | estimate ignoring the incomplete row is an observation, not a requirement | Archetype:BOUNDARY | Technique:EG | Promoted: REG-2026-09-30-push5944 (2026-09-30)",Automated
+PUSH-048,Audience Builder — A Phrase the Index Cannot Parse Shows No Count and Holds Save and Send,Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
+[ACT] choose the mode 'Advanced query'
+[ACT] type the phrase emails:""a in the raw phrase textarea
+[WAIT] the estimate headline settles
+[ACT] attempt to click toolbar 'Save' and toolbar 'Send'
+[WAIT] both stay disabled and the blade does not close
+[ACT] replace the phrase with membertype:Employee
+[WAIT] the estimate headline settles","[DOM] the estimate headline is an em-dash with no number
+[DOM] the text ""Recipients can't be counted for this audience — the search index rejected the query. Check it in Show generated query."" is visible
+[FORM] toolbar 'Save' and 'Send' are held (aria-disabled) and both clicks are refused
+[FORM] after the phrase is replaced with a valid one the estimate shows a number and 'Save' and 'Send' are enabled again","[NETWORK] POST /api/push-message/preview-recipients answers HTTP 400 for the malformed phrase; no POST or PUT /api/push-message fires on either click (PUSH-054 is the API twin)
+[CONSOLE] no JS errors beyond the expected 400",a count shown for a malformed phrase; Save or Send going through; a message created,none - nothing saved (the case never reaches a valid Save),VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | PUSH-054 API twin | Archetype:SILENT | Technique:EG | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-049,Audience Builder — A List and Conditions Combine as a Union and the Audience Caption Survives Save and Reopen,Admin > Push Messages > Audience Builder,High,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with an AGENT-TEST- value
+[ACT] type an AGENT-TEST- text in the 'Message' editor
+[ACT] choose 'Specific people or companies' and pick @td(PUSH_AUDIENCE_PARENT_ORG.name)
+[WAIT] the estimate headline settles at 3
+[ACT] choose 'Match by conditions', click the chip 'Custom conditions', set Customer type equal to Employee
+[WAIT] the estimate headline settles
+[SAVE] click 'Save'
+[WAIT] success confirmation visible
+[ACT] click left menu 'Drafts' and open the saved AGENT-TEST- draft
+[WAIT] 'Push message details' blade opens","[DOM] with the company alone the estimate is 3; with the Employee condition added the estimate is 4 (list union conditions, each person once)
+[DOM] the audience caption names both halves, for example 'Customers where Customer type is Employee, plus <company name>.'
+[FORM] after Save and reopen the caption still names the condition and the picked company (the condition is not dropped)
+[FORM] after reopen the estimate is still 4","[API] POST /api/push-message/preview-recipients with memberIds of the company and an Employee memberQuery returns totalCount 4 (PUSH-053)
+[NETWORK] no 4xx/5xx
+[CONSOLE] no JS errors",estimate 3 (conditions ignored) or 7 (the Employee and a company member counted twice); the caption losing the condition or the picked company after reopen,"Delete the draft: left menu 'Drafts', tick its AGENT-TEST- row checkbox, click 'Delete selected'",VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | caption-after-reopen was a display defect on the earlier PR build (kb:KB-C5B17CE2) | Archetype:PARITY | Technique:DT | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-050,"Audience Builder — [JOURNEY] Estimate, Recipients Blade and the Recipient's Bell Agree for One Real Send (Irreversible)",Admin > Push Messages > Audience Builder > [JOURNEY],Critical,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify. THIS CASE SENDS: a Sent push message is irrevocable and cannot be deleted. It goes to the child company only (2 dedicated fixture people); this is the UI half of the delivery claim and the API layer proves the same claim by numbers in its own suite.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name), front_url={{FRONT_URL}}, recipient_email=@td(PUSH_AUDIENCE_CHILD_CONTACT_1.email), recipient_password={{B2B_USER_PASSWORD}}, other_recipient=@td(PUSH_AUDIENCE_CHILD_CONTACT_2.name), nologin_person=@td(PUSH_AUDIENCE_CHILD_CONTACT_NOLOGIN.name)","--- SCREEN: New push message ---
+[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] fill 'Topic' with AGENT-TEST-audience-journey
+[ACT] type a UNIQUE body AGENT-TEST-audience-journey-body-<runId> in the 'Message' editor - the body MUST differ from every previous run, because a Sent push cannot be deleted and an identical body left in the recipient inbox would let the storefront assertion below pass without this run having delivered anything
+[ACT] choose 'Specific people or companies' and pick @td(PUSH_AUDIENCE_CHILD_ORG.name)
+[WAIT] the estimate headline settles
+[ASSERT] the estimate headline is 2
+--- SCREEN: Sent message ---
+[ACT] click toolbar 'Send' (irreversible)
+[WAIT] success confirmation visible
+[ACT] click left menu 'Sent' and open the message whose body is THIS run's unique AGENT-TEST-audience-journey-body-<runId>
+[WAIT] 'Push message details' blade opens
+[ACT] click sidebar 'Recipients'
+[WAIT] the 'Recipients' blade lists its rows
+--- SCREEN: Storefront bell ---
+[NAV] {{FRONT_URL}}/sign-in
+[ACT] sign in as the recipient (email and password from Test_Data)
+[WAIT] authenticated header visible
+[ACT] click the header bell 'Notifications' (allow up to 60 seconds for the send job)
+[WAIT] the bell dropdown opens","[DOM] the estimate before Send is 2
+[DOM] the Recipients badge and the Recipients blade list exactly 2 rows: the two child-company people, and not the person with no login
+[DOM] the bell dropdown of the recipient contains 'AGENT-TEST-audience-journey-body'
+[DOM] the previewed count, the Recipients blade and the delivered inbox agree (2 = 2 = received)","[API] POST /api/push-message/search-recipients for the sent message returns totalCount equal to the estimate
+[NETWORK] no 4xx/5xx
+[CONSOLE] no JS errors","Recipients blade count differing from the estimate (mid-journey: estimate 2, blade 1 or 3); the message absent from the recipient's bell after the send job window; the no-login person listed as a recipient",none - a Sent message cannot be deleted (push.irrevocable); sign the storefront account out,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | central claim of the ticket: preview count == delivered count; API twin PUSH-055 | Archetype:PARITY | Technique:FLOW | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated
+PUSH-051,"Audience Builder — The Preview Dialog Pages the Whole Audience, 20 Rows a Page, and Reconciles to the Headline",Admin > Push Messages > Audience Builder,Medium,,,Admin authenticated at {{BACK_URL}}; PushMessages with the four-mode Audience builder (3.1006.0-pr-28 or later); audience fixtures seeded by npm run seed:push-audience (vcptcore_qa1 only). GUARD: if the id or platform_id of any PUSH_AUDIENCE_ alias resolves EMPTY on this env the fixture is not seeded here - report `BLOCKED:PRECONDITION_UNMET:FIXTURE_MISSING` and never FAIL (an empty member id previews 0 recipients and reads as a recursion defect). Seed it with TEST_ENV=<env> npm run seed:push-audience and confirm with npm run seed:push-audience:verify.,"admin_url={{BACK_URL}}, admin_email={{ADMIN_EMAIL}}, admin_password={{ADMIN_PASSWORD}}, parent_org=@td(PUSH_AUDIENCE_PARENT_ORG.name), child_org=@td(PUSH_AUDIENCE_CHILD_ORG.name)","[NAV] {{BACK_URL}}
+[ACT] click main menu 'Push Messages'
+[WAIT] 'Push Messages' blade opens with the message list
+[ACT] click toolbar 'New'
+[WAIT] 'New push message' blade opens
+[ACT] choose the mode 'Everyone'
+[WAIT] the estimate headline settles at N
+[ACT] open the audience preview from the estimate panel
+[WAIT] the preview dialog lists rows
+[ACT] go to the next page until the last page","[DOM] the first page shows the label '1–20 of N' with N equal to the estimate headline
+[DOM] the second page shows '21–40 of N'
+[DOM] the last page shows a partial count of rows and its label ends at N
+[DOM] the rows on all pages add up to N (20 per page except the last)","[API] POST /api/push-message/preview-recipients with skip 20 and take 20 returns the second page and the same totalCount (PUSH-052 covers skip/take at the API)
+[CONSOLE] no JS errors",a page with other than 20 rows before the last; N differing from the headline; the last page blank or repeated rows,none - nothing saved,VCST-5944 | Behavior:push.compose.audience-builder | observed live vcptcore_qa1 PushMessages 3.1006.0-pr-28-21fe | 'Everyone' is used because it is the only audience large enough to span pages on the fixture env | Archetype:BOUNDARY | Technique:BVA | Promoted: REG-2026-09-30-push5944 (2026-09-30),Automated

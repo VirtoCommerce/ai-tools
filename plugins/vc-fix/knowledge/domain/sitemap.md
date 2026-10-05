@@ -5,15 +5,15 @@ applicability_rationale: "Full storefront URL map. Customer's sitemap differs by
 
 # Sitemap: FRONT_URL
 
-**Generated:** September 18, 2026 (rev 9 — deterministic axis refreshed at the Sprint 26-18 boundary; body carried from rev 5, July 20 2026)
+**Generated:** October 2, 2026 (rev 10 — deterministic axis refreshed at the Sprint 26-19 boundary; body carried from rev 5, July 20 2026)
 **Base URL:** FRONT_URL (from `FRONT_URL` env var) — vcst-qa
 **Storefront (theme) version:** **2.54.0-pr-2382** (footer "Ver.") *(was 2.49.0 in May)*
-**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow**; 87 modules loaded) *(rev 8, 2026-09-04: was 3.1062.0 / 87 modules)* — the QA env currently runs a **pre-release build pinned to VCST-5378 (unified buyer flow)**, not a stable line
-**Store total products:** 4,550 *(was 4,626 at rev 8 — a **net decrease of 76**, so catalog fixtures were pruned or re-seeded since 2026-09-04; treat product counts and slugs as drift candidates)* · nav categories 53 *(unchanged)* · `/products-with-options` subcategories 7 *(unchanged)*
+**Platform assembly line:** VC 3.10xx (max module-required `platformVersion` = **3.1073.0**; 87 modules loaded) *(rev 9, 2026-09-18: was `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow`, a pre-release build pinned to VCST-5378 — the QA env is back on a stable-numbered line)*
+**Store total products:** 4,567 *(was 4,550 at rev 9, 4,626 at rev 8; treat product counts and slugs as drift candidates)* · nav categories 53 *(unchanged)* · `/products-with-options` subcategories 7 *(unchanged)*
 
 > **Note on the version fields:** the storefront footer "Ver." (`2.54.0-pr-2382`) is the **vc-frontend theme** version — earlier revs of this doc mislabeled it "Platform version". The actual VirtoCommerce **platform** runs on the `3.10xx` assembly line (resolved from `/api/platform/modules`).
 
-> **Route-map freshness (rev 9):** the rev-9 crawl reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `17c99c7c` @ 2026-08-26 vs remote `324deb7a`). Routes added upstream since then are therefore **missing** from the route sections below, so rev 9 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
+> **Route-map freshness (rev 10):** the rev-10 crawl again reported the local `vc-frontend` checkout as **BEHIND `origin/dev`** (local `48a9759c` @ 2026-09-24 vs remote `5ad8ba8d`; rev 9 was `17c99c7c` @ 2026-08-26). Even from that partial checkout the route axis already shows 4 added / 4 removed literals (see the rev-10 changelog), so the route sections below are known-stale. Routes added upstream since then are therefore **missing** from the route sections below, so revs 9 and 10 deliberately refreshed **only** the deterministic axis (platform line, product/category counts) rather than rewriting the route map from a stale source. Pull `vc-frontend` and re-run `npm run sitemap:refresh` before trusting the route lists. Sprint 26-18 lands route-affecting work (VCST-5159 sales-rep-as-plugin, VCST-4386 Skyflow module split), so this is a live risk, not a formality.
 
 ## Overview
 
@@ -580,6 +580,16 @@ Plus top-level categories (live order varies). **The dropdown is a CMS-managed m
 
 ---
 
+## Changelog (vs. September 18, 2026 rev 9)
+
+| Area | Delta |
+|------|-------|
+| Platform assembly line | max module-required `platformVersion` `3.1066.0-alpha.13384-vcst-5378-unified-buyer-flow` → **3.1073.0**; modules loaded **87 — unchanged**. The pre-release pin to VCST-5378 is gone |
+| Store total products | 4,550 → **4,567** (+17) |
+| Nav categories / `/products-with-options` | 53 / 7 — **unchanged** |
+| Route axis (**reported, NOT applied**) | Checkout `48a9759c` @ 2026-09-24 is behind `origin/dev` `5ad8ba8d`. Literal diff from that checkout: ADDED `missions` (`modules/loyalty/index.ts`), `@mount:Account` + `saved-credit-cards` (`modules/skyflow/index.ts`), `/oauth/authorize` (`router/routes/main.ts`); REMOVED `@mount:Company` (`modules/sales-rep/index.ts`), `saved-credit-cards` (`router/routes/account.ts`), `/account` + `/company` (`router/routes/main.ts`). Consistent with the Sprint 26-18 Skyflow module split (VCST-4386), Sales Rep hub-as-plugin (VCST-5159) and VCST-5378 storefront OAuth. §2 **not** rewritten from a stale source — pull and re-run |
+| Scope of this rev | Deterministic xAPI crawl only (`npm run sitemap:refresh`, 2026-10-02, `/qa-test-plan Sprint26-19` Step 0). Theme "Ver." not resolved (SPA-rendered). §§2–9 carried forward, **not** re-verified. *(Rev 9 shipped no changelog block; its deltas are in the header lines.)* |
+
 ## Changelog (vs. August 24, 2026 rev 7)
 
 | Area | Delta |
@@ -655,6 +665,6 @@ See git history of this file for prior revisions.
 
 ---
 
-**Last Updated:** September 4, 2026 (rev 8)
+**Last Updated:** October 2, 2026 (rev 10)
 **Tool Used:** Playwright (Chrome) MCP — live crawl (guest) + `/api/platform/modules` (authed) for platform version
 **Coverage this rev:** `/catalog` top-level grid with live counts, `/products-with-options` subcategories + CFG product paths, homepage footer theme version, "All products" dropdown + inline nav, platform assembly line. **Re-derived from source at rev 8:** §2 Account + Corporate + Sales Rep hub routes (vc-frontend `router/routes/` + `modules/*/index.ts`). **Carried forward from rev 4 (not re-verified):** §7 Admin SPA, §8 REST + §9 GraphQL surface, language list (15), homepage hero copy.

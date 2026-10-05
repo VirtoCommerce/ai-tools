@@ -377,6 +377,25 @@ function panelTopics(p) {
   </section>`;
 }
 
+function panelDoors(rows = []) {
+  const body = rows.map((r) => [
+    `<code>${esc(r.via)}</code>`,
+    esc(r.calls),
+    esc(r.attributed),
+    r.unattributed ? `<strong class="bad">${esc(r.unattributed)}</strong>` : esc(r.unattributed),
+    r.agents.length ? r.agents.map((a) => `<code>${esc(a.agent)}</code> ${esc(a.n)}`).join(', ') : '<span class="muted">—</span>',
+  ]);
+  return `<section id="doors">
+    <h2>9 &middot; Doors &mdash; which calls can say who made them</h2>
+    <p class="lede">An MCP call carries its tool-use id; a CLI call is matched at push time to the
+      shell tool call that ran it. Either way the transcript names the agent. A call that matched
+      nothing &mdash; a plain terminal, a script, a line pushed before the matcher existed &mdash;
+      stays <em>unattributed</em>, and no per-agent reading speaks for it.</p>
+    ${body.length ? table(['door', 'calls', 'attributed', 'unattributed', 'by agent'], body)
+    : empty('No agent call in this window.')}
+  </section>`;
+}
+
 const CSS = `
 :root{--fg:#1c1c1c;--dim:#6a6a6a;--line:#e0ddd8;--bg:#fbfaf8;--card:#fff;--bad:#a4262c;--accent:#2f5d50}
 *{box-sizing:border-box}
@@ -450,6 +469,7 @@ ${panelEvidence(p.evidence)}
 ${panelRefusals(p.refusals)}
 ${panelReach(p.reach)}
 ${panelTopics(p.topics)}
+${panelDoors(p.doors)}
 <footer>Read from the base's <code>log/</code> over the network, analysed locally, rendered here.
 Nothing was written to the base and nothing was written into the repository tree.</footer>
 </main></body></html>`;
@@ -497,6 +517,7 @@ export function renderText(report) {
   out.push(`  topics         ${p.topics.rows.length} distinct over ${p.topics.topiced} line(s)`
     + `${p.topics.untopiced ? `, ${p.topics.untopiced} line(s) carry none` : ''}`
     + `${p.topics.rows.length ? `; top "${p.topics.rows[0].topic}" (${p.topics.rows[0].lines})` : ''}`);
+  out.push(`  doors          ${(p.doors ?? []).map((d) => `${d.via} ${d.calls} (${d.unattributed} unattributed)`).join(', ') || 'no agent call'}`);
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
   if (report.verdict) {

@@ -1,0 +1,229 @@
+{
+ "item": "G3d-rep-record-side-effects",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "runid": "rmunz9s7y",
+ "capturedAt": "2026-09-30T10:55:40.092Z",
+ "calls": [
+  {
+   "who": "admin(REST)",
+   "method": "GET",
+   "path": "/api/sales-rep/6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4",
+   "requestBody": null,
+   "response": {
+    "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "userName": "agent-test-sr-primary@example.com",
+    "salutation": null,
+    "firstName": "Priya",
+    "middleName": null,
+    "lastName": "Rao",
+    "fullName": "Priya Rao",
+    "birthDate": null,
+    "timeZone": null,
+    "defaultLanguage": null,
+    "currencyCode": null,
+    "about": null,
+    "photoUrl": null,
+    "status": "Approved",
+    "emails": [
+     "agent-test-sr-primary@example.com"
+    ],
+    "phones": [],
+    "addresses": [],
+    "storeId": "B2B-store",
+    "password": null,
+    "isLocked": false,
+    "hasGlobalSalesRepRole": true,
+    "roleId": "f18edee1e788476cb0fed2ec534d024e",
+    "roleName": "Sales Representative",
+    "organizations": [
+     {
+      "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+      "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+     },
+     {
+      "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+      "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+      "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+     },
+     {
+      "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+      "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+      "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+     },
+     {
+      "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+      "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+      "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+     },
+     {
+      "organizationId": "99d5002f-cdcb-4071-b874-b557dc66817f",
+      "organizationName": "AGENT-TEST-5707-Delete-rmunz9s7y",
+      "membershipId": "1590f15f-f186-486b-b28c-bc0cd23a7bf9"
+     }
+    ],
+    "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+   }
+  },
+  {
+   "who": "rep2",
+   "path": "/graphql/sales-rep",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "{ salesRepCustomers(storeId: \"B2B-store\", first:50) { totalCount items { organizationId organizationName } } }",
+    "variables": {},
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "salesRepCustomers": {
+      "totalCount": 4,
+      "items": [
+       {
+        "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+       },
+       {
+        "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+       },
+       {
+        "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+        "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+       },
+       {
+        "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "admin(REST)",
+   "method": "PUT",
+   "path": "/api/sales-rep",
+   "requestBody": {
+    "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "userName": "agent-test-sr-primary@example.com",
+    "salutation": null,
+    "firstName": "Priya",
+    "middleName": null,
+    "lastName": "Rao",
+    "fullName": "Priya Rao",
+    "birthDate": null,
+    "timeZone": null,
+    "defaultLanguage": null,
+    "currencyCode": null,
+    "about": null,
+    "photoUrl": null,
+    "status": "Approved",
+    "emails": [
+     "agent-test-sr-primary@example.com"
+    ],
+    "phones": [],
+    "addresses": [],
+    "storeId": "B2B-store",
+    "password": null,
+    "isLocked": false,
+    "hasGlobalSalesRepRole": true,
+    "roleId": "f18edee1e788476cb0fed2ec534d024e",
+    "roleName": "Sales Representative",
+    "organizations": [
+     {
+      "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+      "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+     },
+     {
+      "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+      "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+      "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+     },
+     {
+      "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+      "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+      "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+     },
+     {
+      "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+      "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+      "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+     },
+     {
+      "organizationId": "99d5002f-cdcb-4071-b874-b557dc66817f",
+      "organizationName": "AGENT-TEST-5707-Delete-rmunz9s7y",
+      "membershipId": "1590f15f-f186-486b-b28c-bc0cd23a7bf9"
+     }
+    ],
+    "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+   },
+   "response": {
+    "error": "PUT /api/sales-rep → 500: {\"message\":\"The INSERT statement conflicted with the FOREIGN KEY constraint \\\"FK_MemberRelation_Member_AncestorId\\\". The conflict occurred in database \\\"vcptcore-qa-platform_vcptcore\\\", table \\\"dbo.Member\\\", column 'Id'.\",\"stackTrace\":null}"
+   }
+  },
+  {
+   "who": "admin(REST)",
+   "method": "GET",
+   "path": "/api/sales-rep/6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4",
+   "requestBody": null,
+   "response": {
+    "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "userName": "agent-test-sr-primary@example.com",
+    "salutation": null,
+    "firstName": "Priya",
+    "middleName": null,
+    "lastName": "Rao",
+    "fullName": "Priya Rao",
+    "birthDate": null,
+    "timeZone": null,
+    "defaultLanguage": null,
+    "currencyCode": null,
+    "about": null,
+    "photoUrl": null,
+    "status": "Approved",
+    "emails": [
+     "agent-test-sr-primary@example.com"
+    ],
+    "phones": [],
+    "addresses": [],
+    "storeId": "B2B-store",
+    "password": null,
+    "isLocked": false,
+    "hasGlobalSalesRepRole": true,
+    "roleId": "f18edee1e788476cb0fed2ec534d024e",
+    "roleName": "Sales Representative",
+    "organizations": [
+     {
+      "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+      "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+     },
+     {
+      "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+      "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+      "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+     },
+     {
+      "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+      "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+      "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+     },
+     {
+      "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+      "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+      "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+     },
+     {
+      "organizationId": "99d5002f-cdcb-4071-b874-b557dc66817f",
+      "organizationName": "AGENT-TEST-5707-Delete-rmunz9s7y",
+      "membershipId": "1590f15f-f186-486b-b28c-bc0cd23a7bf9"
+     }
+    ],
+    "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+   }
+  }
+ ]
+}

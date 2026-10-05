@@ -76,8 +76,8 @@ convenience or by what already has a seeder: [`test-data-authoring.md`](../../kn
    `npm run models:check` must also be green before you start. In `update` / `audit`, a red check is
    the input, not a blocker.
 2. **Ask the base for the coordinates the data touches.** For each entity endpoint / GraphQL operation
-   the seeders call for the requirements in scope, run `npm run kb -- ask "<coordinate> <question>"`
-   (MCP: `mcp__kb__kb_ask`). Record hit ids. Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
+   the seeders call for the requirements in scope, run `mcp__kb__kb_ask`
+   (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids. Rule: [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
 3. Read [`../../knowledge/execution/test-data-authoring.md`](../../knowledge/execution/test-data-authoring.md)
    §SECOND RULE + §DISPOSABLE FIXTURES and [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md) (the layer decision tree).
 

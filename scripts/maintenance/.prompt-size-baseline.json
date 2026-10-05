@@ -4,7 +4,7 @@
   ".claude/agents/ba-system-analyzer.md": 34993,
   ".claude/agents/qa-lead-orchestrator.md": 29780,
   ".claude/agents/qa-testing-expert.md": 19282,
-  ".claude/agents/regression-orchestrator.md": 28838,
+  ".claude/agents/regression-orchestrator.md": 28816,
   ".claude/agents/test-management-specialist.md": 26828,
   ".claude/agents/ui-ux-expert.md": 38835,
   ".claude/commands/qa-design.md": 26649,

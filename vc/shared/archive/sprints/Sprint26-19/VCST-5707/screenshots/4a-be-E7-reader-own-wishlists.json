@@ -1,0 +1,29 @@
+{
+ "item": "E7-reader-own-wishlists",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:34:50.119Z",
+ "list": "AGENT-TEST-5707-b3",
+ "calls": [
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 184,
+   "request": {
+    "query": "query($s:String!){ wishlists(storeId:$s, first:50){ totalCount items { id name sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } } }",
+    "variables": {
+     "s": "B2B-store"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlists": {
+      "totalCount": 0,
+      "items": []
+     }
+    }
+   }
+  }
+ ]
+}

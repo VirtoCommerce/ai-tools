@@ -1,0 +1,1230 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+RET-AUTH-000,"PRE-FLIGHT -- Returns And Push Messages Modules, Return And Notification Settings, return-attachments Upload Scope (Suite BLOCKED, Not FAIL, When Missing)",Returns > Authorize & Notifications > Pre-flight,Critical,,,"Runner-native. No browser. Nothing is created except one unattached probe file.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",store={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP modules]
+GET {{BACK_URL}}/api/platform/modules
+[REST-EXEC modules]
+[REST-OP settings]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{store}}/values
+[REST-EXEC settings]
+[AUTH role=USER]
+[GQL-OP push_probe]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC push_probe]
+[REST-OP upload_probe]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_probe]
+[REST-CAPTURE upload_probe.body.[0].url → PROBE_URL]","[ERRORS label=modules] HTTP 200
+[DATA label=modules] body.[?title=Returns].isInstalled = true
+[ERRORS label=settings] HTTP 200
+[EVIDENCE] the store settings body is recorded as evidence: Return.ReturnEnabled, Return.AttachmentsRequired, Return.SendNotifications and Return.SendPushNotifications must read true (a REST object body cannot be regex-scored by this grammar, so the switches are not machine-asserted here - RET-AUTH-028/029/030 fail loudly, as BLOCKED, when a switch is off).
+[ERRORS label=push_probe] errors[] empty
+[DATA label=push_probe] data.pushMessages.totalCount >= 0
+[ERRORS label=upload_probe] HTTP 200
+[DATA label=upload_probe] body.[0].url is non-null
+[EVIDENCE] BLOCKED guard: every assertion here is an ENVIRONMENT prerequisite. A failure means the stand is not prepared (Return module absent, a Return setting or notification switch off, the Push Messages module absent - then ONLY the push assertions of the later cases are BLOCKED - or FileUpload:Scopes without return-attachments). Report the suite (or the push assertions) BLOCKED with the failing prerequisite named; it is not a product FAIL.",[REST] evidence is the graphql-runner JSON per label; the probe file is left unattached,"modules does not list the Returns module as installed; the settings body shows Return.ReturnEnabled, Return.SendNotifications, Return.SendPushNotifications or Return.AttachmentsRequired off; pushMessages is not queryable (Push Messages module absent - email-only environment); the upload probe is refused (FileUpload:Scopes lacks return-attachments) - each means BLOCKED, environment to be fixed, not a defect",none -- the probe upload is unreferenced,VCST-5883 · VCST-5628 · Archetype:CONFIG · Technique:EG | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-001,Authorize — approvedQuantity above requested is refused and nothing persists,Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId), REQUESTED (undecided). SHARED FIXTURE: this call is REFUSED and persists nothing, so it does not consume the fixture. Placed BEFORE RET-AUTH-003 (which decides this same return) by ID/file order on purpose — this suite executes in ID order, so the refusal below is always checked on a genuinely undecided return, never a false FAIL from running after the decision.",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_MIXED.returnLineBReturnLineItemId); qtyB=@td(RETURNS_AUTH_MIXED.returnLineBRequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP over_approve]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 9999}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": {{qtyB}}}]}
+[REST-EXEC over_approve]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[ERRORS label=over_approve] HTTP 400
+[DATA label=over_approve] body.message matches /requests \d+|cannot be approved/i
+[DATA label=read_back] body.status = Requested",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,over_approve returns 200 (an agent can authorize more units than the buyer asked to return); read_back shows the return already decided (validation bypassed),none,VCST-5883 · Archetype:BOUNDARY · Technique:BVA | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-002,"Authorize — negative approvedQuantity, empty items and an undecided line are refused",Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId), REQUESTED. SHARED FIXTURE: all three calls below are refused and persist nothing. Placed BEFORE RET-AUTH-003 (which decides this same return) by ID/file order on purpose, for the same reason as RET-AUTH-001.",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_MIXED.returnLineBReturnLineItemId); qtyA=@td(RETURNS_AUTH_MIXED.returnLineARequestedQuantity); qtyB=@td(RETURNS_AUTH_MIXED.returnLineBRequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP negative_qty]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": -1}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": {{qtyB}}}]}
+[REST-EXEC negative_qty]
+[REST-OP empty_items]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": []}
+[REST-EXEC empty_items]
+[REST-OP undecided_line]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}]}
+[REST-EXEC undecided_line]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[ERRORS label=negative_qty] HTTP 400
+[ERRORS label=empty_items] HTTP 400
+[ERRORS label=undecided_line] HTTP 400
+[DATA label=read_back] body.status = Requested",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"any of the three calls returns 200 (negative quantity, headless items[], or a half-decided return persisted); read_back shows a status other than Requested",none,VCST-5883 · Archetype:BOUNDARY · Technique:BVA | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-003,"Authorize — mixed lines (one full, one declined) yields PartiallyApproved",Returns > Authorize & Notifications > Admin REST,Critical,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId) — a Requested B2B return, two lines, ordered > requested on both (8/5 line A, 6/4 line B). SHARED FIXTURE: this case's own authorize call DECIDES this return (-> PartiallyApproved); it is terminal afterward. RET-AUTH-001/002 in this suite need the SAME alias UNDECIDED and are placed BEFORE this row by ID/file order on purpose — do not renumber this case to run before them. RET-AUTH-016/019 are tolerant of either state and unaffected by this ordering.",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_MIXED.returnLineBReturnLineItemId); qtyA=@td(RETURNS_AUTH_MIXED.returnLineARequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[ERRORS label=authorize] HTTP 200
+[DATA label=read_back] body.status = PartiallyApproved
+[DATA label=read_back] body.lineItems[?id={{lineA}}].itemState = Approved
+[DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = {{qtyA}}
+[DATA label=read_back] body.lineItems[?id={{lineB}}].itemState = Rejected
+[DATA label=read_back] body.lineItems[?id={{lineB}}].approvedQuantity = 0",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,body.status resolves to Approved or Rejected instead of PartiallyApproved; either item's itemState/approvedQuantity does not match what was decided for it; 5xx on authorize,none,VCST-5883 · Archetype:LIFECYCLE · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-004,Authorize — 200 of 240 approved releases the 40 unapproved units to returnable,Returns > Authorize & Notifications > Admin REST,Critical,,ECL-2.1,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_PARTIAL_LINE.returnId) — line A ordered 500, requested 240; line B requested 12 in full. SHARED FIXTURE: RET-AUTH-008/011/020 read/act on the SAME decided return -- this case's authorize call may already have been performed by one of them in this pass; the assertions below run against a READ-BACK so they hold regardless of which case in the suite performed the actual decision.",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId); orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); orderLineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId); orderLineB=@td(RETURNS_AUTH_PARTIAL_LINE.lineBItemId); reqB=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBRequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]
+[AUTH role=USER]
+[GQL-OP returnable]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC returnable]","[DATA label=read_back] body.status = PartiallyApproved
+[DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = 200
+[DATA label=read_back] body.lineItems[?id={{lineB}}].approvedQuantity = 0
+[DATA label=returnable] data.returnableItems[?orderLineItemId={{orderLineA}}].returnableQuantity = @td(RETURNS_AUTH_PARTIAL_LINE.lineAReturnableAfterSeed) + 40
+[DATA label=returnable] data.returnableItems[?orderLineItemId={{orderLineB}}].returnableQuantity = @td(RETURNS_AUTH_PARTIAL_LINE.lineBReturnableAfterSeed) + {{reqB}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test; [GQL] returnableItems is the buyer-facing surface this case's whole point is to unlock,"line A's returnable quantity does not increase by exactly the 40 unapproved units (measured against ordered=500 instead of requested=240, or not released at all); line B's full decline does not release its full requested 12",none,VCST-5883 · Archetype:BOUNDARY · Technique:FLOW | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-005,Authorize — all lines declined yields Rejected and releases the full quantity,Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_REJECT.returnId) — two lines, both requested partially (7 of 9, 3 of 4) so a rejection releasing ORDERED instead of REQUESTED is observable. Dedicated fixture, no cross-row sharing.",return=@td(RETURNS_AUTH_REJECT.returnId); lineA=@td(RETURNS_AUTH_REJECT.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_REJECT.returnLineBReturnLineItemId); orderId=@td(RETURNS_AUTH_REJECT.orderId); orderLineA=@td(RETURNS_AUTH_REJECT.lineAItemId); orderLineB=@td(RETURNS_AUTH_REJECT.lineBItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""NoLongerNeeded"", ""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 0}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP returnable]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC returnable]","[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Rejected
+[DATA label=authorize] body.lineItems[?id={{lineA}}].itemState = Rejected
+[DATA label=authorize] body.lineItems[?id={{lineB}}].itemState = Rejected
+[DATA label=returnable] data.returnableItems[?orderLineItemId={{orderLineA}}].returnableQuantity = @td(RETURNS_AUTH_REJECT.lineAReturnableAfterSeed) + @td(RETURNS_AUTH_REJECT.returnLineARequestedQuantity)
+[DATA label=returnable] data.returnableItems[?orderLineItemId={{orderLineB}}].returnableQuantity = @td(RETURNS_AUTH_REJECT.lineBReturnableAfterSeed) + @td(RETURNS_AUTH_REJECT.returnLineBRequestedQuantity)",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,status stays Requested/Approved instead of Rejected; either line's held quantity is not released back to returnable,none,VCST-5883 · Archetype:LIFECYCLE · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-006,"Authorize — single line of quantity 1 declined yields Rejected, not PartiallyApproved",Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_SINGLE.returnId) — one line, requested 1 of 1 ordered. Dedicated fixture, no cross-row sharing. BVA edge: the All()/Any() predicate over a ONE-element line list.",return=@td(RETURNS_AUTH_SINGLE.returnId); lineA=@td(RETURNS_AUTH_SINGLE.returnLineAReturnLineItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]","[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Rejected
+[DATA label=authorize] body.lineItems[?id={{lineA}}].itemState = Rejected",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,body.status = PartiallyApproved on a return with only one line and zero approved (the all()/any() boundary misclassifying a single-line reject as mixed); itemState reads Approved on the declined single line,none,VCST-5883 · Archetype:BOUNDARY · Technique:BVA | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-007,"Authorize — a decided, Draft or Cancelled return cannot be authorized again",Returns > Authorize & Notifications > Admin REST,High,PROPOSED-BL-RET-B,ECL-13.1,"Runner-native. No browser. Self-contained: creates its OWN throwaway Draft return (never submitted) on @td(RETURNS_AUTH_MIXED.orderId)/lineB, and performs its own decision on @td(RETURNS_AUTH_MIXED.returnId) if not already decided by an earlier case in this pass (the first authorize call below is evidence-only — either outcome is fine; the SECOND, identical call is the actual test and must be refused either way).",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_MIXED.returnLineBReturnLineItemId); qtyA=@td(RETURNS_AUTH_MIXED.returnLineARequestedQuantity); qtyB=@td(RETURNS_AUTH_MIXED.returnLineBRequestedQuantity); orderId=@td(RETURNS_AUTH_MIXED.orderId); orderLineB=@td(RETURNS_AUTH_MIXED.lineBItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP first_decision]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC first_decision]
+[REST-OP re_authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC re_authorize]
+[AUTH role=USER]
+[GQL-OP create_draft]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{orderLineB}}"", quantity: 1 }] }) { id status } }
+[GQL-EXEC create_draft]
+[GQL-CAPTURE create_draft.data.createReturn.id → DRAFT_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize_draft]
+POST {{BACK_URL}}/api/return/{{DRAFT_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize_draft]
+[AUTH role=USER]
+[GQL-OP cleanup_draft]
+mutation { cancelReturn(command: { returnId: ""{{DRAFT_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_draft]","[EVIDENCE] first_decision is either HTTP 200 (this case decided it) or HTTP 400 WRONG_STATUS (already decided by an earlier case in this pass) — both acceptable
+[ERRORS label=re_authorize] HTTP 400
+[DATA label=re_authorize] body.message matches /cannot be approved or declined/i
+[ERRORS label=authorize_draft] HTTP 400
+[DATA label=authorize_draft] body.message matches /status|draft/i
+[ERRORS label=cleanup_draft] errors[] empty",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"re_authorize or authorize_draft returns 200 (a second decision silently overwrites the first, or a Draft return can be decided directly)",none,VCST-5883 · Archetype:LIFECYCLE · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-008,"Partially approved return exposes requested and approved side by side, per line, with reason",Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_PARTIAL_LINE.returnId). SHARED with RET-AUTH-004/011/020 — read-back only, tolerant of whichever case already decided it in this pass. NOTE: the actual EMAIL/PUSH body content (subject/text) is NOT queryable via a confirmed REST/GraphQL contract at authoring time — the [EVIDENCE] line below records what to confirm live (Admin SPA Notifications journal or DB) during the mandatory grounding pass; the verdict here rests on the RETURN's own data, which is what every notification template reads from.",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId); reqA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineARequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP ensure_decided]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId)"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC ensure_decided]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]
+[REST-OP journal_query]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""startDate"": ""@td(RETURNS_AUTH_PARTIAL_LINE.seededAt)"", ""take"": 50}
+[REST-EXEC journal_query]","[EVIDENCE] ensure_decided is either 200 (decided here) or 400 WRONG_STATUS (already decided) — both fine
+[DATA label=read_back] body.lineItems[?id={{lineA}}].quantity = {{reqA}}
+[DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = 200
+[DATA label=read_back] body.lineItems[?id=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId)].rejectReason is non-null
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].tenantIdentity.id = {{return}}
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /240/
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /200/
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /NoLongerNeeded/i
+[EVIDENCE] the tenantIdentity.id match above is asserted against a FIRST-match filter (grammar limitation: no AND-composition in [?key=value], no nested filter key) — a false match would require a DIFFERENT return's PartiallyApproved notification to sort ahead of this one within the query window; if the grounding pass finds this unreliable, narrow further or route through check-return-decisions.mjs's own client-side filter instead",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,requested and approved read the same value on the return's own data (so no template could render them distinctly); the declined line's rejectReason is absent,none,VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-009,Every status change sends exactly one email and one push whose text equals the subject,Returns > Authorize & Notifications > Admin REST,High,BL-NOTIF-001,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId). SHARED FIXTURE with RET-AUTH-001/002/003/016/019 - the decision itself may already have been made by an earlier case in this pass (003 decides it with the SAME body this case sends: line A approved, line B declined = PartiallyApproved), so the authorize call below is evidence-only either way. Everything is asserted PER RETURN, never as a global delta: the push is found by keyword = this return's number and by its exact text ""Return {number} partly approved"" (OBSERVED 2026-10-01: pushMessages(keyword: ""<return number>"") lists only that return's pushes, e.g. ""... received"" + ""... partly approved""), and the email is read from the notification journal filtered by this return (POST /api/notifications/journal with objectIds + objectType Return - OBSERVED to list only that return's records). The push is POLLED (up to 60 s: it is written asynchronously after the decision), then exactly one push and exactly one ReturnPartiallyApprovedEmailNotification must exist for this return. Email delivery is not required (SMTP answers 535 here, the journal record carries status Error) - the journal record is the evidence.",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_MIXED.returnLineBReturnLineItemId); qtyA=@td(RETURNS_AUTH_MIXED.returnLineARequestedQuantity),"[AUTH role=USER]
+[GQL-OP get_number]
+query { return(id: ""{{return}}"") { id number status } }
+[GQL-EXEC get_number]
+[GQL-CAPTURE get_number.data.return.number → RET_NUMBER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP push_for_return]
+query { pushMessages(first: 20, keyword: ""{{RET_NUMBER}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_for_return]
+[WAIT until=push_for_return timeout=60 interval=5] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} partly approved].shortMessage is non-null
+[GQL-CAPTURE push_for_return.data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} partly approved].shortMessage → PUSH_SHORT]
+[WAIT seconds=5]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_query]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{return}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal_query]
+[REST-CAPTURE journal_query.body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].subject → EMAIL_SUBJECT]","[EVIDENCE] authorize is either 200 (decided here) or 400 WRONG_STATUS (already decided by an earlier case) - both fine, this row is about the notification side effect
+[ERRORS label=get_number] errors[] empty
+[DATA label=push_for_return] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} partly approved].shortMessage is non-null
+[COUNT label=push_for_return] data.pushMessages.items[*?shortMessage=Return {{RET_NUMBER}} partly approved].length = 1
+[ERRORS label=journal_query] HTTP 200
+[COUNT label=journal_query] body.results[*?notificationType=ReturnPartiallyApprovedEmailNotification].length = 1
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].tenantIdentity.id = {{return}}
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].tenantIdentity.type = Return
+[DATA label=journal_query] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].subject = Return {{RET_NUMBER}} partly approved
+[VAR] {{EMAIL_SUBJECT}} = {{PUSH_SHORT}}","[REST] the notification journal filtered by this return (objectIds) holds exactly one ReturnPartiallyApprovedEmailNotification for it; [GQL] the buyer's pushMessages filtered by this return's number holds exactly one ""partly approved"" push; the two texts are asserted equal - a duplicate send (two handlers fed by a CRUD-event bridge that also fires on admin PUT) shows as a count of 2, never hidden by another return's push","no push for this return's number reaches ""Return {number} partly approved"" within the 60 s poll (no push sent); two such pushes or two ReturnPartiallyApprovedEmailNotification records for this return (duplicate send); the journal has no record for this return (email skipped); the email subject differs from the push text; the push text is null or empty",none,VCST-5883 · Archetype:REPLAY · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-010,A save that keeps the status sends no new notification,Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId). SHARED FIXTURE — same tolerant pattern as RET-AUTH-009 (decision may already exist). This case edits a non-decision field (customerComment) via updateReturn AFTER the return is decided (or Requested, if this runs first) and checks no NEW push fires from that save alone.",return=@td(RETURNS_AUTH_MIXED.returnId),"[AUTH role=USER]
+[GQL-OP before_push]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC before_push]
+[GQL-CAPTURE before_push.data.pushMessages.totalCount → PUSH_BEFORE]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_before]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""startDate"": ""@td(RETURNS_AUTH_MIXED.seededAt)"", ""take"": 50}
+[REST-EXEC journal_before]
+[REST-CAPTURE journal_before.body.results[*?notificationType=ReturnPartiallyApprovedEmailNotification].length → JOURNAL_BEFORE_COUNT]
+[AUTH role=USER]
+[GQL-OP touch]
+mutation { updateReturn(command: { returnId: ""{{return}}"", customerComment: ""AGENT-TEST no-op touch"" }) { id status customerComment } }
+[GQL-EXEC touch]
+[WAIT seconds=10]
+[GQL-OP after_push]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC after_push]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_after]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""startDate"": ""@td(RETURNS_AUTH_MIXED.seededAt)"", ""take"": 50}
+[REST-EXEC journal_after]
+[REST-CAPTURE journal_after.body.results[*?notificationType=ReturnPartiallyApprovedEmailNotification].length → JOURNAL_AFTER_COUNT]","[EVIDENCE] touch may itself be refused (400) if the return is already decided and updateReturn only allows Draft edits, and errors[] on it is recorded here as evidence only — this case's verdict is the notification counts, not the touch's own status (an errors[] empty assertion here would contradict that stated tolerance)
+[DATA label=after_push] data.pushMessages.totalCount = {{PUSH_BEFORE}}
+[VAR] {{JOURNAL_AFTER_COUNT}} = {{JOURNAL_BEFORE_COUNT}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,push count increases after a save that did not change status — the buyer is re-notified of an old decision every time staff touch the return; the touch mutation itself throws instead of a clean no-op,none,VCST-5883 · Archetype:SILENT · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-011,Moving a partly approved return to Processing then Completed keeps released units returnable,Returns > Authorize & Notifications > Admin REST,High,,ECL-2.1,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_PARTIAL_LINE.returnId), expected PartiallyApproved by the time this runs (SHARED with RET-AUTH-004/008/020 — tolerant ensure-decided call first). Regression guard for VCST-5883 dev comment fix #1 on the refactored head (2 commits landed 2026-09-28 AFTER the last retest).",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); orderLineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP ensure_decided]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId)"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC ensure_decided]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.lineItems → R_LINES]
+[REST-OP to_processing]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""Processing"", ""lineItems"": {{R_LINES}}}
+[REST-EXEC to_processing]
+[AUTH role=USER]
+[GQL-OP after_processing]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_processing]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP to_completed]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""Completed"", ""lineItems"": {{R_LINES}}}
+[REST-EXEC to_completed]
+[AUTH role=USER]
+[GQL-OP after_completed]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after_completed]","[EVIDENCE] ensure_decided may be a no-op (already decided from an earlier case) — the read-backs below are the verdict
+[ERRORS label=to_processing] HTTP 200
+[ERRORS label=to_completed] HTTP 200
+[DATA label=after_processing] data.returnableItems[?orderLineItemId={{orderLineA}}].returnableQuantity = @td(RETURNS_AUTH_PARTIAL_LINE.lineAReturnableAfterSeed) + 40
+[DATA label=after_completed] data.returnableItems[?orderLineItemId={{orderLineA}}].returnableQuantity = @td(RETURNS_AUTH_PARTIAL_LINE.lineAReturnableAfterSeed) + 40",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,returnableQuantity drops back down after the move to Processing or Completed — the previously released 40 units become locked again; to_processing or to_completed themselves return a 4xx/5xx,none,VCST-5883 · Archetype:STALE · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-012,Admin-created New return notifies in the order's own language (the null-LanguageCode store-default fallback is not reachable with this fixture),Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_NEW_ADMIN.returnId) — created by an ADMIN through the legacy REST path (PUT /api/return, no id), status New. PREMISE CORRECTED (5-triage, 2026-09-29, live evidence): the row originally claimed this exercises a null-LanguageCode store-default fallback — live evidence shows an admin-created return's Return.LanguageCode is actually populated FROM THE ORDER (@td(RETURNS_AUTH_NEW_ADMIN.orderLanguageCode)), not left null, so that fallback path is NOT reachable with this fixture. Retitled and re-scoped to what is actually observable: the decision notification carries the order's own language. The store-default fallback claim is neither asserted nor invented data here; it remains an open question for a fixture that can actually produce a null LanguageCode admin-created return.",return=@td(RETURNS_AUTH_NEW_ADMIN.returnId); lineA=@td(RETURNS_AUTH_NEW_ADMIN.returnLineAReturnLineItemId); reqA=@td(RETURNS_AUTH_NEW_ADMIN.returnLineARequestedQuantity),"[AUTH role=USER]
+[GQL-OP before_push]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC before_push]
+[GQL-CAPTURE before_push.data.pushMessages.totalCount → PUSH_BEFORE]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{reqA}}}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[WAIT seconds=15]
+[GQL-OP after_push]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC after_push]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_query]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""startDate"": ""@td(RETURNS_AUTH_NEW_ADMIN.seededAt)"", ""take"": 50}
+[REST-EXEC journal_query]","[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Approved
+[DATA label=after_push] data.pushMessages.totalCount = {{PUSH_BEFORE}} + 1
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].tenantIdentity.id = {{return}}
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].languageCode = @td(RETURNS_AUTH_NEW_ADMIN.orderLanguageCode)
+[EVIDENCE] this proves the notification follows the ORDER's language on an admin-created return, NOT a null-LanguageCode store-default fallback (see corrected Preconditions) — the fallback path itself is untested here, not asserted true or false",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,authorize refuses a New return created via the legacy PUT path (400/500 instead of 200); no push is sent at all for an admin-created return's decision,none,VCST-5883 · Archetype:FALLBACK · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-013,Buyer who submitted in French is notified in French,Returns > Authorize & Notifications > Admin REST,High,PROPOSED-BL-RET-C,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_FR.returnId) — order is de-DE, return created with cultureName fr-FR; the two candidate LanguageCode sources (order vs submission culture) disagree here on purpose. Dedicated to this row only — RET-AUTH-014 now uses its own self-contained throwaway fixture (see below), so this fixture is no longer shared and the decision below is asserted directly, not tolerantly.",return=@td(RETURNS_AUTH_FR.returnId); lineA=@td(RETURNS_AUTH_FR.returnLineAReturnLineItemId); reqA=@td(RETURNS_AUTH_FR.returnLineARequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{reqA}}}]}
+[REST-EXEC authorize]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]
+[REST-OP journal_query]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""startDate"": ""@td(RETURNS_AUTH_FR.seededAt)"", ""take"": 50}
+[REST-EXEC journal_query]","[ERRORS label=authorize] HTTP 200
+[DATA label=read_back] body.languageCode = fr-FR
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].tenantIdentity.id = {{return}}
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].languageCode = fr-FR",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,body.languageCode reads de-DE (order language) instead of fr-FR (submission culture) — the two candidate sources disagree and the wrong one won; read_back itself 4xx/5xx instead of returning the decided return,none,VCST-5883 · Archetype:MONEY · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-014,A locale without its own template still notifies the buyer,Returns > Authorize & Notifications > Admin REST,Critical,PROPOSED-BL-RET-D,,"Runner-native. No browser. SELF-CONTAINED: creates its OWN throwaway return with cultureName fr-FR on @td(RETURNS_AUTH_JOURNEY.orderId) / line A (7 ordered; RETURNS_AUTH_JOURNEY lines are SHARED with other cases of 050o, 073a, 073b and 014c, and the approved unit of this case stays held - re-seed with npm run seed:returns:decisions), independent of RET-AUTH-013's shared RETURNS_AUTH_FR fixture. Everything is asserted PER RETURN, never as a global pushMessages delta (earlier cases push asynchronously and bled into the old +1 count): the push is found by keyword = this return's number and its exact text ""Return {number} approved"" and POLLED up to 60 s; the email is read from the notification journal filtered by this return (objectIds + objectType Return). cultureName is a real field on CreateReturnCommandType (confirmed live in scripts/seed-data/orders/seed-return-decisions.mjs). Store's Return.AttachmentsRequired is true, so an attachment is uploaded before create.",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); orderLineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", cultureName: ""fr-FR"", items: [{ orderLineItemId: ""{{orderLineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id number status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-CAPTURE create.data.createReturn.number → RET_NUMBER]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status items { id orderLineItemId } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → RETURN_LINE_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{RETURN_LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC read_back]
+[AUTH role=USER]
+[GQL-OP push_for_return]
+query { pushMessages(first: 20, keyword: ""{{RET_NUMBER}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_for_return]
+[WAIT until=push_for_return timeout=60 interval=5] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage is non-null
+[GQL-CAPTURE push_for_return.data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage → PUSH_SHORT]
+[WAIT seconds=5]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_query]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RETURN_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal_query]","[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[ERRORS label=authorize] HTTP 200
+[DATA label=read_back] body.languageCode = fr-FR
+[DATA label=push_for_return] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage is non-null
+[COUNT label=push_for_return] data.pushMessages.items[*?shortMessage=Return {{RET_NUMBER}} approved].length = 1
+[ERRORS label=journal_query] HTTP 200
+[COUNT label=journal_query] body.results[*?notificationType=ReturnApprovedEmailNotification].length = 1
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].tenantIdentity.id = {{RETURN_ID}}
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].languageCode = fr-FR
+[DATA label=journal_query] body.results[?notificationType=ReturnApprovedEmailNotification].subject = Return {{RET_NUMBER}} approved
+[EVIDENCE] the module ships English-only templates (per VCST-5883 3x discovery, already OBSERVED: the fr-FR record carries the English subject) - the assertions above prove the notification was SENT (found by this return's id, not skipped) using the shipped default template, stored under languageCode fr-FR",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"no NotificationMessage/PushMessage exists for this return's fr-FR decision (PrepareAsync logged a warning and skipped when FindTemplateForLanguage had no match): the push poll never finds ""Return {number} approved"" within 60 s or the journal filtered by this return has no ReturnApprovedEmailNotification; two pushes or two emails for this return (duplicate send); the journal record is not stored under languageCode fr-FR","none -- decided return, small footprint, no natural cleanup path (the 1 approved unit of RETURNS_AUTH_JOURNEY line A stays held until the fixture is re-seeded)",VCST-5883 · Archetype:FALLBACK · Technique:EG | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-015,"Store switch Return.SendNotifications off -- the buyer is still pushed (exactly once, per return) and no return email is written; the switch is restored",Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Creates its OWN throwaway Requested return on @td(RETURNS_AUTH_JOURNEY.orderId)/lineAItemId (7 ordered; the approved unit stays held - re-seed with npm run seed:returns:decisions) so it does not collide with any other RET-AUTH case's shared fixtures. Return.SendNotifications (the EMAIL switch; Return.SendPushNotifications is the push switch) is written through the flat tenant-values body {""Return.SendNotifications"": false} - the former [{""name"":..,""value"":..}] array form is not the contract of that endpoint - and the platform cache is RESET right after (POST /api/platform-cache/reset, OBSERVED 2026-10-01 as what makes a store-setting write visible; without it the old value is served for 9+ minutes). Settings writes run as ADMIN_DEFAULT and BEFORE any buyer (USER) step. Everything is asserted PER RETURN, never as a global pushMessages delta: the push is found by keyword = this return's number + exact text ""Return {number} approved"" (POLLED up to 60 s), then the notification journal filtered by this return (objectIds + objectType Return) must hold NO email at all for it - neither the registered nor the approved one. Absence cannot be polled, so the journal is read after the push exists (the handlers have run) plus a short fixed wait. Only the email half of the title's former ""push off still emails"" pair is exercised here; the push-off half is not covered.",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); orderLineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId); store={{STORE_ID}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP disable_email]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{store}}/values
+Content-Type: application/json
+Body: {""Return.SendNotifications"": false}
+[REST-EXEC disable_email]
+[REST-OP reset_disable_email]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC reset_disable_email]
+[REST-OP get_settings]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{store}}/values
+[REST-EXEC get_settings]
+[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create_a]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{orderLineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id number status } }
+[GQL-EXEC create_a]
+[GQL-CAPTURE create_a.data.createReturn.id → RETURN_A_ID]
+[GQL-CAPTURE create_a.data.createReturn.number → RET_NUMBER]
+[GQL-OP submit_a]
+mutation { submitReturn(command: { returnId: ""{{RETURN_A_ID}}"" }) { id status items { id orderLineItemId } } }
+[GQL-EXEC submit_a]
+[GQL-CAPTURE submit_a.data.submitReturn.items.0.id → RETURN_A_LINE_ID]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize_a]
+POST {{BACK_URL}}/api/return/{{RETURN_A_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{RETURN_A_LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize_a]
+[AUTH role=USER]
+[GQL-OP push_for_return]
+query { pushMessages(first: 20, keyword: ""{{RET_NUMBER}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_for_return]
+[WAIT until=push_for_return timeout=60 interval=5] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage is non-null
+[GQL-CAPTURE push_for_return.data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage → PUSH_SHORT]
+[WAIT seconds=5]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal_after]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RETURN_A_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal_after]
+[REST-OP restore_email]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{store}}/values
+Content-Type: application/json
+Body: {""Return.SendNotifications"": true}
+[REST-EXEC restore_email]
+[REST-OP reset_restore_email]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC reset_restore_email]","[ERRORS label=disable_email] HTTP 204
+[ERRORS label=reset_disable_email] HTTP 204
+[ERRORS label=get_settings] HTTP 200
+[ERRORS label=submit_a] errors[] empty
+[ERRORS label=authorize_a] HTTP 200
+[DATA label=push_for_return] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} approved].shortMessage is non-null
+[COUNT label=push_for_return] data.pushMessages.items[*?shortMessage=Return {{RET_NUMBER}} approved].length = 1
+[ERRORS label=journal_after] HTTP 200
+[COUNT label=journal_after] body.results[*?notificationType=ReturnApprovedEmailNotification].length = 0
+[COUNT label=journal_after] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 0
+[ERRORS label=restore_email] HTTP 204
+[ERRORS label=reset_restore_email] HTTP 204
+[EVIDENCE] with Return.SendNotifications=false the journal holds no email for this return (neither registered at submit nor approved at authorize) while the push for the same return still fired - each handler reads its own IsEnabled flag independently","[REST] GET tenant values after the write+reset is kept as evidence (HTTP 200; a settings key containing a dot cannot be addressed by the runner's path grammar, so the switch itself is judged by its effect: no email record); [REST] notification journal filtered by this return holds no email; [GQL] the buyer's pushMessages filtered by this return's number holds exactly one ""approved"" push; [SETTINGS] restore_email + cache reset run in Steps and again in Cleanup (best-effort)","the push for this return never reaches ""Return {number} approved"" within 60 s, or two such pushes exist (disabling email silenced push, or duplicated it); any ReturnRegisteredEmailNotification / ReturnApprovedEmailNotification record exists for this return while the email switch was off (the switch is ignored); disable_email or the cache reset is not HTTP 204, (the state could not be established - BLOCKED, not FAIL); restore_email not 204 (the email switch stays off for every later case - escalate)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.SendNotifications"": true}
+[REST POST /api/platform-cache/reset]",VCST-5883 · Archetype:CONFIG · Technique:PW | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-016,A back-office user without return:authorize and an anonymous caller cannot decide,Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_MIXED.returnId). Permission/auth is checked BEFORE any status/quantity validation, so this case is safe regardless of the fixture's decided/undecided state at run time — both calls below persist nothing either way. Role RETURNS_AGENT_NO_AUTHORIZE holds return:read+update, EXCLUDING return:authorize on purpose. `anon` runs FIRST, before any [AUTH] line in this case, so it genuinely carries no Authorization header — previously it ran AFTER [AUTH role=RETURNS_AGENT_NO_AUTHORIZE], which meant it was never actually anonymous.",return=@td(RETURNS_AUTH_MIXED.returnId); lineA=@td(RETURNS_AUTH_MIXED.returnLineAReturnLineItemId); qtyA=@td(RETURNS_AUTH_MIXED.returnLineARequestedQuantity),"[REST-OP anon]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}]}
+[REST-EXEC anon]
+[AUTH role=RETURNS_AGENT_NO_AUTHORIZE]
+[REST-OP no_perm]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{qtyA}}}]}
+[REST-EXEC no_perm]","[ERRORS label=no_perm] HTTP 403
+[ERRORS label=anon] HTTP 401",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,no_perm returns 200 (return:update wrongly accepted in place of return:authorize) or anon returns anything other than 401; no_perm or anon returns a 5xx instead of a clean 403/401,none,VCST-5883 · Archetype:SCOPE · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-017,"available-statuses on a Requested return offers ""Cancelled"" at most once and never the legacy ""Canceled"" spelling",Returns > Authorize & Notifications > Admin REST,Low,,,"Runner-native. No browser. Self-contained: creates its OWN throwaway Requested return on @td(RETURNS_AUTH_MIXED.orderId)/lineAItemId (small qty, does not touch the pre-seeded shared return) so the Requested-specific status set is checked regardless of what any other RET-AUTH case has done to the shared fixture.",orderId=@td(RETURNS_AUTH_MIXED.orderId); orderLineA=@td(RETURNS_AUTH_MIXED.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{orderLineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP available]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}/available-statuses
+[REST-EXEC available]
+[AUTH role=USER]
+[GQL-OP cleanup]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup]","[ERRORS label=available] HTTP 200
+[DATA label=available] body matches /^(?!.*Canceled).*$/
+[DATA label=available] body matches /^(?!(?:.*Cancelled){2}).*$/
+[DATA label=available] body matches /^(?!.*Completed).*$/
+[DATA label=available] body matches /^(?!.*Processing).*$/
+[EVIDENCE] PO decision (VCST-5883): only ""Cancelled"" is offered; the legacy ""Canceled"" spelling is never offered and ""Cancelled"" appears at most once. available-statuses returns a bare string array (confirmed via ret-swagger.json), so a [?key=value]/.length filter cannot evaluate it - the checks above assert on the stringified body via negative-lookahead regex instead. The Completed/Processing absence checks are this case's original contract for a Requested return and are unchanged.",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"the response includes the legacy ""Canceled"" spelling, or ""Cancelled"" more than once (duplicate cancel entries in the dropdown), or Completed/Processing (asserted absent for a Requested return by this case's original contract)",none,VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-018,"Admin PUT adding a second line for an order line already on the return is refused (""listed more than once"") and nothing persists",Returns > Authorize & Notifications > Admin REST,High,PROPOSED-BL-RET-A,ECL-2.1,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_DUP_LINE.returnId) - a plain Requested return of 5 of a 5-unit single line. SHARED FIXTURE: the PUT below is REFUSED and persists nothing, so it does not consume the fixture; it is placed BEFORE RET-AUTH-022 (which decides this same return) by ID/file order on purpose. Regression guard for the VCST-5883 round-2 fix (Return module PR #27): before it, a second return-line for the SAME order line was accepted and both lines could be authorized (6 of 5 observed on RET260928-00011, PROPOSED-BL-RET-A). Developer decision: the duplicate is rejected at save. OBSERVED 2026-10-01: the refusal is HTTP 400 whose body is a JSON ARRAY of messages (not an object with .message): [""Order line item '<id>' is listed more than once. Ask for the total on a single line.""] - so the message is asserted at body.[0].",return=@td(RETURNS_AUTH_DUP_LINE.returnId); orderLineA=@td(RETURNS_AUTH_DUP_LINE.lineAItemId); lineA=@td(RETURNS_AUTH_DUP_LINE.returnLineAReturnLineItemId); orderedA=@td(RETURNS_AUTH_DUP_LINE.lineAOrderedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.status → R_STATUS]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}] → LINE_0_JSON]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].productId → L0_PRODUCT]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].name → L0_NAME]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].price → L0_PRICE]
+[REST-OP add_dup_line]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{{LINE_0_JSON}}, {""orderLineItemId"": ""{{orderLineA}}"", ""productId"": ""{{L0_PRODUCT}}"", ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{L0_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": @td(RETURNS_AUTH_DUP_LINE.lineAOrderedQuantity), ""price"": {{L0_PRICE}}, ""quantity"": 1, ""reason"": ""AGENT-TEST duplicate line""}]}
+[REST-EXEC add_dup_line]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[ERRORS label=add_dup_line] HTTP 400
+[DATA label=add_dup_line] body.[0] matches /listed more than once/i
+[COUNT label=read_back] body.lineItems[*?orderLineItemId={{orderLineA}}].length = 1
+[DATA label=read_back] body.status = Requested",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"add_dup_line returns 200 (a second return-line for the same order line is accepted again - the 6-of-5 over-approval path is reopened); add_dup_line returns 400 but without ""listed more than once"" (a different, unrelated rejection); read_back shows two lines for the same order line; add_dup_line 5xx instead of a clean 400",none,VCST-5883 · Archetype:RACE · Technique:EG | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-019,Admin may edit the buyer's requested quantity on a Requested return (full-body PUT is accepted and persisted),Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Self-contained: creates its OWN throwaway Requested return (qty 2) on @td(RETURNS_AUTH_JOURNEY.orderId)/lineAItemId (7 ordered, ample headroom), then PUTs the buyer's requested quantity from 2 to 4 as admin. The return is created WITH a customerReference so the captured customerReference is never null. A null field is never captured (the runner forces INVALID on a null capture): measureUnit is OBSERVED null for this unit-less product and is sent as a literal null. The PUT line carries its returnId: OBSERVED 2026-10-01 that a full-body PUT line WITHOUT returnId is treated as a new line (the old one is deleted and a new id issued), so the id captured before the PUT no longer exists and every lookup by it reads undefined. BY DESIGN (VCST-5883 developer/PO decision, round 2): an admin may edit anything on a Requested return, including the quantity the buyer asked for - the edit is accepted and persisted, it is NOT refused and no re-notification is required.",orderId=@td(RETURNS_AUTH_JOURNEY.orderId); orderLineA=@td(RETURNS_AUTH_JOURNEY.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATTACHMENT_URL]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", customerReference: ""AGENT-TEST-RET-AUTH-019"", items: [{ orderLineItemId: ""{{orderLineA}}"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATTACHMENT_URL}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.status → R_STATUS]
+[REST-CAPTURE get_current.body.lineItems.0.id → LINE_ID]
+[REST-CAPTURE get_current.body.lineItems.0.productId → L0_PRODUCT]
+[REST-CAPTURE get_current.body.lineItems.0.sku → L0_SKU]
+[REST-CAPTURE get_current.body.lineItems.0.name → L0_NAME]
+[REST-CAPTURE get_current.body.lineItems.0.orderedQuantity → L0_ORDERED]
+[REST-CAPTURE get_current.body.lineItems.0.price → L0_PRICE]
+[REST-CAPTURE get_current.body.lineItems.0.reasonCode → L0_REASONCODE]
+[REST-OP put_qty]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{RETURN_ID}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{LINE_ID}}"", ""returnId"": ""{{RETURN_ID}}"", ""orderLineItemId"": ""{{orderLineA}}"", ""productId"": ""{{L0_PRODUCT}}"", ""sku"": ""{{L0_SKU}}"", ""name"": ""{{L0_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{L0_ORDERED}}, ""price"": {{L0_PRICE}}, ""quantity"": 4, ""reasonCode"": ""{{L0_REASONCODE}}""}]}
+[REST-EXEC put_qty]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC read_back]
+[AUTH role=USER]
+[GQL-OP cleanup_post]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_post]","[ERRORS label=create] errors[] empty
+[ERRORS label=submit] errors[] empty
+[ERRORS label=put_qty] HTTP 200
+[DATA label=read_back] body.lineItems[?id={{LINE_ID}}].quantity = 4",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,put_qty is refused (400) - the back-office can no longer correct a buyer's requested quantity; put_qty returns 200 but read_back still shows quantity=2 (edit silently discarded); put_qty 5xx; the line id captured before the PUT is gone afterwards (the PUT replaced the line instead of updating it),none -- the return is cancelled inline in Steps (cleanup_post),VCST-5883 · Archetype:SCOPE · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-020,PUT on a decided line: the decision is preserved (only Authorize writes it) and the quantity cannot be changed,Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_PARTIAL_LINE.returnId), expected already decided by the time this runs (SHARED with RET-AUTH-004/008/011 - tolerant ensure-decided call first). BY DESIGN (VCST-5883 developer decision, round 2): (a) a full-body PUT that changes approvedQuantity / itemState / rejectReason of a decided line returns 200 but the decision is NOT overwritten - only Authorize writes a decision; (b) a full-body PUT that changes the QUANTITY of a decided line is refused with 400 ""has been approved or declined, so its quantity cannot be changed"". Both PUTs send the schema-correct full body (lineItems keyed by id, EVERY line object carrying its returnId: OBSERVED 2026-10-01 that a line without returnId is treated as a new line - the old one is deleted and a new id issued - which destroyed line A of this SHARED fixture for every later case); line B is echoed byte-identical and unchanged. A null field is never captured (the runner forces INVALID on a null capture): measureUnit is OBSERVED null for this unit-less product and is sent as a literal null.",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP ensure_decided]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId)"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC ensure_decided]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.status → R_STATUS]
+[REST-CAPTURE get_current.body.lineItems[?id=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId)] → LINE_B_JSON]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderLineItemId → LA_ORDERLINE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].productId → LA_PRODUCT]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].sku → LA_SKU]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].name → LA_NAME]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderedQuantity → LA_ORDERED]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].price → LA_PRICE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].quantity → LA_QTY]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].approvedQuantity → LA_APPROVED]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].itemState → LA_STATE]
+[REST-OP put_decision_change]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": 199, ""itemState"": ""Rejected"", ""rejectReason"": ""AGENT-TEST decision edit""}, {{LINE_B_JSON}}]}
+[REST-EXEC put_decision_change]
+[REST-OP read_after_decision_change]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_after_decision_change]
+[REST-OP put_qty_change]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": 1, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}""}, {{LINE_B_JSON}}]}
+[REST-EXEC put_qty_change]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[EVIDENCE] ensure_decided is either 200 or 400 WRONG_STATUS - both fine
+[ERRORS label=put_decision_change] HTTP 200
+[DATA label=read_after_decision_change] body.lineItems[?id={{lineA}}].approvedQuantity = {{LA_APPROVED}}
+[DATA label=read_after_decision_change] body.lineItems[?id={{lineA}}].itemState = {{LA_STATE}}
+[DATA label=read_after_decision_change] body.lineItems[?id={{lineA}}].rejectReason is null
+[ERRORS label=put_qty_change] HTTP 400
+[DATA label=put_qty_change] body.[0] matches /has been approved or declined, so its quantity cannot be changed/i
+[DATA label=read_back] body.lineItems[?id={{lineA}}].quantity = {{LA_QTY}}
+[DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = {{LA_APPROVED}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,put_decision_change is refused (400) instead of accepted-and-ignored; read_after_decision_change shows approvedQuantity=199 / itemState=Rejected / the edited rejectReason (a PUT overwrote a decision that only Authorize may write); put_qty_change returns 200 or read_back shows the changed quantity (a decided line's requested quantity was rewritten); put_qty_change 400 with a different message; any 5xx,none,VCST-5883 · Archetype:SILENT · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-022,"Authorize re-checks availability against the order line: approving 5 when only 3 are left is refused (RETURN_QUANTITY_UNAVAILABLE), approving 3 succeeds",Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_DUP_LINE.returnId) - a Requested return holding 5 of the 5 units of one order line (DUP baseline, single line). SHARED FIXTURE, CONSUMED: the final authorize DECIDES this return (terminal, PartiallyApproved), so this case is placed AFTER RET-AUTH-018 (which needs the same alias undecided) by ID/file order on purpose and the fixture must be re-seeded before the next run (npm run seed:returns:decisions). FIFTH RULE: nothing in the environment can lower an order line, so the case CREATES that state itself right before the step that reads it (lower_order_line: order line 5 -> 3 through PUT /api/order/customerOrders, resent with the order's own captured addresses/shipments/inPayments so nothing else on the order is rewritten), GUARDS it (read_order must show quantity = reducedQty, otherwise the run is BLOCKED (setup/environment), never a FAIL of the authorize rule) and RESTORES the order line to its seeded quantity in Cleanup. OBSERVED 2026-10-01: PUT /api/order/customerOrders answers 204 (no body), not 200 - the effect, not the status, is what proves the setup (read_order). No existing seeder lowers an order line; if the order PUT is refused or rewrites more than the line on this build, treat as BLOCKED and route to a seeder (test-data-engineer). Platform behaviour OBSERVED 2026-09-30 by the operator's QA run (VCST-5883 round 2, Return PR #27): authorize re-validates approvedQuantity against what the order line currently has left.",return=@td(RETURNS_AUTH_DUP_LINE.returnId); lineA=@td(RETURNS_AUTH_DUP_LINE.returnLineAReturnLineItemId); reqA=@td(RETURNS_AUTH_DUP_LINE.returnLineARequestedQuantity); orderId=@td(RETURNS_AUTH_DUP_LINE.orderId); orderLineA=@td(RETURNS_AUTH_DUP_LINE.lineAItemId); orderedA=@td(RETURNS_AUTH_DUP_LINE.lineAOrderedQuantity); reducedQty=3,"[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_order]
+GET {{BACK_URL}}/api/order/customerOrders/{{orderId}}
+[REST-EXEC get_order]
+[REST-CAPTURE get_order.body.number → O_NUMBER]
+[REST-CAPTURE get_order.body.storeId → O_STORE]
+[REST-CAPTURE get_order.body.customerId → O_CUSTID]
+[REST-CAPTURE get_order.body.customerName → O_CUSTNAME]
+[REST-CAPTURE get_order.body.organizationId → O_ORGID]
+[REST-CAPTURE get_order.body.organizationName → O_ORGNAME]
+[REST-CAPTURE get_order.body.currency → O_CURRENCY]
+[REST-CAPTURE get_order.body.status → O_STATUS]
+[REST-CAPTURE get_order.body.addresses → O_ADDRESSES]
+[REST-CAPTURE get_order.body.shipments → O_SHIPMENTS]
+[REST-CAPTURE get_order.body.inPayments → O_PAYMENTS]
+[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].productId → OL_PRODUCT]
+[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].catalogId → OL_CATALOG]
+[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].name → OL_NAME]
+[REST-CAPTURE get_order.body.items[?id={{orderLineA}}].price → OL_PRICE]
+[REST-OP lower_order_line]
+PUT {{BACK_URL}}/api/order/customerOrders
+Content-Type: application/json
+Body: {""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": null, ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": null, ""price"": {{OL_PRICE}}, ""quantity"": {{reducedQty}}}]}
+[REST-EXEC lower_order_line]
+[REST-OP read_order]
+GET {{BACK_URL}}/api/order/customerOrders/{{orderId}}
+[REST-EXEC read_order]
+[REST-OP authorize_over]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{reqA}}}]}
+[REST-EXEC authorize_over]
+[REST-OP read_after_over]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_after_over]
+[REST-OP authorize_fit]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": {{reducedQty}}}]}
+[REST-EXEC authorize_fit]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[EVIDENCE] BLOCKED guard: the setup must have landed before the authorize rule is judged - a failing lower_order_line / read_order check below means BLOCKED (environment/setup), not a product FAIL
+[ERRORS label=lower_order_line] HTTP 204
+[DATA label=read_order] body.items[?id={{orderLineA}}].quantity = {{reducedQty}}
+[ERRORS label=authorize_over] HTTP 400
+[DATA label=authorize_over] body.code = RETURN_QUANTITY_UNAVAILABLE
+[DATA label=authorize_over] body.message matches /{{reqA}} approved, {{reducedQty}} available/i
+[DATA label=read_after_over] body.status = Requested
+[ERRORS label=authorize_fit] HTTP 200
+[DATA label=read_back] body.status = PartiallyApproved
+[DATA label=read_back] body.lineItems[?id={{lineA}}].approvedQuantity = {{reducedQty}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"authorize_over returns 200 (units that no longer exist on the order line are approved - over-refund path); authorize_over returns 400 without RETURN_QUANTITY_UNAVAILABLE or without the ""5 approved, 3 available"" figures; read_after_over shows the return already decided (the refused call persisted something); authorize_fit refused for a quantity that fits (availability over-counts the reduction) or the status is not PartiallyApproved; any 5xx. SETUP failures (lower_order_line not 200, read_order quantity != reducedQty) = BLOCKED, not FAIL","[AUTH role=ADMIN_DEFAULT]
+[REST PUT {{BACK_URL}}/api/order/customerOrders]
+{""id"": ""{{orderId}}"", ""number"": ""{{O_NUMBER}}"", ""storeId"": ""{{O_STORE}}"", ""customerId"": ""{{O_CUSTID}}"", ""customerName"": ""{{O_CUSTNAME}}"", ""organizationId"": ""{{O_ORGID}}"", ""organizationName"": ""{{O_ORGNAME}}"", ""currency"": ""{{O_CURRENCY}}"", ""status"": ""{{O_STATUS}}"", ""addresses"": {{O_ADDRESSES}}, ""shipments"": {{O_SHIPMENTS}}, ""inPayments"": {{O_PAYMENTS}}, ""items"": [{""id"": ""{{orderLineA}}"", ""productId"": ""{{OL_PRODUCT}}"", ""catalogId"": ""{{OL_CATALOG}}"", ""categoryId"": null, ""sku"": ""@td(RETURNS_AUTH_DUP_LINE.lineASku)"", ""name"": ""{{OL_NAME}}"", ""measureUnit"": null, ""price"": {{OL_PRICE}}, ""quantity"": {{orderedA}}}]}",VCST-5883 · Archetype:BOUNDARY · Technique:BVA | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-023,"PUT /api/return with an empty body, a partial body, a null lineItem or a foreign return's lineItem id is refused with 400 and a message, never 500",Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_TWO_RETURNS.returnId) (Requested) and the line id of its sibling return @td(RETURNS_AUTH_TWO_RETURNS.return2LineAReturnLineItemId) - two returns by the same buyer on the same order line, so the foreign id is REAL and belongs to another return. All four PUTs are malformed-input probes and are refused, so they persist nothing and do not consume the fixture. VCST-5883 round 2: the Return module validates the save request instead of failing with a null-reference / 500. OBSERVED 2026-10-01: every refusal is HTTP 400 whose body is a JSON ARRAY of messages, asserted at body.[0]: {} and {""id""} -> ""A return needs at least one line.""; lineItems [null] -> ""A return line is empty.""; a sibling return's line id -> ""Line '<id>' is not a line of this return.""",return=@td(RETURNS_AUTH_TWO_RETURNS.returnId); lineA=@td(RETURNS_AUTH_TWO_RETURNS.returnLineAReturnLineItemId); foreignLine=@td(RETURNS_AUTH_TWO_RETURNS.return2LineAReturnLineItemId); ownQty=@td(RETURNS_AUTH_TWO_RETURNS.returnLineARequestedQuantity),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.status → R_STATUS]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderLineItemId → LA_ORDERLINE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].productId → LA_PRODUCT]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].sku → LA_SKU]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].name → LA_NAME]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderedQuantity → LA_ORDERED]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].price → LA_PRICE]
+[REST-OP empty_body]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {}
+[REST-EXEC empty_body]
+[REST-OP partial_body]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}""}
+[REST-EXEC partial_body]
+[REST-OP null_line]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [null]}
+[REST-EXEC null_line]
+[REST-OP foreign_line]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{foreignLine}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": 1}]}
+[REST-EXEC foreign_line]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_back]","[ERRORS label=empty_body] HTTP 400
+[DATA label=empty_body] body.[0] matches /at least one line/i
+[ERRORS label=partial_body] HTTP 400
+[DATA label=partial_body] body.[0] matches /at least one line/i
+[ERRORS label=null_line] HTTP 400
+[DATA label=null_line] body.[0] matches /line is empty/i
+[ERRORS label=foreign_line] HTTP 400
+[DATA label=foreign_line] body.[0] matches /is not a line of this return/i
+[DATA label=read_back] body.status = Requested
+[DATA label=read_back] body.lineItems[?id={{lineA}}].quantity = {{ownQty}}",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,any of the four PUTs returns 500 (unvalidated input reaches the handler) or 200 (a malformed / foreign-line save is accepted); a 400 without a message in body.[0] or with a different message than the one asserted for that input; read_back shows the return changed (a refused save persisted something or attached the other return's line),none,VCST-5883 · Archetype:BOUNDARY · Technique:EG | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-024,"Authorize -- every line approved in full yields Approved, line state Approved, and releases nothing",Returns > Authorize & Notifications > Admin REST,High,,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. THIS CASE CONSUMES 1 UNIT of PARTIAL_LINE line A. Two lines are not needed: the all-full branch is the V1 variant of the decision table (all full -> Approved; mixed -> PartiallyApproved, RET-AUTH-003; all zero -> Rejected, RET-AUTH-005).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A0]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATT]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[GQL-CAPTURE submit.data.submitReturn.number → NUMBER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC read_back]
+[AUTH role=USER]
+[GQL-OP after]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC after]
+[GQL-CAPTURE after.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A1]","[DATA label=before] data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity >= 1
+[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Approved
+[DATA label=authorize] body.lineItems[?id={{LINE_ID}}].itemState = Approved
+[DATA label=read_back] body.status = Approved
+[DATA label=read_back] body.lineItems[?id={{LINE_ID}}].approvedQuantity = 1
+[DATA label=read_back] body.lineItems[?id={{LINE_ID}}].rejectReason is null
+[DATA label=after] data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity = {{A0}} - 1
+[EVIDENCE] BLOCKED guard: the first assertion (line A has at least 1 returnable unit) is a fixture prerequisite - when it fails the fixture is exhausted, report BLOCKED and re-seed (npm run seed:returns:decisions), never FAIL.",[REST] evidence is the graphql-runner JSON per label; [EVIDENCE] an Approved return releases nothing - the approved unit stays held (A1 = A0 - 1),"status is not Approved after approving every line in full (PartiallyApproved from a first/last-line predicate); the line state is not Approved; the approved unit is released (A1 = A0) or doubly held. Exhausted fixture = BLOCKED, not FAIL",none -- an Approved return cannot be undone; the 1 consumed unit is restored by re-seeding,VCST-5883 · Archetype:LIFECYCLE · Technique:DT | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-025,"available-statuses on decided and cancelled returns -- forward only, never the legacy ""Canceled"", ""Cancelled"" at most once, never an earlier status or another decision status",Returns > Authorize & Notifications > Admin REST,Medium,,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. THIS CASE CONSUMES 2 UNITS of PARTIAL_LINE line A (one Approved, one approved inside a partial decision). Builds four returns - Approved, PartiallyApproved, Rejected, Cancelled - and reads each one's status dropdown source. OBSERVED on Return 3.1003.0-pr-27-90cb: Approved -> [Approved, Completed, Processing]; PartiallyApproved -> [Completed, Processing, PartiallyApproved]; Rejected -> [Rejected]; Cancelled -> [Cancelled]. The case does not pin those exact lists (a later release may add a status); it pins the RULES the PO set: only ""Cancelled"" is ever offered (never ""Canceled""), once; the dropdown moves forward only (Draft, New, Requested never offered after a decision); a decision status is never offered as a target for a return decided differently (an agent decides only through Approve/decline).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[GQL-OP before]
+query { returnableItems(orderId: ""{{orderId}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC before]
+[GQL-CAPTURE before.data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity → A0]
+[REST-OP upload_att_ap]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att_ap]
+[REST-CAPTURE upload_att_ap.body.[0].url → ATT_ap]
+[GQL-OP create_ap]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_ap}}""] }] }) { id status } }
+[GQL-EXEC create_ap]
+[GQL-CAPTURE create_ap.data.createReturn.id → RET_AP]
+[GQL-OP submit_ap]
+mutation { submitReturn(command: { returnId: ""{{RET_AP}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit_ap]
+[GQL-CAPTURE submit_ap.data.submitReturn.items.0.id → LINE_AP]
+[GQL-CAPTURE submit_ap.data.submitReturn.number → NUMBER_ap]
+[REST-OP upload_att_pa]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att_pa]
+[REST-CAPTURE upload_att_pa.body.[0].url → ATT_pa]
+[GQL-OP create_pa]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 2, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_pa}}""] }] }) { id status } }
+[GQL-EXEC create_pa]
+[GQL-CAPTURE create_pa.data.createReturn.id → RET_PA]
+[GQL-OP submit_pa]
+mutation { submitReturn(command: { returnId: ""{{RET_PA}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit_pa]
+[GQL-CAPTURE submit_pa.data.submitReturn.items.0.id → LINE_PA]
+[GQL-CAPTURE submit_pa.data.submitReturn.number → NUMBER_pa]
+[REST-OP upload_att_rj]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att_rj]
+[REST-CAPTURE upload_att_rj.body.[0].url → ATT_rj]
+[GQL-OP create_rj]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_rj}}""] }] }) { id status } }
+[GQL-EXEC create_rj]
+[GQL-CAPTURE create_rj.data.createReturn.id → RET_RJ]
+[GQL-OP submit_rj]
+mutation { submitReturn(command: { returnId: ""{{RET_RJ}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit_rj]
+[GQL-CAPTURE submit_rj.data.submitReturn.items.0.id → LINE_RJ]
+[GQL-CAPTURE submit_rj.data.submitReturn.number → NUMBER_rj]
+[REST-OP upload_att_cx]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att_cx]
+[REST-CAPTURE upload_att_cx.body.[0].url → ATT_cx]
+[GQL-OP create_cx]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT_cx}}""] }] }) { id status } }
+[GQL-EXEC create_cx]
+[GQL-CAPTURE create_cx.data.createReturn.id → RET_CX]
+[GQL-OP submit_cx]
+mutation { submitReturn(command: { returnId: ""{{RET_CX}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit_cx]
+[GQL-CAPTURE submit_cx.data.submitReturn.items.0.id → LINE_CX]
+[GQL-CAPTURE submit_cx.data.submitReturn.number → NUMBER_cx]
+[GQL-OP cancel_cx]
+mutation { cancelReturn(command: { returnId: ""{{RET_CX}}"" }) { id status } }
+[GQL-EXEC cancel_cx]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize_ap]
+POST {{BACK_URL}}/api/return/{{RET_AP}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_AP}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize_ap]
+[AUTH role=USER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize_pa]
+POST {{BACK_URL}}/api/return/{{RET_PA}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{LINE_PA}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC authorize_pa]
+[AUTH role=USER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize_rj]
+POST {{BACK_URL}}/api/return/{{RET_RJ}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""NoLongerNeeded"", ""items"": [{""lineItemId"": ""{{LINE_RJ}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize_rj]
+[AUTH role=USER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_ap]
+GET {{BACK_URL}}/api/return/{{RET_AP}}
+[REST-EXEC get_ap]
+[REST-OP get_pa]
+GET {{BACK_URL}}/api/return/{{RET_PA}}
+[REST-EXEC get_pa]
+[REST-OP get_rj]
+GET {{BACK_URL}}/api/return/{{RET_RJ}}
+[REST-EXEC get_rj]
+[REST-OP get_cx]
+GET {{BACK_URL}}/api/return/{{RET_CX}}
+[REST-EXEC get_cx]
+[REST-OP avail_ap]
+GET {{BACK_URL}}/api/return/{{RET_AP}}/available-statuses
+[REST-EXEC avail_ap]
+[REST-OP avail_pa]
+GET {{BACK_URL}}/api/return/{{RET_PA}}/available-statuses
+[REST-EXEC avail_pa]
+[REST-OP avail_rj]
+GET {{BACK_URL}}/api/return/{{RET_RJ}}/available-statuses
+[REST-EXEC avail_rj]
+[REST-OP avail_cx]
+GET {{BACK_URL}}/api/return/{{RET_CX}}/available-statuses
+[REST-EXEC avail_cx]","[DATA label=before] data.returnableItems[?orderLineItemId={{lineA}}].returnableQuantity >= 3
+[ERRORS label=authorize_ap] HTTP 200
+[DATA label=authorize_ap] body.status = Approved
+[ERRORS label=authorize_pa] HTTP 200
+[DATA label=authorize_pa] body.status = PartiallyApproved
+[ERRORS label=authorize_rj] HTTP 200
+[DATA label=authorize_rj] body.status = Rejected
+[DATA label=cancel_cx] data.cancelReturn.status = Cancelled
+[ERRORS label=get_ap] HTTP 200
+[DATA label=get_ap] body.status = Approved
+[DATA label=get_ap] body.lineItems.0.approvedQuantity = 1
+[DATA label=get_pa] body.status = PartiallyApproved
+[DATA label=get_pa] body.lineItems.0.approvedQuantity = 1
+[DATA label=get_rj] body.status = Rejected
+[DATA label=get_rj] body.lineItems.0.approvedQuantity = 0
+[DATA label=get_cx] body.status = Cancelled
+[ERRORS label=avail_ap] HTTP 200
+[DATA label=avail_ap] body matches /^(?!.*Canceled)(?!.*Draft)(?!.*""New"")(?!.*Requested)(?!.*Rejected)(?!.*PartiallyApproved)(?!(?:.*Cancelled){2}).*$/
+[ERRORS label=avail_pa] HTTP 200
+[DATA label=avail_pa] body matches /^(?!.*Canceled)(?!.*Draft)(?!.*""New"")(?!.*Requested)(?!.*Rejected)(?!.*""Approved"")(?!(?:.*Cancelled){2}).*$/
+[ERRORS label=avail_rj] HTTP 200
+[DATA label=avail_rj] body matches /^(?!.*Canceled)(?!.*Draft)(?!.*""New"")(?!.*Requested)(?!.*Approved)(?!(?:.*Cancelled){2}).*$/
+[ERRORS label=avail_cx] HTTP 200
+[DATA label=avail_cx] body matches /^(?!.*Canceled)(?!.*Draft)(?!.*""New"")(?!.*Requested)(?!.*Approved)(?!.*Rejected)(?!(?:.*Cancelled){2}).*$/
+[EVIDENCE] The negative-lookahead regexes assert on the stringified body because available-statuses returns a bare string array (a [?key=value] filter cannot evaluate it) - the same technique RET-AUTH-017 uses. Each list keeps the current status itself, so it is excluded only for the OTHER decision statuses.
+[EVIDENCE] BLOCKED guard: the first assertion (line A has at least 3 returnable units) is a fixture prerequisite - when it fails the fixture is exhausted, report BLOCKED and re-seed (npm run seed:returns:decisions), never FAIL.","[REST] GET /api/return/{id} per built return (buyer-created through xAPI, decided/cancelled through REST/xAPI): the persisted status (Approved / PartiallyApproved / Rejected / Cancelled) and per-line approvedQuantity are the back-office state whose dropdown source (available-statuses) is asserted next - a dropdown can only be judged against the status it was computed for","any list contains the legacy ""Canceled"" spelling or ""Cancelled"" twice; a decided return offers Draft, New or Requested (backward move); a decided return offers a decision status that is not its own (an agent could decide through the dropdown); the Rejected or Cancelled list offers a forward status (terminal return can move on). Exhausted fixture = BLOCKED, not FAIL",none -- the Approved and partly approved units cannot be undone (re-seed); the Rejected and Cancelled returns hold nothing,VCST-5883 · Archetype:RENDER · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-026,"An admin PUT that sets status Approved, PartiallyApproved or Rejected directly is refused -- a return is decided only through Authorize",Returns > Authorize & Notifications > Admin REST,High,PROPOSED-BL-RET-B,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. Quantity-neutral: the buyer's own Requested return (1 unit of PARTIAL_LINE line A) is cancelled by the buyer at the end. The spec (VCST-5883 decision table, ""CanSetStatus"") says a decision status is reachable only through POST /api/return/{id}/authorize; the status dropdown and a raw PUT must not be a back door that skips the per-line decision, the released quantity and the notification.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATT]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[GQL-CAPTURE submit.data.submitReturn.number → NUMBER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_cur]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC get_cur]
+[REST-CAPTURE get_cur.body.storeId → R_STORE]
+[REST-CAPTURE get_cur.body.customerId → R_CUSTID]
+[REST-CAPTURE get_cur.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_cur.body.orderId → R_ORDERID]
+[REST-CAPTURE get_cur.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_cur.body.lineItems → R_LINES]
+[REST-OP put_approved]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{RETURN_ID}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""status"": ""Approved"", ""lineItems"": {{R_LINES}}}
+[REST-EXEC put_approved]
+[REST-OP put_rejected]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{RETURN_ID}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""status"": ""Rejected"", ""lineItems"": {{R_LINES}}}
+[REST-EXEC put_rejected]
+[REST-OP read_back]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC read_back]
+[AUTH role=USER]
+[GQL-OP read_buyer]
+query { return(id: ""{{RETURN_ID}}"") { id status items { itemState approvedQuantity } } }
+[GQL-EXEC read_buyer]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=submit] errors[] empty
+[ERRORS label=put_approved] HTTP 400
+[ERRORS label=put_rejected] HTTP 400
+[DATA label=read_back] body.status = Requested
+[DATA label=read_back] body.lineItems.0.itemState = Requested
+[DATA label=read_back] body.lineItems.0.approvedQuantity = 0
+[ERRORS label=read_buyer] errors[] empty
+[DATA label=read_buyer] data.return.status = Requested
+[DATA label=read_buyer] data.return.items.0.itemState = Requested
+[DATA label=read_buyer] data.return.items.0.approvedQuantity = 0
+[ERRORS label=cleanup_cancel] errors[] empty
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled","[GQL] the buyer's own xAPI read after the two refused admin PUTs shows the return still Requested with its line undecided (itemState Requested, approvedQuantity 0) - the REST read_back (back-office) and the xAPI read (storefront) agree that the refused PUTs changed nothing","a PUT answers 200 and the return becomes Approved or Rejected without an authorize (the decision, the per-line state, the quantity release and the buyer notification are all skipped); the read-back is no longer Requested; any 5xx",cancelReturn on {{RETURN_ID}} as USER if the inline cancel did not run (state Requested),VCST-5883 · Archetype:LIFECYCLE · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-028,"Submit sends exactly one ""received"" email (ReturnRegisteredEmailNotification) and one push ""Return {number} received"" to the buyer",Returns > Authorize & Notifications > Notifications,High,BL-NOTIF-001,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. Quantity-neutral: the buyer cancels the return at the end. Counts are measured as before/after deltas (journal entries of this return, the buyer's pushMessages totalCount) so a stand with older traffic does not matter.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[GQL-OP push_before]
+query { pushMessages(first: 1) { totalCount } }
+[GQL-EXEC push_before]
+[GQL-CAPTURE push_before.data.pushMessages.totalCount → PUSH_BEFORE]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATT]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[GQL-CAPTURE submit.data.submitReturn.number → NUMBER]
+[WAIT seconds=15]
+[GQL-OP push_after]
+query { pushMessages(first: 1) { totalCount items { id shortMessage } } }
+[GQL-EXEC push_after]
+[GQL-CAPTURE push_after.data.pushMessages.items.0.shortMessage → PUSH_SHORT]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RETURN_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal]
+[REST-CAPTURE journal.body.results.0.subject → EMAIL_SUBJECT]
+[AUTH role=USER]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=submit] errors[] empty
+[DATA label=submit] data.submitReturn.status = Requested
+[DATA label=push_after] data.pushMessages.totalCount = {{PUSH_BEFORE}} + 1
+[ERRORS label=journal] HTTP 200
+[COUNT label=journal] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1
+[DATA label=journal] body.totalCount = 1
+[DATA label=journal] body.results.0.subject = Return {{NUMBER}} received
+[VAR] {{PUSH_SHORT}} = {{EMAIL_SUBJECT}}
+[ERRORS label=cleanup_cancel] errors[] empty",[REST] the journal read is a back-office endpoint (ADMIN_DEFAULT); [GQL] pushMessages is the buyer's own inbox - a delta above 1 is a duplicate send,no push (delta 0) or a duplicate push (delta 2); no Registered email or two of them for the same return; the push text differs from the email subject (the push is the rendered subject); the journal entry is typed as another notification,cancelReturn on {{RETURN_ID}} as USER if the inline cancel did not run (state Requested),VCST-5883 · Archetype:REPLAY · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-029,"Cancelling a Requested return sends exactly one ""cancelled"" email (ReturnCancelledEmailNotification) and one push ""Return {number} cancelled""",Returns > Authorize & Notifications > Notifications,Medium,BL-NOTIF-001,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. Quantity-neutral. Admin Settings > Return > Notifications lists five notifications - registered, approved, partly approved, declined, cancelled; the first four are asserted by RET-AUTH-028/012/009/030, this case covers the fifth. The buyer cancels (the cancel path is the buyer's own cancelReturn).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATT]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[GQL-CAPTURE submit.data.submitReturn.number → RET_NUMBER]
+[GQL-OP cancel]
+mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"", reason: ""AGENT-TEST cancel"" }) { id status } }
+[GQL-EXEC cancel]
+[GQL-OP push_for_return]
+query { pushMessages(first: 20, keyword: ""{{RET_NUMBER}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_for_return]
+[WAIT until=push_for_return timeout=60 interval=5] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} cancelled].shortMessage is non-null
+[GQL-CAPTURE push_for_return.data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} cancelled].shortMessage → PUSH_SHORT]
+[WAIT seconds=5]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RETURN_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal]
+[REST-CAPTURE journal.body.results[?notificationType=ReturnCancelledEmailNotification].subject → EMAIL_SUBJECT]
+[REST-OP get_rest]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC get_rest]","[ERRORS label=submit] errors[] empty
+[ERRORS label=cancel] errors[] empty
+[DATA label=cancel] data.cancelReturn.status = Cancelled
+[DATA label=push_for_return] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} cancelled].shortMessage is non-null
+[COUNT label=push_for_return] data.pushMessages.items[*?shortMessage=Return {{RET_NUMBER}} cancelled].length = 1
+[ERRORS label=journal] HTTP 200
+[COUNT label=journal] body.results[*?notificationType=ReturnCancelledEmailNotification].length = 1
+[DATA label=journal] body.results[?notificationType=ReturnCancelledEmailNotification].subject = Return {{RET_NUMBER}} cancelled
+[ERRORS label=get_rest] HTTP 200
+[DATA label=get_rest] body.status = Cancelled
+[VAR] {{PUSH_SHORT}} = {{EMAIL_SUBJECT}}","[REST] notification journal filtered by this return holds exactly one ReturnCancelledEmailNotification and GET /api/return/{id} reads status Cancelled; [GQL] the buyer's pushMessages filtered by this return's number holds exactly one ""cancelled"" push (the earlier ""received"" push of the same return is a different text and is not counted)","no cancelled email or push after the cancel, or two of either FOR THIS RETURN (the push is found by keyword = the return number and its exact text, polled up to 60 s, never by a global count); the push text differs from the email subject; the back-office record is not Cancelled",none -- the case ends in the terminal Cancelled state which holds nothing,VCST-5883 · Archetype:REPLAY · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-030,"Declining every line sends one ""declined"" email carrying the line decline reason and the return decline reason, plus one push ""Return {number} declined""",Returns > Authorize & Notifications > Notifications,High,BL-NOTIF-001,,"Runner-native. No browser. Self-contained (FIFTH RULE): the buyer creates and submits its OWN Requested return on RETURNS_AUTH_PARTIAL_LINE line A (500 ordered, 240 held by the seeded return, 260 free; no other case of this change writes to that order after RET-AUTH-004 has read it) and the agent decides it through POST /api/return/{id}/authorize. An APPROVED unit stays held by design (no un-authorize; an Approved return cannot be cancelled by an admin edit - available-statuses of an Approved return is [Approved, Completed, Processing]), so a case that approves consumes exactly the units named in its Title/Preconditions from the 260 free; re-seed before the next run (npm run seed:returns:decisions). Cases that decline, or that the buyer cancels, return every unit. These cases are appended AFTER RET-AUTH-004/008/011/020 on purpose: those assert exact returnable arithmetic on the same line. Quantity-neutral (every line declined). RET-AUTH-009 covers the partly approved template and RET-AUTH-012 the approved one; the rejected template is a third, separate template whose job is to state WHY (ticket: ""reject reason per line"").
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",orderId=@td(RETURNS_AUTH_PARTIAL_LINE.orderId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAItemId),"[AUTH role=USER]
+[REST-OP upload_att]
+POST {{BACK_URL}}/api/files/return-attachments
+Content-Type: multipart/form-data
+Body: file=@@td(UPLOAD_FIXTURES.primary.path) (mimeType: image/png; filename: Logo1.png)
+[REST-EXEC upload_att]
+[REST-CAPTURE upload_att.body.[0].url → ATT]
+[GQL-OP create]
+mutation { createReturn(command: { orderId: ""{{orderId}}"", items: [{ orderLineItemId: ""{{lineA}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", attachmentUrls: [""{{ATT}}""] }] }) { id status } }
+[GQL-EXEC create]
+[GQL-CAPTURE create.data.createReturn.id → RETURN_ID]
+[GQL-OP submit]
+mutation { submitReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status number items { id quantity } } }
+[GQL-EXEC submit]
+[GQL-CAPTURE submit.data.submitReturn.items.0.id → LINE_ID]
+[GQL-CAPTURE submit.data.submitReturn.number → RET_NUMBER]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP authorize]
+POST {{BACK_URL}}/api/return/{{RETURN_ID}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""WrongItemDelivered"", ""items"": [{""lineItemId"": ""{{LINE_ID}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC authorize]
+[AUTH role=USER]
+[GQL-OP push_for_return]
+query { pushMessages(first: 20, keyword: ""{{RET_NUMBER}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_for_return]
+[WAIT until=push_for_return timeout=60 interval=5] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} declined].shortMessage is non-null
+[GQL-CAPTURE push_for_return.data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} declined].shortMessage → PUSH_SHORT]
+[WAIT seconds=5]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP journal]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RETURN_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal]
+[REST-CAPTURE journal.body.results[?notificationType=ReturnRejectedEmailNotification].subject → EMAIL_SUBJECT]
+[REST-OP get_rest]
+GET {{BACK_URL}}/api/return/{{RETURN_ID}}
+[REST-EXEC get_rest]","[ERRORS label=submit] errors[] empty
+[ERRORS label=authorize] HTTP 200
+[DATA label=authorize] body.status = Rejected
+[DATA label=push_for_return] data.pushMessages.items[?shortMessage=Return {{RET_NUMBER}} declined].shortMessage is non-null
+[COUNT label=push_for_return] data.pushMessages.items[*?shortMessage=Return {{RET_NUMBER}} declined].length = 1
+[ERRORS label=journal] HTTP 200
+[COUNT label=journal] body.results[*?notificationType=ReturnRejectedEmailNotification].length = 1
+[DATA label=journal] body.results[?notificationType=ReturnRejectedEmailNotification].subject = Return {{RET_NUMBER}} declined
+[DATA label=journal] body.results[?notificationType=ReturnRejectedEmailNotification].body matches /NoLongerNeeded/
+[DATA label=journal] body.results[?notificationType=ReturnRejectedEmailNotification].body matches /WrongItemDelivered/
+[ERRORS label=get_rest] HTTP 200
+[DATA label=get_rest] body.status = Rejected
+[DATA label=get_rest] body.rejectReason = WrongItemDelivered
+[DATA label=get_rest] body.lineItems.0.rejectReason = NoLongerNeeded
+[VAR] {{PUSH_SHORT}} = {{EMAIL_SUBJECT}}","[REST] notification journal filtered by this return holds exactly one ReturnRejectedEmailNotification carrying both reasons, and GET /api/return/{id} reads status Rejected with the return-level rejectReason and the line rejectReason; [GQL] the buyer's pushMessages filtered by this return's number holds exactly one ""declined"" push","the declined email is missing, duplicated or typed as another notification; the line reason or the return reason is absent from the body (the buyer is not told why); the push text differs from the subject; this return does not have exactly one ""declined"" push (found by keyword = the return number and its exact text, polled up to 60 s - never a global count); the back-office record does not carry the return-level and line-level reasons",none -- Rejected is terminal and holds no quantity,VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-031,"The partly approved email shows, per line, the requested quantity next to the approved quantity with the line's measure unit",Returns > Authorize & Notifications > Notifications,High,,,"Runner-native. No browser. Read-only against RETURNS_AUTH_PARTIAL_LINE (line A: 240 requested of 500 ordered, measure unit ""box""; line B: 12 requested, no unit). The decision is made tolerantly first (200, or 400 WRONG_STATUS when RET-AUTH-004/008 already decided it with the same payload) so this case holds in any order. Template contract (ticket, Notifications): ""Templates must render quantities with MeasureUnit, and every line must show requested and approved side by side"" - RET-AUTH-008 already asserts the numerals 240, 200 and the reason; this case adds the UNIT, which a numerals-only check cannot see (the fixture carries unit ""box"" on line A only, so a template that drops the unit or applies one unit to every line is observable).
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId); unitA=@td(RETURNS_AUTH_PARTIAL_LINE.lineAMeasureUnit),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP ensure_decided]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC ensure_decided]
+[REST-OP journal]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{return}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal]","[EVIDENCE] ensure_decided is either 200 (decided here) or 400 WRONG_STATUS (already decided) - both fine
+[ERRORS label=journal] HTTP 200
+[COUNT label=journal] body.results[*?notificationType=ReturnPartiallyApprovedEmailNotification].length = 1
+[DATA label=journal] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /240 {{unitA}}/
+[DATA label=journal] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /Requested/
+[DATA label=journal] body.results[?notificationType=ReturnPartiallyApprovedEmailNotification].body matches /Approved/",,"the requested quantity is rendered without its unit (""240"" instead of ""240 box""); the Approved column is missing (a partial decision reads as a full one); two partly approved emails exist for one return",none -- read-only against a decided fixture,VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01),Automated
+RET-AUTH-035,The price of a decided line stays editable in the Admin API and Save persists it (by design); the original price is restored afterwards,Returns > Authorize & Notifications > Admin REST,Low,,,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_PARTIAL_LINE.returnId), decided tolerantly first (SHARED FIXTURE, same pattern as RET-AUTH-020). Team decision (VCST-5883, observed live on vcptcore-qa1): the PRICE of a decided line is editable in the Admin blade and Save persists it - it is not a decision field. The storefront xAPI exposes no return price (the xAPI return types carry no price field), so the edit is invisible to the buyer. The case restores the captured original price in its last step so the fixture is left as found. 1.23 is a chosen input (never asserted against a stored value other than itself).
+Every line object of the full-body PUT carries its returnId (a line without it is treated as a new line: the old one is deleted and a new id issued). A null field is never captured (the runner forces INVALID on a null capture): measureUnit is OBSERVED null for this unit-less product and is sent as a literal null.
+ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or, where named, only the cases that need it - BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Return installed (GET /api/platform/modules, isInstalled=true).
+(2) Module VirtoCommerce.PushMessages installed - needed ONLY by the push assertions (pushMessages query, push counts, push text); the email assertions do not need it (the module sends email-only when it is absent).
+(3) Store {{STORE_ID}} Settings > Return > Return: ""Return module"" (Return.ReturnEnabled) = ON; ""Order statuses allowing returns"" (Return.AllowedOrderStatuses) contains Completed; ""Photos or documents required"" (Return.AttachmentsRequired) = ON (the buyer-side setup steps attach one file per line); ""Return reasons"" (Return.Reasons) contains NoLongerNeeded.
+(4) Store {{STORE_ID}} Settings > Return > Notifications: ""Return email notifications"" (Return.SendNotifications) = ON and ""Return push notifications"" (Return.SendPushNotifications) = ON (both default ON; RET-AUTH-015 flips and restores them).
+(5) Platform configuration FileUpload:Scopes includes return-attachments.
+(6) Permission return:authorize (""Approve and decline returns"") held by {{ADMIN}} (an administrator holds it); NO stock role holds it - the restricted user RETURNS_AGENT_NO_AUTHORIZE (seed:backoffice-rbac) is the negative actor.
+(7) Fixtures: npm run seed:returns:decisions (RETURNS_AUTH_*) re-seeded BEFORE each run, because a decided return is terminal and approved units stay held; verify with npm run returns:decisions:check. Buyer {{USER_EMAIL}}, colleague {{USER2_EMAIL}} in the same organization.
+(8) Email delivery is NOT required: SMTP may answer 535 and every message then ends in status Error - the notification journal record (type, recipient, subject, body, language) is the evidence, never delivery.",return=@td(RETURNS_AUTH_PARTIAL_LINE.returnId); lineA=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineAReturnLineItemId); lineB=@td(RETURNS_AUTH_PARTIAL_LINE.returnLineBReturnLineItemId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP ensure_decided]
+POST {{BACK_URL}}/api/return/{{return}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{lineA}}"", ""approvedQuantity"": 200}, {""lineItemId"": ""{{lineB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC ensure_decided]
+[REST-OP get_current]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC get_current]
+[REST-CAPTURE get_current.body.storeId → R_STORE]
+[REST-CAPTURE get_current.body.customerId → R_CUSTID]
+[REST-CAPTURE get_current.body.customerName → R_CUSTNAME]
+[REST-CAPTURE get_current.body.orderId → R_ORDERID]
+[REST-CAPTURE get_current.body.orderNumber → R_ORDERNUM]
+[REST-CAPTURE get_current.body.customerReference → R_CUSTREF]
+[REST-CAPTURE get_current.body.status → R_STATUS]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineB}}] → LINE_B_JSON]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderLineItemId → LA_ORDERLINE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].productId → LA_PRODUCT]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].sku → LA_SKU]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].name → LA_NAME]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].orderedQuantity → LA_ORDERED]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].price → LA_PRICE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].quantity → LA_QTY]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].approvedQuantity → LA_APPROVED]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].itemState → LA_STATE]
+[REST-CAPTURE get_current.body.lineItems[?id={{lineA}}].attachments → LA_ATT]
+[REST-OP put_price]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": 1.23, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": null, ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
+[REST-EXEC put_price]
+[REST-OP read_priced]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_priced]
+[REST-OP restore_price]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{return}}"", ""storeId"": ""{{R_STORE}}"", ""customerId"": ""{{R_CUSTID}}"", ""customerName"": ""{{R_CUSTNAME}}"", ""orderId"": ""{{R_ORDERID}}"", ""orderNumber"": ""{{R_ORDERNUM}}"", ""customerReference"": ""{{R_CUSTREF}}"", ""status"": ""{{R_STATUS}}"", ""lineItems"": [{""id"": ""{{lineA}}"", ""returnId"": ""{{return}}"", ""orderLineItemId"": ""{{LA_ORDERLINE}}"", ""productId"": ""{{LA_PRODUCT}}"", ""sku"": ""{{LA_SKU}}"", ""name"": ""{{LA_NAME}}"", ""measureUnit"": null, ""orderedQuantity"": {{LA_ORDERED}}, ""price"": {{LA_PRICE}}, ""quantity"": {{LA_QTY}}, ""approvedQuantity"": {{LA_APPROVED}}, ""itemState"": ""{{LA_STATE}}"", ""reasonCode"": null, ""attachments"": {{LA_ATT}}}, {{LINE_B_JSON}}]}
+[REST-EXEC restore_price]
+[REST-OP read_restored]
+GET {{BACK_URL}}/api/return/{{return}}
+[REST-EXEC read_restored]","[EVIDENCE] ensure_decided is either 200 or 400 WRONG_STATUS - both fine
+[ERRORS label=put_price] HTTP 200
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].price = 1.23
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].approvedQuantity = {{LA_APPROVED}}
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].itemState = {{LA_STATE}}
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].reasonCode is null
+[DATA label=read_priced] body.lineItems[?id={{lineA}}].attachments.0.url is non-null
+[COUNT label=read_priced] body.lineItems.length = 2
+[ERRORS label=restore_price] HTTP 200
+[DATA label=read_restored] body.lineItems[?id={{lineA}}].price = {{LA_PRICE}}",,"the line disappears from the return after the PUT (a line object without its returnId is dropped - the full-body PUT must carry the returnId of the line, as the Admin SPA does); the price edit on a decided line is refused (400) or silently ignored (read_priced still shows the original); the price edit changes approvedQuantity or itemState (a price save rewrote a decision); the restore does not bring the original price back",none -- restore_price already returned the fixture to its captured price,VCST-5883 · Archetype:SILENT · Technique:ST | Promoted: VCST-5883 (2026-10-01),Automated

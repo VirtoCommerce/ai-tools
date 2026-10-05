@@ -1,0 +1,211 @@
+{
+ "item": "step3c-c4-addonly-tf",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-30T11:52:14.691Z",
+ "command": {
+  "listId": "9be028cb-d399-4d8b-8740-471bd2246586",
+  "addSharedWithIds": [
+   "@td(ORG_TECHFLOW.platform_id)"
+  ]
+ },
+ "calls": [
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "9be028cb-d399-4d8b-8740-471bd2246586"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlist": null
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 172,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "scope": "Organization"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "9be028cb-d399-4d8b-8740-471bd2246586"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlist": null
+    }
+   }
+  },
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 229,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "9be028cb-d399-4d8b-8740-471bd2246586",
+      "name": "AGENT-TEST-5707-co1-ren",
+      "scope": "Private",
+      "description": "co-owner edit",
+      "items": [
+       {
+        "id": "a11b5a17-8b60-4e55-890f-15f59a157ab6",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 5
+       }
+      ],
+      "sharingSetting": {
+       "id": "eb12fba1-b522-4cf8-b637-8a49213e2eb9",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 213,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "9be028cb-d399-4d8b-8740-471bd2246586"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlist": null
+    }
+   }
+  }
+ ]
+}

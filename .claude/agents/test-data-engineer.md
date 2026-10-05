@@ -119,7 +119,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
 6. **Provision it live (your job — no browser needed).** Against a non-prod, `ENV_RISK`-safe env
    (`TEST_ENV=<env>`), run the **real** seed — `TEST_ENV=<env> npm run seed:<domain>` (or the specific
    `.mjs` seeder). **Before it, ASK** the base about each Platform-API endpoint the seeder calls:
-   `npm run kb -- ask "<endpoint> <question>"` (MCP: `mcp__kb__kb_ask`) — what an endpoint was *seen*
+   `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<endpoint> <question>"`) — what an endpoint was *seen*
    doing (a default it applies, a field it ignores) is what a seeder otherwise re-learns by failing.
    Then confirm the outcome deterministically:
    - runtime GUIDs landed in `test-data/aliases.<env>.json` (not in any committed CSV);
