@@ -23,6 +23,39 @@ export async function ghJson(url: string): Promise<any | null> {
   return res.json();
 }
 
+export interface Http {
+  gh(path: string): Promise<any | null>;
+  ghAll(path: string, maxPages?: number): Promise<any[]>;
+  getText(url: string): Promise<string | null>;
+  getJson(url: string): Promise<any | null>;
+  head(url: string, headers?: Record<string, string>): Promise<{ status: number; lastModified?: string }>;
+}
+const apiUrl = (p: string) => (p.startsWith('http') ? p : `https://api.github.com${p}`);
+export function makeHttp(): Http {
+  return {
+    gh: (p) => ghJson(apiUrl(p)),
+    async ghAll(p, maxPages = 10) {
+      const out: any[] = [];
+      let url: string | null = `${apiUrl(p)}${p.includes('?') ? '&' : '?'}per_page=100`;
+      for (let i = 0; url && i < maxPages; i++) {
+        const res: Response = await fetch(url, { headers: ghHeaders() });
+        if (res.status === 404) return out;
+        if (res.status === 403 || res.status === 429) throw new Error(`GitHub rate-limited (HTTP ${res.status}).`);
+        if (!res.ok) throw new Error(`GitHub API error ${res.status} for ${url}`);
+        out.push(...(await res.json()));
+        url = /<([^>]+)>;\s*rel="next"/.exec(res.headers.get('link') ?? '')?.[1] ?? null;
+      }
+      return out;
+    },
+    async getText(u) { const r = await fetch(u); return r.ok ? r.text() : null; },
+    async getJson(u) { const r = await fetch(u); return r.ok ? r.json() : null; },
+    async head(u, headers = {}) {
+      const r = await fetch(u, { method: 'HEAD', redirect: 'follow', headers });
+      return { status: r.status, lastModified: r.headers.get('last-modified') ?? undefined };
+    },
+  };
+}
+
 export async function fetchFile(c: EnvCoords, path: string): Promise<ManifestFile> {
   const j = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(c.branch)}`);
   if (!j?.content) throw new Error(`Could not read ${c.deployOwner}/${c.deployRepo}/${path}@${c.branch}`);
