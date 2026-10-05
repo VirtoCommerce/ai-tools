@@ -1,6 +1,6 @@
 # BUG: Widening a Customer share to "Anyone with link" warns that recipients will lose access, but their links become public
 
-## Status: READY_TO_SUBMIT · **Tracker:** VCST-6104 (auto-fix labels withheld: fix sits on open PR #2476 and the copy needs a UX decision)
+## Status: FIXED · **Tracker:** VCST-6104
 **Severity: Low** (P3), wrong access-control copy. It exposes nothing the rep did not choose. It tells the rep the opposite of what happens to existing recipients.
 **Found by:** `/qa-test-fast VCST-5728`, exploratory session 2026-09-29 pm (EXP-08) · **Related:** VCST-5707 (FE sharing rework, Testing), VCST-5728
 **Archetype:** `RENDER`/copy. The confirm copy is computed from "scope changed", not from the audience delta.
@@ -47,3 +47,9 @@
 - **Component / module:** shared/wishlists `share-wishlist-modal` + `stop-sharing-confirmation-modal`
 - **RCA anchor:** `share-wishlist-modal.vue:205` `revokesCurrentAudience`; `locales/en.json` `stop_sharing_modal.change_message`
 - **Routing confidence:** MEDIUM. The fix is on an open PR, and the right copy per target scope needs a PO/UX decision.
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2476 (unmerged), commits `43bcb9ca` (copy) + `e4a4cf58` (`widensToAnyone` / `revokesTargets` logic). Build `vc-theme-b2b-vue-2.59.0-pr-2476-0abb-0abbf215`.
+- **Tracker:** VCST-6104
+- **Verified:** 2026-10-05, `/qa-verify-fix` (via `/qa-test VCST-6104 localhost`), STR 3/3, checklist 10/10. Local storefront serving the PR build, proxied to the vcst-qa backend.
+- **Method:** Customer → Anyone with link and My organization → Anyone with link save with no confirmation; same sharing key; the guest opens the old link. Narrowing paths and recipient removal confirm with "The link stays the same. Some users may lose access." Evidence: `reports/tickets/Sprint26-20/VCST-6104/evidence.html`.
