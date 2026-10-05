@@ -73,11 +73,19 @@ export function secretValuesFrom(text) {
  * is. The default root is THE REPO, resolved from this module's own location and not from
  * `process.cwd()` -- a `kb` invoked from somewhere else would otherwise load no secrets at all and
  * report a clean scan it never performed.
+ *
+ * Besides the two fixed names, every per-env secrets file `.gitignore` keeps out of git
+ * (`.env.<env>.local`, `.env.playwright.<env>`): passwords moved into one of those and out of the
+ * fixed names would otherwise leave the gate holding zero values while it reports a clean scan.
  */
 export function secretFiles(env = process.env) {
   if (env.VC_MEASURE_SECRETS) return env.VC_MEASURE_SECRETS.split(';').filter(Boolean);
   const root = env.VC_ENV_ROOT || resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-  return [join(root, '.env.local'), join(root, '.env.playwright.local')];
+  let perEnv = [];
+  try {
+    perEnv = readdirSync(root).filter((n) => /^\.env\.(?:.+\.local|playwright\..+)$/.test(n));
+  } catch { /* an unlistable root still gets the two fixed names */ }
+  return [...new Set(['.env.local', '.env.playwright.local', ...perEnv])].map((n) => join(root, n));
 }
 
 // ── deployment hosts: not secrets, but not ours to publish either ─────────────────────────────

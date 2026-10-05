@@ -5,16 +5,20 @@
  *
  * Values are read from the env layer and never printed.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 
 /* Which files hold the secret values. VC_MEASURE_SECRETS is honoured here for the same reason
  * tool-log.mjs honours it: the scan must look in exactly the files whose values the hook is
  * redacting, or the two disagree about what a secret is. Fallback: the two conventional names
- * under VC_ENV_ROOT (default: the current directory). */
+ * plus every per-env secrets file (`.env.<env>.local`, `.env.playwright.<env>`) under
+ * VC_ENV_ROOT (default: the current directory) — the same list as kb/core/secret-gate.mjs. */
 const REPO = (process.env.VC_ENV_ROOT || ".").replace(/[\\/]?$/, "/");
+const perEnvSecretFiles = () => {
+  try { return readdirSync(REPO).filter((n) => /^\.env\.(?:.+\.local|playwright\..+)$/.test(n)); } catch { return []; }
+};
 const SECRET_FILES = process.env.VC_MEASURE_SECRETS
   ? process.env.VC_MEASURE_SECRETS.split(";")
-  : [REPO + ".env.local", REPO + ".env.playwright.local"];
+  : [...new Set([".env.local", ".env.playwright.local", ...perEnvSecretFiles()])].map((n) => REPO + n);
 const SECRET_NAME = /password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key/i;
 const looksLikePath = (v) =>
   /^[A-Za-z]:[\\/]/.test(v) || /^[\\/]/.test(v) || /^\w+:\/\//.test(v) || (v.match(/[\\/]/g) || []).length >= 2;

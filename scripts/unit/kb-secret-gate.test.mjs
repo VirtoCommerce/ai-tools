@@ -56,14 +56,16 @@ test('the default secret files are anchored at the REPO, not at process.cwd()', 
   // A `kb` invoked from anywhere else would otherwise load nothing and report a clean scan it
   // never performed — the worst possible failure for a gate.
   const files = secretFiles({});
-  assert.equal(files.length, 2);
+  // The two fixed names always lead; anything after them is a per-env secrets file found at the
+  // root, so the count depends on the checkout and is not asserted.
+  assert.ok(/[\\/]\.env\.local$/.test(files[0]), files[0]);
+  assert.ok(/[\\/]\.env\.playwright\.local$/.test(files[1]), files[1]);
   for (const f of files) {
-    assert.ok(/[\\/]\.env\.(local|playwright\.local)$/.test(f), f);
+    assert.ok(/[\\/]\.env\.(?:local|.+\.local|playwright\..+)$/.test(f), f);
     assert.ok(isAbsolute(f), `${f} must be absolute — a relative path would follow the caller's cwd`);
+    // All under one root, and that root is the repo the module lives in, not wherever `kb` was run.
+    assert.equal(dirname(f), resolve(import.meta.dirname, '..', '..'));
   }
-  // Both under one root, and that root is the repo the module lives in, not wherever `kb` was run.
-  assert.equal(dirname(files[0]), dirname(files[1]));
-  assert.equal(dirname(files[0]), resolve(import.meta.dirname, '..', '..'));
 });
 
 test('VC_MEASURE_SECRETS overrides the file list, so the gate and the hook cannot disagree', () => {
