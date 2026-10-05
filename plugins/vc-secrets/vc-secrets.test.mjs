@@ -4475,13 +4475,24 @@ test("cmdLaunch: a server with no oauth reference gets no NODE_OPTIONS and no ch
     }
 });
 
-test("cmdLaunch: a child node below the flag floor is refused before anything is spawned or bound", async () => {
+test("cmdLaunch: a child node below the flag floor is refused before anything is spawned or bound", async (t) => {
     // "or bound" is the half a name can claim for free: the gate has to run BEFORE createChannel,
     // or a refused launch mkdtemps a directory the "exit" handler removes only when the process
     // leaves -- which a suite driving cmdLaunch in-process never does, so they accumulate.
-    const channelDirs = () => (process.platform === "win32" ? []
-        : fs.readdirSync("/tmp").filter((x) => x.startsWith("vc-secrets-ch-")));
-    const before = channelDirs();
+    // The watch is a spy on the directories THIS launch creates, not a listing of /tmp: /tmp is
+    // shared with every other process, and one making or removing a vc-secrets-ch- directory
+    // between two listings would redden this test. The launcher reads fs.mkdtempSync off the
+    // default fs object at call time, so the spy sees every channel it makes.
+    const made = [];
+    const real = fs.mkdtempSync;
+    t.mock.method(fs, "mkdtempSync", (prefix, ...rest) => {
+        const dir = real(prefix, ...rest);
+        if (String(prefix).includes("vc-secrets-ch-")) {
+            made.push(dir);
+        }
+
+        return dir;
+    });
     const cfg = m.loadConfig(authorizedOauthPaths());
     let spawned = 0;
     await assert.rejects(() => launch("servers", "s", cfg, {
@@ -4491,7 +4502,7 @@ test("cmdLaunch: a child node below the flag floor is refused before anything is
         spawnFn: () => { spawned++; return fakeChild(); },
     }), /18\.18\.0/);
     assert.equal(spawned, 0);
-    assert.deepEqual(channelDirs(), before, "the version gate must precede createChannel");
+    assert.deepEqual(made, [], "the version gate must precede createChannel");
 });
 
 test("cmdLaunch: the version gate probes the declared node, and says so when it could not", async () => {

@@ -4417,6 +4417,11 @@ channelTest("cmdLaunch: the channel directory is removed when the launcher proce
     assert.equal(fs.existsSync(r.stdout), false, "one leftover directory per launch, otherwise");
 });
 
+// The child watches only the directories its own launch creates, through a spy on the default fs
+// object (the launcher reads mkdtempSync off it at call time), not a listing of /tmp: /tmp is
+// shared with every other process, and one making or removing a vc-secrets-ch- directory during
+// the run would redden this test. `created === 1` is the half a bare "nothing left" cannot give:
+// it fails if no channel is ever made, so the test cannot pass without having had one to leak.
 channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind", async () => {
     if (process.platform === "win32") {
         return;   // a named pipe has no directory to leak
@@ -4427,7 +4432,15 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
     fs.writeFileSync(script, `
         import * as m from ${JSON.stringify(launcherModuleUrl)};
         import fs from "node:fs";
-        const before = new Set(fs.readdirSync("/tmp").filter((x) => x.startsWith("vc-secrets-ch-")));
+        const made = [];
+        const real = fs.mkdtempSync;
+        fs.mkdtempSync = (prefix, ...rest) => {
+            const dir = real(prefix, ...rest);
+            if (String(prefix).includes("vc-secrets-ch-")) {
+                made.push(dir);
+            }
+            return dir;
+        };
         m.cmdLaunch("servers", "s", ${JSON.stringify(CMD_LAUNCH_CFG)}, {
             bindPlatform: "linux",
             readCache: async () => ({ state: "valid", accessToken: "t" }),
@@ -4435,14 +4448,13 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
             spawnFn: () => { throw new Error("spawn refused"); },
         }).catch(() => {
             process.on("exit", () => {
-                const after = fs.readdirSync("/tmp").filter((x) => x.startsWith("vc-secrets-ch-"));
-                fs.writeSync(1, JSON.stringify(after.filter((x) => !before.has(x))));
+                fs.writeSync(1, JSON.stringify({ created: made.length, left: made.filter((d) => fs.existsSync(d)) }));
             });
             process.exit(1);   // what fail() does
         });
     `);
     const r = spawnSync(process.execPath, [script], { encoding: "utf8" });
-    assert.equal(r.stdout, "[]", `leaked ${r.stdout}${r.stderr}`);
+    assert.deepEqual(JSON.parse(r.stdout), { created: 1, left: [] }, `${r.stdout}${r.stderr}`);
 });
 
 // Nothing here observes channel.push and no client ever connects, so delivery is NOT what this
