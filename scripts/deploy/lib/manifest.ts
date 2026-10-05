@@ -1,7 +1,7 @@
 // scripts/deploy/lib/manifest.ts — minimal-diff editing of vc-deploy-dev's backend/packages.json and
 // theme/artifact.json. Shared by `vc-deploy.ts pr` and `vc-deploy.ts upgrade`.
-import { readPins } from '../upgrade/pins.ts';
-import type { Pin } from '../upgrade/pins.ts';
+import { readPins } from './pins.ts';
+import type { Pin } from './pins.ts';
 
 export const THEME_URL_RE = /https?:\/\/[^\s"'<>]*vc-theme[^\s"'<>]*\.zip/i;
 

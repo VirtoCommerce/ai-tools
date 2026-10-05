@@ -14,22 +14,28 @@ export type DeliverResult =
   | { kind: 'pushed-no-pr'; note: string; headBranch: string; compareUrl: string; direct: boolean; account: string; perm: string }
   | { kind: 'partial'; headBranch: string; compareUrl: string; writeOwner: string; committed: string[]; failed: string[] }
   | { kind: 'handoff'; reason: string }
-  | { kind: 'stale'; path: string };
+  | { kind: 'stale'; path: string }
+  | { kind: 'unreadable'; path: string };
 export class DeliverError extends Error {}
 
 export async function deliverPr(req: DeliverRequest, cli: GhCli = realGhCli): Promise<DeliverResult> {
   const c = req.coords, log = req.log ?? (() => {});
   const me = req.forkOwner || cli.user();
   if (!me) throw new DeliverError('Could not resolve the GitHub account — is `gh` authenticated? (run `gh auth status`).');
+  const baseSha = cli.refSha(c.deployOwner, c.deployRepo, c.branch);
+  if (!baseSha) throw new DeliverError(`Could not read ${c.deployOwner}/${c.deployRepo}@${c.branch} head — check the branch name for env "${c.env}".`);
   // The plan was computed from a snapshot; if the env branch moved since, the approved diff is stale.
+  // Compared at baseSha — the commit the head branch is created from below — not at the moving branch,
+  // so a push landing after this check can never be silently reverted by the PR.
+  const pinned = req.files.some((f) => f.snapshot !== undefined);
   for (const f of req.files) {
     if (f.snapshot === undefined) continue;
-    if ((await cli.fileText(c.deployOwner, c.deployRepo, f.path, c.branch)) !== f.snapshot) return { kind: 'stale', path: f.path };
+    const now = await cli.fileText(c.deployOwner, c.deployRepo, f.path, baseSha);
+    if (now === null) return { kind: 'unreadable', path: f.path };
+    if (now !== f.snapshot) return { kind: 'stale', path: f.path };
   }
   const perm = cli.permission(c.deployOwner, c.deployRepo, me);
   const direct = canWrite(perm);
-  const baseSha = cli.refSha(c.deployOwner, c.deployRepo, c.branch);
-  if (!baseSha) throw new DeliverError(`Could not read ${c.deployOwner}/${c.deployRepo}@${c.branch} head — check the branch name for env "${c.env}".`);
   let writeOwner: string;
   if (direct) {
     writeOwner = c.deployOwner;
@@ -43,7 +49,9 @@ export async function deliverPr(req: DeliverRequest, cli: GhCli = realGhCli): Pr
   let headBranch = req.headBranch;
   if (req.uniqueBranch) for (let n = 2; cli.refSha(writeOwner, c.deployRepo, headBranch) !== null; n++) headBranch = `${req.headBranch}-${n}`;
   const headSpec = direct ? headBranch : `${me}:${headBranch}`;
-  const branchSha = direct ? baseSha : (cli.refSha(me, c.deployRepo, c.branch) || baseSha);
+  // Snapshot-checked delivery builds on exactly the commit it checked (forks share the upstream's objects);
+  // unchecked delivery (`pr`) keeps building on the fork's synced branch, as it always has.
+  const branchSha = direct || pinned ? baseSha : (cli.refSha(me, c.deployRepo, c.branch) || baseSha);
   // Surface (not silently resolve) a concurrent run on a deterministic branch name: the commits below overwrite it.
   const headExistedBefore = !req.uniqueBranch && cli.refSha(writeOwner, c.deployRepo, headBranch) !== null;
   const compareUrl = `https://github.com/${c.deployOwner}/${c.deployRepo}/compare/${c.branch}...${headSpec.replace(':', '%3A')}?expand=1`;

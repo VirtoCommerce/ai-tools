@@ -1,10 +1,4 @@
 // scripts/deploy/upgrade/versions.ts
-/** `<Id>_<version>.zip` → Id + version, split at the FIRST `_` followed by a digit (draft §2). */
-export function splitBlobName(name: string): { id: string; version: string } | null {
-  const m = /^(.+?)_(\d.*)\.zip$/i.exec(name);
-  return m ? { id: m[1], version: m[2] } : null;
-}
-
 /** Numeric per-component compare of dotted versions (3.1009.0 > 3.999.0). Pass BASES — suffixes are not ordered here. */
 export function cmpVersion(a: string, b: string): number {
   const pa = baseOf(a).split('.').map(Number), pb = baseOf(b).split('.').map(Number);

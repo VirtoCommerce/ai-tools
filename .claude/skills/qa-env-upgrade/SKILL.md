@@ -91,6 +91,7 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions> --apply \
 - exit 1 → the message names one of these (mapping: `scripts/deploy/upgrade/cli.ts` APPLY):
   - **nothing to change** — nothing written; the env is up to date.
   - **stale** ("changed on `<branch>` since the plan") — nothing written; offer to restart from step 1.
+  - **unreadable** ("could not read … to confirm it is unchanged") — nothing written; check `GIT_TOKEN` / access and retry step 5.
   - **no write path** (web-edit links) — no file committed (a fork or an empty branch may remain);
     hand the links over.
   - **PARTIAL commit** — WRITTEN: the branch is in an inconsistent state; hand the compare URL over

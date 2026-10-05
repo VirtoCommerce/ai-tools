@@ -1,15 +1,15 @@
 // scripts/deploy/upgrade/plan.ts — build the plan (network, read-only), then finalize/render (pure).
 import type { EnvCoords } from '../lib/env.ts';
 import type { Http } from '../lib/github.ts';
-import { fetchFile } from '../lib/github.ts';
+import { enc, fetchFile } from '../lib/github.ts';
 import { THEME_URL_RE } from '../lib/manifest.ts';
 import { getAdminToken, liveModules } from '../lib/live.ts';
+import { blobBase, readPins } from '../lib/pins.ts';
 import { classifyModule, classifyPlatform } from './classify.ts';
 import type { FeedEntry } from './feed.ts';
-import { blobBase, readPins } from './pins.ts';
 import { classifyTheme, resolveThemeTarget } from './theme.ts';
 import { resolveEndState } from './checks.ts';
-import type { Dropped } from './checks.ts';
+import type { Dropped, Requires } from './checks.ts';
 import type { Change, Decision, Decisions, QuestionGroup, Row, UpgradePlan } from './types.ts';
 
 export interface RepoMap { platformRepo: string; themeRepo: string; modules: Record<string, string> }
@@ -69,7 +69,12 @@ export async function buildPlan(c: EnvCoords, http: Http, opts: { repoMap: RepoM
     .filter((p: any) => String(p.head?.ref ?? '').startsWith('env-upgrade-'))
     .map((p: any) => ({ number: p.number, url: p.html_url, head: p.head.ref }));
   const pkg = await fetchFile(c, c.packagesPath);
-  const theme = await fetchFile(c, c.themePath).catch(() => null);
+  const notes: string[] = [];
+  // Only a 404 means "this env has no theme file"; any other failure (rate limit, network) stops the plan
+  // rather than silently dropping the Theme row.
+  const themeJ = await http.gh(`/repos/${repoFull}/contents/${enc(c.themePath)}?ref=${encodeURIComponent(c.branch)}`);
+  const theme = themeJ?.content ? { text: Buffer.from(themeJ.content, 'base64').toString('utf8') } : null;
+  if (!theme) notes.push(`no ${c.themePath} on ${c.branch} — the theme is not checked`);
   const feedArr = await http.getJson(opts.feedUrl);
   if (!Array.isArray(feedArr)) throw new Error(`module feed unreadable: ${opts.feedUrl}`);
   const feed = new Map<string, FeedEntry>(feedArr.map((e: FeedEntry) => [e.Id, e]));
@@ -89,7 +94,6 @@ export async function buildPlan(c: EnvCoords, http: Http, opts: { repoMap: RepoM
   const { pins, duplicates } = readPins(pkg.json);
   const rows: Row[] = [await classifyPlatform(pkg.json, platformLatest, platformRepo, http)];
   for (const p of pins) rows.push(await classifyModule(p, duplicates.includes(p.id), ctx));
-  const notes: string[] = [];
   if (theme) {
     const t = await resolveThemeTarget(http, themeRepo, base, opts.themeWorkflow);
     notes.push(...t.notes);
@@ -112,6 +116,9 @@ export interface Finalized { accepted: Change[]; dropped: Dropped[]; passes: num
 
 export function finalize(plan: UpgradePlan, decisions: Decisions): Finalized {
   const valid = (d: unknown): d is Decision => d === 'keep' || d === 'replace';
+  if (decisions === null || typeof decisions !== 'object' || Array.isArray(decisions)) {
+    throw new Error('decisions: must be a JSON object { "<group key>": "keep" | "replace" | { "<component>": "keep" | "replace" } }');
+  }
   for (const [key, d] of Object.entries(decisions)) {
     const g = plan.questions.find((q) => q.key === key);
     if (!g) throw new Error(`decisions: unknown group "${key}" (groups: ${plan.questions.map((q) => q.key).join(', ') || 'none'})`);
@@ -138,7 +145,8 @@ export function finalize(plan: UpgradePlan, decisions: Decisions): Finalized {
   }
   const current = new Map(plan.rows.filter((r) => r.kind !== 'theme').map((r) => [r.component, r.kind === 'platform' ? r.current.split(' ')[0] : r.current]));
   const atLatest = new Set(plan.rows.filter((r) => r.status === 'EQUAL').map((r) => r.component));
-  const res = resolveEndState(current, proposed, atLatest);
+  const requires = new Map<string, Requires>(plan.rows.filter((r) => r.currentDeps).map((r) => [r.component, { deps: r.currentDeps!, platformFloor: r.currentPlatformFloor }]));
+  const res = resolveEndState(current, proposed, atLatest, requires);
   return { ...res, approved, kept };
 }
 
@@ -150,7 +158,7 @@ const statusOrder = (r: Row, f: Finalized): number =>
 
 export function renderTable(plan: UpgradePlan, f: Finalized): string {
   const out = [`Env: ${plan.env} · ${plan.deployOwner}/${plan.deployRepo}@${plan.branch} · feed fetched ${plan.fetchedAt} · platform latest ${plan.platformLatest}`, '',
-    '| Component | On env | Live | Latest release | Status | Action / note |', '|---|---|---|---|---|---|'];
+    '| Component | On env | Live | Target | Status | Action / note |', '|---|---|---|---|---|---|'];
   const equal = plan.rows.filter((r) => r.status === 'EQUAL' && r.kind !== 'platform');
   const shown = plan.rows.filter((r) => !equal.includes(r)).sort((a, b) => statusOrder(a, f) - statusOrder(b, f) || a.component.localeCompare(b.component));
   for (const r of shown) {
@@ -171,9 +179,12 @@ export function renderTable(plan: UpgradePlan, f: Finalized): string {
   return out.join('\n');
 }
 
+/** What the change moves to, in words: the theme's target is an alpha, so "latest releases" alone would call it one. */
+const goal = (f: Finalized): string => (f.accepted.some((c) => c.kind === 'theme') ? 'latest releases + green theme alpha' : 'latest releases');
+
 export function renderCommitMessage(plan: UpgradePlan, f: Finalized, trailers: string[]): { title: string; message: string } {
   const n = f.accepted.length;
-  const title = `${plan.env}: upgrade to latest releases (${n} component${n === 1 ? '' : 's'})`;
+  const title = `${plan.env}: upgrade to ${goal(f)} (${n} component${n === 1 ? '' : 's'})`;
   const down = (c: { component: string }) => f.approved.has(c.component) && plan.rows.some((r) => r.component === c.component && r.downgrade);
   const lines = f.accepted.map((c) => `- ${c.component}: ${c.kind === 'theme' ? c.from.split('/').pop() : c.from} → ${c.kind === 'theme' ? c.to.split('/').pop() : c.to}${down(c) ? ' (DOWNGRADE, operator approved)' : ''}`);
   return { title, message: [title, '', ...lines, ...(trailers.length ? ['', ...trailers] : [])].join('\n') };
@@ -188,11 +199,15 @@ export function renderPrBody(plan: UpgradePlan, f: Finalized, footer: string): s
     ...f.kept.map((r) => `| ${r.component} | ${r.current} | kept on purpose — ${r.note}${r.prUrl ? ` ${r.prUrl}` : ''} |`),
     ...f.dropped.map((d) => `| ${d.change.component} | ${d.change.from} | ${d.status}: ${d.reason} |`),
   ];
+  // Rows this tool never changes — a reviewer still needs to see them (a DUPLICATE is theirs to fix by hand).
+  const leftRows = plan.rows.filter((r) => ['AHEAD', 'DUPLICATE', 'NOT_IN_FEED', 'NO_RELEASE'].includes(r.status))
+    .map((r) => `| ${r.component} | ${r.current} | ${r.status}${r.note ? ` — ${r.note}` : ''}${r.prUrl ? ` ${r.prUrl}` : ''} |`);
   const equal = plan.rows.filter((r) => r.status === 'EQUAL').length;
   return [
-    `Upgrade **${plan.env}** (\`${plan.branch}\`) to the latest releases. Feed fetched ${plan.fetchedAt}; platform latest ${plan.platformLatest}.`, '',
+    `Upgrade **${plan.env}** (\`${plan.branch}\`) to the ${goal(f)}. Feed fetched ${plan.fetchedAt}; platform latest ${plan.platformLatest}.`, '',
     '### Changed', '', '| Component | Was | Now | Why |', '|---|---|---|---|', ...changed, '',
     ...(keptRows.length ? ['### Kept on purpose', '', '| Component | On env | Reason |', '|---|---|---|', ...keptRows, ''] : []),
+    ...(leftRows.length ? ['### Not changed by this tool', '', '| Component | On env | Why |', '|---|---|---|', ...leftRows, ''] : []),
     `The other ${equal} component(s) already match. Checks ran to a fixed point in ${f.passes} pass(es).`, '',
     '**A human merges this PR; the merge triggers the deploy.** Right after it the env can serve the OLD build for a minute or two —',
     'check `/api/platform/modules` only after the deploy Action is green **and** the versions have actually changed.',

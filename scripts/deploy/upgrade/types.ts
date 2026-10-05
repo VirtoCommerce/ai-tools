@@ -18,6 +18,8 @@ export interface Row {
   component: string; kind: Kind; current: string; source?: 'AzureBlob' | 'GithubReleases';
   latest: string | null; status: Status; note: string;
   trackerKey?: string; prUrl?: string; downgrade?: boolean;
+  currentDeps?: { Id: string; Version: string }[]; // non-optional deps of the PINNED release (feed), when known
+  currentPlatformFloor?: string;
   change?: Change;    // proposed without asking (BEHIND, PRERELEASE→RELEASE)
   replace?: Change;   // offered by a PRERELEASE? question
 }

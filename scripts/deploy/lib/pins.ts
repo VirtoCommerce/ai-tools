@@ -1,5 +1,11 @@
-// scripts/deploy/upgrade/pins.ts — read every module pin of a parsed packages.json, whatever its shape.
-import { splitBlobName } from './versions.ts';
+// scripts/deploy/lib/pins.ts — read every module pin of a parsed packages.json, whatever its shape.
+// Shared: lib/manifest.ts verifies edits with it, upgrade/ classifies with it.
+
+/** `<Id>_<version>.zip` → Id + version, split at the FIRST `_` followed by a digit (draft §2). */
+export function splitBlobName(name: string): { id: string; version: string } | null {
+  const m = /^(.+?)_(\d.*)\.zip$/i.exec(name);
+  return m ? { id: m[1], version: m[2] } : null;
+}
 
 export interface Pin { id: string; version: string; source: 'AzureBlob' | 'GithubReleases' }
 export const isBlobSource = (s: any): boolean => s?.Name === 'AzureBlob' || String(s?.ServiceUri ?? '').includes('vc3prerelease');

@@ -10,7 +10,7 @@
  * --decisions: { "<group key>": "keep" | "replace" | { "<component>": "keep" | "replace" } }; a group
  * not listed is KEEP.
  * Exit: 0 ok (APPLY: PR opened and its files verified) · 1 APPLY did not finish cleanly — nothing to
- * change, stale snapshot or no write path (nothing written), or partial commit / branch pushed without
+ * change, stale or unreadable snapshot, or no write path (nothing written), or partial commit / branch pushed without
  * a PR / PR files unverified or wrong (WRITTEN — the message carries the URL) · 2 tool error, STOP or
  * bad input — nothing was written (every exit-2 path precedes the first write).
  * Never adds or removes a module, never downgrades without an explicit, flagged approval, never calls
@@ -88,6 +88,8 @@ export async function runUpgrade(args: string[], deps: { cli?: GhCli; http?: Htt
   // ── APPLY ──
   loadEnvFiles(plan.env);
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
+  // The stale-snapshot check reads the env branch with this token; without it the read 404s on a private repo.
+  if (!deps.cli && !getToken()) fail('No GIT_TOKEN — APPLY re-reads the env branch before writing (read .env.local).', TAG);
   const coords = resolveEnvCoords(plan.env);
   if (`${coords.deployOwner}/${coords.deployRepo}@${coords.branch}` !== `${plan.deployOwner}/${plan.deployRepo}@${plan.branch}`) {
     fail(`env "${plan.env}" now resolves to ${coords.deployOwner}/${coords.deployRepo}@${coords.branch}, the plan was for ${plan.deployOwner}/${plan.deployRepo}@${plan.branch} — re-plan`, TAG);
@@ -116,6 +118,7 @@ export async function runUpgrade(args: string[], deps: { cli?: GhCli; http?: Htt
     r = await deliverPr({ coords, headBranch: `env-upgrade-${plan.branch}-${stamp}`, uniqueBranch: true, title, message, body, files, author: gitAuthor(), forkOwner: flag('fork-owner'), log: (l) => console.log(l) }, deps.cli ?? realGhCli);
   } catch (e) { if (e instanceof DeliverError) fail(e.message, TAG); throw e; }
   if (r.kind === 'stale') { console.error(`[${TAG}] STOP — ${r.path} changed on ${plan.branch} since the plan. Someone changed the env; re-run from the PLAN phase.`); throw new Exit(1); }
+  if (r.kind === 'unreadable') { console.error(`[${TAG}] STOP — could not read ${r.path} on ${plan.branch} to confirm it is unchanged (token, access or network?) — nothing was written.`); throw new Exit(1); }
   if (r.kind === 'handoff') {
     console.error(`[${TAG}] ${r.reason} — nothing was written. Web edit:`);
     for (const p of files) console.error(`  https://github.com/${plan.deployOwner}/${plan.deployRepo}/edit/${plan.branch}/${p.path}`);

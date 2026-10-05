@@ -416,7 +416,7 @@ export async function runPr(args: string[]): Promise<void> {
   try { r = await deliverPr({ coords: c, headBranch, title, body, files, forkOwner: flag('fork-owner'), log: asJson ? undefined : (l) => console.log(l) }); }
   catch (e) { if (e instanceof DeliverError) fail(e.message); throw e; }
   if (r.kind === 'handoff') { console.error(`[deploy-pr] ${r.reason}`); return handoff(); }
-  if (r.kind === 'stale') fail(`unexpected stale result for ${r.path}`); // pr mode passes no snapshot
+  if (r.kind === 'stale' || r.kind === 'unreadable') fail(`unexpected ${r.kind} result for ${r.path}`); // pr mode passes no snapshot
   if (r.kind === 'partial') {
     console.error(`[deploy-pr] ⚠ PARTIAL commit — the branch is now in an inconsistent state (push rights?).`);
     for (const p of r.committed) console.error(`  ${p}: committed`);
