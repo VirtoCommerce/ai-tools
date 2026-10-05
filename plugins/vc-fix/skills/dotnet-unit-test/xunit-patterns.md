@@ -23,13 +23,14 @@ in your test code fails the build). Read the test csproj — use only packages a
   subfolders (Aggregates/, Handlers/, Validators/, …) — put the new test in the matching one.
 - Files are `<Subject>Tests.cs` / `<Subject>UnitTests.cs`; some repos share a `<Name>TestsBase.cs`
   base class — reuse it if neighbors do.
-- New test class/method named for the behavior + ticket, e.g.
-  `CouponDiscountTests.AppliesToPostTierAmount_VCST1234`.
+- New test class/method named for the subject + behavior, e.g.
+  `CouponDiscountTests.AppliesToPostTierAmount` — **never a ticket key** (no `_VCST1234` suffix);
+  the key belongs in the commit/PR. Filter the repro by class/method name, not by key.
 
 ## Service-level repro (most common)
 ```csharp
 [Fact]
-public async Task GetPrices_WhenPriceListDeleted_DoesNotReturnZero_VCST1234()
+public async Task GetPrices_WhenPriceListDeleted_DoesNotReturnZero()
 {
     // Arrange — mock only the collaborators the seam needs
     var repo = new Mock<IPricingRepository>();
@@ -50,7 +51,7 @@ public async Task GetPrices_WhenPriceListDeleted_DoesNotReturnZero_VCST1234()
 ```csharp
 [Theory]
 [InlineData(0)] [InlineData(-1)] [InlineData(int.MaxValue)]
-public void ClampQuantity_OutOfRange_Throws_VCST1234(int qty) { /* ... */ }
+public void ClampQuantity_OutOfRange_Throws(int qty) { /* ... */ }
 ```
 
 ## EF repository mocking (MockQueryable)

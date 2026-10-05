@@ -1,6 +1,6 @@
 # Search-bar `view_item_list` is pushed on page load for the URL keyword, with no dropdown shown `[Low]`
 
-## Status: CONFIRMED — VCST-6100 · fix PR VirtoCommerce/vc-frontend#2529 (In review, 2026-10-01)
+## Status: FIXED — VCST-6100 · fix PR VirtoCommerce/vc-frontend#2529 (verified 2026-10-05, PR still open)
 
 **Tracker:** VCST-6100 (Bug, relates to VCST-2945; labels vc-fix + qa-autofix)
 
@@ -61,3 +61,10 @@ header bar hydrates it from the URL `q` (`search-bar.vue` l.223). `searchAndShow
 - **Routing confidence:** MEDIUM — the load path is confirmed in the data layer; the exact guard is inferred from source
 
 Found by: /qa-test-fast VCST-2945 (2026-09-28)
+
+## Resolution
+
+- **Fixed in:** vc-frontend PR #2529 (`claude/qa-autofix/VCST-6100`, head `bc4b9a08`, theme `2.59.0-pr-2529-bc4b-bc4b9a08`), still open at verification time. The `search_bar` impression is pushed only while the dropdown is `visible`; the hidden prefetch is kept.
+- **Tracker:** VCST-6100 → Tested (2026-10-05). Comment 111377.
+- **Verified:** 2026-10-05 via `/qa-verify-fix` on a local storefront proxied to vcst-qa. RED on vcst-qa `2.59.0-pr-2524` (1 `search_bar` impression on load, dropdown closed) → GREEN 3/3 on the PR build (0 on load; exactly 1 when the dropdown opens), checklist 10/10.
+- **Evidence:** `reports/tickets/Sprint26-20/VCST-6100/evidence.html`, `verification-summary.json`, `verification-report.md`, `screenshots/`.

@@ -83,7 +83,7 @@ route/page  →  component (.vue)  →  composable (use*)  →  store / provide-
 
 - **Component / UI logic:** `mount` / `shallowMount` from `@vue/test-utils` (or
   `@testing-library/vue`), asserting rendered output / emitted events / `data-test-id` state. Confirm
-  **red** filtered: `npx vitest run -t <ticket-key>` (or by file path). See `/vue-unit-test`
+  **red** filtered by file path (`npx vitest run path/to/the.spec.ts`; test names carry no ticket key). See `/vue-unit-test`
   `vitest-patterns.md`.
 - **Composable / util (pure logic):** call the function directly; wrap reactive composables in
   `effectScope()` (as `useDateField.test.ts` does). Prefer this over a full mount when the bug is in
