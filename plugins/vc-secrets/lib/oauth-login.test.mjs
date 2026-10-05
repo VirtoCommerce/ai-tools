@@ -36,9 +36,10 @@ test("resolveEnvEntries: Key Vault reads run in parallel, so two that wait for e
         assert.deepEqual(outcome.env, { A: "value-a", B: "value-b" });
     });
 
-// The job object, run for real. The source-text tests above pin what the script says; only a Windows
-// machine can show that terminating the bound process ends the tree it started. Both tests below build
-// the same tree and differ only in the bind, so the second says whether the first could have failed.
+// The job object, run for real. The source-text tests in lib/keystore.test.mjs pin what the script says;
+// only a Windows machine can show that terminating the bound process ends the tree it started. Both tests
+// below build the same tree and differ only in the bind, so the second says whether the first could have
+// failed.
 //
 // Skipped where the bind cannot run, with the missing thing named. A machine where Add-Type is blocked
 // is NOT skipped: there the script is the feature not working, and the bind test must say so.
@@ -788,7 +789,7 @@ function cmdLogoutSeams() {
 // a user-facing string becomes "vc-secrets"/"vc-secrets login". `cache.entryNames(serverName)`
 // becomes `oauthEntryKeys(serverName, decl, cfg)` — both return { refresh, access }, but the
 // values here are the full three-segment keystore keys keyFor produces, not the source's bare
-// entry names, so an assertion on a written/removed name reads it off LOGIN_KEYS below instead of
+// entry names, so an assertion on a written/removed name reads it off LOGIN_KEYS above instead of
 // a literal "oauth-azure-mcp-*" string.
 //
 // cmdLogin refuses a project-scope entry whose app registration the user file has not acknowledged,
@@ -1332,7 +1333,7 @@ const FREE_LOCK = async () => ({ release: async () => {} });
 // (mcpw.test.js): `m.McpwError` becomes `m.VcSecretsError`, `cache.entryNames(serverName)`
 // becomes `oauthEntryKeys(serverName, decl, cfg)` (both return { refresh, access }, but the
 // values here are the full three-segment keystore keys keyFor produces -- an assertion on a
-// removed/attempted name reads it off LOGOUT_KEYS below instead of a literal
+// removed/attempted name reads it off LOGOUT_KEYS above instead of a literal
 // "oauth-azure-mcp-*" string), and every "mcpw"/"mcpw run" in a user-facing string becomes
 // "vc-secrets"/"vc-secrets run".
 //
@@ -1523,7 +1524,7 @@ test("cmdLogout: where the lock cannot be bound at all, the removal proceeds and
 
 // One in-process mutex standing in for the socket, so the reproduction runs sandboxed too: what
 // is under test is the order logout and a renewal agree on, not the socket that enforces it --
-// that is what the lockTest cases in this file cover.
+// that is what the lockTest cases in vc-secrets-oauth.test.mjs cover.
 function sharedLock() {
     let held = false;
 
@@ -1603,7 +1604,7 @@ test("cmdLogout: an unserialised removal is announced, and a serialised one is q
 test("cmdLogout: an error from the lock reaches the caller, and nothing is deleted on the way past", async () => {
     // The half of the source's mcpw.test.js that lost its referent. That test drives the
     // error THROUGH cmdLogout and asserts twice -- it propagates, AND nothing was attempted. This
-    // package pinned acquireTokenLock directly instead (vc-secrets-oauth.test.mjs, the
+    // package pinned acquireTokenLock directly instead (lib/oauth-token.test.mjs, the
     // "not laundered into one" test), which was right while cmdLogout did not exist, but only the
     // first assertion survived the re-point. The second one is the half about logout.
     //
@@ -1635,8 +1636,8 @@ test("cmdLogout: an error from the lock reaches the caller, and nothing is delet
 
 lockTest("the renewal, a login and a logout all lock on ONE name -- pre-occupied, not read off the source", async () => {
     // The source captures this by monkeypatching c.acquireLock (mcpw.test.js) -- unavailable
-    // here for the same reason tokenLockFor's own test gives (this file, "tokenLockFor: project
-    // scope keys the lock exactly the way keyFor keys the keystore entry"): cache.acquireLock is
+    // here for the same reason tokenLockFor's own test gives (lib/oauth-token.test.mjs, "tokenLockFor:
+    // project scope keys the lock exactly the way keyFor keys the keystore entry"): cache.acquireLock is
     // a read-only ES module export. Proven instead by PRE-occupying the exact path keyFor's own
     // rule predicts and observing all three writers collide with it -- if any of them computed
     // its lock name some other way, it would bind its OWN, unoccupied lock instead of contending

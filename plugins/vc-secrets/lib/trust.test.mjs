@@ -1504,10 +1504,11 @@ test("doctor: an untrusted repository server is a FAIL with the remedy, a truste
     assert.match(corrupt.stderr, /INFO config files loaded/, "and doctor carried on");
 });
 
-// The real verb, because the two halves are each tested alone above and nothing else notices the wire
-// between them: doctor hands childNodeProbes the trust gate's problems, and a doctor that stopped doing so
-// would EXECUTE the declared command of a repository nobody trusted, to ask it for a version. The command
-// is a script that leaves a marker, standing in for whatever a hostile declaration would do.
+// The real verb, because the two halves are each tested alone -- doctor's trust findings above,
+// childNodeProbes' `refused` in lib/launch.test.mjs -- and nothing else notices the wire between them:
+// doctor hands childNodeProbes the trust gate's problems, and a doctor that stopped doing so would EXECUTE
+// the declared command of a repository nobody trusted, to ask it for a version. The command is a script
+// that leaves a marker, standing in for whatever a hostile declaration would do.
 test("doctor: an untrusted repository's declared node is not run to ask its version, a trusted one is",
     { skip: process.platform === "win32" && "a #!/bin/sh script is not executable by a shell-less win32 spawn" },
     () => {

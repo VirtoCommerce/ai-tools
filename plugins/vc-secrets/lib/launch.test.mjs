@@ -328,7 +328,7 @@ test("childNodeProbes: on win32 a declared PATH replaces the inherited one whate
 // Every in-process launch below that is not ABOUT the Windows bind goes through this. With no bindPlatform
 // cmdLaunch binds the launching process to a kill-on-close job on win32 -- and in these tests the launching
 // process is the test runner, so an unset default would put the runner itself in a job. A test about the
-// bind passes bindPlatform: "win32" and stubs credReadMany (launchWithBind, above).
+// bind passes bindPlatform: "win32" and stubs credReadMany (launchWithBind, below).
 function launch(kind, name, cfg, deps = {}) {
     return m.cmdLaunch(kind, name, cfg, { bindPlatform: "linux", ...deps });
 }
@@ -488,8 +488,8 @@ test("cmdLaunch: dispose detaches the handlers that would exit the process", asy
     const child = Object.assign(fakeChild(), { pid: 2 ** 22 + 1 });
     // Counted as a DELTA: the runner holds signal listeners of its own, so an absolute count would
     // pin the harness rather than the launch. The signals are registered unconditionally. The "exit"
-    // listener here is the POSIX group kill; the oauth path's own "exit" handler is pinned in
-    // vc-secrets-oauth.test.mjs, where a launch reaches it.
+    // listener here is the POSIX group kill; the oauth path's own "exit" handler is pinned by "cmdLaunch:
+    // dispose detaches the exit handler that removes the channel directory" below, where a launch reaches it.
     const signals = ["SIGINT", "SIGTERM", "SIGHUP", ...(process.platform === "win32" ? [] : ["SIGQUIT"])];
     const before = signals.map((s) => process.listenerCount(s));
     const exitBefore = process.listenerCount("exit");
@@ -1289,8 +1289,9 @@ test("cmdLaunch: a write to a child that has gone is swallowed, and any other st
 
 // The same defect without a process or a timer to race: the error is EMITTED on the child's stdin, and the
 // bytes and the EOF the client sends afterwards are what the launcher must still read. The real-process test
-// below waits for the error to be handled by sleeping, which a delayed error would defeat; the order here is
-// fixed by construction.
+// in vc-secrets.test.mjs ("cmdLaunch: a server that closed its stdin and kept running is still torn down
+// after the client's EOF behind unread input") waits for the error to be handled by sleeping, which a
+// delayed error would defeat; the order here is fixed by construction.
 test("cmdLaunch: after the child's stdin fails with EPIPE the launcher keeps draining its own, and the client's EOF arms the teardown",
     { skip: process.platform === "win32" && "win32 keeps inherit for both" },
     async (t) => {
@@ -1664,7 +1665,7 @@ test("the margin covers the tick, the exchange, the skew allowance and both keys
     // ordinary clock-correction allowance cacheStatus absorbs before calling it a rollback;
     // TIMEOUT_LOCAL_MS (this launcher) is one keystore call, counted twice because the renewal
     // writes the refresh entry and then the access entry after the exchange -- the same pair
-    // LOCK_WAIT_MS's own relation above has to cover.
+    // LOCK_WAIT_MS's own relation (lib/keystore.test.mjs) has to cover.
     assert.ok(cache.MARGIN_MS >= m.RENEWAL_TICK_MS + oauth.TIMEOUT_OAUTH_MS + cache.SKEW_TOLERANCE_MS
             + 2 * m.TIMEOUT_LOCAL_MS,
         `MARGIN_MS=${cache.MARGIN_MS} must be at least RENEWAL_TICK_MS(${m.RENEWAL_TICK_MS}) + `
@@ -2461,10 +2462,10 @@ channelTest("importing the target module wakes no receiver; importing the preloa
 
 // ---------------------------------------------------------------------------------------------
 // cmdLaunch — the oauth-branch tests that need a REAL bound channel, so they run under
-// channelTest rather than plain `test` (see the comment above channelTest, and the sandbox note
-// above lockTest: a unix-domain-socket / filesystem-socket bind is refused here, and skipping is
-// the expected outcome, not a signal). The tests that never reach createChannel at all live in
-// vc-secrets.test.mjs beside the rest of cmdLaunch's coverage.
+// channelTest rather than plain `test` (see the bind-probe comments for channelTest and lockTest in
+// test-support.mjs: a unix-domain-socket / filesystem-socket bind is refused here, and skipping is
+// the expected outcome, not a signal). The tests that never reach createChannel at all are plain
+// `test` calls: above in this file, and the process-level ones in vc-secrets.test.mjs.
 //
 // Ported from mcpw.js's cmdRun and mcpw.test.js's own cmdRun test block: cmdRun(server, cfg, deps)
 // becomes cmdLaunch(kind, name, cfg, deps), McpwError becomes VcSecretsError, MCPW_* becomes
@@ -2688,8 +2689,7 @@ channelTest("cmdLaunch: a failed renewal is loud on fd 2, and does not disturb t
 });
 
 // A tiny stub binary on PATH, intercepting the real "gpg" invocation runTool makes for a local
-// secret read -- the same technique vc-secrets.test.mjs uses (withStubOnPath/stubBinary), inlined
-// here rather than imported so this file stays independent of that one's fixtures.
+// secret read -- the same technique as withStubOnPath/stubBinary in test-fixtures.mjs.
 function stubGpgOnPath(plaintext) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-gpgstub-"));
     tmpDirs.push(dir);

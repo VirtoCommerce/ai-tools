@@ -36,7 +36,6 @@ test("oauthReferences: a reference inside a task is found, not only inside serve
 const ADO_SCOPES = ["499b84ac-1321-427f-aa17-267ca6975798/.default", "offline_access"];
 
 // ── oauthTenantChecks: which consumer answers for an entry, and whether it is even worth asking ────
-//
 
 test("oauthTenantChecks: a task-only consumer's organisation is read from its own args", async () => {
     const cfg = { secrets: {}, servers: {}, tasks: {

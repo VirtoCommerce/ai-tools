@@ -673,8 +673,9 @@ test("LOCK_WAIT_MS outlasts the holder's whole critical section, not just its ex
 test("buildLocalWrite(keychain).stdinCommand: composes up to the line limit, refuses one byte past it", () => {
     // The limit mirrors SECURITY_LINE_LIMIT in lib/keystore.mjs -- declared at the top of that module
     // beside WCM_BLOB_LIMIT, not next to the buildLocalWrite branch that enforces it (restated here
-    // rather than read through its re-export -- same discipline as the lock tests' locally-declared
-    // backoff constants above: pin the value the guard actually enforces, not a re-export of it).
+    // rather than read through its re-export -- same discipline as the locally-declared backoff constants
+    // of "ensureFreshToken: the contended wait's backoff and ceiling bound the deadline it enforces"
+    // (lib/oauth-token.test.mjs): pin the value the guard actually enforces, not a re-export of it).
     //
     // The boundary is DERIVED, not hardcoded: the composed overhead (the account, the key, and
     // the fixed "add-generic-password ..." text) is measured here from the real builder with a

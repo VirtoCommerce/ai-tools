@@ -652,11 +652,11 @@ test("parseEntry: unreadable input is absent, and nothing about it is echoed", (
 
 // lockPathFor now takes a PROJECT axis as well as the entry name (source had only the entry), so
 // every test below is adapted rather than copied: every call takes the extra scope argument. The
-// per-platform tests below and "two projects declaring the same entry name..." further down pin
-// that the scope segment actually reaches the name and that two different scopes never collide on
-// win32, darwin and linux respectively; the remaining tests carry the argument only to keep the
-// call real, since their own subject is the user axis, the entry axis, or a name-injection
-// boundary.
+// per-platform tests below (darwin's in lib/keystore.test.mjs) and "two projects declaring the same
+// entry name..." further down pin that the scope segment actually reaches the name and that two
+// different scopes never collide on win32, darwin and linux respectively; the remaining tests carry the
+// argument only to keep the call real, since their own subject is the user axis, the entry axis, or a
+// name-injection boundary.
 
 test("lockPathFor: an abstract name on linux, with no filesystem entry", () => {
     const p = cache.lockPathFor("azure-mcp", "proj", { platform: "linux", userInfo: () => ({ uid: 1000 }) });
@@ -937,10 +937,10 @@ test("loginDeps: a seam handed in as null counts as NOT injected, as the body's 
 });
 
 test("seamsOf: a seam declared without a default is still a seam", () => {
-    // The parser is guilty until shown otherwise, because it feeds the deepEqual above and a parser
-    // that quietly finds fewer names makes that assertion pass while covering less. Requiring an
-    // `=` dropped a defaultless seam entirely -- and defaultless is the dangerous kind, since main
-    // calls cmdLogin with no deps object at all.
+    // The parser is guilty until shown otherwise, because it feeds the seam-list deepEqual in
+    // lib/oauth-login.test.mjs and a parser that quietly finds fewer names makes that assertion pass while
+    // covering less. Requiring an `=` dropped a defaultless seam entirely -- and defaultless is the
+    // dangerous kind, since main calls cmdLogin with no deps object at all.
     assert.deepEqual(seamsOf("async function f(a, cfg, {\n    withDefault = 1,\n    bare,\n} = {}) {"),
         ["withDefault", "bare"]);
 });
@@ -1129,9 +1129,8 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
 const PROBE_PATH = fileURLToPath(new URL("./vc-secrets-probe.mjs", import.meta.url));
 
 // Writes a single project-scope declaration file and returns its containing directory, exactly as
-// tmpConfigDir in vc-secrets.test.mjs does -- kept local (that file is off-limits to import from,
-// so it is not re-exported) but reusing this file's own tmpDirs/after() cleanup above rather than
-// growing a second one.
+// tmpConfigDir (test-fixtures.mjs) does, and pushes it onto the shared tmpDirs cleanup (test-support.mjs)
+// rather than growing a second one.
 function tmpProbeConfigDir(cfg) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-probe-"));
     tmpDirs.push(dir);

@@ -99,7 +99,7 @@ function strippedBodyOf(name, source = strippedLauncherSource()) {
 }
 
 test("stripComments: removes comments and only comments", () => {
-    // The source-text tests above and below match on stripped text, so a stripper that cuts too little
+    // The source-text tests in this package match on stripped text, so a stripper that cuts too little
     // lets a comment satisfy a match, and one that cuts too much hides code behind a "comment" that was
     // really a literal. Every case here is a construct that has to survive or die on its own.
     // The regex cases are the ones a string-only stripper gets wrong: a quote or a `//` inside a regex
@@ -208,7 +208,7 @@ test("oauthTenantChecks: driven by the declaration, preferring the reference onc
     // The reference appears only with the switch, and a tenant-binding mistake is worth catching at
     // SETUP -- otherwise the one check that turns it into a named finding stays dormant through
     // exactly the phase where someone would fix it cheaply. Source-inspected for the shape of the loop
-    // itself; that cmdDoctor calls THIS function, not a lookalike, is the test below.
+    // itself; that cmdDoctor calls THIS function, not a lookalike, is a test in lib/doctor.test.mjs.
     // Comments stripped before the slice.
     const body = strippedBodyOf("async function oauthTenantChecks");
     assert.notEqual(body, "", "oauthTenantChecks moved");
@@ -222,8 +222,8 @@ test("oauthTenantChecks: driven by the declaration, preferring the reference onc
 // Ported from mcpw.js's cmdRun and mcpw.test.js's own cmdRun test block, with the naming map
 // applied: cmdRun(server, cfg, deps) -> cmdLaunch(kind, name, cfg, deps), McpwError ->
 // VcSecretsError, MCPW_* -> VC_SECRETS_*.
-// The tests below that need a real bound channel live in vc-secrets-oauth.test.mjs (channelTest) —
-// these do not reach createChannel at all, so a plain `test` is enough.
+// The cmdLaunch tests that need a real bound channel run under channelTest, in lib/launch.test.mjs and
+// vc-secrets-oauth.test.mjs -- these do not reach createChannel at all, so a plain `test` is enough.
 // ---------------------------------------------------------------------------------------------
 
 test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers around it) in the test sources states its bind platform", () => {
@@ -233,10 +233,10 @@ test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers ar
     // forward their deps to cmdLaunch and default to none, so they bind the runner exactly as it does.
     // The platform must be a literal INSIDE the call's own arguments: a comment, `bindPlatform:
     // undefined`, or a literal belonging to the next statement leaves the bind on its win32 default.
-    // Every test source is scanned -- the *.test.mjs files and test-support.mjs, walked, so a file
-    // split off later is covered on arrival. Two residuals, stated rather than left to be found: a
-    // helper that spreads caller deps AFTER its literal (`launch`) can still be overridden by its
-    // caller, and a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
+    // Every test source is scanned -- the *.test.mjs files, test-support.mjs and test-fixtures.mjs,
+    // walked, so a file split off later is covered on arrival. Two residuals, stated rather than left to
+    // be found: a helper that spreads caller deps AFTER its literal (`launch`) can still be overridden by
+    // its caller, and a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
     // satisfies the match without reaching cmdLaunch.
     const callSite = /m\.(?:cmdLaunch|cmdTask|cmdRun)\(/g;
     const root = fileURLToPath(new URL("./", import.meta.url));
@@ -674,8 +674,8 @@ function shimEnv(home) {
 }
 
 // Points installPath at a temp dir holding a stub launcher that just proves which install ran — real
-// launcher behaviour is already covered by the vc-secrets.mjs tests above; the shim's own job is
-// picking the RIGHT install and handing it argv, which is what these tests exercise.
+// launcher behaviour is already covered by the vc-secrets.mjs tests in lib/ and above; the shim's own
+// job is picking the RIGHT install and handing it argv, which is what these tests exercise.
 function writeStubInstall(label) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-shim-install-"));
     tmpDirs.push(dir);
@@ -2011,8 +2011,8 @@ const GUARDED_IN_PACKAGE = [
 // from; like the README it is prose that loads nowhere and grants nothing.
 const UNGUARDED_FILES = ["README.md", "LICENSE"];
 
-// Neither guarded nor unguarded-by-decision: they are the subject's own instrument, and the helper
-// module they share. Listed so the classification below accounts for every tracked file rather than
+// Neither guarded nor unguarded-by-decision: they are the subject's own instrument, and the two helper
+// modules they share. Listed so the classification below accounts for every tracked file rather than
 // filtering some out of view.
 const TEST_FILES = ["vc-secrets.test.mjs", "vc-secrets-oauth.test.mjs", "test-support.mjs", "test-fixtures.mjs",
     "lib/util.test.mjs", "lib/spawn.test.mjs", "lib/config.test.mjs", "lib/keystore.test.mjs", "lib/trust.test.mjs",
@@ -2300,7 +2300,7 @@ test("guard: every file this package ships is classified -- guarded or deliberat
     // of the misses above were introduced.
     //
     // So this walk has no filter of any kind: every directory is descended and every FILE is reported,
-    // dot-directories included. The two test files are a list of their own rather than an exclusion,
+    // dot-directories included. The test files are a list of their own rather than an exclusion,
     // because an exclusion is a filter and this test is about not having one.
     //
     // `git ls-files` would be a better subject still -- it names what the package ships -- and it is

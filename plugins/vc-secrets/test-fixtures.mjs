@@ -1,3 +1,10 @@
+// Fixtures shared by more than one test file, or tied to this file's location at the package root:
+// declarations and configs, temp paths, PATH stubs, capability probes, and the module URLs a spawned
+// child loads. It must not import node:test: the CI sentinel ("ci: the workflow runs every test file in
+// this package, through the quoted glob") treats any other file that imports node:test as a test file
+// the glob must reach, and this one is not a *.test.mjs. What needs node:test -- the socketTest, lockTest
+// and channelTest wrappers, their bind probes, and the tmpDirs cleanup -- lives in test-support.mjs.
+
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -47,7 +54,7 @@ export function denyFs(t, method, denied) {
 
 // Capability probes, run once at load. Each asks a question about the MACHINE, not about the code, and
 // a test whose subject this machine cannot host carries `{ skip: !CAN_X && "<what is missing>" }` --
-// the same shape the socket, lock and channel wrappers use in vc-secrets-oauth.test.mjs. An absent
+// the same shape the socket, lock and channel wrappers use in test-support.mjs. An absent
 // capability is not a failure; an absent capability that reports as one is, because it buries the real
 // regressions it is mixed in with. Each reason names the missing THING rather than the platform, so a
 // machine that later grows the capability starts running the test without anyone editing a condition.
@@ -65,7 +72,7 @@ tmpDirs.push(probeDir);
 
 // A directory link. Windows creates a true symlink only in Developer Mode or elevated (otherwise
 // fs.symlinkSync raises EPERM), but a junction needs no privilege, so it is what the tests use there. A
-// junction takes an absolute target -- every one passed below is -- and behaves as a link for what these
+// junction takes an absolute target -- every one the tests pass is -- and behaves as a link for what these
 // tests read: realpath resolves it, and libuv reports any reparse point as a link to readdir, so
 // Dirent.isSymbolicLink() is true for one. The probe stays, so a machine that truly cannot link skips.
 export const LINK_TYPE = process.platform === "win32" ? "junction" : "dir";
@@ -531,7 +538,7 @@ export const LOGIN_CFG = { oauth: { "azure-mcp": LOGIN_DECL }, projectId: "login
 // A repository's entries are stored under a projectId the repository chose, so login and logout for one
 // are held to a trust record for the checkout (requireNamespaceTrust). The fixtures below are about
 // something else, and the repository they declare is recorded under its own root and id, as `trust`
-// would; the verbs' trust behaviour is tested in vc-secrets.test.mjs.
+// would; the verbs' trust behaviour is tested in lib/oauth-login.test.mjs and lib/cli.test.mjs.
 export function trustedFor(cfg) {
     return { schemaVersion: 1, repositories: { [cfg.projectRoot]: {
         trustedAt: "2000-01-01T00:00:00.000Z", projectId: cfg.projectId, servers: {}, tasks: {} } } };
@@ -606,8 +613,8 @@ export function seamsOf(source) {
     parts.push(current);
 
     // The name, whether or not a default follows it. Requiring the `=` was the same hole in a
-    // second costume: a seam added WITHOUT a default vanished from the list, so the deepEqual below
-    // passed and the one production call site -- main, which calls
+    // second costume: a seam added WITHOUT a default vanished from the list, so the seam-list deepEqual
+    // (lib/oauth-login.test.mjs) passed and the one production call site -- main, which calls
     // cmdLogin(arg, cfg) with no deps object at all -- would hand it `undefined`.
     return parts.map((part) => (/^\s*(\w+)/.exec(part) ?? [])[1]).filter(Boolean);
 }
@@ -625,7 +632,7 @@ export function definedSeams(deps) {
     return Object.entries(deps).filter(([, value]) => value !== undefined && value !== null).map(([key]) => key);
 }
 
-// The module URLs the fixtures below load, computed once from this test file's own URL so they
+// The module URLs the preload tests load, computed once from this file's own URL so they
 // resolve regardless of the spawned process's working directory.
 export const PRELOAD_URL = new URL("./vc-secrets-preload.mjs", import.meta.url).href;
 
@@ -634,8 +641,8 @@ export const TARGET_URL = new URL("./vc-secrets-target.mjs", import.meta.url).hr
 // A launchable declared entirely at USER scope, so neither the oauth entry nor the server it is
 // referenced from needs a registration grant (resolveEnvEntries exempts a user-scope launchable
 // outright) or a projectId (keyFor and cmdLaunch's scopeKey both short-circuit on
-// decl.scope === "user"). That keeps these tests about the launch mechanics cmdLaunch adds, not
-// about the authorization machinery vc-secrets.test.mjs already covers.
+// decl.scope === "user"). That keeps the tests using it about the launch mechanics cmdLaunch adds, not
+// about the authorization machinery the resolveEnvEntries tests (lib/config.test.mjs) already cover.
 export const CMD_LAUNCH_OAUTH_DECL = { ...DECL_IDENTITY, scope: "user", home: "user", kind: "oauth",
     declaredName: "ado", targetPackage: "some-oauth-package" };
 

@@ -670,9 +670,10 @@ test("doctorReport: a shim contract below REQUIRED_SHIM_CONTRACT is a WARN", () 
 });
 
 test("doctorReport: a shim at contract 1 is told to reinstall, and the line names contract 2", () => {
-    // The equality test above passes while both constants sit at 1, and the relative test above it passes
-    // whatever they are. Contract 2 is what added the marketplace-restricted cache fallback to the shim, so
-    // an install that kept its copied contract-1 shim must be told -- pinned by value, not by comparison.
+    // The equality test (vc-secrets.test.mjs, "the shim in this package declares the contract the launcher
+    // requires") passes while both constants sit at 1, and the relative test above passes whatever they
+    // are. Contract 2 is what added the marketplace-restricted cache fallback to the shim, so an install
+    // that kept its copied contract-1 shim must be told -- pinned by value, not by comparison.
     const cfg = { secrets: {}, servers: {} };
     const lines = m.doctorReport(cfg, {
         env: {}, platform: "linux", enableLists: { enabled: [], disabled: [] },
@@ -731,7 +732,6 @@ function oauthDoctorLines(overrides = {}) {
 }
 
 // ── oauth verdicts, the tenant check, and the child node floor ──────────────────────────────────
-//
 
 test("doctorReport: a signed-in entry reports OK", () => {
     const lines = oauthDoctorLines({ oauthStatus: { "azure-mcp": "ok" } });
@@ -1005,7 +1005,8 @@ test("cmdDoctor: the oauth checks are wired to the report, not merely available"
 
 test("cmdDoctor: the tenant checks it reports come from oauthTenantChecks, not a private copy of its loop", async () => {
     // A private copy of the loop in cmdDoctor would still print tenant lines, and would drift from the
-    // function the tests above pin. So the printed tenant line must be the one this function returned.
+    // function the oauthTenantChecks tests pin (lib/oauth-checks.test.mjs, vc-secrets.test.mjs). So the
+    // printed tenant line must be the one this function returned.
     const repo = doctorOauthRepo();
     const calls = [];
     const oauthTenantChecks = async (...args) => {
@@ -1666,7 +1667,7 @@ async function probeKeys(cfg, extra = {}) {
 //
 // The probe writes and then deletes a key of its own; `unlock` existence-checks and test-decrypts the entries
 // a repository declares. Both build keys from the repository's projectId, so both stand behind the same
-// predicate as the verbs above (namespaceTrustProblem).
+// predicate as set, login and logout (namespaceTrustProblem).
 
 test("probeKeystoreWrite: in a checkout not trusted for its namespace the probe writes and removes under the user key, never the claimed namespace", async () => {
     const cfg = { projectId: "proj-x", secrets: {}, oauth: {} };
