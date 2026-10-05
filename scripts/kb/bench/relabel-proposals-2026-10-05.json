@@ -1,0 +1,182 @@
+{
+ "about": "Exhaustive relabel 2026-10-05 on operator-approved sets (v2, wave2): additions to targets were applied; flips of a control to a target and new contested marks are proposals awaiting the operator, not applied.",
+ "proposals": [
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "T-active-plain",
+   "proposal": "contested",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-90B0D8F5",
+    "KB-06409954",
+    "KB-D080516B",
+    "KB-BBBC4225"
+   ],
+   "note": "Added the entries that state what the badge reads (97170665, D8FDFA6F, 90B0D8F5, BBBC4225 say lock then statusInOrganization; 06409954 says contact status; D080516B gives the membership-status labels); contested because 27B4CD10 says isLockedInOrganization ? Locked : contact.status while 90B0D8F5/D8FDFA6F show the badge following statusInOrganization, not contact.status."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "T-active-route",
+   "proposal": "contested",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-90B0D8F5",
+    "KB-D080516B",
+    "KB-BBBC4225",
+    "KB-82111688"
+   ],
+   "note": "Added entries stating the column reflects membership/contact status plus the membership lock, not the account (97170665, D8FDFA6F, 90B0D8F5, D080516B, BBBC4225, 82111688); contested on contact.status vs statusInOrganization as the field read."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "P-BAEBCDA7-1",
+   "proposal": "contested",
+   "expect": [
+    "KB-BAEBCDA7",
+    "KB-4A8606CA",
+    "KB-DA14E8B7",
+    "KB-D080516B"
+   ],
+   "note": "Added KB-4A8606CA (a wrong-address invitation cannot be undone in the UI), KB-DA14E8B7 (re-inviting the address is refused as a duplicate) and KB-D080516B (revokeOrganizationInvite sets Deleted, which can be re-invited); contested because D080516B's revoke-and-re-invite path contradicts BAEBCDA7's claim that an invitation cannot be cancelled or resent."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "P-4D082C89-1",
+   "proposal": "contested",
+   "expect": [
+    "KB-BBBC4225",
+    "KB-D8FDFA6F",
+    "KB-27B4CD10",
+    "KB-DA14E8B7"
+   ],
+   "note": "Added KB-27B4CD10 (a never-completed invitation renders as Active) and KB-DA14E8B7 (the pending row shows the 'Invite sent' placeholder name); contested because BBBC4225 says the status reads Invited while D8FDFA6F and 27B4CD10 say it reads Active."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "P-66089074-2",
+   "proposal": "contested",
+   "expect": [
+    "KB-B4490B0B",
+    "KB-9139A1A3",
+    "KB-EF478346"
+   ],
+   "note": "Added KB-9139A1A3 (the guest-to-signed-in merge happens server-side, so no explicit mergeCart call need show) and KB-EF478346 (vc-frontend calls mergeCart only when the guest cart has items); contested because EF478346 says the client issues mergeCart while the other two say the merge happens server-side."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "C-cart-payments",
+   "proposal": "target",
+   "expect": [
+    "KB-535FF3AC",
+    "KB-94C2ADCC"
+   ],
+   "partial": true,
+   "note": "Added KB-535FF3AC (availablePaymentMethods returns the store's active methods, and the set differs per deployment) and KB-94C2ADCC (allowCartPayment gateways render the cart card form only for signed-in users); partial because neither defines the allowCartPayment field itself."
+  },
+  {
+   "set": "rank-labelled-set.v2.json",
+   "id": "C-smoke-path",
+   "proposal": "target",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-ADA16454",
+    "KB-98A231B6"
+   ],
+   "partial": true,
+   "note": "Added KB-50EBEEE9 (checkout lives on /cart and there is no /checkout route), KB-ADA16454 (/checkout/review redirects to /cart unless multistep is on) and KB-98A231B6 (the add-to-cart stepper sends updateCartQuantity); partial because none covers the homepage or catalog browse, and none was observed on virtostart."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-12",
+   "proposal": "target",
+   "expect": [
+    "KB-78638393",
+    "KB-7F535D52"
+   ],
+   "partial": true,
+   "note": "Was empty; added KB-78638393 and KB-7F535D52, which state that the order advances from Payment required to Processing on a clean authorization and stays at Payment required when it is held; nothing covers what initializePayment returns."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-15",
+   "proposal": "target",
+   "expect": [
+    "KB-F78ED1CC",
+    "KB-DEBE1CED"
+   ],
+   "partial": true,
+   "note": "Was empty; added KB-F78ED1CC (the master PDP shows price N/A pending variant selection, so nothing is preselected) and KB-DEBE1CED (picking options re-renders the name but the price stays N/A)."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-19",
+   "proposal": "target",
+   "expect": [
+    "KB-8C530141",
+    "KB-25388E6C"
+   ],
+   "partial": true,
+   "note": "Added KB-8C530141 and KB-25388E6C because both state which fulfillment centers count toward store availability (main plus additional store FFCs); neither states the reserved-quantity arithmetic, so partial."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-20",
+   "proposal": "target",
+   "expect": [
+    "KB-F7E4DB8E"
+   ],
+   "partial": true,
+   "note": "Added KB-F7E4DB8E, which states the keyword filter of customerOrders/search is a prefix match on order number with results newest first; the full filter and response-field set is not stated, so partial."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-23",
+   "proposal": "target",
+   "expect": [
+    "KB-EDDBBE75",
+    "KB-D842824E",
+    "KB-CF3FAD18",
+    "KB-50EBEEE9"
+   ],
+   "partial": true,
+   "note": "Added KB-EDDBBE75 (redeem handling on orders, mixed cash+points cart), KB-50EBEEE9 (Pay with points offered at checkout), KB-CF3FAD18 (points balance check on /cart) and KB-D842824E (loyalty-currency lines excluded from the order total); the exact reduction mechanism is only partly stated."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-31",
+   "proposal": "target",
+   "expect": [
+    "KB-0DD47BD1",
+    "KB-F1542157",
+    "KB-4982C91F"
+   ],
+   "partial": true,
+   "note": "Added KB-0DD47BD1 (Admin blade totals match API, payment subtotal reads paymentSubTotal), KB-F1542157 (Line items header vs order header discount scope) and KB-4982C91F (Admin shows rounded header vs unrounded Discounts grid); the full calculation of every total is not stated, so partial."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-33",
+   "proposal": "target",
+   "expect": [
+    "KB-8264632C"
+   ],
+   "partial": true,
+   "note": "Added KB-8264632C because it states a cart can hold several coupons while the page shows one slot; whether two coupon rewards both apply at once is not stated, so partial."
+  },
+  {
+   "set": "rank-labelled-set.wave2.json",
+   "id": "W2-36",
+   "proposal": "target",
+   "expect": [
+    "KB-1AC55A1D",
+    "KB-DB7B6317"
+   ],
+   "partial": true,
+   "note": "Added KB-1AC55A1D (payment statuses New/Authorized/Paid with captures[]/refunds[]) and KB-DB7B6317 (order Processing is computed when payment is captured); refund effect on the order is not stated, so partial."
+  }
+ ]
+}

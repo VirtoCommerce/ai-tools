@@ -1,6 +1,6 @@
 {
  "about": "VCST-6122 wave2 held-out set (2026-10-05): the 43 live asks of VCST-6122-wave2, labelled by the operator in wave2-to-label.json; every row is split test (held out: the ranker was frozen before the wave).",
- "snapshot": "vcst-6122-schema2@52b3683",
+ "snapshot": "vcst-6122-schema2@062c845",
  "targets": [
   {
    "id": "W2-03",
@@ -28,54 +28,82 @@
    "q": "Which shipping methods does the checkout page offer and how is the shipping cost calculated?",
    "expect": [
     "KB-6AA0D7FB",
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-53D776C2"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 6"
+   "cite": "wave2-to-label.json row 6",
+   "expectBeforeExhaustive": [
+    "KB-6AA0D7FB",
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-53D776C2, which states that fixed rate shipping prices per OPTION through a store setting."
   },
   {
    "id": "W2-07",
    "q": "On the storefront order history page, which order statuses are shown to the customer and how are they labelled?",
    "expect": [
-    "KB-1205B62A"
+    "KB-1205B62A",
+    "KB-DB7B6317"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 7"
+   "cite": "wave2-to-label.json row 7",
+   "expectBeforeExhaustive": [
+    "KB-1205B62A"
+   ],
+   "exhaustiveNote": "Added KB-DB7B6317 for the labelling part: the storefront relabels statuses for shoppers, so labels need not equal admin values."
   },
   {
    "id": "W2-08",
    "q": "What roles can a company administrator assign to a new member when inviting a colleague on the storefront?",
    "expect": [
-    "KB-B769C7B1"
+    "KB-B769C7B1",
+    "KB-68D63D8C"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 8"
+   "cite": "wave2-to-label.json row 8",
+   "expectBeforeExhaustive": [
+    "KB-B769C7B1"
+   ],
+   "exhaustiveNote": "Added KB-68D63D8C: the Invite member dialog lists assignableRoles filtered by MembershipRolesWhitelist, defaulting to Organization employee, Organization maintainer and Purchasing agent, which completes the answer."
   },
   {
    "id": "W2-09",
    "q": "How does a configurable product page validate required sections before add to cart, via the configurationSections of the product query?",
    "expect": [
-    "KB-0C163966"
+    "KB-0C163966",
+    "KB-D54F3AAB"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 9"
+   "cite": "wave2-to-label.json row 9",
+   "expectBeforeExhaustive": [
+    "KB-0C163966"
+   ],
+   "exhaustiveNote": "Added KB-D54F3AAB, which states that a required section with no default makes the add control disabled until filled."
   },
   {
    "id": "W2-10",
    "q": "GraphQL addCoupon mutation: what does the cart return for the applied coupon and its discount?",
    "expect": [
-    "KB-E7790BF6"
+    "KB-E7790BF6",
+    "KB-35F20D97",
+    "KB-C55BBF2E",
+    "KB-C1024558"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 10"
+   "cite": "wave2-to-label.json row 10",
+   "expectBeforeExhaustive": [
+    "KB-E7790BF6"
+   ],
+   "exhaustiveNote": "Added KB-35F20D97 (addCoupon appends the code with isAppliedSuccessfully plus a cart.discounts row), KB-C55BBF2E (a coupon's effect is its entry in the addCoupon response's discounts) and KB-C1024558 (the discount row carries coupon=<code>)."
   },
   {
    "id": "W2-16",
@@ -112,22 +140,33 @@
    "id": "W2-25",
    "q": "What does the order confirmation page /checkout/completed show after placing an order?",
    "expect": [
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-EF925925",
+    "KB-56979CB9"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 25"
+   "cite": "wave2-to-label.json row 25",
+   "expectBeforeExhaustive": [
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-EF925925 (the confirmation page carries no money at all) and KB-56979CB9 (the confirmation page displays the order number)."
   },
   {
    "id": "W2-26",
    "q": "Can a customer request a return for a delivered order and what happens to order status?",
    "expect": [
-    "KB-67D0AB31"
+    "KB-67D0AB31",
+    "KB-809EA119"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 26"
+   "cite": "wave2-to-label.json row 26",
+   "expectBeforeExhaustive": [
+    "KB-67D0AB31"
+   ],
+   "exhaustiveNote": "Added KB-809EA119, which states that a buyer submits a return through the storefront Select items to return wizard; no candidate states what happens to order status."
   },
   {
    "id": "W2-27",
@@ -144,22 +183,36 @@
    "id": "W2-28",
    "q": "Do automatic promotions reprice the cart immediately after changeCartItemQuantity?",
    "expect": [
-    "KB-35A09C64"
+    "KB-35A09C64",
+    "KB-AD1FA66B",
+    "KB-055845A3"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 28"
+   "cite": "wave2-to-label.json row 28",
+   "expectBeforeExhaustive": [
+    "KB-35A09C64"
+   ],
+   "exhaustiveNote": "Added KB-AD1FA66B (read side recomputes promotions, a mutation writes the snapshot back) and KB-055845A3 (the cart re-evaluates promotions on every read)."
   },
   {
    "id": "W2-29",
    "q": "which payment methods are available at checkout and how does a card payment with the sandbox test card behave",
    "expect": [
     "KB-535FF3AC",
-    "KB-7F535D52"
+    "KB-7F535D52",
+    "KB-50EBEEE9",
+    "KB-C7E16C35",
+    "KB-78638393"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 29"
+   "cite": "wave2-to-label.json row 29",
+   "expectBeforeExhaustive": [
+    "KB-535FF3AC",
+    "KB-7F535D52"
+   ],
+   "exhaustiveNote": "Added KB-50EBEEE9 and KB-C7E16C35, which list the offered payment methods, and KB-78638393, which states the CyberSource sandbox held-for-review outcome."
   },
   {
    "id": "W2-30",
@@ -176,11 +229,18 @@
    "q": "When a user belongs to several organizations, how does switching organization work and what changes after the switch?",
    "expect": [
     "KB-8BE777BB",
-    "KB-B5B57F41"
+    "KB-B5B57F41",
+    "KB-0080ED6D",
+    "KB-737F80EE"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 32"
+   "cite": "wave2-to-label.json row 32",
+   "expectBeforeExhaustive": [
+    "KB-8BE777BB",
+    "KB-B5B57F41"
+   ],
+   "exhaustiveNote": "Added KB-0080ED6D (the switched organization persists and is sent as organization_id on the next sign-in) and KB-737F80EE (after an organization switch the account-menu button loses its text until reload)."
   },
   {
    "id": "W2-35",
@@ -197,44 +257,66 @@
    "id": "W2-37",
    "q": "Can a company member be deleted from the organization, and what happens to their account and orders?",
    "expect": [
-    "KB-9912A219"
+    "KB-9912A219",
+    "KB-BAEBCDA7"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 37"
+   "cite": "wave2-to-label.json row 37",
+   "expectBeforeExhaustive": [
+    "KB-9912A219"
+   ],
+   "exhaustiveNote": "Added KB-BAEBCDA7, which states that Delete removes the organization membership only and the account survives; nothing states what happens to orders."
   },
   {
    "id": "W2-38",
    "q": "Which cart totals (subtotal, discount total, tax) are shown after a percentage discount is applied?",
    "expect": [
     "KB-D4A064A5",
-    "KB-C55BBF2E"
+    "KB-C55BBF2E",
+    "KB-996BDF08",
+    "KB-A3CE7FBA"
    ],
    "partial": true,
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 38"
+   "cite": "wave2-to-label.json row 38",
+   "expectBeforeExhaustive": [
+    "KB-D4A064A5",
+    "KB-C55BBF2E"
+   ],
+   "exhaustiveNote": "Added KB-996BDF08 (the percentage reward lands on CartType.discounts and discountTotal, not on lines) and KB-A3CE7FBA (subTotal stays the list subtotal)."
   },
   {
    "id": "W2-39",
    "q": "Is the Place order button disabled until a payment method and shipping method are selected?",
    "expect": [
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-C7E16C35"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 39"
+   "cite": "wave2-to-label.json row 39",
+   "expectBeforeExhaustive": [
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-C7E16C35, which states that Place order is disabled with 'Complete all required information to proceed.' until a payment method is chosen."
   },
   {
    "id": "W2-40",
    "q": "Does an organization-specific price list override the default price for users of that organization in the cart?",
    "expect": [
-    "KB-ADFD93AB"
+    "KB-ADFD93AB",
+    "KB-1834ABE5"
    ],
    "source": "wave2",
    "split": "test",
-   "cite": "wave2-to-label.json row 40"
+   "cite": "wave2-to-label.json row 40",
+   "expectBeforeExhaustive": [
+    "KB-ADFD93AB"
+   ],
+   "exhaustiveNote": "Added KB-1834ABE5, which states that a signed-in B2B shopper got 111.11 instead of 399.99 because the winning assignment was gated on a group carried by the shopper's organization."
   }
  ],
  "controls": [

@@ -1,6 +1,6 @@
 {
  "about": "VCST-6122 large labelled set (2026-10-05): 300 real asks drawn from the base logs on main (2026-09-18..10-05; stratified by who x ask state; already-labelled and near-duplicate questions removed; wave runs excluded). Candidates per question = verdict top 10 + floor-1 top 3 + BM25 top 8 over bodies (scripts/kb/bench/label-packets.mjs). Labelled by two independent Claude passes with shuffled candidates; the 33 disagreements adjudicated by a third; the operator audits a random sample. Split BY ENTRY GROUP: a group that holds an entry already split in v2 keeps that split, the rest by a seeded hash (logs300-seed-1); controls by row hash. contested rows stay out of every metric. Questions logged by a pre-#328 client with a Git Bash path rewrite (C:/Program Files/Git/<route>) are stored repaired, as ask now repairs them before ranking; the logged text is kept in qAsLogged. Validated after labelling: 10 rows removed (listed in removed[]): 4 same-intent repeats beyond two per entry, 6 questions about our own test fixtures or environment availability rather than platform behaviour.",
- "snapshot": "vcst-6122-schema2@6e810a6",
+ "snapshot": "vcst-6122-schema2@062c845",
  "splitSeed": "logs300-seed-1",
  "approved": null,
  "targets": [
@@ -19,12 +19,18 @@
    "id": "L-003",
    "q": "which payment methods does the storefront checkout offer, Query.cart availablePaymentMethods",
    "expect": [
-    "KB-535FF3AC"
+    "KB-535FF3AC",
+    "KB-50EBEEE9",
+    "KB-C7E16C35"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Lists the six methods the storefront offers and that Query.cart.availablePaymentMethods returns exactly those, set per deployment."
+   "note": "Lists the six methods the storefront offers and that Query.cart.availablePaymentMethods returns exactly those, set per deployment.",
+   "expectBeforeExhaustive": [
+    "KB-535FF3AC"
+   ],
+   "exhaustiveNote": "Added KB-50EBEEE9 (lists the six payment methods offered at checkout) and KB-C7E16C35 (dropdown renders exactly what availablePaymentMethods returns, naming the method codes)."
   },
   {
    "id": "L-004",
@@ -52,23 +58,31 @@
    "id": "L-006",
    "q": "/account/missions loyalty mission card daysRemaining 0 date badge label",
    "expect": [
-    "KB-5A3931CE"
+    "KB-26B8BE64"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "States with daysRemaining 0 the /account/missions card reads '0 days left' with a danger dot."
+   "note": "States with daysRemaining 0 the /account/missions card reads '0 days left' with a danger dot.",
+   "expectPreMerge": [
+    "KB-5A3931CE"
+   ]
   },
   {
    "id": "L-007",
    "q": "changeWishlist message max length 1024 atomic rejection",
    "expect": [
-    "KB-0BC18481"
+    "KB-0BC18481",
+    "KB-B4377884"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "States 1024 code units are stored, 1025 is rejected INVALID_OPERATION and 'nothing in that command persists' (atomic)."
+   "note": "States 1024 code units are stored, 1025 is rejected INVALID_OPERATION and 'nothing in that command persists' (atomic).",
+   "expectBeforeExhaustive": [
+    "KB-0BC18481"
+   ],
+   "exhaustiveNote": "Added KB-B4377884, which states a message over 1024 characters is refused with generic INVALID_OPERATION."
   },
   {
    "id": "L-008",
@@ -149,17 +163,6 @@
    "note": "A240F961 states cards below 1024px put the order link and total on one flex row and that order numbers wrap, but not how the total itself wraps at 375px."
   },
   {
-   "id": "L-019",
-   "q": "GET /api/order/customerOrders/{id} — what does a configurable product line item's configurationItems array persist (sectionId, sectionName, productId, customText, price)?",
-   "expect": [
-    "KB-4105EEBE"
-   ],
-   "source": "logs",
-   "split": "dev",
-   "labelled": "agreed",
-   "note": "States each REST configurationItems element carries sectionId and sectionName alongside productId, price and customText on Orders 3.1015.0; older entries claim sectionId is lost (version-bound)."
-  },
-  {
    "id": "L-021",
    "q": "changeWishlist more than 1000 addSharedWithIds removeSharedWithIds limit",
    "expect": [
@@ -230,13 +233,22 @@
    "id": "L-029",
    "q": "Query.products filter barcode:\"<value>\" — are * and ? in the value treated as wildcards (EvalBarcodeFilterMiddleware, ES8)?",
    "expect": [
-    "KB-348505EB",
-    "KB-110E0652"
+    "KB-110E0652",
+    "KB-916CDCA1",
+    "KB-78B45E71"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "Both state that * and ? in a barcode: filter value act as wildcards on ES8; 348505EB names EvalBarcodeFilterMiddleware as the cause."
+   "note": "Both state that * and ? in a barcode: filter value act as wildcards on ES8; 348505EB names EvalBarcodeFilterMiddleware as the cause.",
+   "expectPreMerge": [
+    "KB-348505EB",
+    "KB-110E0652"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-110E0652"
+   ],
+   "exhaustiveNote": "Added KB-916CDCA1 ('the same held through the storefront barcode expansion' on ES8) and KB-78B45E71 (the provider still interprets * and ? inside barcode:\"<value>\"), since both state the wildcard behaviour of the barcode filter term."
   },
   {
    "id": "L-030",
@@ -254,27 +266,35 @@
    "id": "L-031",
    "q": "wishlist(listId) targeted customer Read access denied requestedAccess Write",
    "expect": [
-    "KB-2A9084BA",
-    "KB-2F64A447",
-    "KB-D1DF95A5"
+    "KB-2F64A447"
    ],
    "partial": true,
    "source": "logs",
    "split": "test",
    "labelled": "adjudicated",
-   "note": "All three state a target-org Read member gets Access denied from wishlist(listId), but none states the requestedAccess Write mechanism Q asks about."
+   "note": "All three state a target-org Read member gets Access denied from wishlist(listId), but none states the requestedAccess Write mechanism Q asks about.",
+   "expectPreMerge": [
+    "KB-2A9084BA",
+    "KB-2F64A447",
+    "KB-D1DF95A5"
+   ]
   },
   {
    "id": "L-032",
    "q": "Page Builder Designer section/page actions menu (tune icon) — how to open the Designer on a page and Save selected as Shared Component",
    "expect": [
-    "KB-E423C32F"
+    "KB-E423C32F",
+    "KB-FA3338C3"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-E423C32F lists the page actions menu including Save selected as Shared Component (disabled until sections are selected) but not how to open the Designer on a page."
+   "note": "KB-E423C32F lists the page actions menu including Save selected as Shared Component (disabled until sections are selected) but not how to open the Designer on a page.",
+   "expectBeforeExhaustive": [
+    "KB-E423C32F"
+   ],
+   "exhaustiveNote": "Added KB-FA3338C3, which states that the tune icon is 'Actions for <name>' and that sections are chosen with the Select checkbox that Save selected as Shared Component needs; how to open the Designer on a page is still not stated."
   },
   {
    "id": "L-033",
@@ -303,24 +323,19 @@
    "id": "L-035",
    "q": "/search?barcode= single hit redirect product page",
    "expect": [
-    "KB-71011C1F"
+    "KB-71011C1F",
+    "KB-1D53A1BE",
+    "KB-110E0652",
+    "KB-78B45E71"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "KB-71011C1F: exactly one hit replaces the URL (router.replace) with the product page, and Back does not loop."
-  },
-  {
-   "id": "L-036",
-   "q": "tax provider FixedRateTaxProvider store B2B-store taxTotal 0 cart",
-   "expect": [
-    "KB-3E408000",
-    "KB-1B18B821"
+   "note": "KB-71011C1F: exactly one hit replaces the URL (router.replace) with the product page, and Back does not loop.",
+   "expectBeforeExhaustive": [
+    "KB-71011C1F"
    ],
-   "source": "logs",
-   "split": "calibration",
-   "labelled": "agreed",
-   "note": "KB-3E408000 says B2B-store with AvaTax and FixedRate both active evaluates to empty tax, so taxTotal is 0; KB-1B18B821 explains zero tax when no provider is active (an inactive FixedRateTaxProvider)."
+   "exhaustiveNote": "Added KB-1D53A1BE ('exactly one hit replaced the URL with the product page'), KB-110E0652 ('opens the PDP on a single hit') and KB-78B45E71 ('the single-hit redirect opened that product's page')."
   },
   {
    "id": "L-037",
@@ -337,12 +352,17 @@
    "id": "L-039",
    "q": "api/catalog/barcode-search/store settings scannerEnabled fields PUT GET",
    "expect": [
-    "KB-2CADFEBD"
+    "KB-2CADFEBD",
+    "KB-BC55C4F0"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-2CADFEBD details GET defaults {scannerEnabled:true,fields:[]}, PUT validation and normalisation of fields, and the permissions."
+   "note": "KB-2CADFEBD details GET defaults {scannerEnabled:true,fields:[]}, PUT validation and normalisation of fields, and the permissions.",
+   "expectBeforeExhaustive": [
+    "KB-2CADFEBD"
+   ],
+   "exhaustiveNote": "Added KB-BC55C4F0, which states the same GET/PUT barcode-search endpoint permissions (BrowseFilters:Read/Update) that KB-2CADFEBD covers."
   },
   {
    "id": "L-041",
@@ -382,13 +402,18 @@
    "id": "L-046",
    "q": "/account/missions SKU modal VcLineItems subtotal availability",
    "expect": [
-    "KB-CE2F9A45"
+    "KB-CE2F9A45",
+    "KB-3C7B6A36"
    ],
    "partial": true,
    "source": "logs",
    "split": "test",
    "labelled": "adjudicated",
-   "note": "CE2F9A45 states the SKU modal cart subtotal renders a bare 0, but nothing states line-item availability or VcLineItems subtotal behaviour."
+   "note": "CE2F9A45 states the SKU modal cart subtotal renders a bare 0, but nothing states line-item availability or VcLineItems subtotal behaviour.",
+   "expectBeforeExhaustive": [
+    "KB-CE2F9A45"
+   ],
+   "exhaustiveNote": "Added KB-3C7B6A36, which states that the SKU modal renders the 'Totals and cart subtotal are estimates' hint, a further part of the subtotal question; availability is still not covered."
   },
   {
    "id": "L-049",
@@ -406,14 +431,24 @@
    "id": "L-050",
    "q": "What REST endpoint or GraphQL query returns PushMessage records sent to a specific user, filterable by objectId/objectType, for counting how many push messages a mutation produced?",
    "expect": [
-    "KB-9B9FAF0F",
-    "KB-21BA7389"
+    "KB-17555498",
+    "KB-21BA7389",
+    "KB-6AF43C39"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "9B9FAF0F finds produced pushes via POST /api/push-message/search by topic/memberIds and 21BA7389 gives the per-user pushMessages query, but no body states an objectId/objectType filter."
+   "note": "9B9FAF0F finds produced pushes via POST /api/push-message/search by topic/memberIds and 21BA7389 gives the per-user pushMessages query, but no body states an objectId/objectType filter.",
+   "expectPreMerge": [
+    "KB-9B9FAF0F",
+    "KB-21BA7389"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-17555498",
+    "KB-21BA7389"
+   ],
+   "exhaustiveNote": "Added KB-6AF43C39, which states that the recipient's xAPI pushMessages lists messages sent to that member; filtering by objectId/objectType is still not stated."
   },
   {
    "id": "L-051",
@@ -465,12 +500,18 @@
    "id": "L-055",
    "q": "products filter wildcard * ? term filter Elasticsearch",
    "expect": [
-    "KB-916CDCA1"
+    "KB-916CDCA1",
+    "KB-110E0652",
+    "KB-78B45E71"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "A quoted products filter term honours '* and ? inside the quotes ... as wildcards' on an Elasticsearch 8 provider."
+   "note": "A quoted products filter term honours '* and ? inside the quotes ... as wildcards' on an Elasticsearch 8 provider.",
+   "expectBeforeExhaustive": [
+    "KB-916CDCA1"
+   ],
+   "exhaustiveNote": "Added KB-110E0652 (the ES8 filter builder turns a term containing * or ? into a WildcardQuery) and KB-78B45E71 (the provider honours * and ? inside a quoted filter term)."
   },
   {
    "id": "L-056",
@@ -510,12 +551,21 @@
    "q": "ReturnRegisteredEmailNotification return status notification email push message",
    "expect": [
     "KB-17555498",
-    "KB-9B9FAF0F"
+    "KB-22E1D313",
+    "KB-97A675C1"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Each return status change enqueues one email plus one push with topic = return number, and submitReturn raises exactly one ReturnRegisteredEmailNotification and a 'Return <number> received' push."
+   "note": "Each return status change enqueues one email plus one push with topic = return number, and submitReturn raises exactly one ReturnRegisteredEmailNotification and a 'Return <number> received' push.",
+   "expectPreMerge": [
+    "KB-17555498",
+    "KB-9B9FAF0F"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-17555498"
+   ],
+   "exhaustiveNote": "Added KB-22E1D313 (one buyer push per return status change, 'received' then 'declined') and KB-97A675C1 (a decision writes a Return*EmailNotification journal entry), both parts of the return notification fact."
   },
   {
    "id": "L-061",
@@ -543,37 +593,52 @@
    "id": "L-063",
    "q": "/sign-in how does storefront login authenticate",
    "expect": [
-    "KB-0407F36E"
+    "KB-0407F36E",
+    "KB-7A4C260E",
+    "KB-0080ED6D"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
    "note": "'Submitting the /sign-in form triggers a REST call to POST /connect/token ... not a GraphQL mutation'.",
-   "qAsLogged": "C:/Program Files/Git/sign-in how does storefront login authenticate"
+   "qAsLogged": "C:/Program Files/Git/sign-in how does storefront login authenticate",
+   "expectBeforeExhaustive": [
+    "KB-0407F36E"
+   ],
+   "exhaustiveNote": "Added KB-7A4C260E (a storefront sign-in token request goes to POST /connect/token with camelCase storeId) and KB-0080ED6D (code sign-in posts /connect/token grant_type=otp_email), both of which state how /sign-in authenticates."
   },
   {
    "id": "L-065",
    "q": "Sales Rep hub route /company/my-customers storefront path 404 /sales-reps",
    "expect": [
-    "KB-A240F961"
+    "KB-A240F961",
+    "KB-EA467E9B",
+    "KB-09CEE315"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Lists the Sales Rep hub routes under /company/ (/company/my-customers/:organizationId/orders, /company/customer-orders, /company/dashboard), but no entry says whether /sales-reps returns 404."
+   "note": "Lists the Sales Rep hub routes under /company/ (/company/my-customers/:organizationId/orders, /company/customer-orders, /company/dashboard), but no entry says whether /sales-reps returns 404.",
+   "expectBeforeExhaustive": [
+    "KB-A240F961"
+   ],
+   "exhaustiveNote": "Added KB-EA467E9B (states the storefront /company/my-customers rep-hub route and its guard) and KB-09CEE315 (states /company/my-customers/<orgId>/orders as the rep customer-orders page); no candidate states the /sales-reps 404, so partial stays."
   },
   {
    "id": "L-066",
    "q": "/account/missions mission card date badge severity danger warning success",
    "expect": [
-    "KB-5A3931CE"
+    "KB-26B8BE64"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Covers only one severity case: the card reads '0 days left' with a danger dot; the warning and success thresholds are not stated."
+   "note": "Covers only one severity case: the card reads '0 days left' with a danger dot; the warning and success thresholds are not stated.",
+   "expectPreMerge": [
+    "KB-5A3931CE"
+   ]
   },
   {
    "id": "L-068",
@@ -636,12 +701,18 @@
    "q": "On /company/members (GetOrganizationContacts), why does the Name column render the literal text \"Invite sent\" instead of the contact's name for some members?",
    "expect": [
     "KB-D8FDFA6F",
-    "KB-BBBC4225"
+    "KB-BBBC4225",
+    "KB-DA14E8B7"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "Both state the page substitutes 'Invite sent' for a pending invitee's name that the API returns; D8FDFA6F names contact.status null as the discriminator."
+   "note": "Both state the page substitutes 'Invite sent' for a pending invitee's name that the API returns; D8FDFA6F names contact.status null as the discriminator.",
+   "expectBeforeExhaustive": [
+    "KB-D8FDFA6F",
+    "KB-BBBC4225"
+   ],
+   "exhaustiveNote": "Added KB-DA14E8B7, which states the 'Invite sent' placeholder name is tied to the invitation held in contact.status and disappears once Block rewrites that status."
   },
   {
    "id": "L-076",
@@ -680,12 +751,18 @@
    "id": "L-080",
    "q": "barcode-search/store settings BarcodeScannerEnabled BarcodeSearchFields storefront",
    "expect": [
-    "KB-16859F54"
+    "KB-16859F54",
+    "KB-71011C1F",
+    "KB-110E0652"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Describes the storefront under each barcode-search store setting, e.g. 'scannerEnabled false ... the switch hides the entry point only' and the no-fields literal filter."
+   "note": "Describes the storefront under each barcode-search store setting, e.g. 'scannerEnabled false ... the switch hides the entry point only' and the no-fields literal filter.",
+   "expectBeforeExhaustive": [
+    "KB-16859F54"
+   ],
+   "exhaustiveNote": "Added KB-71011C1F (storefront /search?barcode= behaviour once BarcodeSearchFields is configured) and KB-110E0652 (no fields leaves barcode literal, scannerEnabled false does not stop expansion), both stating the setting effects."
   },
   {
    "id": "L-081",
@@ -748,35 +825,55 @@
    "id": "L-089",
    "q": "Query.products barcode product without price in store currency not found",
    "expect": [
-    "KB-7837F100"
+    "KB-7837F100",
+    "KB-4F298EB0"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "States Query.products barcode filter returns an unpriced product and the storefront's added 'price.USD:(0 TO)' term is what hides it."
+   "note": "States Query.products barcode filter returns an unpriced product and the storefront's added 'price.USD:(0 TO)' term is what hides it.",
+   "expectBeforeExhaustive": [
+    "KB-7837F100"
+   ],
+   "exhaustiveNote": "Added KB-4F298EB0, which states the products request with the active-currency price term returns no product priced only in another currency, the same fact KB-7837F100 attributes to the added price term."
   },
   {
    "id": "L-091",
    "q": "sharedWishlist sharingKey stable after scope change",
    "expect": [
     "KB-7A9D4927",
-    "KB-E8234FA0"
+    "KB-E8234FA0",
+    "KB-D7F08A26",
+    "KB-BE7DF8DA",
+    "KB-F2FA8EBD",
+    "KB-91DF8883"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-7A9D4927 says changing scope 'mints nothing' and keeps the same key; KB-E8234FA0 says 'Once a row exists the id is stable across scope changes' and adds the never-shared exception."
+   "note": "KB-7A9D4927 says changing scope 'mints nothing' and keeps the same key; KB-E8234FA0 says 'Once a row exists the id is stable across scope changes' and adds the never-shared exception.",
+   "expectBeforeExhaustive": [
+    "KB-7A9D4927",
+    "KB-E8234FA0"
+   ],
+   "exhaustiveNote": "Added KB-D7F08A26 (row keeps same id, re-share reuses key), KB-BE7DF8DA (AnyoneAnonymous keeps sharingSetting.id), KB-F2FA8EBD (same key reused after re-share) and KB-91DF8883 ('The link stays the same', Private to Anyone reuses old key)."
   },
   {
    "id": "L-092",
    "q": "What happens on the /cart page when placing an order — is there a separate /checkout route?",
    "expect": [
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-ADA16454",
+    "KB-C7E16C35"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "States 'the /cart page carries the whole checkout' and 'There is no /checkout route'."
+   "note": "States 'the /cart page carries the whole checkout' and 'There is no /checkout route'.",
+   "expectBeforeExhaustive": [
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-ADA16454 (with multistep off the storefront is single-page cart-as-checkout and /checkout/review redirects to /cart) and KB-C7E16C35 (payment step is on /cart, not a separate /checkout/payment route)."
   },
   {
    "id": "L-093",
@@ -828,24 +925,35 @@
    "id": "L-100",
    "q": "changeWishlist sharedWithId legacy multi-target position",
    "expect": [
-    "KB-42230B0A"
+    "KB-42230B0A",
+    "KB-D7F08A26"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "States 'Legacy sharedWithId writes compare against the first target only' and that any other id on a multi-target list is refused INVALID_OPERATION."
+   "note": "States 'Legacy sharedWithId writes compare against the first target only' and that any other id on a multi-target list is refused INVALID_OPERATION.",
+   "expectBeforeExhaustive": [
+    "KB-42230B0A"
+   ],
+   "exhaustiveNote": "Added KB-D7F08A26, which states the legacy sharedWithId on the sharing row equals the first target."
   },
   {
    "id": "L-101",
    "q": "/cart where does checkout happen, is there a separate checkout route",
    "expect": [
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-ADA16454",
+    "KB-C7E16C35"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
    "note": "States 'the /cart page carries the whole checkout' and 'There is no /checkout route to navigate to'.",
-   "qAsLogged": "C:/Program Files/Git/cart where does checkout happen, is there a separate checkout route"
+   "qAsLogged": "C:/Program Files/Git/cart where does checkout happen, is there a separate checkout route",
+   "expectBeforeExhaustive": [
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-ADA16454 (single-page cart-as-checkout, /checkout/review redirects to /cart unless multistep is on) and KB-C7E16C35 (payment selection is on /cart, no separate checkout route)."
   },
   {
    "id": "L-104",
@@ -871,27 +979,19 @@
    "note": "Says 'removing one chip re-queries with that bound dropped' but says nothing about a date preset after closing the Start chip."
   },
   {
-   "id": "L-107",
-   "q": "how do you add a configurable product to the cart on the storefront",
-   "expect": [
-    "KB-F78ED1CC"
-   ],
-   "source": "logs",
-   "split": "calibration",
-   "labelled": "agreed",
-   "note": "States 'A CONFIGURABLE product's PDP ... shows an explicit Add to cart BUTTON' while simple products add via the stepper."
-  },
-  {
    "id": "L-108",
    "q": "UCP MCP update_cart rejected over-stock quantity persists in cart non-atomic",
    "expect": [
-    "KB-B142F52E",
     "KB-DAD0D552"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Both state the refused update_cart 'is not atomic'/'is not a rollback' and get_cart keeps the over-stock quantity."
+   "note": "Both state the refused update_cart 'is not atomic'/'is not a rollback' and get_cart keeps the over-stock quantity.",
+   "expectPreMerge": [
+    "KB-B142F52E",
+    "KB-DAD0D552"
+   ]
   },
   {
    "id": "L-109",
@@ -956,24 +1056,39 @@
    "q": "cancel order cascades to payment and shipment status Mutation.cancelOrder",
    "expect": [
     "KB-ADA91F7B",
-    "KB-4CCC2DD6",
-    "KB-F7988EA2"
+    "KB-F7988EA2",
+    "KB-4C5627CE"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "adjudicated",
-   "note": "All state cancelling an order cascades to the payment (Cancelled) but not the shipment (stays New); the cascade is a server event handler, so it is not surface-specific."
+   "note": "All state cancelling an order cascades to the payment (Cancelled) but not the shipment (stays New); the cascade is a server event handler, so it is not surface-specific.",
+   "expectPreMerge": [
+    "KB-ADA91F7B",
+    "KB-4CCC2DD6",
+    "KB-F7988EA2"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-ADA91F7B",
+    "KB-F7988EA2"
+   ],
+   "exhaustiveNote": "Added KB-4C5627CE, which states cancelling the order leaves the shipment at New/isCancelled false while the cascaded PaymentIn is cancelled."
   },
   {
    "id": "L-119",
    "q": "what payment methods are offered at the storefront checkout payment step for a signed-in B2B buyer, and where does that list come from",
    "expect": [
-    "KB-535FF3AC"
+    "KB-535FF3AC",
+    "KB-C7E16C35"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Lists the six methods offered and that they come from 'Query.cart.availablePaymentMethods' backed by the store's active payment methods."
+   "note": "Lists the six methods offered and that they come from 'Query.cart.availablePaymentMethods' backed by the store's active payment methods.",
+   "expectBeforeExhaustive": [
+    "KB-535FF3AC"
+   ],
+   "exhaustiveNote": "Added KB-C7E16C35, which states the dropdown renders exactly Query.cart.availablePaymentMethods and names the six method codes offered."
   },
   {
    "id": "L-120",
@@ -1001,13 +1116,16 @@
    "id": "L-122",
    "q": "sharedWishlist sharingKey: can the target customer read a rep-shared list and its message",
    "expect": [
-    "KB-2F64A447",
-    "KB-A0FFEA0A"
+    "KB-2F64A447"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "Both state sharedWishlist(sharingKey) returns the list with 'access Read, isOwner false, the current sharingSetting.message'."
+   "note": "Both state sharedWishlist(sharingKey) returns the list with 'access Read, isOwner false, the current sharingSetting.message'.",
+   "expectPreMerge": [
+    "KB-2F64A447",
+    "KB-A0FFEA0A"
+   ]
   },
   {
    "id": "L-125",
@@ -1025,12 +1143,17 @@
    "id": "L-126",
    "q": "how many failed sign-in attempts before lockout and for how long POST /connect/token",
    "expect": [
-    "KB-8646A9CB"
+    "KB-8646A9CB",
+    "KB-0407F36E"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "States the lockout policy directly: '5 failed attempts, 15-minute lockout' on /connect/token."
+   "note": "States the lockout policy directly: '5 failed attempts, 15-minute lockout' on /connect/token.",
+   "expectBeforeExhaustive": [
+    "KB-8646A9CB"
+   ],
+   "exhaustiveNote": "Added KB-0407F36E, which states the 5-attempts/15-minute lockout policy for POST /connect/token."
   },
   {
    "id": "L-127",
@@ -1075,18 +1198,6 @@
    "split": "dev",
    "labelled": "agreed",
    "note": "States image drop/paste/toolbar in vcUkHtmleditor each fire one POST /api/assets?folderUrl=cms-content/layouts/assets via handlers on .CodeMirror."
-  },
-  {
-   "id": "L-134",
-   "q": "is coupon code case-sensitive Query.validateCoupon",
-   "expect": [
-    "KB-A3004A3B",
-    "KB-35F20D97"
-   ],
-   "source": "logs",
-   "split": "dev",
-   "labelled": "agreed",
-   "note": "Both answer directly but contradict: KB-A3004A3B says validation is 'case-insensitive', KB-35F20D97 says 'matching is case-sensitive'."
   },
   {
    "id": "L-135",
@@ -1173,25 +1284,40 @@
    "expect": [
     "KB-191B1B4C",
     "KB-DEBE1CED",
-    "KB-F78ED1CC"
+    "KB-F78ED1CC",
+    "KB-7313AF61"
    ],
    "partial": true,
    "source": "logs",
    "split": "calibration",
    "labelled": "adjudicated",
-   "note": "The broad Q is covered in parts: the variations panel lists the master, the master picker never becomes purchasable, and the master PDP shows a disabled 'Select options to proceed' button."
+   "note": "The broad Q is covered in parts: the variations panel lists the master, the master picker never becomes purchasable, and the master PDP shows a disabled 'Select options to proceed' button.",
+   "expectBeforeExhaustive": [
+    "KB-191B1B4C",
+    "KB-DEBE1CED",
+    "KB-F78ED1CC"
+   ],
+   "exhaustiveNote": "Added KB-7313AF61, which states a variation's own SEO-slug product page shows real price, stock and a working stepper."
   },
   {
    "id": "L-149",
    "q": "GraphQL shareWishlist / wishlist sharing message push notification sales rep",
    "expect": [
     "KB-EFD1A7FD",
-    "KB-5AB85ADC"
+    "KB-5AB85ADC",
+    "KB-A98E467C",
+    "KB-24B83B02",
+    "KB-EEE4C4BB"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Both state that saving a Customer share sends sendCustomerCommunication with 'the note (or a default ...) plus the /shared-list/<key> link' as the push."
+   "note": "Both state that saving a Customer share sends sendCustomerCommunication with 'the note (or a default ...) plus the /shared-list/<key> link' as the push.",
+   "expectBeforeExhaustive": [
+    "KB-EFD1A7FD",
+    "KB-5AB85ADC"
+   ],
+   "exhaustiveNote": "Added KB-A98E467C, KB-24B83B02 and KB-EEE4C4BB, each stating the rep's share message reaches the customer as a push of message plus /shared-list link."
   },
   {
    "id": "L-150",
@@ -1208,23 +1334,17 @@
    "id": "L-151",
    "q": "storefront header account button — does it show OrgName / UserName for a single-organization B2B user or only for a multi-organization user?",
    "expect": [
-    "KB-512D556A"
+    "KB-512D556A",
+    "KB-8BE777BB"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "KB-512D556A states the header shows 'OrgName / UserName' only for a multi-organization user while a single-org member sees their name alone."
-  },
-  {
-   "id": "L-154",
-   "q": "Push Messages audience caption after save and reopen — does it still name the condition and the picked company?",
-   "expect": [
-    "KB-D9F48037"
+   "note": "KB-512D556A states the header shows 'OrgName / UserName' only for a multi-organization user while a single-org member sees their name alone.",
+   "expectBeforeExhaustive": [
+    "KB-512D556A"
    ],
-   "source": "logs",
-   "split": "dev",
-   "labelled": "agreed",
-   "note": "KB-D9F48037 says after save and reopen the caption is the SAME 'Customers where ... plus <picked>' (newer build), superseding KB-C5B17CE2's omission; it shows a picked person rather than a company."
+   "exhaustiveNote": "Added KB-8BE777BB, which states a multi-org buyer gets 'OrgName / UserName' in the account button while a single-org buyer gets only their name there."
   },
   {
    "id": "L-156",
@@ -1252,60 +1372,96 @@
    "id": "L-158",
    "q": "/company/members Active column for locked member",
    "expect": [
-    "KB-27B4CD10"
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-82111688",
+    "KB-90B0D8F5",
+    "KB-06409954"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
    "note": "KB-27B4CD10 states a membership lock shows a red Blocked badge while a locked security account or contact-level Locked still renders Active.",
-   "qAsLogged": "C:/Program Files/Git/company/members Active column for locked member"
+   "qAsLogged": "C:/Program Files/Git/company/members Active column for locked member",
+   "expectBeforeExhaustive": [
+    "KB-27B4CD10"
+   ],
+   "exhaustiveNote": "Added KB-97170665 (membership lock renders a red Blocked badge), KB-82111688 (locked account shows a green Active tick), KB-90B0D8F5 (contact-level Locked still shows Active) and KB-06409954 (Admin lock leaves the roster Active), since Q does not say which lock axis it means."
   },
   {
    "id": "L-160",
    "q": "xAPI loyaltyMissionProgress daysRemaining semantics and page /account/missions mission card rendering",
    "expect": [
     "KB-813DD6AC",
-    "KB-5A3931CE"
+    "KB-26B8BE64"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-813DD6AC gives daysRemaining as 'ceil((EndDate - UtcNow) in days), floored at 0', and KB-5A3931CE gives the card rendering '0 days left' with a danger dot."
+   "note": "KB-813DD6AC gives daysRemaining as 'ceil((EndDate - UtcNow) in days), floored at 0', and KB-5A3931CE gives the card rendering '0 days left' with a danger dot.",
+   "expectPreMerge": [
+    "KB-813DD6AC",
+    "KB-5A3931CE"
+   ]
   },
   {
    "id": "L-163",
    "q": "products filter barcode:\"v\" xAPI EvalBarcodeFilterMiddleware isGenerated",
    "expect": [
-    "KB-110E0652"
+    "KB-110E0652",
+    "KB-71011C1F"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-110E0652: barcode:\"v\" becomes an OR of term filters on configured fields 'reported in filters[] with isGenerated:true'."
+   "note": "KB-110E0652: barcode:\"v\" becomes an OR of term filters on configured fields 'reported in filters[] with isGenerated:true'.",
+   "expectBeforeExhaustive": [
+    "KB-110E0652"
+   ],
+   "exhaustiveNote": "Added KB-71011C1F, which states that barcode:\"<value>\" is expanded into one isGenerated:true filter per configured field."
   },
   {
    "id": "L-164",
    "q": "changeWishlist sharingSetting message stop sharing re-share Customer scope sharing key",
    "expect": [
-    "KB-5EACBEDD",
-    "KB-0BC18481"
+    "KB-D7F08A26",
+    "KB-0BC18481",
+    "KB-7A9D4927",
+    "KB-F2FA8EBD"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "5EACBEDD states stop sharing clears targets and message and re-share reuses the key without restoring them; 0BC18481 confirms Private nulls the message and re-share does not restore it."
+   "note": "5EACBEDD states stop sharing clears targets and message and re-share reuses the key without restoring them; 0BC18481 confirms Private nulls the message and re-share does not restore it.",
+   "expectPreMerge": [
+    "KB-5EACBEDD",
+    "KB-0BC18481"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-D7F08A26",
+    "KB-0BC18481"
+   ],
+   "exhaustiveNote": "Added KB-7A9D4927 (re-scoping reuses the same sharing key) and KB-F2FA8EBD (after re-sharing, the same key is reused) for the re-share sharing-key part."
   },
   {
    "id": "L-165",
    "q": "order-level discount allocated to line items CustomerOrder discountAmount",
    "expect": [
     "KB-F1542157",
-    "KB-FF7E4D5B"
+    "KB-B9C8ECD3"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "KB-F1542157 says 'the platform does not spread it across lines' and every items[].discountAmount is 0; KB-FF7E4D5B records the same on the CustomerOrder."
+   "note": "KB-F1542157 says 'the platform does not spread it across lines' and every items[].discountAmount is 0; KB-FF7E4D5B records the same on the CustomerOrder.",
+   "expectPreMerge": [
+    "KB-F1542157",
+    "KB-FF7E4D5B"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-F1542157"
+   ],
+   "exhaustiveNote": "Added KB-B9C8ECD3, which states that a cart-subtotal reward leaves items[].discountAmount at 0 and is recorded only as an order-level discount."
   },
   {
    "id": "L-166",
@@ -1335,14 +1491,17 @@
    "id": "L-168",
    "q": "Query.wishlist Customer-scope share target organization member Access denied",
    "expect": [
-    "KB-2A9084BA",
-    "KB-2F64A447",
-    "KB-D1DF95A5"
+    "KB-2F64A447"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "Each states a target-org member gets 'Access denied.' Forbidden from wishlist(listId) for a Customer-scope share and reads it only via sharedWishlist."
+   "note": "Each states a target-org member gets 'Access denied.' Forbidden from wishlist(listId) for a Customer-scope share and reads it only via sharedWishlist.",
+   "expectPreMerge": [
+    "KB-2A9084BA",
+    "KB-2F64A447",
+    "KB-D1DF95A5"
+   ]
   },
   {
    "id": "L-170",
@@ -1360,13 +1519,17 @@
    "q": "ReturnStatusNotificationHandlerBase Approved notification missing journal ReturnApprovedEmailNotification",
    "expect": [
     "KB-17555498",
-    "KB-66D78761",
     "KB-97A675C1"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "66D78761/97A675C1 state an Approved decision writes ReturnApprovedEmailNotification within ~1s, and 17555498 states a status job can succeed yet send nothing until requeued, which explains a missing entry."
+   "note": "66D78761/97A675C1 state an Approved decision writes ReturnApprovedEmailNotification within ~1s, and 17555498 states a status job can succeed yet send nothing until requeued, which explains a missing entry.",
+   "expectPreMerge": [
+    "KB-17555498",
+    "KB-66D78761",
+    "KB-97A675C1"
+   ]
   },
   {
    "id": "L-173",
@@ -1406,35 +1569,36 @@
    "q": "products filter barcode: xAPI wildcard",
    "expect": [
     "KB-110E0652",
+    "KB-916CDCA1"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state that the xAPI products barcode:\"v\" filter honours * and ? as wildcards (\"* and ? are honoured as wildcards\").",
+   "expectPreMerge": [
+    "KB-110E0652",
     "KB-348505EB"
    ],
-   "source": "logs",
-   "split": "dev",
-   "labelled": "agreed",
-   "note": "Both state that the xAPI products barcode:\"v\" filter honours * and ? as wildcards (\"* and ? are honoured as wildcards\")."
-  },
-  {
-   "id": "L-178",
-   "q": "Push Messages admin blade conditions mode incomplete condition row recipient estimate audience caption",
-   "expect": [
-    "KB-EB70C1F9",
-    "KB-735DF4D1"
+   "expectBeforeExhaustive": [
+    "KB-110E0652"
    ],
-   "source": "logs",
-   "split": "dev",
-   "labelled": "agreed",
-   "note": "EB70C1F9 covers the incomplete row's effect on estimate and caption (\"silently dropped... caption reads 'Customers where Customer type is Contact.'\"); 735DF4D1 covers hint/Save/estimate depending on a complete condition."
+   "exhaustiveNote": "Added KB-916CDCA1, which states that * and ? inside quoted xAPI products filter terms are honoured as wildcards, including through the barcode expansion; KB-78B45E71 is left out as storefront-only."
   },
   {
    "id": "L-179",
    "q": "five failed sign-ins lockout duration /sign-in",
    "expect": [
-    "KB-8646A9CB"
+    "KB-8646A9CB",
+    "KB-0407F36E"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "States the policy \"5 failed attempts, 15-minute lockout\" and the resulting user_is_temporary_locked_out code."
+   "note": "States the policy \"5 failed attempts, 15-minute lockout\" and the resulting user_is_temporary_locked_out code.",
+   "expectBeforeExhaustive": [
+    "KB-8646A9CB"
+   ],
+   "exhaustiveNote": "Added KB-0407F36E, which states the 5-attempt / 15-minute lockout policy for /sign-in."
   },
   {
    "id": "L-180",
@@ -1485,13 +1649,18 @@
    "id": "L-184",
    "q": "/search empty state header_empty reset storefront",
    "expect": [
-    "KB-71011C1F"
+    "KB-71011C1F",
+    "KB-9CD03E2B"
    ],
    "partial": true,
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "Describes the barcode zero-hit empty state with a Reset search button navigating to /catalog; Q may mean the generic keyword search empty state, which no entry states."
+   "note": "Describes the barcode zero-hit empty state with a Reset search button navigating to /catalog; Q may mean the generic keyword search empty state, which no entry states.",
+   "expectBeforeExhaustive": [
+    "KB-71011C1F"
+   ],
+   "exhaustiveNote": "Added KB-9CD03E2B, which states that Reset search on the barcode empty state navigates to /catalog and clears barcode and q; the header_empty text itself remains unstated."
   },
   {
    "id": "L-185",
@@ -1503,18 +1672,6 @@
    "split": "calibration",
    "labelled": "agreed",
    "note": "\"Redeemed rows show the points amount unsigned... no minus sign\", by design."
-  },
-  {
-   "id": "L-186",
-   "q": "what does the Active column on /company/members show",
-   "expect": [
-    "KB-27B4CD10",
-    "KB-97170665"
-   ],
-   "source": "logs",
-   "split": "test",
-   "labelled": "agreed",
-   "note": "27B4CD10: the column renders \"isLockedInOrganization ? Locked : contact.status\"; 97170665 gives the observed badge mapping (lock wins, Approved->Active, Invited, Blocked, Inactive)."
   },
   {
    "id": "L-188",
@@ -1532,36 +1689,32 @@
    "id": "L-191",
    "q": "products(filter) price.EUR currency no price barcode not found /search?barcode=",
    "expect": [
-    "KB-4F298EB0"
+    "KB-4F298EB0",
+    "KB-7837F100"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "In EUR the storefront sends \"price.EUR:(0 TO) barcode:...\" and renders 'No products found for barcode' for a product priced only in USD."
+   "note": "In EUR the storefront sends \"price.EUR:(0 TO) barcode:...\" and renders 'No products found for barcode' for a product priced only in USD.",
+   "expectBeforeExhaustive": [
+    "KB-4F298EB0"
+   ],
+   "exhaustiveNote": "Added KB-7837F100, which states that the storefront's added price.<currency>:(0 TO) term is why a product with no price in that currency is not found by a barcode lookup."
   },
   {
    "id": "L-192",
    "q": "Push Messages module API push message search topic",
    "expect": [
-    "KB-9B9FAF0F"
+    "KB-17555498"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Shows POST /api/push-message/search finds a return push \"with topic = the return number\"; Q is vague and no entry documents searching by topic as a criterion."
-  },
-  {
-   "id": "L-193",
-   "q": "What does the \"Active\" column on the storefront B2B company members list (/company/members) reflect — which entity field feeds it, and what does it show for a blocked/locked user account?",
-   "expect": [
-    "KB-27B4CD10",
-    "KB-97170665"
-   ],
-   "source": "logs",
-   "split": "test",
-   "labelled": "agreed",
-   "note": "Column is fed by isLockedInOrganization then contact status/statusInOrganization; a locked security account \"leaves the row green and Active\" while a membership lock shows red Blocked."
+   "note": "Shows POST /api/push-message/search finds a return push \"with topic = the return number\"; Q is vague and no entry documents searching by topic as a criterion.",
+   "expectPreMerge": [
+    "KB-9B9FAF0F"
+   ]
   },
   {
    "id": "L-195",
@@ -1601,12 +1754,17 @@
    "id": "L-199",
    "q": "POST /api/search/indexes/index documentIds deleted product orphan index document removal",
    "expect": [
-    "KB-31802239"
+    "KB-31802239",
+    "KB-4C29749E"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "\"documentIds does not remove it\"; a startDate/endDate window over the deletion removes the orphan documents."
+   "note": "\"documentIds does not remove it\"; a startDate/endDate window over the deletion removes the orphan documents.",
+   "expectBeforeExhaustive": [
+    "KB-31802239"
+   ],
+   "exhaustiveNote": "Added KB-4C29749E, which states that a delete needs a startDate/endDate window instead of a documentIds request."
   },
   {
    "id": "L-200",
@@ -1667,49 +1825,76 @@
    "id": "L-206",
    "q": "changeWishlist legacy sharedWithId input",
    "expect": [
-    "KB-A871AA8D"
+    "KB-A871AA8D",
+    "KB-B4377884",
+    "KB-42230B0A"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "States the legacy sharedWithId on a Customer share 'is applied as sharingSetting.targets = [that org] (a one-element set), not dropped'."
+   "note": "States the legacy sharedWithId on a Customer share 'is applied as sharingSetting.targets = [that org] (a one-element set), not dropped'.",
+   "expectBeforeExhaustive": [
+    "KB-A871AA8D"
+   ],
+   "exhaustiveNote": "Added KB-B4377884 and KB-42230B0A, which state what a legacy sharedWithId input does (it replaces the target on a 1-target list, is refused on a multi-target list, and is ignored without scope)."
   },
   {
    "id": "L-207",
    "q": "wishlist set to Private does the old /shared-list/ link stop working changeWishlist",
    "expect": [
     "KB-7A9D4927",
-    "KB-4895528A"
+    "KB-D7F08A26",
+    "KB-F2FA8EBD",
+    "KB-91DF8883"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Both state that after Private the key resolves to null and that re-sharing revives the same key, so setting Private is 'a suspension, not a revocation'."
+   "note": "Both state that after Private the key resolves to null and that re-sharing revives the same key, so setting Private is 'a suspension, not a revocation'.",
+   "expectPreMerge": [
+    "KB-7A9D4927",
+    "KB-4895528A"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-7A9D4927",
+    "KB-D7F08A26"
+   ],
+   "exhaustiveNote": "Added KB-F2FA8EBD and KB-91DF8883, which state that after Stop sharing readers get null/404 and that the same key is reused on re-share."
   },
   {
    "id": "L-208",
    "q": "loyaltyMissionProgress daysRemaining 0 status InProgress after endDate expiry job",
    "expect": [
-    "KB-26B8BE64",
-    "KB-5A3931CE"
+    "KB-26B8BE64"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "Both state a mission past EndDate reads status InProgress with daysRemaining 0 until the expiry job runs."
+   "note": "Both state a mission past EndDate reads status InProgress with daysRemaining 0 until the expiry job runs.",
+   "expectPreMerge": [
+    "KB-26B8BE64",
+    "KB-5A3931CE"
+   ]
   },
   {
    "id": "L-211",
    "q": "Admin SPA Push Messages 'New push message' blade — what does the Audience builder offer (modes, estimate headline, preview dialog)?",
    "expect": [
     "KB-AC05FCD4",
-    "KB-1178FECF"
+    "KB-1178FECF",
+    "KB-F6F89D31",
+    "KB-8DA09FE8"
    ],
    "partial": true,
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "AC05FCD4 lists the four modes and 1178FECF describes the estimate breakdown and the preview dialog paging at 20 rows; no single entry covers the whole builder."
+   "note": "AC05FCD4 lists the four modes and 1178FECF describes the estimate breakdown and the preview dialog paging at 20 rows; no single entry covers the whole builder.",
+   "expectBeforeExhaustive": [
+    "KB-AC05FCD4",
+    "KB-1178FECF"
+   ],
+   "exhaustiveNote": "Added KB-F6F89D31 (the estimate headline breakdown and chip counts) and KB-8DA09FE8 (the headline em-dash on a rejected query), both of which describe the estimate headline."
   },
   {
    "id": "L-212",
@@ -1737,13 +1922,20 @@
    "id": "L-215",
    "q": "/account/missions mission card layout, completed state, and mission modal behaviour",
    "expect": [
-    "KB-011D79B2"
+    "KB-011D79B2",
+    "KB-26B8BE64",
+    "KB-CE2F9A45",
+    "KB-3C7B6A36"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Covers only the SKU mission modal behaviour (absolute quantity, prefill on reopen); nothing states the card layout or the completed state."
+   "note": "Covers only the SKU mission modal behaviour (absolute quantity, prefill on reopen); nothing states the card layout or the completed state.",
+   "expectBeforeExhaustive": [
+    "KB-011D79B2"
+   ],
+   "exhaustiveNote": "Added KB-26B8BE64 (the card's '0 days left' and Open mission button), KB-CE2F9A45 (the modal footer layout) and KB-3C7B6A36 (the modal estimate hint placement)."
   },
   {
    "id": "L-216",
@@ -1774,12 +1966,20 @@
    "id": "L-219",
    "q": "changeWishlist addSharedWithIds sales rep unserved organization Access denied",
    "expect": [
-    "KB-B4377884"
+    "KB-B4377884",
+    "KB-8F61528A",
+    "KB-0BC18481",
+    "KB-509D70C4",
+    "KB-B811FD82"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "States 'Adding an unserved org (alone or with a served one) returns Access denied (Forbidden) and writes nothing'."
+   "note": "States 'Adding an unserved org (alone or with a served one) returns Access denied (Forbidden) and writes nothing'.",
+   "expectBeforeExhaustive": [
+    "KB-B4377884"
+   ],
+   "exhaustiveNote": "Added KB-8F61528A, KB-0BC18481, KB-509D70C4 and KB-B811FD82, each of which states that adding an unserved organization returns Access denied (Forbidden) and writes nothing."
   },
   {
    "id": "L-220",
@@ -1810,12 +2010,19 @@
    "q": "POST /api/search/indexes/index product index lag catalog link searchable",
    "expect": [
     "KB-25388E6C",
-    "KB-5D688448"
+    "KB-5D688448",
+    "KB-4C29749E",
+    "KB-31802239"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "25388E6C shows a product in a linked catalog indexed by documentIds is searchable 'on the first poll ~20 s later', and 5D688448 says search lags writes and needs the category linked into the virtual catalog."
+   "note": "25388E6C shows a product in a linked catalog indexed by documentIds is searchable 'on the first poll ~20 s later', and 5D688448 says search lags writes and needs the category linked into the virtual catalog.",
+   "expectBeforeExhaustive": [
+    "KB-25388E6C",
+    "KB-5D688448"
+   ],
+   "exhaustiveNote": "Added KB-4C29749E and KB-31802239, which state that a change reaches the index only at a scheduled run and that a targeted documentIds index request makes it searchable."
   },
   {
    "id": "L-223",
@@ -1833,38 +2040,55 @@
    "q": "MULTI_ORG user organization switcher account menu contact.organizations empty",
    "expect": [
     "KB-4EDC989E",
-    "KB-512D556A"
+    "KB-512D556A",
+    "KB-8BE777BB"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "4EDC989E says an empty contact.organizations leaves the user organization-less, and 512D556A says the switcher appears only for a user with more than one organization; the answer needs both."
+   "note": "4EDC989E says an empty contact.organizations leaves the user organization-less, and 512D556A says the switcher appears only for a user with more than one organization; the answer needs both.",
+   "expectBeforeExhaustive": [
+    "KB-4EDC989E",
+    "KB-512D556A"
+   ],
+   "exhaustiveNote": "Added KB-8BE777BB, which states that multi-org buyers get the Organizations switcher in the account menu and that the header org slot differs by membership count."
   },
   {
    "id": "L-225",
    "q": "Admin Push Messages New push message audience builder: four modes, estimate headline, preview-recipients endpoint behaviour",
    "expect": [
     "KB-AC05FCD4",
-    "KB-1178FECF"
+    "KB-1178FECF",
+    "KB-8DA09FE8",
+    "KB-F6F89D31"
    ],
    "partial": true,
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "AC05FCD4 lists the four modes and 1178FECF covers the estimate breakdown, preview paging and the preview-recipients 400 on a malformed phrase; no single entry covers everything asked."
+   "note": "AC05FCD4 lists the four modes and 1178FECF covers the estimate breakdown, preview paging and the preview-recipients 400 on a malformed phrase; no single entry covers everything asked.",
+   "expectBeforeExhaustive": [
+    "KB-AC05FCD4",
+    "KB-1178FECF"
+   ],
+   "exhaustiveNote": "Added KB-8DA09FE8 (preview-recipients returns 400 and the headline becomes an em-dash) and KB-F6F89D31 (the previewed estimate breakdown equals the delivered count)."
   },
   {
    "id": "L-226",
    "q": "wishlists isOwner false access Write Organization scope wishlist sales rep list",
    "expect": [
     "KB-B59A1F9D",
-    "KB-A0FFEA0A"
+    "KB-2F64A447"
    ],
    "partial": true,
    "source": "logs",
    "split": "test",
    "labelled": "adjudicated",
-   "note": "B59A1F9D covers an Organization-scope list seen with access Write and isOwner false, and A0FFEA0A that such a list appears in wishlists() with isOwner false; the sales-rep angle is not stated."
+   "note": "B59A1F9D covers an Organization-scope list seen with access Write and isOwner false, and A0FFEA0A that such a list appears in wishlists() with isOwner false; the sales-rep angle is not stated.",
+   "expectPreMerge": [
+    "KB-B59A1F9D",
+    "KB-A0FFEA0A"
+   ]
   },
   {
    "id": "L-227",
@@ -1905,24 +2129,39 @@
    "id": "L-233",
    "q": "POST /api/loyalty-missions admin blade validation 400 message",
    "expect": [
-    "KB-DCE536F0"
+    "KB-DCE536F0",
+    "KB-D64B1613",
+    "KB-79DB4E17"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "KB-DCE536F0 states the mission blade shows only '400: Bad request' and an empty Error details dialog instead of the errorMessage (KB-79DB4E17 notes later platform builds fix setError)."
+   "note": "KB-DCE536F0 states the mission blade shows only '400: Bad request' and an empty Error details dialog instead of the errorMessage (KB-79DB4E17 notes later platform builds fix setError).",
+   "expectBeforeExhaustive": [
+    "KB-DCE536F0"
+   ],
+   "exhaustiveNote": "Added KB-D64B1613 (the 400 raw FluentValidation array) and KB-79DB4E17 (how setError renders that body; earlier builds threw), which is build-dependent rather than contradictory."
   },
   {
    "id": "L-234",
    "q": "POST /api/notifications/journal return notification message stored status Error SMTP 535",
    "expect": [
-    "KB-9B9FAF0F",
-    "KB-17555498"
+    "KB-17555498",
+    "KB-A4ABEFEA",
+    "KB-97A675C1"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Both state the return notification is stored in the notification journal with the return id 'status Error when SMTP rejects it', which answers the stored-with-Error question."
+   "note": "Both state the return notification is stored in the notification journal with the return id 'status Error when SMTP rejects it', which answers the stored-with-Error question.",
+   "expectPreMerge": [
+    "KB-9B9FAF0F",
+    "KB-17555498"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-17555498"
+   ],
+   "exhaustiveNote": "Added KB-A4ABEFEA and KB-97A675C1, which state that the journal row is stored with status Error when SMTP fails."
   },
   {
    "id": "L-239",
@@ -1939,12 +2178,17 @@
    "id": "L-240",
    "q": "xAPI products filter term wildcard gtin asterisk",
    "expect": [
-    "KB-916CDCA1"
+    "KB-916CDCA1",
+    "KB-110E0652"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "KB-916CDCA1 states * and ? inside a quoted filter term are honoured as wildcards, e.g. gtin:\"*\" returned 318."
+   "note": "KB-916CDCA1 states * and ? inside a quoted filter term are honoured as wildcards, e.g. gtin:\"*\" returned 318.",
+   "expectBeforeExhaustive": [
+    "KB-916CDCA1"
+   ],
+   "exhaustiveNote": "Added KB-110E0652, which states that the ElasticSearch8 builder turns any term containing * or ? into a wildcard query, with gtin \"<12 digits>*\" returning 1 hit."
   },
   {
    "id": "L-242",
@@ -1961,13 +2205,16 @@
    "id": "L-244",
    "q": "/account/missions loyaltyMissionProgress daysRemaining expired mission card storefront",
    "expect": [
-    "KB-5A3931CE",
     "KB-26B8BE64"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "adjudicated",
-   "note": "5A3931CE gives the ended-unswept card ('0 days left', enabled Open mission) and 26B8BE64 that after the sweep the mission turns Expired and drops out of loyaltyMissionProgress."
+   "note": "5A3931CE gives the ended-unswept card ('0 days left', enabled Open mission) and 26B8BE64 that after the sweep the mission turns Expired and drops out of loyaltyMissionProgress.",
+   "expectPreMerge": [
+    "KB-5A3931CE",
+    "KB-26B8BE64"
+   ]
   },
   {
    "id": "L-245",
@@ -2029,12 +2276,19 @@
    "id": "L-255",
    "q": "When an organization member is blocked (status Blocked / locked) from the Admin side, what does the storefront company members list show for them, and what does the GraphQL/REST API return?",
    "expect": [
-    "KB-97170665"
+    "KB-97170665",
+    "KB-27B4CD10",
+    "KB-90B0D8F5",
+    "KB-06409954"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "States the roster shows a red 'Blocked' badge and the API carries the block only in isLockedInOrganization while status fields stay Approved."
+   "note": "States the roster shows a red 'Blocked' badge and the API carries the block only in isLockedInOrganization while status fields stay Approved.",
+   "expectBeforeExhaustive": [
+    "KB-97170665"
+   ],
+   "exhaustiveNote": "Added KB-27B4CD10, KB-90B0D8F5 and KB-06409954 because Q does not say which Admin block it means, and each states the roster and API result for one Admin lock axis (account lock and contact-level Locked both leave the row Active)."
   },
   {
    "id": "L-256",
@@ -2062,25 +2316,41 @@
    "id": "L-258",
    "q": "xAPI products filter barcode:\"<value>\" exact mode — are * and ? in the scanned value treated as wildcards (EvalBarcodeFilterMiddleware, TermFilter, ElasticSearch8 HasWildcardValue)?",
    "expect": [
-    "KB-348505EB",
-    "KB-110E0652"
+    "KB-110E0652",
+    "KB-916CDCA1",
+    "KB-78B45E71"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Both state barcode exact mode honours * and ? as wildcards; KB-348505EB names EvalBarcodeFilterMiddleware TermFilter turned into a WildcardQuery by ElasticSearch8."
+   "note": "Both state barcode exact mode honours * and ? as wildcards; KB-348505EB names EvalBarcodeFilterMiddleware TermFilter turned into a WildcardQuery by ElasticSearch8.",
+   "expectPreMerge": [
+    "KB-348505EB",
+    "KB-110E0652"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-110E0652"
+   ],
+   "exhaustiveNote": "Added KB-916CDCA1 (wildcards honoured 'through the storefront barcode expansion') and KB-78B45E71 (the provider interprets * and ? inside the barcode:\"<value>\" term)."
   },
   {
    "id": "L-260",
    "q": "return status New vs Requested: storefront createReturn / admin Add new return initial status VirtoCommerce.Return",
    "expect": [
     "KB-BDCD3057",
-    "KB-F97CFAF6"
+    "KB-F97CFAF6",
+    "KB-85F02FDB",
+    "KB-17555498"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "KB-BDCD3057 states admin Add new return 'creates the return with status New' and KB-F97CFAF6 states buyer createReturn 'created a Draft'."
+   "note": "KB-BDCD3057 states admin Add new return 'creates the return with status New' and KB-F97CFAF6 states buyer createReturn 'created a Draft'.",
+   "expectBeforeExhaustive": [
+    "KB-BDCD3057",
+    "KB-F97CFAF6"
+   ],
+   "exhaustiveNote": "Added KB-85F02FDB (an Add new return return 'opens at once with status New') and KB-17555498 (xAPI submitReturn moves Draft -> Requested)."
   },
   {
    "id": "L-261",
@@ -2167,12 +2437,17 @@
    "id": "L-269",
    "q": "/checkout route storefront checkout page",
    "expect": [
-    "KB-50EBEEE9"
+    "KB-50EBEEE9",
+    "KB-ADA16454"
    ],
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "States checkout is on /cart and 'There is no /checkout route to navigate to'."
+   "note": "States checkout is on /cart and 'There is no /checkout route to navigate to'.",
+   "expectBeforeExhaustive": [
+    "KB-50EBEEE9"
+   ],
+   "exhaustiveNote": "Added KB-ADA16454, which states that the storefront uses single-page cart-as-checkout and /checkout/review redirects to /cart unless checkout_multistep_enabled is on."
   },
   {
    "id": "L-270",
@@ -2189,37 +2464,36 @@
    "id": "L-272",
    "q": "POST /api/platform/security/roles create role permissions platform:access",
    "expect": [
-    "KB-49F6B6EF"
+    "KB-49F6B6EF",
+    "KB-700E5D52"
    ],
    "partial": true,
    "source": "logs",
    "split": "dev",
    "labelled": "agreed",
-   "note": "Only states 'PUT /api/platform/security/roles with a stable id upserts the role' and permissions read back via GET; nothing about POST create or platform:access."
+   "note": "Only states 'PUT /api/platform/security/roles with a stable id upserts the role' and permissions read back via GET; nothing about POST create or platform:access.",
+   "expectBeforeExhaustive": [
+    "KB-49F6B6EF"
+   ],
+   "exhaustiveNote": "Added KB-700E5D52, which states 'platform:access does not exist on this build'; the role-create part is still only partly answered."
   },
   {
    "id": "L-274",
    "q": "wishlist sharingSetting targets addSharedWithIds removeSharedWithIds delta semantics",
    "expect": [
     "KB-509D70C4",
-    "KB-B4377884"
+    "KB-B4377884",
+    "KB-0BC18481"
    ],
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "KB-509D70C4 gives add/remove delta semantics (present-id add and absent-id remove are no-ops, case-insensitive) and KB-B4377884 says deltas without scope are silently ignored."
-  },
-  {
-   "id": "L-275",
-   "q": "What does the Active column on the storefront /company/members list reflect for an organization member — the contact's status, the ApplicationUser isActive flag, or the ASP.NET Identity lockout state?",
-   "expect": [
-    "KB-27B4CD10",
-    "KB-97170665"
+   "note": "KB-509D70C4 gives add/remove delta semantics (present-id add and absent-id remove are no-ops, case-insensitive) and KB-B4377884 says deltas without scope are silently ignored.",
+   "expectBeforeExhaustive": [
+    "KB-509D70C4",
+    "KB-B4377884"
    ],
-   "source": "logs",
-   "split": "test",
-   "labelled": "agreed",
-   "note": "KB-27B4CD10 says the column renders 'isLockedInOrganization ? Locked : contact.status' and the account lockout never reaches it; KB-97170665 gives the observed badge rule from lock and statusInOrganization."
+   "exhaustiveNote": "Added KB-0BC18481, which states that removing the last target with removeSharedWithIds is refused and that a failed command is atomic for addSharedWithIds."
   },
   {
    "id": "L-276",
@@ -2236,12 +2510,17 @@
    "id": "L-277",
    "q": "/company/members invite member role options organization maintainer",
    "expect": [
-    "KB-68D63D8C"
+    "KB-68D63D8C",
+    "KB-B769C7B1"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "KB-68D63D8C says assignableRoles is filtered by MembershipRolesWhitelist with defaults 'Organization employee, Organization maintainer, Purchasing agent'."
+   "note": "KB-68D63D8C says assignableRoles is filtered by MembershipRolesWhitelist with defaults 'Organization employee, Organization maintainer, Purchasing agent'.",
+   "expectBeforeExhaustive": [
+    "KB-68D63D8C"
+   ],
+   "exhaustiveNote": "Added KB-B769C7B1, which states that the storefront role dialog offers only the 3-role subset returned by GET /api/members/customers/invite/roles."
   },
   {
    "id": "L-279",
@@ -2270,12 +2549,21 @@
    "q": "/company/members Active column after admin locks the user account",
    "expect": [
     "KB-27B4CD10",
-    "KB-4B889114"
+    "KB-06409954",
+    "KB-82111688"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "Both state that locking the security account in Admin 'leaves the row green and Active' on /company/members."
+   "note": "Both state that locking the security account in Admin 'leaves the row green and Active' on /company/members.",
+   "expectPreMerge": [
+    "KB-27B4CD10",
+    "KB-4B889114"
+   ],
+   "expectBeforeExhaustive": [
+    "KB-27B4CD10"
+   ],
+   "exhaustiveNote": "Added KB-06409954 (an Admin lock leaves the roster member Active with a green tick) and KB-82111688 (a permanently locked account still wears the green Active tick)."
   },
   {
    "id": "L-282",
@@ -2305,26 +2593,38 @@
    "id": "L-286",
    "q": "products(filter: \"fieldname:value\") term filter — is matching case-sensitive or case-insensitive on the active search provider (does ElasticSearch lowercase terms while Lucene does not)?",
    "expect": [
-    "KB-916CDCA1"
+    "KB-916CDCA1",
+    "KB-110E0652"
    ],
    "partial": true,
    "source": "logs",
    "split": "calibration",
    "labelled": "agreed",
-   "note": "KB-916CDCA1 says 'Values are matched case-insensitively on this deployment's search provider' (Elasticsearch 8), but makes no Lucene comparison."
+   "note": "KB-916CDCA1 says 'Values are matched case-insensitively on this deployment's search provider' (Elasticsearch 8), but makes no Lucene comparison.",
+   "expectBeforeExhaustive": [
+    "KB-916CDCA1"
+   ],
+   "exhaustiveNote": "Added KB-110E0652, which states that the generated term filters match case-insensitively on ElasticSearch8; no candidate compares ElasticSearch with Lucene, so it stays partial."
   },
   {
    "id": "L-288",
    "q": "POST /api/punchout/cxml PunchOutSetupRequest and /connect/token grant_type=punchout behaviour",
    "expect": [
     "KB-C239652A",
-    "KB-62D97984"
+    "KB-62D97984",
+    "KB-CA2AE929",
+    "KB-ACC12F26"
    ],
    "partial": true,
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "KB-C239652A gives the success path (StartPage URL that signs the mapped user in) and KB-62D97984 the rejection statuses; the grant_type=punchout side is covered only in passing."
+   "note": "KB-C239652A gives the success path (StartPage URL that signs the mapped user in) and KB-62D97984 the rejection statuses; the grant_type=punchout side is covered only in passing.",
+   "expectBeforeExhaustive": [
+    "KB-C239652A",
+    "KB-62D97984"
+   ],
+   "exhaustiveNote": "Added KB-CA2AE929 (the punchout grant answers 400 login_failed for an invalid or absent session_token) and KB-ACC12F26 (the cXML setup plus the punchout grant redeem returns a 200 token for the mapped userId), both of which state grant behaviour."
   },
   {
    "id": "L-289",
@@ -2342,12 +2642,19 @@
    "id": "L-290",
    "q": "/search?barcode= exact match barcode search results page redirect single match",
    "expect": [
-    "KB-71011C1F"
+    "KB-71011C1F",
+    "KB-1D53A1BE",
+    "KB-110E0652",
+    "KB-78B45E71"
    ],
    "source": "logs",
    "split": "test",
    "labelled": "agreed",
-   "note": "KB-71011C1F: 'Exactly one hit: the URL is replaced (router.replace) by the product's page' for exact barcode matching."
+   "note": "KB-71011C1F: 'Exactly one hit: the URL is replaced (router.replace) by the product's page' for exact barcode matching.",
+   "expectBeforeExhaustive": [
+    "KB-71011C1F"
+   ],
+   "exhaustiveNote": "Added KB-1D53A1BE ('exactly one hit replaced the URL with the product page'), KB-110E0652 ('opens the PDP on a single hit') and KB-78B45E71 ('the single-hit redirect opened that product's page'), each of which states the single-match redirect."
   },
   {
    "id": "L-291",
@@ -2403,6 +2710,20 @@
    "split": "calibration",
    "labelled": "agreed",
    "note": "KB-2CBB229F: 'PUT /api/stores replaces the entity: fields omitted from the body are nulled'; the safe form is GET, merge, then PUT."
+  },
+  {
+   "id": "L-084",
+   "q": "What does the product-card variations button on the storefront catalog/search listing render — the i18n key pages.catalog.variations_button — and how does it pluralize for a single variation?",
+   "expect": [
+    "KB-F78ED1CC"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate names the pages.catalog.variations_button key or its singular form; KB-F78ED1CC only mentions an 'N variations' card label.",
+   "partial": true,
+   "exhaustiveNote": "Added KB-F78ED1CC because it states the master's category card renders 'N variations' plus 'From $X'; no candidate gives the i18n key or the singular form.",
+   "wasControl": true
   }
  ],
  "controls": [
@@ -2585,15 +2906,6 @@
    "split": "dev",
    "labelled": "agreed",
    "note": "No candidate states how POST /api/carts computes or returns totals; KB-AD1FA66B covers stored totals only after a mutation via GET."
-  },
-  {
-   "id": "L-084",
-   "q": "What does the product-card variations button on the storefront catalog/search listing render — the i18n key pages.catalog.variations_button — and how does it pluralize for a single variation?",
-   "expect": [],
-   "source": "logs",
-   "split": "test",
-   "labelled": "agreed",
-   "note": "No candidate names the pages.catalog.variations_button key or its singular form; KB-F78ED1CC only mentions an 'N variations' card label."
   },
   {
    "id": "L-090",
@@ -3134,6 +3446,105 @@
     "KB-9AF5645D"
    ],
    "note": "8646A9CB says detailed errors are on, 9AF5645D records vcptcore_qa1 with them off and contrasts on vs off for OTP only; Q names no deployment and the password-grant effect is not stated."
+  },
+  {
+   "id": "L-019",
+   "q": "GET /api/order/customerOrders/{id} — what does a configurable product line item's configurationItems array persist (sectionId, sectionName, productId, customText, price)?",
+   "expect": [
+    "KB-4105EEBE",
+    "KB-59E4B5FC"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added KB-59E4B5FC, which states the REST order configurationItems persist productId, sku, quantity, customText but lose sectionId, contradicting KB-4105EEBE's sectionId and sectionName presence."
+  },
+  {
+   "id": "L-036",
+   "q": "tax provider FixedRateTaxProvider store B2B-store taxTotal 0 cart",
+   "expect": [
+    "KB-3E408000",
+    "KB-1B18B821",
+    "KB-5F7C8FC4"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added KB-5F7C8FC4, which states that B2B-store's FixedRateTaxProvider is isActive false and that zero tax is specific to that store; this contradicts KB-3E408000's FixedRate isActive true, so the label is contested."
+  },
+  {
+   "id": "L-107",
+   "q": "how do you add a configurable product to the cart on the storefront",
+   "expect": [
+    "KB-F78ED1CC",
+    "KB-98A231B6",
+    "KB-4B47D094",
+    "KB-0C163966"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added KB-98A231B6 (configurable products keep a real Add to cart button), KB-4B47D094 (createConfiguredLineItem then addItem with configurationSections) and KB-0C163966 (stepper is the add control), which contradicts KB-F78ED1CC, so contested."
+  },
+  {
+   "id": "L-134",
+   "q": "is coupon code case-sensitive Query.validateCoupon",
+   "expect": [
+    "KB-A3004A3B",
+    "KB-35F20D97"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Expect unchanged but marked contested: KB-A3004A3B says validation is case-insensitive while KB-35F20D97 says 'matching is case-sensitive'."
+  },
+  {
+   "id": "L-154",
+   "q": "Push Messages audience caption after save and reopen — does it still name the condition and the picked company?",
+   "expect": [
+    "KB-D9F48037",
+    "KB-C5B17CE2"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added KB-C5B17CE2 and marked contested: it says the reopened caption omits the condition ('Sending to John Mitchell.') while KB-D9F48037 says the same caption survives."
+  },
+  {
+   "id": "L-178",
+   "q": "Push Messages admin blade conditions mode incomplete condition row recipient estimate audience caption",
+   "expect": [
+    "KB-EB70C1F9",
+    "KB-735DF4D1"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Marked contested: KB-EB70C1F9 says an empty row next to a complete condition shows no validation and Save is not held, while KB-735DF4D1 says the same setup shows 'This condition has no value.' and disables Save."
+  },
+  {
+   "id": "L-186",
+   "q": "what does the Active column on /company/members show",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-BBBC4225",
+    "KB-90B0D8F5",
+    "KB-06409954",
+    "KB-82111688"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added the entries that state what feeds the Active column (KB-D8FDFA6F, KB-BBBC4225, KB-90B0D8F5, KB-06409954, KB-82111688); contested because KB-27B4CD10, KB-06409954 and KB-82111688 say contact.status feeds it, while KB-97170665, KB-D8FDFA6F and KB-BBBC4225 say statusInOrganization does."
+  },
+  {
+   "id": "L-193",
+   "q": "What does the \"Active\" column on the storefront B2B company members list (/company/members) reflect — which entity field feeds it, and what does it show for a blocked/locked user account?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F",
+    "KB-BBBC4225",
+    "KB-90B0D8F5",
+    "KB-06409954",
+    "KB-82111688"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added KB-D8FDFA6F, KB-BBBC4225, KB-90B0D8F5, KB-06409954 and KB-82111688, which state the field feeding the column or the locked-account display; contested because contact.status (KB-27B4CD10, KB-06409954) and statusInOrganization (KB-97170665, KB-D8FDFA6F) are each named as the source."
+  },
+  {
+   "id": "L-275",
+   "q": "What does the Active column on the storefront /company/members list reflect for an organization member — the contact's status, the ApplicationUser isActive flag, or the ASP.NET Identity lockout state?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-06409954",
+    "KB-0B6067F8",
+    "KB-82111688",
+    "KB-D8FDFA6F",
+    "KB-90B0D8F5"
+   ],
+   "note": "exhaustive relabel 2026-10-05: Added the entries stating that the column ignores account lock state; marked contested because KB-27B4CD10 says the badge reads contact.status while KB-D8FDFA6F and KB-97170665 say it consumes statusInOrganization."
   }
  ],
  "removed": [
