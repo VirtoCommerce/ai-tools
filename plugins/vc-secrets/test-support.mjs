@@ -4,6 +4,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { test, after } from "node:test";
+import net from "node:net";
+import * as cache from "./vc-secrets-cache.mjs";
 
 const PACKAGE_DIR = path.dirname(fileURLToPath(import.meta.url));
 
@@ -254,3 +257,131 @@ export function launcherSourceFiles() {
 export function launcherSource() {
     return launcherSourceFiles().map((f) => fs.readFileSync(f, "utf8")).join("\n");
 }
+
+export const tmpDirs = [];
+
+after(() => {
+    for (const dir of tmpDirs) {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+});
+
+// Measured on this machine: a bind that is refused does NOT throw from listen() — it emits
+// an 'error' event, and an unattached one aborts the whole process instead of failing one test.
+// So the probe attaches a handler, which makes it async, which is why the skip decision happens
+// inside each test rather than in a module-level constant.
+//
+// Adapted from the source's unix-domain-socket probe: the capability under test here is a
+// loopback TCP bind, covering httpsPostForm's socket-drop behaviour, so the probe binds one
+// instead of a unix socket — probing the wrong permission would answer confidently either way.
+// The lock-file tests that need a real unix-socket bind get their own gate and probe further
+// down (canBindLocks/lockTest), because they exercise a different privilege than this one.
+let bindProbe = null;
+
+function canBindSockets() {
+    bindProbe ??= new Promise((resolve) => {
+        const probe = net.createServer();
+        probe.once("error", () => resolve(false));
+        probe.once("listening", () => probe.close(() => resolve(true)));
+        probe.listen(0, "127.0.0.1");
+    });
+
+    return bindProbe;
+}
+
+// This is the only coverage httpsPostForm's socket-drop behaviour has. Measured on this machine:
+// a loopback TCP bind is permitted both inside and outside the Claude Code sandbox — it is the
+// unix-socket bind the sandbox refuses, which is what the source's probe tested and why this one
+// was changed. So the expected outcome here is RUN, not skip: a run reporting it skipped means a
+// broken probe or an unusually restricted host, and either way the skip is a signal.
+export const socketTest = (name, fn) => test(name, async (t) => {
+    if (!(await canBindSockets())) {
+        t.skip("needs an environment that permits a loopback TCP bind");
+
+        return;
+    }
+    await fn(t);
+});
+
+// acquireLock binds a UNIX socket (abstract on linux, a filesystem path on darwin) — a different
+// privilege from socketTest's loopback TCP probe above. Measured on this sandbox: TCP loopback
+// bind is permitted, both an abstract AND a filesystem unix-socket bind are EPERM. So reusing
+// socketTest here would answer "can bind" and every lockTest case would then fail EPERM, reading as
+// a regression rather than a sandbox restriction — a probe of the wrong privilege answers
+// confidently either way.
+let lockBindProbe = null;
+
+function canBindLocks() {
+    lockBindProbe ??= new Promise((resolve) => {
+        const probe = net.createServer();
+        probe.once("error", () => resolve(false));
+        probe.once("listening", () => probe.close(() => resolve(true)));
+        probe.listen(cache.lockPathFor("selftest-" + process.pid, "proj",
+            { platform: process.platform, env: process.env }));
+    });
+
+    return lockBindProbe;
+}
+
+// Unlike socketTest, a skip here is NOT a signal that the probe is broken — it is the expected
+// outcome in the Claude Code sandbox, where a unix-domain-socket bind IS refused (EPERM). All
+// four lockTest cases skip there, and a green in-sandbox run proves less than it looks like:
+// measured, a mutation where release() never closes the server is fully green in-sandbox and
+// only dies when the suite runs outside it.
+export const lockTest = (name, fn) => test(name, async (t) => {
+    if (!(await canBindLocks())) {
+        t.skip("needs an environment that permits a unix-domain-socket bind");
+
+        return;
+    }
+    await fn(t);
+});
+
+// The path/pipe a stub channel binds to. Named pipes on Windows have no filesystem lifetime to
+// clean up, so only the POSIX branch registers a tmpDir for the `after()` sweep.
+let pipeSeq = 0;
+
+export function stubChannelPath() {
+    if (process.platform === "win32") {
+        return `\\\\.\\pipe\\vcs-t16-${process.pid}-${pipeSeq++}`;
+    }
+    // /tmp rather than os.tmpdir(): a socket path is limited to sun_path's ~104-108 bytes, which a
+    // redirected TMPDIR can exceed -- measured on Linux, the bind then lands silently at a truncated path.
+    const dir = fs.mkdtempSync("/tmp/vcs-t16-");
+    tmpDirs.push(dir);
+
+    return path.join(dir, "c.sock");
+}
+
+// The preload's net.connect uses a filesystem socket / named pipe -- neither socketTest's TCP bind
+// nor lockTest's abstract-namespace bind -- and a probe of the wrong privilege answers confidently
+// either way (the file's own comment above lockTest records that defect once already).
+let channelBindProbe = null;
+
+function canBindChannel() {
+    channelBindProbe ??= new Promise((resolve) => {
+        let probePath;
+        try {
+            probePath = stubChannelPath();
+        } catch {
+            resolve(false);
+
+            return;
+        }
+        const probe = net.createServer();
+        probe.once("error", () => resolve(false));
+        probe.once("listening", () => probe.close(() => resolve(true)));
+        probe.listen(probePath);
+    });
+
+    return channelBindProbe;
+}
+
+export const channelTest = (name, fn) => test(name, async (t) => {
+    if (!(await canBindChannel())) {
+        t.skip("needs an environment that permits a filesystem-socket bind");
+
+        return;
+    }
+    await fn(t);
+});
