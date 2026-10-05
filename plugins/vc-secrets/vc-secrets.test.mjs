@@ -265,7 +265,7 @@ test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers ar
     }
     // 8 in lib/launch.test.mjs and 2 in vc-secrets-oauth.test.mjs when this was written. A renamed
     // namespace or a destructured call would match nothing and pass; the floor makes it a red.
-    assert.ok(inspected >= 10, `only ${inspected} in-process launch calls found: the call-site pattern no longer reaches them`);
+    assert.ok(inspected >= 10, `only ${inspected} in-process launch calls found, below the floor of 10: either calls were removed (lower the floor on purpose) or the call-site pattern no longer reaches them`);
 });
 
 // Signal 0 says a process exists, and a killed one whose parent never reaps it -- PID 1 of a container

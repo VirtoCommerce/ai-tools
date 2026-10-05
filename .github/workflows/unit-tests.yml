@@ -70,8 +70,9 @@ jobs:
           count=$(node -e 'console.log(require("node:fs").globSync(process.argv[1]).length)' "$pattern")
           test "$count" -gt 0 || { echo "vc-secrets: no test file matches $pattern" >&2; exit 1; }
           # The floor above refuses only a zero match, and the sentinel that checks every other file's reach
-          # lives in this file, so only its own loss has to be named here.
-          test -f plugins/vc-secrets/vc-secrets.test.mjs || { echo "vc-secrets: the file holding the CI sentinel is gone" >&2; exit 1; }
+          # lives in plugins/vc-secrets/vc-secrets.test.mjs, so only that file's loss has to be named here.
+          test -f plugins/vc-secrets/vc-secrets.test.mjs \
+            || { echo "vc-secrets: the file holding the CI sentinel is gone" >&2; exit 1; }
           node --test "$pattern"
       # Typecheck is a SEPARATE, narrower gate: ci/tsconfig.json covers ci/*.ts + ci/lib/ +
       # scripts/**/*.ts only. Stated explicitly because a green "typecheck" on a change that is all

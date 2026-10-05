@@ -254,7 +254,8 @@ export function callArguments(stripped, openIndex, blanked = codeOnly(stripped))
         }
     }
 
-    // A backslash that escapes a backtick makes the re-scan open a literal of its own and never find the end.
+    // A backslash that escapes a backtick can make the re-scan open a literal of its own and miss the end,
+    // or reach a `)` past it, which the backslash check above then refuses.
     throw new Error(inLiteral
         ? `${unreadable}: no closing parenthesis found, as when its arguments hold an escaped backtick`
         : `no closing parenthesis for the call opened before index ${openIndex}`);
