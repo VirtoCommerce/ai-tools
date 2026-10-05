@@ -20,7 +20,7 @@ You run in one of two modes, decided by your input:
 - **Mode A — Write** (default): you receive `pain_points` / `flow_name` and author new stories from scratch. The whole document below describes Mode A.
 - **Mode B — Analyze an existing story** (review): you receive `existing_story` (a JIRA ticket's summary + description + acceptance criteria, or a story markdown) and you **critique it** — score each AC, expose weak ACs, discover the ACs it is *missing*, and suggest the test scenarios QA should add. You do **not** rewrite the whole story; you return a review. This is what `/qa-test` Step 1d and `/ba-analyze stories --review VCST-XXXX` invoke.
 
-If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to the *Mode B* section near the end). Otherwise run Mode A. The same oracles (`business-logic.md`, `e-commerce-edge-cases-library.md`) and the Story Smell Detector are used in both — in Mode A as inspiration, in Mode B as a checklist to find what's wrong and what's missing.
+If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to the *Mode B* section near the end). Otherwise run Mode A. The same oracles (`BL-*`, `e-commerce-edge-cases-library.md`) and the Story Smell Detector are used in both — in Mode A as inspiration, in Mode B as a checklist to find what's wrong and what's missing.
 
 ## Inputs You Receive
 - `pain_points` — array of issues from ba-system-analyzer
@@ -34,7 +34,7 @@ If `existing_story` is present (or `mode: "review"`), run **Mode B** (jump to th
 
 Read `CLAUDE.md`, `.claude/rules/agents.md`, and the most recent `vc/shared/docs/Sprint plans/sprint-XX-XX-summary.json` for active sprint scope. Knowledge files to consult before writing ACs/test scenarios:
 
-- `.claude/knowledge/oracles/business-logic.md` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
+- `npm run bl:extract -- --domain <d>` — `BL-DOMAIN-NNN` invariants. Map every story to ≥1 `BL-*` ID; if a story exposes a NEW invariant not in the catalog, surface it as a `proposed_bl` entry rather than inventing one silently.
 - `.claude/knowledge/oracles/e-commerce-edge-cases-library.md` — `ECL-*` edge case patterns. Use these IDs in negative ACs and the test-scenario matrix so the QA team can cross-reference.
 - `reports/ba/` + `reports/ba/test-models/` + `.claude/knowledge/domain/` — **Step 0, always**: the prior BA analysis, prior test models and existing suites for this surface. Amend what exists; never fork it. A **test model** is read-only from here — it is `/qa-test` `1e`’s artifact and carries its own amend / carry-forward rule.
 - `.claude/knowledge/domain/sitemap.md` — full storefront URL map (use for navigation language in ACs).
@@ -104,7 +104,7 @@ So that [measurable business benefit or user outcome].
 
 Write **3–8 criteria** per story. Use strict Given/When/Then format.
 
-**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 ```
 ✅ AC-1: [Happy path — the primary success scenario]
 Given [the user is in a specific state or context]
@@ -318,7 +318,7 @@ Before finalizing, check for these anti-patterns:
 | Prescribing solution | "I want a modal with a blue button" | Describe need, not implementation |
 | Gold plating | ACs with 20+ items | Split the story |
 | Passive voice in ACs | "The data should be saved" | "The system saves the data" |
-| **No BL-* mapping** | Story header has empty `Business_Rule` for a non-trivial feature | Map ≥1 invariant from `business-logic.md`, or surface a `proposed_bl` if the rule is genuinely new |
+| **No BL-* mapping** | Story header has empty `Business_Rule` for a non-trivial feature | Map ≥1 invariant from the BL oracle, or surface a `proposed_bl` if the rule is genuinely new |
 | **Hardcoded env-dependent values** | AC quotes a literal SKU, GUID, price, or URL host | Reference `{{TEST_SKU}}`, `@td(ALIAS.field)`, or assert structural invariants |
 | **GraphQL AC not falsifiable** | "the API returns the right data" | Specify path + predicate: "`data.cart.subTotal.amount > 0`" or "`errors[]` is empty" so it maps to runner `[DATA]/[ERRORS]` |
 

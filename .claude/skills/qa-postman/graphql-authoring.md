@@ -167,9 +167,9 @@ pm.test('GraphQL returns validation error', function () {
 
 ## 7. Common GraphQL Gotchas (project-specific)
 
-These are documented in shared memory (`feedback_graphql_*` entries) — read them before authoring:
+Read these before authoring:
 
-- **`products` filter requires `category.subtree:<B2B_VIRTUAL_CATALOG_ID>`** as a base filter. The active virtual catalog root ID changes — re-verify before hardcoding. Current (2026-04-30): `9238c387-d779-40cb-b27d-5496a670a924`. Cross-check `test-data/aliases.json` BOPIS entry's `testProductCatalogId` field.
+- **`products` filter requires `category.subtree:@td(VIRTUAL_CATALOG_B2B.id)`** as a base filter. The virtual catalog root moves between re-seeds and differs per environment, so never write the ID itself — the alias resolves it (`test-data/aliases.json`, overridden per env by `aliases.<TEST_ENV>.json`). Recipe: `.claude/knowledge/execution/live-discovery.md` §Recipe 1 — pin the virtual-catalog root, then query products under it.
 - **Cart mutations need `userId`.** See order-creation-matrix.md for the exact requirements.
 - **Shipment add/update needs price matching the rate** — mismatched price returns ApolloError that looks like a code bug but is data validation.
 - **Happy-path queries use full field selection.** Minimal field selection is allowed only for counter probes, roundtrips, or dedicated schema-coverage tests.

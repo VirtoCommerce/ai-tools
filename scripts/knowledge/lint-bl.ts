@@ -34,7 +34,7 @@
  * so the suite CSV schema stays single-sourced.
  *
  * Usage:
- *   npx tsx scripts/knowledge/lint-bl.ts [business-logic.md] [--json] [--filter=<id-regex>] [--fail-on=Blocker|Critical|High|Medium]
+ *   npx tsx scripts/knowledge/lint-bl.ts [<oracle.md>, default: rendered from bl/*.yaml] [--json] [--filter=<id-regex>] [--fail-on=Blocker|Critical|High|Medium]
  *   npm run bl:lint                # human report, gate on High
  *   npm run bl:audit:collect       # --json inventory for /qa-review-bl
  *
@@ -45,11 +45,12 @@ import { readFileSync, readdirSync, statSync } from "fs";
 import { dirname, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, type Row } from "../test-cases/append-test-cases-to-suite.js";
+import { BL_DIR, oracleText } from "./bl-yaml.ts";
 
 type Severity = "Blocker" | "Critical" | "High" | "Medium" | "Informational";
 const SEVERITY_ORDER: Severity[] = ["Informational", "Medium", "High", "Critical", "Blocker"];
 
-const VALID_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"]);
+export const VALID_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux", "P2-ux"]);
 const P0P1_TAGS = new Set(["P0-revenue", "P0-security", "P1-data", "P1-ux"]);
 const REQUIRED_FIELDS = ["Rule", "Verify", "Violation signal", "Agents"] as const;
 
@@ -62,13 +63,14 @@ const REQUIRED_FIELDS = ["Rule", "Verify", "Violation signal", "Agents"] as cons
 export const ENTRY_RE = /^###\s+(BL-[A-Z0-9]+-\d+[A-Z]?)\s*:\s*(.*)$/;
 export const DOMAIN_RE = /^##\s+Domain\s+\S+\s*:.*$/;
 const BL_TOKEN_RE = /\bBL-[A-Z0-9]+-\d+[A-Z]?\b/g;
-const BRACKET_TAG_RE = /`\[([^\]]+)\]`/g;
+export const BRACKET_TAG_RE = /`\[([^\]]+)\]`/g;
 
 export interface Invariant {
   id: string;
   domainPrefix: string; // e.g. "BL-CART"
   seq: number;
   title: string;
+  heading: string; // the heading's raw text after `BL-…:`, tags and notes included (kept verbatim for findings that quote it)
   severity: string; // raw tag or "" if missing/malformed
   domain: string; // the `## Domain` heading text
   fields: Record<string, string>; // Rule / Verify / Violation signal / Agents / Source / Suite coverage / Amended / Promoted / ...
@@ -109,10 +111,9 @@ export const BLC_002_BASELINE: Record<string, number> = {
   // BL-GA4-001..004 were PROMOTED into the oracle (Domain 26) and their 33 citations are now real;
   // the rest were converted to declared forward-references with `npm run bl:remap --propose`,
   // which lint-bl.ts exempts from BLC-002 by design. Per BLC-002: fix + de-baseline, never widen.
-  // Remaining entries are the BL-SEC-* family, whose citing rows in suite 044 are still unauthored —
-  // relabelling those would hide the debt rather than pay it.
-  "BL-SEC-001": 3, "BL-SEC-002": 1, "BL-SEC-003": 8, "BL-SEC-004": 5,
-  "BL-SEC-005": 2,
+  // BL-SEC-001..005 REMOVED 2026-09-30 (BL 2.0 M0, docs/bug-detection-requirements.md §7.6): no
+  // BL-SEC family exists in the oracle, so the 19 citations were dropped with `bl:remap --drop`
+  // rather than proposed. A security invariant enters the oracle only from a human source.
   // BL-CFG-003/004/007/008 REMOVED 2026-09-19 — the tool bug that stranded them is fixed.
   // They were briefly restored here because `npm run bl:remap --propose` reported "0 case(s) in
   // 0 file(s)" for all four while THIS lint reported 4/1/4/5 citing cases in 072e. The cause was
@@ -131,6 +132,11 @@ const find = (rule: string, severity: Severity, id: string, message: string): Fi
 
 function truncate(s: string, n = 80): string {
   return s.length > n ? s.slice(0, n - 1) + "…" : s;
+}
+
+/** `Rule` or a qualified form of it (`Rule (write path — …)`): BLL-003 and the extractors share this. */
+export function isField(label: string, base: string): boolean {
+  return label === base || label.startsWith(base + " ") || label.startsWith(base + "(");
 }
 
 /** Parse a `- **Field:** value` bullet; returns [field, value] or null. */
@@ -176,6 +182,7 @@ export function parseOracle(text: string): Invariant[] {
         domainPrefix: prefix,
         seq,
         title,
+        heading: tail,
         severity: severityTag,
         domain,
         fields: {},
@@ -187,6 +194,12 @@ export function parseOracle(text: string): Invariant[] {
       continue;
     }
     if (!cur) continue;
+    // A non-rule `###` (a `### Note` inside a domain) ends the entry, as it does in `sliceOracle`, so the
+    // note's lines are not read as continuations of the entry's last field.
+    if (/^###\s/.test(raw)) {
+      flush();
+      continue;
+    }
     const bullet = parseFieldBullet(raw);
     if (bullet) {
       curField = bullet[0];
@@ -303,7 +316,7 @@ export function lint(
     // "Verify (read path)"), so match by prefix, not exact key.
     const fieldKeys = Object.keys(inv.fields);
     for (const req of REQUIRED_FIELDS) {
-      const hit = fieldKeys.some((k) => k === req || k.startsWith(req + " ") || k.startsWith(req + "("));
+      const hit = fieldKeys.some((k) => isField(k, req));
       if (!hit) f.push(find("BLL-003", "High", inv.id, `missing required field: **${req}**`));
     }
 
@@ -403,7 +416,9 @@ function main(): void {
   const argv = process.argv.slice(2);
   const here = dirname(fileURLToPath(import.meta.url));
   const repoRoot = resolve(here, "..", "..");
-  const file = argv.find((a) => !a.startsWith("--")) ?? join(repoRoot, ".claude", "knowledge", "oracles", "business-logic.md");
+  // An explicit file is read as given; otherwise the oracle is rendered from bl/*.yaml (BL 2.0 M4 — no script reads the markdown).
+  const given = argv.find((a) => !a.startsWith("--"));
+  const file = given ?? join(repoRoot, BL_DIR, "*.yaml");
   const json = argv.includes("--json");
   const filterArg = argv.find((a) => a.startsWith("--filter="))?.split("=")[1];
   const filterRe = filterArg ? new RegExp(filterArg, "i") : null;
@@ -412,7 +427,7 @@ function main(): void {
 
   let raw: string;
   try {
-    raw = readFileSync(file, "utf-8");
+    raw = given ? readFileSync(given, "utf-8") : oracleText(join(repoRoot, BL_DIR));
   } catch (e) {
     console.error(`Cannot read oracle: ${file}\n${(e as Error).message}`);
     process.exit(1);

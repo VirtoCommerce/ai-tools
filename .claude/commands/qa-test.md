@@ -1,5 +1,5 @@
 ---
-description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist, plus the design/a11y visual lane when the ticket is UI-visible) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
+description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist; the design/a11y visual lane under --visual) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
 argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes]"
 disable-model-invocation: true
 ---
@@ -394,7 +394,7 @@ left, and asking before knowing what those are fetches the same docs twice.
 
 **2-load** — the actual rule **text and patterns**, never just IDs:
 
-| Always | `business-logic.md` `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` · `.claude/skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for the regression corpus) · `.claude/knowledge/oracles/vc-bug-catalog.md` `VC-*` — each entry's `Detection probe` is a ready-made scenario |
+| Always | `bl:extract -- --domain <d>` `BL-*` · `e-commerce-edge-cases-library.md` `ECL-*` · the domain checklists via `/qa-checklist` · `.claude/skills/qa-plan/e2e-scenario-catalog.md` `E2E-*` (the suite-traceability backbone for the regression corpus) · `.claude/knowledge/oracles/vc-bug-catalog.md` `VC-*` — each entry's `Detection probe` is a ready-made scenario |
 |---|---|
 | **`visual_surface`** | `BL-UI-*` **and `BL-A11Y-001..004`** · `.claude/skills/qa-design/SKILL.md` (§State-Stress) · `.claude/knowledge/oracles/critical-ui-scope.md` · the generated selectors **and** design tokens · `.claude/skills/qa-sbtm/modern-web-attack-surface.md` §`UIP-*` |
 | **`contract_surface`** | the **refreshed** `.claude/knowledge/api/graphql-schema.md` · `.claude/knowledge/api/graphql-test-cases-runner.md` · the `test-data/graphql/index.json` fixture inventory — read it **before** proposing a new fixture (each op lists its `usedBy[]`) |
@@ -566,7 +566,7 @@ running**.
 | | Track | Released by | Notes |
 |---|---|---|---|
 | **4a** | **Checklist** — the applicable specialist agent(s), **in a single message**, running **Artifact B and nothing else** | `3-exec` | **FAST = one agent.** Prompt contract: [`SKILL.md`](../skills/qa-test/SKILL.md) §Agent dispatch. **Record `timing.time_to_first_test_minutes` at this dispatch** — it is the number this structure exists to move |
-| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent, never invoke `/qa-design`.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
+| **4v** | **Visual lane** — `ui-ux-expert` on Chrome DevTools MCP, in the **same message** as 4a | `3-exec` | FULL when `visual_surface: true`; FAST only under `--visual`/`--axes`. **Dispatch the agent; it invokes skill `qa-design` first.** Axes, targets, the two things the brief must carry, verdicts, the SKIPPED rule: [`visual-axis.md`](../skills/qa-test/visual-axis.md). Writes `design-report.md` + `summary.json.visual` |
 | **4c** | **C1** — `/qa-regression <suite ids> --ids <new Draft ids + every REPAIR id + every RE-BASE id> --no-promote` | `3-cases` — **or A's `2a` phase when it authored nothing** (§C1) | Its own run; capture `RUN_ID` + wall-clock. **`--no-promote` is mandatory** — it suppresses `/qa-regression` Step 6.5, which would otherwise promote minutes-old cases from inside the run that authored them, re-creating the placement `5g`'s removal fixed. **Skip C1 saying so when the exact set is empty** — an omitted C1 must not read as a passing one |
 
 **The specialist agent no longer runs the Artifact-A rows** — why:
@@ -636,7 +636,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 
 | | Phase | In one line | Gate |
 |---|---|---|---|
-| **5-triage** | Triage | Triage the C1 run via **`/qa-triage-results <RUN_ID> --fix`** (never from scratch), correlate App Insights for the window, validate evidence quality, then classify → provenance → severity → dedup every remaining finding. Fold in the Step-3x lane's bugs — it files none itself | — |
+| **5-triage** | Triage | **`/qa-triage-results <RUN_ID> --fix`** on C1, **`… ticket <key> --verify`** on the checklist (4a/4v/3x rows); each real bug → `vc-fix:qa-investigate` → 5-file's `/vc-fix:qa-bug`. Correlate App Insights, validate evidence, then classify → provenance → severity → dedup the rest | — |
 | **5-verdict** | Reconcile AC & DoD **live**, then decide | Close `1d`'s static hypothesis against what the agents observed, resolve every DoD item and compute both percentages **from the actual counts** — then PASS / PASS WITH NOTES / FAIL / BLOCKED, derived from that plus 5-triage, **no new judgment**. It is **recorded, not published**: 5-report publishes | inline |
 | **5-file** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5-report comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related · **`BL-A11Y-*` on a functional/feature/E2E ticket → standalone + related, at its real severity, and it does NOT fail 5-verdict** ([`triage.md`](../skills/qa-test/triage.md) §7a) | inline |
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
@@ -668,8 +668,8 @@ and promotion deferred to the exit round
 - Never use WebKit (unsupported on Windows). Never assign two agents to the same browser server
   simultaneously. Fallback: chrome→firefox, edge→chrome, firefox→edge (max 1 retry). **Max 3 concurrent
   browser agents — counted across checklist agents and regression lanes.**
-- Read all URLs from `config.js` / `.env` — never hardcode. Always load `business-logic.md` for the affected
-  domains.
+- Read all URLs from `config.js` / `.env` — never hardcode. Always load the affected
+  domains' `BL-*`.
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same
   delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
 - **What persists:** `summary.json` + `testing-checklist.md` + screenshots under

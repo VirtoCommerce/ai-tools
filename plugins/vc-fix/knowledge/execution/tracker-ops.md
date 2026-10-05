@@ -25,8 +25,15 @@ deliver one conclusion — and left them to reconcile which version is current.
 3. **Nothing is posted mid-run** "so they know sooner". Findings live in chat and in the local
    report until close-out. If the operator explicitly says *post now*, that post becomes **the**
    comment for the run and everything later amends it.
-4. **A second comment requires the operator to ask for one**, for a reason they state. Not because
-   the run learned something new — a run always learns something new.
+4. **A second comment *in the same round* requires the operator to ask for one**, for a reason they
+   state. Learning something new about the same build is an amend — a run always learns something new.
+5. **A retest on an UPDATED artifact is a new round, and a new round is a NEW comment.** The developer
+   shipped new builds, so the people waiting on them must be notified, and an edit notifies nobody. The
+   earlier comment stays as that round's record — post the new round as a new comment, never an edit
+   (`commentId`) of the old one. The plugin's hooks enforce this by age and session: editing a ledger
+   comment older than 12 h (`TRACKER_ROUND_HOURS`), or one another session posted, is blocked as a
+   probable new round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
+   `--same-round "<reason>"`.
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the
@@ -39,10 +46,19 @@ comment, a results comment correcting it, a delta measurement, a malformed wiki-
 consolidated report superseding the first three. The fifth contained the other four. Teammates had
 already acted on the superseded ones.
 
+**Measured 2026-09-30, VCST-5883 — the opposite failure, which is why rule 5 exists:** a round-2 retest
+of NEW builds was amended into round 1's comment 110693, and the developer and PO never learned it
+happened. Three mechanisms let it through: the helper's run id was always `local` (it read a session
+variable Claude Code does not export), so a checkout was one run forever; `--amend` had no guard at all;
+and the MCP hooks matched one server name, so a claude.ai Atlassian connector bypassed them. Fixed in
+issue #360 — the round is now keyed on the build under test.
+
 ### 0a. How to amend (Jira)
 
-The Atlassian MCP exposes only `addCommentToJiraIssue` — **there is no edit or delete tool**, which is
-precisely why corrections turned into new comments. Use REST directly:
+The Atlassian MCP was long used as if `addCommentToJiraIssue` could only post, which is precisely why
+corrections turned into new comments. It CAN edit: pass `commentId` (the local `atlassian` server and the
+claude.ai connectors alike; `addOrEditJiraIssueComment` on some connectors). There is still no delete tool; the plugin's hooks guard
+that edit path and treat a ledger comment older than 12 h as a previous round (rule 5). Otherwise use REST directly:
 
 ```bash
 # edit an existing comment (auth: JIRA_EMAIL + JIRA_API_TOKEN from .env.local)
@@ -184,6 +200,30 @@ them. Always resolve the *destination status* by role, then map it to the live w
      `"auto"`/`"confirm-once"`, `/qa-verify-fix` treats each QA-side transition as `ask` until
      `qaRoleStatesComplete` is `true` — do not apply the fix-side policy to a QA-side transition without
      checking this flag first.
+
+## 2a. Labels on bugs Claude files
+
+Every Jira **Bug** Claude creates — and every **Sub-task** that is a bug (§5b in-scope filing) — says who found it
+and, for an agent finding, during what.
+In the VirtoCommerce QA repo a PreToolUse hook refuses the create call without a valid set.
+
+| Who found it | Labels |
+|---|---|
+| Claude, while testing a ticket (`/qa-test`, `/qa-test-fast`, exploratory) | `found-by-agent` + `found-in-testing` |
+| Claude, in a regression run (`/qa-regression`, `ci:regression`, triage of a run) | `found-by-agent` + `found-in-regression` |
+| A person — the user saying "I found this, file it", a Teams/partner report | `reported-by-human` |
+
+The labels go in the create call's `labels` parameter where the tool has one (the claude.ai connector), else
+in `additional_fields.labels`; keep any labels already there.
+
+**Found by the agent means Claude saw the failure itself in this session.** That is a verdict,
+screenshot, API response or trace from its own run. If a person described the bug — even when they
+ask Claude to file it, and even when Claude then reproduces it — the label is `reported-by-human`.
+If the origin is unclear, it is `reported-by-human` too. Undercounting agent findings is harmless;
+crediting agents with a person's finding corrupts the metric.
+
+A label that turns out wrong is corrected in Jira by hand. **These labels are VC-internal: apply them only on
+VC's own Jira, never on a client project's tracker.**
 
 ## 3. Which git/PR mechanism? — from `contributionPlan(repo)`
 

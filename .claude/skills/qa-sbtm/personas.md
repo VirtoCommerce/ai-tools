@@ -66,7 +66,7 @@ Cannot see the screen. Navigates with Tab, Shift+Tab, Arrow keys, Enter, Space. 
 - Run axe-core via `mcp__Chrome_DevTools__lighthouse_audit` or the `/qa-accessibility` skill against the same page
 
 ### What this persona typically finds
-Missing aria-labels on icon buttons, focus traps, missing focus rings (charter the Coffee and Red presets — those are the two WCAG-gated themes per `feedback_a11y_gated_themes`), inaccessible custom dropdowns, modals without focus management, missing live regions, color-only state indicators.
+Missing aria-labels on icon buttons, focus traps, missing focus rings (charter the Coffee and Red presets — those are the two WCAG-gated themes), inaccessible custom dropdowns, modals without focus management, missing live regions, color-only state indicators.
 
 ---
 
@@ -79,7 +79,7 @@ Wants something they're not entitled to: another user's data, a discount they di
 
 - **IDOR (Insecure Direct Object Reference):** Navigate to `/account/orders/<your-order-id>`, then swap the ID for someone else's. Same for quotes, addresses, lists, members.
 - **Privilege escalation via URL:** As a non-admin user, try to access `/admin`, `/api/admin/*`, `/account/company/members/edit/*`
-- **Disabled control bypass:** Find a disabled button (e.g., "Add to Cart" when out of stock); use DevTools to remove `disabled` attribute and click it — does the server reject it? (Cross-ref `feedback_no_force_disabled_controls`)
+- **Disabled control bypass:** Find a disabled button (e.g., "Add to Cart" when out of stock); use DevTools to remove `disabled` attribute and click it — does the server reject it?
 - **Hidden field tampering:** Find hidden form fields (price, productId, quantity), modify via DevTools, submit
 - **Header manipulation:** Modify `Authorization`, `X-User-Id`, or store/culture headers via DevTools Network → Replay Request
 - **Token replay:** Capture an auth token, log out, try to use the token (should be invalidated)
@@ -91,7 +91,7 @@ Wants something they're not entitled to: another user's data, a discount they di
 - **SQL/NoSQL injection probes:** `'; DROP TABLE`, `' OR '1'='1`, `{"$ne": null}` in fields that look like they hit a query
 
 ### What this persona typically finds
-Missing server-side authorization checks, mass-assignment vulnerabilities, IDOR, client-side-only validation, token-lifecycle bugs (logout doesn't invalidate), missing CSRF protection, XSS in unsanitized rich-text fields, role-cache bugs (see `feedback_admin_permissions_via_roles`).
+Missing server-side authorization checks, mass-assignment vulnerabilities, IDOR, client-side-only validation, token-lifecycle bugs (logout doesn't invalidate), missing CSRF protection, XSS in unsanitized rich-text fields, role-cache bugs.
 
 **Important:** Stay within authorized testing scope (vcst-qa, vcptcore, virtostart). Never test production. If you find a real security issue, file via `/qa-bug` with severity Critical and stop publishing details until triaged.
 
@@ -113,7 +113,7 @@ On a 3G connection, in a tunnel, or behind a flaky corporate VPN. Every request 
 - Test the cart page when the cart query fails (block `/graphql` via DevTools Network → Block request URL) — does the page recover gracefully or stay broken?
 - Test the PDP when the inventory check times out — does Add to Cart show a "checking" state or assume in-stock?
 - Test the search page when the search API returns 504 — does it show retry UI or a blank page?
-- Reload the cart 10 times in quick succession on Slow 3G — any double-cart or stale-Apollo data? (Cross-ref `feedback_apollo_cart_shipment_stale_data`)
+- Reload the cart 10 times in quick succession on Slow 3G — any double-cart or stale-Apollo data?
 
 ### What this persona typically finds
 Generic error messages with no recovery, missing skeleton/loading states, double-submit on slow connections, lost orders (placed but no confirmation), layout shift on image load, Apollo cache + slow network = stale data, blocking spinners with no timeout.
@@ -131,12 +131,12 @@ Buys for a 500-person company. Has authority to request, not approve. Manages a 
 - Create a quote with 50 line items; have a manager reject it; modify quantities; re-submit; have it approved; convert to order — does line-item history persist across the entire chain?
 - Place an order as a buyer below the approval threshold ($X), one above it — verify routing to approval vs direct order
 - As a manager, approve two quotes simultaneously (two tabs, click Approve at the same instant) — any double-approval or race?
-- Bulk-add 50 SKUs from a CSV/quick-order pad — verify each SKU resolves to the correct product (including configurable products) and quantity (cross-ref `reference_b2b_lineitem_consolidation`)
+- Bulk-add 50 SKUs from a CSV/quick-order pad — verify each SKU resolves to the correct product (including configurable products) and quantity
 - Apply a contract price that overrides the catalog price — verify the contract price wins in cart, quote, and order
 - Switch the currency mid-cart — does the cart re-price correctly or break? (Cross-ref ECL category)
 - Download an order export (CSV/PDF) — verify all line items, prices, taxes, totals match the on-screen view
 - Try ordering an item that's now discontinued (was in a saved list) — clear error or silent skip?
-- Use the impersonation feature: support agent impersonates the procurement officer — verify the cart, account, and recently-viewed are the officer's, not the agent's (cross-ref `reference_impersonation_permission_naming`)
+- Use the impersonation feature: support agent impersonates the procurement officer — verify the cart, account, and recently-viewed are the officer's, not the agent's
 - Set up a re-order from a 6-month-old order — verify obsolete SKUs are flagged, prices are refreshed, addresses still valid
 
 ### What this persona typically finds
@@ -156,7 +156,7 @@ Their browser state has drifted from server reality. They have a token from yest
 - Sign in. Then in DevTools → Application → Local Storage, **modify a stored value** (e.g., change `cartId` to a random GUID). Refresh — graceful recovery or crash?
 - Sign in as User A in Tab 1. Sign out, sign in as User B in Tab 2. Switch back to Tab 1 — whose cart shows?
 - Set the auth token expiry to be in the past (modify `exp` claim in DevTools), reload — should redirect to sign-in cleanly
-- After a deploy, open the app with an older Service Worker still active — does it self-update or serve stale assets? (Cross-ref `feedback_mcp_browser_cache`)
+- After a deploy, open the app with an older Service Worker still active — does it self-update or serve stale assets?
 - Stay on the same page for 35 minutes (idle past session timeout). Click any control — error path should be informative, not silent failure
 - Switch the storefront environment via env var, then load a URL from the previous env's session — does it reject the cookies?
 - Sign in, then load `/account/orders/<order-id>` from a previous user's session (paste a URL from yesterday's session) — should 403 or redirect, not show stale data

@@ -62,7 +62,7 @@ excludes: >-
 
 > Refresh with `/qa-domain-map inventory`. This file answers **what the feature is and where its
 > surfaces are**. It does **not** carry behavioural rules — those are `BL-*` in
-> `oracles/business-logic.md` (nearest token `cat`) — and it can **never ground an assertion as `{DOC}`**.
+> the BL oracle (nearest token: `npm run bl:extract -- --domain cat`) — and it can **never ground an assertion as `{DOC}`**.
 
 **Every claim carries a verdict.** `CONFIRMED` = observed live or read at source this pass (the cell
 says which) · `DRIFT` = prior art says otherwise and prior art is wrong · `MISSING` = documented, does

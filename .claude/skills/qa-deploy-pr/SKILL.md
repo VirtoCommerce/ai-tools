@@ -21,7 +21,7 @@ skill **gathers all of them and repins them together, in one manifest update**, 
 ## Why a deterministic script (+ a thin agent layer)
 
 Resolution + the manifest math + the fork/PR mechanics are deterministic — they live in
-**`scripts/deploy/deploy-pr-artifact.ts`** (`npm run deploy:pr`). The agent's only job is to
+**`scripts/deploy/vc-deploy.ts pr`** (core in `scripts/deploy/pr/pr.ts` + `scripts/deploy/lib/`; `npm run deploy:pr`). The agent's only job is to
 pick the input (ticket vs explicit set), read the resolved table, and decide whether to
 `--apply`. The script reuses the repo's established building blocks: the PR→`vc3prerelease`
 artifact resolver from `qa-local-env/resolve-task.mjs`, the AzureBlob/`BlobName` merge contract
@@ -108,9 +108,7 @@ delivery path from the account's *actual* permission on the deploy repo
 **Token routing (important).** Reads use the ambient fine-grained PAT (`GIT_TOKEN`), but that
 token lacks fork/PR rights on `vc-deploy-dev`. **Writes go through `gh` with the keyring
 classic `gho_` token** (`gh` invoked with `GITHUB_TOKEN`/`GH_TOKEN` unset) — the credential the
-rest of this repo uses for VirtoCommerce writes (`reference_github_token_routing`). The old
-`403 denied to Lenajava1` in `reference_deploy_module_pr_to_vcst_qa` was the *fine-grained* PAT;
-the account actually has `write` via the classic token.
+rest of this repo uses for VirtoCommerce writes.
 
 **Minimal diff.** The manifest edit is done as **text surgery** on the raw file (remove the
 `GithubReleases {Id,Version}` block, add a `BlobName`-only AzureBlob entry / swap the theme
@@ -159,7 +157,7 @@ shape is unexpected.
   pinning it moves the env off its current release (e.g. `3.1051.0` → `3.1053.0`) on top of the PR's own
   change. That is inherent to testing a platform PR build — note it, and revert the pin after verifying.
 - **Stale SPA bundle:** after a deploy, clear the Playwright/MCP browser cache before verifying
-  admin-SPA/storefront bundles (memory `feedback_mcp_browser_cache`).
+  admin-SPA/storefront bundles.
 
 ## STOP / rules
 

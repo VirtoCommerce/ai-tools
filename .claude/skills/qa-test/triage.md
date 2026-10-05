@@ -63,12 +63,21 @@ gets **no separate `BUG-AI-*` draft** — 5-file's `/vc-fix:qa-bug` owns it.
 | `BL-*` listed in the prompt but not mentioned in results | Flag as untested — request verification |
 | HIGH-confidence `REAL_BUG` in the window not reflected in agent results | Surface it — the UI test missed a backend error; carry into the finding list |
 
-### 3. Classify findings that have no RUN_ID
+### 3. Findings that have no RUN_ID — the same command, in `ticket` mode
 
-Item 0 already classified the regression run's own FAILs. The rest — failed ACs (confirmed at 5-verdict.1, folded
-back here), checklist-track agent-reported bugs, App-Insights signals — use the same taxonomy
-`/qa-triage-results` uses: real product bug vs test-defect (`TEST_STEPS_DEFECT` / `ASSERTION_DEFECT` /
-`TEST_DATA_DEFECT` / `STALE_TEST`) vs `BY_DESIGN` / `ENV` / `KNOWN_ISSUE`.
+Item 0 already classified the regression run's own FAILs. The rest — the checklist track (4a), the visual lane
+(4v), the discovery lane (3x) — go through **`/qa-triage-results ticket <ticket-key> --verify`**, not an inline
+pass. **First, every one of those findings must be a row with a verdict in `testing-checklist.md`** (visual-axis §6
+already requires this for 4v). Ticket mode reads only that file, and a finding that is not in it is never
+triaged. `--verify` sends **every** `REAL_BUG` candidate through `vc-fix:qa-investigate`, not just the
+HIGH-confidence ones, so each bug that reaches 5-file arrives with an evidence package. What ticket mode returns
+and what this phase does with it: [`routing-and-fix.md`](../qa-triage-results/routing-and-fix.md) §Ticket mode.
+
+Still classified inline, using that command's taxonomy: failed ACs (confirmed at 5-verdict.1, folded back here)
+and App-Insights signals. The classes are real product bug vs test-defect (`TEST_STEPS_DEFECT` /
+`ASSERTION_DEFECT` / `TEST_DATA_DEFECT` / `STALE_TEST`) vs `BY_DESIGN` / `ENV` / `KNOWN_ISSUE`. An inline real
+bug is investigated the same way before it is filed: one `vc-fix:qa-investigate` dispatch, as that command's
+Phase 4 runs it.
 
 Ambiguous → **real bug / LOW**, never relabelled as a test-defect. A test-defect routes to
 `/qa-review-tests <suite> --fix`, not a ticket.
@@ -96,8 +105,7 @@ never re-graded at 5-file to move a finding across the line.
 
 ### 6. Dedup — every finding, regardless of source
 
-Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker (per
-`feedback_duplicate_check_across_all_sprints`). A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
+Glob `reports/bugs/**` + all `reports/tickets/Sprint*/`, and search the tracker. A match = PRE-EXISTING. A `/qa-triage-results`-confirmed bug
 still needs this tracker-wide check before 5-file can file it.
 
 **`--iterate` — the one exception, and it matters because this item runs AFTER item 4.** A match on a
@@ -118,7 +126,7 @@ what makes the axis safe to switch on:
 | A **`BL-A11Y-*` invariant FAIL** on a **functional / feature / E2E** ticket | **never blocks** — filed as its **own standalone ticket** (§7a) | `visual.a11y_findings[]` |
 | A **`vs. DESIGN` `DRIFT` / `MISSING` / `UNSPEC` / `KNOWN_DIVERGENCE`** | **advisory** — reported, never filed by this rule, **never** fails 5-verdict | `visual.advisory[]` |
 | **`AMBIGUOUS`** — the spec contradicts an invariant or a WCAG criterion | escalate to the human in the 5-report report; **never** resolve it by obeying the spec | `visual.advisory[]` + named in the report |
-| **`SKIPPED` / `INCONCLUSIVE`** (no `/design-consent`; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
+| **`SKIPPED` / `INCONCLUSIVE`** (no design source on disk; axe blocked by CSP) | an absent measurement | `visual.axes.*.skipped_reason` — **never** reported as clean |
 
 Precedence is `BL-UI / BL-A11Y invariant > design spec > UX heuristic`: **a spec match never rescues an
 invariant FAIL.** The reason drift only advises is that most drift rows are cosmetic px deltas where the

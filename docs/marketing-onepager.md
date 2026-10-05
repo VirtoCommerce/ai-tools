@@ -113,5 +113,5 @@ Tier A artifacts (methodology, test-case CSV format, evidence policy, defect wor
 - Versioning + Tier A freeze: [`docs/versioning.md`](versioning.md)
 - Distribution model: [`docs/distribution.md`](distribution.md)
 - Release + versioning process: [`docs/release-process.md`](release-process.md)
-- Source: https://github.com/VirtoCommerce/vc-mcp-testing-module
+- Source: https://github.com/VirtoCommerce/ai-tools
 - Current version: see [`CHANGELOG.md`](../CHANGELOG.md)

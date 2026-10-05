@@ -38,14 +38,14 @@ Provides the structured methodology framework for exploratory testing sessions. 
 
 ## Execution
 
-1. **Read the methodology references:** Load `scenario-discovery.md` FIRST — it defines the primary lens (finding scenarios we don't cover). Then `session-based-testing.md` for the core SBTM framework. Consult `../../agents/knowledge/oracles/vc-bug-catalog.md` BEFORE the session to learn what NOT to re-discover, and the two SUPPLY-side oracles — `e-commerce-edge-cases-library.md` for candidate boundary/failure shapes (**`[THEORETICAL]` sections first**: `[OBSERVED]` ones are already `/qa-checklist`'s and the suites' job) and `business-logic.md` for the `BL-*` a deviation is judged against. The three are read in two opposite directions — the catalog and the suites to SUBTRACT known ground, the ECL and BL to SUPPLY targets and a correctness reference; the table is at `/qa-exploratory` Step 5a. For Risk and Edge-Case charters, also load `adversarial-heuristics.md` (apply as filters / familiar-problems oracle, not as a checklist). Pick a persona from `personas.md` when the session benefits from a specific user lens. Reach for `modern-web-attack-surface.md` when probing cache, multi-tab, or browser-feature surfaces.
+1. **Read the methodology references:** Load `scenario-discovery.md` FIRST — it defines the primary lens (finding scenarios we don't cover). Then `session-based-testing.md` for the core SBTM framework. Consult `../../agents/knowledge/oracles/vc-bug-catalog.md` BEFORE the session to learn what NOT to re-discover, and the two SUPPLY-side oracles — `e-commerce-edge-cases-library.md` for candidate boundary/failure shapes (**`[THEORETICAL]` sections first**: `[OBSERVED]` ones are already `/qa-checklist`'s and the suites' job) and `bl:extract` for the `BL-*` a deviation is judged against. The three are read in two opposite directions — the catalog and the suites to SUBTRACT known ground, the ECL and BL to SUPPLY targets and a correctness reference; the table is at `/qa-exploratory` Step 5a. For Risk and Edge-Case charters, also load `adversarial-heuristics.md` (apply as filters / familiar-problems oracle, not as a checklist). Pick a persona from `personas.md` when the session benefits from a specific user lens. Reach for `modern-web-attack-surface.md` when probing cache, multi-tab, or browser-feature surfaces.
 
 2. **Before a session — Charter creation:**
    - Define the mission (what area to explore and why)
    - Select charter type: Feature, Risk, Workflow, or Edge-Case
    - Choose applicable heuristic(s): CRISP for quality attributes, SFDPOT for system dimensions
    - Set time box: 30-minute session (5 min setup + 20 min explore + 5 min document)
-   - **Ask the base about the charter area** — `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`), one question per page path / GraphQL operation in the charter. What it already holds is known ground to subtract, exactly like the bug catalog
+   - **Ask the base about the charter area** — `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`), one question per page path / GraphQL operation in the charter. What it already holds is known ground to subtract, exactly like the bug catalog
 
 3. **During a session — Guided exploration:**
    - Follow the selected heuristic's sub-questions to guide exploration

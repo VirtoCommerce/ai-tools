@@ -155,7 +155,7 @@ qualifying product in 4549 scanned), a review-images modal needing ≥2 images, 
 store configures as a hosted redirect.
 
 Each is `BLOCKED` — after a real attempt that failed, never as a shortcut
-(`feedback_blocked_is_not_terminal`) — or `NOT_APPLICABLE` with the environment reason named. **Never a
+— or `NOT_APPLICABLE` with the environment reason named. **Never a
 silent PASS.** All four otherwise resolve to *"unverified"*, which is honest and, to anyone skimming,
 indistinguishable from *"fine"*. Backlog: B-35.
 
@@ -203,8 +203,7 @@ design-system class: [`design-system-consistency.md`](../qa-design/design-system
 hosted Storybook, which is exactly why the exclusion has to be written down — the §5c detection signals
 would otherwise swallow it. No Coffee theme, no gated-preset set, no `BL-UI` invariant scope, no storefront
 selectors, no regression suites. A vc-shell UI task is not a `ui-kit` shape class ticket; see
-[`plugins/vc-fix/skills/vc-shell-fix/SKILL.md`](../../../plugins/vc-fix/skills/vc-shell-fix/SKILL.md) and the `reference_vc_shell_vendor_portal_testing`
-memory.
+[`plugins/vc-fix/skills/vc-shell-fix/SKILL.md`](../../../plugins/vc-fix/skills/vc-shell-fix/SKILL.md) and the VC-SHELL section of `vc-bug-catalog.md`.
 
 **It does not own the visual axis, the BL-UI invariants, or the design-system methodology.** Those keep
 their owners — [`visual-axis.md`](visual-axis.md), [`qa-design/SKILL.md`](../qa-design/SKILL.md) and

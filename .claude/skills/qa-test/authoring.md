@@ -26,7 +26,7 @@ returned.
 **Load knowledge files** for the identified domains (from `.claude/knowledge/`) — fill the model's
 `Business Rules` / `Edge cases` with the actual rule **text** and patterns, not just IDs:
 
-- **business-logic.md** — the `BL-*` invariants for the domains (mandatory verification points).
+- **`npm run bl:extract -- --domain <d>`** — the `BL-*` invariants for the domains (mandatory verification points).
 - **e-commerce-edge-cases-library.md** — the `ECL-*` patterns.
 - **domain-checklists.md** / **backend-admin-checklists.md** / **graphql-checklist.md** (via
   `/qa-checklist`) — checklist items for the domains.
@@ -39,7 +39,7 @@ returned.
   `CONVENTION` entries as scenario candidates: those are false-positive guards, and the right use is to
   *avoid filing* the behaviour they describe. Then fill `Archetype sweep`.
 - **When `1b` item 2c derived `visual_surface: true` — the oracles that make a UI assertion strong:**
-  `business-logic.md` **Domain 15 `BL-UI-*`** (measurable invariants + their `Verify` recipes) **and
+  **`BL-UI-*`** (`--domain ui`; measurable invariants + their `Verify` recipes) **and
   `BL-A11Y-001..004`** (keyboard operability, accessible naming, contrast, axe-clean — all **P1**, and new
   to this load: the pipeline previously carried no accessibility oracle at any step),
   `oracles/critical-ui-scope.md` (36 components × applicable invariants, with real selectors — a scope
@@ -245,8 +245,10 @@ Naming every target suite up front is also what makes the Step-3b fan-out safe, 
 Each authored case stamps its scenario row's archetype and technique into the free-text `References`
 column: `Archetype:<TOKEN> · Technique:<TOKEN>` (+ `Probe:VC-*-NNN` when the row came from a
 `vc-bug-catalog` Detection probe; + `Role:<role-id>` when it came from a Part 0r role scenario, so a later
-reader can tell whose refusal the case defends). The appender **rejects a row without the two mandatory
-stamps**; `Probe:` and `Role:` are provenance, optional and unvalidated. No new CSV column: these join the
+reader can tell whose refusal the case defends; + `Catches:<ISSUE-KEY>` or `Catches:mutant:<ID>` when it
+was written to catch a known bug or a response mutant — [`knowledge/execution/cases-that-catch-bugs.md`](../../knowledge/execution/cases-that-catch-bugs.md) §3).
+The appender **rejects a row without the two mandatory stamps**; `Probe:`, `Role:` and `Catches:` are
+provenance, optional and unvalidated. No new CSV column: these join the
 `Synced:` / `Audited:` / `Promoted:` stamps `References` already carries.
 
 **When the domain has a mind map (`domain_map.mind_map`, axes.md §2g), each row also names its
@@ -370,7 +372,7 @@ introduce:
 | 1 | `npm run tc:alloc` and hand each batch **only its own** `--id-block` | `--check-global-ids` reads the corpus at APPEND time, so two batches both pass and then both write. A cross-suite duplicate ID silently overwrites the other suite's per-case results and failure evidence at run time. `tc:scaffold` refuses to spill past its block. |
 | 2 | Author the **`[JOURNEY]` / `Technique:FLOW` case itself**, before fan-out, and put it in every batch brief as the baseline they refine | It traverses the whole chain by definition. Per-layer batches each writing their own produce N partial journeys and no owner of the chain — the failure the 71-case storefront suite that placed zero orders represents. |
 | 3 | Resolve **every blank cell** of the 1e variants × links matrix and assign each cell to exactly one batch | Cell ownership is what makes duplication structurally impossible. With it there is no cross-batch dedup pass to run; without it two batches both claim a cell, or both skip it. |
-| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, **the Part 0r role scenarios whose refusals this batch owns (rows, not a path — they are small, per-batch, and an agent handed only a path re-reads the whole model)**, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading `business-logic.md` + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
+| 4 | Compile a per-layer **authoring pack** into the brief — the extracted `BL-*`/`ECL-*` rule text (`npm run bl:extract -- --domain <d>` · `npm run ecl:extract -- --domain <d>`), the batch's matrix rows, the journey case, **the Part 0r role scenarios whose refusals this batch owns (rows, not a path — they are small, per-batch, and an agent handed only a path re-reads the whole model)**, the layer's selectors/schema fragments. **Cut the schema fragments from the snapshot `1b` item 2d refreshed, and stamp the pack with its rev.** This is the worked case of a pattern every fan-out now shares — what may be packed, what must stay a path, and why: [`dispatch-pack.md`](dispatch-pack.md) | Step 2 already loaded the oracles once. Four agents re-reading the BL oracle + ECL + `critical-ui-scope` + `vc-bug-catalog` + `graphql-schema.md` is 4× the dominant token cost for zero extra information — that alone can make the fan-out cost more than it saves. The pack is also the fan-out's single point of contract failure: cut from an unrefreshed snapshot it distributes one stale contract to every batch at once, and the resulting cases fail at Step 4 as what look like product defects ([`contract-refresh.md`](contract-refresh.md) §4). A GraphQL batch reads `test-data/graphql/index.json` before authoring a new fixture — 74 ops already exist. |
 
 **Batch contract** (each batch is one `test-management-specialist`):
 

@@ -49,7 +49,8 @@ skills/
 ├── qa-hotfix-check/                 # [QA Methodology]  Deliver a released hotfix onto deployed envs
 ├── qa-bundle-check/                 # [QA Methodology]  Audit a stable bundle for available hotfixes
 ├── qa-deploy-pr/                    # [QA Methodology]  Deploy a change's CI prerelease artifacts to the test env
-├── qa-review-oracles/               # [QA Methodology]  Two-axis oracle triangulation (BL + ECL) & auto-apply
+├── qa-env-upgrade/                  # [QA Methodology]  Upgrade an env to the latest releases (one deploy PR)
+├── qa-review-oracles/               # [QA Methodology]  Oracle review: BL sync from human sources, ECL triangulation
 ├── qa-review-bl/                    # [QA Methodology]  Alias of qa-review-oracles bl
 │
 │   (the six [Development] skills are NOT here — see the note under "Development Skills" below)
@@ -136,12 +137,13 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder) |
 | `/qa-hotfix-check` | Deliver an already-released hotfix onto the deployed stable + regression envs; verify live, transition tickets, bump bundles | SKILL.md (env wiring + deploy-poll + verification + transition) |
 | `/qa-deploy-pr` | Gather all fresh CI prerelease artifacts a change produced (modules + platform + vc-frontend) and deploy them together to the test env in one manifest update; dry-run by default, `--apply` opens a gated deploy PR, `--verify` polls live state. Never merges | SKILL.md |
+| `/qa-env-upgrade` | Bring a deployed env up to the latest released modules + platform and the newest green theme alpha; asks only where no release exists; one deploy PR, never merges | SKILL.md (orchestration) + reference.md (statuses, rationale); core scripts/deploy/vc-deploy.ts upgrade |
 
 ### Oracle Maintenance
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-review-oracles` | Triangulate an oracle (BL invariants or ECL edge-case sections) against docs + live + source code, auto-apply confirmed changes, and reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
+| `/qa-review-oracles` | Keep the oracles true: sync BL rules (`bl/<slug>.yaml`) from human sources and re-check `SUSPECT` ones; triangulate ECL sections against docs + live + source and auto-apply confirmed changes; reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
 | `/qa-review-bl` | Alias of `/qa-review-oracles bl` — kept working because `/qa-test-lifecycle` Phase 4c auto-runs it by this name | alias stub → `qa-review-oracles/` |
 
 ## Development (6)
@@ -174,7 +176,7 @@ Outside the four QA categories.
 |-------|---------|-----------------|
 | `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
 | `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
-| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against its review dimensions (triggering, BUDGET-004 tiering, single source of truth, no-hardcode, portability, executability, write safety, delegation, grounding, integration); findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, healing-playbook.md, improvement-loop.md |
+| `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against generic review dimensions (any prompt, any repo), plus a QA profile of repo-specific criteria for `qa-*` skills and commands and the QA agents; findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, repo-profile.md, healing-playbook.md, improvement-loop.md |
 
 ## Agent → Skill Map
 

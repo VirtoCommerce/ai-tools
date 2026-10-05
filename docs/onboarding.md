@@ -7,7 +7,7 @@
 > | | **`vc-fix` plugin** | **Full `vc-qa` toolset** |
 > |---|---|---|
 > | What | The bug-lifecycle slice: setup, bug filing, autofix, verification, monitoring, self-diagnostics (10 agents / 16 skills / 8 commands). | The whole crew: regression, BA analysis, ~121 reference suites, test-data + authoring framework (17 agents / 40 skills / 31 commands). |
-> | How you get it | `/plugin install vc-fix@vc-tools` from the marketplace. | **Clone this repo** — `.claude/` components auto-load in the checkout. **Not** marketplace-installable. |
+> | How you get it | `/plugin install vc-fix@ai-tools` from the marketplace. | **Clone this repo** — `.claude/` components auto-load in the checkout. **Not** marketplace-installable. |
 > | This guide | **Install & Verify** below. | Everything **after Verify** (regression selections, module subsetting, suite authoring). |
 >
 > The old model — installing the whole repo as one `vc-qa` plugin — was retired in v0.7.0, along with its `manifest.json` + `bootstrap/install.ts` installer. Onboarding is now `/project-init`.
@@ -47,8 +47,9 @@ You need each of these before you start. If any are missing, the install will fa
 
 The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plugin docs](https://code.claude.com/docs/en/plugin-marketplaces)). Two steps:
 
-> **Note:** the `vc-tools` marketplace currently lists only `vc-fix` (the bug-lifecycle subset — setup,
-> bug filing, autofix, verification, monitoring, self-diagnostics; see `plugins/vc-fix/`). The Install
+> **Note:** the `ai-tools` marketplace lists the plugins under `plugins/` — `.claude-plugin/marketplace.json`
+> says which; `vc-fix` is the bug-lifecycle one (setup, bug filing, autofix, verification, monitoring,
+> self-diagnostics; see `plugins/vc-fix/`). The Install
 > and Verify steps below are the `vc-fix` plugin onboarding. `vc-qa` — the full agent crew this guide
 > otherwise describes (regression, BA analysis, 110 suites) — is **not** marketplace-installable; its
 > content lives in this repo and is used from a direct clone, not `/plugin install`. Sections past
@@ -57,11 +58,11 @@ The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plu
 **Step A — install the plugin via Claude Code:**
 
 ```
-/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-fix@vc-tools
+/plugin marketplace add VirtoCommerce/ai-tools
+/plugin install vc-fix@ai-tools
 ```
 
-(Other accepted source formats: `https://github.com/VirtoCommerce/vc-mcp-testing-module`, `git@github.com:VirtoCommerce/vc-mcp-testing-module.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
+(Other accepted source formats: `https://github.com/VirtoCommerce/ai-tools`, `git@github.com:VirtoCommerce/ai-tools.git`, or `./path/to/local/checkout`. The `github://` URI scheme is NOT supported.)
 
 Claude Code clones the plugin into its cache and auto-discovers the agents (`agents/`), skills (`skills/`), commands (`commands/`), knowledge files (`knowledge/`), and MCP server config.
 

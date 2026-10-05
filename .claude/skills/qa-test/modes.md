@@ -122,7 +122,7 @@ promotion. This table is the rest of the contract.
 | `5-triage` · `5-verdict` | **PER ROUND** | Already in the enumeration: the verdict gate is what decides whether there is another round. `5-verdict`'s reconciliation and self-check re-run per round and cost no dispatch (the `5b` verifier that used to ratify them was folded away 2026-09-16). |
 | `5-file` file bugs | **PER ROUND**, new findings only | `/vc-fix:qa-fix` needs a filed ticket, so a round that files nothing cannot fix anything and the loop dead-ends at its own precondition. A finding this run already filed is **CARRIED**, not re-filed (§Three carve-outs). |
 | `5-report.1` Feature Release Gate | **AT LOOP EXIT** | There is one release, so there is one recommendation. A FAIL round is an automatic NO-GO the loop has *already acted on* by starting another round; ratifying per round emits N−1 recommendations about builds that no longer exist. |
-| `5-report.2` tracker comment | **PER ROUND, as amends of the run's ONE comment** (`tracker-ops.md` §0) — a **round delta** in rounds 1…N−1, the **full template once**, at exit | The full template every round buries the ticket under near-identical comments. Nothing at all leaves a prerelease deployed to the shared test env with no trace on the ticket. The delta is the minimum that keeps a human able to see the env moved, and why. |
+| `5-report.2` tracker comment | **PER ROUND, as amends of the run's ONE comment** (`tracker-ops.md` §0; the loop is rule 5's one exception, so it amends with `--same-round`) — a **round delta** in rounds 1…N−1, the **full template once**, at exit | The full template every round buries the ticket under near-identical comments. Nothing at all leaves a prerelease deployed to the shared test env with no trace on the ticket. The delta is the minimum that keeps a human able to see the env moved, and why. |
 | `5-report.3` persist `summary.json` | **PER ROUND** (rewritten in place; the round appended to `iterations.per_round[]`) | The loop can STOP at any round — G0 BAIL, BLOCKED, the cap, a dropped session — and a history persisted only on a clean exit is missing exactly when it is needed. It is also the only artifact that can support the cap-reached hand-off's per-round claims. |
 | `5-report.4` `testing-checklist.md` | **PER ROUND**, **append-only** | On FAST it is the run's ONLY durable record, and the RED→GREEN transition *is* the loop's deliverable: overwriting a round-1 FAIL with a round-2 PASS deletes the evidence that the defect was ever there. |
 | Evidence screenshots | **PER ROUND**, round-stamped | Round N+1 re-runs the same case IDs into the same folder, so an unstamped `{TC-ID}-FAIL-{description}.png` lets the round-2 PASS **overwrite the round-1 FAIL** — and the checklist row that cites it then points at a green image. Every round stamps `-r{N}`, round 1 included (`.claude/rules/reports.md` §7). |
@@ -203,8 +203,7 @@ with the failure list, which is the moment the loop actually hands off. Every su
 `status_transitions[]` with the bug key, like any other (§8 of that file).
 
 **And `/vc-fix:qa-verify-fix`'s own matrix stops at `TESTED` too.** Its all-pass row used to read
-`TESTED (Finish test) → DONE (Move to Done)`, which no run may do — corrected in place; the standing
-`feedback_verify_fix_stops_at_tested` guidance was already the operative rule.
+`TESTED (Finish test) → DONE (Move to Done)`, which no run may do — corrected in place; stopping at `TESTED` was already the operative rule.
 
 #### The exit round
 
@@ -282,8 +281,9 @@ Next: [round N+1 | STOP — cap reached | STOP — G0 BAIL on <key> | exit to th
 
 Markdown, outcome-first, evidence referenced not inlined — the same discipline as the full 5-report comment.
 **Round 1 posts it and records `summary.json.tracker.comment_id`; every later round, and the exit
-template, AMENDS that comment** (`npm run tracker:comment -- --amend <id>`, `tracker-ops.md` §0) — never a
-new one.
+template, AMENDS that comment** (`npm run tracker:comment -- --amend <id> --artifact "<round build>"
+--same-round "qa-test --iterate round N"`, `tracker-ops.md` §0) — never a new one. `--same-round` is
+required: each round is a new build, and without it the round guard refuses the amend as a new round.
 
 ### Artifact refresh between rounds
 

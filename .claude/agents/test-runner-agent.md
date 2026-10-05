@@ -49,7 +49,7 @@ browser slot. Run autonomously through setup → execute → teardown → JSON r
 - `knowledge/api/graphql-schema.md` — live xAPI schema snapshot to cross-check field/type names when a `[GQL-EXEC]` returns DV-006…DV-011.
 - `knowledge/execution/live-discovery.md` — runtime data resolution: a step needing "any product / catalog root / first address / active coupon" is never hardcoded — `[GQL-OP]+[GQL-CAPTURE]` (CSV runner) or `scripts/lib/live-discover.ts` (interactive); unasserted unique inputs from `scripts/lib/random-data.ts` (`AGENT-TEST-` prefix, swept by `/qa-seed-data teardown`). Consult before calling a BLOCKED "fixture drift" — discovery may resolve it without a re-seed.
 
-For BL-* / ECL-* IDs, look up the specific ID in `knowledge/oracles/business-logic.md` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
+For BL-* / ECL-* IDs, look up the specific ID with `npm run bl:extract -- --id <ID>` or `knowledge/oracles/e-commerce-edge-cases-library.md` ONLY if meaning is ambiguous.
 
 ## Phase 0: Your CSV already contains only your cases
 
@@ -117,7 +117,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
         - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
         - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
    - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
-9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation (FAIL, BLOCKED, unexpected result, step-3 incidental), ask before you classify it:** `npm run kb -- ask "<coordinate> <what you saw>"` (MCP: `mcp__kb__kb_ask`). Cite a hit in `notes`, keep its id for Phase 5; a miss blocks nothing. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
+9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation (FAIL, BLOCKED, unexpected result, step-3 incidental), ask before you classify it:** `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). Cite a hit in `notes`, keep its id for Phase 5; a miss blocks nothing. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
 
    ```
    {"id":"CART-002","title":"Add to Cart - From Category List","status":"PASS","durationMs":41230,"notes":"","evidence":[],"trace":""}

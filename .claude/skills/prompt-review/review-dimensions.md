@@ -1,174 +1,235 @@
-# Review dimensions — what `/prompt-review` collects and checks
+# Review dimensions — the generic core
 
-Step 1 of [`SKILL.md`](SKILL.md) runs the Collect section below; Step 3 applies the severity scale,
-the dimensions and the Verdict section.
+What `/prompt-review` checks in **any** prompt that an LLM executes: a skill, a command, an agent
+definition, a system prompt. Nothing here depends on this repository. The repo-specific criteria
+for the QA toolset (`qa-*` skills and commands, and the QA agents) are in [`repo-profile.md`](repo-profile.md), keyed
+to the same `G` ids; for those units apply both, and a profile check sharpens a generic one without
+replacing it. Every other unit gets this file only.
 
-## Collect
+Step 1 of [`SKILL.md`](SKILL.md) runs §Candidates below together with the profile's §Tooling (and
+its §QA greps in scope); Step 3 applies the severities, the dimensions and §Verdict.
 
-Run all three blocks in one batch. `T` is the space-separated list of the unit's files. Nothing is
-written to disk.
+Sources the generic checks draw on: Anthropic's skill authoring best practices
+(platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices), the official
+`skill-creator` and `plugin-dev` skill-reviewer, superpowers `writing-skills` and its
+*testing-skills-with-subagents*, and the OpenAI prompt optimizer's contradiction and format checkers.
 
-**Facts** — BUDGET-004 status, the cap itself (never transcribe it), baseline entry, DOC findings:
+## Candidates
+
+Generic greps. Every hit is a **candidate** to confirm, never a finding by itself. `T` is the
+space-separated list of the unit's files. A grep with no hits exits 1; that is not an error.
+
 ```bash
-npm run -s context:report | node -e '
-let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{const r=JSON.parse(s);
-console.log("cap",r.BUDGET.promptBodyChars,"| linter scans CLAUDE.md + .claude/** only");
-for(const f of process.argv.slice(1)){const o=r.prompts.over.find(x=>x.file===f);
- console.log(f,o?`OVER: ${o.chars} (allowed ${o.allowed})`:"not over (or not scanned: plugins/*)",
-  r.promptBaseline[f]?"| in baseline":"",
-  r.findings.filter(x=>x.file===f).map(x=>`| ${x.code}:${x.line} ${x.detail}`).join(" "))}})' $T
-wc -c $T
+grep -nEi '\b(every|each|all|any|no|never|always|only)\b +(helper|subagent|agent|step|write|finding|brief|run)s?\b' $T  # G2 scoped rules
+grep -nEi '\b(spawn|dispatch|delegate|hand (it )?to)\b|subagent_type|Agent tool' $T  # G2/G4 instances: every brief
+grep -nE '\b(MUST|NEVER|ALWAYS)\b' $T                                              # G9 bare imperatives: check each has a why
 ```
-
-**Grep pack** — candidates only; confirm each before it becomes a finding (a grep with no hits exits 1 — that is not an error):
-```bash
-grep -nE '\b(feedback|reference|project)_[a-z0-9_]{3,}' $T                        # D5 memory slugs
-grep -nE '~?\b[0-9]{2,}\+?[- ](suites?|test cases?|cases?|agents?|skills?|commands?|files?|dimensions?|class(es)?|groups?)\b' $T  # D3 counts
-grep -nE '\bdefault(s| is| of)? [0-9]+\b|\(default [0-9]+\)' $T                    # D3 transcribed defaults
-grep -nE 'https?://[A-Za-z0-9.-]+\.(azurewebsites\.net|virtocommerce\.(com|cloud)|govirto\.com)' $T  # D4 hosts
-grep -nE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' $T        # D4 GUIDs
-grep -nE 'reports/tickets/Sprint[0-9]' $T                                          # D4 evidence paths
-grep -nE -- '--secrets.*\{\{|\{\{[A-Z_]*PASSWORD\}\}.*(browser_type|fill)' $T       # D4 secrets
-grep -nE 'merge_pull_request|gh pr merge|auto-?merge' $T                           # D7 — a PROHIBITION is fine
-grep -nE '~/\.claude|settings\.local\.json|[A-Z]:\\|/Users/' $T                    # D5 per-user paths
-```
-
-**Citation sweep** — resolves markdown links and backticked file names relative to the citing
-file, the repo root, `.claude/` and (for `plugins/*`) the plugin root; checks `file.md §Heading` (first two words); skips fenced code; flags a bare
-`§N` with no file; prints each `BL-*` id's real title so you can check it backs the claim:
-```bash
-node -e '
-const fs=require("fs"),path=require("path"),all=require("child_process").execSync("git ls-files",{encoding:"utf8"}).split("\n");
-const bl=fs.readFileSync(".claude/knowledge/oracles/business-logic.md","utf8");
-const heads=f=>{try{return fs.readFileSync(f,"utf8").split("\n").filter(l=>/^#+ /.test(l)).map(l=>l.replace(/^#+\s*/,"").toLowerCase())}catch{return null}};
-for(const f of process.argv.slice(1)){const plug=(f.match(/^plugins\/[^/]+\//)||[""])[0];
- const resolve=r=>[path.join(path.dirname(f),r),r,plug&&path.join(plug,r),path.join(".claude",r)].find(p=>p&&fs.existsSync(p));
- let fence=false;fs.readFileSync(f,"utf8").split("\n").forEach((l,i)=>{const at=`${f}:${i+1}`;if(/^```/.test(l)){fence=!fence;return}if(fence)return;
-  const bare=l.replace(/\[[^\]]*\]\([^)]*\)/g,"");const refs=[...l.matchAll(/\]\(([^)#\s]+)/g),...bare.matchAll(/`([^`\s]+\.(?:md|mjs|ts|js|json|yml|csv))`/g)].map(m=>m[1]);
-  for(const r of refs){if(/^https?:|[<*{$]|XX|\.\.\./.test(r))continue;
-   if(!resolve(r)){const hit=all.filter(p=>p.endsWith("/"+path.basename(r)));console.log(`${at}  UNRESOLVED ${r}${hit.length?"  (same name at: "+hit.slice(0,2).join(", ")+")":""}`)}}
-  for(const m of l.matchAll(/`([^`\s]+\.md)`\s*§\s*([A-Za-z0-9][^`,;.)*—(]{2,40})/g)){const p=resolve(m[1]);const h=p&&heads(p);const want=m[2].replace(/[^\w\s-]/g," ").trim().toLowerCase().split(/\s+/).slice(0,2).join(" ");
-   if(h&&!h.some(x=>x.includes(want)))console.log(`${at}  §MISSING ${m[1]} §${m[2].trim()}`)}
-  if(/(^|[^`\w])§\s*\d/.test(l)&&!/\.md/.test(l))console.log(`${at}  §-with-no-file: ${l.trim().slice(0,70)}`);
-  for(const id of new Set(l.match(/\bBL-[A-Z]+-\d+\b/g)||[])){const m=bl.match(new RegExp("^#+ "+id+":?\\s*(.*)$","m"));console.log(`${at}  ${id} = ${m?m[1].slice(0,60):"NOT IN business-logic.md"}`)}
- })}' $T
-```
-An UNRESOLVED name with a "same name at" hint is usually a bare filename that should carry its
-path; one with no hint is dangling. The sweep cannot tell whether a cited file actually **says**
-what the prompt claims — for citations on a step's critical path, open the target and check.
-
----
 
 ## Severities
 
 - **BLOCKER** — following the prompt produces an unsafe or wrong **outward** effect (an ungated
-  write to a tracker/GitHub/env, a secret leak, a merge), or a step cannot execute at all.
+  write to a shared system, a secret leak, a merge), or a step cannot execute at all.
 - **MAJOR** — a run is likely to go wrong, silently: a contradiction whose either reading changes
   what gets done, a dangling citation on a critical path, a drifted restatement, over-budget,
   mis-triggering, a caller that cannot invoke it.
 - **MINOR** — correct today, but will rot: a restatement identical to its owner, a transcribed
-  count/default, a slug-only citation, an unsourced illustrative claim.
+  count/default, an unsourced illustrative claim.
 - **NIT** — wording, ordering, formatting. Never block on a NIT.
 
-## D1 — Frontmatter & triggering
+## G1 — Interface: triggering, invocation, callers, outputs
 
-- `name` = directory / file name; `argument-hint` matches `## Usage` and what the steps parse.
-- `.claude/skills/` descriptions lead with a `[Category]` tag (`.claude/skills/README.md`), except
-  the root-level skills listed there.
-- **Model-invocable** (no `disable-model-invocation`): the `description` is always in context and
-  decides triggering — it must say what, when, and *not for X (use Y)* for its nearest neighbours.
-  Overlap with no disambiguation → MAJOR.
-- **`disable-model-invocation: true`**: the description is not in the model's context, so trigger
-  tuning is moot; check instead that no caller needs to invoke it (D10).
-- The flag belongs on anything that itself performs an outward write without its own confirmation
-  gate; missing there → BLOCKER. A methodology skill whose *command* holds the flag and the gates,
-  but which is itself model-invocable → MAJOR (it can run with no gate).
-- Agents: `model` and `tools` present and sufficient for what the body asks.
+How the prompt is reached and what it hands back.
 
-## D2 — Size & loading tier
+- **Name and arguments** match the usage section and what the steps actually parse.
+- **The description decides triggering** wherever the model sees it. It says *when* to use the prompt
+  and *not for X (use Y)* for its nearest neighbours, in the third person. Overlap with no
+  disambiguation → MAJOR.
+- **The description says *when*, never *how*.** A "what" is one capability clause. A step
+  sequence, a list of passes or a list of checks is the workflow, and an agent that sees it may
+  follow the summary instead of loading the body. superpowers measured this: a description naming
+  "review between tasks" produced one review where the body required two. Workflow in the
+  description → MINOR; MAJOR when it differs from the body.
+- **Invocation control matches side effects.** A prompt that itself performs an outward write with
+  no confirmation gate of its own must not be auto-invocable → BLOCKER. A method prompt whose
+  wrapper holds the gate, but which can itself be invoked directly → MAJOR (it runs with no gate).
+- **Callers still fit.** Everything that invokes it by name still matches its name, arguments and
+  outputs, and *can* invoke it (an invocation-disabled prompt that a pipeline calls by name does
+  not run) → MAJOR.
+- **Outputs others consume keep their schema** (a file, a JSON, a verdict vocabulary) → MAJOR if
+  changed silently.
+- **An agent declares** the model and tools the body needs → MAJOR if a tool it uses is missing.
 
-- Loaded-whole files are capped by BUDGET-004 (`CLAUDE.md` §Where the rules live; cap from
-  §Collect). Over the cap and not in the baseline → BLOCKER under `.claude/` (the build fails); in
-  the baseline → MAJOR, overage is the number to cut. **`plugins/*` is not gated** by the linter —
-  over the cap there is MAJOR and must be checked with `wc -c`.
-- A conditional block (a mode, a recovery path, a long example, a schema, history) of ~2K chars or
-  more in a loaded-whole file is a move-down candidate **even under the cap** → MINOR.
-- An agent definition is paid on every dispatch — weigh its bytes above a command's.
-- A baseline entry for a file now under the cap, or renamed away, must be deleted → MINOR.
+## G2 — Internal consistency: rules × instances
 
-## D3 — Single source of truth
+A general rule ("every helper…", "never write…", "only the lead posts") is stated once, and the
+places it governs are scattered through the steps. Reading top to bottom does not catch a conflict
+between the two, because by the time the reader reaches the step the rule is a hundred lines back.
+So build the table:
 
-- A rule, list or table restated from its owner (`CLAUDE.md` §Detailed References names owners)
-  instead of cited: drifted → MAJOR, identical today → MINOR.
-- A transcribed count, default, budget number, version or model id → MINOR (the fix is the command
-  or constant that holds it).
-- A command and its skill carrying the same step list or table → MAJOR once they differ.
+1. **Rules.** Every statement whose subject is a class (the G2 scoped-rules grep, plus any section
+   titled "Rules for…"): rule, scope, line.
+2. **Instances.** Every place in the unit that falls in each rule's scope: each dispatch, each
+   step, each write, each branch.
+3. **Per pair, three questions:**
+   - **Carried?** The instance cites the rule (by heading) or the rule plainly covers it. A
+     dispatch site whose brief must carry the rule (G4) and does not → MAJOR.
+   - **Faithful?** If the instance restates the rule, nothing is lost. A paraphrase that drops a
+     clause → MAJOR: the agent follows the version in front of it.
+   - **Compatible?** What the instance requires is allowed by the rule as written. If not, and
+     the rule declares no exception → MAJOR (BLOCKER if one reading causes an outward effect). Either
+     reading is wrong: the agent obeys the rule and the step fails, or it breaks the rule and decides
+     for itself which other rules are soft.
+4. **Fix shape:** one statement of the rule; instances cite it; any exception lives **at the rule**
+   with its scope ("…except build output in the worktree, for the test helper"), never implied at
+   the instance.
 
-## D4 — No hardcode
+**Worked example.** A skill's rules for every helper say: read-only, "no new files in any
+repository or worktree", put this in the spawn prompt, and report a probe test as text instead of
+writing one. Three helpers are spawned later:
 
-`.claude/rules/test-data.md` §GOLDEN RULE applies to prompts: a hardcoded env URL → MAJOR; a
-literal password/token → BLOCKER; `{{VAR}}` passed to Playwright `--secrets` instead of the bare key
-(`.claude/rules/agents.md` §MCP servers) → BLOCKER; an evidence OUTPUT path with a sprint/ticket in
-it (THIRD RULE) → MAJOR.
+| Instance | Carried? | Faithful? | Compatible? |
+|---|---|---|---|
+| Diff-pass brief | yes, "and the read-only mandate" | yes, cited | yes |
+| Test-helper brief | restated, "told not to edit, create or commit anything" | **no**: drops scratch-only, the `git` verbs and probe-as-text, the clause a test helper most needs | **no**: "run the test projects in the worktree" builds, which writes `bin/`/`obj/` there, and no exception is declared |
+| Sweep-helper brief | **no**: the spawn step never mentions the mandate | — | yes |
 
-## D5 — Portability
+That is three MAJORs a top-to-bottom read misses. One edit fixes all three: declare the
+build-output exception at the rule, and have every spawn site cite the rule instead of restating it.
 
-- A memory slug that **carries** a claim rather than trailing one stated in full → MINOR, or MAJOR
-  when a step acts on the claim (`CLAUDE.md` §What reaches a teammate).
-- A per-user path (`~/.claude/…`, `settings.local.json`, an absolute OS path) → MAJOR.
-- Plugin prompts: bare relative paths are a documented limitation (`CLAUDE.md` §Project Overview).
-  Flag only a **new** instance, or one without the documented mitigation (a script resolving off
-  `import.meta.url` / `pluginRoot()`) → MINOR.
+Plain contradictions between two instructions are found the same way: pair them, then ask whether
+either reading changes what gets done (MAJOR) or causes an outward effect (BLOCKER).
 
-## D6 — Step executability
+## G3 — Executability
 
-Read the steps as the executing agent would, with no other context.
+Read the steps as the executing agent would, with no other context, on any machine it is meant to
+run on.
 
-- Each step names inputs, action, output and stop condition; missing on a step that can fail →
-  MAJOR.
-- Every cited path, `§`, script, agent name and argument resolves (the citation sweep, plus a manual
-  check that the cited text says what is claimed).
-- Branches are exhaustive: missing tool, MCP down, empty input, user declines, an intermediate state
-  (e.g. a stalled run).
-- Ordering: nothing consumes what a later step produces.
-- Two instructions that contradict → MAJOR; BLOCKER only when one reading causes an outward effect.
+- **Each step** names its inputs, action, output and stop condition → MAJOR if missing on a step
+  that can fail.
+- **Every reference resolves:** cited files and their sections, scripts, agent names, tool ids,
+  arguments. For a reference on a step's critical path, open the target and check that it **says**
+  what the prompt claims.
+- **Branches are exhaustive:** missing tool, server down, empty input, user declines, a stalled
+  intermediate state.
+- **Ordering:** nothing consumes what a later step produces.
+- **Tool contract.** For every command or API call whose output a later step reads, name the field
+  that step needs and check that the call returns it: complete (not truncated or paginated away)
+  and in the shape assumed. Check the tool's own docs or `--help`, never memory. A field the call
+  never returns, or a capped list treated as complete → MAJOR.
+- **Re-run and pre-state.** A step that creates something (a worktree, a branch, a file) says
+  what to do when it already exists → MAJOR when re-runs are expected. A state the step assumes
+  (a clone at the right commit, a server up) is checked, not presumed → MAJOR if a wrong state
+  silently changes the result.
+- **Portability.** Nothing depends on one person's machine or private context (a per-user path,
+  a private note, a local-only setting) → MAJOR when a step acts on it.
 
-## D7 — Write safety
+## G4 — Delegation
 
-- Every outward write (tracker comment/transition, GitHub push/PR/comment, env deploy, Teams) is
-  gated — confirmation, `--dry-run`, or a documented authority. Ungated → BLOCKER.
-- An **instruction to merge** → BLOCKER. A prohibition of merging is correct — not a finding.
-- A write described as "nothing" / "report only" that in fact writes (a tracked file, a store) →
-  MAJOR — list the real writes.
-- Tracker comments: one per run (`.claude/rules/reports.md` §0); status transitions only via
-  `qa-lead-orchestrator` (`.claude/rules/agents.md`); files written go to one of the ten categories
-  (`.claude/rules/reports.md` §1) or a declared owner path.
-- A delegated flow that can itself write outward (e.g. a callee that asks "create a ticket?") must be
-  told to stop before that step → MAJOR if not.
+The brief is the subagent's whole world: it cannot read the rest of the prompt, and it cannot ask.
+For **each** dispatch site (the G2 instance grep):
 
-## D8 — Delegation
+- **The agent type exists** and has the tools the brief needs → MAJOR if not.
+- **Every fact it needs is in the brief**, including the state the parent has already established
+  (paths, refs, what was already checked) → MAJOR if a step depends on a missing one.
+- **Every binding rule reaches it.** The rules the prompt sets for this kind of subagent are named
+  at the dispatch site, to be pasted into the brief → MAJOR if one is left out. If it is paraphrased
+  with a clause dropped, that is a G2 finding.
+- **The task is allowed by the mandate.** The assigned work is possible inside the rules the brief
+  carries; if not, the exception is declared where the rule is stated (G2).
+- **Output shape and the can't-ask path.** The brief names the shape it returns (fields, order) and
+  what the subagent does instead of asking: return the question plus the assumption it made →
+  MAJOR when the parent parses the output; else MINOR.
+- **Concurrency:** parallel subagents never share a mutable resource (a browser session, a file
+  they both write, a fixture) → MAJOR.
+- **Model choice** (if the prompt picks one) has a reason tied to the work → NIT if missing.
 
-Judge each dispatch against `.claude/rules/agents.md` §Agent Delegation and §Parallel Execution
-(cite them; do not restate). Also: the dispatched agent type exists (`.claude/agents/` or a harness
-type), the brief carries every fact the subagent needs, a pool is sized, and the brief never tells a
-subagent to prefer a doc over the artifact it edits.
+## G5 — Side effects and secrets
 
-## D9 — Product grounding
+- **Every outward write** (to a tracker, a code host, an environment, a chat channel) is gated by a
+  confirmation, a dry-run, or a documented authority. Ungated → BLOCKER.
+- **An instruction to merge** → BLOCKER. A *prohibition* of merging is correct, not a finding.
+- **A "writes nothing" claim** that in fact writes (a tracked file, a store) → MAJOR: list the real
+  writes.
+- **A delegated flow that can itself write outward** (a callee that asks "create a ticket?") is told
+  to stop before that step → MAJOR if not.
+- **A literal secret** (password, token, key) → BLOCKER. A secret passed in a form the tool does
+  not resolve, so the literal placeholder is typed instead → BLOCKER.
 
-Claims a step acts on are sourced (`{DOC}`, `{BL}`, `{OBSERVED}`, `{SPEC}`) or cite a knowledge
-file; unsourced → MAJOR. A cited `BL-*`/`ECL-*` id whose title does not match the claim → MINOR in an
-example, MAJOR in a rule. Exact UI strings cited as `{DOC}` → MINOR (they are `{OBSERVED}`).
+## G6 — Single source of truth
 
-## D10 — Integration & contracts
+A fact stated once and cited does not drift. A restated fact drifts at the next edit, and it
+drifts silently.
 
-- Callers (SKILL.md Step 2) still match name, arguments and outputs; a mismatch → MAJOR.
-- **`disable-model-invocation: true` + a caller that invokes it by name** (a pipeline phase, a CI
-  workflow) → MAJOR: the Skill tool cannot run it; a model falling back to reading the `SKILL.md`
-  is an unreliable workaround, not a pass.
-- Listed in `.claude/skills/README.md` and, if user-facing, `.claude/ROUTING.md` → MINOR if missing.
-- `.claude/` ↔ `plugins/vc-fix/` copies: a difference is reported and asked about, not judged;
-  self-diagnostics containment files that are not byte-identical → MAJOR (SKILL.md Step 0, item 4).
-- Artifacts other flows consume (`summary.json`, a CSV, a fingerprint store) keep their schema.
+- **A rule, list or table restated from its owner** instead of cited: drifted → MAJOR, identical
+  today → MINOR.
+- **Inside one unit too.** A rule paraphrased in a second section of the same prompt drifts the
+  same way, and no linter sees it. Use G2 to find it.
+- **A wrapper and its body** (a command and its skill, two copies of one prompt) carrying the same
+  step list → MAJOR once they differ.
+- **A transcribed value** that has a source of truth: a count, a default, a budget, a version, a
+  model id, a URL, an id → MINOR, or MAJOR when a step acts on it. The fix is a pointer to the
+  command or constant that holds it.
+
+## G7 — Context economy
+
+Every token of a prompt that is loaded whole is paid on every run, and a subagent definition is
+paid on every dispatch.
+
+- **The entry file holds only what every run needs.** A conditional block (a mode, a recovery
+  path, a long example, a schema, history) of roughly 2K chars or more is a move-down candidate,
+  even under budget → MINOR.
+- **Detail moves to supporting files read on demand**, each reached directly from the entry file:
+  a chain of references loses content when the model previews with a partial read → MINOR.
+- **Over the size budget** → MAJOR. The budget is the repository's; here it is BUDGET-004, read
+  from `repo-profile.md` §Tooling.
+- **Explanations of what the model already knows** (what a PDF is, how git works) → MINOR.
+
+## G8 — Grounding
+
+Claims about an external system that a step **acts on** (a gate, a flag, a verdict criterion, an
+expected behaviour) are sourced: a doc, an observation, a spec, a file that owns the fact. Never
+the author's memory. Unsourced → MAJOR in a rule, MINOR in an illustration. A citation whose target
+does not back the claim counts as unsourced.
+
+## G9 — Instruction craft
+
+Checks a reader can make from the text:
+
+- **Every hard rule carries its why**, in one clause or a pointer to where it lives. A bare
+  MUST/NEVER on a judgement call → MINOR: the model cannot generalise a rule whose reason it was not
+  given (skill-creator calls an all-caps rule with no reason a "yellow flag"). Firm wording itself
+  is not the defect (it is right for a gate, G10); the missing reason is.
+- **Freedom matches fragility.** A fragile or order-sensitive operation left as prose ("set up the
+  worktree") → MAJOR if it can fail silently; give the exact command. A judgement task
+  over-scripted into a fixed sequence → MINOR.
+- **A default, not a menu.** Several equal options with no default and no rule for choosing → MINOR.
+- **One term per concept.** The same thing under two names reads as two things → MINOR; MAJOR when
+  the term is the subject of a rule (G2 cannot match a rule to an instance under another name).
+- **Examples agree with the rules they illustrate.** An example that breaks a rule stated beside it
+  → MAJOR: the model copies examples over prose.
+- **Output contract.** Anything a parent, a script or a later step parses has its exact shape stated
+  (fields, order, verdict vocabulary) → MAJOR if missing.
+- **Tools named by exact id**, not by description → MINOR.
+- **No time-bound statements** in instructions ("until next month use…") → MINOR; history goes
+  where history lives.
+
+## G10 — Decision points and behavioural evidence
+
+REVIEW reads text, but only runs show whether a prompt works. That gap matters most at its
+**decision points**: the places where the prompt asks the model to do something other than its
+default, such as stopping to ask instead of falling back, *not* filing a finding, or refusing a
+shortcut under deadline.
+
+- **Find them.** Every stop/ask condition, every "not a finding", every override of an obvious
+  default.
+- **Each has its counter.** The predictable rationalisation for skipping it is answered in the text
+  (a Thought | Reality table, an explicit negation, an "even when…"). Missing on a stop, a gate or
+  an outward write → MAJOR; elsewhere → MINOR. To find the rationalisations, run the scenario
+  without the rule and record what the model says (superpowers *testing-skills-with-subagents*).
+- **Evidence on record.** A decision point added or changed with no run evidence (an isolated
+  session, with vs without the rule, 3 or more runs) → MINOR in REVIEW, and the first candidate for
+  `--improve` (`improvement-loop.md` §3). The useful record is one row per decision point:
+  `without k/n` vs `with k/n`.
 
 ---
 
@@ -180,3 +241,8 @@ example, MAJOR in a rule. Exact UI strings cited as `{DOC}` → MINOR (they are 
 - **NEEDS REDESIGN** — a BLOCKER, or a MAJOR whose fix means restructuring the steps or changing
   the prompt's arguments/outputs that callers rely on. A MAJOR settled by one PROPOSE recipe (e.g.
   H10, flip a flag) is still NEEDS HEALING — the decision is the user's, the fix is local.
+
+Under the verdict, two short lists, so a clean result can be checked as well as a dirty one:
+**Checked clean:** the dimensions with no findings. **Checked and dropped, because…:** one line
+per candidate (a grep hit, a G2 pair, a suspicion) that you did not make a finding, with the
+reason. Dropping a candidate is itself a claim and needs the same evidence a finding would.

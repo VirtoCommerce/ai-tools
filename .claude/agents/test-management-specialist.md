@@ -36,7 +36,7 @@ Techniques and data tactics are the **toolbox you reach into after** answering #
 
 ## LAYER 1 — BUSINESS LOGIC: Invariant Coverage Mapping
 
-> **Reference:** `knowledge/oracles/business-logic.md`. Slice it, never read it whole:
+> **Reference:** the BL oracle. Slice it, never read it whole:
 > `npm run bl:extract -- --domain <d>` (`bl:extract:list` prints the domains and their sizes).
 
 - Every **BL-*** invariant → at least one test case. **BL-CROSS-*** → cross-layer verification cases
@@ -73,7 +73,7 @@ Every feature decomposes into testable layers. Each layer has its own output for
 
 | Resource | Reference |
 |---|---|
-| Business invariants | `knowledge/oracles/business-logic.md` — slice with `npm run bl:extract -- --domain <d>` |
+| Business invariants | `npm run bl:extract -- --domain <d>` |
 | Edge Cases Library | `knowledge/oracles/e-commerce-edge-cases-library.md` — ECL-* IDs |
 | Test Design Examples (toggles/flags) | `skills/qa-test-design/examples/` — one worked file per technique (real QA products CFG-001–CFG-010) |
 | Storefront Checklists | `skills/qa-checklist/domain-checklists.md` |
@@ -183,7 +183,7 @@ Browsers: `playwright-chrome` (primary), `playwright-firefox`, `playwright-edge`
 | Test Case Generator Skill | `skills/qa-test-cases-generator/SKILL.md` |
 | xAPI & REST API Reference | `skills/qa-api/xapi-query-ref.md` — ready-to-use query/mutation signatures for Steps column |
 | API Test Case Patterns | `skills/qa-api/api-test-case-patterns.md` — coverage checklists, REST/GraphQL step tags, per-domain test ID patterns, negative test sets, skeletons |
-| Test Data Combination Design | `skills/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. **Delegate the actual authoring of new seeders / fixtures / validators to the `test-data-engineer` agent** — you design what data is needed; it writes (and unit-tests) the scripts that provision it (`knowledge/execution/test-data-authoring.md`). |
+| Test Data Combination Design | `skills/qa-generate-data/SKILL.md` — DESIGN cross-entity combinations (learn-live → pairwise matrix → reuse/gap → `@td()` combo aliases) BEFORE seeding. Run in workflow step 5b. **Delegate the actual authoring of new seeders / fixtures / validators to the `test-data-engineer` agent** — you design what data is needed; it writes the scripts that provision it (`knowledge/execution/test-data-authoring.md`). |
 | Test Data Seeding | `skills/qa-seed-data/SKILL.md` |
 | E2E Scenario Catalog | `skills/qa-plan/e2e-scenario-catalog.md` |
 | Module → Suite Mapping | `knowledge/execution/module-suite-map.md` |
@@ -211,7 +211,7 @@ vs. REVERSAL     — for every forward effect on money / points / stock / entitl
 vs. ORACLE       — does any case assert the CURRENT behaviour where the spec says otherwise? Inverting
                    an assertion to match a known defect certifies the bug and inverts on fix — keep the
                    spec expectation and hold the case, or cut it to the bug report.
-vs. INVARIANTS   — BL-* coverage from business-logic.md? **Zero BL-* for the domain is itself the
+vs. INVARIANTS   — BL-* coverage (bl:extract)? **Zero BL-* for the domain is itself the
                    finding** — a suite with no correctness oracle records behaviour instead of judging
                    it, and cannot tell a defect from a design decision. Raise it, and route the
                    candidate invariants to /qa-review-oracles rather than writing around the hole
@@ -259,7 +259,7 @@ BLOCKED ❌ → escalate to qa-lead
    - **GraphQL layer**: `/qa-api cases <xModule> <operation>` — reads patterns + query signatures; applies `[GQL]`/`[ERRORS]`/`[ROUNDTRIP]` tags; always includes `errors[]` check. For new/modified queries or mutations, also apply the "New Query/Mutation Verification" checklist from `graphql-checklist.md` (schema, required/optional fields, permissions, response structure)
    - **Admin UI / Storefront / E2E layers**: `/qa-test-cases-generator VCST-XXXX --layer admin|storefront|e2e`
    - **Storefront journey cases**: for features listed in `e2e-scenario-catalog.md` (E2E-*) or flows with cross-screen state (checkout, cart→order, BOPIS end-to-end, login+purchase), prefer one journey case over a set of atomic screen cases — see Frontend Journey Exception above
-   - **KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+   - **KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
    - All cases: enriched 15-column CSV with **layer-specific tags** from `test-case-template.md`
    - **All generated cases start with `Automation_Status = Draft`.** `Draft` is a real, executable state, **not a holding pen**: the regression runner does **not** skip it, which is what lets the authoring run execute its own new cases. Promotion (step 7) records that a case has *earned* its status from evidence — it is not what makes the case runnable
    - Domain checklists as input: storefront → `domain-checklists.md`, admin/API → `backend-admin-checklists.md`. REAL labels from step 3. P0: happy + negative, P1: errors + edge cases

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "node \"./hooks/guard-declarations.mjs\"",
+        "failClosed": true
+      }
+    ]
+  }
+}

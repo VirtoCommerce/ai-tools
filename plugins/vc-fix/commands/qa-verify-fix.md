@@ -83,7 +83,7 @@ Reference `tracker-ops.md` / `project-profile.mjs` — don't restate their conte
 
 1. **Resolve current sprint** — check if `reports/tickets/Sprint-current` exists → use it. Otherwise list `reports/tickets/` and pick the latest `SprintXX-XX` folder. This becomes `{SPRINT}` for all output paths below.
 2. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user — fix may not be deployed or env may be stale.
-3. **Duplicate check** — scan `reports/tickets/{SPRINT}/VCST-XXXX/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
+3. **Duplicate check** — scan `reports/tickets/{SPRINT}/<ticket-key>/` for a verification run in the last 4 hours. If found, warn user and show previous verdict.
 4. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the affected module/feature (e.g., `"order status transitions"`, `"cart price recalculation"`) with `tokens: 8000`. Understand expected post-fix behavior to set correct assertions.
 
 ## Step 1 — Fetch Ticket & Understand the Bug
@@ -116,7 +116,7 @@ If the tracker is not configured/reachable, ask the user to paste:
 
 **Output before proceeding:**
 ```
-Ticket: VCST-XXXX | Severity: High | Priority: P1 | Component: Cart
+Ticket: <ticket-key> | Severity: High | Priority: P1 | Component: Cart
 Status: READY FOR TEST
 Domain: Cart/Checkout (#8)
 STR: 5 steps identified
@@ -179,7 +179,7 @@ With the fix confirmed deployed, transition the ticket to the **`testing`** role
 **Honor the transition policy per `tracker-ops.md` §Live transition discovery point 4** — including the
 QA-side `qaRoleStatesComplete` gate: only apply `auto`/`confirm-once` when it's `true`, else `ask`.
 
-Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". Follow `tracker-ops.md` §2 **Comment & body style**: clear, brief, outcome-first, evidence referenced not inlined. **On Jira, write Markdown** (`##`/`**`/`` ` ``/`-` lists) — never Jira wiki markup. **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
+Add a tracker comment (Jira `addCommentToJiraIssue` / Azure `ado.mjs comment --id <n> --text-file <path>`) — state only what Step 2 **confirmed**, never a presumptive "deployed". A verification of a build newer than the ticket's last QA comment is a **new** comment, never an edit of the old one — an edit notifies nobody (`tracker-ops.md` §0 rule 5). Follow `tracker-ops.md` §2 **Comment & body style**: clear, brief, outcome-first, evidence referenced not inlined. **On Jira, write Markdown** (`##`/`**`/`` ` ``/`-` lists) — never Jira wiki markup. **On Azure, write the comment as HTML** (`<b>`, `<br/>`, `<ul>/<li>`, `<code>`) per [`azure-html-format.md`](../knowledge/execution/azure-html-format.md) — a plain-text/Markdown comment collapses into one unreadable paragraph; the plain block below is illustrative content, not the literal wire format:
 ```
 Starting QA verification.
 Platform: [PlatformVersion confirmed deployed in Step 2]
@@ -211,7 +211,7 @@ If the tracker is unavailable, skip the transition and note it in the final repo
 Output the checklist before executing. The Cross-Layer section depends on the dispatched agent:
 
 ```
-Verification Checklist for VCST-XXXX:
+Verification Checklist for <ticket-key>:
 Fix Confirmation:
   [ ] 1. Reproduce original bug (STR from ticket)
   [ ] 2. Verify fix resolves the reported issue
@@ -251,19 +251,19 @@ Edge Cases:
   - `qa-frontend-expert` / `qa-testing-expert` → `FRONT_URL`
   - `qa-backend-expert` → `BACK_URL` (+ `FRONT_URL` if the fix has a storefront-visible side)
 - Browser server assignment
-- Output path: `reports/tickets/{SPRINT}/VCST-XXXX/`
+- Output path: `reports/tickets/{SPRINT}/<ticket-key>/`
 - Evidence requirements: screenshot at previously-failing step, console log, network errors, HAR file
 - Instruction to follow `skills/qa-evidence/evidence-capture-policy.md`
 
 **Agent prompt structure:**
 ```
-Verify bug fix for VCST-XXXX on the [backend / frontend].
+Verify bug fix for <ticket-key> on the [backend / frontend].
 
 Bug: [summary]
 Fix: [what the dev changed]
 Environment: {FRONT_URL} / {BACK_URL}  (use those that apply)
 Browser: {BROWSER_SERVER}
-Output: reports/tickets/{SPRINT}/VCST-XXXX/
+Output: reports/tickets/{SPRINT}/<ticket-key>/
 
 Steps to Reproduce (run 3 consecutive times):
 1. [step 1]
@@ -281,7 +281,7 @@ Take a screenshot at the step that previously failed.
 Capture console errors and network failures.
 Follow skills/qa-evidence/evidence-capture-policy.md
 
-Write results to reports/tickets/{SPRINT}/VCST-XXXX/verification-report.md
+Write results to reports/tickets/{SPRINT}/<ticket-key>/verification-report.md
 ```
 
 ---
@@ -322,7 +322,7 @@ STR: Passed 3/3 runs
 Regression: [X] adjacent checks — all passed
 Console: No new errors
 Side effects: None
-Evidence: reports/tickets/{SPRINT}/VCST-XXXX/
+Evidence: reports/tickets/{SPRINT}/<ticket-key>/
 Business rules verified: [BL-* list or "N/A"]
 ```
 
@@ -331,7 +331,7 @@ Business rules verified: [BL-* list or "N/A"]
 QA FAILED — Reopening.
 Issue: [what still fails or what new issue was found]
 STR result: [X/3 passed]
-Evidence: reports/tickets/{SPRINT}/VCST-XXXX/
+Evidence: reports/tickets/{SPRINT}/<ticket-key>/
 Build: [version/commit tested]
 Environment: [URL]
 ```
@@ -353,7 +353,7 @@ For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, assemble ONE 
 
 **Where it goes — profile-aware, containment-first (this is what matters on a client deployment):**
 
-- **Default = a LOCAL file.** Write the page to `reports/tickets/{SPRINT}/VCST-XXXX/evidence.html` and link that path from the tracker comment + summary. Nothing leaves the project — always safe, and the normal outcome.
+- **Default = a LOCAL file.** Write the page to `reports/tickets/{SPRINT}/<ticket-key>/evidence.html` and link that path from the tracker comment + summary. Nothing leaves the project — always safe, and the normal outcome.
 - **Publishing it as a hosted Claude Artifact uploads the content to an external host**, so it is **opt-in and gated by project type** (`profile.projectType`):
   - **Native-platform project** (`projectType` ≠ `client`, or no profile): the defect is VirtoCommerce's own on public repos → you MAY publish, after asking the operator.
   - **Client project** (`projectType === "client"`): do **NOT** auto-publish — the reproduction carries the client's endpoints, identifiers, and data. Publish **only** if the operator explicitly asks **and** the page is scrubbed of every client host / path / identifier / datum / secret — and **NEVER** for a **client-owned-code** bug (quality-gates §2a: client code and data never leave the client's project). When unsure, keep it local.
@@ -365,10 +365,10 @@ Record the result in `verification-summary.json`: `evidence` = the local path (a
 
 ## Step 7 — Deliver Summary
 
-Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
+Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
 ```json
 {
-  "ticket": "VCST-XXXX",
+  "ticket": "<ticket-key>",
   "verdict": "VERIFIED|VERIFIED_WITH_NOTES|FIX_INCOMPLETE|NEW_REGRESSION|INTERMITTENT|BLOCKED",
   "date": "YYYY-MM-DD",
   "environment": "{FRONT_URL}",
@@ -389,9 +389,9 @@ Write `reports/tickets/{SPRINT}/VCST-XXXX/verification-summary.json`:
   "bugs_filed": [],
   "business_rules_verified": ["BL-CART-001"],
   "tracker_transition": {"role": "tested", "state": "TESTED"},
-  "evidence": "reports/tickets/{SPRINT}/VCST-XXXX/evidence.html",
+  "evidence": "reports/tickets/{SPRINT}/<ticket-key>/evidence.html",
   "evidence_artifact": null,
-  "artifacts": "reports/tickets/{SPRINT}/VCST-XXXX/"
+  "artifacts": "reports/tickets/{SPRINT}/<ticket-key>/"
 }
 ```
 (`tracker_transition.role` is the lifecycle role applied; `state` is the resolved destination status —

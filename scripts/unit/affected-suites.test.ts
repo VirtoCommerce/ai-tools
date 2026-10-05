@@ -39,7 +39,7 @@ test("`diff` defaults to the last commit; `diff <range>` honours the range", () 
 
 test("a bare git range is placed as a diff of this repo", () => {
   const p = placeChange("main..HEAD", () => ["x.ts"]);
-  assert.equal(p?.repo, "vc-mcp-testing-module");
+  assert.equal(p?.repo, "ai-tools");
   assert.match(p?.via ?? "", /git diff main\.\.HEAD/);
 });
 

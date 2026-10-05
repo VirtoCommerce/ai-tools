@@ -7,7 +7,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 **Standing up a deployment?** `/project-init` → `/qa-env-check` → `/qa-smoke`.
 **New to the repo, already configured?** `/qa-onboarding` → `/qa-env-check` → `/qa-smoke`.
 
-> **The bug-lifecycle commands come from the `vc-fix` plugin, not from `.claude/commands/`:** `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback` live in `plugins/vc-fix/commands/` and appear in the `/` menu once the plugin is installed (`/plugin install vc-fix@vc-tools`; the team has it enabled at user level). The `.claude/` copies were removed on 2026-09-08 — they were the older Jira-only versions and had silently forked from the tracker-agnostic plugin (audit D1); the plugin copy is the only copy now.
+> **The bug-lifecycle commands come from the `vc-fix` plugin, not from `.claude/commands/`:** `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback` live in `plugins/vc-fix/commands/` and appear in the `/` menu once the plugin is installed (`/plugin install vc-fix@ai-tools`; the team has it enabled at user level). The `.claude/` copies were removed on 2026-09-08 — they were the older Jira-only versions and had silently forked from the tracker-agnostic plugin (audit D1); the plugin copy is the only copy now.
 
 > This file is an INDEX, not a contract. Where a decision has a single source of truth, it is named
 > in §Single Sources of Truth below — read that file, don't re-derive the rule from this table.
@@ -24,12 +24,13 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Run regression suites** | `/qa-regression [smoke\|critical\|sprint\|full\|frontend\|backend\|IDs] [--cases <tier>] [--also-ids <ids>] [--no-plan]` | Command |
 | **Triage a finished regression run's failures** | `/qa-triage-results [RUN_ID\|latest] [--fix] [--verify]` | Command |
 | **Test a ticket / feature / PR** | `/qa-test <ticket-key> \| feature \| PR #N \| --epic <KEY> [--iterate]` | Command |
-| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--dry-run]` | Command |
+| **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
 | **Deploy a PR's prerelease artifacts to a test env** | `/qa-deploy-pr <ticket-key> [--apply] [--verify]` | Command |
+| **Upgrade an env to the latest released modules + platform** | `/qa-env-upgrade <env>` | Skill |
 | **Check a stable bundle for missed hotfixes** | `/qa-bundle-check vN \| <package.json-url>` | Command |
 | **Release a hotfix into stable bundles** | `/qa-hotfix VCST-XXXX [bundles] [--dry-run]` | Command |
 | **Deliver a released hotfix onto the deployed envs** | `/qa-hotfix-check VCST-XXXX [--envs=…] [--dry-run]` | Command |
@@ -41,7 +42,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Build a sprint test plan** | `/qa-test-plan SprintXX-YY \| current \| last` | Command |
 | **Generate coverage at scale** | `/qa-coverage-gap [analyze \| generate \| validate \| full \| domain <name> \| suite <ID>]` — run per domain | Skill |
 | **Seed / teardown test data** | `/qa-seed-data [bootstrap\|minimal\|catalog\|b2b\|pricing\|inventory\|loyalty\|promotions\|bopis\|configurable\|users\|full\|teardown]` | Command |
-| **Audit an oracle (BL / ECL) against docs+live+source** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
+| **Review an oracle (BL: sync from human sources · ECL: docs+live+source)** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
@@ -74,6 +75,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-fix` — Autonomous fix of an already-filed bug: G0 triage → G1 single-repo route → reproduce-as-test → minimal fix → review → PR → **STOP for human review** (never auto-merges)
 - `/qa-verify-fix` — Reproduce the original bug, confirm the fix, regression checks, transition the ticket (stops at TESTED)
 - `/qa-deploy-pr` — Gather every fresh CI prerelease artifact a change produced and deploy them together in ONE `vc-deploy-dev` manifest update. Unblocks `/qa-test PR #N` and `/qa-verify-fix`
+- `/qa-env-upgrade` — Compare an env's `vc-deploy-dev` manifest with the latest releases (`modules_v3.json` + `vc-platform`), move PR/alpha pins to the release that contains them, ask where none does, and open ONE deploy PR on a yes. Never merges
 - `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` — the three-link hotfix chain: find bundles missing a shipped patch → cherry-pick onto `support/<X.Y>` and release → deliver onto the deployed envs and close the ticket
 - `/qa-monitoring` — App Insights: query → dedup by fingerprint → triage → live repro → report. Detect-and-report only. Interactive twin of `ci/run-monitor.ts`
 - `/qa-perf-measure` — Backend work per request on a **deployed** env (dependency counts via the `operation_Id` join, N+1 by input scaling, paired controls). Measure-and-report only
@@ -106,12 +108,12 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-defect` — Defect lifecycle, Bug workflow
 - `/qa-evidence` — Evidence capture & report formatting, output paths
 - `/qa-metrics` — Quality metrics & gate enforcement
-- `/qa-review-oracles` — Two-axis oracle audit (`bl` → `business-logic.md`, `ecl` → `e-commerce-edge-cases-library.md`): triangulate against docs + live + source, auto-apply confirmed, route the rest to proposals. **Value gates GROWTH only**, never a correction
+- `/qa-review-oracles` — Two-axis oracle review: `bl` syncs `bl/<slug>.yaml` from human sources (AC, docs, Jira) and re-checks `SUSPECT` rules; `ecl` triangulates `e-commerce-edge-cases-library.md` against docs + live + source and auto-applies confirmed changes. **Value gates GROWTH only**, never a correction
 
 ### Specialized Testing (Skills — domain expertise)
 - `/qa-storybook` — Visual regression, responsive breakpoints, state variations
 - `/qa-accessibility` — WCAG 2.2 AA audits (POUR + the 2.2 additions, axe-core, Lighthouse, keyboard walk)
-- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project via `DesignSync`; reports `SKIPPED`, never PASS, where `/design-consent` is unavailable)
+- `/qa-design` — Dual Storybook + Storefront BL-UI audit, design-system consistency, UX heuristics, and the **`vs. DESIGN` axis** (tokens / control geometry / icon name→glyph parity vs a Claude Design project's local files via `npm run design:extract`; reports `SKIPPED`, never PASS, when no copy is on disk)
 - `/qa-api` — REST + GraphQL xAPI: reference lookup, execution, case generation
 - `/code-review-full` — 9 parallel review agents over a diff **of this repo** — not a QA flow against the VC platform
 - `/qa-perf-measure`, `/qa-monitoring`, `/qa-triage-results`, `/qa-deploy-pr`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-bundle-check`, `/qa-local-env` — the skills backing the same-named commands above
@@ -121,7 +123,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 > **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
 > removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
 > this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
-> once `vc-fix@vc-tools` is installed.
+> once `vc-fix@ai-tools` is installed.
 
 - `/dotnet-unit-test` — Reproduce a backend bug as a failing xUnit test (red → green)
 - `/dotnet-fix` — Minimal, idiomatic .NET 10 fix in one VC module
@@ -172,7 +174,7 @@ Browser lane assignments and the firefox click-capability prerequisites (the lan
 - **`diagnostics/`** — `skill-expectations.md`
 - **`domain/`** — `catalog.md`, `mobile-navigation.md`, `products.md`, `sitemap.md`, `store-settings.md`, `white-labeling.md`
 - **`execution/`** — `debugging-signals.md`, `es-call-ab-method.md`, `live-discovery.md`, `module-suite-map.md`, `performance-thresholds.md`, `test-data-authoring.md`, `test-execution-preflight.md`, `test-runner-tags.md`, `ticket-routing.md`, `tracker-ops.md`
-- **`oracles/`** — `business-logic.md` (BL-*), `critical-ui-scope.md`, `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* archetypes)
+- **`oracles/`** — `bl/<slug>.yaml` (BL-*, read via `bl:extract`), `critical-ui-scope.md`, `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* archetypes)
 - **`agents/`** — per-team `shared-instructions.md` + `README.md` (a plain reference dir, not scanned as components)
 
 Also: `.claude/architecture/TIER.md` (A/B/C/D classification — read before any standardization or
@@ -180,7 +182,7 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 `agent-dispatch.md`).
 
 ### Plugins (distributed separately — NOT part of this `.claude/` surface)
-- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `vc-tools` marketplace: `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`. Self-contained; the canonical copy of the self-diagnostics subsystem
+- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`. Self-contained; the canonical copy of the self-diagnostics subsystem
 - **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Depends on `vc-fix`; advisory only, never a CI gate
 
 ## Single Sources of Truth (read these, don't re-derive)
@@ -240,8 +242,8 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 - `domain/release-ledger.md` — MUST be consulted before **designing a test for**, or **triaging a failure in**, a component the ledger records a release for since the env's deployed version. It is the only source in the repo that answers "what shipped recently": VirtoOZ's release corpus stops at Platform 3.917.1 while production is past 3.1050, so the docs MCP cannot see roughly nine months of releases. Generated — `npm run releases:refresh`; never hand-edit. **Three rules travel with it, and skipping any one of them produces a confidently wrong verdict:** (1) it says what is **released upstream**, never what is **deployed on the env under test** — a capability it records that the live `/api/platform/modules` probe does not carry is `NOT_DEPLOYED`, never a `FAIL` and never a bug; (2) it is an editorial monthly digest that **declares itself non-exhaustive**, so presence is evidence but absence is not — a miss never licenses "nothing changed"; (3) it carries **no behaviour** (no ACs, field lists, or expected-value literals), so it can raise a *hypothesis* about a failure but can never settle a verdict, and it can never ground an assertion as `{DOC}`.
 - `domain/store-settings.md` §The storefront capability manifest — read before concluding a storefront feature is **missing, disabled or undeployed**. `npm run store:caps` replays vc-frontend’s own anonymous app-boot query (`InitializeApplication`) and prints which modules the STOREFRONT can see, at which version, with their public flags (`--settings`). This is a THIRD vantage, not a cheaper `/api/platform/modules`: a module installed and healthy at the platform level can expose no capability the storefront sees, and the platform manifest calls that env green while the button never renders. No token, so any lane can pre-flight it. Read the probe’s mode line first — with `XAPI.Security.ReturnModuleVersion` OFF, versions blank out and settings-less modules vanish, and absence stops being evidence.
 - `oracles/critical-ui-scope.md` — **currently UNCOVERED** (its only covering suite `048b` was removed 2026-07-25, so every applicable cell is `GAP`); it is the scope definition + `/qa-design` audit reference, not a regression gate.
-- `oracles/business-logic.md` — **do not hand an agent this path when you know the domain.** `npm run bl:extract -- --domain <cart|pricing|auth|…>` slices the invariants verbatim (ids, bodies and severity tags unchanged) so a brief can carry them as DATA: measured, `--domain cart` is 15 of 216 invariants, 7.5% of the file, ~7.2K tokens against ~96K. `npm run bl:extract:list` shows the domains; `--id`, `--severity` and `--json` narrow further. An agent that receives an extract must not re-read the oracle (`knowledge/agents/qa/shared-instructions.md` §Business Logic Reference), and an extract declares itself a subset so a filtered-out domain is never read as "no rule applies".
-- `oracles/e-commerce-edge-cases-library.md` — **same rule as `business-logic.md` above.** `npm run ecl:extract -- --domain <d>` (or `--chapter <n>`) slices the `ECL-N.M` sections verbatim, whole pattern table included; `npm run ecl:extract:list` shows the chapters. `--domain` matches chapter AND section titles deliberately, so a payment brief still carries chapter 14's VC-specific payment section. When you are packing a brief, extract BOTH oracles or neither — one extract beside one path makes "the brief already carries it" ambiguous ([`skills/qa-test/dispatch-pack.md`](skills/qa-test/dispatch-pack.md)).
+- `oracles/bl/<slug>.yaml` (the BL oracle) — **never hand an agent a path to it.** `npm run bl:extract -- --domain <cart|pricing|auth|…>` slices the invariants verbatim (ids, bodies and severity tags unchanged) so a brief can carry them as DATA: measured, `--domain cart` is 15 of 216 invariants, 7.5% of the file, ~7.2K tokens against ~96K. `npm run bl:extract:list` shows the domains; `--id`, `--severity` and `--json` narrow further. An agent that receives an extract must not re-read the oracle (`knowledge/agents/qa/shared-instructions.md` §Business Logic Reference), and an extract declares itself a subset so a filtered-out domain is never read as "no rule applies".
+- `oracles/e-commerce-edge-cases-library.md` — **same rule as the BL oracle above.** `npm run ecl:extract -- --domain <d>` (or `--chapter <n>`) slices the `ECL-N.M` sections verbatim, whole pattern table included; `npm run ecl:extract:list` shows the chapters. `--domain` matches chapter AND section titles deliberately, so a payment brief still carries chapter 14's VC-specific payment section. When you are packing a brief, extract BOTH oracles or neither — one extract beside one path makes "the brief already carries it" ambiguous ([`skills/qa-test/dispatch-pack.md`](skills/qa-test/dispatch-pack.md)).
 - `oracles/vc-bug-catalog.md` — the "Familiar Problems" oracle (HICCUPPS-F) for exploratory sessions + Bad Neighborhood Tours.
 - Note: `test-case-template.md` (enriched CSV column spec) lives in `skills/qa-test-cases-generator/`, NOT in `knowledge/`.
 

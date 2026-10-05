@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../../../templates/bl.schema.json
+domain:
+  heading: "Domain 27: Push Messages (BL-PUSH)"
+  prefixes:
+    - BL-PUSH
+  agents: []
+  intro: |-
+    > **Declared 2026-09-29, deliberately EMPTY — no invariant has cleared the evidence bar yet.** The
+    > section exists so `.claude/knowledge/domain/push-messages.md` has a slug to resolve against; an empty
+    > domain is an honest statement of the coverage hole, not an oversight. The Push Messages module is, in
+    > the published guide's words, what "enables marketers to send custom notifications to selected
+    > customers or organizations within the Virto Commerce Platform" (PlatformUserGuide → Push Messages →
+    > Overview) — delivered to the storefront bell and Notifications page, and optionally to the browser
+    > through Firebase Cloud Messaging. It currently ships **zero** invariants of its own, so it is judged
+    > only by delegation to general oracles that do not know it exists — `BL-AUTH-*` (who may read a
+    > message), `BL-B2B-*` (organization scoping of recipients) and the storefront layout invariants
+    > (`BL-UI-*`). Suites `068` and `050l` currently cite `BL-NOTIF-001` / `BL-NOTIF-003`, which are
+    > **order-email** invariants; those citations stay put here (citation remaps belong to
+    > `/qa-review-tests --fix`, never this oracle).
+    >
+    > Candidates surfaced but **not** promoted (each needs a `/qa-review-oracles` three-axis pass):
+    > a Sent message is immutable and irrevocable (source: the service refuses modify/delete of a Sent
+    > message; the HTTP status of that refusal and any recall path are unconfirmed); `pushMessages` returns
+    > only the caller's own recipient rows and refuses an anonymous caller; read state is per recipient,
+    > not per message; the customer never sees a message's topic (the xAPI type and the FCM payload carry
+    > none); the documented 1024-character maximum has no enforcement in the module itself; the list's
+    > recipient count and percent-read are populated by no read path. Surfaces, evidence and the open
+    > gaps: `.claude/knowledge/domain/push-messages.md` §3 and §5.
+rules: []

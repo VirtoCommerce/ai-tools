@@ -55,6 +55,8 @@ const TEARDOWN_STEPS = [
   // hand-made reps, orphaned documents — need `npm run sr:inventory`, which is deliberately not
   // wired into an unattended chain: it can delete things no script can recreate.
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', args: ['--teardown'] },
+  // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
+  { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
@@ -76,6 +78,7 @@ const TEARDOWN_STEPS = [
   { name: 'loyalty', script: 'loyalty/seed-loyalty.mjs', args: ['--teardown'] },
   { name: 'loyalty-fixtures', script: 'loyalty/seed-loyalty-fixtures.mjs', args: ['--teardown'] },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', args: ['--teardown'] },
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', args: ['--teardown'] },
   { name: 'b2b-addresses', script: 'b2b/seed-b2b-addresses.mjs', args: ['--teardown'] },
   // Contract pricing before the org graph: the contract binds the AcmeCorp organisation and owns a
   // buyer contact inside it, so it must release both before company-users deletes them.
@@ -148,6 +151,10 @@ const STEPS = [
   // existing product for an existing organisation and creates its own dedicated buyer inside it.
   // Optional — it needs VirtoCommerce.Contracts deployed.
   { name: 'org-contract', script: 'pricing/seed-org-contract-pricing.mjs', required: false, priority: 106 },
+  // Push Messages audience-builder fixture (VCST-5944): a two-level org tree + an Employee holding a
+  // login. Needs nothing but the member graph, so it sits just after the org/address steps. OPTIONAL —
+  // the fixture is only meaningful where the PushMessages module is deployed.
+  { name: 'push-audience', script: 'push-messages/seed-push-audience.mjs', required: false, priority: 107 },
   { name: 'promotions', script: 'promotions/seed-promotions.mjs', required: false, priority: 110 },
   // The 1-PTS divisor fixture (LOY_SKU_PTS_UNIT) that balance-relative loyalty tests depend on. Runs
   // just BEFORE the loyalty programs (120) and is OPTIONAL (warns if the loyalty module/PTS currency
@@ -196,6 +203,9 @@ const STEPS = [
   // `required: false` because it hard-aborts on an env with no genuine second store
   // (STORE_ID_SECONDARY), which is a legitimate deployment shape — see seed-wishlists.mjs.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', required: false, priority: 150 },
+  // VCST-5748 OTP sign-in accounts (the non-optIn SEEDED_ACCOUNTS of auth/otp-signin-specs.mjs — no
+  // Administrator: the opt-in back-office accounts need --only). Self-contained: creates its own contacts/accounts on STORE_ID.
+  { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', required: false, priority: 102 },
 ].sort((a, b) => a.priority - b.priority);
 
 function runStep(step) {

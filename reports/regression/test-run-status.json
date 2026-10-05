@@ -1,26 +1,32 @@
 {
- "runId": "REG-2026-09-29-1457",
+ "runId": "REG-2026-10-01-1243",
  "status": "completed",
- "startedAt": "2026-09-29T14:57:57.454Z",
- "selection": "102",
+ "startedAt": "2026-10-01T12:43:22.000Z",
+ "windowStart": "2026-10-01T12:43:22.000Z",
+ "selection": "083c,083d",
  "env": "vcst",
  "scoped": true,
- "purpose": "/qa-regression 102 --ids UCPA-037..042 — the 6 Draft cases authored by /qa-test-lifecycle VCST-6054. Direct run: Step 6.5 promotion DRY (no --promote).",
- "preflightNote": "UCP 3.1007.0-pr-9-91ca / XCart 3.1037.0-pr-141-fb27 / Inventory 3.1008.0 / Platform 3.1073.0-pr-3121-9965 / theme 2.59.0-pr-2476-0604. UCPA-042 mutates PROD_STOCK_DROP stock and must run alone on that fixture.",
+ "purpose": "/qa-test VCST-5957 4c C1 exact set: 16 new Draft + 3 REPAIR + 10 RE-BASE. Delegated: --no-promote.",
+ "preflightNote": "Theme 2.59.0-pr-2524-3069 / Loyalty 3.1009.0-pr-18-4411 / Platform 3.1075.0. Deadline cases seed via seed-missions-deadline.mjs (real order on LOY_PERSONAL_NOORG, accepted) and teardown per case: run deadline consumers serially. MSN_DL set valid until 2026-10-01T23:49:08Z.",
  "suites": [
   {
-   "id": "102",
-   "name": "UCP Agentic Commerce",
-   "file": "regression/suites/Backend/ucp/102-ucp-agentic-commerce.csv",
+   "id": "083c",
+   "name": "Loyalty Missions Storefront",
+   "file": "regression/suites/Frontend/loyalty/083c-loyalty-missions-storefront.csv",
    "status": "done",
-   "lane": "deterministic",
-   "ids": "UCPA-037..UCPA-042",
-   "pass": 6,
-   "fail": 0,
-   "blocked": 0,
-   "skipped": 0
+   "lane": "browser",
+   "ids": "MSNF-088..MSNF-102,MSNF-034,MSNF-035,MSNF-087,MSNF-019,MSNF-024,MSNF-027,MSNF-078,MSNF-060",
+   "browser": "playwright-chrome"
+  },
+  {
+   "id": "083d",
+   "name": "Loyalty Missions E2E",
+   "file": "regression/suites/Frontend/loyalty/083d-loyalty-missions-e2e.csv",
+   "status": "done",
+   "lane": "browser",
+   "ids": "MSN-E2E-009,MSN-E2E-001,MSN-E2E-002,MSN-E2E-003,MSN-E2E-006,MSN-E2E-008",
+   "browser": "playwright-chrome"
   }
  ],
- "windowStart": "2026-09-29T14:58:17.269Z",
- "finishedAt": "2026-09-29T15:03:40.214Z"
+ "finishedAt": "2026-10-01T13:46:00.000Z"
 }

@@ -208,11 +208,10 @@ The three lanes do **not** share slots.
 **Batch the short tail before you dispatch (bounded, never unbounded).**
 
 `npm run regression:plan -- <selection>` prints, per lane, what batching costs and saves on THIS
-selection — `110 dispatches → 74 (36 fewer), makespan +0.1%` on `full`'s browser lane. Group the
-lane's queue with the same rule the plan prices (`ci/lib/suite-batching.ts`, `batchSuites`): fill a
-session up to **60 cases**, never past it; a suite bigger than that goes alone and is never split;
-and only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session, because the batch is
-dispatched to one slot.
+selection. Group the lane's queue with the same rule the plan prices (`ci/lib/suite-batching.ts`,
+`batchSuites`): fill a session up to **60 cases**, never past it; a suite bigger than that goes alone
+and is never split; only suites with the SAME affinity (`REQUIRES` / `NOT ON`) share a session; an
+`EXCLUSIVE <group>` suite is its own batch — **never two of one group in flight at once**.
 
 Each dispatch then carries a `{{SUITE_BATCH}}` of one or more suites. **A batch of one is the normal
 case** — nothing changes for a long suite.

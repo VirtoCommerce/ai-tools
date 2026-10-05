@@ -31,7 +31,7 @@ test cases / suites          ─►  reference each combination via @td(COMBO_AL
 
 > **Combination design first, row authoring second.** The value here is combinatorial / boundary
 > COVERAGE, not plausible-looking individual rows. A single product row is not "prepared test data";
-> the *combination* that exercises a scenario is. See `feedback_test_data_prep_is_combination_design`.
+> the *combination* that exercises a scenario is.
 
 ---
 
@@ -47,10 +47,10 @@ the combinations from the scenarios that feature requires; you do **not** hand i
 
 ### 1. Scope the scenarios (test-design-first)
 Establish what must be covered before touching any data. Lead with feature/journey scope + adversarial
-intent (`feedback_test_design_mental_model`), then apply the `/qa-test-design` techniques to derive
+intent, then apply the `/qa-test-design` techniques to derive
 cases: equivalence partitions, **boundary values** (the balance one cent short, the cart one cent over
 a threshold), **decision tables** (promo applies? loyalty earns? stacks?), state transitions, and
-**pairwise** to bound the combination count. Consult `business-logic.md` (BL-* invariants the data must
+**pairwise** to bound the combination count. Consult `npm run bl:extract -- --domain <d>` (BL-* invariants the data must
 let you observe) and `vc-bug-catalog.md` (historical combinations that broke). Output: a scenario list.
 
 ### 2. Learn the feature live (variant-space discovery)
@@ -79,8 +79,7 @@ starting point; prune/relabel it to the axes the scenarios actually need.
 
 ### 4. Design the combination matrix (the core deliverable)
 **Before designing a combination that depends on how an entity behaves** (does an unpriced line earn
-points? does an auto promo stack?), ask the base: `npm run kb -- ask "<endpoint | GraphQL op> <question>"`
-(MCP: `mcp__kb__kb_ask`); cite hit ids in the matrix, a miss is not a blocker. Rule:
+points? does an auto promo stack?), ask the base: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<endpoint | GraphQL op> <question>"`); cite hit ids in the matrix, a miss is not a blocker. Rule:
 [`CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*.
 
 Feed the pruned factor spec (+ any constraints excluding invalid pairs) to the pairwise generator:
@@ -193,7 +192,7 @@ absorbed once in the base row. Record the base→variant lineage in each alias's
 | **`AGENT-TEST-` prefix** on every authored unique value. | `/qa-seed-data teardown` sweeps the prefix. Use [`random-data.ts`](../../../scripts/lib/random-data.ts). |
 | **Reuse before authoring.** Live-discover / existing aliases first; author only true gaps. | Minimizes new seed load and keeps the fixture surface small (your answer: reuse-first). |
 | **Realistic, domain-correct values** — believable names/brands/prices, valid state↔ZIP, alphanumeric coupon codes (`^[a-zA-Z0-9]+$`). | Fixtures are read by humans and drive real assertions. |
-| **Assert shape, not volatile values** (prices, catalog-dependent titles drift). | `feedback_env_resilience`. |
+| **Assert shape, not volatile values** (prices, catalog-dependent titles drift). | A value that drifts with the catalog fails for reasons unrelated to the feature. |
 | **Every fixture must make its link's question DECIDABLE** — for each link of the feature's value chain, if that link were implemented wrong, would this data make the case fail? | `.claude/rules/test-data.md` §SECOND RULE. Missions seeded flat \$30 orders with no shipping/tax/discount, so *"is the goal measured against `order.Total` or merchandise value?"* had the same answer under both implementations — 127 cases could not settle it and the defect was found by reading source. |
 | **Values on both sides of a distinction under test must DIVERGE** — quantities, rankings, ALL vs ANY, target vs remaining. | Equal values make the case vacuous: it passes whichever way the code goes. Same reasoning as `td:validate:variation-stock` and `td:validate:sales-rep-stats`; ship the guard that fails when divergence collapses. |
 | **Constrain `live-discover` on every dimension the feature reads** (currency, price shape, stock, catalog scope). | It selects on availability, not suitability. Unconstrained PerSku discovery handed missions a €455 row and a \$25 row, producing a mixed-currency bug that was filed and then rejected — reviewer time spent on a fixture artefact. |
@@ -229,8 +228,7 @@ absorbed once in the base row. Record the base→variant lineage in each alias's
 
 ## Boundaries (when to STOP)
 - **Design + author fixtures only. Never provision** — that's `/qa-seed-data`.
-- **Never author/edit regression suite CSVs** or `config/test-suites.json` (runner/planner boundary —
-  `feedback_runner_planner_no_suite_authoring`). This skill writes `test-data/` only.
+- **Never author/edit regression suite CSVs** or `config/test-suites.json` (runner/planner boundary). This skill writes `test-data/` only.
 - **Reuse before you author**; don't invent GUIDs or live prices.
 - **No real credentials/cards.** Passwords stay in `.env`; cards stay processor-test cards.
 
@@ -253,12 +251,11 @@ The combination matrix returned inline (step 7) is what those callers consume to
 - Stage 3 — gap fixtures + aliases + validate: [`scripts/test-data/author-fixtures.ts`](../../../scripts/test-data/author-fixtures.ts)
 
 ## References (cite, don't duplicate)
-- Combination-design intent: `feedback_test_data_prep_is_combination_design` · test-design mindset: `feedback_test_design_mental_model`
 - Techniques: [`/qa-test-design`](../qa-test-design/SKILL.md) (EP, BVA, decision tables, pairwise)
 - Policy + enforcement: [`.claude/rules/test-data.md`](../../rules/test-data.md)
 - Directory map + seed-gap tables: [`test-data/README.md`](../../../test-data/README.md)
 - Resolver decision tree (`{{VAR}}` vs `@td()` vs live-discover vs random-data): [`knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
-- BL invariants the data must let you observe: [`knowledge/oracles/business-logic.md`](../../knowledge/oracles/business-logic.md) · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
+- BL invariants the data must let you observe: `npm run bl:extract -- --domain <d>` · historical bad combinations: [`vc-bug-catalog.md`](../../knowledge/oracles/vc-bug-catalog.md)
 - Generators: [`scripts/lib/random-data.ts`](../../../scripts/lib/random-data.ts) · discovery: [`scripts/lib/live-discover.ts`](../../../scripts/lib/live-discover.ts)
 - Validators: [`scripts/test-data/validate-td-refs.ts`](../../../scripts/test-data/validate-td-refs.ts) · [`scripts/test-data/audit-aliases.ts`](../../../scripts/test-data/audit-aliases.ts)
 - Provisioning companion: [`/qa-seed-data`](../qa-seed-data/SKILL.md)

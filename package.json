@@ -1,5 +1,5 @@
 {
-  "name": "vc-mcp-testing-module",
+  "name": "ai-tools",
   "version": "0.8.1",
   "description": "",
   "main": "config.js",
@@ -82,6 +82,10 @@
     "seed:sales-rep-i18n:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-i18n-plural.mjs --teardown",
     "seed:sales-rep-tasks": "node scripts/seed-data/sales-rep/seed-sales-rep-tasks.mjs",
     "seed:sales-rep-tasks:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-tasks.mjs --teardown",
+    "seed:otp-signin": "node scripts/seed-data/auth/seed-otp-signin.mjs",
+    "seed:otp-signin:rearm": "node scripts/seed-data/auth/seed-otp-signin.mjs --verify",
+    "seed:otp-signin:verify-only": "node scripts/seed-data/auth/seed-otp-signin.mjs --verify-only",
+    "seed:otp-signin:teardown": "node scripts/seed-data/auth/seed-otp-signin.mjs --teardown",
     "sales-rep:stats": "node scripts/seed-data/sales-rep/probe-sales-rep-statistics.mjs",
     "seed:sales-rep-demo": "node scripts/seed-data/sales-rep/seed-sales-rep-demo.mjs",
     "seed:sales-rep-demo:teardown": "node scripts/seed-data/sales-rep/seed-sales-rep-demo.mjs --teardown",
@@ -98,6 +102,12 @@
     "seed:orders:teardown": "node scripts/seed-data/orders/seed-order-states.mjs --teardown",
     "seed:quotes": "node scripts/seed-data/orders/seed-quotes.mjs",
     "seed:quotes:teardown": "node scripts/seed-data/orders/seed-quotes.mjs --teardown",
+    "seed:returns": "node scripts/seed-data/orders/seed-return-orders.mjs",
+    "seed:returns:teardown": "node scripts/seed-data/orders/seed-return-orders.mjs --teardown",
+    "returns:check": "node scripts/seed-data/orders/check-returnable-items.mjs",
+    "seed:returns:decisions": "node scripts/seed-data/orders/seed-return-decisions.mjs",
+    "seed:returns:decisions:teardown": "node scripts/seed-data/orders/seed-return-decisions.mjs --teardown",
+    "returns:decisions:check": "node scripts/seed-data/orders/check-return-decisions.mjs",
     "seed:products:teardown": "node scripts/seed-data/products/seed-standard-products.mjs --teardown",
     "seed:configurable:teardown": "node scripts/seed-data/products/seed-configurable.mjs --teardown",
     "seed:properties": "node scripts/seed-data/catalog/seed-catalog-properties.mjs",
@@ -131,6 +141,7 @@
     "td:reconcile:store": "node scripts/seed-data/store/check-store-defaults.mjs",
     "td:validate:b2b": "node scripts/seed-data/b2b/validate-b2b-data.mjs",
     "td:validate:membership-lock": "node scripts/seed-data/b2b/validate-membership-lock-data.mjs",
+    "td:validate:otp-signin": "node scripts/seed-data/auth/validate-otp-signin-data.mjs",
     "td:validate:credentials": "node scripts/seed-data/validate-credentials.mjs",
     "td:validate:cfg": "node scripts/seed-data/products/validate-configurable-data.mjs",
     "td:validate:standard": "node scripts/seed-data/products/validate-standard-data.mjs",
@@ -199,6 +210,14 @@
     "bl:extract": "npx tsx scripts/knowledge/extract-bl.ts",
     "bl:extract:list": "npx tsx scripts/knowledge/extract-bl.ts --list",
     "bl:remap": "npx tsx scripts/knowledge/remap-bl-citations.ts",
+    "bl:convert": "npx tsx scripts/knowledge/bl-yaml.ts",
+    "bl:convert:check": "npx tsx scripts/knowledge/bl-yaml.ts --check",
+    "bl:render": "npx tsx scripts/knowledge/bl-yaml.ts --render-oracle",
+    "bl:fresh": "npx tsx scripts/knowledge/bl-fresh.ts",
+    "inv:run": "npx tsx scripts/invariants/run.ts",
+    "detect:mutate": "npx tsx scripts/detection/mutation-trial.ts",
+    "gaps": "npx tsx scripts/detection/gaps.ts",
+    "assert:strength": "npx tsx scripts/detection/assertion-strength.ts",
     "ecl:lint": "npx tsx scripts/knowledge/lint-ecl.ts",
     "ecl:extract": "npx tsx scripts/knowledge/extract-ecl.ts",
     "ecl:extract:list": "npx tsx scripts/knowledge/extract-ecl.ts --list",
@@ -224,6 +243,7 @@
     "layout:list": "npx tsx scripts/layout/layout-runner.ts --list --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
     "layout:author:check": "node scripts/layout/author-reference-suite.mjs --check",
+    "design:extract": "npx tsx scripts/layout/design-spec-extract.ts",
     "verify:multi-env": "npx tsx scripts/test-cases/verify-multi-env-filters.ts",
     "verify:multi-env:report": "npx tsx scripts/test-cases/verify-multi-env-filters.ts --write-report",
     "bundle:check": "npx tsx scripts/hotfix/bundle-version-check.ts",
@@ -231,8 +251,9 @@
     "hotfix:release": "npx tsx scripts/hotfix/hotfix-release.ts",
     "hotfix:deliver": "npx tsx scripts/hotfix/hotfix-deliver.ts",
     "hotfix:deliver:dry": "npx tsx scripts/hotfix/hotfix-deliver.ts --dry-run",
-    "deploy:pr": "npx tsx scripts/deploy/deploy-pr-artifact.ts",
-    "deploy:pr:apply": "npx tsx scripts/deploy/deploy-pr-artifact.ts --apply",
+    "deploy:pr": "npx tsx scripts/deploy/vc-deploy.ts pr",
+    "deploy:pr:apply": "npx tsx scripts/deploy/vc-deploy.ts pr --apply",
+    "deploy:upgrade": "npx tsx scripts/deploy/vc-deploy.ts upgrade",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
@@ -304,27 +325,32 @@
     "bl:extract:has": "npx tsx scripts/knowledge/extract-bl.ts --has-domain",
     "kb:install": "node scripts/kb/install-mcp.mjs",
     "models:check": "npx tsx scripts/maintenance/check-test-models.ts",
-    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts"
+    "models:view": "npx tsx scripts/maintenance/render-mind-map.ts",
+    "seed:push-audience": "node scripts/seed-data/push-messages/seed-push-audience.mjs",
+    "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
+    "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
+    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VirtoCommerce/vc-mcp-testing-module.git"
+    "url": "git+https://github.com/VirtoCommerce/ai-tools.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/VirtoCommerce/vc-mcp-testing-module/issues"
+    "url": "https://github.com/VirtoCommerce/ai-tools/issues"
   },
-  "homepage": "https://github.com/VirtoCommerce/vc-mcp-testing-module#readme",
+  "homepage": "https://github.com/VirtoCommerce/ai-tools#readme",
   "dependencies": {
     "@azure/identity": "^4.13.1",
     "@playwright/mcp": "^0.0.77",
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",
     "graphql": "^16.14.0",
-    "pptxgenjs": "^4.0.1"
+    "pptxgenjs": "^4.0.1",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.140",
@@ -336,5 +362,8 @@
     "playwright": "^1.61.1",
     "tsx": "^4.0.0",
     "typescript": "^7.0.2"
+  },
+  "allowScripts": {
+    "esbuild@0.27.4": true
   }
 }

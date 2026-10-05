@@ -8,6 +8,146 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
+
+**Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of
+holding a credential (`node ${VC_SECRETS} run <server>`), and a declared non-MCP command runs the same way
+through `task <name>`. At launch it resolves the
+secrets the declaration names from the OS credential store (Windows Credential Manager, macOS Keychain, gpg on
+Linux) or Azure Key Vault, injects them into the process tree rooted at the declared process, and stays as its
+parent to forward stdio and end the tree on exit. An `oauth` block covers servers that need a delegated token
+(`vc-secrets login`). A repository's declarations launch only after `vc-secrets trust` records them for that
+checkout, and a changed declaration is refused until it is trusted again. Skills: `install` (a version-stable
+shim), `doctor`, `migrate`. What this protects and what it does not: `plugins/vc-secrets/README.md`, "Scope of
+the protection".
+
+**Changed: the licence is stated once, and it is the platform's.** The repository had no `LICENSE` file,
+`"ISC"` in `package.json` (an `npm init` default) and `"TBD-internal"` in every plugin manifest. The platform's
+licence is now committed at the root, and `package.json`, `plugins/vc-fix/package.json` and every
+`plugin.json` say `SEE LICENSE IN LICENSE`. An install copies only `plugins/<name>/`, so `vc-fix`, `vc-perf`
+and `vc-secrets` each ship a copy of the file. The `vc-fix` and `vc-perf` versions are unchanged; an existing
+install receives the new metadata with their next release.
+
+**Verified:** `node --test plugins/vc-secrets/vc-secrets.test.mjs plugins/vc-secrets/vc-secrets-oauth.test.mjs`
+933 tests, 0 failing on Linux, and 0 failing (the skips are platform-gated) on Windows 11 / Node 24 /
+PowerShell 5.1, including the real job-object test that ends a server's whole process tree;
+`npm run context:check` green.
+
+---
+
+## Every bug a test run finds is triaged, then investigated, then filed — `vc-fix` `0.9.6` — 2026-10-01
+
+Before this, a `/qa-test` checklist FAIL and every `/qa-test-fast` finding went straight from a runner's
+note to `/vc-fix:qa-bug`. `/qa-triage-results` ran only on a regression `RUN_ID`, and `/qa-investigate` was
+cited but never called, because the vc-fix copy carried `disable-model-invocation: true`. Both flows now
+run the same chain: **`qa-triage-results` → `vc-fix:qa-investigate` → `/vc-fix:qa-bug`**. `vc-perf` is
+unchanged.
+
+**Changed (`vc-fix`): `qa-investigate` is model-invocable.** The flag is removed, and the description now
+says when to use the skill, because the model reads it to decide. A new handoff mode is added: run ahead of
+`/vc-fix:qa-bug`, the skill stops at its evidence gate. It returns the evidence package
+(`evidence-index.md` + `root-cause.md`), the `REPRODUCED` / `NOT_REPRODUCED` result and the owning
+layer/repo, and writes no report, so one bug gets one report. Because the skill can now trigger by
+itself, it may also start in client sessions when a bug is being investigated.
+
+**Added: `/qa-triage-results ticket <KEY>`.** `npm run triage:collect -- --ticket <KEY>`
+(`scripts/lib/regression-triage.ts`) reads the ticket's newest `testing-checklist.md`. Its FAIL / BLOCKED /
+NOT-RUN rows become `source: "checklist"` issues for the same classifier a regression run uses. If an item
+appears twice, the last row wins, so a later re-test round supersedes the first. Advisory rows (`DRIFT`,
+`UNSPEC`, `WAIVED`) are counted and not triaged. A row with no readable verdict is listed in
+`unresulted[]` and stops the triage. Ticket mode writes only `triage-report.md` and the investigation
+packages. It returns everything else to the calling flow, which stays the only writer of its checklist and
+the only caller of `qa-bug`. Phase 4 live verification now has the QA expert invoke
+`vc-fix:qa-investigate`, in both modes.
+
+**Changed: `/qa-test` and `/qa-test-fast`.** 5-triage and Stage 3 run
+`qa-triage-results ticket <KEY> --verify`, so every real-bug candidate is investigated. `qa-bug` then
+reuses each package and does not reproduce the bug again. Every exploratory and visual finding must be a
+checklist row with a verdict before triage. `/qa-test-fast` also gains the visual lane: `ui-ux-expert`
+invokes the `qa-design` skill when `visual_surface: true`, and `--no-visual` drops it
+(`skills/qa-test/visual-axis.md` is the single source for both flows).
+
+## Tracker comment rounds: a retest of a new build is a new comment — `vc-fix` `0.9.5` — 2026-10-01
+
+Fixes #360. On VCST-5883 a round-2 retest of new builds was amended into round 1's comment, and an edit
+notifies nobody, so the developer and PO never learned the retest happened. `vc-perf` is unchanged.
+
+**Added: rounds keyed on the build under test.** `tracker:comment` takes `--artifact "<build under test>"` and
+records it in `.tracker-comments.json`. A post for a new artifact is a new round and is allowed; an `--amend`
+of a comment recorded for a different artifact is refused. With no artifact, a ledger comment older than 12 h
+(`TRACKER_ROUND_HOURS`) counts as a previous round: a post is allowed and an amend is refused. The one
+override for an amend is `--same-round "<reason>"`, which the `/qa-test --iterate` loop uses. The decision is
+`scripts/tracker/round-guard.mjs`.
+
+**Fixed: the helper's run id.** It read `CLAUDE_SESSION_ID`, which Claude Code does not export, so every post
+recorded run `local` and a checkout counted as one run forever. It now reads `CLAUDE_CODE_SESSION_ID`, the
+same transcript id the hooks receive.
+
+**Fixed: the MCP hooks covered one server name.** `enforce-one-tracker-comment` and `record-tracker-comment`
+(`.claude/` and `plugins/vc-fix/hooks/`, changed together) now match
+`^mcp__.+__(addCommentToJiraIssue|addOrEditJiraIssueComment)$`, so the claude.ai Atlassian connectors no longer
+bypass them. A call with `commentId` is an edit, not a second comment: the guard blocks it only when the
+ledger comment is older than 12 h or was posted by another session, and the recorder no longer logs it as a
+new post. An amend from a provably different session is refused the same way (`--same-round` overrides), as
+is an amend that names no `--artifact` when the comment records one; amending an older comment no longer
+replaces the ledger entry for the current round. An
+amend of a comment this checkout's ledger does not know takes its age from Jira's `created` time, and a
+successful amend records the build it now reports.
+
+**Changed: `tracker-ops.md` §0** gains rule 5 (a new build is a new round and a new comment) and rewords
+rule 4, in both copies. §0a no longer says the MCP has no edit tool. `/qa-test` 5-report and `/qa-test-fast`
+pass the probed build as `--artifact`; `/qa-verify-fix`, which posts through the MCP, is told that a
+verification of a newer build is a new comment.
+
+---
+
+## Origin labels on bugs Claude files; a tracker-neutral ticket placeholder — `vc-fix` `0.9.4` — 2026-09-30
+
+Ships the `plugins/vc-fix/` changes from #355 and #357, which merged after `0.9.3` without a version bump. Text
+only; no code changed. `vc-perf` is unchanged and stays at `0.3.1`.
+
+**Added: origin labels on Jira bugs Claude files (#355).** `/qa-bug` now records who found the bug on the
+report's line 4 (`**Found by:** agent — testing <TICKET>` / `agent — regression <RUN_ID>` / `human`), set from a
+new `found-by:agent-testing` / `found-by:agent-regression` argument, and Step 5 turns that line into labels:
+`found-by-agent` + `found-in-testing` or `found-in-regression`, else `reported-by-human`. An unclear origin is
+`reported-by-human`. The rule is `knowledge/execution/tracker-ops.md` §2a. The labels apply on VC's own Jira
+only, never on a client project's tracker. The PreToolUse hook that enforces them
+(`.claude/hooks/enforce-bug-labels.mjs`) lives in this repo's `.claude/` and does not ship with the plugin.
+
+**Changed: the ticket placeholder is `<ticket-key>`, not `VCST-XXXX` (#357).** A client Jira uses its own
+prefix and Azure Boards keys are bare numbers, so branch names (`claude/qa-autofix/<ticket-key>`), output paths,
+command examples, argument hints and templates across 31 plugin files now use `<ticket-key>`. Where
+`qa-evidence/output-paths.md` illustrates the key format it shows Jira `ABC-123` next to Azure `12345`.
+`knowledge/diagnostics/skill-expectations.md` changed in the plugin and `.claude/` copies together.
+
+---
+
+## The repository and the marketplace are renamed `ai-tools` — catalog `0.10.0`, `vc-fix` `0.9.3`, `vc-perf` `0.3.1` — 2026-09-30
+
+**BREAKING:** the marketplace `vc-tools` is now **`ai-tools`**, so plugin ids change from `vc-fix@vc-tools` /
+`vc-perf@vc-tools` to `vc-fix@ai-tools` / `vc-perf@ai-tools`. Both plugins bump a patch version, because their
+code changed (the `deliver` target, the install resolvers) and an unchanged version would never reach an
+existing install. The `claude plugin list` resolvers (`plugins/*/knowledge/…/plugin-root.md`,
+`project-init/verify-access.mjs` `pickPluginInstall`) accept both ids and always prefer `…@ai-tools`,
+whatever order the CLI prints them in. `/project-init`'s readiness table WARNs when both ids are enabled,
+because each copy's `hooks.json` starts its own telemetry collector (the duplicate-collector fault in
+`CLAUDE.md`, VCST-5582 H).
+**Migration — uninstall first, so two copies never run together:** `/plugin uninstall vc-fix@vc-tools` (and
+`vc-perf@vc-tools`), then `/plugin marketplace add VirtoCommerce/ai-tools`, `/plugin install vc-fix@ai-tools`
+(and `vc-perf@ai-tools` if you use it), then restart Claude Code.
+
+**Changed:** GitHub repo `VirtoCommerce/vc-mcp-testing-module` → `VirtoCommerce/ai-tools`. Every live reference
+now uses the new name: the marketplace-add command in the READMEs, onboarding and workshop material,
+`package.json` (`name`, `repository`, `bugs`, `homepage`), both plugins' `homepage`/`repository`, the
+`customer-template.yml` checkout, and the `/vc-self-check deliver` target (`PLUGIN_REPO`, changed in the
+`plugins/vc-fix/` copy and the `.claude/` copy together). `ci/lib/affected-suites.ts` now labels a local
+git diff with the repo name `ai-tools`. Older entries in this file keep the name the repo had then.
+**Migration:** in an existing clone run `git remote set-url origin https://github.com/VirtoCommerce/ai-tools.git`.
+If you added the marketplace under the old name, run
+`/plugin marketplace add VirtoCommerce/ai-tools`. GitHub still redirects the old URL.
+
+---
+
 ## The headless CI auto-fix twin is removed; auto-fix PR bodies follow Virto's PR-description guide — `vc-fix` `0.9.2` — 2026-09-28
 
 **Removed: the headless auto-fix lane.** `ci/run-fix-cycle.ts`, `ci/agents/fix-{triage,backend,frontend}-agent.md`,

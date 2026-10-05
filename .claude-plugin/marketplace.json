@@ -1,7 +1,7 @@
 {
-  "name": "vc-tools",
+  "name": "ai-tools",
   "description": "Virto Commerce internal QA tooling, published as a Claude Code marketplace for VC customers running the VC platform.",
-  "version": "0.9.4",
+  "version": "0.11.0",
   "owner": {
     "name": "Virto Commerce",
     "email": "support@virtocommerce.com"
@@ -16,6 +16,11 @@
       "name": "vc-perf",
       "source": "./plugins/vc-perf",
       "description": "Three-layer performance loop — BenchmarkDotNet A/B (L1), k6 load harness (L2), dotnet-trace allocation/CPU/DB attribution (L3), machine-readable perf-verdict, optimization PRs. Depends on vc-fix (reuses its onboarding, routing, and backend dev/review agents). Advisory only."
+    },
+    {
+      "name": "vc-secrets",
+      "source": "./plugins/vc-secrets",
+      "description": "Runs a declared process with its secrets resolved at launch, so no plaintext token sits in an MCP config, a settings env block or a .env file."
     }
   ]
 }

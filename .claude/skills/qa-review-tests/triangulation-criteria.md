@@ -3,9 +3,9 @@
 Reference for **Dimension 11** of `/qa-review-tests` (the `--triangulate` flag). The skill's
 SKILL.md holds the flow; this file holds the judgment rules the triangulation runs against.
 
-Direct sibling of `.claude/skills/qa-review-oracles/bl-audit-criteria.md` and
-`ecl-audit-criteria.md` — same three axes, same evidence bar, same waiver logic. The difference is
-the **subject**: `/qa-review-oracles` triangulates an entry in an *oracle* (a `BL-*` invariant or an
+Direct sibling of `.claude/skills/qa-review-oracles/ecl-audit-criteria.md` — same three axes, same
+evidence bar, same waiver logic (the BL axis no longer triangulates: `bl-audit-criteria.md`). The
+difference is the **subject**: `/qa-review-oracles ecl` triangulates an entry in an *oracle* (an
 `ECL-<n>.<m>` section); this triangulates **an assertion in a regression test case**. That is why
 Dimension 11 was deliberately NOT folded into the merged oracles skill: its write target is a CSV,
 not an oracle, and the two write disciplines are opposites (this one edits suites and never touches
@@ -47,7 +47,7 @@ Neither is confirmed; both are reported as proposals and **never** write to the 
 ### 1a. `docs: N/A` allowance — behavior no documentation can cover
 
 Test cases assert far more undocumented behavior than BL invariants do, so this waiver carries more
-weight here than in `/qa-review-bl`. Three classes can **never** satisfy the Docs axis:
+weight here than in `/qa-review-oracles ecl`. Three classes can **never** satisfy the Docs axis:
 
 1. **Implementation / UX mechanics** — rounding, decimal-money arithmetic, GraphQL HTTP status codes,
    coupon-slot UX, quantity-reject-vs-auto-cap, facet-render mechanics, infinite-scroll batching,
@@ -173,12 +173,21 @@ Steps/Assertions **as written** describe what the agreeing axes show.
 | ✓ | ✓ | ✓ | no (evidence agrees, case text stale) | **DRIFT** |
 | ✓ | ✓ | ✓ | (behavior is real but no case covers it) | **MISSING** |
 | N/A (§1a) | ✓ | ✓ | yes | **CONFIRMED** |
-| N/A (§1a) | ✓ | ✓ | no (evidence agrees, case text stale) | **DRIFT** |
+| N/A (§1a) | ✓ | ✓ | no (evidence agrees, case text stale), and the assertion is `{HYPOTHESIS}` / `{OBSERVED}` | **DRIFT** |
+| N/A (§1a) | ✓ | ✓ | no, and the assertion carries a human source (`{SPEC}`, `{BL}`, a `Catches:` bug key) | **CONTRADICTORY** — a bug candidate, never DRIFT (see below) |
 | N/A (§1a) | ✓ | ✓ | (behavior is real but no case covers it) | **MISSING** |
 | an applicable axis absent (incl. docs that *could* exist but wasn't found — not §1a) | — | — | — | **UNGROUNDED** |
 | fewer than two axes remain after waivers | — | — | — | **UNGROUNDED** |
 | present but conflicting (incl. deploy lag, §1e) | — | — | — | **CONTRADICTORY** |
 | all applicable axes say the behavior is gone | — | — | — | **RETIRE** |
+
+**Code and live agreeing is not a source.** Any bug is present in both the code and the stand, so those two
+axes always agree. When docs are N/A, the case's own human-sourced expectation — ticket AC (`{SPEC}`), a
+`DECLARED` rule (`{BL}`), a Fixed bug's resolution (`Catches:`) — **is** the docs axis, and source + live
+disagreeing with it is a conflict between a requirement and the build: **CONTRADICTORY**, reported as a bug
+candidate and routed down the defect path. Rewriting the case to the build would make it pass on the bug it
+exists to catch (`knowledge/execution/cases-that-catch-bugs.md` §2; BL 2.0 §7.3a in
+`docs/bug-detection-requirements.md`).
 
 **Roll-up:** a case's verdict is its **worst** assertion verdict, ordered
 `CONFIRMED < MISSING < DRIFT < UNGROUNDED < CONTRADICTORY < RETIRE`. A case with one DRIFT assertion

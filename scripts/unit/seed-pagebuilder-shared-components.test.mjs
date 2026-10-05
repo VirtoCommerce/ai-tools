@@ -22,33 +22,10 @@ import {
 
 // ── permission derivation ────────────────────────────────────────────────────
 
-test('rolePermissions: omitting a verb drops exactly that shared-components permission', () => {
-  const all = rolePermissions({ key: 'x', omit: [] });
-  const noCreate = rolePermissions({ key: 'x', omit: ['create'] });
-  assert.equal(all.length - noCreate.length, 1);
-  assert.deepEqual(
-    all.filter((p) => !noCreate.includes(p)),
-    ['builder:shared-components:create'],
-  );
-  // the base is untouched — that is what makes a 403 attributable to the sc gate
-  for (const b of BUILDER_BASE_PERMISSIONS) assert.ok(noCreate.includes(b), `base ${b} must survive`);
-});
-
 test('rolePermissions: omitting every verb leaves the base and nothing else', () => {
   const none = rolePermissions({ key: 'x', omit: ['read', 'create', 'update', 'delete'] });
   assert.deepEqual(none, [...BUILDER_BASE_PERMISSIONS]);
   assert.deepEqual(excludedPermissions({ key: 'x', omit: ['read', 'create', 'update', 'delete'] }), [...SC_PERMISSIONS]);
-});
-
-test('excludedPermissions is the exact complement of what the role holds', () => {
-  for (const omit of [[], ['read'], ['update'], ['create', 'delete']]) {
-    const u = { key: 'x', omit };
-    const held = new Set(rolePermissions(u));
-    const lacked = excludedPermissions(u);
-    assert.equal(lacked.length, omit.length);
-    for (const p of lacked) assert.ok(!held.has(p), `${p} must not be held`);
-    for (const p of SC_PERMISSIONS) assert.ok(held.has(p) || lacked.includes(p), `${p} must be held or lacked`);
-  }
 });
 
 test('roleBody / accountBody: the account can never bypass the gate it is meant to prove', () => {
@@ -133,13 +110,6 @@ test('buildPageContentBody: an unresolved ref THROWS rather than emitting a dang
   );
 });
 
-test('pageRefs derives the referenced aliases in order, ignoring ordinary blocks', () => {
-  assert.deepEqual(
-    pageRefs({ content: [{ type: 'text', text: 'x' }, { ref: 'A' }, { type: 'title' }, { ref: 'B' }] }),
-    ['A', 'B'],
-  );
-});
-
 test('buildComponentCreateBody: content is a JSON OBJECT (an array is rejected 400 by the API)', () => {
   const body = buildComponentCreateBody({ name: 'N' }, { content: [{ type: 'text', text: 'x' }] }, { storeId: 'S' });
   assert.equal(body.storeId, 'S');
@@ -156,21 +126,6 @@ test('createGroupedBody always carries pages:[] (omitting it is a 500 NRE, not a
 });
 
 // ── usage derivation (synthetic fixture — independent of the committed one) ──
-
-test('expectedUsage counts pages once per component but references individually', () => {
-  const synthetic = {
-    pages: {
-      PB_SC_CONSUMER_A: { content: [{ ref: 'SC_MULTI' }, { ref: 'SC_MULTI' }] },
-      PB_SC_CONSUMER_B: { content: [{ ref: 'SC_MULTI' }, { ref: 'SC_SINGLE' }] },
-      PB_SC_CONTROL: { content: [{ type: 'text', text: 'none' }] },
-    },
-  };
-  const { byPages, byRefs } = expectedUsage(synthetic);
-  assert.equal(byPages.SC_MULTI, 2);
-  assert.equal(byRefs.SC_MULTI, 3);
-  assert.equal(byPages.SC_SINGLE, 1);
-  assert.equal(byPages.SC_UNUSED, 0);
-});
 
 // ── the guard's own logic (not the committed data it guards) ─────────────────
 

@@ -1,4 +1,4 @@
-# vc-mcp-testing-module
+# ai-tools
 
 Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 
@@ -18,8 +18,8 @@ This repo hosts two things:
 ## Quick Start — Install `vc-fix`
 
 ```
-/plugin marketplace add VirtoCommerce/vc-mcp-testing-module
-/plugin install vc-fix@vc-tools
+/plugin marketplace add VirtoCommerce/ai-tools
+/plugin install vc-fix@ai-tools
 ```
 
 Then, in the plugin install directory (Claude Code shows the path after install), run:
@@ -68,14 +68,14 @@ inventory, self-containment rationale, gate ladder reference).
 ### Install (direct clone)
 
 ```bash
-git clone https://github.com/VirtoCommerce/vc-mcp-testing-module && cd vc-mcp-testing-module
+git clone https://github.com/VirtoCommerce/ai-tools && cd ai-tools
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
 /project-init                   # scaffolds .env.<env> + .env.local, then env:check
 # Create .mcp.json (see below) → restart IDE → type: /qa-env-check
 ```
 
-> Prefer a manual clone? `git clone … && cd vc-mcp-testing-module && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
+> Prefer a manual clone? `git clone … && cd ai-tools && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
 
 Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
 
@@ -186,9 +186,9 @@ manifest (the old `.claude-plugin/plugin.json` was deleted). `vc-fix`'s own copi
 `plugins/vc-fix/`.
 
 ```
-vc-mcp-testing-module/
+ai-tools/
 ├── CLAUDE.md             # Claude Code project instructions
-├── .claude-plugin/       # marketplace.json ONLY (lists only vc-fix; the vc-qa plugin.json was deleted)
+├── .claude-plugin/       # marketplace.json ONLY (lists the plugins under plugins/; the vc-qa plugin.json was deleted)
 ├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
 │                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)

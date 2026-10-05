@@ -56,8 +56,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { spawnSync } from "node:child_process";
 import Ajv2020 from "ajv/dist/2020.js";
 import type { ValidateFunction } from "ajv";
-import { ENTRY_RE } from "../knowledge/lint-bl.ts";
 import { SECTION_RE } from "../knowledge/lint-ecl.ts";
+import { BL_DIR, readDomains } from "../knowledge/bl-yaml.ts";
 import { parseSuite, loadDesignVocabulary, isCanonicalHeader } from "../test-cases/append-test-cases-to-suite.ts";
 
 // fileURLToPath, not .pathname — a space in the repo path ("My Projects") URL-encodes to %20.
@@ -736,15 +736,11 @@ function domainMapRevs(): Map<string, number> | null {
   return out;
 }
 
+/** The BL ids the records hold (`bl/*.yaml`, BL 2.0 M4) — not the generated markdown. */
 function blIds(): Set<string> | null {
-  const t = readIf(join(ROOT, ".claude", "knowledge", "oracles", "business-logic.md"));
-  if (t == null) return null;
-  const out = new Set<string>();
-  for (const line of t.split(/\r?\n/)) {
-    const m = ENTRY_RE.exec(line);
-    if (m) out.add(m[1]);
-  }
-  return out;
+  const dir = join(ROOT, BL_DIR);
+  if (!existsSync(dir)) return null;
+  return new Set([...readDomains(dir).values()].flatMap((f) => f.rules.map((r) => r.id)));
 }
 
 function eclIds(): Set<string> | null {

@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
-import { appendFile, readFile, utimes, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir, readFile, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 
@@ -23,7 +23,7 @@ import {
   logTargetOf, outsideBase, ownFlushDue, ownedByMe, postVerbSweepAllowed, published, queueFiles, sameEvidence, shouldSweep,
   unionLines,
 } from '../kb/core/push.mjs';
-import { orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, readQueue, releaseConsumed } from '../kb/core/queue.mjs';
+import { log, orderQueue, pushStatusPath, queueBacklog, queuePath, readPushStatus, readQueue, releaseConsumed } from '../kb/core/queue.mjs';
 import { reachPath, sentPath } from '../kb/core/reach.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 // THE READER, IN THE WRITER'S TEST, DELIBERATELY. STEP 3c's whole claim is that the path gained a
@@ -1823,4 +1823,35 @@ test('review 4.4b: a push that LANDS our counters marks them sent, so the next p
   assert.equal(await readFile(sentPath(dir, SESSION), 'utf8'), '30 3\n');
   const api = fakeApi(state);
   assert.equal((await run(env, api)).state, 'nothing', 'nothing new: no second commit');
+}));
+
+// ─── WHO CALLED, end to end (VCST-6146): sidecar transcript id -> push -> stamped CLI line ───────
+
+test('a CLI line is published with the Bash call and subagent that ran it, through the sidecar', () => withQueue(async ({ dir, env }) => {
+  const tx = '23b796a8-db8e-477d-b9cc-9b8199ecbf25';
+  const transcripts = join(dir, 'transcripts');
+  const cliEnv = { ...env, CLAUDE_CODE_SESSION_ID: tx, KB_TRANSCRIPTS_DIR: transcripts };
+  // Written through the real writer, so the sidecar it fills is keyed the way push reads it.
+  await log({ kind: 'ask', q: 'GET /cart lockout', state: 'miss', via: 'cli' }, { env: cliEnv });
+  await log({ kind: 'ask', q: 'typed in a plain terminal', state: 'miss', via: 'cli' }, { env: { ...env, KB_TRANSCRIPTS_DIR: transcripts } });
+  const [line] = (await readQueue({ env, path: queuePath(env) })).lines;
+  const sub = join(transcripts, tx, 'subagents');
+  await mkdir(sub, { recursive: true });
+  await writeFile(join(sub, 'agent-a.jsonl'), `${JSON.stringify({
+    timestamp: new Date(Date.parse(line.at) - 1000).toISOString(),
+    message: { content: [{ type: 'tool_use', id: 'toolu_CLI', name: 'Bash', input: { command: 'npm run -s kb -- ask "GET /cart lockout"' } }] },
+  })}\n`);
+  await writeFile(join(sub, 'agent-a.meta.json'), JSON.stringify({ agentType: 'qa-frontend-expert' }));
+
+  const state = makeBase([makeEntry({ id: 'KB-11111111', subject: 'a fact' })]);
+  assert.equal((await run(cliEnv, fakeApi(state), { now: () => new Date(Date.parse(line.at) + 60_000) })).state, 'pushed');
+  const asks = linesOfSession(state, SESSION).filter((l) => l.kind === 'ask');
+  const stamped = asks.find((l) => l.q === 'GET /cart lockout');
+  assert.equal(stamped.call, 'toolu_CLI');
+  assert.equal(stamped.agent, 'qa-frontend-expert');
+  // Same queue, but this line's process recorded no transcript id: the sidecar holds only `tx`,
+  // and the question is in no call, so it stays unnamed.
+  const plain = asks.find((l) => l.q === 'typed in a plain terminal');
+  assert.equal('call' in plain, false);
+  assert.equal('agent' in plain, false);
 }));

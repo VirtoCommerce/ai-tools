@@ -1,0 +1,123 @@
+{
+ "item": "E1-remove",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:31:50.632Z",
+ "list": "AGENT-TEST-5707-b1",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 215,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "scope": "Customer",
+      "removeSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 210,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "sharedWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "sharedWishlist": null
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 247,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

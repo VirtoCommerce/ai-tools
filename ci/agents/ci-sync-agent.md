@@ -89,7 +89,7 @@ If cases were added/removed, update `config/test-suites.json` testCount.
 
 Read on-demand:
 - `.claude/knowledge/execution/module-suite-map.md` — module → suite mapping + dependencies
-- `.claude/knowledge/oracles/business-logic.md` — BL-* invariants for correct assertions
+- `npm run bl:extract -- --domain <d>` — BL-* invariants for correct assertions
 - `.claude/knowledge/domain/products.md` — product types and test data
 - `.claude/skills/qa-coverage-gap/feature-domain-map.md` — expected coverage per domain
 

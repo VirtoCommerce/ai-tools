@@ -15,7 +15,7 @@ Shared reference for `test-runner-agent.md`. Consulted on demand — do NOT pre-
 | `Title` | Test name — announce before execution |
 | `Section` | Grouping only |
 | `Priority` | Critical/High/Medium/Low — determines failure severity |
-| `Business_Rule` | BL-* invariant(s). If observed behavior violates it, mark FAIL regardless of steps. Look up the specific BL-ID in `knowledge/oracles/business-logic.md` only if ambiguous |
+| `Business_Rule` | BL-* invariant(s). If observed behavior violates it, mark FAIL regardless of steps. Look up the specific BL-ID with `npm run bl:extract -- --id <BL-ID>` only if ambiguous |
 | `Edge_Case_Refs` | ECL-* sections to actively watch for. Look up in `knowledge/oracles/e-commerce-edge-cases-library.md` only if ambiguous |
 | `Preconditions` | Verify before executing; mark BLOCKED if unmet |
 | `Test_Data` | `{{VAR}}` and `@td()` bindings — see substitution below |

@@ -4,8 +4,8 @@ How the plugin reaches Virto Commerce customers, what we ship, and how we versio
 
 > **Status:** Pre-v1.0 (currently v0.6.0). Distribution mechanism is **finalized below** for the v0.x → v1.0.0 path. Subject to refinement based on Phase 4 pilot feedback.
 >
-> **Update:** `.claude-plugin/marketplace.json` currently lists only `vc-fix` (the bug-lifecycle subset —
-> see `plugins/vc-fix/`), not `vc-qa`. Everything below describes `vc-qa`'s distribution model, which
+> **Update:** `.claude-plugin/marketplace.json` lists the plugins under `plugins/` (read it for which), not
+> `vc-qa`. Everything below describes `vc-qa`'s distribution model, which
 > still applies to its on-disk content but is not currently reachable via `/plugin install` — customers
 > get it only via a direct clone, not the marketplace.
 
@@ -106,7 +106,7 @@ Full triage flow, SLA targets, communication templates, and patch-release workfl
 
 ## Customer Migration Path (Phase 4 pilot → GA)
 
-1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `vc-tools` marketplace. No external customers yet.
+1. **Pre-pilot (now):** plugin lives on `main`, distributed via the `ai-tools` marketplace. No external customers yet.
 2. **Pilot start (v0.1.0):** one friendly VC customer installs from a specific commit SHA. We support them directly through Phase 4.
 3. **Pilot close (v0.2.0):** consolidate pilot feedback into a versioned release. Possibly bump to `0.2.0-beta` for second-customer dogfood.
 4. **GA (v1.0.0):** at least 3 successful customer installs on a stable contract. Tier A gets the freeze stamp. `^1.0` becomes the recommended pin.

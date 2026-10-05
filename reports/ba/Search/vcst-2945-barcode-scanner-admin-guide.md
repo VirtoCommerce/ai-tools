@@ -1,9 +1,5 @@
 # Configuring the Barcode Scanner
 
-!!! note
-    This guide describes the **Barcode scanner** widget as it behaves in the VCST-2945 PR build
-    (Catalog `3.1046.0-pr-909`, XCatalog `3.1022.0-pr-113`) — not yet part of a released version.
-
 The **Barcode scanner** setting controls whether the storefront's barcode scan button is shown to
 shoppers, and how a scanned code is matched to a product. It lives alongside **Facets** and
 **Sorting** in a store's **Search configuration**.
@@ -23,7 +19,17 @@ To set up how scans are matched for a store:
    |---|---|---|
    | Enable barcode scanner in the storefront | Shows or hides the scan icon in the storefront search bars | On |
    | Match scanned code by | **Full-text search** treats a scan as an ordinary keyword search (the previous behavior); **Exact match on selected fields** matches only the fields you choose below | Exact match on selected fields |
-   | Fields to match | Only shown in Exact match mode. Pick one or more product identifiers a scanned code must equal: the built-in **GTIN**, **MPN**, and **SKU**, plus any short-text catalog property you've set up to hold a code | GTIN, SKU |
+   | Fields to match | Only shown in Exact match mode. Pick one or more product identifiers a scanned code is matched against: the built-in **GTIN**, **MPN**, and **SKU**, plus any short-text catalog property you've set up to hold a code | GTIN, SKU |
+
+   In **Full-text search** mode (the default) there is no field list — a scan is searched like typed text:
+
+   ![Barcode scanner blade in Full-text search mode](../../tickets/Sprint26-19/VCST-2945/screenshots/doc-admin-barcode-blade-fulltext-blade.png)
+
+   In **Exact match on selected fields** mode the **Fields to match** list appears; tick each field a
+   scan should be matched against (here **GTIN** and **SKU**; other rows of the list are omitted from the
+   picture):
+
+   ![Barcode scanner blade in Exact match mode with GTIN and SKU selected](../../tickets/Sprint26-19/VCST-2945/screenshots/doc-admin-barcode-blade-exact-crop.png)
 
 5. Click **Save** in the toolbar.
 
@@ -52,6 +58,5 @@ and check the field list. Changing the mode or any field drops the missing field
 *Source: this run's own evidence (`reports/tickets/Sprint26-19/VCST-2945/`, field values and hints
 captured verbatim from the Admin SPA during testing); PlatformUserGuide "Configure facets"
 (https://docs.virtocommerce.org/platform/user-guide/catalog/managing-properties) consulted for the
-Search configuration widget's voice and navigation pattern. No clean screenshot of this blade is
-available from this run — the only capture on file shows a since-reported access-control defect and
-would misrepresent the normal blade, so none is embedded here.*
+Search configuration widget's voice and navigation pattern. Screenshots captured 2026-10-01 on
+B2B-store without saving (settings GET-confirmed unchanged before and after).*

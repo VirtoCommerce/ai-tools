@@ -1,6 +1,6 @@
 ---
-description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket, the domain map, a test model and the mind map feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly; the run ends in a short human-readable verdict. feature-test route only."
-argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--dry-run]"
+description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket, the domain map, a test model and the mind map feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
+argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
 disable-model-invocation: true
 ---
 
@@ -13,7 +13,7 @@ behind every step, the rationalization table and the red flags are in
 | | `/qa-test` FAST | **`/qa-test-fast`** | `/qa-test` FULL |
 |---|---|---|---|
 | Context | the ticket | ticket + PR diff + domain map + test model + mind map | the same + story review + reachability |
-| Execution | one agent | checklist lanes ‖ exploratory, ≤3 browser lanes | + suite authoring + C1 regression + visual lane |
+| Execution | one agent (+ visual lane under `--visual`) | checklist lanes ‖ exploratory ‖ visual lane when UI-visible, ≤3 browser lanes at once | + suite authoring + C1 regression + visual lane |
 | Gates | inline self-check | inline, per stage | independent verifier per step |
 | Suites | untouched | **untouched** | new `Draft` cases |
 
@@ -53,7 +53,7 @@ behind every step, the rationalization table and the red flags are in
 4. **Domain slug.** Take the candidate from the ticket's components and summary, then check it with
    `npm run bl:extract -- --has-domain <slug>`.
 5. **Ask the base for this run's coordinates.** For each page path, GraphQL operation and endpoint the
-   ticket names, run `npm run kb -- ask "<coordinate> <question>"` (MCP: `mcp__kb__kb_ask`). Record the
+   ticket names, run `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record the
    hit ids; a miss is not a blocker. Rule: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules →
    *Product context*.
 
@@ -82,7 +82,7 @@ Full briefs, merge rules and the context bundle:
    **`--dry-run` stops here.** It prints the artifact list and the Stage-2 dispatch plan and writes
    nothing to the tracker.
 
-## Stage 2 — Execution (one message, ≤3 browser lanes)
+## Stage 2 — Execution (one message of ≤3 browser lanes; the visual lane follows when a slot frees)
 
 Briefs, the lane split, the data rules and teardown:
 [`../skills/qa-test-fast/execution.md`](../skills/qa-test-fast/execution.md).
@@ -92,17 +92,31 @@ Briefs, the lane split, the data rules and teardown:
 2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
    The charter is the model's unresolved items. `--no-explore` drops the lane. That is recorded, never
    silent.
-3. **Join.** Every item has a Result. The created-entity ledger is complete. Teardown ran and was
-   re-read.
+3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
+   Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+   `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
+   brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
+   [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes
+   `design-report.md` + `summary.json.visual`.
+4. **Join.** Pass every bullet of [`execution.md`](../skills/qa-test-fast/execution.md) §Join gate —
+   results, ledger, settings, the visual lane's `qa-design skill: loaded`, and every exploratory/visual
+   finding as a table row.
 
 ## Stage 3 — Verdict
 
 Triage, the verdict rules, the report shapes and the tracker comment:
 [`../skills/qa-test-fast/verdict.md`](../skills/qa-test-fast/verdict.md).
 
-1. **Triage.** Merge the checklist and exploratory findings and classify each one.
-2. **Bugs.** Call `/vc-fix:qa-bug` **once per product bug**, sequentially, passing the evidence. Its
-   tracker-ticket step runs only after the user says yes.
+1. **Triage.** Invoke the Skill tool with `skill: "qa-triage-results"`, args `ticket <TICKET> --verify`. It
+   classifies every non-passing checklist row, and Phase 4 sends **every** real-bug candidate through
+   `vc-fix:qa-investigate`, which returns an evidence package for each one. It returns the confirmed bugs, the
+   checklist fixes (you apply them; you are the checklist's only writer) and the dismissed rows. A non-empty
+   `unresulted[]` sends you back to the Stage 2 join. Visual findings block or advise per
+   [`visual-axis.md`](../skills/qa-test/visual-axis.md) §3.
+2. **Bugs.** Call `/vc-fix:qa-bug` **once per confirmed bug**, sequentially, passing its investigation package
+   so that it reuses the package and does not reproduce the bug again. A `needs-review` candidate is listed in
+   `verdict.md` and not filed. Its tracker-ticket step runs only after the user says yes. Then tear down
+   by ledger id ([`execution.md`](../skills/qa-test-fast/execution.md) §Data) and re-read.
 3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)
    §5-verdict.2.
 4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
@@ -112,8 +126,8 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
    ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
-   comment, and write the returned id into `summary.json.tracker.comment_id` — a re-run amends that id
-   (Step 0.3). No status transition.
+   comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
+   (Step 0.3); a new build posts a new comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
    `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
    (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in
