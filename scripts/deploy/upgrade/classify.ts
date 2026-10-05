@@ -70,12 +70,14 @@ export async function classifyModule(pin: Pin, duplicate: boolean, ctx: Classify
     return { ...row, status: 'BEHIND', change: await moduleChange(pin, latest, 'BEHIND', ctx) };
   }
   const downgrade = cmpVersion(latest.Version, v.base) < 0;
-  const ask = async (note: string): Promise<Row> =>
-    ({ ...row, status: 'PRERELEASE?', note, trackerKey: key, prUrl: pr?.url, downgrade, replace: await moduleChange(pin, latest, 'PRERELEASE→RELEASE', ctx) });
+  const ask = async (note: string, down = downgrade): Promise<Row> =>
+    ({ ...row, status: 'PRERELEASE?', note, trackerKey: key, prUrl: pr?.url, downgrade: down, replace: await moduleChange(pin, latest, 'PRERELEASE→RELEASE', ctx) });
   if (v.kind === 'pr') {
     if (!pr || pr.state === 'missing') return ask(`PR #${v.pr} not found`);
     if (pr.state !== 'merged') return ask(pr.state === 'open' ? 'PR open' : 'PR closed unmerged');
     if (!pr.releasedIn) return ask('merged, not released yet');
+    if (cmpVersion(pr.releasedIn, v.base) < 0) return ask(`PR #${v.pr} is in ${pr.releasedIn} (lower than the pin)`, true);
+    if (cmpVersion(latest.Version, pr.releasedIn) < 0) return ask(`released in ${pr.releasedIn}, feed latest ${latest.Version}`);
     return { ...row, status: 'PRERELEASE→RELEASE', note: `PR #${v.pr} is in ${pr.releasedIn}`, trackerKey: key, prUrl: pr.url, change: await moduleChange(pin, latest, 'PRERELEASE→RELEASE', ctx) };
   }
   if (v.kind === 'alpha') {
@@ -99,6 +101,13 @@ export async function classifyPlatform(json: any, latest: string, platformRepo: 
     return d === 0 ? row : d > 0 ? { ...row, status: 'AHEAD', note: 'never downgraded' } : { ...row, status: 'BEHIND', change: change('BEHIND') };
   }
   const pr = t.kind === 'pr' ? await prRelease(http, platformRepo, t.pr!, t.base) : null;
-  if (pr?.releasedIn) return { ...row, status: 'PRERELEASE→RELEASE', note: `PR #${t.pr} is in ${pr.releasedIn}`, prUrl: pr.url, trackerKey: trackerKey(pr.title), change: change('PRERELEASE→RELEASE') };
-  return { ...row, status: 'PRERELEASE?', note: pr ? (pr.state === 'open' ? 'PR open' : pr.state === 'merged' ? 'merged, not released yet' : `PR ${pr.state}`) : 'prerelease image', prUrl: pr?.url, trackerKey: trackerKey(pr?.title, tag), downgrade: cmpVersion(latest, baseOf(tag)) < 0, replace: change('PRERELEASE→RELEASE') };
+  const key = trackerKey(pr?.title, tag);
+  let note = pr ? (pr.state === 'open' ? 'PR open' : pr.state === 'merged' ? 'merged, not released yet' : `PR ${pr.state}`) : 'prerelease image';
+  let downgrade = cmpVersion(latest, baseOf(tag)) < 0;
+  if (pr?.releasedIn) {
+    if (cmpVersion(pr.releasedIn, t.base) < 0) { note = `PR #${t.pr} is in ${pr.releasedIn} (lower than the pin)`; downgrade = true; }
+    else if (cmpVersion(latest, pr.releasedIn) < 0) note = `released in ${pr.releasedIn}, feed latest ${latest}`;
+    else return { ...row, status: 'PRERELEASE→RELEASE', note: `PR #${t.pr} is in ${pr.releasedIn}`, prUrl: pr.url, trackerKey: key, change: change('PRERELEASE→RELEASE') };
+  }
+  return { ...row, status: 'PRERELEASE?', note, prUrl: pr?.url, trackerKey: key, downgrade, replace: change('PRERELEASE→RELEASE') };
 }
