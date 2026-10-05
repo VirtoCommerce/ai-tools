@@ -86,7 +86,7 @@ import { describe, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
 import PublishBanner from "../../vc-module-pagebuilder/src/VirtoCommerce.PageBuilderModule.Web/Apps/page-builder-shell/src/components/PublishBanner.vue";
 
-describe("PublishBanner — clears 'has unsaved changes' after Publish (VCST-5515)", () => {
+describe("PublishBanner — clears 'has unsaved changes' after Publish", () => {
   test("hides the banner once the publish action resolves", async () => {
     const wrapper = mount(PublishBanner, { props: { pageId: "test-page" } });
     await wrapper.get('[data-test-id="field-title"]').setValue("edited title");
