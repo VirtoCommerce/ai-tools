@@ -1,8 +1,8 @@
 {
   "$comment": "Curated golden-set xAPI GraphQL fixtures. Each entry is schema-validated via `npm run graphql:fixtures:validate`. Run that script after any fixture edit or backend deploy. Files live under ./queries/ and ./mutations/.",
-  "lastValidated": "2026-09-23",
+  "lastValidated": "2026-09-25",
   "backUrl": "https://vcst-qa.govirto.com",
-  "totalFixtures": 76,
+  "totalFixtures": 86,
   "queries": {
     "me": {
       "path": "queries/me.graphql",
@@ -436,6 +436,48 @@
         "isStarted": true
       },
       "semantics": "Per-user loyalty mission progress. status/statuses are plain String (not an enum), so an unknown value validates and returns an empty page — assert totalCount. A units mission fills currentValue/targetValue (Decimal); a spend mission fills currentMoneyValue/targetMoneyValue (MoneyType)."
+    },
+    "returnableItems": {
+      "path": "queries/returnableItems.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["ORDER_ID"],
+      "usedBy": ["RET-GQL-001", "RET-GQL-002", "RET-GQL-003", "RET-GQL-004", "RET-GQL-005", "RET-GQL-006", "RET-GQL-007", "RET-GQL-008", "RET-GQL-014", "RET-GQL-022", "RET-GQL-023", "RET-GQL-028"]
+    },
+    "returnPolicy": {
+      "path": "queries/returnPolicy.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID"],
+      "usedBy": ["RET-GQL-009", "RET-GQL-028"]
+    },
+    "returnReasons": {
+      "path": "queries/returnReasons.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID"],
+      "usedBy": ["RET-GQL-010", "ORD-RET-005"]
+    },
+    "returnStatuses": {
+      "path": "queries/returnStatuses.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": [],
+      "usedBy": ["RET-GQL-011"]
+    },
+    "return": {
+      "path": "queries/return.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["RETURN_ID"],
+      "usedBy": ["RET-GQL-012", "RET-GQL-013", "RET-GQL-016", "RET-GQL-017", "RET-GQL-025", "RET-GQL-026"]
+    },
+    "returns": {
+      "path": "queries/returns.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["STORE_ID"],
+      "usedBy": ["RET-GQL-030"]
     }
   },
   "mutations": {
@@ -808,6 +850,35 @@
         "Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.",
         "Scoped to lineItemId only — other configured lineItems in cart are NOT affected."
       ]
+    },
+    "createReturn": {
+      "path": "mutations/createReturn.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["ORDER_ID", "ORDER_LINE_ITEM_ID"],
+      "runnerNote": "quantity is a non-string Int — the suite's own cases pass it as a fixed literal directly in the query body (each case's value is known at authoring time); use a real $qty variable + [GQL-VARS] only if a case needs to vary it at runtime.",
+      "usedBy": ["RET-GQL-013", "RET-GQL-014", "RET-GQL-015", "RET-GQL-016", "RET-GQL-017", "RET-GQL-018", "RET-GQL-019", "RET-GQL-020", "RET-GQL-021", "RET-GQL-022", "RET-GQL-023", "RET-GQL-024", "RET-GQL-025", "RET-GQL-026", "RET-GQL-027", "RET-GQL-028"]
+    },
+    "updateReturn": {
+      "path": "mutations/updateReturn.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["RETURN_ID"],
+      "usedBy": ["RET-GQL-016", "RET-GQL-024", "RET-GQL-025"]
+    },
+    "submitReturn": {
+      "path": "mutations/submitReturn.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["RETURN_ID"],
+      "usedBy": ["RET-GQL-014", "RET-GQL-017", "RET-GQL-018", "RET-GQL-019", "RET-GQL-022", "RET-GQL-023", "RET-GQL-024", "RET-GQL-025", "RET-GQL-026", "RET-GQL-028"]
+    },
+    "cancelReturn": {
+      "path": "mutations/cancelReturn.graphql",
+      "category": "returns",
+      "role": "ORG_USER",
+      "requiredVars": ["RETURN_ID"],
+      "usedBy": ["RET-GQL-013", "RET-GQL-014", "RET-GQL-015", "RET-GQL-016", "RET-GQL-017", "RET-GQL-018", "RET-GQL-019", "RET-GQL-022", "RET-GQL-023", "RET-GQL-024", "RET-GQL-025", "RET-GQL-026", "RET-GQL-027"]
     }
   }
 }

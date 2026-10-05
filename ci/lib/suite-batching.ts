@@ -30,6 +30,12 @@
 //      a subtle affinity bug would strand.
 //   2. A suite is never SPLIT. A suite larger than the budget is its own batch and stays whole;
 //      splitting a suite is `suites:lanes`' job and changes what a result file means.
+//   3. A suite with an `exclusiveGroup` (shared mutable state, e.g. a store-wide setting) is its OWN
+//      batch, carrying the group; serialising the group is the dispatcher's job (`ExclusiveGroups`
+//      in `scheduler.ts`, and the orchestrator's never-two-batches-of-one-group rule). Merging a group
+//      into one session used to be the safeguard, and it failed twice: members of different affinity
+//      landed in different buckets (two batches, no serialisation), and a merged group ignored the
+//      case budget (two 50-case suites became one 100-case session).
 
 import { minutesOf, type SuiteCapsInput } from "./suite-caps.ts";
 
@@ -44,6 +50,7 @@ export interface BatchableSuite extends SuiteCapsInput {
   id: string;
   browserDenyList?: readonly string[];
   preferredBrowser?: string;
+  exclusiveGroup?: string;
 }
 
 export interface SuiteBatch {
@@ -55,6 +62,7 @@ export interface SuiteBatch {
   estimatedMinutes: number;
   browserDenyList?: readonly string[];
   preferredBrowser?: string;
+  exclusiveGroup?: string;
 }
 
 /** Suites may share a session only if one slot can accept all of them. */
@@ -93,6 +101,8 @@ export function batchSuites(
       const d = minutesOf(b) - minutesOf(a);
       return d !== 0 ? d : a.id.localeCompare(b.id);
     });
+    // Invariant 3: a group member is never merged with anything — its batch carries the group.
+    for (const s of ordered) if (s.exclusiveGroup) batches.push(toBatch([s]));
     let current: BatchableSuite[] = [];
     let cases = 0;
     const flush = (): void => {
@@ -101,7 +111,7 @@ export function batchSuites(
       current = [];
       cases = 0;
     };
-    for (const s of ordered) {
+    for (const s of ordered.filter((x) => !x.exclusiveGroup)) {
       const n = casesOf(s);
       // A suite bigger than the budget goes alone rather than being split or dragging others past it.
       if (n >= maxCases) {
@@ -131,5 +141,6 @@ function toBatch(suites: readonly BatchableSuite[]): SuiteBatch {
     estimatedMinutes: suites.reduce((sum, s) => sum + minutesOf(s), 0),
     ...(first.preferredBrowser ? { preferredBrowser: first.preferredBrowser } : {}),
     ...(first.browserDenyList?.length ? { browserDenyList: [...first.browserDenyList] } : {}),
+    ...(first.exclusiveGroup ? { exclusiveGroup: first.exclusiveGroup } : {}),
   };
 }

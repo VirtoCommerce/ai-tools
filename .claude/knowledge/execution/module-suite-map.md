@@ -39,7 +39,7 @@ applicability_rationale: "vcst's module → suite mapping. Customer's mapping di
 | **Import/Export** | — | 064 | Data Import/Export pages | `/api/bulk/` | — |
 | **SEO** | — | 066 | Marketing → SEO, Redirects | `/api/seo/` | — |
 | **Image Tools** | — | 069 | Assets → Thumbnails | `/api/image-tools/` | — |
-| **Returns** | — | 073 | Orders → Returns, RMA | `/api/returns/` | — |
+| **Returns** | — | 073, 073a, 073b, 050o, 014c | Orders → Returns, RMA | `/api/return/` | — |
 | **Contracts** | — | 074 | Customers → Contracts | `/api/contracts/` | — |
 | **Loyalty** | — | 075 | Customers → Loyalty | `/api/loyalty/` | — |
 | **Channels** | — | 076 | Catalog → Publishing, Data Quality | `/api/channels/` | — |

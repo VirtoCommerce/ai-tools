@@ -1,0 +1,35 @@
+# name: returnableItems
+# category: returns
+# role: ORG_USER
+# purpose: Per-line return eligibility for one order -- orderedQuantity, deliveredQuantity,
+#   returnableQuantity (capped by DELIVERED, not ordered), isReturnable, and ineligibilityReason
+#   (OUTSIDE_RETURN_WINDOW / NOT_DELIVERED / ORDER_STATUS_NOT_ALLOWED / LINE_CANCELLED /
+#   NOTHING_LEFT_TO_RETURN / RETURNS_DISABLED). deliveryDate/returnableUntil are DateTime.
+# required-vars: ORDER_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-001, RET-GQL-002, RET-GQL-003, RET-GQL-004, RET-GQL-005, RET-GQL-006, RET-GQL-007,
+#   RET-GQL-008, RET-GQL-014, RET-GQL-022, RET-GQL-023, RET-GQL-028 (050o-graphql-returns.csv)
+# runner-note: VCST-5628. returnableQuantity already nets out quantity held by every OTHER non-Draft/
+#   non-Cancelled/non-Rejected return on the order (ReturnQuantityService.NonHoldingStatuses) -- a
+#   Draft return of your own holds nothing, so creating one and re-querying this must show the SAME
+#   returnableQuantity as before the create.
+
+query {
+  returnableItems(orderId: "{{ORDER_ID}}") {
+    orderLineItemId
+    productId
+    sku
+    name
+    imageUrl
+    measureUnit
+    orderedQuantity
+    deliveredQuantity
+    returnableQuantity
+    isReturnable
+    ineligibilityReason
+    deliveryDate
+    returnableUntil
+  }
+}

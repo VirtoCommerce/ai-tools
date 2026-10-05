@@ -14,8 +14,18 @@
  *   const resolved = resolver.resolveCSV(csvContent);
  */
 
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+
+/**
+ * Why an `@td()` reference did not resolve on the current env (see `explainMiss`).
+ * `unseeded` is a fact about the ENVIRONMENT — the reference is sound and another env (or the
+ * alias's own `fields` declaration) proves the field exists, it simply has no value here yet —
+ * so the remedy is to seed, not to edit the suite. `broken` is a fact about the REFERENCE.
+ */
+export type TdMiss =
+  | { kind: "unseeded"; alias: string; field: string; seededOn: string[]; seed?: string }
+  | { kind: "broken"; reason: string };
 
 interface AliasFields {
   [shortName: string]: string; // shortName → CSV column name
@@ -103,6 +113,8 @@ export class TestDataResolver {
   // file supplies only the runtime-drifting GUIDs (id, platform_id, …). See
   // resolveAlias() — env fields win per-field; anything absent falls back to base.
   private envOverrides: AliasRegistry = {};
+  private envName?: string;
+  private otherOverrides?: Map<string, AliasRegistry>;
   private csvCache: Map<string, CSVRow[]> = new Map();
   private jsonCache: Map<string, Record<string, unknown>> = new Map();
   private warnings: string[] = [];
@@ -126,6 +138,7 @@ export class TestDataResolver {
     // the base aliases.json stays shared and definition-only. Resolution is
     // field-level (see resolveAlias), so an override needs only the drifting fields.
     const envName = testEnv ?? process.env.TEST_ENV;
+    this.envName = envName;
     if (envName) {
       const envPath = join(testDataDir, `aliases.${envName}.json`);
       if (existsSync(envPath)) {
@@ -165,6 +178,59 @@ export class TestDataResolver {
   /** Clear accumulated warnings */
   clearWarnings(): void {
     this.warnings = [];
+  }
+
+  /**
+   * Classify a reference that failed to resolve (`inner` = the text inside `@td(...)`).
+   * It is `unseeded` when the alias exists and ANOTHER env's overlay carries the field
+   * (`seededOn`) but this env has no value — the env needs seeding, the suite is fine. The alias's
+   * optional `seed` names the npm script that writes it. Everything else (unknown alias, a field no
+   * env has ever been seeded with, direct-CSV miss) is `broken`.
+   */
+  explainMiss(inner: string): TdMiss {
+    const m = inner.trim().match(/^([A-Z][A-Z0-9_]+)((?:\.\w+)+)$/);
+    if (!m) return { kind: "broken", reason: "not an ALIAS.field reference" };
+    const alias = m[1];
+    const field = m[2].slice(1);
+    const entry = this.aliases[alias] as Record<string, unknown> | undefined;
+    if (!entry) return { kind: "broken", reason: `unknown alias "${alias}"` };
+
+    const seededOn: string[] = [];
+    for (const [env, reg] of this.loadOtherOverrides()) {
+      const ov = reg[alias];
+      if (ov && typeof ov === "object" && this.tryResolveObjectField(ov as Record<string, unknown>, field) !== undefined) {
+        seededOn.push(env);
+      }
+    }
+    // Seeded NOWHERE stays broken even when the field is declared: no env has ever produced the
+    // value, so nothing proves the reference (or the seeder that should write it) is right.
+    if (seededOn.length === 0) {
+      const declared = Boolean((entry.fields as AliasFields | undefined)?.[field.split(".")[0]]);
+      return {
+        kind: "broken",
+        reason: declared
+          ? `field "${field}" of alias "${alias}" is not seeded on any env — seed it once on some env to prove it`
+          : `field "${field}" is not declared on alias "${alias}" and no env carries it`,
+      };
+    }
+    const seed = typeof entry.seed === "string" ? entry.seed : undefined;
+    return { kind: "unseeded", alias, field, seededOn: seededOn.sort(), seed };
+  }
+
+  /** Every aliases.<env>.json except the base file and the current env's own overlay. */
+  private loadOtherOverrides(): Map<string, AliasRegistry> {
+    if (this.otherOverrides) return this.otherOverrides;
+    this.otherOverrides = new Map();
+    let names: string[] = [];
+    try { names = readdirSync(this.testDataDir); } catch { /* no dir → no other envs */ }
+    for (const name of names) {
+      const env = name.match(/^aliases\.(.+)\.json$/)?.[1];
+      if (!env || env === this.envName) continue;
+      try {
+        this.otherOverrides.set(env, JSON.parse(readFileSync(join(this.testDataDir, name), "utf-8")) as AliasRegistry);
+      } catch { /* an unreadable overlay proves nothing either way */ }
+    }
+    return this.otherOverrides;
   }
 
   private resolveToken(inner: string): string {
