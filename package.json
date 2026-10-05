@@ -252,6 +252,7 @@
     "hotfix:deliver:dry": "npx tsx scripts/hotfix/hotfix-deliver.ts --dry-run",
     "deploy:pr": "npx tsx scripts/deploy/vc-deploy.ts pr",
     "deploy:pr:apply": "npx tsx scripts/deploy/vc-deploy.ts pr --apply",
+    "deploy:upgrade": "npx tsx scripts/deploy/vc-deploy.ts upgrade",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
