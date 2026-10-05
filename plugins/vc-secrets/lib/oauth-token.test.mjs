@@ -694,8 +694,8 @@ test("ensureFreshToken: the contended wait's backoff and ceiling bound the deadl
     // constant deleted from the loop. This instead DRIVES the loop and pins the numbers it must
     // actually produce: the backoff seed, the doubling, the ceiling, and the window the deadline
     // falls in — the same shape as the source's own pinned-copy test (mcpw.test.js), driven
-    // through ensureFreshToken rather than cmdLogout: cmdLogout is ported now and pins the same numbers
-    // on its own call to acquireTokenLock (see the cmdLogout tests in lib/oauth-login.test.mjs), but
+    // through ensureFreshToken rather than cmdLogout. acquireTokenLock's own numbers are pinned by
+    // "acquireTokenLock: seed, doubling and ceiling of its own wait" above, but
     // this one is kept because it is the one that drives ensureFreshToken's OWN call to the loop —
     // a change that broke only that call site would go unnoticed without it.
     const LOCK_POLL_SEED = 250;

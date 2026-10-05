@@ -1,9 +1,10 @@
 // Fixtures shared by more than one test file, or tied to this file's location at the package root:
-// declarations and configs, temp paths, PATH stubs, capability probes, and the module URLs a spawned
-// child loads. It must not import node:test: the CI sentinel ("ci: the workflow runs every test file in
-// this package, through the quoted glob") treats any other file that imports node:test as a test file
-// the glob must reach, and this one is not a *.test.mjs. What needs node:test -- the socketTest, lockTest
-// and channelTest wrappers, their bind probes, and the tmpDirs cleanup -- lives in test-support.mjs.
+// declarations and configs, trust state, cmdLogin seam helpers, process and env runners, temp paths, PATH
+// stubs, capability probes, and the module URLs a spawned child loads. It must not import node:test: the CI
+// sentinel ("ci: the workflow runs every test file in this package, through the quoted glob") treats any
+// other file that imports node:test as a test file the glob must reach, and this one is not a *.test.mjs.
+// What needs node:test -- the socketTest, lockTest and channelTest wrappers, their bind probes, and the
+// tmpDirs cleanup -- lives in test-support.mjs.
 
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";

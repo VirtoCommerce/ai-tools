@@ -1128,9 +1128,9 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
 
 const PROBE_PATH = fileURLToPath(new URL("./vc-secrets-probe.mjs", import.meta.url));
 
-// Writes a single project-scope declaration file and returns its containing directory, exactly as
-// tmpConfigDir (test-fixtures.mjs) does, and pushes it onto the shared tmpDirs cleanup (test-support.mjs)
-// rather than growing a second one.
+// Writes a single project-scope declaration file and returns its containing directory, as tmpConfigDir
+// (test-fixtures.mjs) does (with its own temp-dir prefix), and pushes it onto the shared tmpDirs cleanup
+// (test-support.mjs) rather than growing a second one.
 function tmpProbeConfigDir(cfg) {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-probe-"));
     tmpDirs.push(dir);

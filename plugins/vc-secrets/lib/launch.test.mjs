@@ -2465,7 +2465,7 @@ channelTest("importing the target module wakes no receiver; importing the preloa
 // channelTest rather than plain `test` (see the bind-probe comments for channelTest and lockTest in
 // test-support.mjs: a unix-domain-socket / filesystem-socket bind is refused here, and skipping is
 // the expected outcome, not a signal). The tests that never reach createChannel at all are plain
-// `test` calls: above in this file, and the process-level ones in vc-secrets.test.mjs.
+// `test` calls: in this file, and the process-level ones in vc-secrets.test.mjs.
 //
 // Ported from mcpw.js's cmdRun and mcpw.test.js's own cmdRun test block: cmdRun(server, cfg, deps)
 // becomes cmdLaunch(kind, name, cfg, deps), McpwError becomes VcSecretsError, MCPW_* becomes

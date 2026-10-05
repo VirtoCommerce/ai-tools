@@ -1,9 +1,9 @@
 // Helpers shared by this package's test files: the source scanners (stripComments, codeOnly,
 // callArguments), the launcher source readers, the one tmpDirs list with its after() cleanup, and the
-// node:test wrappers socketTest, lockTest and channelTest with the bind probes that gate them. Not a test
-// file itself: it declares no tests, and the CI step does not name it. (Node's default `node --test`
-// discovery may still load it and finds nothing to run.) It sits outside lib/, so the declarations guard
-// leaves it writable like the tests.
+// node:test wrappers socketTest, lockTest and channelTest with the bind probes that gate them and
+// stubChannelPath, the socket path they bind. Not a test file itself: it declares no tests, and the CI step
+// does not name it. (Node's default `node --test` discovery may still load it and finds nothing to run.) It
+// sits outside lib/, so the declarations guard leaves it writable like the tests.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
