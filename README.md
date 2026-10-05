@@ -6,9 +6,11 @@ Agentic QA system for the **Virto Commerce B2B e-commerce platform**.
 
 This repo hosts two things:
 
-1. **[`vc-fix`](plugins/vc-fix/)** — a self-contained Claude Code plugin (bug lifecycle: setup,
-   filing, autonomous fixing, verification, monitoring). **This is the flagship, marketplace-installable
-   offering** — see Quick Start below.
+1. **The `ai-tools` plugin marketplace.** Its flagship is **[`vc-fix`](plugins/vc-fix/)** — a
+   self-contained Claude Code plugin (bug lifecycle: setup, filing, autonomous fixing, verification,
+   monitoring) — see Quick Start below. It also lists **[`vc-perf`](plugins/vc-perf/)** (the performance
+   loop; needs `vc-fix`) and **[`vc-secrets`](plugins/vc-secrets/)** (starts a command with its
+   credentials resolved from the OS credential store or Azure Key Vault, so config files hold none).
 2. **The full `vc-qa` agent crew** (regression, BA analysis, the regression suites, the agent crew) — the source
    `vc-fix` was extracted from. It now lives project-scoped under `.claude/` (auto-discovered on any
    clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
@@ -72,7 +74,7 @@ git clone https://github.com/VirtoCommerce/ai-tools && cd ai-tools
 npm install
 npx playwright install chromium firefox   # Edge uses the system msedge channel
 /project-init                   # scaffolds .env.<env> + .env.local, then env:check
-# Create .mcp.json (see below) → restart IDE → type: /qa-env-check
+# Create .mcp.json (see below) → restart IDE → type: /qa-env-check (vc-fix plugin)
 ```
 
 > Prefer a manual clone? `git clone … && cd ai-tools && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
@@ -102,17 +104,17 @@ Every script works against **one environment**, chosen by name (`TEST_ENV`), and
 
 How the final value is decided:
 
-- **`.env.local` overrides `.env.<env>` for every env.** A `BACK_URL` or `USER_EMAIL` there silently points every environment at it, so keep env-specific values out of it. Scripts print `[env] .env.local sets BACK_URL=…, overriding .env.<env>` when that happens.
+- **`.env.local` overrides `.env.<env>` for every env.** A `BACK_URL` or `USER_EMAIL` there points every environment at it, so keep env-specific values out of it. Scripts warn about it (`[env] .env.local sets BACK_URL=…, overriding .env.<env>`) only for `BACK_URL`, `FRONT_URL` and `ENV_RISK`; any other key, such as a test account, overrides silently.
 - **`KEY_<ENV>` beats `KEY` for that env**, whichever file (or your shell) sets it. Use it in `.env.<env>` to pin a value that nobody's `.env.local` can change, e.g. `BACK_URL_VCPTCORE_DEV=…`. Passwords in `.env.playwright.<env>` beat `.env.local` the same way.
-- The files also override a variable of the same name set in your shell. To override one from the shell, use the `KEY_<ENV>` form.
+- `.env.<env>` and `.env.local` also override a variable of the same name set in your shell (`.env.defaults` doesn't). To override one from the shell, use the `KEY_<ENV>` form — unless a file pins that same `KEY_<ENV>`, which then wins.
 
 **Choosing the environment.** Env names are `[a-z0-9_]+` (`vcptcore_dev`, not `vcptcore-dev`); a name without a `.env.<env>` file prints a warning. The first of these that is set wins:
 
 1. `TEST_ENV` in your shell. PowerShell: `$env:TEST_ENV='vcptcore_dev'` (stays set in that terminal). Bash: `TEST_ENV=vcptcore_dev npm run env:check`.
-2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default, for every session in this checkout. Sessions in the VS Code chat panel don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it. A `claude` CLI session does inherit the `TEST_ENV` of the terminal that started it, and that beats the file — so two sessions can run against two envs in parallel (`$env:TEST_ENV='vcst'; claude` in one terminal, `$env:TEST_ENV='vcptcore_dev'; claude` in another).
+2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default, for every session in this checkout. Sessions in the VS Code chat panel don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it. A `claude` CLI session does inherit the `TEST_ENV` of the terminal that started it, and that beats the file — so two sessions can run against two envs in parallel (`$env:TEST_ENV='vcst'; claude` in one terminal, `$env:TEST_ENV='vcptcore_dev'; claude` in another). The deploy scripts (`npm run deploy:*`, `/qa-deploy-pr`) skip this file: they read only the shell's `TEST_ENV` or their `--env=` flag.
 3. `vcst`.
 
-Check the result with `npm run env:check`; it prints SET/EMPTY, never values. Variable *names* are the same in every env, only values differ. In code: `import { env } from './config.js'` (ES modules — always `.js`). To add an env, start from [`templates/.env.{env}.example`](templates/.env.{env}.example).
+Check the result with `npm run env:check`; it prints each variable as SET (with its length) or EMPTY, never a secret's value. Variable *names* are the same in every env, only values differ. In code: `import { env } from './config.js'` (ES modules — always `.js`). To add an env, start from [`templates/.env.{env}.example`](templates/.env.{env}.example).
 
 **Keep config shared.** Whatever the seeded data depends on — URLs, the store, the test accounts' emails — must resolve to the same values for everyone who seeds or tests an env. So it belongs in the committed `.env.<env>`, never only in your `.env.local`. When two testers resolve different values they break each other: the tests sign in as accounts that were never seeded, and re-seeding hands shared fixtures to whoever seeded last (the order seeder moves its `AGENT-TEST-ORD-*` orders to the current `USER_EMAIL`).
 
@@ -128,6 +130,7 @@ Minimum files:
 ANTHROPIC_API_KEY=sk-ant-...
 GIT_TOKEN=ghp_...         POSTMAN_API_KEY=...        FIGMA_API_KEY=...
 GITHUB_FIX_BUGS_TOKEN=ghp_...   # write-capable PAT for /qa-fix (push + PR). GIT_TOKEN is read-only and 403s on push to the VC org.
+JIRA_EMAIL=you@...        JIRA_API_TOKEN=...         # Jira REST, same account: tracker comments, /qa-deploy-pr finding a ticket's PRs
 
 # .env.playwright.<env> — that env's passwords
 ADMIN_PASSWORD=...        USER_PASSWORD=...          USER2_PASSWORD=...
@@ -140,22 +143,12 @@ App Insights monitoring vars (`APPINSIGHTS_APP_ID_*`, `APPINSIGHTS_RESOURCE_*`, 
 
 #### 2. `.mcp.json` (gitignored — create in project root)
 
-```json
-{
-  "mcpServers": {
-    "playwright-chrome":  { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-chrome.config.json"] },
-    "playwright-firefox": { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-firefox.config.json"] },
-    "playwright-edge":    { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@playwright/mcp@latest", "--config", "config/mcp-playwright-edge.config.json"] },
-    "postman":            { "type": "stdio", "command": "cmd", "args": ["/c", "npx", "@postman/postman-mcp-server@latest", "--minimal"], "env": { "POSTMAN_API_KEY": "%POSTMAN_API_KEY%" } }
-  }
-}
-```
+Copy [`templates/.mcp.json.example`](templates/.mcp.json.example) to `.mcp.json` and replace its `<PLACEHOLDER>`s. It declares the Playwright lanes (`playwright-chrome`, `-firefox`, `-edge`, `-mobile`), Chrome DevTools, Postman, GitHub, Context7, **Azure** (App Insights for `/qa-monitoring` — authenticate with `az login`), Figma and Atlassian; drop the servers you don't use. VirtoOZ is set up at user level. The `kb` server needs no entry: a tracked `SessionStart` hook adds it, so it appears after one restart (`npm run kb:install` does the same by hand).
 
-> **macOS/Linux:** drop `"command": "cmd"` and the `"/c"` arg — use `"command": "npx"` with the remaining args, and `$POSTMAN_API_KEY`.
+> **macOS/Linux:** drop `"command": "cmd"` and the `"/c"` arg — use `"command": "npx"` with the remaining args.
+> **Keep `@playwright/mcp` pinned** at the template's version. The lane configs in `config/` are written for it, and `@latest` swaps the binary that reads them.
 > **WebKit is not supported on Windows** — use Chromium, Firefox, or Edge. **Restart the IDE after any `.mcp.json` change.**
-> **Browser logins:** the Playwright servers can only type a password through `--secrets`. Add `"--secrets", ".env.playwright.<env>"` to each `playwright-*` server (as in [`templates/.mcp.json.example`](templates/.mcp.json.example)). The servers read that file once, at start. To pick it per session, write the path as `.env.playwright.${TEST_ENV:-<default env>}`: Claude Code fills in the `TEST_ENV` of the shell that started `claude`, so two CLI sessions started with different `TEST_ENV` values use different envs' passwords. The env's file must exist, or that session's browser servers don't start.
-
-Optional user/IDE-level MCP servers (not in `.mcp.json`): Chrome DevTools, **Azure** (App Insights for `/qa-monitoring` — authenticate with `az login` / AAD), Atlassian (JIRA), Figma, GitHub, Context7, VirtoOZ.
+> **Browser logins:** the Playwright servers can only type a password through `--secrets`. The template passes `--secrets .env.playwright.local`; point it at the env's own `.env.playwright.<env>` instead, the file the scripts read. The servers read that file once, at start. To pick it per session, write the path as `.env.playwright.${TEST_ENV:-<default env>}`: Claude Code fills in the `TEST_ENV` of the shell that started `claude`, so two CLI sessions started with different `TEST_ENV` values use different envs' passwords. The env's file must exist, or that session's browser servers don't start.
 
 #### 3. Verify
 
@@ -188,23 +181,22 @@ Caveats:
 
 ### How Testing Works
 
-Five pipelines:
+Four pipelines:
 
 1. **Interactive MCP-driven** (primary) — tell Claude Code what to test: `/qa-smoke storefront`, `/qa-test VCST-1234`, `Use qa-frontend-expert to verify checkout`. Real browser via Playwright MCP → HAR/screenshots/console → reports.
 2. **CI regression** — `ci/run-regression.ts` runs CSV suites headless in Docker (`npm run ci:*`).
-3. **Change-driven full cycle** — `npm run ci:cycle`; sync stale cases, then run the affected suites.
-4. **Full-cycle** — `ci/run-full-cycle.ts`: sync stale cases → review → regression (`npm run ci:cycle`).
-5. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
+3. **Full cycle** — `npm run ci:cycle` (`ci/run-full-cycle.ts`): sync stale cases → review → run the affected suites.
+4. **Monitoring** (`/qa-monitoring`) + **auto-fix** (`/qa-fix`) — App Insights triage / bug-fix-to-PR (gate ladder G0–G7, never auto-merges).
 
-> `ci/` ships with the plugin (it's tracked) and also runs in GitHub Actions. Only transient sub-paths (`.fix-workspace/`, heavy run artifacts) are gitignored.
+> `ci/` is tracked. Its GitHub Actions workflows (`full-cycle.yml`, `suite-audit.yml`, `monitor.yml`) run only when started by hand: their schedules are commented out.
 
 ### Commands, Skills & Agents
 
 Full reference: each command and skill file's own frontmatter (`description` + `argument-hint`), which the harness renders as the `/` menu.
 
-- **Slash commands** (`ls .claude/commands` for the current set; the bug-lifecycle ones — `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/project-init`, `/vc-self-check` — come from the `vc-fix` plugin, see `.claude/ROUTING.md`) — `/qa-bundle-check`, `/code-review-full`, `/qa-smoke`, `/qa-test`, `/qa-regression`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, …
+- **Slash commands** (`ls .claude/commands` for the current set; the bug-lifecycle ones — `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/qa-env-check`, `/project-init`, `/vc-self-check` — come from the `vc-fix` plugin, see `.claude/ROUTING.md`; `/qa-monitoring`, `/project-init` and `/vc-self-check` also have project-scoped copies here) — `/qa-bundle-check`, `/code-review-full`, `/qa-smoke`, `/qa-test`, `/qa-test-fast`, `/qa-deploy-pr`, `/qa-regression`, `/qa-hotfix`, `/qa-hotfix-check`, `/qa-triage-results`, `/qa-design`, `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-test-plan`, `/qa-seed-data`, `/qa-sitemap`, `/qa-local-env`, `/qa-onboarding`, `/ba-analyze`, …
 - **Skills** in [`skills/`](.claude/skills) — one `skills/<name>/SKILL.md` each, category as a `[Tag]` in the description; see [skills/README.md](.claude/skills/README.md) for how the counts are derived.
-- **Agents** in [`agents/`](.claude/agents) across three teams (QA, BA, Developers) — roster in [`.claude/rules/agents.md`](.claude/rules/agents.md). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
+- **Agents** in [`agents/`](.claude/agents) for the QA and BA teams (the Developers team, the `/qa-fix` crew, ships only in the `vc-fix` plugin) — roster in [`.claude/rules/agents.md`](.claude/rules/agents.md). Each parallel agent uses its own browser — see [`.claude/rules/agents.md`](.claude/rules/agents.md). Max 3 concurrent browser agents.
 
 Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
@@ -232,24 +224,24 @@ manifest (the old `.claude-plugin/plugin.json` was deleted). `vc-fix`'s own copi
 ai-tools/
 ├── CLAUDE.md             # Claude Code project instructions
 ├── .claude-plugin/       # marketplace.json ONLY (lists the plugins under plugins/; the vc-qa plugin.json was deleted)
-├── plugins/vc-fix/       # THE marketplace-listed plugin — self-contained bug-lifecycle slice (own
-│                         #   agents/skills/commands + own copies of knowledge/.claude/scripts/config.js)
+├── plugins/              # the marketplace's plugins: vc-fix (flagship — self-contained bug-lifecycle slice,
+│                         #   own agents/skills/commands + own copies of knowledge/.claude/scripts/config.js),
+│                         #   vc-perf (performance loop), vc-secrets (credential launcher)
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
 │   ├── agents/           #   agents, flat *.md (QA / BA / Developers) — no subfolders
 │   ├── skills/           #   skills, each skills/<name>/SKILL.md ([Category] tag in the description)
 │   ├── commands/         #   slash commands, flat *.md (the / menu is the inventory)
-│   ├── hooks/            #   hooks.json (2 hooks) + enforce-real-user.mjs
+│   ├── hooks/            #   hook scripts (registered in the tracked .claude/settings.json)
 │   ├── knowledge/        #   shared reference files (api/ oracles/ execution/ domain/ …) + agents/ team instructions
-│   ├── rules/            #   reference docs (agents, regression, skills-commands, mcp-browsers, test-data, quality-gates, reports)
+│   ├── rules/            #   always-loaded rules (agents, regression, reports, test-data)
 │   ├── architecture/     #   TIER.md classification
 │   └── ROUTING.md        #   "New here?" entry point
 ├── config/               # vc-qa: Playwright browser configs + test-suites.json manifest
 ├── ci/                   # vc-qa: CI / full-cycle / monitoring pipelines (tracked)
 ├── vc/                   # vc-qa: VC internal per-env data (+ shared/docs/prompts/ templates) — customers ignore
 ├── regression/suites/    # vc-qa: CSV suites under Frontend/ + Backend/, module-aligned dirs (`npm run suites:lint` prints the totals)
-├── tests/                # vc-qa: Test cases by sprint/JIRA ticket
 ├── test-data/            # vc-qa: Alias registry + CSV fixtures
-├── reports/              # vc-qa: Bug + regression reports
+├── reports/              # vc-qa: bug, regression and per-ticket reports (tickets/<Sprint>/<TICKET>/<env>/)
 ├── scripts/              # vc-qa: Resolvers, GraphQL runner, sync/lint utilities, seeders
 └── config.js             # vc-qa: Layered env loader (TEST_ENV-keyed)
 ```
@@ -258,9 +250,7 @@ ai-tools/
 
 ### Regression Suites
 
-CSV suites in enriched agent-native format, organized under `Frontend/<module>/` and `Backend/<module>/`. **Authoritative definitions + selection groups live in [`config/test-suites.json`](config/test-suites.json)** (groups: `smoke`, `critical`, `release`, `frontend`, `backend`, `sprint`, `full`, plus module/feature-aligned groups like `catalog`, `b2b`, `payment`).
-
-P0 suites: 042 (Smoke), 078 (Smoke companion), 039 (CyberSource payment), 044 (Security), 049 (Platform REST API).
+CSV suites in enriched agent-native format, organized under `Frontend/<module>/` and `Backend/<module>/`. **Authoritative definitions + selection groups live in [`config/test-suites.json`](config/test-suites.json)** (groups: `smoke`, `critical`, `purchase-flow`, `frontend`, `backend`, `sprint`, `full`, plus module/feature-aligned groups like `catalog`, `b2b`, `payment`). Suite priorities live there too; `npm run regression:plan -- <group>` lists a group's suites.
 
 Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)).
 
