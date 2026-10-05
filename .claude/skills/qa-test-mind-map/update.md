@@ -9,7 +9,7 @@ renames ids.
 | Trigger | Start from |
 |---|---|
 | `TM-011`: the domain map's `rev` moved past `domain_map_rev` | the map's §0 "changed since rev N" and §7 amendments |
-| A ticket changed behaviour (`--from VCST-XXXX`) | the chain links its test model's `Chain position:` names, plus its `/qa-test` `reports/tickets/<Sprint>/<TICKET>/summary.json` → `domain_map.mind_map_findings[]` (DRIFT and missing-behaviour candidates the run handed back at `5-docs-map`) |
+| A ticket changed behaviour (`--from VCST-XXXX`) | the chain links its test model's `Chain position:` names, plus its `/qa-test` `reports/tickets/<Sprint>/<TICKET>/<env>/summary.json` → `domain_map.mind_map_findings[]` (DRIFT and missing-behaviour candidates the run handed back at `5-docs-map`) |
 | `--since <git-ref>` on the domain's code or specs | `npm run regression:select` for the paths, then the nodes whose evidence cites those files |
 | An oracle amendment (`BL-*` Status or Rule changed) | every node whose `oracle_refs` or `{BL}` evidence names it |
 | A `kb dispute` against an entry a node cites | that node |

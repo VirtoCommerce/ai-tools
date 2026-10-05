@@ -101,7 +101,7 @@ Business rules verified: [BL-* list]. Bugs: [list, with relationship — sub-tas
 Not filed (below severity floor): [N] Low — [one line each + reports/bugs/open/low/<file>.md], or None.
 Release gate: [GO/CONDITIONAL GO/NO-GO recommendation]. Decision: [verdict].
 Release note: [<layer>/<audience> — /ba-analyze docs release <ticket-key>], or "none — <refusal>".
-Evidence: reports/tickets/{SPRINT}/<ticket-key>/screenshots/
+Evidence: reports/tickets/{SPRINT}/<ticket-key>/<env>/screenshots/
 ```
 
 The `Release note` line is **mandatory too, and says `none — <refusal>` when there is no fragment** —
@@ -120,7 +120,7 @@ prerelease deployed to the shared test env with no trace. The delta carries the 
 
 ### 3. Persist `summary.json`
 
-Write `reports/tickets/{SPRINT}/<ticket-key>/summary.json` per
+Write `reports/tickets/{SPRINT}/<ticket-key>/<env>/summary.json` per
 [`.claude/templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json): `path`, the
 AC-analysis + `ac_dod_estimate` block, counts, the **`regression`** block (`c1` only — `c2` was removed with `5r`) and `regression_triage`, `bugs_filed`
 with relationship + severity, `bugs_not_filed`, the **`timing`** block,
@@ -275,7 +275,7 @@ should) auto-fire it. When `refusal` is null, state exactly this:
 
 ```
 /ba-analyze docs release <ticket-key>
-# layer=<layer> · audience=<audience> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/summary.json
+# layer=<layer> · audience=<audience> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/<env>/summary.json
 ```
 
 Those four facts are the whole hand-off — the follow-up run re-derives nothing. When `refusal` is
@@ -324,7 +324,7 @@ table).
 
 ```
 /ba-analyze docs ticket <ticket-key> --publish
-# layer=<layer> · audiences=<derived list> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/summary.json
+# layer=<layer> · audiences=<derived list> · summary.json: reports/tickets/{SPRINT}/<ticket-key>/<env>/summary.json
 ```
 
 `ba-doc-writer` runs **alone** (same reason as `doc_scope: release` — there is no per-ticket
