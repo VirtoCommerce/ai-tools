@@ -77,7 +77,7 @@ npx playwright install chromium firefox   # Edge uses the system msedge channel
 
 > Prefer a manual clone? `git clone … && cd ai-tools && npm install`, then hand-create `.env.local` + `.mcp.json`. For a new customer/deployment run `/project-init` — it also writes the `project-profile.json` that `/qa-fix` routing needs.
 
-Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`.
+Pick the environment with `TEST_ENV` (default `vcst`) — see [Configuration](#configuration).
 
 > **New deployment or new customer?** Run **`/project-init`** in Claude Code instead of hand-writing the files below. It asks only what shapes config (env name, bug tracker — Jira or Azure Boards, code host — GitHub or Azure Repos, auth per axis) and **derives** the rest (native-platform vs client project, client org, fork account) from your token + a live repo scan, then writes `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json` and verifies access. That profile is what routes each `/qa-fix` to the right repo (client custom code vs native VirtoCommerce platform) and the right tracker.
 
@@ -91,27 +91,50 @@ Default `TEST_ENV` is `vcst`. Switch with `TEST_ENV=vcptcore npm run env:check` 
 
 #### 1. Environment variables (layered loader, keyed by `TEST_ENV`)
 
-Files load in order; later overrides earlier:
+Every script works against **one environment**, chosen by name (`TEST_ENV`), and builds its settings from these files. Later rows override earlier ones:
 
-| File | Tracked | Purpose |
-|------|---------|---------|
-| `.env.defaults` | git | Cross-env constants (sandbox cards, Builder.io) |
-| `.env.${TEST_ENV}` | git | Per-env URLs/IDs (`.env.vcst`, `.env.vcptcore`, `.env.virtostart`) — no secrets |
-| `.env.local` | **gitignored** | Secrets — create this locally (passwords, API tokens) |
+| File | In git | Holds |
+|------|--------|-------|
+| `.env.defaults` | yes | Constants shared by every env (sandbox cards, Builder.io) |
+| `.env.<env>` | yes | That env's URLs, store, `ENV_RISK` and **which accounts the tests use** (`USER_EMAIL`, `ORG_USER_EMAIL`, …). Shared by the whole team. |
+| `.env.local` | no | Your API tokens and machine-wide settings. **Applied to every env.** |
+| `.env.playwright.<env>` | no | That env's passwords. The scripts read it for the active env; the Playwright MCP servers read it through `--secrets`. |
 
-Validate with `npm run env:check` (42 vars; 26 required). Variable *names* are stable across envs — only values differ. Access in code via `import { env } from './config.js'` (ES modules — always `.js`).
+How the final value is decided:
 
-Minimum `.env.local`:
+- **`.env.local` overrides `.env.<env>` for every env.** A `BACK_URL` or `USER_EMAIL` there silently points every environment at it, so keep env-specific values out of it. Scripts print `[env] .env.local sets BACK_URL=…, overriding .env.<env>` when that happens.
+- **`KEY_<ENV>` beats `KEY` for that env**, whichever file (or your shell) sets it. Use it in `.env.<env>` to pin a value that nobody's `.env.local` can change, e.g. `BACK_URL_VCPTCORE_DEV=…`. Passwords in `.env.playwright.<env>` beat `.env.local` the same way.
+- The files also override a variable of the same name set in your shell. To override one from the shell, use the `KEY_<ENV>` form.
+
+**Choosing the environment.** Env names are `[a-z0-9_]+` (`vcptcore_dev`, not `vcptcore-dev`); a name without a `.env.<env>` file prints a warning. The first of these that is set wins:
+
+1. `TEST_ENV` in your shell. PowerShell: `$env:TEST_ENV='vcptcore_dev'` (stays set in that terminal). Bash: `TEST_ENV=vcptcore_dev npm run env:check`.
+2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default. Claude Code's own commands and hooks don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it.
+3. `vcst`.
+
+Check the result with `npm run env:check`; it prints SET/EMPTY, never values. Variable *names* are the same in every env, only values differ. In code: `import { env } from './config.js'` (ES modules — always `.js`). To add an env, start from [`templates/.env.{env}.example`](templates/.env.{env}.example).
+
+**Keep config shared.** Whatever the seeded data depends on — URLs, the store, the test accounts' emails — must resolve to the same values for everyone who seeds or tests an env. So it belongs in the committed `.env.<env>`, never only in your `.env.local`. When two testers resolve different values they break each other: the tests sign in as accounts that were never seeded, and re-seeding hands shared fixtures to whoever seeded last (the order seeder moves its `AGENT-TEST-ORD-*` orders to the current `USER_EMAIL`).
+
+**Passwords are the exception: they never go into git.** That is an accepted gap. Sync them by hand from the team secret store, and keep the values identical across testers:
+
+- Seeding resets an existing test account's password to the value in your config, so testers with different values lock each other out.
+- If a password variable is missing, the seeders create the account with a built-in fallback password, without a warning, and the tests can't sign in. The variable names are listed in [`templates/.env.local.template`](templates/.env.local.template).
+
+Minimum files:
 
 ```env
+# .env.local — tokens, never env-specific values
 ANTHROPIC_API_KEY=sk-ant-...
-ADMIN=...                 ADMIN_PASSWORD=...
-USER_EMAIL=...            USER_PASSWORD=...
-USER2_EMAIL=...           USER2_PASSWORD=...
-USER_VIRTO=...            USER_VIRTO_PASSWORD=...
 GIT_TOKEN=ghp_...         POSTMAN_API_KEY=...        FIGMA_API_KEY=...
 GITHUB_FIX_BUGS_TOKEN=ghp_...   # write-capable PAT for /qa-fix (push + PR). GIT_TOKEN is read-only and 403s on push to the VC org.
+
+# .env.playwright.<env> — that env's passwords
+ADMIN_PASSWORD=...        USER_PASSWORD=...          USER2_PASSWORD=...
+TEST_USER_PASSWORD=...    B2B_USER_PASSWORD=...      DEFAULT_TEST_PASSWORD=...
 ```
+
+This layering is how the scripts in this repo work. The `vc-fix` plugin keeps its own copy of the loader, which doesn't read `.env.playwright.<env>`; there, per-env passwords go in `.env.local` as `KEY_<ENV>=…`.
 
 App Insights monitoring vars (`APPINSIGHTS_APP_ID_*`, `APPINSIGHTS_RESOURCE_*`, `AZURE_SUBSCRIPTION_ID`, `AZURE_RESOURCE_GROUP`) are committed in `.env.${TEST_ENV}` — no secrets needed.
 
@@ -130,6 +153,7 @@ App Insights monitoring vars (`APPINSIGHTS_APP_ID_*`, `APPINSIGHTS_RESOURCE_*`, 
 
 > **macOS/Linux:** drop `"command": "cmd"` and the `"/c"` arg — use `"command": "npx"` with the remaining args, and `$POSTMAN_API_KEY`.
 > **WebKit is not supported on Windows** — use Chromium, Firefox, or Edge. **Restart the IDE after any `.mcp.json` change.**
+> **Browser logins:** the Playwright servers can only type a password through `--secrets`. Add `"--secrets", ".env.playwright.<env>"` to each `playwright-*` server (as in [`templates/.mcp.json.example`](templates/.mcp.json.example)). The servers read that file once, at start, so switching env means changing the path and restarting the IDE.
 
 Optional user/IDE-level MCP servers (not in `.mcp.json`): Chrome DevTools, **Azure** (App Insights for `/qa-monitoring` — authenticate with `az login` / AAD), Atlassian (JIRA), Figma, GitHub, Context7, VirtoOZ.
 
@@ -142,6 +166,25 @@ npm run env:check       # SET/EMPTY report — fails if required vars missing
 Then in Claude Code: `Navigate to the storefront URL and take a screenshot`. If a browser opens and navigates — you're set.
 
 **Common issues:** restart the IDE after `.mcp.json` edits · close all Chrome windows before `playwright-chrome` (user-data-dir conflict) · `Browser "chromium" is not installed` → run `cli.js install` inside the MCP's bundled `playwright-core`.
+
+### Test Data Seeding
+
+The seeders create the data the suites reference — catalogs, products, prices, stock, store settings, B2B orgs and users, promotions, loyalty and more — on the env selected by `TEST_ENV`, through the platform API. Before seeding: `npm ci`, a passing `npm run env:check`, the env's passwords in `.env.playwright.<env>`, and `ENV_RISK` declared in `.env.<env>`. The seeders refuse `ENV_RISK=production` unless you pass `--allow-admin-writes-on-prod`.
+
+```bash
+npm run seed:bootstrap -- --dry-run   # rehearsal: reads only, prints the plan
+npm run seed:bootstrap                # every phase in dependency order (several minutes)
+npm run seed:minimal                  # required phases only
+npm run td:reconcile                  # check the live env afterwards
+npm run seed:bootstrap:teardown       # remove what the seeders created (AGENT-TEST-* only)
+```
+
+Single domains have their own scripts (`seed:b2b`, `seed:products`, `seed:promotions`, … in `package.json`), and in Claude Code `/qa-seed-data bootstrap` runs the same flow. The seeders are idempotent, so re-running repairs drift. They write the runtime IDs they create to `test-data/aliases.<env>.json`: commit that file after seeding a shared env so everyone resolves the same IDs (`localhost`'s is gitignored). After the first seed, set `TEST_USER_ID` in `.env.<env>` to the id of `USER_EMAIL`'s account.
+
+Caveats:
+
+- **Seeding changes existing data, not only adds.** On an env that already has data, the store step reconfigures the `STORE_ID` store from [`test-data/stores/stores.csv`](test-data/stores/stores.csv) (email, fulfillment centers, white-labeling theme, payment and shipping methods). The optional steps add store-wide promotions (including an automatic gift on every cart), loyalty programs and published `qa-*` pages.
+- **Reading a dry run:** later steps can't find what earlier steps only pretended to create, so expect "not found — seed … first" warnings that a real run won't produce. The catalog step's plan also shows a new virtual catalog; a real run reuses the store's existing one.
 
 ### How Testing Works
 
@@ -171,7 +214,7 @@ Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 npm run env:check          # Validate env vars (active TEST_ENV)
 npm run ci:smoke           # CI smoke (042, 078, 078b-d)   ·  ci:critical / ci:frontend / ci:backend / ci:full
 npm run ci:cycle           # Full pipeline: sync → review → regression
-npm run seed[:minimal|:catalog|:full|:teardown]   # Test-data seeding (Postman MCP)
+npm run seed:bootstrap     # Test-data seeding (-- --dry-run to rehearse) — see Test Data Seeding
 npm run graphql:validate   # Run GraphQL fixtures  ·  schema:check (drift gate)
 npm run suites:lint        # Manifest selections in sync  ·  scope:validate (critical-UI scope)
 ```
@@ -211,7 +254,7 @@ ai-tools/
 └── config.js             # vc-qa: Layered env loader (TEST_ENV-keyed)
 ```
 
-**Gitignored:** `.env`, `.env.local`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json`. (`ci/` and `.github/` are tracked and ship.) `.claude/settings.json` is tracked — the shared project config (hooks + `enabledPlugins`, incl. Serena).
+**Gitignored:** `.env`, `.env.local`, `.env.playwright.*`, `.env.test-env`, `.mcp.json`, `results/`, `.newman-run/`, `.fix-workspace/`, `project-profile.json`, `.claude/settings.local.json`. (`ci/` and `.github/` are tracked and ship.) `.claude/settings.json` is tracked — the shared project config (hooks + `enabledPlugins`, incl. Serena).
 
 ### Regression Suites
 
