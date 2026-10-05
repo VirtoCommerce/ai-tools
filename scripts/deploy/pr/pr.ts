@@ -1,5 +1,5 @@
 /**
- * deploy-pr-artifact.ts
+ * vc-deploy.ts pr — deploy a change's PR artifacts
  *
  * Gather ALL the fresh CI pre-release artifacts a change produced (across several
  * vc-module-* repos + vc-platform + vc-frontend) and pin them TOGETHER, in ONE manifest
@@ -46,7 +46,7 @@
  * branch matching the env (never hardcode vcst-qa). --env <name> targets any environment.
  *
  * Usage:
- *   npx tsx scripts/deploy/deploy-pr-artifact.ts <ticket-key> [options]
+ *   npx tsx scripts/deploy/vc-deploy.ts pr <ticket-key> [options]
  *
  * Options:
  *   --env=<name>               Target env (default: resolved TEST_ENV). Picks the vc-deploy-dev branch + BACK_URL.
@@ -75,27 +75,16 @@
  * (Jira: JIRA_EMAIL + JIRA_API_TOKEN). The --verify live check needs the env's admin credentials.
  */
 
-import { existsSync, readFileSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
-import { parse as parseDotenv } from 'dotenv';
+import { OWNER, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { accountPermission, canWrite, commitViaGh, createPr, createRef, ensureFork, fetchFile, getToken, gh, ghJson, ghUser, refSha, setToken } from '../lib/github.ts';
+import { THEME_URL_RE, countChangedLines, editPackagesText, editThemeText, pinnedModule, tagOf } from '../lib/manifest.ts';
+import type { Target } from '../lib/manifest.ts';
+import { getAdminToken, liveModules, platformHealthy } from '../lib/live.ts';
+import { Exit, fail } from '../lib/exit.ts';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..', '..');
-const OWNER = 'VirtoCommerce';
-const DEPLOY_REPO_DEFAULT = 'VirtoCommerce/vc-deploy-dev';
-const PACKAGES_PATH_DEFAULT = 'backend/packages.json';
-const THEME_PATH_DEFAULT = 'theme/artifact.json';
-const POLL = 15_000;
 const JIRA_BASE = (process.env.JIRA_BASE_URL || 'https://virtocommerce.atlassian.net').replace(/\/$/, '');
-// vcst / vcptcore are the two QA envs; their vc-deploy-dev branches carry a -qa suffix the env name
-// doesn't (there is no bare `vcst` or `vcptcore` branch), and neither .env carries a DEPLOY_* block.
-// Every other env's branch equals the env name (underscores → hyphens) unless .env.<env> overrides it.
-const BRANCH_MAP: Record<string, string> = { vcst: 'vcst-qa', vcptcore: 'vcptcore-qa' };
 const ARTIFACT_RE = /https?:\/\/vc3prerelease\.blob\.core\.windows\.net\/[^\s)"'<>]+?\.zip/gi;
 const PR_URL_RE = /github\.com\/(VirtoCommerce)\/([A-Za-z0-9._-]+)\/pull\/(\d+)/gi;
-const THEME_URL_RE = /https?:\/\/[^\s"'<>]*vc-theme[^\s"'<>]*\.zip/i;
 // A vc-platform PR does NOT publish a vc3prerelease zip — its CI pushes a CONTAINER IMAGE and the
 // PR body carries `Image tag: ghcr.io/VirtoCommerce/platform:<tag>`. That tag is the only thing
 // vc-deploy-dev's deploy-backend.yml reads for the platform (`PlatformImageTag` → docker build-arg),
@@ -105,19 +94,6 @@ const PLATFORM_IMAGE_TAG_RE = /ghcr\.io\/[A-Za-z0-9._-]+\/platform:([A-Za-z0-9._
 /** Leading semver of a container tag: `3.1053.0-pr-3092-2588-vcst-5532-2588d613` → `3.1053.0`. */
 const SEMVER_PREFIX_RE = /^(\d+\.\d+\.\d+(?:\.\d+)?)/;
 
-// ── types ──────────────────────────────────────────────────────────────────────
-type Kind = 'module' | 'platform' | 'theme';
-interface Target {
-  kind: Kind;
-  id?: string;             // module Id (backend) or repo pseudo
-  version?: string;        // module / platform version
-  blobName?: string;       // backend module blob file name
-  themeUrl?: string;       // full storefront theme artifact URL
-  imageTag?: string;       // platform ONLY: the container tag → PlatformImageTag. Defaults to `version`.
-  source: string;          // "PR owner/repo#N" | "--module" | "--platform" | "--theme"
-}
-/** The tag a platform pin writes to PlatformImageTag (falls back to the version for a plain bump). */
-const tagOf = (t: Target): string => t.imageTag ?? t.version!;
 /**
  * Build a platform Target from a container tag. `PlatformVersion` keeps the tag's BASE semver while
  * `PlatformImageTag` carries the full pre-release tag — they are different fields with different
@@ -142,76 +118,7 @@ export function parsePlatformFlag(raw: string, source: string): Target {
   if (eq > 0) return { kind: 'platform', version: v.slice(0, eq).trim(), imageTag: v.slice(eq + 1).trim(), source };
   return platformTargetFromTag(v, source);
 }
-interface EnvCoords {
-  env: string; deployOwner: string; deployRepo: string; branch: string;
-  packagesPath: string; themePath: string; backUrl: string; admin: string; password: string;
-}
-interface ManifestFile { text: string; sha: string; json: any; }
 
-// ── env / token ──────────────────────────────────────────────────────────────
-/**
- * Layered load with the SAME precedence as config.js (`override: true`): a LATER file wins over
- * an earlier one, so `.env.local` (per-developer secrets + the identities they pair with) beats a
- * committed `.env.<env>`. First-wins here silently mismatched a committed `.env.<env>` JIRA_EMAIL
- * against the `.env.local` JIRA_API_TOKEN of whoever ran it → Jira 404 on a ticket that exists.
- * An AMBIENT value (real process env — an inline `VAR=x npm run …`, or CI) still outranks every
- * file, which is why this tracks file-supplied keys instead of using dotenv's own `override`.
- */
-function loadEnvFiles(testEnv: string): void {
-  const fromFile = new Set<string>();
-  for (const f of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
-    const p = resolve(REPO_ROOT, f);
-    if (!existsSync(p)) continue;
-    for (const [k, v] of Object.entries(parseDotenv(readFileSync(p)))) {
-      if (process.env[k] === undefined || fromFile.has(k)) { process.env[k] = v; fromFile.add(k); }
-    }
-  }
-}
-function readEnvFile(path: string): Record<string, string> {
-  return existsSync(path) ? parseDotenv(readFileSync(path)) : {};
-}
-let TOKEN: string | undefined;
-function ghHeaders(extra: Record<string, string> = {}): Record<string, string> {
-  return { Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'vc-deploy-pr', ...(TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {}), ...extra };
-}
-
-/** Resolve deploy + connection coords for an env. `.env.<env>` DEPLOY_* wins; else convention. */
-function resolveEnvCoords(env: string, passwordOverride?: string): EnvCoords {
-  // stable / regression live in .env.vcptcore_<key>; everything else in .env.<env>.
-  const vcpt = /^vcptcore[_-](stable|regression)$/i.exec(env);
-  const primary = vcpt ? resolve(REPO_ROOT, `.env.vcptcore_${vcpt[1].toLowerCase()}`) : resolve(REPO_ROOT, `.env.${env}`);
-  const e = readEnvFile(primary);
-  const local = readEnvFile(resolve(REPO_ROOT, '.env.local'));
-  const repoSpec = e.DEPLOY_REPO || DEPLOY_REPO_DEFAULT;
-  const [deployOwner, deployRepo] = repoSpec.includes('/') ? repoSpec.split('/') : [OWNER, repoSpec];
-  const branch = e.DEPLOY_BRANCH || BRANCH_MAP[env] || env.replace(/_/g, '-');
-  // Per-env secret lookup, in config.js's own promotion form FIRST (`ADMIN_PASSWORD_${TEST_ENV}`
-  // upper-cased) — the vcptcore-suffix forms below only ever produce STABLE/REGRESSION, so a plain
-  // `vcptcore` used to strip to "" and silently fall through to the generic ADMIN_PASSWORD (wrong
-  // account → no admin token → --verify's live column reads "unavailable" instead of the version).
-  const envKey = env.toUpperCase().replace(/[^A-Z0-9]/g, '_');
-  const suffix = env.replace(/^vcptcore[_-]?/, '').replace(/[^a-z0-9]/gi, '').toUpperCase();
-  const password = passwordOverride
-    || local[`ADMIN_PASSWORD_${envKey}`]
-    || local[`ADMIN_PASSWORD_VCPTCORE_${suffix}`] || local[`ADMIN_PASSWORD_${suffix}`]
-    || local.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD || 'Password1';
-  return {
-    env, deployOwner, deployRepo, branch,
-    packagesPath: e.DEPLOY_PACKAGES_PATH || PACKAGES_PATH_DEFAULT,
-    themePath: e.DEPLOY_THEME_PATH || THEME_PATH_DEFAULT,
-    backUrl: (e.BACK_URL || process.env.BACK_URL || '').replace(/\/$/, ''),
-    admin: e.ADMIN || process.env.ADMIN || 'admin', password,
-  };
-}
-
-// ── GitHub API ───────────────────────────────────────────────────────────────
-async function ghJson(url: string): Promise<any | null> {
-  const res = await fetch(url, { headers: ghHeaders() });
-  if (res.status === 404) return null;
-  if (res.status === 403 || res.status === 429) throw new Error(`GitHub rate-limited (HTTP ${res.status}). ${TOKEN ? 'Wait for reset.' : 'Set GIT_TOKEN in .env.local.'}`);
-  if (!res.ok) throw new Error(`GitHub API error ${res.status} for ${url}`);
-  return res.json();
-}
 
 // ── tracker ticket → linked PRs (Jira impl; port of qa-local-env/resolve-task.mjs) ──
 // The configured tracker's dev-link lookup. Jira today; Azure Boards users pass --pr explicitly.
@@ -307,327 +214,9 @@ export function parsePrRef(ref: string): PrRef | null {
   return short ? { owner: short[1] || OWNER, repo: short[2], number: +short[3], source: '--pr' } : null;
 }
 
-// ── manifest read / mutate ──────────────────────────────────────────────────────
-async function fetchFile(c: EnvCoords, path: string): Promise<ManifestFile> {
-  const j = await ghJson(`https://api.github.com/repos/${c.deployOwner}/${c.deployRepo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(c.branch)}`);
-  if (!j?.content) throw new Error(`Could not read ${c.deployOwner}/${c.deployRepo}/${path}@${c.branch}`);
-  const text = Buffer.from(j.content, 'base64').toString('utf8');
-  return { text, sha: j.sha, json: JSON.parse(text) };
-}
-/** Current pin of a module Id: its version + which source it sits in (blob vs GithubReleases).
- *  Recognises BOTH {Id,Version} entries AND BlobName-only AzureBlob entries ("<Id>_<version>.zip",
- *  which carry no Id field — the shape vc-deploy-dev uses for prerelease pins). */
-export function pinnedModule(json: any, id: string): { version: string; source: string; blobName?: string } | null {
-  for (const s of json.Sources ?? []) for (const m of s?.Modules ?? []) {
-    if (m?.Id === id) return { version: String(m.Version), source: String(s.Name ?? ''), blobName: m.BlobName };
-    if (typeof m?.BlobName === 'string') { const bm = m.BlobName.match(/^(.+)_(\d.*)\.zip$/i); if (bm && bm[1] === id) return { version: bm[2], source: String(s.Name ?? 'AzureBlob'), blobName: m.BlobName }; }
-  }
-  return null;
-}
-/** Pin a module as a pre-release AzureBlob item (and drop it from GithubReleases). Mutates `json`. */
-export function applyModule(json: any, id: string, version: string, blobName: string): void {
-  json.Sources ||= [];
-  const gh = json.Sources.find((s: any) => /github/i.test(s?.Name || '')) || json.Sources.find((s: any) => Array.isArray(s?.Modules) && s.ModuleSources);
-  let blob = json.Sources.find((s: any) => s?.Name === 'AzureBlob' || (s?.ServiceUri || '').includes('vc3prerelease'));
-  if (!blob) { blob = { Name: 'AzureBlob', Container: 'packages', ServiceUri: 'https://vc3prerelease.blob.core.windows.net', Modules: [] }; json.Sources.push(blob); }
-  blob.Modules ||= [];
-  if (gh?.Modules) gh.Modules = gh.Modules.filter((m: any) => m.Id !== id);
-  const existing = blob.Modules.find((m: any) => m.Id === id);
-  if (existing) { existing.Version = version; existing.BlobName = blobName; }
-  else blob.Modules.push({ Id: id, Version: version, BlobName: blobName });
-}
-/**
- * Pin the platform. `imageTag` defaults to `version` (a plain release bump, where the two are equal);
- * a PR pre-release passes them separately — PlatformVersion keeps the base semver, PlatformImageTag
- * carries the full `-pr-…` container tag, which is the ONLY field vc-deploy-dev's deploy-backend.yml
- * reads (`PLATFORM_TAG` → the docker build-arg). Mutates `json`.
- */
-export function applyPlatform(json: any, version: string, imageTag: string = version): void {
-  json.PlatformVersion = version;
-  if (json.PlatformImageTag !== undefined) json.PlatformImageTag = imageTag;
-}
-function serialize(json: any): string { return JSON.stringify(json, null, 2) + '\n'; }
-/** Lines added + removed (multiset symmetric difference) — handles insertions/deletions, so a
- *  minimal surgical edit reports a small number and a full reserialize reports a large one. */
-export function countChangedLines(before: string, after: string): number {
-  const bag = (t: string) => { const m = new Map<string, number>(); for (const l of t.split('\n')) m.set(l, (m.get(l) || 0) + 1); return m; };
-  const a = bag(before), b = bag(after);
-  let diff = 0;
-  for (const k of new Set([...a.keys(), ...b.keys()])) diff += Math.abs((a.get(k) || 0) - (b.get(k) || 0));
-  return diff;
-}
-
-const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/');
-
-// ── minimal text-surgery (preserve the manifest's formatting; fall back to reserialize) ─────────
-// vc-deploy-dev's packages.json MAY use an irregular indent JSON.stringify can't reproduce, in which
-// case mutating the parsed object + reserializing rewrites the whole file. These edit the RAW text so
-// the deploy PR shows a clean 2-hunk diff (like a vc-ci "<TICKET>-vcst-qa-deployment" PR). Note most
-// env branches now round-trip through JSON.stringify(…, 2) exactly, where the reserialize path is
-// equally minimal and this surgery only wins 0-2 lines — it is belt-and-braces plus "never reformat
-// DevOps's file", NOT a large win. Don't grow this layer further on diff-size grounds alone.
-// Each returns null on an unexpected OR ambiguous shape → editPackagesText falls back to reserialize;
-// guessing is never correct here, because a wrong-but-valid manifest deploys the wrong build.
-const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-/** Literal (no `$` expansion) replacement of the first `re` match — `String.replace` treats `$&`,
- *  `` $` ``, `$'`, `$n` in a replacement STRING as references, and these values come from a
- *  PR-body URL via decodeURIComponent, so a `$` in a filename would splice manifest text in. */
-const subLiteral = (s: string, re: RegExp, to: string) => s.replace(re, () => to);
-/** A line's leading whitespace, tabs included — a spaces-only pattern measures a tab file as 0. */
-const indentOf = (l: string) => (l.match(/^[ \t]*/) as RegExpMatchArray)[0];
-/** Line range [openBrace, closeBrace] of the Sources[] object whose body matches `marker`. */
-function sourceBlockRange(lines: string[], marker: RegExp): [number, number] | null {
-  const at = lines.findIndex((l) => marker.test(l));
-  if (at < 0) return null;
-  let open = -1;                                                 // that object's own opening brace
-  for (let i = at; i >= 0; i--) if (/^\s*\{\s*$/.test(lines[i])) { open = i; break; }
-  if (open < 0) return null;
-  let depth = 0;
-  for (let i = open; i < lines.length; i++) {
-    // Depth counts structural braces only — blank the string literals first so a `{`/`[` inside a
-    // value (URL, BlobName) can't skew the range.
-    for (const ch of lines[i].replace(/"(?:\\.|[^"\\])*"/g, '""')) {
-      if (ch === '{' || ch === '[') depth++; else if (ch === '}' || ch === ']') depth--;
-    }
-    if (i > open && depth <= 0) return at <= i ? [open, i] : null; // range must contain the marker
-  }
-  return null;
-}
-/** Split into `\r`-free lines + the EOL to rejoin with. Constructed lines must carry the file's own
- *  EOL, else a CRLF manifest gets LF-only inserts (mixed endings + phantom diff on touched lines). */
-const splitLines = (text: string) => ({ lines: text.split(/\r?\n/), eol: text.includes('\r\n') ? '\r\n' : '\n' });
-/** Remove a GithubReleases {Id,Version} object (+ its adjacent comma). Unchanged text if the id
- *  isn't in GithubReleases; null if it's there but not in the canonical 4-line shape. */
-export function removeGhReleaseEntry(text: string, id: string): string | null {
-  const { lines, eol } = splitLines(text);
-  const idRe = new RegExp(`"Id"\\s*:\\s*"${escRe(id)}"`);
-  // Scope the search to the GithubReleases source when it's locatable: an AzureBlob prerelease entry
-  // may ALSO carry an "Id" (the {Id,Version,BlobName} shape a reserialize writes), and matching THAT
-  // one would fail the 4-line shape check and force a needless whole-file reserialize.
-  const gh = sourceBlockRange(lines, /"Name"\s*:\s*"[^"]*github[^"]*"/i)
-          ?? sourceBlockRange(lines, /"ModuleSources"\s*:/);      // same shapes applyModule() accepts
-  let idLine = -1;
-  for (let i = gh ? gh[0] : 0, end = gh ? gh[1] : lines.length - 1; i <= end; i++) if (idRe.test(lines[i])) { idLine = i; break; }
-  if (idLine < 0) return text;                                   // not in GithubReleases — nothing to remove
-  const open = idLine - 1, close = idLine + 2;                   // { · Id · Version · }
-  if (open < 0 || close >= lines.length) return null;
-  if (!/^\s*\{\s*$/.test(lines[open]) || !/^\s*\},?\s*$/.test(lines[close])) return null;
-  const closeHasComma = /\},[ \t]*$/.test(lines[close]);
-  lines.splice(open, close - open + 1);
-  if (!closeHasComma) {                                          // was the last entry → drop the previous entry's trailing comma
-    for (let i = open - 1; i >= 0; i--) { if (/\S/.test(lines[i])) { if (/\},?[ \t]*$/.test(lines[i])) lines[i] = lines[i].replace(/,([ \t]*)$/, '$1'); break; } }
-  }
-  return lines.join(eol);
-}
-/** The file's indent step, as the literal whitespace string (so a tab-indented manifest gets tabs).
- *  Read off the first indented line rather than the enclosing block's own indent, which can be
- *  irregular — vcst-qa indented the AzureBlob block's children at the SAME column as its opening
- *  brace, so a parent-delta would yield an empty step. Two spaces if the file has no indent at all. */
-const detectIndentUnit = (lines: string[]) =>
-  lines.find((l) => /^[ \t]+\S/.test(l))?.match(/^[ \t]+/)![0] ?? '  ';
-/** Seed the first entry into an EMPTY AzureBlob `"Modules": []` — the state of a branch that has
- *  never carried a prerelease pin (vcptcore-stable and -regression are both here today), where there
- *  is no `"BlobName"` line to anchor on. Returns null if the AzureBlob source, or its empty Modules
- *  array, can't be located. Mutates `lines`. */
-function insertFirstBlobEntry(lines: string[], blobName: string, eol: string): string | null {
-  const range = sourceBlockRange(lines, /"Name"\s*:\s*"AzureBlob"|"ServiceUri"\s*:\s*"[^"]*vc3prerelease/);
-  if (!range) return null;                                         // no AzureBlob source at all
-  const [open, close] = range;
-  let modAt = -1;                                                  // that source's own "Modules" key
-  for (let i = open + 1; i < close; i++) if (/"Modules"\s*:/.test(lines[i])) { modAt = i; break; }
-  if (modAt < 0) return null;
-  const mod = indentOf(lines[modAt]), unit = detectIndentUnit(lines);
-  const entry = [`${mod}${unit}{`, `${mod}${unit}${unit}"BlobName": "${blobName}"`, `${mod}${unit}}`];
-  const inline = /^([ \t]*"Modules"\s*:\s*)\[[ \t]*\][ \t]*(,?)[ \t]*\r?$/.exec(lines[modAt]);
-  if (inline) {                                                    // "Modules": []  (one line)
-    lines.splice(modAt, 1, `${inline[1]}[`, ...entry, `${mod}]${inline[2]}`);
-    return lines.join(eol);
-  }
-  if (/"Modules"\s*:\s*\[[ \t]*\r?$/.test(lines[modAt])) {         // "Modules": [ … ] (multi-line)
-    for (let i = modAt + 1; i < close; i++) {
-      if (!/\S/.test(lines[i])) continue;
-      if (!/^[ \t]*\][ \t]*,?[ \t]*\r?$/.test(lines[i])) return null; // array is NOT empty → unexpected
-      lines.splice(i, 0, ...entry);
-      return lines.join(eol);
-    }
-  }
-  return null;
-}
-/** Add (or replace) a BlobName-only entry in the AzureBlob source, matching existing indentation.
- *  `id` must own AT MOST one entry and one entry per line — anything ambiguous returns null so the
- *  caller reserializes (whose applyModule matches by `Id`) instead of editing the wrong pin. */
-export function upsertBlobEntry(text: string, id: string, blobName: string): string | null {
-  const { lines, eol } = splitLines(text);
-  const blobRe = new RegExp(`"BlobName"\\s*:\\s*"${escRe(id)}_`, 'i');
-  const owns = lines.filter((l) => blobRe.test(l)).length;
-  if (owns > 1) return null;                                      // same module pinned twice — don't guess
-  const existing = lines.findIndex((l) => blobRe.test(l));
-  if (existing >= 0) {
-    // One entry per line, else the id-anchored match above and the positional replace below can
-    // disagree and rewrite a NEIGHBOUR's BlobName (silently dropping that module's pin).
-    if ((lines[existing].match(/"BlobName"\s*:/g) || []).length > 1) return null;
-    lines[existing] = subLiteral(lines[existing], /"BlobName"\s*:\s*"[^"]*"/, `"BlobName": "${blobName}"`);
-    // Refresh this entry's "Version" if it has one: pinnedModule() prefers an explicit Version over
-    // the BlobName-derived one, so leaving it stale would make the table / --verify report a version
-    // the pin no longer points at. (Entries written by a reserialize carry Id+Version+BlobName.)
-    const ver = blobName.match(/^.+_(\d.*)\.zip$/i)?.[1];
-    const setVer = (l: string) => l.replace(/("Version"\s*:\s*")[^"]*(")/, (_m, a, b) => a + ver + b);
-    if (/"Version"\s*:/.test(lines[existing])) {                  // single-line entry: Version sits here
-      if (!ver) return null;
-      lines[existing] = setVer(lines[existing]);
-    } else {
-      // Multi-line entry: bound the search to THIS entry's own field lines — contiguous, at the same
-      // indent as the BlobName line, stopping at any brace/bracket. So an outer key (e.g. a
-      // source-level "Version") can never be rewritten, and order within the entry doesn't matter.
-      const sibling = (i: number) => !/^[ \t]*[{}[\]]/.test(lines[i]) && indentOf(lines[i]) === indentOf(lines[existing]);
-      let lo = existing, hi = existing;
-      while (lo - 1 >= 0 && sibling(lo - 1)) lo--;
-      while (hi + 1 < lines.length && sibling(hi + 1)) hi++;
-      for (let i = lo; i <= hi; i++) {
-        if (!/"Version"\s*:/.test(lines[i])) continue;
-        if (!ver) return null;                                    // can't derive a version → reserialize
-        lines[i] = setVer(lines[i]);
-        break;
-      }
-    }
-    return lines.join(eol);
-  }
-  const sample = lines.findIndex((l) => /"BlobName"\s*:/.test(l));
-  if (sample < 1) return insertFirstBlobEntry(lines, blobName, eol); // empty AzureBlob — no sibling to mirror
-  const blobIndent = indentOf(lines[sample]);
-  // Mirror the sibling ENTRY'S OPENING BRACE, found by scanning up from its BlobName line. Reading
-  // `sample - 1` assumed the brace always sits directly above, which only holds for a BlobName-ONLY
-  // entry — on the {Id,…,BlobName} shape that line is `"Id"`, so the braces inherited the FIELD
-  // indent and the inserted entry sat one step deeper than its siblings (valid JSON, untidy diff).
-  const openAt = (() => { for (let i = sample; i >= 0; i--) if (/^[ \t]*\{\s*$/.test(lines[i])) return i; return -1; })();
-  const braceIndent = openAt >= 0 ? indentOf(lines[openAt]) : blobIndent;
-  let lastClose = -1;
-  for (let i = 0; i < lines.length - 1; i++) if (/"BlobName"\s*:/.test(lines[i]) && /^\s*\}/.test(lines[i + 1])) lastClose = i + 1;
-  if (lastClose < 0) return null;
-  lines[lastClose] = lines[lastClose].replace(/^([ \t]*\})[ \t]*,?[ \t]*$/, '$1,');
-  lines.splice(lastClose + 1, 0, `${braceIndent}{`, `${blobIndent}"BlobName": "${blobName}"`, `${braceIndent}}`);
-  return lines.join(eol);
-}
-export function bumpPlatformText(text: string, version: string, imageTag: string = version): string | null {
-  let hit = 0;
-  const out = text.replace(/("PlatformVersion"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + version + b))
-                  .replace(/("PlatformImageTag"\s*:\s*")[^"]*(")/, (_m, a, b) => (hit++, a + imageTag + b));
-  return hit > 0 ? out : null;
-}
-/** Apply all module moves + a platform bump. Prefer minimal surgery; verify (valid JSON + intended
- *  semantic delta) and fall back to a full reserialize if anything is off. */
-export function editPackagesText(origText: string, origJson: any, modules: Target[], platformT?: Target): { text: string; minimal: boolean } {
-  let text: string | null = origText;
-  for (const t of modules) {
-    text = removeGhReleaseEntry(text!, t.id!); if (text == null) break;
-    text = upsertBlobEntry(text, t.id!, t.blobName!); if (text == null) break;
-  }
-  if (text != null && platformT) text = bumpPlatformText(text, platformT.version!, tagOf(platformT));
-  if (text != null) {
-    try {
-      const j = JSON.parse(text);
-      const gh = j.Sources?.find((s: any) => /github/i.test(s?.Name || ''));
-      const blob = j.Sources?.find((s: any) => s?.Name === 'AzureBlob' || (s?.ServiceUri || '').includes('vc3prerelease'));
-      let good = true;
-      // Assert the intended END STATE, not mere presence. Surgery matches by BlobName prefix while the
-      // reserialize fallback matches by `Id`; when the two can disagree (duplicate pin, stale sibling
-      // Version, an entry the prefix scan missed) the only safe outcome is the reserialize. pinnedModule
-      // is the right oracle because it is exactly what the dry-run table and --verify read.
-      for (const t of modules) {
-        if (gh?.Modules?.some((m: any) => m.Id === t.id)) good = false;
-        const owning = (blob?.Modules ?? []).filter((m: any) =>
-          m?.Id === t.id || String(m?.BlobName ?? '').toLowerCase().startsWith(`${String(t.id).toLowerCase()}_`));
-        if (owning.length !== 1) good = false;                     // missing, or duplicated (stale one could win)
-        const pin = pinnedModule(j, t.id!);
-        if (pin?.version !== t.version || pin?.blobName !== t.blobName) good = false;
-      }
-      if (platformT && (String(j.PlatformVersion) !== platformT.version
-        || (j.PlatformImageTag !== undefined && String(j.PlatformImageTag) !== tagOf(platformT)))) good = false;
-      if (good) return { text, minimal: true };
-    } catch { /* fall through */ }
-  }
-  const clone = JSON.parse(JSON.stringify(origJson));
-  for (const t of modules) applyModule(clone, t.id!, t.version!, t.blobName!);
-  if (platformT) applyPlatform(clone, platformT.version!, tagOf(platformT));
-  return { text: serialize(clone), minimal: false };
-}
-export function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
-  const m = THEME_URL_RE.exec(text);
-  return m ? { text: text.replace(m[0], newUrl), from: m[0] } : { text, from: null };
-}
-
-// ── writes via `gh` (keyring classic token — the credential with write on vc-deploy-dev) ─────────
-// The ambient fine-grained PAT (TOKEN, used for reads) lacks fork/PR rights on the deploy repo;
-// `gh` falls back to the keyring gho_ classic token when GITHUB_TOKEN/GH_TOKEN are unset (the same
-// routing the rest of this repo uses for VirtoCommerce writes — see reference_github_token_routing).
-const GH_ENV: NodeJS.ProcessEnv = (() => { const e = { ...process.env }; delete e.GITHUB_TOKEN; delete e.GH_TOKEN; return e; })();
-function gh(args: string[]): string { return execFileSync('gh', args, { env: GH_ENV, encoding: 'utf8', maxBuffer: 1 << 26 }); }
-function ghApi(path: string, extra: string[] = []): any { return JSON.parse(gh(['api', path, ...extra])); }
-function ghUser(): string | null { try { return ghApi('user').login ?? null; } catch { return null; } }
-/** Actual account permission on a repo: admin|maintain|write|triage|read|none. */
-function accountPermission(owner: string, repo: string, me: string): string {
-  try { return ghApi(`repos/${owner}/${repo}/collaborators/${encodeURIComponent(me)}/permission`).permission ?? 'none'; } catch { return 'none'; }
-}
-const canWrite = (p: string) => p === 'admin' || p === 'maintain' || p === 'write';
-function refSha(owner: string, repo: string, branch: string): string | null {
-  try { return ghApi(`repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(branch)}`).object?.sha ?? null; } catch { return null; }
-}
-async function ensureFork(owner: string, repo: string, me: string): Promise<boolean> {
-  try { ghApi(`repos/${me}/${repo}`); return true; } catch { /* no fork yet */ }
-  try { gh(['repo', 'fork', `${owner}/${repo}`, '--clone=false']); } catch { return false; }
-  for (let i = 0; i < 20; i++) { await sleep(3000); try { ghApi(`repos/${me}/${repo}`); return true; } catch { /* keep polling */ } }
-  return false;
-}
-function createRef(owner: string, repo: string, branch: string, sha: string): boolean {
-  try { gh(['api', '--method', 'POST', `repos/${owner}/${repo}/git/refs`, '-f', `ref=refs/heads/${branch}`, '-f', `sha=${sha}`]); return true; }
-  catch (e: any) { return /already exists|Reference already exists/i.test(String(e.stderr || e.message || e)); }
-}
-function commitViaGh(owner: string, repo: string, path: string, text: string, branch: string, message: string): boolean {
-  let sha: string | null = null;
-  try { sha = ghApi(`repos/${owner}/${repo}/contents/${enc(path)}?ref=${encodeURIComponent(branch)}`).sha ?? null; } catch { /* new file */ }
-  const args = ['api', '--method', 'PUT', `repos/${owner}/${repo}/contents/${enc(path)}`, '-f', `message=${message}`, '-f', `content=${Buffer.from(text, 'utf8').toString('base64')}`, '-f', `branch=${branch}`];
-  if (sha) args.push('-f', `sha=${sha}`);
-  try { gh(args); return true; } catch (e: any) { console.error('[deploy-pr] commit failed:', String(e.stderr || e.message || e).slice(0, 240)); return false; }
-}
-function createPr(owner: string, repo: string, base: string, head: string, title: string, body: string): { ok: boolean; url?: string; note: string } {
-  try { const url = gh(['pr', 'create', '--repo', `${owner}/${repo}`, '--base', base, '--head', head, '--title', title, '--body', body]).trim(); return { ok: true, url, note: 'opened' }; }
-  catch (e: any) {
-    const msg = String(e.stderr || e.message || e);
-    if (/already exists/i.test(msg)) { try { const url = gh(['pr', 'list', '--repo', `${owner}/${repo}`, '--head', head.includes(':') ? head.split(':')[1] : head, '--json', 'url', '--jq', '.[0].url']).trim(); if (url) return { ok: true, url, note: 'already open' }; } catch { /* ignore */ } }
-    return { ok: false, note: msg.slice(0, 240) };
-  }
-}
-
-// ── live verify (/api/platform/modules) ─────────────────────────────────────────
-async function getAdminToken(c: EnvCoords): Promise<string | null> {
-  if (!c.backUrl) return null;
-  try {
-    const r = await fetch(`${c.backUrl}/connect/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
-    if (r.status !== 200) return null;
-    return (await r.json())?.access_token ?? null;
-  } catch { return null; }
-}
-async function liveModules(c: EnvCoords, token: string): Promise<Record<string, string> | null> {
-  try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
-    if (r.status !== 200) return null;
-    const mods = await r.json();
-    const out: Record<string, string> = {};
-    for (const m of Array.isArray(mods) ? mods : []) if (m?.id) out[String(m.id).toLowerCase()] = String(m.version ?? '');
-    return out;
-  } catch { return null; }
-}
-async function platformHealthy(c: EnvCoords): Promise<boolean> {
-  try { return (await fetch(`${c.backUrl}/health`, { redirect: 'manual' })).status === 200; } catch { return false; }
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-class Exit { constructor(public code: number) {} }
-function fail(msg: string): never { console.error(`[deploy-pr] ${msg}`); throw new Exit(2); }
 
 // ── main ─────────────────────────────────────────────────────────────────────
-async function main() {
-  const args = process.argv.slice(2);
+export async function runPr(args: string[]): Promise<void> {
   const flag = (n: string) => args.find((a) => a.startsWith(`--${n}=`))?.split('=').slice(1).join('=');
   const flags = (n: string) => args.filter((a) => a.startsWith(`--${n}=`)).map((a) => a.split('=').slice(1).join('='));
   const has = (n: string) => args.includes(`--${n}`);
@@ -638,8 +227,8 @@ async function main() {
 
   loadEnvFiles(process.env.TEST_ENV || 'vcst');
   const env = flag('env') || process.env.TEST_ENV || 'vcst';
-  TOKEN = process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
-  if (!TOKEN) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
+  setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
+  if (!getToken()) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
   const c = resolveEnvCoords(env, flag('password'));
 
   // ── 1. resolve the artifact set ──
@@ -648,7 +237,7 @@ async function main() {
   let summary: string | null = null;
 
   if (key) {
-    if (!/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(key)) fail(`"${key}" is not a ticket key. Usage: deploy-pr-artifact.ts <ticket-key> [--pr ...] [--module Id=Ver] [--platform Ver] [--theme url]`);
+    if (!/^[A-Z][A-Z0-9]{1,9}-\d+$/.test(key)) fail(`"${key}" is not a ticket key. Usage: vc-deploy.ts pr <ticket-key> [--pr ...] [--module Id=Ver] [--platform Ver] [--theme url]`);
     // A tracker lookup failure is only FATAL when the ticket is the sole source of targets. With an
     // explicit --pr/--module/--platform/--theme the run is tracker-agnostic by design (Azure Boards,
     // no dev-links, dead creds) — the key then only labels the branch / commit message.
@@ -885,14 +474,4 @@ async function main() {
   }
 }
 
-// Guarded so this module can be `import()`ed (e.g. by unit tests) without running the CLI.
-const isMain = (() => {
-  try { return !!process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]); } catch { return false; }
-})();
-if (isMain) {
-  main().catch((e) => {
-    if (e instanceof Exit) { process.exitCode = e.code; return; }
-    console.error(`[deploy-pr] fatal: ${e.message}`);
-    process.exitCode = 2;
-  });
-}
+
