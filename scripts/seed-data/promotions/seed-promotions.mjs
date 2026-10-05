@@ -427,17 +427,19 @@ async function main() {
         // Expiry drift heal: a coupon that has EXPIRED live while the CSV now declares it valid
         // (no end date, or a future ABSOLUTE one) is otherwise "present" forever and every case using
         // it fails on an expired code (REG-2026-10-02-2022 COU-020 FREESHIP, expired 2026-06-08).
-        // Coupons have no update route, so it is deleted and re-added below. Relative-dated coupons
+        // It is updated IN PLACE: /coupons/add is CrudService.SaveChangesAsync, an upsert by id (the
+        // code-uniqueness check only covers transient coupons), so posting the live coupon with its id
+        // keeps the id and the usage history. Relative-dated coupons
         // (expiry_past / expiry_future, yesterday/tomorrow) are skipped EXPLICITLY — couponExpiry()
         // re-anchors them to now, so judging them would churn them every day.
         for (const c of promoCoupons) {
           if (isRelativeDated(c.edge_case_type, c.end_date)) continue;
           const code = c.code.trim();
           const liveC = existing.find((x) => x.code === code);
-          if (liveC && expiredButDeclaredValid(liveC.expirationDate, couponExpiry(c))) {
-            await api('DELETE', `/api/marketing/promotions/coupons/delete?ids=${encodeURIComponent(liveC.id)}`, null, { expectStatus: [200, 204] });
-            present.delete(code);
-            log(`    ↻ coupon ${code}: expired live (${liveC.expirationDate}) but valid in CSV → re-adding`);
+          const wantExpiry = couponExpiry(c);
+          if (liveC && expiredButDeclaredValid(liveC.expirationDate, wantExpiry)) {
+            await api('POST', '/api/marketing/promotions/coupons/add', [{ ...liveC, expirationDate: wantExpiry || null }], { expectStatus: [200, 204] });
+            log(`    ↻ coupon ${code}: expired live (${liveC.expirationDate}) but valid in CSV → expiry set to ${wantExpiry || 'none'} (same id)`);
           }
         }
         for (const c of promoCoupons) {
