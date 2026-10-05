@@ -434,25 +434,45 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * Live-discover REAL catalog products that EXIST on the target env (POST /api/catalog/search/products —
  * the same admin route seed-loyalty uses to resolve SKU→productId). Returns up to `count` normalized
- * `{ id, sku, name, catalogId }`, preferring buyable physical products. Env-resilient (no hardcoded
+ * `{ id, sku, name, catalogId, minQuantity, maxQuantity, trackInventory }`, preferring buyable products.
+ * `minQuantity` / `maxQuantity` are the product's order-quantity limits as the search projection
+ * returns them (0 = no limit; `null` = the payload did not carry the field — callers that depend on the
+ * limits must re-read the product, never treat `null` as "no limit"). Env-resilient (no hardcoded
  * SKUs, per .claude/rules/test-data.md): callers overlay these onto order/quote line items so the
  * seeded records reference browsable products. Returns [] in --dry-run or when the catalog is empty —
- * callers keep their fixture placeholders. Optional `catalogId` scopes the search to one catalog.
+ * callers keep their fixture placeholders. Optional `catalogId` scopes the search to one catalog;
+ * optional `sort` (e.g. `'code:asc'`) makes the page DETERMINISTIC — without it the search order is
+ * the index's, so a catalog change anywhere shifts which products a caller gets.
  */
-export async function discoverCatalogProducts(api, count = 3, { catalogId = null, searchPhrase = '' } = {}) {
+export async function discoverCatalogProducts(api, count = 3, { catalogId = null, searchPhrase = '', sort = null } = {}) {
   if (DRY_RUN || count <= 0) return [];
   const body = { take: Math.max(count * 2, count), responseGroup: 'ItemInfo', searchPhrase };
   if (catalogId) body.catalogId = catalogId;
+  if (sort) body.sort = sort;
   let res;
   try { res = await api('POST', '/api/catalog/search/products', body, { expectStatus: [200, 201] }); }
   catch (e) { verbose(`discoverCatalogProducts: search failed (${String(e.message).slice(0, 120)})`); return []; }
   const items = res?.items || res?.results || [];
   const norm = items
     .filter((p) => p && p.id && (p.code || p.sku))
-    .map((p) => ({ id: p.id, sku: p.code || p.sku, name: p.name || p.code || p.sku, catalogId: p.catalogId }));
+    .map((p) => ({ id: p.id, sku: p.code || p.sku, name: p.name || p.code || p.sku, catalogId: p.catalogId,
+      minQuantity: p.minQuantity ?? null, maxQuantity: p.maxQuantity ?? null, trackInventory: p.trackInventory ?? null }));
   // Prefer buyable/active where the flag is present, but never return fewer than we have.
   const buyable = norm.filter((p) => items.find((i) => i.id === p.id)?.isBuyable !== false);
   return (buyable.length >= count ? buyable : norm).slice(0, count);
+}
+
+/**
+ * Every customer order carrying EXACTLY this `number`, newest first (search projection). The
+ * customerOrders/search `keyword` is a PREFIX match returned newest-first (kb KB-F7E4DB8E), so a
+ * `take: 1` / first-hit lookup for AGENT-TEST-ORD-X can return AGENT-TEST-ORD-X2 — and a seeder that
+ * then judges or DELETES "its" order acts on another fixture's. Always filter by `number ===`, with a
+ * take large enough to reach the exact hit behind newer prefix matches. DI on `api` like the helpers above.
+ */
+export async function findOrdersByExactNumber(api, number, { take = 100 } = {}) {
+  if (!number) return [];
+  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take });
+  return (found?.results || []).filter((o) => o?.number === number);
 }
 
 /**
