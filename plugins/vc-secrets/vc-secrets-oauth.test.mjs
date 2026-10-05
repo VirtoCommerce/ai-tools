@@ -36,23 +36,21 @@ after(() => {
 function launcherEnv(extra = {}) {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-launcher-home-"));
     tmpDirs.push(home);
-    const env = { ...process.env };
-    for (const key of Object.keys(env)) {
-        if (/^VC_SECRETS_/i.test(key)) {
-            delete env[key];
+    const env = {};
+    for (const [key, value] of Object.entries(process.env)) {
+        if (!/^VC_SECRETS_/i.test(key)) {
+            env[key] = value;
         }
     }
 
     return { ...env, HOME: home, USERPROFILE: home, XDG_CONFIG_HOME: home, ...extra };
 }
 
-// A spawned launcher refuses a repository's launchable until a trust record says otherwise. Written
-// through the launcher's own writeTrustState under the env the launcher will read it from, and built
-// from the config itself with launchShape, so the record follows the declaration under test. Kept local
-// like tmpProbeConfigDir below: this file does not import from the other suite.
-function trustedLauncherEnv(dir, extra = {}) {
-    const env = launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, ...extra });
-    const cfg = m.loadConfig(m.configPaths(env, dir));
+// What `trust` records for a config: every launchable a repository declared, as launchShape sees it.
+// Derived from the config under test rather than written out, so a test that changes a declaration
+// changes what was trusted with it and keeps meaning "trusted as declared". Passed as `deps.trustState`
+// to the in-process launch path, and to trustProblem directly.
+function trustedStateFor(cfg) {
     const record = { trustedAt: "2000-01-01T00:00:00.000Z", projectId: cfg.projectId, servers: {}, tasks: {} };
     for (const kind of ["servers", "tasks"]) {
         for (const [name, launchable] of Object.entries(cfg[kind])) {
@@ -61,9 +59,24 @@ function trustedLauncherEnv(dir, extra = {}) {
             }
         }
     }
-    m.writeTrustState(env, { schemaVersion: 1, repositories: { [cfg.projectRoot]: record } });
+
+    return { schemaVersion: 1, repositories: { [cfg.projectRoot]: record } };
+}
+
+// The same, as a real trust file under the environment a spawned launcher will read it from -- for the
+// tests that run `vc-secrets run` as a process. `cwd` is where the launcher will discover its
+// declarations, unless the env carries VC_SECRETS_CONFIG_DIR, which configPaths honours first.
+function seedTrust(env, cwd) {
+    m.writeTrustState(env, trustedStateFor(m.loadConfig(m.configPaths(env, cwd))));
 
     return env;
+}
+
+// A spawned launcher refuses a repository's launchable until a trust record says otherwise: this is the
+// env it will read the record from, seeded for the declarations in `dir`. Kept local like
+// tmpProbeConfigDir below: this file does not import from the other suite.
+function trustedLauncherEnv(dir, extra = {}) {
+    return seedTrust(launcherEnv({ VC_SECRETS_CONFIG_DIR: dir, ...extra }), dir);
 }
 
 test("vc-secrets-oauth throws the same VcSecretsError the launcher's exit-code path recognises", () => {
