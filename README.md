@@ -109,7 +109,7 @@ How the final value is decided:
 **Choosing the environment.** Env names are `[a-z0-9_]+` (`vcptcore_dev`, not `vcptcore-dev`); a name without a `.env.<env>` file prints a warning. The first of these that is set wins:
 
 1. `TEST_ENV` in your shell. PowerShell: `$env:TEST_ENV='vcptcore_dev'` (stays set in that terminal). Bash: `TEST_ENV=vcptcore_dev npm run env:check`.
-2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default. Claude Code's own commands and hooks don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it.
+2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default, for every session in this checkout. Sessions in the VS Code chat panel don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it. A `claude` CLI session does inherit the `TEST_ENV` of the terminal that started it, and that beats the file — so two sessions can run against two envs in parallel (`$env:TEST_ENV='vcst'; claude` in one terminal, `$env:TEST_ENV='vcptcore_dev'; claude` in another).
 3. `vcst`.
 
 Check the result with `npm run env:check`; it prints SET/EMPTY, never values. Variable *names* are the same in every env, only values differ. In code: `import { env } from './config.js'` (ES modules — always `.js`). To add an env, start from [`templates/.env.{env}.example`](templates/.env.{env}.example).
@@ -153,7 +153,7 @@ App Insights monitoring vars (`APPINSIGHTS_APP_ID_*`, `APPINSIGHTS_RESOURCE_*`, 
 
 > **macOS/Linux:** drop `"command": "cmd"` and the `"/c"` arg — use `"command": "npx"` with the remaining args, and `$POSTMAN_API_KEY`.
 > **WebKit is not supported on Windows** — use Chromium, Firefox, or Edge. **Restart the IDE after any `.mcp.json` change.**
-> **Browser logins:** the Playwright servers can only type a password through `--secrets`. Add `"--secrets", ".env.playwright.<env>"` to each `playwright-*` server (as in [`templates/.mcp.json.example`](templates/.mcp.json.example)). The servers read that file once, at start, so switching env means changing the path and restarting the IDE.
+> **Browser logins:** the Playwright servers can only type a password through `--secrets`. Add `"--secrets", ".env.playwright.<env>"` to each `playwright-*` server (as in [`templates/.mcp.json.example`](templates/.mcp.json.example)). The servers read that file once, at start. To pick it per session, write the path as `.env.playwright.${TEST_ENV:-<default env>}`: Claude Code fills in the `TEST_ENV` of the shell that started `claude`, so two CLI sessions started with different `TEST_ENV` values use different envs' passwords. The env's file must exist, or that session's browser servers don't start.
 
 Optional user/IDE-level MCP servers (not in `.mcp.json`): Chrome DevTools, **Azure** (App Insights for `/qa-monitoring` — authenticate with `az login` / AAD), Atlassian (JIRA), Figma, GitHub, Context7, VirtoOZ.
 
