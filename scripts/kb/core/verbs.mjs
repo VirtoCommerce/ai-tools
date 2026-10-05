@@ -8,7 +8,8 @@
 // (Git Data API, blobs -> tree -> commit -> ref) is a later session, and the queue is already the
 // durable record it will read.
 
-import { writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
@@ -460,14 +461,41 @@ const rowsKey = (rows) => `${rows.length}:${rows.map((r) => r.id).join(',')}`;
 export const clearVerdictCaches = () => cached.clear();
 
 /** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). Cached per base. */
-export async function loadVerdictRanker(reader, { locator = null } = {}) {
-  return locator ? remember(`ranker\0${locator}`, () => readVerdictRanker(reader)) : readVerdictRanker(reader);
+export async function loadVerdictRanker(reader, { locator = null, env = null } = {}) {
+  return locator ? remember(`ranker\0${locator}`, () => readRankerRemembered(reader, locator, env)) : readVerdictRanker(reader);
 }
 
-async function readVerdictRanker(reader) {
+// A REMOTE BASE WITHOUT ranker.json -- every base until the data PR lands -- answered a 404 on every
+// CLI ask, one extra sequential request each, because a CLI process lives for one ask and the
+// in-memory cache never gets a second look. The ABSENCE alone is remembered on disk beside the queue
+// for ABSENT_TTL_MS, per locator; a ranker that exists is always read fresh, so publishing one takes
+// effect within that window and deleting one takes effect at once.
+const ABSENT_TTL_MS = 10 * 60_000;
+const absentPath = (env) => join(queueDir(env ?? process.env), 'ranker-absent.json');
+function readAbsent(env) {
+  try { return JSON.parse(readFileSync(absentPath(env), 'utf8')) ?? {}; } catch { return {}; }
+}
+async function readRankerRemembered(reader, locator, env) {
+  const remote = /^https?:/i.test(String(locator));
+  if (remote) {
+    const at = readAbsent(env)[locator];
+    if (Number.isFinite(at) && Date.now() - at < ABSENT_TTL_MS) return null;
+  }
+  let missing = false;
+  const ranker = await readVerdictRanker(reader, { onMissing: () => { missing = true; } });
+  if (remote && missing) {
+    try {
+      await mkdir(queueDir(env ?? process.env), { recursive: true });
+      writeFileSync(absentPath(env), JSON.stringify({ ...readAbsent(env), [locator]: Date.now() }));
+    } catch { /* best effort: without the marker the next ask simply reads again */ }
+  }
+  return ranker;
+}
+
+async function readVerdictRanker(reader, { onMissing = () => {} } = {}) {
   let read;
   try { read = await reader.readIndex('ranker.json'); } catch { return null; }
-  if (!read?.ok) return null;
+  if (!read?.ok) { if (read?.reason === 'missing') onMissing(); return null; }
   try {
     const r = JSON.parse(read.text);
     const m = r?.model;
@@ -574,7 +602,7 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
     return { state: cat.state, why: cat.why, hits: [], ...repair };
   }
 
-  const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator });
+  const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator, env });
   if (verdictRanker) {
     return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
   }

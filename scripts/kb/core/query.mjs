@@ -24,6 +24,11 @@ export function stem(token) {
   const t = String(token);
   if (t.length <= 3 || /\d/.test(t)) return t;
   if (t.endsWith('ies') && t.length > 4) return `${t.slice(0, -3)}y`;
+  // -uses: "statuses"/"bonuses" must meet "status"/"bonus", and "causes"/"houses" must meet
+  // "cause"/"house". Both sides go to the -us form: strip "es" from -uses, "e" from -use.
+  if (t === 'uses') return 'use';
+  if (t.endsWith('uses')) return t.slice(0, -2);
+  if (t.endsWith('use')) return t.slice(0, -1);
   if (/(?:ss|us|is)$/.test(t)) return t;
   if (/(?:ches|shes|xes|sses)$/.test(t)) return t.slice(0, -2);
   if (t.endsWith('s')) return t.slice(0, -1);

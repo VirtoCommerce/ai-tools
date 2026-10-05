@@ -23,7 +23,10 @@ import { idList, normalizeScope, textList } from './index-load.mjs';
  * coin toss.
  */
 export function countEvidence(evidence = []) {
-  const items = Array.isArray(evidence) ? evidence : [];
+  // An item a MERGE carried in from a session that had already supported the survivor
+  // (`duplicateSession`, merge-entries.mjs) is kept for provenance and not counted: one agent seeing
+  // one fact once, filed twice, is one observation, not a corroboration.
+  const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
   const disputed = items.filter((e) => e?.contradicts).length;
   return { trust: items.length - disputed, disputed };
 }

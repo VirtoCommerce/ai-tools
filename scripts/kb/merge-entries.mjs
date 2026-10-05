@@ -86,7 +86,12 @@ export function merge(files, plans) {
     let data = { ...s.data };
     for (const id of p.absorbed) {
       const a = byId.get(id).data;
-      data.evidence = [...(data.evidence ?? []), ...(a.evidence ?? []).map((e) => ({ ...e, mergedFrom: id }))];
+      // A supporting item from a session that already supports the survivor is the same observer
+      // filing the same fact twice: carried for provenance, flagged so trust does not count it again.
+      const seen = new Set((data.evidence ?? []).filter((e) => !e.contradicts && e.by).map((e) => e.by));
+      data.evidence = [...(data.evidence ?? []), ...(a.evidence ?? []).map((e) => ({
+        ...e, mergedFrom: id, ...(!e.contradicts && e.by && seen.has(e.by) ? { duplicateSession: true } : {}),
+      }))];
       data.anchors = union(data.anchors, a.anchors, (x) => x.coordinate);
       if (data.questions || a.questions) data.questions = union(data.questions, a.questions, (x) => x.text.toLowerCase());
       if (data.concepts || a.concepts) data.concepts = union(data.concepts, a.concepts, (x) => x.id);
