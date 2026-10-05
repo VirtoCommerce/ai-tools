@@ -142,14 +142,13 @@ test("lib: every layer exists, is listed, and depends only on layers below it", 
     const libDir = fileURLToPath(new URL("./lib/", import.meta.url));
     const files = fs.readdirSync(libDir).filter((f) => f.endsWith(".mjs") && !f.endsWith(".test.mjs")).map((f) => f.slice(0, -4)).sort();
     assert.deepEqual(files, [...LIB_LAYERS].sort(), "a lib/ module is missing from LIB_LAYERS, or a listed one is gone");
-    const siblings = LIB_SIBLINGS;
     for (const layer of LIB_LAYERS) {
         const source = codeOnly(fs.readFileSync(path.join(libDir, `${layer}.mjs`), "utf8"));
         assert.doesNotMatch(source, /\bimport\s*\(/, `lib/${layer}.mjs: no dynamic import`);
         for (const [, , spec] of source.matchAll(/\b(?:from|import)\s*(["'])([^"']+)\1/g)) {
             const below = /^\.\/([^/]+)\.mjs$/.exec(spec);
             const ok = spec.startsWith("node:")
-                || (spec.startsWith("../") && siblings.has(spec.slice(3)))
+                || (spec.startsWith("../") && LIB_SIBLINGS.has(spec.slice(3)))
                 || (below !== null && LIB_LAYERS.indexOf(below[1]) >= 0 && LIB_LAYERS.indexOf(below[1]) < LIB_LAYERS.indexOf(layer));
             assert.ok(ok, `lib/${layer}.mjs depends on "${spec}", which is not node:, a package sibling, or a layer below it`);
         }
@@ -234,25 +233,37 @@ test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers ar
     // The platform must be a literal INSIDE the call's own arguments: a comment, `bindPlatform:
     // undefined`, or a literal belonging to the next statement leaves the bind on its win32 default.
     // Every test source is scanned -- the *.test.mjs files, test-support.mjs and test-fixtures.mjs,
-    // walked, so a file split off later is covered on arrival. Two residuals, stated rather than left to
+    // walked, so a file split off later is covered on arrival. Residuals, stated rather than left to
     // be found: a helper that spreads caller deps AFTER its literal (`launch`) can still be overridden by
-    // its caller, and a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
-    // satisfies the match without reaching cmdLaunch.
+    // its caller, a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
+    // satisfies the match without reaching cmdLaunch, a string argument containing the literal
+    // satisfies it too, and a call through another alias or a destructured binding is not seen at all
+    // -- the floor below turns that last one into a red instead of a vacuous pass.
     const callSite = /m\.(?:cmdLaunch|cmdTask|cmdRun)\(/g;
     const root = fileURLToPath(new URL("./", import.meta.url));
     const walk = (dir, prefix = "") => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
         (e.isDirectory() ? walk(path.join(dir, e.name), `${prefix}${e.name}/`) : [`${prefix}${e.name}`]));
     const files = walk(root).filter((f) => f.endsWith(".test.mjs") || f === "test-support.mjs" || f === "test-fixtures.mjs");
     assert.ok(files.includes("vc-secrets.test.mjs") && files.includes("vc-secrets-oauth.test.mjs"), files.join(","));
+    let inspected = 0;
     for (const file of files) {
         const source = stripComments(fs.readFileSync(path.join(root, file), "utf8"));
         const blanked = codeOnly(source);
         for (const hit of source.matchAll(callSite)) {
             const where = `${file}:${source.slice(0, hit.index).split("\n").length}`;
-            const args = callArguments(source, hit.index + hit[0].length, blanked);
+            let args;
+            try {
+                args = callArguments(source, hit.index + hit[0].length, blanked);
+            } catch (error) {
+                throw new Error(`${where}: ${error.message}`, { cause: error });
+            }
             assert.match(args, /bindPlatform:\s*"[^"]+"/, `${where} launches in-process without a literal bind platform`);
+            inspected += 1;
         }
     }
+    // 8 in lib/launch.test.mjs and 2 in vc-secrets-oauth.test.mjs when this was written. A renamed
+    // namespace or a destructured call would match nothing and pass; the floor makes it a red.
+    assert.ok(inspected >= 10, `only ${inspected} in-process launch calls found: the call-site pattern no longer reaches them`);
 });
 
 // Signal 0 says a process exists, and a killed one whose parent never reaps it -- PID 1 of a container
@@ -2104,6 +2115,7 @@ test("guard: the package's own test files stay writable", () => {
         "plugins/vc-secrets/vc-secrets.test.mjs",
         "plugins/vc-secrets/vc-secrets-oauth.test.mjs",
         "plugins/vc-secrets/test-support.mjs",
+        "plugins/vc-secrets/test-fixtures.mjs",
         "/home/dev/ai-tools/plugins/vc-secrets/vc-secrets.test.mjs",
     ]) {
         assert.equal(runGuardOn(testFile, "Edit").status, 0, `${testFile}: tests are how this package is worked on`);

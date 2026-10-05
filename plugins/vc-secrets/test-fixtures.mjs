@@ -13,7 +13,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as m from "./vc-secrets.mjs";
 import * as cache from "./vc-secrets-cache.mjs";
-import { tmpDirs } from "./test-support.mjs";
+import { stripComments, tmpDirs } from "./test-support.mjs";
 
 export const LAUNCHER_PATH = fileURLToPath(new URL("./vc-secrets.mjs", import.meta.url));
 
@@ -598,10 +598,10 @@ export function loginDeps(overrides = {}) {
 // silently, and the guard passed covering nothing for the very case it exists for.
 export function seamsOf(source) {
     const raw = source.slice(source.indexOf("{", source.indexOf("cfg,")) + 1, source.indexOf("} = {}) {"));
-    // Line comments go BEFORE the split, not after it. Prose contains commas, and the comma is what
+    // Comments go BEFORE the split, not after it. Prose contains commas, and the comma is what
     // the split acts on: one part would end mid-sentence and the next would begin with an ordinary
     // word that reads as a seam name -- losing the real seam and inventing a phantom in its place.
-    const block = raw.replace(/\/\/.*$/gm, "");
+    const block = stripComments(raw);
     const parts = [];
     let depth = 0;
     let current = "";

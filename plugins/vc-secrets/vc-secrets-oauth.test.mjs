@@ -16,6 +16,7 @@ import http from "node:http";
 import { stripComments, launcherSource, tmpDirs, socketTest, lockTest, channelTest } from "./test-support.mjs";
 import {
     launcherEnv, trustedLauncherEnv, DECL_IDENTITY, loginDeps, seamsOf, definedSeams, CMD_LAUNCH_CFG,
+    tmpConfigDir,
 } from "./test-fixtures.mjs";
 
 test("vc-secrets-oauth throws the same VcSecretsError the launcher's exit-code path recognises", () => {
@@ -1123,21 +1124,11 @@ channelTest("cmdLaunch: a spawn that throws leaves no channel directory behind",
         });
     `);
     const r = spawnSync(process.execPath, [script], { encoding: "utf8" });
+    assert.ok(r.stdout, r.stderr);
     assert.deepEqual(JSON.parse(r.stdout), { created: 1, left: [] }, `${r.stdout}${r.stderr}`);
 });
 
 const PROBE_PATH = fileURLToPath(new URL("./vc-secrets-probe.mjs", import.meta.url));
-
-// Writes a single project-scope declaration file and returns its containing directory, as tmpConfigDir
-// (test-fixtures.mjs) does (with its own temp-dir prefix), and pushes it onto the shared tmpDirs cleanup
-// (test-support.mjs) rather than growing a second one.
-function tmpProbeConfigDir(cfg) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-probe-"));
-    tmpDirs.push(dir);
-    fs.writeFileSync(path.join(dir, m.CONFIG_NAME), JSON.stringify(cfg));
-
-    return dir;
-}
 
 // ---------------------------------------------------------------------------------------------
 // vc-secrets-probe.mjs — the initialize-handshake verification aid. Ported from the upstream
@@ -1197,7 +1188,7 @@ test("vc-secrets-probe: a launcher refusal is captured, classified, and still ec
     // and the plumbing is the change: stderr used to be inherited, which let the developer read it
     // but left the probe unable to tell its two failures apart. Both halves matter, so both are
     // asserted through a real run.
-    const dir = tmpProbeConfigDir({ secrets: {}, servers: {} });
+    const dir = tmpConfigDir({ secrets: {}, servers: {} });
     const r = spawnSync(process.execPath, [PROBE_PATH, "ghost"],
         { env: launcherEnv({ VC_SECRETS_CONFIG_DIR: dir }), encoding: "utf8" });
     assert.match(r.stderr, /probe: ghost -> launcher refused: unknown server/);
@@ -1226,7 +1217,7 @@ test("vc-secrets-probe: a backend tool's multi-line failure is still a launcher 
         + '>&2 echo "gpg: public key decryption failed: No pinentry"\n'
         + '>&2 echo "gpg: decryption failed: No secret key"\n'
         + 'exit 2\n', { mode: 0o755 });
-    const dir = tmpProbeConfigDir({
+    const dir = tmpConfigDir({
         projectId: "demo",
         secrets: { plain: { backend: "local" } },
         servers: { s: { command: "true", args: [], env: { OTHER: "secret:plain" } } },
@@ -1277,7 +1268,7 @@ test("vc-secrets-probe: a silent server death stays the server's even with the l
     // "classifyProbeFailure: an exit code the launcher cannot produce itself is the server's,
     // whatever the last line said", and measured -- deleting that branch leaves THIS test green, because
     // with the knob dropped there is no benign line left for it to misread.
-    const dir = tmpProbeConfigDir({ projectId: "p", secrets: {},
+    const dir = tmpConfigDir({ projectId: "p", secrets: {},
         servers: { silent: { command: process.execPath, args: ["-e", "setTimeout(()=>process.exit(3),80)"], env: {} } } });
     const r = spawnSync(process.execPath, [PROBE_PATH, "silent"],
         { env: trustedLauncherEnv(dir, { VC_SECRETS_TIMING: "1" }), encoding: "utf8" });

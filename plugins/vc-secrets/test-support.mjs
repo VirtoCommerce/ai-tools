@@ -220,9 +220,12 @@ export function codeOnly(src) {
 // cannot hold one; the arguments are sliced from `stripped` itself. The two have the same length
 // (blanking replaces characters one for one), which is what lets one index serve both. A caller
 // scanning many calls in one file passes `blanked` so the view is made once, not once per call.
-// A call written inside a template literal's text (a script a test writes out and runs) is blanks in
-// that view, its closing `)` with it, so the count would run on past the literal. That call is read
-// as the code it is: the view is rebuilt from the text that follows it.
+// A call written inside any literal (a script a test writes out and runs as a template, a string or
+// a regex) is blanks in that view, its closing `)` with it, so the count would run on past the
+// literal. That call is read as the code it is: the view is rebuilt from the text that follows it.
+// That re-scan cannot tell the literal's own escapes and comment openers from code, so a call whose
+// arguments hold a backslash, `//` or `/*`, or whose end the re-scan cannot find, is refused rather
+// than read wrongly.
 export function callArguments(stripped, openIndex, blanked = codeOnly(stripped)) {
     if (blanked.length !== stripped.length) {
         throw new Error("callArguments needs the stripComments result: codeOnly of it must have the same length");
@@ -230,6 +233,7 @@ export function callArguments(stripped, openIndex, blanked = codeOnly(stripped))
     const inLiteral = blanked[openIndex - 1] !== "(";
     const view = inLiteral ? codeOnly(stripped.slice(openIndex)) : blanked;
     const offset = inLiteral ? openIndex : 0;
+    const unreadable = `the call opened before index ${openIndex} sits inside a literal and cannot be read reliably`;
     let depth = 1;
     for (let i = inLiteral ? 0 : openIndex; i < view.length; i += 1) {
         if (view[i] === "(") {
@@ -237,12 +241,20 @@ export function callArguments(stripped, openIndex, blanked = codeOnly(stripped))
         } else if (view[i] === ")") {
             depth -= 1;
             if (depth === 0) {
-                return stripped.slice(openIndex, offset + i);
+                const args = stripped.slice(openIndex, offset + i);
+                if (inLiteral && /\\|\/\/|\/\*/.test(args)) {
+                    throw new Error(`${unreadable}: its arguments hold a backslash or a comment opener`);
+                }
+
+                return args;
             }
         }
     }
 
-    throw new Error(`no closing parenthesis for the call opened before index ${openIndex}`);
+    // A backslash that escapes a backtick makes the re-scan open a literal of its own and never find the end.
+    throw new Error(inLiteral
+        ? `${unreadable}: no closing parenthesis found, as when its arguments hold an escaped backtick`
+        : `no closing parenthesis for the call opened before index ${openIndex}`);
 }
 
 // The launcher is the entry file plus everything under lib/. A test that reads the launcher as text

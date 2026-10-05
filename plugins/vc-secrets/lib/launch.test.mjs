@@ -16,6 +16,7 @@ import {
     onlyFiles, authorizedOauthPaths, KV_PAT, credHex, d1Config, d1LiveRun, waitFor, withStubOnPath, TRUST_BASE,
     trustCfg, withDeclaration, trustEnv, NO_TRUST, withProcessEnv, NS_SERVER, namespaceCfg, namespaceOauthCfg,
     PRELOAD_URL, TARGET_URL, CMD_LAUNCH_OAUTH_DECL, CMD_LAUNCH_CFG,
+    stubBinary,
 } from "../test-fixtures.mjs";
 
 // A minimal stand-in for a spawned child, for cmdLaunch tests that inject spawnFn: never signalled
@@ -2688,16 +2689,6 @@ channelTest("cmdLaunch: a failed renewal is loud on fd 2, and does not disturb t
     }
 });
 
-// A tiny stub binary on PATH, intercepting the real "gpg" invocation runTool makes for a local
-// secret read -- the same technique as withStubOnPath/stubBinary in test-fixtures.mjs.
-function stubGpgOnPath(plaintext) {
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "vc-secrets-gpgstub-"));
-    tmpDirs.push(dir);
-    fs.writeFileSync(path.join(dir, "gpg"), `#!/bin/sh\nprintf %s ${JSON.stringify(plaintext)}\n`, { mode: 0o755 });
-
-    return dir;
-}
-
 channelTest("cmdLaunch: an oauth reference and an ordinary secret both reach the child, and neither leaks on fd 1 or fd 2", async (t) => {
     // Replaces vc-secrets.test.mjs's deleted "cmdLaunch: an authorized oauth reference is refused,
     // and the secret beside it is still not leaked" -- that test's body asserted only the interim
@@ -2718,7 +2709,7 @@ channelTest("cmdLaunch: an oauth reference and an ordinary secret both reach the
     const secretPath = path.join(secretsHome, "vc-secrets", "secrets", "user", "plain.gpg");
     fs.mkdirSync(path.dirname(secretPath), { recursive: true });
     fs.writeFileSync(secretPath, "ciphertext-placeholder");
-    const binDir = stubGpgOnPath("PLAIN-SECRET-VALUE");
+    const binDir = stubBinary("gpg", '#!/bin/sh\nprintf %s "PLAIN-SECRET-VALUE"\n');
 
     const savedPath = process.env.PATH;
     const savedXdg = process.env.XDG_CONFIG_HOME;
