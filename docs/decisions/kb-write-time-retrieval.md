@@ -483,6 +483,18 @@ in `relabel-proposals-2026-10-05.json`). Then the same end-to-end run, logs300 d
   test split, so this set is no longer held out for the base as it now stands. The gate needs a
   fresh set: asks logged after 2026-10-05, labelled exhaustively from the start.
 
+**Cards for the rest (2026-10-05, base `6f0fbc2`).** The 74 active entries without a retrieval card
+got one (4-6 questions, vocabulary concepts, closed surface; `plans-11-cards.json`). Base alone, the
+right entry is in the returned list for 92% / 98% of logs300 dev / calibration targets (91% / 87%).
+
+**Letting the base answer alone more often does not survive held-out rows.** Re-fitted on v2 + logs300
+dev and calibration (205 targets, 84 controls), the answer threshold drops from 0.957 to 0.859 and the
+base answers 34-47% of dev / calibration targets alone, all right -- in sample. On the spent test
+splits the same ranker answers 22 logs300 rows with 2 wrong, both CONTROLS (`L-020`, `L-110`), and 5
+wave2 rows with 3 wrong. A confident answer on a control is the one outcome the AC allows zero of, so
+the re-fit is not published; `ranker.m4-gate.json` stays the base's ranker. Sufficiency is still not
+decidable from the index (M4), and more labels did not change that.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get
