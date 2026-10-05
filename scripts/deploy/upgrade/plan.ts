@@ -112,6 +112,9 @@ export function finalize(plan: UpgradePlan, decisions: Decisions): Finalized {
     const g = plan.questions.find((q) => q.key === key);
     if (!g) throw new Error(`decisions: unknown group "${key}" (groups: ${plan.questions.map((q) => q.key).join(', ') || 'none'})`);
     if (typeof d === 'string') { if (!valid(d)) throw new Error(`decisions["${key}"]: must be "keep" or "replace"`); continue; }
+    if (d === null || typeof d !== 'object' || Array.isArray(d) || Object.keys(d).length === 0) {
+      throw new Error(`decisions["${key}"]: must be "keep" or "replace", or a non-empty { component: "keep"|"replace" } object`);
+    }
     for (const [comp, v] of Object.entries(d)) {
       if (!g.components.includes(comp)) throw new Error(`decisions["${key}"]: "${comp}" is not in group ${key}`);
       if (!valid(v)) throw new Error(`decisions["${key}"]["${comp}"]: must be "keep" or "replace"`);
@@ -135,6 +138,9 @@ export function finalize(plan: UpgradePlan, decisions: Decisions): Finalized {
   return { ...res, approved, kept };
 }
 
+/** The theme target is a green dev alpha, never a release — label it so at render time. */
+const THEME_LABEL = '→ GREEN DEV ALPHA';
+
 const statusOrder = (r: Row, f: Finalized): number =>
   r.kind === 'platform' ? 0 : f.accepted.some((c) => c.component === r.component) ? 1 : (f.kept.includes(r) || r.status === 'AHEAD') ? 2 : f.dropped.some((d) => d.change.component === r.component) ? 3 : 4;
 
@@ -146,7 +152,7 @@ export function renderTable(plan: UpgradePlan, f: Finalized): string {
   for (const r of shown) {
     const acc = f.accepted.find((c) => c.component === r.component);
     const drop = f.dropped.find((d) => d.change.component === r.component);
-    const status = drop ? drop.status : acc && f.approved.has(r.component) ? 'PRERELEASE→RELEASE' : r.status;
+    const status = drop ? drop.status : acc && r.kind === 'theme' ? THEME_LABEL : acc && f.approved.has(r.component) ? 'PRERELEASE→RELEASE' : r.status;
     const action = acc ? `→ ${r.kind === 'theme' ? acc.to.split('/').pop() : acc.to}${f.approved.has(r.component) ? ' (you approved)' : ''}`
       : drop ? `${f.approved.has(r.component) ? 'you approved → release; ' : ''}blocked: ${drop.reason}` : r.note || '—';
     const live = r.kind === 'module' ? (plan.live?.[r.component.toLowerCase()] ?? '?') : '—';
@@ -170,7 +176,7 @@ export function renderCommitMessage(plan: UpgradePlan, f: Finalized, trailers: s
 export function renderPrBody(plan: UpgradePlan, f: Finalized, footer: string): string {
   const changed = f.accepted.map((c) => {
     const r = plan.rows.find((x) => x.component === c.component)!;
-    return `| ${c.component} | ${r.current} | ${c.kind === 'theme' ? c.to.split('/').pop() : c.to} | ${c.status}${r.prUrl ? ` — ${r.prUrl}` : ''}${f.approved.has(c.component) ? ' (operator approved)' : ''} |`;
+    return `| ${c.component} | ${r.current} | ${c.kind === 'theme' ? c.to.split('/').pop() : c.to} | ${c.kind === 'theme' ? THEME_LABEL : c.status}${r.prUrl ? ` — ${r.prUrl}` : ''}${f.approved.has(c.component) ? ' (operator approved)' : ''} |`;
   });
   const keptRows = [
     ...f.kept.map((r) => `| ${r.component} | ${r.current} | kept on purpose — ${r.note}${r.prUrl ? ` ${r.prUrl}` : ''} |`),
