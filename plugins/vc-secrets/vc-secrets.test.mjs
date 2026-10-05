@@ -240,7 +240,8 @@ test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers ar
     // its caller, a literal nested deeper in the arguments (`{ deps: { bindPlatform: "linux" } }`)
     // satisfies the match without reaching cmdLaunch, a string argument containing the literal
     // satisfies it too, and a call through another alias or a destructured binding is not seen at all
-    // -- the floor below turns that last one into a red instead of a vacuous pass.
+    // -- the floor below reds when an existing call becomes unseen that way, but a new call written so
+    // passes beside the ones it still sees.
     const callSite = /m\.(?:cmdLaunch|cmdTask|cmdRun)\(/g;
     const root = fileURLToPath(new URL("./", import.meta.url));
     const walk = (dir, prefix = "") => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
@@ -263,8 +264,8 @@ test("every in-process launch call (cmdLaunch, or the cmdRun/cmdTask wrappers ar
             inspected += 1;
         }
     }
-    // 8 in lib/launch.test.mjs and 2 in vc-secrets-oauth.test.mjs when this was written. A renamed
-    // namespace or a destructured call would match nothing and pass; the floor makes it a red.
+    // 8 in lib/launch.test.mjs and 2 in vc-secrets-oauth.test.mjs when this was written. An existing
+    // call renamed or destructured would match nothing and pass; the floor makes that a red.
     assert.ok(inspected >= 10, `only ${inspected} in-process launch calls found, below the floor of 10: either calls were removed (lower the floor on purpose) or the call-site pattern no longer reaches them`);
 });
 

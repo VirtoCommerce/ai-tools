@@ -733,6 +733,9 @@ refuse ordinary files in every repository. Claude Code's registration uses `${CL
 instead, and where a client runs hooks from the workspace it equals `cwd` anyway. The residual is a
 client that sends neither field: with no usable root, **every** directory-scoped name above is matched
 only as sent, so a bare relative path to any of them is not caught in a package-rooted workspace.
+A drive-relative path on a drive other than the root's (`D:lib\keystore.mjs` under a `C:` root) is
+rooted onto that root, because the payload does not carry the other drive's current directory, so a
+guarded file reached that way is not caught either.
 The launcher's entry file and the hook itself stay covered there, being matched by file.
 
 One off switch **inside this repository** is knowingly out of reach: `.claude-plugin/marketplace.json`

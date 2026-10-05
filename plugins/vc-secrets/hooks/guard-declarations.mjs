@@ -169,8 +169,10 @@ const LIB_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?lib\/[^/]+(?<!\.test)\.mjs$/i;
 // after the colon and the rewrite is anchored at the start. It can only widen what is refused: no
 // pattern can begin a match at a one-letter segment, so any match the old form had lay in the segments
 // after it, which the new form still contains. One approximation: a drive-relative path on ANOTHER
-// drive (`d:lib\x`) is rooted onto the given root, not onto that drive's own current directory --
-// a wrong root can only add refusals, so this too only widens.
+// drive (`d:lib\x`) is rooted onto the given root, not onto that drive's own current directory, which
+// the payload does not carry. So a directory-scoped name reached that way is not caught, and under a
+// package-shaped root an ordinary file of such a name on the other drive is refused -- the accepted
+// false positive of a package-shaped root.
 function normalisedPath(raw) {
     let filePath = raw.replace(/\\/g, "/").replace(/^[A-Za-z]:(?=[^/])/, "").split("/")
         .map((segment) => {
