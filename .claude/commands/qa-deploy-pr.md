@@ -32,6 +32,6 @@ terminal entry; the skill holds the methodology, the env wiring, and the deliver
 - **Env-aware:** the `vc-deploy-dev` branch + `BACK_URL` come from `TEST_ENV` / `.env.<env>`
   (`vcst`→`vcst-qa`, else the branch matching the env). Never hardcode `vcst-qa`.
 
-Deterministic core: `scripts/deploy/deploy-pr-artifact.ts` (`npm run deploy:pr` /
+Deterministic core: `scripts/deploy/vc-deploy.ts pr` (core in `scripts/deploy/pr/pr.ts` + `scripts/deploy/lib/`; `npm run deploy:pr` /
 `deploy:pr:apply`). Gate context: `.claude/knowledge/execution/quality-gates.md` (G6 E2E verification) +
 `.claude/templates/agent-dispatch.md` (Build Verification).
