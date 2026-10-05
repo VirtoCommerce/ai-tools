@@ -526,3 +526,21 @@ VCST-6087 (Jira) and its phase-1/2 comment; bench run 2026-09-30 (`scripts/kb/be
 VCST-6087-wave1 --days 1`); PLAN §3.5, §11, §14.4 (`_kbplan/PLAN.md`, outside the repo); arXiv
 1905.02851, 2301.03266, 2510.09557, 2411.06037, 2404.04287, 2210.11934; Anthropic, *Contextual
 Retrieval*.
+
+**A second `kb_show` (2026-10-05, base `17b4b7a`, logs300 dev + calibration, 202 `ambiguous` items).**
+A Sonnet-class agent ran the real CLI (`kb show`) on each item; arm A kept the one-open contract,
+arm B allowed one more open when the first body did not state the fact.
+
+| | A: one open | B: a second open allowed |
+|---|---|---|
+| picks precision | 127/130 (98%) | 132/136 (97%) |
+| controls end in `none` | 56/56 | 55/56 |
+| targets resolved, non-partial | 117/125 (94%) | 118/125 (94%) |
+| targets resolved, partial | 10/27 | 14/27 |
+| entries opened per ask | 0.74 | 0.93 (28 asks opened two) |
+
+- The second open buys one full target and four partial ones for 25% more opens, one more wrong
+  reliance and one control relied on. Not worth it as the default; the one-open contract stays.
+- Run as a live agent calling `kb show`, the one-open contract resolves 94% of non-partial targets,
+  against 87% when the pick and the body check were scored as two separate passes: the separate
+  body-check pass was stricter than an agent reading the body in its own flow.
