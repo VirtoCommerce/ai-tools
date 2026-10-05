@@ -974,5 +974,58 @@
     }
    ]
   }
+ },
+ "wave3": {
+  "about": "Fresh held-out wave VCST-6122-wave3 (2026-10-05): 104 live asks by 8 Sonnet QA agents on vcst-6122-schema2 @ 17b4b7a; 98 scored (6 contested). M4 = the agents' own live closings (kb show / kb none, from the log). floor-1 = the same questions through judge-harness --decider floor-1 with a Sonnet picker.",
+  "M4live": {
+   "picksPrecision": [
+    25,
+    27
+   ],
+   "controlsNone": [
+    34,
+    34
+   ],
+   "resolvedNonPartial": [
+    19,
+    28
+   ],
+   "resolvedAll": [
+    25,
+    64
+   ],
+   "shownNonPartial": [
+    23,
+    28
+   ],
+   "meanAskTokens": 391,
+   "wrong": [
+    "W3-043 KB-BE7DF8DA (probable label gap: its body states that anonymous sharedWishlist(key) returns the list with access Read)",
+    "W3-045 KB-C075BDF9"
+   ]
+  },
+  "floor1": {
+   "picksPrecision": [
+    9,
+    9
+   ],
+   "controlsNone": [
+    34,
+    34
+   ],
+   "resolvedNonPartial": [
+    7,
+    28
+   ],
+   "resolvedAll": [
+    9,
+    64
+   ],
+   "rightEntryReturned": [
+    14,
+    64
+   ],
+   "meanAskTokens": 366
+  }
  }
 }

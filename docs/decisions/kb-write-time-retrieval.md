@@ -544,3 +544,30 @@ arm B allowed one more open when the first body did not state the fact.
 - Run as a live agent calling `kb show`, the one-open contract resolves 94% of non-partial targets,
   against 87% when the pick and the body check were scored as two separate passes: the separate
   body-check pass was stricter than an agent reading the body in its own flow.
+
+## Fresh held-out wave VCST-6122-wave3 (2026-10-05) -- M4 triples what floor-1 resolves; the absolute gate still fails
+
+Eight Sonnet-class QA agents, one per area, each asked 13 questions they needed before writing test
+cases, through the real CLI on `vcst-6122-schema2` @ `17b4b7a` (ranker verdict-1; `KB_SYNTHETIC=1`,
+`KB_NO_SWEEP=1`, `KB_PUSH_CONFIRM=1`, an isolated queue: nothing was pushed). 104 asks, every one closed
+by handle but one; one agent's self-report claimed a reliance the log does not show (scored from the
+log). Labelled exhaustively by two independent passes (77 agreed), 27 adjudicated: 64 targets (36
+partial), 34 controls, 6 contested. Never used to change the base or the ranker.
+`rank-labelled-set.wave3.json`, `wave3/asks.json`, `e2e-result.json`.
+
+| | **M4, the agents' live closings** | floor-1, same questions | gate |
+|---|---|---|---|
+| picks precision | 25/27 (93%) | 9/9 | >= 95% -- **fail** (by one row) |
+| controls end in `none` | 34/34 | 34/34 | >= 90% |
+| targets resolved, non-partial | 19/28 (68%) | 7/28 (25%) | >= 80% -- **fail** |
+| all targets resolved | 25/64 (39%) | 9/64 (14%) | -- |
+| right entry shown | 44/64 (69%) | 14/64 (22%) | -- |
+| mean `ask` tokens | 391 | 366 | <= 400 |
+
+- **Against production, M4 resolves almost three times as many targets** (25 vs 9) on questions
+  nobody had seen, with no confident wrong answer on a control from either.
+- One of M4's two wrong reliances is a probable label gap (`W3-043`: `KB-BE7DF8DA` states that an
+  anonymous `sharedWishlist(key)` returns the list); with it precision would read 26/27. Not relabelled.
+- **The base, not the ranker, now bounds the result.** 36 of 64 targets are answered only in part, and
+  5 of 28 full targets never reached the list. Fresh questions are wider than what the base holds;
+  the lever is coverage (capture) and the partial-answer contract, not retrieval.
