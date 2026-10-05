@@ -69,7 +69,8 @@ export const enc = (p: string) => p.split('/').map(encodeURIComponent).join('/')
 // `gh` falls back to the keyring gho_ classic token when GITHUB_TOKEN/GH_TOKEN are unset (the same
 // routing the rest of this repo uses for VirtoCommerce writes — see reference_github_token_routing).
 export const GH_ENV: NodeJS.ProcessEnv = (() => { const e = { ...process.env }; delete e.GITHUB_TOKEN; delete e.GH_TOKEN; return e; })();
-export function gh(args: string[]): string { return execFileSync('gh', args, { env: GH_ENV, encoding: 'utf8', maxBuffer: 1 << 26 }); }
+// stderr is captured, not inherited: an expected 404 (probing a branch name) must not print, and callers read e.stderr.
+export function gh(args: string[]): string { return execFileSync('gh', args, { env: GH_ENV, encoding: 'utf8', maxBuffer: 1 << 26, stdio: ['ignore', 'pipe', 'pipe'] }); }
 export function ghApi(path: string, extra: string[] = []): any { return JSON.parse(gh(['api', path, ...extra])); }
 export function ghUser(): string | null { try { return ghApi('user').login ?? null; } catch { return null; } }
 /** Actual account permission on a repo: admin|maintain|write|triage|read|none. */
@@ -99,8 +100,8 @@ export function commitViaGh(owner: string, repo: string, path: string, text: str
   if (author) for (const who of ['author', 'committer']) args.push('-f', `${who}[name]=${author.name}`, '-f', `${who}[email]=${author.email}`);
   try { gh(args); return true; } catch (e: any) { console.error('[vc-deploy] commit failed:', String(e.stderr || e.message || e).slice(0, 240)); return false; }
 }
-export function createPr(owner: string, repo: string, base: string, head: string, title: string, body: string): { ok: boolean; url?: string; note: string } {
-  try { const url = gh(['pr', 'create', '--repo', `${owner}/${repo}`, '--base', base, '--head', head, '--title', title, '--body', body]).trim(); return { ok: true, url, note: 'opened' }; }
+export function createPr(owner: string, repo: string, base: string, head: string, title: string, body: string, draft = false): { ok: boolean; url?: string; note: string } {
+  try { const url = gh(['pr', 'create', '--repo', `${owner}/${repo}`, '--base', base, '--head', head, '--title', title, '--body', body, ...(draft ? ['--draft'] : [])]).trim(); return { ok: true, url, note: 'opened' }; }
   catch (e: any) {
     const msg = String(e.stderr || e.message || e);
     if (/already exists/i.test(msg)) { try { const url = gh(['pr', 'list', '--repo', `${owner}/${repo}`, '--head', head.includes(':') ? head.split(':')[1] : head, '--json', 'url', '--jq', '.[0].url']).trim(); if (url) return { ok: true, url, note: 'already open' }; } catch { /* ignore */ } }
@@ -116,7 +117,7 @@ export interface GhCli {
   createRef(owner: string, repo: string, branch: string, sha: string): boolean;
   fileText(owner: string, repo: string, path: string, ref: string): Promise<string | null>;
   commit(owner: string, repo: string, path: string, text: string, branch: string, message: string, author?: Author): boolean;
-  createPr(owner: string, repo: string, base: string, head: string, title: string, body: string): { ok: boolean; url?: string; note: string };
+  createPr(owner: string, repo: string, base: string, head: string, title: string, body: string, draft?: boolean): { ok: boolean; url?: string; note: string };
 }
 export const realGhCli: GhCli = {
   user: ghUser,

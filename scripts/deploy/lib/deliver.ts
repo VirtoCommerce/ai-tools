@@ -7,7 +7,7 @@ import type { Author, GhCli } from './github.ts';
 export interface DeliverFile { path: string; text: string; snapshot?: string }
 export interface DeliverRequest {
   coords: EnvCoords; headBranch: string; uniqueBranch?: boolean; title: string; message?: string; body: string;
-  files: DeliverFile[]; author?: Author; forkOwner?: string; log?: (line: string) => void;
+  files: DeliverFile[]; author?: Author; forkOwner?: string; draft?: boolean; log?: (line: string) => void;
 }
 export type DeliverResult =
   | { kind: 'pr'; url: string; note: string; headBranch: string; compareUrl: string; direct: boolean; account: string; perm: string }
@@ -67,7 +67,7 @@ export async function deliverPr(req: DeliverRequest, cli: GhCli = realGhCli): Pr
   if (failed.length) return committed.length
     ? { kind: 'partial', headBranch, compareUrl, writeOwner, committed, failed }
     : { kind: 'handoff', reason: 'A commit failed (push rights?).' };
-  const pr = cli.createPr(c.deployOwner, c.deployRepo, c.branch, headSpec, req.title, req.body);
+  const pr = cli.createPr(c.deployOwner, c.deployRepo, c.branch, headSpec, req.title, req.body, req.draft);
   return pr.ok
     ? { kind: 'pr', url: pr.url!, note: pr.note, headBranch, compareUrl, direct, account: me, perm }
     : { kind: 'pushed-no-pr', note: pr.note, headBranch, compareUrl, direct, account: me, perm };

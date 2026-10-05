@@ -87,6 +87,9 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions> --apply \
   --trailer="<this session's commit attribution line>" --pr-footer="<this session's PR attribution>"
 ```
 
+Add `--draft` when the operator asks for a trial run: the PR opens as a draft, which nobody can merge
+until it is marked ready.
+
 - exit 0 → the PR is open and carries exactly the edited files: report its URL and the merge note below.
 - exit 1 → the message names one of these (mapping: `scripts/deploy/upgrade/cli.ts` APPLY):
   - **nothing to change** — nothing written; the env is up to date.

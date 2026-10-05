@@ -5,7 +5,7 @@
  *   --env=<env> --plan-out=<file> [--json]            PLAN  (read-only network; writes the plan JSON)
  *   --plan=<file> [--decisions=<file>] [--json]       TABLE (pure: end state + checks + the table)
  *   --plan=<file> [--decisions=<file>] --apply        APPLY (edit, check by value, ONE deploy PR; never merges)
- *       [--trailer=<line>]... [--pr-footer=<text>] [--fork-owner=<login>]
+ *       [--trailer=<line>]... [--pr-footer=<text>] [--fork-owner=<login>] [--draft]
  *
  * --decisions: { "<group key>": "keep" | "replace" | { "<component>": "keep" | "replace" } }; a group
  * not listed is KEEP.
@@ -115,7 +115,7 @@ export async function runUpgrade(args: string[], deps: { cli?: GhCli; http?: Htt
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   let r;
   try {
-    r = await deliverPr({ coords, headBranch: `env-upgrade-${plan.branch}-${stamp}`, uniqueBranch: true, title, message, body, files, author: gitAuthor(), forkOwner: flag('fork-owner'), log: (l) => console.log(l) }, deps.cli ?? realGhCli);
+    r = await deliverPr({ coords, headBranch: `env-upgrade-${plan.branch}-${stamp}`, uniqueBranch: true, title, message, body, files, author: gitAuthor(), forkOwner: flag('fork-owner'), draft: has('draft'), log: (l) => console.log(l) }, deps.cli ?? realGhCli);
   } catch (e) { if (e instanceof DeliverError) fail(e.message, TAG); throw e; }
   if (r.kind === 'stale') { console.error(`[${TAG}] STOP — ${r.path} changed on ${plan.branch} since the plan. Someone changed the env; re-run from the PLAN phase.`); throw new Exit(1); }
   if (r.kind === 'unreadable') { console.error(`[${TAG}] STOP — could not read ${r.path} on ${plan.branch} to confirm it is unchanged (token, access or network?) — nothing was written.`); throw new Exit(1); }
