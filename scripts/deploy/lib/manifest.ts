@@ -256,7 +256,7 @@ export function editPackagesText(origText: string, origJson: any, modules: Targe
 }
 export function editThemeText(text: string, newUrl: string): { text: string; from: string | null } {
   const m = THEME_URL_RE.exec(text);
-  return m ? { text: text.replace(m[0], newUrl), from: m[0] } : { text, from: null };
+  return m ? { text: subLiteral(text, THEME_URL_RE, newUrl), from: m[0] } : { text, from: null };
 }
 
 // ── upgrade edits (vc-deploy.ts upgrade) ────────────────────────────────────────────────────────
@@ -355,7 +355,7 @@ export function editUpgradeText(text: string, changes: ManifestChange[]): { text
 }
 
 /** Problems with `newText`, compared BY VALUE (never `!==` on arrays — bc0701f5): the pin set equals
- *  the original plus exactly `changes`, no Id sits in two places, and no other top-level key or
+ *  the original plus exactly `changes`, no Id newly sits in two places, and no other top-level key or
  *  source header moved. [] means the edit is exactly what was approved. */
 export function verifyUpgradeEdit(origText: string, newText: string, changes: ManifestChange[]): string[] {
   let a: any, b: any;
@@ -363,7 +363,10 @@ export function verifyUpgradeEdit(origText: string, newText: string, changes: Ma
   const problems: string[] = [];
   const before = new Map(readPins(a).pins.map((p) => [p.id, p]));
   const afterRead = readPins(b), after = new Map(afterRead.pins.map((p) => [p.id, p]));
-  if (afterRead.duplicates.length) problems.push(`Id in two places: ${afterRead.duplicates.join(', ')}`);
+  // A DUPLICATE already in the original is reported in the plan and never changed by it — only a new one is the edit's fault.
+  const preDup = new Set(readPins(a).duplicates);
+  const newDup = afterRead.duplicates.filter((id) => !preDup.has(id));
+  if (newDup.length) problems.push(`Id in two places: ${newDup.join(', ')}`);
   const want = new Map<string, Pin>(before);
   for (const c of changes) {
     if (c.mode === 'platform') continue;

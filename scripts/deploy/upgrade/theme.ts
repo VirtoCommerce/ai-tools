@@ -23,9 +23,11 @@ export function parseBlobList(xml: string, pkgName: string, version: string): { 
   return { alphas: alphas.sort((a, b) => b.n - a.n), next: /<NextMarker>([^<]+)<\/NextMarker>/.exec(xml)?.[1] ?? null };
 }
 
-export function matchRun(a: Alpha, runs: PublishRun[]): PublishRun | null {
+/** EVERY run (one entry per run id) whose publish-step window contains the alpha's Last-Modified. */
+export function matchRun(a: Alpha, runs: PublishRun[]): PublishRun[] {
   const t = Date.parse(a.lastModified);
-  return runs.find((r) => t >= r.start && t <= r.end) ?? null;
+  const hit = runs.filter((r) => t >= r.start && t <= r.end);
+  return hit.filter((r, i) => hit.findIndex((x) => x.runId === r.runId) === i);
 }
 
 export function themePinKind(url: string, pkgName: string): { kind: 'release' | 'alpha' | 'branch-alpha' | 'pr' | 'unknown'; version?: string; n?: number; pr?: number; branch?: string } {
@@ -59,26 +61,41 @@ export async function resolveThemeTarget(http: Http, repo: string, blobBase: str
   const runs: PublishRun[] = [];
   const commits = await http.ghAll(`/repos/${repo}/commits?sha=${encodeURIComponent(branch)}`, 2);
   let ci = 0;
-  for (const a of alphas) {
-    let run = matchRun(a, runs);
-    while (!run && ci < commits.length) {
-      const sha = String(commits[ci++].sha);
-      for (const r of (await http.gh(`/repos/${repo}/actions/runs?head_sha=${sha}&per_page=20`))?.workflow_runs ?? []) {
-        if (!String(r.path ?? '').endsWith(workflowFile) || r.event !== 'push' || r.head_branch !== branch) continue;
-        for (const j of (await http.gh(`/repos/${repo}/actions/runs/${r.id}/jobs?per_page=100`))?.jobs ?? []) {
-          for (const s of j.steps ?? []) {
-            if (/publish.*blob/i.test(String(s.name)) && s.started_at && s.completed_at) {
-              runs.push({ runId: r.id, headSha: r.head_sha, conclusion: r.conclusion, start: Date.parse(s.started_at), end: Date.parse(s.completed_at) });
-            }
+  /** Load the next (older) commit's publish steps; returns the ones it added. */
+  const loadNext = async (): Promise<PublishRun[]> => {
+    const sha = String(commits[ci++].sha), added: PublishRun[] = [];
+    for (const r of (await http.gh(`/repos/${repo}/actions/runs?head_sha=${sha}&per_page=20`))?.workflow_runs ?? []) {
+      if (!String(r.path ?? '').endsWith(workflowFile) || r.event !== 'push' || r.head_branch !== branch) continue;
+      for (const j of (await http.gh(`/repos/${repo}/actions/runs/${r.id}/jobs?per_page=100`))?.jobs ?? []) {
+        for (const s of j.steps ?? []) {
+          if (/publish.*blob/i.test(String(s.name)) && s.started_at && s.completed_at) {
+            added.push({ runId: r.id, headSha: r.head_sha, conclusion: r.conclusion, start: Date.parse(s.started_at), end: Date.parse(s.completed_at) });
           }
         }
       }
-      run = matchRun(a, runs);
     }
-    if (!run) { notes.push(`${a.name}: no ${workflowFile} publish step found for it`); continue; }
+    runs.push(...added);
+    return added;
+  };
+  for (const a of alphas) {
+    const t = Date.parse(a.lastModified);
+    while (!matchRun(a, runs).length && ci < commits.length) await loadNext();
+    // A run of an OLDER commit can still be publishing at the same moment (concurrent pushes): keep
+    // loading until a commit's publish steps all ended before this alpha — only then is the match set complete.
+    if (matchRun(a, runs).length) while (ci < commits.length) { const got = await loadNext(); if (got.length && got.every((r) => r.end < t)) break; }
+    const matched = matchRun(a, runs);
+    if (!matched.length) { notes.push(`${a.name}: no ${workflowFile} publish step found for it`); continue; }
+    const ids = matched.map((r) => r.runId).join(', ');
+    if (new Set(matched.map((r) => r.conclusion)).size > 1) {
+      notes.push(`${a.name}: ambiguous — publish windows of runs ${ids} overlap with different conclusions`);
+      continue;
+    }
     // A red run can still have published (it failed after the publish step): such an alpha exists but is never the target.
+    // All matched runs agree here. If they are green, take the OLDEST commit's (runs load newest-first),
+    // so a "PR is in the target" ancestry check against headSha can only under-claim, never over-claim.
+    const run = matched[matched.length - 1];
     if (run.conclusion === 'success') return { target: { url: `${blobBase}/${a.name}`, name: a.name, version, n: a.n, headSha: run.headSha }, pkgName, version, notes };
-    notes.push(`${a.name}: run ${run.runId} concluded ${run.conclusion} — not a target`);
+    notes.push(`${a.name}: run${matched.length > 1 ? 's' : ''} ${ids} concluded ${run.conclusion} — not a target`);
   }
   return { target: null, pkgName, version, notes };
 }

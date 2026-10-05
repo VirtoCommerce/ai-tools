@@ -44,12 +44,13 @@ Exit 2 → show the error and stop (missing env file, branch not found, token, r
 ## 2. Questions — one per feature group
 
 For each entry of `questions` (≤4 per `AskUserQuestion` call): header = the group `key`; the question
-shows every `lines[]` entry verbatim (pins, PR links and state, the release it would become, DOWNGRADE
-where flagged). Options, the recommended one first and labelled *(Recommended)* per the group's
-`recommended`:
+shows every `lines[]` entry verbatim (pins, PR links and state, the release — or, for the theme, the
+green dev alpha — it would become, DOWNGRADE where flagged). Options, the recommended one first and
+labelled *(Recommended)* per the group's `recommended` (a group with a DOWNGRADE is never recommended
+*Replace*):
 
 - *Keep the PR/alpha builds* → `"keep"`
-- *Replace with release* → `"replace"`
+- *Replace with release* (a theme-only group: *Replace with the green dev alpha*) → `"replace"`
 - *Decide per module* → ask one follow-up per component, record `{ "<component>": "keep" | "replace" }`
 
 Write the answers to `<scratchpad>/env-upgrade-<env>.decisions.json` as
@@ -62,7 +63,12 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions>
 ```
 
 Show the output **verbatim** — it is the table, the counts and the check results. A *Replace* the checks
-blocked is marked "you approved → release; blocked: …" in it; say so in one line.
+blocked is marked "you approved → release; blocked: …" (theme: "you approved → green dev alpha;
+blocked: …") in it; say so in one line. An approved downgrade reads "(you approved, DOWNGRADE)" — name it.
+
+Exit 2 here means the decisions file is malformed (unknown group, component or value — the error names
+it): show the error, rewrite the file from the step-2 answers, re-run. If the error names the plan
+instead (unreadable, unsupported schema), go back to step 1.
 
 ## 4. One yes/no
 
@@ -76,10 +82,19 @@ npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions> --apply \
   --trailer="<this session's commit attribution line>" --pr-footer="<this session's PR attribution>"
 ```
 
-- exit 0 → report the PR URL and the merge note below.
-- exit 1 → relay the message: *stale* means someone changed the env since step 1 — offer to start
-  over from step 1; a web-edit link means no write path — hand the links over.
-- exit 2 → relay the error; nothing was written unless the message says PARTIAL.
+- exit 0 → the PR is open and carries exactly the edited files: report its URL and the merge note below.
+- exit 1 → the message names one of these (mapping: `upgrade/cli.ts` APPLY):
+  - **nothing to change** — nothing written; the env is up to date.
+  - **stale** ("changed on `<branch>` since the plan") — nothing written; offer to restart from step 1.
+  - **no write path** (web-edit links) — no file committed (a fork or an empty branch may remain);
+    hand the links over.
+  - **PARTIAL commit** — WRITTEN: the branch is in an inconsistent state; hand the compare URL over
+    (fix or delete the branch).
+  - **branch pushed, PR not opened** — WRITTEN: hand the compare URL over to open it.
+  - **PR opened, but its files could not be verified / it does not carry or also touches files** —
+    WRITTEN: the `✅ PR` line is printed first; relay that URL and say it must be reviewed before merge.
+- exit 2 → nothing was written (tool error, STOP or bad input — every exit-2 path in `cli.ts` comes
+  before the first write): relay the error.
 
 **Merge note:** a human merges; the merge triggers the deploy. Right after it the env can serve the
 OLD build for a minute or two, so check `/api/platform/modules` only after the deploy Action is green
@@ -87,7 +102,8 @@ OLD build for a minute or two, so check `/api/platform/modules` only after the d
 
 ## Never
 
-- Never downgrade, never add or remove a module, never call an alpha a release.
+- Never downgrade without an explicit, flagged approval; never add or remove a module; never call an
+  alpha a release.
 - Never write before the step-4 yes; never merge; never edit another env's branch.
 - Never hand-edit the manifest or work around a script STOP — report it.
 - Never transcribe versions, module lists or env→branch mappings into this file.

@@ -8,14 +8,20 @@
  *       [--trailer=<line>]... [--pr-footer=<text>] [--fork-owner=<login>]
  *
  * --decisions: { "<group key>": "keep" | "replace" | { "<component>": "keep" | "replace" } }; a group
- * not listed is KEEP. Exit: 0 ok · 1 nothing to change / stale / blocked · 2 tool error or bad input.
- * Never adds or removes a module, never downgrades, never calls an alpha a release.
+ * not listed is KEEP.
+ * Exit: 0 ok (APPLY: PR opened and its files verified) · 1 APPLY did not finish cleanly — nothing to
+ * change, stale snapshot or no write path (nothing written), or partial commit / branch pushed without
+ * a PR / PR files unverified or wrong (WRITTEN — the message carries the URL) · 2 tool error, STOP or
+ * bad input — nothing was written (every exit-2 path precedes the first write).
+ * Never adds or removes a module, never downgrades without an explicit, flagged approval, never calls
+ * an alpha a release.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { REPO_ROOT, envFilePath, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
-import { getToken, makeHttp, setToken } from '../lib/github.ts';
+import { getToken, makeHttp, realGhCli, setToken } from '../lib/github.ts';
+import type { GhCli, Http } from '../lib/github.ts';
 import { THEME_URL_RE, editThemeText, editUpgradeText, verifyUpgradeEdit } from '../lib/manifest.ts';
 import type { ManifestChange } from '../lib/manifest.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
@@ -35,7 +41,8 @@ function gitAuthor(): { name: string; email: string } | undefined {
   } catch { return undefined; }
 }
 
-export async function runUpgrade(args: string[]): Promise<void> {
+/** `deps` exists for tests only: a fake `gh` CLI and HTTP for the APPLY phase. */
+export async function runUpgrade(args: string[], deps: { cli?: GhCli; http?: Http } = {}): Promise<void> {
   const flag = (n: string) => args.find((a) => a.startsWith(`--${n}=`))?.split('=').slice(1).join('=');
   const flags = (n: string) => args.filter((a) => a.startsWith(`--${n}=`)).map((a) => a.split('=').slice(1).join('='));
   const has = (n: string) => args.includes(`--${n}`);
@@ -106,7 +113,7 @@ export async function runUpgrade(args: string[]): Promise<void> {
   const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   let r;
   try {
-    r = await deliverPr({ coords, headBranch: `env-upgrade-${plan.branch}-${stamp}`, uniqueBranch: true, title, message, body, files, author: gitAuthor(), forkOwner: flag('fork-owner'), log: (l) => console.log(l) });
+    r = await deliverPr({ coords, headBranch: `env-upgrade-${plan.branch}-${stamp}`, uniqueBranch: true, title, message, body, files, author: gitAuthor(), forkOwner: flag('fork-owner'), log: (l) => console.log(l) }, deps.cli ?? realGhCli);
   } catch (e) { if (e instanceof DeliverError) fail(e.message, TAG); throw e; }
   if (r.kind === 'stale') { console.error(`[${TAG}] STOP — ${r.path} changed on ${plan.branch} since the plan. Someone changed the env; re-run from the PLAN phase.`); throw new Exit(1); }
   if (r.kind === 'handoff') {
@@ -116,12 +123,22 @@ export async function runUpgrade(args: string[]): Promise<void> {
   }
   if (r.kind === 'partial') { console.error(`[${TAG}] ⚠ PARTIAL commit on ${r.writeOwner}/${plan.deployRepo}@${r.headBranch}: committed ${r.committed.join(', ')}; FAILED ${r.failed.join(', ')}. Fix or delete the branch: ${r.compareUrl}`); throw new Exit(1); }
   if (r.kind === 'pushed-no-pr') { console.log(`Branch pushed, PR not opened (${r.note}). Open it: ${r.compareUrl}`); throw new Exit(1); }
-  // The PR must carry only the files we wrote.
-  const prNumber = Number(/\/pull\/(\d+)/.exec(r.url)?.[1]);
-  const prFiles = prNumber ? (await makeHttp().ghAll(`/repos/${plan.deployOwner}/${plan.deployRepo}/pulls/${prNumber}/files`)).map((x: any) => x.filename) : [];
-  const extra = prFiles.filter((p: string) => !files.some((x) => x.path === p));
+  // The PR exists from here on: print it FIRST, so no later failure can hide a PR that was opened.
   console.log(`✅ PR ${r.note}: ${r.url}`);
   console.log('A human merges it; the merge deploys. Check /api/platform/modules only after the deploy Action is green AND the versions changed.');
-  if (extra.length) { console.error(`⚠ the PR also touches ${extra.join(', ')} — review before anyone merges`); throw new Exit(1); }
+  // The PR must carry exactly the files we wrote — no more, no fewer.
+  const prUrl = r.url;
+  function unverified(why: string): never { console.error(`⚠ the PR's files could not be verified (${why}) — review ${prUrl} before anyone merges`); throw new Exit(1); }
+  const prNumber = Number(/\/pull\/(\d+)/.exec(prUrl)?.[1]);
+  if (!prNumber) unverified('no PR number in the URL');
+  let prFiles: string[];
+  try {
+    prFiles = (await (deps.http ?? makeHttp()).ghAll(`/repos/${plan.deployOwner}/${plan.deployRepo}/pulls/${prNumber}/files`)).map((x: any) => String(x.filename));
+  } catch (e: any) { unverified(e.message); }
+  const extra = prFiles.filter((p) => !files.some((x) => x.path === p));
+  const missing = files.map((x) => x.path).filter((p) => !prFiles.includes(p));
+  if (missing.length) console.error(`⚠ the PR does not carry ${missing.join(', ')} — review before anyone merges`);
+  if (extra.length) console.error(`⚠ the PR also touches ${extra.join(', ')} — review before anyone merges`);
+  if (missing.length || extra.length) throw new Exit(1);
   throw new Exit(0);
 }

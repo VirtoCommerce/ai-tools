@@ -33,14 +33,18 @@ disagree, the code is what runs — fix whichever is wrong, in the same commit.
 - **A PR build is never auto-moved to a lower or not-yet-in-feed release.** If its only containing
   release is LOWER than the pin, or that release is not yet in the feed, the row is `PRERELEASE?`
   (DOWNGRADE flagged) and the operator is asked — an auto-move would downgrade or point at nothing.
-- **The theme row's accepted change reads `→ GREEN DEV ALPHA`** in the table and the PR body, never
-  "release" — an alpha is never called a release.
+  A group holding a DOWNGRADE is never recommended *Replace*, and an approved one stays flagged
+  `DOWNGRADE` in the table, the PR body and the commit message.
+- **The theme target is never called a release:** its question line reads `→ green dev alpha <file>`,
+  its accepted change `→ GREEN DEV ALPHA`, and a blocked *Replace* `you approved → green dev alpha`.
 - **Alpha `X.Y.Z-alpha.N` precedes release `X.Y.Z`** — matched "by version": the last alpha of a version
   is built minutes before its release.
 - **Theme target = newest GREEN dev alpha.** The blob name has no sha; the only link to its CI run is the
   blob's `Last-Modified` inside the run's *Publish to Blob* step window. Runs are listed per commit
   (`?head_sha=`), because `branch=dev&event=push` returned nothing newer than two weeks back (measured
-  2026-10-02). A red run can still have published — that alpha is never the target.
+  2026-10-02). A red run can still have published — that alpha is never the target. Every run whose
+  window holds the timestamp counts (concurrent pushes overlap): the alpha is a target only if ALL of
+  them are green; mixed conclusions are noted as *ambiguous* and the next alpha is tried.
 - **Checks run on the END STATE, to a fixed point** — after the operator's answers, because a *Replace*
   changes what the end state is. One deploy 404 rolls back the whole install, hence the download check.
 - **Moving only part of a feature to releases breaks it** — hence one question per tracker key, with

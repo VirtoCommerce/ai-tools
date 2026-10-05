@@ -37,7 +37,10 @@ async function checkAsset(http: Http, c: Change, platformImage: string | undefin
   c.assetOk = (await http.head(c.assetUrl)).status === 200;
 }
 
-function groupQuestions(rows: Row[]): QuestionGroup[] {
+/** A theme URL's file name, decoded — the theme target is an alpha blob, never a release. */
+const fileOf = (url: string) => decodeURIComponent(url.split('/').pop() ?? url);
+
+export function groupQuestions(rows: Row[]): QuestionGroup[] {
   const groups = new Map<string, Row[]>();
   for (const r of rows) {
     const asked = r.status === 'PRERELEASE?';
@@ -49,9 +52,10 @@ function groupQuestions(rows: Row[]): QuestionGroup[] {
   return [...groups].filter(([, rs]) => rs.some((r) => r.status === 'PRERELEASE?')).map(([key, rs]) => ({
     key,
     components: rs.filter((r) => r.status === 'PRERELEASE?').map((r) => r.component),
-    recommended: rs.every((r) => r.status !== 'PRERELEASE?' || /closed unmerged/.test(r.note)) ? 'replace' : 'keep',
+    // A downgrade is never the one-click recommendation: the operator has to choose it on purpose.
+    recommended: !rs.some((r) => r.downgrade) && rs.every((r) => r.status !== 'PRERELEASE?' || /closed unmerged/.test(r.note)) ? 'replace' : 'keep',
     lines: rs.map((r) => r.replace
-      ? `${r.component}: ${r.current} → release ${r.replace.to}${r.downgrade ? ' (DOWNGRADE)' : ''} — ${r.note}${r.prUrl ? ` ${r.prUrl}` : ''}`
+      ? `${r.component}: ${r.current} → ${r.kind === 'theme' ? `green dev alpha ${fileOf(r.replace.to)}` : `release ${r.replace.to}`}${r.downgrade ? ' (DOWNGRADE)' : ''} — ${r.note}${r.prUrl ? ` ${r.prUrl}` : ''}`
       : `${r.component}: ${r.current} — ${r.status}, stays as is${r.prUrl ? ` ${r.prUrl}` : ''}`),
   }));
 }
@@ -153,8 +157,9 @@ export function renderTable(plan: UpgradePlan, f: Finalized): string {
     const acc = f.accepted.find((c) => c.component === r.component);
     const drop = f.dropped.find((d) => d.change.component === r.component);
     const status = drop ? drop.status : acc && r.kind === 'theme' ? THEME_LABEL : acc && f.approved.has(r.component) ? 'PRERELEASE→RELEASE' : r.status;
-    const action = acc ? `→ ${r.kind === 'theme' ? acc.to.split('/').pop() : acc.to}${f.approved.has(r.component) ? ' (you approved)' : ''}`
-      : drop ? `${f.approved.has(r.component) ? 'you approved → release; ' : ''}blocked: ${drop.reason}` : r.note || '—';
+    const approved = f.approved.has(r.component) ? (r.downgrade ? ' (you approved, DOWNGRADE)' : ' (you approved)') : '';
+    const action = acc ? `→ ${r.kind === 'theme' ? acc.to.split('/').pop() : acc.to}${approved}`
+      : drop ? `${f.approved.has(r.component) ? `you approved → ${r.kind === 'theme' ? 'green dev alpha' : 'release'}; ` : ''}blocked: ${drop.reason}` : r.note || '—';
     const live = r.kind === 'module' ? (plan.live?.[r.component.toLowerCase()] ?? '?') : '—';
     out.push(`| ${r.component} | ${r.current} | ${live} | ${r.latest ?? '—'} | ${status} | ${action} |`);
   }
@@ -169,14 +174,15 @@ export function renderTable(plan: UpgradePlan, f: Finalized): string {
 export function renderCommitMessage(plan: UpgradePlan, f: Finalized, trailers: string[]): { title: string; message: string } {
   const n = f.accepted.length;
   const title = `${plan.env}: upgrade to latest releases (${n} component${n === 1 ? '' : 's'})`;
-  const lines = f.accepted.map((c) => `- ${c.component}: ${c.kind === 'theme' ? c.from.split('/').pop() : c.from} → ${c.kind === 'theme' ? c.to.split('/').pop() : c.to}`);
+  const down = (c: { component: string }) => f.approved.has(c.component) && plan.rows.some((r) => r.component === c.component && r.downgrade);
+  const lines = f.accepted.map((c) => `- ${c.component}: ${c.kind === 'theme' ? c.from.split('/').pop() : c.from} → ${c.kind === 'theme' ? c.to.split('/').pop() : c.to}${down(c) ? ' (DOWNGRADE, operator approved)' : ''}`);
   return { title, message: [title, '', ...lines, ...(trailers.length ? ['', ...trailers] : [])].join('\n') };
 }
 
 export function renderPrBody(plan: UpgradePlan, f: Finalized, footer: string): string {
   const changed = f.accepted.map((c) => {
     const r = plan.rows.find((x) => x.component === c.component)!;
-    return `| ${c.component} | ${r.current} | ${c.kind === 'theme' ? c.to.split('/').pop() : c.to} | ${c.kind === 'theme' ? THEME_LABEL : c.status}${r.prUrl ? ` — ${r.prUrl}` : ''}${f.approved.has(c.component) ? ' (operator approved)' : ''} |`;
+    return `| ${c.component} | ${r.current} | ${c.kind === 'theme' ? c.to.split('/').pop() : c.to} | ${c.kind === 'theme' ? THEME_LABEL : c.status}${r.prUrl ? ` — ${r.prUrl}` : ''}${f.approved.has(c.component) ? (r.downgrade ? ' (operator approved, DOWNGRADE)' : ' (operator approved)') : ''} |`;
   });
   const keptRows = [
     ...f.kept.map((r) => `| ${r.component} | ${r.current} | kept on purpose — ${r.note}${r.prUrl ? ` ${r.prUrl}` : ''} |`),
