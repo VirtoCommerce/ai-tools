@@ -69,7 +69,13 @@ npm run tracker:comment -- --ticket VCST-1234 --amend 109824 --same-round "<reas
 npm run tracker:comment -- --ticket VCST-1234 --get 109824                     # read it back
 npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "<reason>"
+npm run tracker:comment -- --ticket VCST-1234 --artifact "<build>" --body-file body.md --attach-file plan.md   # §5d
 ```
+
+`--attach` is for an **image** to embed inline (§5c — it forces the v2 API and a wiki body);
+`--attach-file` is for any **file** to link (a plan, a report page): the body keeps its dialect and one
+`Attached:` line linking each file by id is appended. **Never upload with raw REST from this repo** —
+both flags dedupe against what is already on the issue, which is what makes a retry safe.
 
 It guards BOTH directions (`scripts/tracker/round-guard.mjs`): a second `--post` in the same round is
 refused (offering `--amend`), and an `--amend` of a comment recorded for a different `--artifact`, or
@@ -401,7 +407,8 @@ itself**, in full, in the comment body. A summary plus a repo path is not a deli
 - **Summarize only when explicitly asked to.** "Push it to the ticket" means the content.
 - **An oversized artifact is still ONE comment** (§0). Do not split it across several — that is the
   noise the GOLDEN RULE forbids, and it was licensed here until 2026-09-17. If it genuinely will not
-  fit, attach it as a file to the same ticket and reference the attachment from the single comment,
+  fit, attach it as a file to the same ticket and reference the attachment from the single comment
+  (`npm run tracker:comment -- … --attach-file <file>` does both in one step, §0a),
   or ask the operator which half they want inline. Never shrink it to an abstract, and never serialise
   it into a comment thread.
 - **A pointer is legitimate only when the target is reachable** — a merged-and-pushed GitHub URL, a

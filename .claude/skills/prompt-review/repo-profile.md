@@ -88,6 +88,13 @@ grep -nE '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}' $T      
 grep -nE 'reports/tickets/Sprint[0-9]' $T                                          # G6 evidence paths
 grep -nE 'kb_ask|kb_capture|npm run kb' $T                                         # G8 — present where a step establishes platform behaviour?
 ```
+Cyrillic (G3 homoglyphs, G9 language), in Node because a `[А-я]` range misfires in Git Bash's
+locale and BSD grep has no `-P`. `MIXED` = one word mixing Latin and Cyrillic letters:
+```bash
+node -e 'for(const f of process.argv.slice(1))require("fs").readFileSync(f,"utf8").split("\n").forEach((l,i)=>{if(!/\p{Script=Cyrillic}/u.test(l))return;
+ const mix=l.match(/[\p{L}\p{N}_]*(\p{Script=Latin}\p{Script=Cyrillic}|\p{Script=Cyrillic}\p{Script=Latin})[\p{L}\p{N}_]*/gu);
+ console.log(`${f}:${i+1}  ${mix?"MIXED "+mix.join(","):/^description:/.test(l)?"CYR (description)":"CYR"}  ${l.trim().slice(0,70)}`)})' $T
+```
 
 ---
 
@@ -144,6 +151,11 @@ grep -nE 'kb_ask|kb_capture|npm run kb' $T                                      
   thread resolution (only the GraphQL review threads do); `gh pr view --json files` stops at 100
   files without saying so (use the paginated `pulls/<n>/files` API); `git worktree add` fails when
   the path already exists.
+- **Homoglyphs** (a `MIXED` hit): a Cyrillic letter inside a Latin word looks identical and matches
+  nothing. In anything a step or a tool matches on (a path, id, command, grep pattern, search
+  keyword, alias, a label a step selects by) → MAJOR: the step silently finds nothing. A homoglyph
+  the file itself documents as a deliberate trap is not a finding (the `Сontract` fixture note in
+  `.claude/skills/qa-checklist/backend-admin-checklists.md`). Fix → PROPOSE: retype the word in Latin.
 
 ## G4 — Delegation
 
@@ -240,6 +252,21 @@ only then live or source.
   steps, a Judge without the read step, a Dispatcher without the brief line → MAJOR. A Mechanic is
   exempt and says nothing about the base. The `plugins/vc-fix/` copies are exempt from §5 for now
   (authoring standard §7) — do not flag them.
+
+## G9 — Instruction craft
+
+- **Cyrillic that is not data** (a `CYR` hit). Prompts here are written in English; Russian appears
+  where an operator's request is quoted. Judge each hit by what the text does:
+  - **a step name, rule or instruction carried only by the Russian phrase** (a step labelled by the
+    operator's original words) → MINOR: a reader who does not read Russian gets no name for the
+    step. Fix: an English name, the quote kept beside it as provenance.
+  - **text the agent prints to the operator only in Russian** → MINOR; MAJOR under `plugins/vc-fix/`,
+    which is distributed to client teams (`CLAUDE.md` §Project Overview).
+  - **a Russian trigger phrase in a `description`** → fine beside its English equivalent, as the
+    existing QA descriptions pair them; alone → MINOR. Under `disable-model-invocation: true` it
+    triggers nothing (§G1): it is menu text, NIT at most.
+- **Not a finding:** quoted product surface or test input (a Cyrillic UI label or design-table
+  header quoted as observed, a Unicode test value), and a quoted message being analysed or filtered.
 
 ## G10 — Behavioural evidence
 

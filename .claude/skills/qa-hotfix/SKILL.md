@@ -1,6 +1,6 @@
 ---
 name: qa-hotfix
-description: "[QA Methodology] Release a HOTFIX of an already-merged-and-released fix into the bundles that are currently the latest stable releases (ASK which ones — the set changes over time; e.g. at one point v12 & v14). Resolve the JIRA task → its linked PR → fix commit, verify it is MERGED and SHIPPED, check the fix-shape safety gate (single module, no dependency-version bump), then per bundle create the support/<X.Y> branch if missing (gated) and cherry-pick onto it, triggering the repo's 'Release hotfix' workflow. Use when asked to 'выпустить хотфикс для релиза', backport a fix to a stable bundle, or cut a patch on a support line. Gated writes, never auto-merges, STOPs on a fix-shape risk or a cherry-pick conflict."
+description: "[QA Methodology] Release a hotfix of an already-merged-and-released fix into the stable bundles the operator names, as patch releases cut from support/<X.Y> branches. Use when asked to 'выпустить хотфикс для релиза' / release a hotfix, backport a fix to a stable bundle, or cut a patch on a support line. Not for finding bundles that miss a patch (/qa-bundle-check) or delivering a released hotfix onto environments (/qa-hotfix-check). Gated writes; never auto-merges."
 argument-hint: "VCST-XXXX [v12,v14] [--repo=<name>] [--pr=<ref>] [--dry-run]"
 ---
 
@@ -31,7 +31,7 @@ commit → "Release Hotfix"). Terminal entry: [`/qa-hotfix`](../../commands/qa-h
   - `vc-frontend` → `theme-release-hotfix.yml`
   Run **on the support branch** with `incrementPatch=true` → publishes `X.Y.(Z+1)`,
   `makeLatest=false`, then auto-commits the bumped version back.
-- **No `gh` CLI** in this environment — writes go through local `git` + the token-authenticated
+- **`gh` is not required** — writes go through local `git` + the token-authenticated
   GitHub REST API (`workflow_dispatch` = `POST /actions/workflows/{id}/dispatches`).
 
 ## Why a deterministic script (+ a thin agent layer)
@@ -54,14 +54,14 @@ PR resolution order:
    (unscoped, so it also matches PRs that carry the key only in a comment). A single product-repo
    hit (`vc-module-*`, `vc-platform`, `vc-frontend`) is used directly.
 2. **FALLBACK — the JIRA description:** only when search finds nothing / can't disambiguate, parse
-   the PR link out of the issue **description** (`feedback-find-linked-pr-in-jira-first`). The
+   the PR link out of the issue **description**. The
    script does this via JIRA REST when `JIRA_EMAIL` + `JIRA_API_TOKEN` are in `.env.local`; the
    `/qa-hotfix` command does it via the Atlassian MCP when running interactively.
 3. **MANUAL — last resort:** `--pr=<owner/repo#num | url>` or `--repo=<name>`.
 
 ## Step 2 — gate the fix: MERGED and SHIPPED (run FIRST, no bundles yet)
 
-This is the original "проверяем, что PR смержен и релиз выпущен" step. Run the precheck **without**
+This is the original "check the PR is merged and the release is out" step. Run the precheck **without**
 `--bundles` — it does the gate phase only, then stops to ask for bundles:
 
 ```bash
@@ -73,7 +73,7 @@ npx tsx scripts/hotfix/hotfix-precheck.ts VCST-5082 [--repo=<name>] [--pr=<owner
 1. The PR is **MERGED** (else STOP — merge first; a hotfix cherry-picks the merged commit).
 2. The fix has **SHIPPED** in a normal release (the merge commit is contained in a published
    release tag) — else STOP, run the normal "Release" workflow on the base branch first
-   ("сначала просим выпустить релиз").
+   (ask for the release to be cut first).
 
 Both pass → the script prints `✓ Gates passed` and prompts for bundles → go to Step 3.
 
@@ -82,8 +82,8 @@ Both pass → the script prints `✓ Gates passed` and prompts for bundles → g
 Only after the gates pass. **The set of stable bundles is not fixed — it changes as new generations
 ship.** `v12`/`v14` are only an illustrative pair; do **not** hardcode them.
 
-1. Ask the user: **"which release bundles are currently the latest stable?"** (the
-   "я тебе говорю v12 и v14" step). Accept whatever they name (`v13,v15`, a single `v16`, …).
+1. Ask the user: **"which release bundles are currently the latest stable?"** (the operator
+   names them — e.g. "v12 and v14"). Accept whatever they name (`v13,v15`, a single `v16`, …).
 2. If unsure what exists, candidates live at `vc-modules/bundles/<vN>/package.json` on `master` —
    but *which are the supported stable lines* is the user's call, not a guess. When in doubt, ask.
 
@@ -120,7 +120,7 @@ so it's repo/task-level, not per-bundle):
 | 2 | **No breaking changes** | HEURISTIC flag: touches a contract-bearing file (`module.manifest`, `.csproj`, `Directory.Build.props`, `*Dto.cs`, `Models/`, `Contracts/`, `I*.cs`, `*Client.cs`) | flagged → a **developer MUST confirm** it isn't breaking before proceeding |
 | 3 | **Doesn't bump other modules' dependency versions** | scans the diff for a changed `VirtoCommerce.*` version in a manifest/`.csproj`/props | a raised pin → **STOP + hand off** (a hotfix must not drag dependency versions) |
 | 4 | **cherry-pick applies clean** | the actual `git cherry-pick` at the write step | conflict beyond trivial → **STOP + hand off** |
-| 5 | **`vc-build compress` passes** | the **"Release hotfix" workflow** builds + tests the artifact; `hotfix:release --poll` exits `1` if the run is red | red run → read logs, self-correct ≤2× or escalate |
+| 5 | **`vc-build compress` passes** | the **"Release hotfix" workflow** builds + tests the artifact; `hotfix:release --poll` exits `1` if the run is red | red run → **STOP**: report the run URL + failing step; a re-run needs a new confirmation |
 | 6 | **Regression environment** | after the release deploys, run regression on the support line | RED → hand off |
 
 Checks 1–3 are mechanized in the precheck (no clone); 4–6 are enforced downstream (write step /
@@ -150,7 +150,7 @@ For `READY` bundles, and for `✗ no support/X.Y` bundles after their branch is 
 Work in `.fix-workspace/` (gitignored). **Triple-guarded no-auto-merge culture applies**
 (`.claude/knowledge/execution/quality-gates.md`): every write needs explicit human confirmation — sequentially,
 one confirmation per write; in parallel, a single **batch** confirmation covering all lanes before
-any push (see *Parallel vs sequential* below). Either way, nothing is pushed unconfirmed.
+any push (see [`parallel-lanes.md`](parallel-lanes.md) §Parallel vs sequential). Either way, nothing is pushed unconfirmed.
 
 **Step 0 — create the support branch when it's missing (`✗ no support/X.Y`).** A hotfix needs a
 `support/X.Y` line; if it doesn't exist yet, create it (this used to be a hand-off, now it's a
@@ -170,7 +170,7 @@ After the branch exists, re-run the precheck for that bundle → it should now r
 continue with steps 1–4.
 
 For each ready bundle (line `X.Y`) — one **lane**; with ≥2 `READY` bundles run the lanes in
-parallel (own worktree each) per *Parallel vs sequential* below, after a single batch confirmation:
+parallel (own worktree each) per [`parallel-lanes.md`](parallel-lanes.md) §Parallel vs sequential, after a single batch confirmation:
 
 1. `git fetch && git checkout support/X.Y`
 2. `git cherry-pick <fixSha>`
@@ -181,52 +181,20 @@ parallel (own worktree each) per *Parallel vs sequential* below, after a single 
    ```bash
    npm run hotfix:release -- --repo=<name> --branch=support/X.Y --expect-commit=<fixSha> --poll
    ```
-   `hotfix-release.ts` discovers the "Release hotfix" workflow, dispatches it on the support
+   `scripts/hotfix/hotfix-release.ts` discovers the "Release hotfix" workflow, dispatches it on the support
    branch (`incrementPatch=true`), polls the run, and verifies the published `X.Y.(Z+1)` release
    contains `<fixSha>`. Exit `0` = released + verified · `1` = run failed or commit not in release.
 
-### Parallel vs sequential — what can run concurrently
-
-The unit of parallelism is the **support branch** (one per `READY` bundle). Because of *one repo
-per task*, all bundles route to the **same repo**, so this is fan-out across that repo's support
-lines (`3.1000`, `3.1011`, …). Default: **for ≥2 `READY` bundles, run them in parallel**; drop to
-sequential the moment a branch needs human judgment (a cherry-pick conflict).
-
-**Parallelize (independent per branch — safe):**
-
-- **Per-bundle precheck** — read-only; `hotfix-precheck.ts` already takes all bundles in one call.
-- **The whole per-branch write pipeline** (steps 0–4), one lane per support line — **but each lane
-  needs its OWN git worktree**: a single working tree can only be checked out on one branch at a
-  time, so cherry-picking two lines in one clone is inherently serial. Give each line an isolated
-  worktree: `git worktree add .fix-workspace/<repo>--<X.Y> support/<X.Y>` → cherry-pick / push /
-  release run concurrently across lanes.
-- **`hotfix:release … --poll` per branch** — the **biggest win**: each poll blocks minutes, and the
-  lanes are independent (different lines → different `X.Y.*` tags, no tag collision; the auto
-  `IncrementPatch` commit lands on each line's own branch; the Release-hotfix workflow has **no
-  repo-scoped `concurrency` group**, so GitHub runs the dispatches concurrently). Launch them as
-  background jobs, then collect verdicts.
-
-**Keep sequential / serialized (a shared resource or a barrier):**
-
-- **Steps 1–3** (resolve fix → gate merged+shipped → ask bundles) and the **fix-shape check** —
-  per *task*, computed once; nothing to fan out.
-- **The ordered pipeline WITHIN a lane** — `checkout → cherry-pick → (resolve) → push → release`
-  each depends on the previous; only *across* lanes is it parallel.
-- **The human confirmation gate** — collapse it into **one batch confirmation** (show every lane's
-  diff, confirm once) *before* any push. Never fan out writes without it.
-- **Two releases on the SAME support branch** — never concurrent (degenerate: two bundles on one
-  `X.Y` line share the branch → the `IncrementPatch` auto-commits would race). Distinct lines only.
-- **JIRA comment + status advance** — one *task* → do **once, after all lanes finish** (aggregate
-  the per-bundle results into a single comment + a single `Hotfix ready` transition), not per lane.
-
-**Isolation rules for a parallel run:** a lane that hits a cherry-pick conflict (or any STOP)
-**must not abort the other lanes** — that lane STOPs and hands off; the rest proceed, and the final
-report lists per-lane outcomes (released / stopped-conflict / stopped-other). Rate limits are a
-non-issue with `GIT_TOKEN` (5000 req/h).
+**Parallel lanes.** With ≥2 `READY` bundles, read [`parallel-lanes.md`](parallel-lanes.md) §Parallel vs
+sequential before the batch confirmation — what runs concurrently, what stays serial, lane isolation.
 
 ### After the hotfix
 
 - Re-run the precheck → the bundle should now read `◯ already-applied`.
+- **Confirm before the tracker writes.** The outcome comment, the "Need hotfixes" flag and the status
+  transition below are outward writes to a shared board: show the comment text, the flag and the
+  target status, and get one explicit yes before writing any of them. On a no, write nothing and say
+  so in the close-out.
 - Report per bundle: new patch version + release URL. Comment the outcome on the JIRA task (English; Markdown, never Jira wiki markup; clear/brief/outcome-first per `knowledge/execution/tracker-ops.md` §5a **Comment & body style**).
 - **Advance the JIRA status to `Hotfix ready`** (right after the outcome comment) — **only for
   issue type `Bug`.** The `Wait hotfixes` / `Hotfix ready` statuses live only in the Bug workflow;
@@ -235,8 +203,9 @@ non-issue with `GIT_TOKEN` (5000 req/h).
   the issue's `issuetype.name` first; if it isn't `Bug`, do nothing here. For a Bug, the path is
   **`Tested → Wait hotfixes → Hotfix ready`**, but the middle hop is driven by a field, not a
   transition:
-  1. **Set the "Need hotfixes" flag** (VCST: `customfield_10181` = option `{id: "10151"}` — the
-     ` true` checkbox). A JIRA post-function then **auto-moves `Tested → Wait hotfixes`** (the
+  1. **Set the "Need hotfixes" flag** (find the field by its name `Need hotfixes` in the issue's edit
+     metadata and set its `true` option; on VCST that is `customfield_10181` = option `{id: "10151"}`,
+     an example only — never hardcode it). A JIRA post-function then **auto-moves `Tested → Wait hotfixes`** (the
      "Wait hotfixes" status only exists while this flag is set — that's why there is no manual
      `Tested → Wait hotfixes` transition).
   2. **Take the live-discovered transition whose target status is `Hotfix ready`** (VCST: the
@@ -249,34 +218,15 @@ non-issue with `GIT_TOKEN` (5000 req/h).
   - Tracker-agnostic: this is the VCST (Jira) workflow; discover the field + transitions live and
     skip the step on a tracker/project that has no `Hotfix ready` status.
 - **Theme/frontend caveat:** a vc-frontend hotfix release asset is named `vc-frontend-X.Y.Z.zip`
-  (not `vc-theme-b2b-vue-*`) — `reference-vc-frontend-release-asset-naming`. If a bundle's
+  (not `vc-theme-b2b-vue-*`). If a bundle's
   `ThemeB2BVue` pin must then be bumped, take the URL from the release's real `assets[]`, never by
   string-replacing the version. (Bumping the bundle pin itself is `/qa-bundle-check` territory.)
 
 ## Final step — offer self-diagnostics (consent-gated)
 
-At the **very end of every `/qa-hotfix` run** — whether it published a hotfix, STOPPED, or BAILed —
-offer to self-diagnose this session with [`/vc-self-check`](../vc-self-check/SKILL.md), the plugin's
-Tier-B self-diagnostician. A hotfix touches many moving parts (PR/release gates, cherry-picks across
-support lines, the Release-hotfix workflow, JIRA transitions), so a run is a rich signal for catching
-a degraded or broken skill.
-
-**How to offer it (respect `vc-self-check`'s hard invariant — NEVER auto-trigger unprompted):**
-
-1. **Ask, don't run.** Present a single Yes/No (`AskUserQuestion`): *"Run self-diagnostics on this
-   session? (`/vc-self-check` — local report only, nothing is sent anywhere.)"* Run it **only** on an
-   explicit **Yes**; on No, end normally.
-2. **On Yes → invoke `/vc-self-check` (default `latest`).** It reads this session's passive telemetry
-   + transcript against the skill-expectations oracle and writes a **local** `DIAG-*.md` under
-   `.vc-fix/diagnostics/`. It is **read-only** w.r.t. the install and **sends nothing externally** —
-   upstream contribution is the separate, independently-consented `/vc-self-check deliver` (never run
-   it from here).
-3. **No double-nag.** If the global end-of-session consent prompt already offered self-check for this
-   session (its one-shot `selfCheckSeen` guard fired), or telemetry hasn't been collected (no
-   `.vc-fix/diagnostics/*.jsonl` — the `SessionStart` hook isn't wired), **skip this offer silently**.
-   Never re-prompt a session that already ran the diagnostician.
-4. **Trivial / clean runs:** a no-op run (e.g. a fast STOP before any write, or `--dry-run`) rarely
-   yields findings — the offer is still fine, but don't insist; a declined offer is a normal ending.
+At the very end of every run — released, STOPPED or BAILed — follow
+[`self-check-offer.md`](self-check-offer.md): one Yes/No, run `/vc-self-check` only on an explicit Yes,
+never auto-trigger.
 
 ## Hard rules (STOP/BAIL is a success, not a failure)
 
@@ -298,7 +248,7 @@ a degraded or broken skill.
 
 ## Reporting
 
-This is tooling output, not one of the five tracked report categories (`.claude/rules/reports.md`)
+This is tooling output, not one of the tracked report categories (`.claude/rules/reports.md` §1)
 — print the precheck table and the released versions to the user / JIRA comment; do **not** create a
 file under `reports/`. A hotfix that changes a release decision flows into the normal release report.
 

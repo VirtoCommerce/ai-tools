@@ -22,7 +22,15 @@
 //   npm run tracker:comment -- --ticket VCST-1234 --get 109824
 //   npm run tracker:comment -- --ticket VCST-1234 --delete 109823
 //   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --force-new "PO asked for a separate note"
+//   npm run tracker:comment -- --ticket VCST-1234 --body-file body.md --attach-file plan.md   # a FILE, linked
 //   (add --dry-run to any of the above)
+//
+// --attach  <img>  uploads an IMAGE/GIF and embeds it inline — that forces the v2 API + wiki body (§5c).
+// --attach-file <f> uploads any file (a plan, a report page, a log) and LINKS it: the body keeps its
+//                   dialect and one `Attached:` line is appended. tracker-ops.md §5d — a deliverable too
+//                   big for the comment travels as an attachment on the same ticket, referenced from the ONE
+//                   comment. Re-attaching a same-name file is reused only when the size matches; a changed
+//                   file uploads as a new attachment and the link points at the new one.
 //
 // Ledger: .tracker-comments.json (gitignored) maps ticket -> {comment_id, run_id, …}.
 // It is what makes the rule mechanical instead of a judgment call, and it is what
@@ -30,7 +38,7 @@
 // reports/tickets/*/<TICKET>/summary.json as `tracker.comment_id` when that file exists.
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
@@ -65,6 +73,7 @@ function parseArgs(argv) {
     else if (k === "--artifact") a.artifact = next();
     else if (k === "--same-round") a.sameRound = next();
     else if (k === "--attach") { (a.attach ??= []).push(next()); }
+    else if (k === "--attach-file") { (a.attachFile ??= []).push(next()); }
     else if (k === "--wiki") a.wiki = true;
     else if (k === "--dry-run") a.dryRun = true;
     else if (k === "--help" || k === "-h") a.help = true;
@@ -128,19 +137,26 @@ async function jira(method, path, body) {
  * is the only path. Checks what is already attached first — a blind retry after a
  * broken output pipe duplicates every attachment.
  */
-async function attachFiles(ticket, paths) {
+async function attachFiles(ticket, paths, { flag = "--attach", matchSize = false } = {}) {
   const { base, hdr } = await jiraAuth();
   const issue = await jira("GET", `/rest/api/3/issue/${ticket}?fields=attachment`);
-  const already = new Map((issue?.fields?.attachment ?? []).map(x => [x.filename, x]));
+  // Newest last, so a later same-name upload wins the lookup.
+  const already = new Map((issue?.fields?.attachment ?? [])
+    .sort((x, y) => String(x.created).localeCompare(String(y.created)))
+    .map(x => [x.filename, x]));
   const out = [];
   for (const p of paths) {
     const abs = resolve(ROOT, p);
-    if (!existsSync(abs)) die(`--attach: file not found: ${abs}`);
+    if (!existsSync(abs)) die(`${flag}: file not found: ${abs}`);
     const name = abs.split(/[\\/]/).pop();
-    if (already.has(name)) {
-      out.push({ name, id: already.get(name).id, reused: true });
+    const prev = already.get(name);
+    // --attach keeps its old rule (a same-name image is the same image: a wiki `!name!` cannot
+    // tell two apart). --attach-file links by id, so a CHANGED file is uploaded, not silently reused.
+    if (prev && (!matchSize || Number(prev.size) === statSync(abs).size)) {
+      out.push({ name, id: prev.id, reused: true });
       continue;
     }
+    if (prev) console.log(`  ! ${name}: an older attachment with this name exists (id ${prev.id}, ${prev.size} B) — uploading the changed file`);
     const fd = new FormData();
     fd.append("file", new Blob([readFileSync(abs)]), name);
     const r = await fetch(`${base}/rest/api/3/issue/${ticket}/attachments`, {
@@ -226,8 +242,12 @@ if (a.mode === "delete") {
 }
 
 // post / amend both need a body
-const body = a.body ?? (a.bodyFile ? readFileSync(resolve(ROOT, a.bodyFile), "utf8") : null);
+let body = a.body ?? (a.bodyFile ? readFileSync(resolve(ROOT, a.bodyFile), "utf8") : null);
 if (!body) die("--body-file <path> or --body <text> is required.");
+// Fail before any network call or ledger decision, never half-way through a post.
+for (const [flag, list] of [["--attach", a.attach], ["--attach-file", a.attachFile]]) {
+  for (const p of list ?? []) if (!existsSync(resolve(ROOT, p))) die(`${flag}: file not found: ${resolve(ROOT, p)}`);
+}
 // Two APIs, two formats (§5a + §5c): v3 takes MARKDOWN and cannot embed images;
 // v2 takes WIKI markup and is the only path that renders an attachment inline.
 // --attach therefore implies v2, and there the wiki check must NOT fire.
@@ -242,7 +262,8 @@ const API = useWiki ? "2" : "3";
 // (`400 {"errors":{"comment":"Comment body is not valid!"}}`). The Atlassian MCP converts on POST,
 // which is why posting worked and `--amend` did not — measured 2026-09-22 on VCST-5378, and it
 // broke the one path tracker-ops.md §0 routes every correction through.
-const wireBody = useWiki ? body : markdownToAdf(body);
+// Built after the uploads below, because an --attach-file link needs the attachment id.
+const toWire = (b) => (useWiki ? b : markdownToAdf(b));
 
 const thisRun = runId(a);
 // The ledger is per checkout: an amend of a comment it does not know (another worktree or clone
@@ -307,7 +328,37 @@ if (a.attach?.length) {
 }
 const mediaNames = (a.attach ?? []).map(p => resolve(ROOT, p).split(/[\\/]/).pop());
 
+// ---- files: upload (or reuse), then ONE appended `Attached:` line that links each by id
+let linked = [];
+if (a.attachFile?.length) {
+  const jiraBase = (process.env.JIRA_BASE_URL ?? process.env.JIRA_BASE ?? "<jira>").replace(/\/+$/, "");
+  if (a.dryRun) {
+    linked = a.attachFile.map(p => ({ name: resolve(ROOT, p).split(/[\\/]/).pop(), id: "<id>" }));
+    console.log(`\n  [dry-run] would attach and link: ${linked.map(f => f.name).join(", ")}`);
+  } else {
+    linked = await attachFiles(a.ticket, a.attachFile, { flag: "--attach-file", matchSize: true });
+    for (const f of linked) {
+      console.log(`  ${f.reused ? "= already attached" : "✓ attached"}  ${f.name}  (id ${f.id})${f.size ? `  ${(f.size / 1024).toFixed(0)} KB` : ""}`);
+    }
+  }
+  // `(` `)` survive encodeURIComponent and would end a Markdown link early.
+  const url = f => `${jiraBase}/secure/attachment/${f.id}/${encodeURIComponent(f.name).replace(/[()]/g, c => `%${c.charCodeAt(0).toString(16).toUpperCase()}`)}`;
+  const links = linked.map(f => (useWiki ? `[${f.name}|${url(f)}]` : `[${f.name}](${url(f)})`)).join(" · ");
+  body = `${body.replace(/\s+$/, "")}\n\n${useWiki ? "*Attached:*" : "**Attached:**"} ${links}\n`;
+  if (a.dryRun) console.log(`  [dry-run] appended: ${body.trim().split("\n").pop()}`);
+}
+const wireBody = toWire(body);
+
 async function reportRender(id) {
+  if (linked.length) {
+    const c = await jira("GET", `/rest/api/3/issue/${a.ticket}/comment/${id}?expand=renderedBody`);
+    const html = c?.renderedBody ?? "";
+    console.log(`\n    renderedBody check (--attach-file links):`);
+    for (const f of linked) {
+      const ok = html.includes(`/secure/attachment/${f.id}/`);
+      console.log(`      ${ok ? "✓" : "✗"} ${f.name} → attachment ${f.id}${ok ? "" : "  — link NOT found in the rendered comment"}`);
+    }
+  }
   if (!mediaNames.length) return;
   const v = await verifyRender(a.ticket, id, mediaNames);
   console.log(`\n    renderedBody check (§5c — a 200 OK proves nothing):`);
