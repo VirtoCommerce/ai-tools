@@ -9,7 +9,7 @@
 // launcher, so the launcher's whole export surface is one line away from a file nobody was watching.
 //
 // The names this package cannot claim on a whole machine -- `clients.*`, `hooks/targets.mjs`, the
-// client manifests and the skill files -- are guarded only INSIDE the package directory, a smaller
+// client manifests, the skill files and the `lib/` modules -- are guarded only INSIDE the package directory, a smaller
 // guarantee than the rest, stated as such where it is implemented. (`hooks-cursor.json` is in that
 // group for a different reason: it travels with `hooks.json`, not because the name is contested.)
 //
@@ -62,15 +62,42 @@ const TRUST_FILE_RE = /(^|\/)vc-secrets\/trust\.json$/i;
 // which writes the shim, together with `vc-secrets-shim.mjs`, whose bytes are what it writes.
 //
 // Matched by file rather than by directory. A directory-scoped pattern can reach the checkout and the
-// plugin cache -- `PACKAGE_FILE_RE` below is one, and it needs an extra segment to do it -- but not a
-// workspace rooted AT this package, which is how the package is ordinarily worked on. Matching the file
-// buys that case and pays machine-wide matching for it: a same-named file in an unrelated repository is
-// refused, which is pinned by a test as
+// plugin cache -- `PACKAGE_FILE_RE` and `LIB_RE` below are such, and each needs an extra segment to do
+// it -- but not, by itself, a workspace rooted AT this package, which is how the package is ordinarily
+// worked on: a client there sends the path relative to the workspace, with no directory in front of it.
+// Matching the file buys that case whatever the client sends and pays machine-wide matching for it: a
+// same-named file in an unrelated repository is refused, which is pinned by a test as
 // accepted rather than left to be discovered. `(^|\/)` for the same reason the two patterns above carry
 // it, and its bare alternative is not decoration -- a package-rooted workspace sends `vc-secrets.mjs`
 // with no directory at all. The `$` keeps `vc-secrets.mjs.bak` out. The test files are out for a
 // different reason -- `.test.mjs` cannot match `(-…)?\.mjs` -- and freezing them would stop all work on
 // this package, the fastest way to get a guard switched off wholesale.
+//
+// The directory-scoped names get the package-rooted case a second way: a relative path is also tested
+// joined onto every root the payload names (see the loop below) -- its `cwd` and each entry of its
+// `workspace_roots`. What each client documents:
+//   - Claude Code: `cwd` in the common input fields, "Current working directory when the hook is
+//     invoked", and "Handlers run in the current directory with Claude Code's environment". Whether
+//     `file_path` is absolute on Write/Edit is not established here, and nothing below depends on it.
+//   - Cursor: `workspace_roots` in the common schema, "The list of root folders in the workspace"; `cwd`
+//     in the `preToolUse` example (the absolute `"/project"`) but not in the common schema.
+//   - Codex: `cwd`, "Working directory for the session", and "Commands run with the session `cwd` as
+//     their working directory". Not established whether it is absolute, nor that it is the directory
+//     an `apply_patch` header is relative to.
+// Every root is tried and any match refuses. A wrong root can only add refusals (a package-shaped wrong
+// root is the accepted false positive), so the extra forms only widen.
+//
+// The hook process's own working directory is NOT a root, and that is a decision. The Cursor
+// registration's command is relative (`./hooks/guard-declarations.mjs`), so it works only when run from
+// the plugin directory, which is package-shaped by construction: taking that directory as a root would
+// refuse ordinary files in every repository, which is how a guard gets switched off. Claude Code's
+// registration uses `${CLAUDE_PLUGIN_ROOT}` instead. Where a client does run hooks from the workspace
+// (Claude Code and Codex, per the quotes above) that directory equals `cwd` and adds nothing. What
+// remains: a client that sends neither `cwd` nor `workspace_roots` leaves a bare relative path matched
+// only as sent, and in a package-rooted workspace EVERY directory-scoped name (the scoped list and
+// `lib/`) goes uncovered. So does each of them reached through the package directory under another
+// name -- a symlink or junction, a renamed copy, an 8.3 short name -- whatever roots the payload names,
+// since each pattern needs the literal segment `vc-secrets`.
 const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|probe|teardown))?|guard-declarations|install-shim|shim-path)\.mjs$/i;
 // The same package, scoped to its directory rather than matched by file. `clients.*`, `targets.mjs`,
 // `hooks.json`, `plugin.json`, `SKILL.md` and `openai.yaml` are names half the repositories on this
@@ -78,8 +105,8 @@ const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|pro
 // have nothing to do with us. `hooks-cursor.json` is the exception inside the exception: nothing else
 // uses that name, and it is here because it travels with `hooks.json` -- keeping the pair in one pattern
 // beats a third pattern for one file. Scoping covers the checkout and, through the version segment
-// below, the installed copy; it gives up the package-rooted workspace, which is the trade the paragraph
-// above makes in the other direction.
+// below, the installed copy; it gives up the package-rooted workspace unless a root completes the path
+// (the paragraph above), which is the trade that paragraph makes in the other direction.
 //
 // `clients.json` is here because `clients.mjs` reads it at module-evaluation time, so it arrives in the
 // launcher's process as data the guarded module acts on. The hook registrations because either one turns
@@ -116,6 +143,12 @@ const MODULE_RE = /(^|\/)(vc-secrets(-(oauth|cache|preload|target|shim|error|pro
 // `0.9.0-89c71c99b8da`, bare hashes led by a letter, and one directory called `unknown`. Anything
 // narrower misses some of them, and the ones it misses are the installs nobody thinks to check.
 const PACKAGE_FILE_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?(clients\.(mjs|json)|hooks\/(targets\.mjs|hooks(-cursor)?\.json)|\.(claude|codex|cursor)-plugin\/plugin\.json|skills\/[^/]+\/(SKILL\.md|agents\/openai\.yaml))$/i;
+// lib/ -- the launcher, split by layer. Short names that half the repositories on this machine also
+// use, so matched by directory like PACKAGE_FILE_RE, with the same optional version segment. A
+// `*.test.mjs` beside them is excluded for the reason MODULE_RE excludes the test files. The trade
+// is pinned by a test: a `lib/` under any directory named `vc-secrets` is refused, in a repository
+// that is not this one too.
+const LIB_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?lib\/[^/]+(?<!\.test)\.mjs$/i;
 
 // The patterns here match the SPELLING of a path, and the file system resolves several spellings to one
 // file: `vc-secrets/./trust.json` and `vc-secrets//trust.json` on every platform, and on Windows also a
@@ -128,8 +161,22 @@ const PACKAGE_FILE_RE = /(^|\/)vc-secrets\/(?:[^/]+\/)?(clients\.(mjs|json)|hook
 // directory can carry one too and a path through it still resolves to what is inside (`dir::$INDEX_ALLOCATION`
 // then the file); only a drive letter's own colon is left. Other aliases of a file -- 8.3 short names
 // among them -- are not resolved here.
+//
+// A drive letter followed by a non-slash (`C:lib\keystore.mjs`) is a drive-RELATIVE path: it names a
+// file relative to that drive's current directory. The stream cut below would read its colon as a
+// stream separator and reduce the first segment to `C`, dropping the rest of that segment -- an allow
+// for a path naming a guarded file. So the drive prefix is dropped first and the path is read as
+// relative, which the root completion in the loop below then roots. Drive-absolute `C:/...`, a bare
+// `C:` and a stream suffix (`trust.json::$DATA`, `..:x`) are untouched: the lookahead wants a non-slash
+// after the colon and the rewrite is anchored at the start. It can only widen what is refused: no
+// pattern can begin a match at a one-letter segment, so any match the old form had lay in the segments
+// after it, which the new form still contains. One approximation: a drive-relative path on ANOTHER
+// drive (`d:lib\x`) is rooted onto the given root, not onto that drive's own current directory, which
+// the payload does not carry. So a directory-scoped name reached that way is not caught, and under a
+// package-shaped root an ordinary file of such a name on the other drive is refused -- the accepted
+// false positive of a package-shaped root.
 function normalisedPath(raw) {
-    let filePath = raw.replace(/\\/g, "/").split("/")
+    let filePath = raw.replace(/\\/g, "/").replace(/^[A-Za-z]:(?=[^/])/, "").split("/")
         .map((segment) => {
             const colon = segment.indexOf(":");
             if (colon <= 0 || /^[A-Za-z]:$/.test(segment)) {
@@ -195,43 +242,58 @@ if (!targets.readable) {
     process.exit(0);
 }
 
+// A relative path names a file relative to the client's working directory, and a directory-scoped
+// pattern cannot see the package in it. It is completed with every root the payload names: its `cwd` and
+// each string entry of its `workspace_roots`. Each joined form is tested alongside the sent one, and any
+// match refuses, so a wrong root can only add refusals. The joined form is built from the normalised
+// path and not from `raw`: joined raw, a drive-relative `C:..\x` leaves its `C:` inside a segment
+// (`<root>/C:..`), the stream cut reduces that to `C`, and the climb out of `<root>` is lost.
+const roots = [
+    input?.cwd,
+    ...(Array.isArray(input?.workspace_roots) ? input.workspace_roots : []),
+].filter((root) => typeof root === "string" && root !== "");
+const isAbsolute = (p) => p.startsWith("/") || /^[A-Za-z]:\//.test(p);
+
 for (const raw of targets.paths) {
-    const filePath = normalisedPath(raw);
-    // Covers all three homes: <repo>/.claude/vc-secrets.json, its .local. sibling, and
-    // ~/.claude/vc-secrets.json
-    if (DECLARATION_RE.test(filePath)) {
-        fs.writeSync(2,
-            "BLOCK: a vc-secrets declaration decides which command receives which secret -- change it via a human PR, not an in-session edit. "
-            + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-        process.exit(2);
-    }
-    // Not the declaration's remedy: the record changes only through `vc-secrets trust`, which asks a person
-    // at a terminal -- a PR cannot reach it, and an in-session edit would skip the question.
-    if (TRUST_FILE_RE.test(filePath)) {
-        fs.writeSync(2,
-            "BLOCK: the vc-secrets trust file records which repository declarations you approved to run -- change it with \"vc-secrets trust\" or \"vc-secrets untrust\" in your own terminal, not an in-session edit. "
-            + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-        process.exit(2);
-    }
-    // The shim is what every server launch runs, and — unlike the launcher in the plugin cache — a
-    // plugin update never overwrites it, so an edit here survives indefinitely.
-    if (SHIM_RE.test(filePath)) {
-        fs.writeSync(2,
-            "BLOCK: the vc-secrets shim is on the path of every server launch -- reinstall it with the vc-secrets install skill instead of editing it.\n");
-        process.exit(2);
-    }
-    // Checked AFTER the shim, and the order is load-bearing: this pattern matches the installed shim
-    // too, so testing it first would answer an installed-copy edit with "open a PR" when the fix there
-    // is a reinstall. Both remedies are right in one place and useless in the other.
-    //
-    // The launcher is the reason this block exists at all -- it holds the keystore io and the login
-    // verb, so an edit here changes what READS a token, where a declaration only names one. The rest
-    // of the package qualifies through the three ways stated where MODULE_RE is defined.
-    if (MODULE_RE.test(filePath) || PACKAGE_FILE_RE.test(filePath)) {
-        fs.writeSync(2,
-            "BLOCK: this is vc-secrets' own code on the path that handles a token -- change it through a human PR, not an in-session edit. "
-            + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
-        process.exit(2);
+    const sent = normalisedPath(raw);
+    const forms = isAbsolute(sent) ? [sent] : [...new Set([sent, ...roots.map((root) => normalisedPath(`${root}/${sent}`))])];
+    for (const filePath of forms) {
+        // Covers all three homes: <repo>/.claude/vc-secrets.json, its .local. sibling, and
+        // ~/.claude/vc-secrets.json
+        if (DECLARATION_RE.test(filePath)) {
+            fs.writeSync(2,
+                "BLOCK: a vc-secrets declaration decides which command receives which secret -- change it via a human PR, not an in-session edit. "
+                + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
+            process.exit(2);
+        }
+        // Not the declaration's remedy: the record changes only through `vc-secrets trust`, which asks a person
+        // at a terminal -- a PR cannot reach it, and an in-session edit would skip the question.
+        if (TRUST_FILE_RE.test(filePath)) {
+            fs.writeSync(2,
+                "BLOCK: the vc-secrets trust file records which repository declarations you approved to run -- change it with \"vc-secrets trust\" or \"vc-secrets untrust\" in your own terminal, not an in-session edit. "
+                + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
+            process.exit(2);
+        }
+        // The shim is what every server launch runs, and — unlike the launcher in the plugin cache — a
+        // plugin update never overwrites it, so an edit here survives indefinitely.
+        if (SHIM_RE.test(filePath)) {
+            fs.writeSync(2,
+                "BLOCK: the vc-secrets shim is on the path of every server launch -- reinstall it with the vc-secrets install skill instead of editing it.\n");
+            process.exit(2);
+        }
+        // Checked AFTER the shim, and the order is load-bearing: this pattern matches the installed shim
+        // too, so testing it first would answer an installed-copy edit with "open a PR" when the fix there
+        // is a reinstall. Both remedies are right in one place and useless in the other.
+        //
+        // The launcher is the reason this block exists at all -- it holds the keystore io and the login
+        // verb, so an edit here changes what READS a token, where a declaration only names one. The rest
+        // of the package qualifies through the three ways stated where MODULE_RE is defined.
+        if (MODULE_RE.test(filePath) || PACKAGE_FILE_RE.test(filePath) || LIB_RE.test(filePath)) {
+            fs.writeSync(2,
+                "BLOCK: this is vc-secrets' own code on the path that handles a token -- change it through a human PR, not an in-session edit. "
+                + "(This guard sees the client's write tools only; it is a speed bump, not a security boundary.)\n");
+            process.exit(2);
+        }
     }
 }
 

@@ -718,12 +718,29 @@ command that then runs. An edit to any of them changes what an agent may do; an 
 misinforms a reader.
 
 Some guarded names are guarded **only inside the package directory**: `clients.mjs`, `clients.json`,
-`hooks/targets.mjs`, the hook registrations, the client manifests and the skill files. Those names
-belong to half the repositories on any machine and this hook runs in all of them, so claiming them
-outright would refuse edits in projects that have never heard of vc-secrets. The cost is a workspace
-rooted at the package itself, where they arrive with no directory in front of them — and it is worth
-being plain about which half that leaves open: `hooks/targets.mjs` and the registrations, the off
-switches. The launcher and the hook itself stay covered there, being matched by file.
+`hooks/targets.mjs`, the hook registrations, the client manifests, the skill files and the `lib/` modules.
+Those names belong to half the repositories on any machine and this hook runs in all of them, so claiming
+them outright would refuse edits in projects that have never heard of vc-secrets. The cost is a workspace
+rooted at the package itself, where they arrive with no directory in front of them. A relative path is
+therefore also tested joined onto each root the payload names: its `cwd` and each entry of its
+`workspace_roots`. A wrong root can only add refusals (a package-shaped wrong root is the accepted false
+positive), so the extra forms only widen. What each client documents: Claude Code and Codex document `cwd`
+in the hook input; Cursor shows `cwd` in its examples and documents `workspace_roots`; what the path in
+a Codex `apply_patch` header is relative to is not established. The hook's own working directory is
+deliberately not a root: the Cursor registration's command is relative (`./hooks/...`), so it works only
+when run from the plugin directory, which is package-shaped, and taking that directory as a root would
+refuse ordinary files in every repository. Claude Code's registration uses `${CLAUDE_PLUGIN_ROOT}`
+instead, and where a client runs hooks from the workspace it equals `cwd` anyway. The residual is a
+client that sends neither field: with no usable root, **every** directory-scoped name above is matched
+only as sent, so a bare relative path to any of them is not caught in a package-rooted workspace.
+A drive-relative path on a drive other than the root's (`D:lib\keystore.mjs` under a `C:` root) is
+rooted onto that root, because the payload does not carry the other drive's current directory, so a
+guarded file reached that way is not caught either. Nor is one reached through the package directory
+under another name — a symlink or junction, a renamed copy, an 8.3 short name — whatever roots the
+payload names, since each of these names is matched only below a directory literally called
+`vc-secrets`; the plugin cache and a checkout are named that way, and so is a Cursor local install
+unless its directory was renamed.
+The launcher's entry file and the hook itself stay covered there, being matched by file.
 
 One off switch **inside this repository** is knowingly out of reach: `.claude-plugin/marketplace.json`
 at the repo root — not in this package — is what makes the package a plugin at all, and its name is not
