@@ -1,0 +1,3191 @@
+{
+ "about": "VCST-6122 large labelled set (2026-10-05): 300 real asks drawn from the base logs on main (2026-09-18..10-05; stratified by who x ask state; already-labelled and near-duplicate questions removed; wave runs excluded). Candidates per question = verdict top 10 + floor-1 top 3 + BM25 top 8 over bodies (scripts/kb/bench/label-packets.mjs). Labelled by two independent Claude passes with shuffled candidates; the 33 disagreements adjudicated by a third; the operator audits a random sample. Split BY ENTRY GROUP: a group that holds an entry already split in v2 keeps that split, the rest by a seeded hash (logs300-seed-1); controls by row hash. contested rows stay out of every metric. Questions logged by a pre-#328 client with a Git Bash path rewrite (C:/Program Files/Git/<route>) are stored repaired, as ask now repairs them before ranking; the logged text is kept in qAsLogged. Validated after labelling: 10 rows removed (listed in removed[]): 4 same-intent repeats beyond two per entry, 6 questions about our own test fixtures or environment availability rather than platform behaviour.",
+ "snapshot": "vcst-6122-schema2@6e810a6",
+ "splitSeed": "logs300-seed-1",
+ "approved": null,
+ "targets": [
+  {
+   "id": "L-001",
+   "q": "SharingSettingType deprecated sharedWithId WishlistType sharingSetting introspection",
+   "expect": [
+    "KB-D3328AFF"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Introspection entry states sharedWithId is isDeprecated true 'Use targets' while singular sharingSetting is not deprecated."
+  },
+  {
+   "id": "L-003",
+   "q": "which payment methods does the storefront checkout offer, Query.cart availablePaymentMethods",
+   "expect": [
+    "KB-535FF3AC"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists the six methods the storefront offers and that Query.cart.availablePaymentMethods returns exactly those, set per deployment."
+  },
+  {
+   "id": "L-004",
+   "q": "storefront PDP quantity stepper is the add-to-cart entry point on a B2B store — which GraphQL mutation does the first increment send, addItem or changeCartItemQuantity?",
+   "expect": [
+    "KB-98A231B6"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the first stepper increment sends updateCartQuantity (UpdateShortCartItemQuantity) and 'did NOT call addItem'."
+  },
+  {
+   "id": "L-005",
+   "q": "storefront mobile search overlay backdrop close button common.labels.close",
+   "expect": [
+    "KB-F3B1E987"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the full-viewport backdrop button is named with the raw key 'common.labels.close' in the mobile search overlay."
+  },
+  {
+   "id": "L-006",
+   "q": "/account/missions loyalty mission card daysRemaining 0 date badge label",
+   "expect": [
+    "KB-5A3931CE"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States with daysRemaining 0 the /account/missions card reads '0 days left' with a danger dot."
+  },
+  {
+   "id": "L-007",
+   "q": "changeWishlist message max length 1024 atomic rejection",
+   "expect": [
+    "KB-0BC18481"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 1024 code units are stored, 1025 is rejected INVALID_OPERATION and 'nothing in that command persists' (atomic)."
+  },
+  {
+   "id": "L-008",
+   "q": "quote line prices zero after quantity edit changeQuoteItemQuantity",
+   "expect": [
+    "KB-AA7CCB07"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States Save after ChangeQuoteItemQuantity on a Draft quote keeps listPrice and recomputes totals; zero prices 'Not reproduced'."
+  },
+  {
+   "id": "L-010",
+   "q": "Does save for later keep configurable product configurationItems on the saved card (getSavedForLater)?",
+   "expect": [
+    "KB-A272971F"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States the saved-for-later projection does not select configurationItems and the configuration returns after moveFromSavedForLater."
+  },
+  {
+   "id": "L-011",
+   "q": "changeWishlist scope Customer addSharedWithIds removeSharedWithIds targets",
+   "expect": [
+    "KB-509D70C4"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "Keyword query; this entry states how addSharedWithIds/removeSharedWithIds deltas apply to targets with scope Customer (case, duplicates, no-ops, 1000 cap)."
+  },
+  {
+   "id": "L-012",
+   "q": "SharingSettingType.targets organization no longer served by rep name still returned removeSharedWithIds",
+   "expect": [
+    "KB-8F61528A"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States for an unserved org 'the owner's sharingSetting.targets still returns the org with name' and removeSharedWithIds of it succeeds."
+  },
+  {
+   "id": "L-013",
+   "q": "two cart subtotal promotions both non-exclusive on one cart, do they stack, isExclusive",
+   "expect": [
+    "KB-5ADBFB34"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States under default BestReward policy only the largest cart-subtotal reward applies and 'isExclusive is a red herring'."
+  },
+  {
+   "id": "L-014",
+   "q": "order payment status Paid vs capturedDate divergence in xAPI orders query",
+   "expect": [
+    "KB-1AC55A1D"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States capturedDate is stamped with authorizedDate even when paymentStatus is Authorized, but observed over REST, not the xAPI orders query."
+  },
+  {
+   "id": "L-016",
+   "q": "sales-rep customer-orders page /sales-rep mobile card order total wrap 375px",
+   "expect": [
+    "KB-A240F961"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "A240F961 states cards below 1024px put the order link and total on one flex row and that order numbers wrap, but not how the total itself wraps at 375px."
+  },
+  {
+   "id": "L-019",
+   "q": "GET /api/order/customerOrders/{id} — what does a configurable product line item's configurationItems array persist (sectionId, sectionName, productId, customText, price)?",
+   "expect": [
+    "KB-4105EEBE"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States each REST configurationItems element carries sectionId and sectionName alongside productId, price and customText on Orders 3.1015.0; older entries claim sectionId is lost (version-bound)."
+  },
+  {
+   "id": "L-021",
+   "q": "changeWishlist more than 1000 addSharedWithIds removeSharedWithIds limit",
+   "expect": [
+    "KB-509D70C4"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States addSharedWithIds over 1000 entries is refused INVALID_OPERATION while 'removeSharedWithIds of 1001 ids is accepted'."
+  },
+  {
+   "id": "L-022",
+   "q": "changeWishlist scope AnyoneAnonymous from Customer clears targets message key kept",
+   "expect": [
+    "KB-BE7DF8DA"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States switching Customer to AnyoneAnonymous 'keeps sharingSetting.id, sets targets [] and message null'."
+  },
+  {
+   "id": "L-023",
+   "q": "order shippingTaxTotal 0 while shipping is taxed",
+   "expect": [
+    "KB-8793DFE7"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the order header's shippingTaxTotal reads 0 while shippingTotalWithTax implies 30 of shipping tax."
+  },
+  {
+   "id": "L-024",
+   "q": "/cart CyberSource inline Microform payment form — how does the Place order button gate on the card iframes on a B2B store?",
+   "expect": [
+    "KB-94C2ADCC"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only states the storefront 'gates Place order on it only when the user is authenticated'; it does not describe how the Microform iframes gate the button."
+  },
+  {
+   "id": "L-025",
+   "q": "GET /api/loyalty-program-operation-log/balance/organization/{organizationId} for an organization id that no longer exists — what does it return",
+   "expect": [
+    "KB-EC1EDCE2"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the organization balance route 'still answered 200 {balance: N}' for deleted organizations."
+  },
+  {
+   "id": "L-026",
+   "q": "Track new recipients memberQuery new member created push message recipient added",
+   "expect": [
+    "KB-CB05268E"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-CB05268E states a tracked Sent push with free-text memberQuery reaches a newly created member within seconds, with per-recipient createdDate equal to account creation."
+  },
+  {
+   "id": "L-029",
+   "q": "Query.products filter barcode:\"<value>\" — are * and ? in the value treated as wildcards (EvalBarcodeFilterMiddleware, ES8)?",
+   "expect": [
+    "KB-348505EB",
+    "KB-110E0652"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "Both state that * and ? in a barcode: filter value act as wildcards on ES8; 348505EB names EvalBarcodeFilterMiddleware as the cause."
+  },
+  {
+   "id": "L-030",
+   "q": "returns: returnableItems returnableQuantity for a line with ordered=500 requested=240 approved=200 -- does the never-requested remainder (260) stay independently returnable alongside the released unapproved units (40), or does approval math cap total returnable at the released amount only",
+   "expect": [
+    "KB-809EA119",
+    "KB-F97CFAF6"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-809EA119 states returnable = ordered - approved (300), combining the 260 never-requested and 40 released units; KB-F97CFAF6 gives the same 500/240/200 -> 300."
+  },
+  {
+   "id": "L-031",
+   "q": "wishlist(listId) targeted customer Read access denied requestedAccess Write",
+   "expect": [
+    "KB-2A9084BA",
+    "KB-2F64A447",
+    "KB-D1DF95A5"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "All three state a target-org Read member gets Access denied from wishlist(listId), but none states the requestedAccess Write mechanism Q asks about."
+  },
+  {
+   "id": "L-032",
+   "q": "Page Builder Designer section/page actions menu (tune icon) — how to open the Designer on a page and Save selected as Shared Component",
+   "expect": [
+    "KB-E423C32F"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-E423C32F lists the page actions menu including Save selected as Shared Component (disabled until sections are selected) but not how to open the Designer on a page."
+  },
+  {
+   "id": "L-033",
+   "q": "logout revoke token access token still valid",
+   "expect": [
+    "KB-7564A9BF"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-7564A9BF: neither logout nor POST /revoke/token invalidates an issued access token by default because validation is stateless."
+  },
+  {
+   "id": "L-034",
+   "q": "virtostart-demo-store.govirto.com storefront smoke path — cart, checkout, payment: what has been observed about known-failing or environment-specific behaviour on the virtostart staging demo store?",
+   "expect": [
+    "KB-7F535D52"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "adjudicated",
+   "note": "7F535D52 is the only virtostart cart/payment observation (non-deterministic CyberSource hold); the CFG fixture 404s are PDP data, not the cart/checkout/payment path, and nothing covers the whole smoke path."
+  },
+  {
+   "id": "L-035",
+   "q": "/search?barcode= single hit redirect product page",
+   "expect": [
+    "KB-71011C1F"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-71011C1F: exactly one hit replaces the URL (router.replace) with the product page, and Back does not loop."
+  },
+  {
+   "id": "L-036",
+   "q": "tax provider FixedRateTaxProvider store B2B-store taxTotal 0 cart",
+   "expect": [
+    "KB-3E408000",
+    "KB-1B18B821"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-3E408000 says B2B-store with AvaTax and FixedRate both active evaluates to empty tax, so taxTotal is 0; KB-1B18B821 explains zero tax when no provider is active (an inactive FixedRateTaxProvider)."
+  },
+  {
+   "id": "L-037",
+   "q": "POST /revoke/token revoked access token still authorizes graphql EnablePersistentStorageTokenValidation",
+   "expect": [
+    "KB-7564A9BF"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-7564A9BF: with EnablePersistentStorageTokenValidation false, POST /revoke/token does not invalidate an already-issued access token."
+  },
+  {
+   "id": "L-039",
+   "q": "api/catalog/barcode-search/store settings scannerEnabled fields PUT GET",
+   "expect": [
+    "KB-2CADFEBD"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-2CADFEBD details GET defaults {scannerEnabled:true,fields:[]}, PUT validation and normalisation of fields, and the permissions."
+  },
+  {
+   "id": "L-041",
+   "q": "changeWishlist scope AnyoneAnonymous sharing key reused",
+   "expect": [
+    "KB-BE7DF8DA",
+    "KB-7A9D4927"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-BE7DF8DA says switching to AnyoneAnonymous keeps sharingSetting.id (the key); KB-7A9D4927 says re-scoping mints no new key."
+  },
+  {
+   "id": "L-042",
+   "q": "SharingSettingType.targets order sharedWithId first target changes after save",
+   "expect": [
+    "KB-42230B0A"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-42230B0A: the write response lists targets in add order, later reads use a different storage order, and sharedWithId is the first target of whichever order is used."
+  },
+  {
+   "id": "L-043",
+   "q": "storefront GraphQL endpoint /xapi/graphql",
+   "expect": [
+    "KB-1144B33E"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-1144B33E: the xAPI endpoint is POST /graphql and /xapi/graphql is not a valid path."
+  },
+  {
+   "id": "L-046",
+   "q": "/account/missions SKU modal VcLineItems subtotal availability",
+   "expect": [
+    "KB-CE2F9A45"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "CE2F9A45 states the SKU modal cart subtotal renders a bare 0, but nothing states line-item availability or VcLineItems subtotal behaviour."
+  },
+  {
+   "id": "L-049",
+   "q": "PUT /api/loyalty-missions editing a Published mission",
+   "expect": [
+    "KB-608F7C05"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-608F7C05 states only in passing that a Published mission is immutable, not what PUT /api/loyalty-missions returns when editing one."
+  },
+  {
+   "id": "L-050",
+   "q": "What REST endpoint or GraphQL query returns PushMessage records sent to a specific user, filterable by objectId/objectType, for counting how many push messages a mutation produced?",
+   "expect": [
+    "KB-9B9FAF0F",
+    "KB-21BA7389"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "9B9FAF0F finds produced pushes via POST /api/push-message/search by topic/memberIds and 21BA7389 gives the per-user pushMessages query, but no body states an objectId/objectType filter."
+  },
+  {
+   "id": "L-051",
+   "q": "share-wishlist-modal Change who can access confirmation",
+   "expect": [
+    "KB-91DF8883",
+    "KB-F2FA8EBD"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "Both entries state when the 'Change who can access?' confirmation shows per scope transition and its copy, though they quote different body text, so each answers on its own."
+  },
+  {
+   "id": "L-052",
+   "q": "page-builder-shell Designer section actions menu tune clipboard paste Shared Component",
+   "expect": [
+    "KB-E423C32F"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the Designer section actions menu (Hide/Copy/Paste before/Paste after) and 'Save selected as Shared Component', and that 'the clipboard is read only when a Paste item is clicked'."
+  },
+  {
+   "id": "L-053",
+   "q": "storefront /checkout place order — what is the expected order status after card authorization on virtostart, and does a CyberSource Decision Manager held-for-review note block order creation?",
+   "expect": [
+    "KB-7F535D52",
+    "KB-78638393"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "On virtostart the status is non-deterministic (Processing or 'Payment required'), and a Decision Manager hold leaves the order 'created successfully but stays in status Payment required', so it does not block creation."
+  },
+  {
+   "id": "L-054",
+   "q": "what does Query.whiteLabelingSettings return and how do org and store settings merge",
+   "expect": [
+    "KB-A23A4A41"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "A23A4A41 states whiteLabelingSettings resolves org and store settings independently and merges per field (logo, theme, link lists), with org theme overriding store theme."
+  },
+  {
+   "id": "L-055",
+   "q": "products filter wildcard * ? term filter Elasticsearch",
+   "expect": [
+    "KB-916CDCA1"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "A quoted products filter term honours '* and ? inside the quotes ... as wildcards' on an Elasticsearch 8 provider."
+  },
+  {
+   "id": "L-056",
+   "q": "AvaTaxRateProvider active B2B-store tax 0",
+   "expect": [
+    "KB-3E408000"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "With AvaTaxRateProvider and FixedRateTaxProvider both active on B2B-store, 'evaluate ... returns an empty array, and storefront carts measure taxTotal 0'."
+  },
+  {
+   "id": "L-058",
+   "q": "Organization.assignableRoles empty MembershipRolesWhitelist store override",
+   "expect": [
+    "KB-68D63D8C"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'an override that exists but holds no values yields an empty list: assignableRoles returns []'."
+  },
+  {
+   "id": "L-059",
+   "q": "GET-merge-POST /api/catalog/products variations field null reference 500",
+   "expect": [
+    "KB-969D7E09"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "A GET-to-POST round-trip with variations[] returns 500 and dropping variations[] fixes it, but the error is a PK_Item duplicate key, not a null reference."
+  },
+  {
+   "id": "L-060",
+   "q": "ReturnRegisteredEmailNotification return status notification email push message",
+   "expect": [
+    "KB-17555498",
+    "KB-9B9FAF0F"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Each return status change enqueues one email plus one push with topic = return number, and submitReturn raises exactly one ReturnRegisteredEmailNotification and a 'Return <number> received' push."
+  },
+  {
+   "id": "L-061",
+   "q": "wishlist sharingSetting targets order unstable",
+   "expect": [
+    "KB-42230B0A"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "'the createWishlist/changeWishlist response lists targets in the order the ids were added, but every later ... read returns them in a different, stable storage order'."
+  },
+  {
+   "id": "L-062",
+   "q": "submitReturn attachmentUrls return-attachments upload",
+   "expect": [
+    "KB-F1E057A8"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Files are uploaded to POST /api/files/return-attachments with the buyer token and 'passed as attachmentUrls on updateReturn' (not on submitReturn)."
+  },
+  {
+   "id": "L-063",
+   "q": "/sign-in how does storefront login authenticate",
+   "expect": [
+    "KB-0407F36E"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "'Submitting the /sign-in form triggers a REST call to POST /connect/token ... not a GraphQL mutation'.",
+   "qAsLogged": "C:/Program Files/Git/sign-in how does storefront login authenticate"
+  },
+  {
+   "id": "L-065",
+   "q": "Sales Rep hub route /company/my-customers storefront path 404 /sales-reps",
+   "expect": [
+    "KB-A240F961"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists the Sales Rep hub routes under /company/ (/company/my-customers/:organizationId/orders, /company/customer-orders, /company/dashboard), but no entry says whether /sales-reps returns 404."
+  },
+  {
+   "id": "L-066",
+   "q": "/account/missions mission card date badge severity danger warning success",
+   "expect": [
+    "KB-5A3931CE"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Covers only one severity case: the card reads '0 days left' with a danger dot; the warning and success thresholds are not stated."
+  },
+  {
+   "id": "L-068",
+   "q": "platform admin embedded-app vc-shell environment badge QA rendered twice",
+   "expect": [
+    "KB-A8067930"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The embedded vc-shell app renders its own vc-environment-banner even when embedded, because the render condition 'ignores isEmbedded', so 'QA' appears twice."
+  },
+  {
+   "id": "L-069",
+   "q": "is an open cart page re-confirmed before Place order",
+   "expect": [
+    "KB-EF925925"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'The cart page is rendered once from a read and never revises itself' and Place order builds from a fresh evaluation 'with no comparison against what the page showed'."
+  },
+  {
+   "id": "L-070",
+   "q": "Which order statuses are settable in the Admin SPA orders status dropdown and shipment status?",
+   "expect": [
+    "KB-DB7B6317",
+    "KB-4C5627CE"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The order Status dropdown offers seven settable values (Processing is not settable), and the shipment blade lists five states, 'Send, not Sent'; both entries are needed."
+  },
+  {
+   "id": "L-071",
+   "q": "changeWishlist addSharedWithIds case-insensitive uppercase id duplicate",
+   "expect": [
+    "KB-509D70C4"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "'an id differing only in letter case from a present target is a no-op on add ... duplicates within one addSharedWithIds (any case) collapse to one target'."
+  },
+  {
+   "id": "L-072",
+   "q": "page-builder-designer section tree keyboard accessibility Tab Escape",
+   "expect": [
+    "KB-FA3338C3"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Gives the Designer section tree's Tab order, ArrowUp/ArrowDown reordering, and that 'Escape closes the Add block panel and the section editor ... and returns focus'."
+  },
+  {
+   "id": "L-073",
+   "q": "On /company/members (GetOrganizationContacts), why does the Name column render the literal text \"Invite sent\" instead of the contact's name for some members?",
+   "expect": [
+    "KB-D8FDFA6F",
+    "KB-BBBC4225"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "Both state the page substitutes 'Invite sent' for a pending invitee's name that the API returns; D8FDFA6F names contact.status null as the discriminator."
+  },
+  {
+   "id": "L-076",
+   "q": "VcDateRangePicker split layout calendar footer Clear clears one field or both",
+   "expect": [
+    "KB-F9D75EA0"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States that in the split layout 'that calendar's footer Clear empties only its own field'."
+  },
+  {
+   "id": "L-078",
+   "q": "quote request updateQuoteItems quantity edit prices zero",
+   "expect": [
+    "KB-AA7CCB07"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States a draft quote quantity save keeps listPrice and that prices 'dropping to 0.00 on save' were not reproduced, though the mutation is changeQuoteItemQuantity, not updateQuoteItems."
+  },
+  {
+   "id": "L-079",
+   "q": "PUT /api/stores/{id} Catalog.Search.BarcodeSearchFields unvalidated",
+   "expect": [
+    "KB-3FCE7089"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'The generic PUT /api/stores does no validation: an unknown field is stored verbatim'; the {id} path form itself answers 405 per KB-F91252E5."
+  },
+  {
+   "id": "L-080",
+   "q": "barcode-search/store settings BarcodeScannerEnabled BarcodeSearchFields storefront",
+   "expect": [
+    "KB-16859F54"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Describes the storefront under each barcode-search store setting, e.g. 'scannerEnabled false ... the switch hides the entry point only' and the no-fields literal filter."
+  },
+  {
+   "id": "L-081",
+   "q": "SharingSettingType.targets deleted organization null name",
+   "expect": [
+    "KB-8F61528A"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States that after deletion 'targets keep the id with name, subtitle and imageUrl null'."
+  },
+  {
+   "id": "L-082",
+   "q": "sharedWishlist sharingKey AnyoneAnonymous stray Customer row deactivated Private SharedWithId",
+   "expect": [
+    "KB-D7F08A26"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States changeWishlist(scope Private) keeps the row with 'scope Private, targets [] and no sharedWithId' and sharedWishlist returns null with no error."
+  },
+  {
+   "id": "L-085",
+   "q": "/connect/token password grant storeId user_cannot_login_in_store",
+   "expect": [
+    "KB-7A4C260E"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States storeId must be camelCase and 'store_id, a header, or no store at all return 400 user_cannot_login_in_store'."
+  },
+  {
+   "id": "L-086",
+   "q": "markPushMessageRead markPushMessageUnread mutation",
+   "expect": [
+    "KB-6AF43C39"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'markPushMessageRead(command: {messageId}) returned true and flipped isRead' but says nothing about markPushMessageUnread."
+  },
+  {
+   "id": "L-087",
+   "q": "/checkout/completed confirmation page email notification message",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States /checkout/completed shows 'Order <number> has been successfully submitted.' plus Show order, but nothing about an email notification message."
+  },
+  {
+   "id": "L-089",
+   "q": "Query.products barcode product without price in store currency not found",
+   "expect": [
+    "KB-7837F100"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States Query.products barcode filter returns an unpriced product and the storefront's added 'price.USD:(0 TO)' term is what hides it."
+  },
+  {
+   "id": "L-091",
+   "q": "sharedWishlist sharingKey stable after scope change",
+   "expect": [
+    "KB-7A9D4927",
+    "KB-E8234FA0"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-7A9D4927 says changing scope 'mints nothing' and keeps the same key; KB-E8234FA0 says 'Once a row exists the id is stable across scope changes' and adds the never-shared exception."
+  },
+  {
+   "id": "L-092",
+   "q": "What happens on the /cart page when placing an order — is there a separate /checkout route?",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'the /cart page carries the whole checkout' and 'There is no /checkout route'."
+  },
+  {
+   "id": "L-093",
+   "q": "/cart what does the cart page carry",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists what /cart carries: Shipping details, Payment details, Order comment and Place order in the Order summary sidebar.",
+   "qAsLogged": "C:/Program Files/Git/cart what does the cart page carry"
+  },
+  {
+   "id": "L-096",
+   "q": "storefront /cart Delivery method dropdown options show price or delivery estimate Fixed Rate (Ground) (Air)",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'Delivery methods offered: Fixed Rate (Ground) $150.00 and Fixed Rate (Air)', so a price shows for Ground, but nothing about a delivery estimate."
+  },
+  {
+   "id": "L-097",
+   "q": "Does POST /api/punchout-user-mappings validate userId against the contact, and can a punchout mapping bind an administrator account?",
+   "expect": [
+    "KB-ACC12F26"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States the mapping 'accepts a caller-supplied userId that is NOT validated ... and is NOT rejected for administrator accounts'."
+  },
+  {
+   "id": "L-099",
+   "q": "mobile search overlay close backdrop accessible name common.labels.close, submit button unnamed, Cancel 18px tall",
+   "expect": [
+    "KB-F3B1E987"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the backdrop is 'named \"common.labels.close\"', the submit button is unnamed and 'Cancel measuring 42x18 CSS px'."
+  },
+  {
+   "id": "L-100",
+   "q": "changeWishlist sharedWithId legacy multi-target position",
+   "expect": [
+    "KB-42230B0A"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States 'Legacy sharedWithId writes compare against the first target only' and that any other id on a multi-target list is refused INVALID_OPERATION."
+  },
+  {
+   "id": "L-101",
+   "q": "/cart where does checkout happen, is there a separate checkout route",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'the /cart page carries the whole checkout' and 'There is no /checkout route to navigate to'.",
+   "qAsLogged": "C:/Program Files/Git/cart where does checkout happen, is there a separate checkout route"
+  },
+  {
+   "id": "L-104",
+   "q": "pushMessages xAPI query unreadOnly withHidden totalCount unreadCount",
+   "expect": [
+    "KB-21BA7389"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Gives pushMessages args incl. unreadOnly/withHidden and 'PushMessageConnection has totalCount... (no unreadCount field)'."
+  },
+  {
+   "id": "L-105",
+   "q": "/company/my-customers/{id}/orders date preset after closing Start chip",
+   "expect": [
+    "KB-09CEE315"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Says 'removing one chip re-queries with that bound dropped' but says nothing about a date preset after closing the Start chip."
+  },
+  {
+   "id": "L-107",
+   "q": "how do you add a configurable product to the cart on the storefront",
+   "expect": [
+    "KB-F78ED1CC"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States 'A CONFIGURABLE product's PDP ... shows an explicit Add to cart BUTTON' while simple products add via the stepper."
+  },
+  {
+   "id": "L-108",
+   "q": "UCP MCP update_cart rejected over-stock quantity persists in cart non-atomic",
+   "expect": [
+    "KB-B142F52E",
+    "KB-DAD0D552"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state the refused update_cart 'is not atomic'/'is not a rollback' and get_cart keeps the over-stock quantity."
+  },
+  {
+   "id": "L-109",
+   "q": "POST /api/carts/search Wishlist sharingSettings rows admin REST",
+   "expect": [
+    "KB-D7F08A26"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Shows wishlist sharingSettings rows via admin 'GET /api/carts/{id} shows sharingSettings[0].targets[]', but not via POST /api/carts/search."
+  },
+  {
+   "id": "L-111",
+   "q": "/cart CyberSource authorizePayment held for review by Decision Manager — what order status results?",
+   "expect": [
+    "KB-78638393",
+    "KB-7F535D52"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "adjudicated",
+   "note": "Both state that a held-for-review CyberSource authorization leaves the order at Payment required."
+  },
+  {
+   "id": "L-115",
+   "q": "Push Messages audience builder Custom conditions generated phrase field operator matrix admin SPA",
+   "expect": [
+    "KB-4BFCE2B2"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists every field token and operator shape, e.g. 'is not -> !field:value; contains -> field:\"*a*\"'."
+  },
+  {
+   "id": "L-116",
+   "q": "PUT /api/loyalty-missions validation negative FixedAmountReward amount",
+   "expect": [
+    "KB-D64B1613"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States PUT returns '400 with a raw array of FluentValidation errors' but not specifically for a negative FixedAmountReward amount."
+  },
+  {
+   "id": "L-117",
+   "q": "api/catalog/barcode-search/store PUT validation unknown field 400 404",
+   "expect": [
+    "KB-2CADFEBD"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "'PUT rejects unknown or excluded fields ... with 400' and 'unknown store -> 404 even when the fields are also invalid'."
+  },
+  {
+   "id": "L-118",
+   "q": "cancel order cascades to payment and shipment status Mutation.cancelOrder",
+   "expect": [
+    "KB-ADA91F7B",
+    "KB-4CCC2DD6",
+    "KB-F7988EA2"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "All state cancelling an order cascades to the payment (Cancelled) but not the shipment (stays New); the cascade is a server event handler, so it is not surface-specific."
+  },
+  {
+   "id": "L-119",
+   "q": "what payment methods are offered at the storefront checkout payment step for a signed-in B2B buyer, and where does that list come from",
+   "expect": [
+    "KB-535FF3AC"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists the six methods offered and that they come from 'Query.cart.availablePaymentMethods' backed by the store's active payment methods."
+  },
+  {
+   "id": "L-120",
+   "q": "/search header search bar submit Enter history replace push Back button",
+   "expect": [
+    "KB-C298769B"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "'A submit made while already on /search replaces the current history entry rather than pushing a new one, so Back skips'."
+  },
+  {
+   "id": "L-121",
+   "q": "sales-rep customer orders mobile card /account/customers orders total layout 375px",
+   "expect": [
+    "KB-A240F961"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "A240F961 states rep customer-order lists render mobile cards below 1024px with the order link and total on one flex row (routes are /company/..., Q's route is loose)."
+  },
+  {
+   "id": "L-122",
+   "q": "sharedWishlist sharingKey: can the target customer read a rep-shared list and its message",
+   "expect": [
+    "KB-2F64A447",
+    "KB-A0FFEA0A"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Both state sharedWishlist(sharingKey) returns the list with 'access Read, isOwner false, the current sharingSetting.message'."
+  },
+  {
+   "id": "L-125",
+   "q": "storefront reverse proxy routing for /api/* REST endpoints on vcptcore-qa1-storefront — which backend REST paths are proxied through the storefront's own domain",
+   "expect": [
+    "KB-6D7B2ED7"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Shows one path not proxied, 'the storefront ingress returns 405' for /api/otp/request on vcptcore_qa1, but gives no general list of proxied paths."
+  },
+  {
+   "id": "L-126",
+   "q": "how many failed sign-in attempts before lockout and for how long POST /connect/token",
+   "expect": [
+    "KB-8646A9CB"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the lockout policy directly: '5 failed attempts, 15-minute lockout' on /connect/token."
+  },
+  {
+   "id": "L-127",
+   "q": "punchout cXML session setup",
+   "expect": [
+    "KB-C239652A"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Describes the valid cXML PunchOutSetupRequest returning a StartPage URL that signs the mapped user in."
+  },
+  {
+   "id": "L-131",
+   "q": "Push Messages Custom conditions builder generated phrase field mapping name emails login membertype status groups businesscategory defaultlanguage roleid parentorganizations hasparentorganizations createddate",
+   "expect": [
+    "KB-4BFCE2B2"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists the full field-to-token mapping, e.g. 'Email -> emails, Username -> login ... Registered -> createddate'."
+  },
+  {
+   "id": "L-132",
+   "q": "products filter sku: alias code mpn: field xAPI products(filter)",
+   "expect": [
+    "KB-3BFF73A3"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States 'sku: is accepted as an alias of code, but mpn: is not an alias of manufacturerPartNumber'."
+  },
+  {
+   "id": "L-133",
+   "q": "Admin SPA vcUkHtmleditor uikit-htmleditor.js CodeMirror image paste drop upload",
+   "expect": [
+    "KB-FFB3268E"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States image drop/paste/toolbar in vcUkHtmleditor each fire one POST /api/assets?folderUrl=cms-content/layouts/assets via handlers on .CodeMirror."
+  },
+  {
+   "id": "L-134",
+   "q": "is coupon code case-sensitive Query.validateCoupon",
+   "expect": [
+    "KB-A3004A3B",
+    "KB-35F20D97"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both answer directly but contradict: KB-A3004A3B says validation is 'case-insensitive', KB-35F20D97 says 'matching is case-sensitive'."
+  },
+  {
+   "id": "L-135",
+   "q": "Switching organization on the storefront — what happens to the cart contents of the previous organization?",
+   "expect": [
+    "KB-8BE777BB"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Only notes that after an organization switch 'the cart badge cleared'; it does not say what happens to the previous organization's cart."
+  },
+  {
+   "id": "L-137",
+   "q": "loyaltyMissionProgress daysRemaining ceil EndDate UtcNow expired mission still returned InProgress",
+   "expect": [
+    "KB-813DD6AC",
+    "KB-26B8BE64"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-813DD6AC gives 'ceil((EndDate - UtcNow) in days), floored at 0' and KB-26B8BE64 says a past-EndDate mission is still returned 'status InProgress and daysRemaining 0' until the sweep."
+  },
+  {
+   "id": "L-138",
+   "q": "/account/notifications Return {number} received declined push message order",
+   "expect": [
+    "KB-22E1D313"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States /account/notifications shows 'Return {number} received' then 'Return {number} declined', newest first."
+  },
+  {
+   "id": "L-140",
+   "q": "configurable product line item price on the order — base product price plus the chosen option's extendedPrice, line quantity stays 1",
+   "expect": [
+    "KB-4B47D094"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the line price is base + extendedPrice ($526) with 'quantity 1' and survives to the placed order line."
+  },
+  {
+   "id": "L-142",
+   "q": "revoke wishlist share link sharingKey",
+   "expect": [
+    "KB-7A9D4927"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States re-scoping to Private only suspends the sharingKey while 'Deleting the list IS a real revocation'."
+  },
+  {
+   "id": "L-143",
+   "q": "storefront configurable product page — are CFG_LAPTOP / CFG_RING configurable product URLs present on virtostart, or do they 404?",
+   "expect": [
+    "KB-D54F3AAB"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States both CFG_LAPTOP/CFG_RING URLs 'render the storefront's 404 page' on virtostart."
+  },
+  {
+   "id": "L-145",
+   "q": "missions page SKU modal 'Purchase target quantity of SKUs' estimate hint alert hidden under modal footer scroll",
+   "expect": [
+    "KB-3C7B6A36"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the 'Totals and cart subtotal are estimates' alert is the last child of the scroll body and 'the fold cuts through the alert', with nothing covered by the footer."
+  },
+  {
+   "id": "L-148",
+   "q": "how does a product with variations behave on the storefront product page",
+   "expect": [
+    "KB-191B1B4C",
+    "KB-DEBE1CED",
+    "KB-F78ED1CC"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "adjudicated",
+   "note": "The broad Q is covered in parts: the variations panel lists the master, the master picker never becomes purchasable, and the master PDP shows a disabled 'Select options to proceed' button."
+  },
+  {
+   "id": "L-149",
+   "q": "GraphQL shareWishlist / wishlist sharing message push notification sales rep",
+   "expect": [
+    "KB-EFD1A7FD",
+    "KB-5AB85ADC"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state that saving a Customer share sends sendCustomerCommunication with 'the note (or a default ...) plus the /shared-list/<key> link' as the push."
+  },
+  {
+   "id": "L-150",
+   "q": "search products REST /api/catalog/products/search",
+   "expect": [
+    "KB-C440D4E3"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States /api/catalog/products has no search operation and 'Catalog search on this platform is POST /api/catalog/listentries'."
+  },
+  {
+   "id": "L-151",
+   "q": "storefront header account button — does it show OrgName / UserName for a single-organization B2B user or only for a multi-organization user?",
+   "expect": [
+    "KB-512D556A"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-512D556A states the header shows 'OrgName / UserName' only for a multi-organization user while a single-org member sees their name alone."
+  },
+  {
+   "id": "L-154",
+   "q": "Push Messages audience caption after save and reopen — does it still name the condition and the picked company?",
+   "expect": [
+    "KB-D9F48037"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-D9F48037 says after save and reopen the caption is the SAME 'Customers where ... plus <picked>' (newer build), superseding KB-C5B17CE2's omission; it shows a picked person rather than a company."
+  },
+  {
+   "id": "L-156",
+   "q": "Does a guest see a card form on /cart for allowCartPayment gateways and what order status results?",
+   "expect": [
+    "KB-94C2ADCC"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-94C2ADCC: for an anonymous guest the allowCartPayment card form 'does not render' and the order is created with status Payment required."
+  },
+  {
+   "id": "L-157",
+   "q": "Does DELETE /api/loyalty-missions fail once a mission has progress?",
+   "expect": [
+    "KB-608F7C05"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-608F7C05: DELETE /api/loyalty-missions 'returns 500 once a mission has mission transactions' due to a RESTRICT foreign key."
+  },
+  {
+   "id": "L-158",
+   "q": "/company/members Active column for locked member",
+   "expect": [
+    "KB-27B4CD10"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-27B4CD10 states a membership lock shows a red Blocked badge while a locked security account or contact-level Locked still renders Active.",
+   "qAsLogged": "C:/Program Files/Git/company/members Active column for locked member"
+  },
+  {
+   "id": "L-160",
+   "q": "xAPI loyaltyMissionProgress daysRemaining semantics and page /account/missions mission card rendering",
+   "expect": [
+    "KB-813DD6AC",
+    "KB-5A3931CE"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-813DD6AC gives daysRemaining as 'ceil((EndDate - UtcNow) in days), floored at 0', and KB-5A3931CE gives the card rendering '0 days left' with a danger dot."
+  },
+  {
+   "id": "L-163",
+   "q": "products filter barcode:\"v\" xAPI EvalBarcodeFilterMiddleware isGenerated",
+   "expect": [
+    "KB-110E0652"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-110E0652: barcode:\"v\" becomes an OR of term filters on configured fields 'reported in filters[] with isGenerated:true'."
+  },
+  {
+   "id": "L-164",
+   "q": "changeWishlist sharingSetting message stop sharing re-share Customer scope sharing key",
+   "expect": [
+    "KB-5EACBEDD",
+    "KB-0BC18481"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "5EACBEDD states stop sharing clears targets and message and re-share reuses the key without restoring them; 0BC18481 confirms Private nulls the message and re-share does not restore it."
+  },
+  {
+   "id": "L-165",
+   "q": "order-level discount allocated to line items CustomerOrder discountAmount",
+   "expect": [
+    "KB-F1542157",
+    "KB-FF7E4D5B"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-F1542157 says 'the platform does not spread it across lines' and every items[].discountAmount is 0; KB-FF7E4D5B records the same on the CustomerOrder."
+  },
+  {
+   "id": "L-166",
+   "q": "/account/missions SKU modal deleted product null raw GUID title 404 link",
+   "expect": [
+    "KB-E7007F44"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-E7007F44 states loyaltyMissionProgress returns 'product: null' for a deleted PerSku target, but not how the SKU modal renders it (raw GUID title, 404 link)."
+  },
+  {
+   "id": "L-167",
+   "q": "sales rep hub my customers send message popup push email recipients (sendMessage / sales-rep customers page)",
+   "expect": [
+    "KB-A98E467C"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-A98E467C covers sendCustomerCommunication's pushSent/emailSent and that 'the recipient org member's pushMessages gets a new item', but not the my-customers popup itself."
+  },
+  {
+   "id": "L-168",
+   "q": "Query.wishlist Customer-scope share target organization member Access denied",
+   "expect": [
+    "KB-2A9084BA",
+    "KB-2F64A447",
+    "KB-D1DF95A5"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Each states a target-org member gets 'Access denied.' Forbidden from wishlist(listId) for a Customer-scope share and reads it only via sharedWishlist."
+  },
+  {
+   "id": "L-170",
+   "q": "Does the Remember Me checkbox on /sign-in change session persistence?",
+   "expect": [
+    "KB-9D80EE6B"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-9D80EE6B: the Remember me checkbox 'has no effect on the session'; token request and refresh token are identical."
+  },
+  {
+   "id": "L-171",
+   "q": "ReturnStatusNotificationHandlerBase Approved notification missing journal ReturnApprovedEmailNotification",
+   "expect": [
+    "KB-17555498",
+    "KB-66D78761",
+    "KB-97A675C1"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "66D78761/97A675C1 state an Approved decision writes ReturnApprovedEmailNotification within ~1s, and 17555498 states a status job can succeed yet send nothing until requeued, which explains a missing entry."
+  },
+  {
+   "id": "L-173",
+   "q": "POST /api/push-message status Sent memberIds recipients async job",
+   "expect": [
+    "KB-6AF43C39"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-6AF43C39: after POST /api/push-message {status: Sent, memberIds}, the messages showed up in the recipient's pushMessages 'within about 1 s'."
+  },
+  {
+   "id": "L-174",
+   "q": "SalesRepCustomerOrders createddate filter date range custom date",
+   "expect": [
+    "KB-09CEE315"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-09CEE315: custom dates send salesRepCustomerOrders filter createddate:[start local midnight as UTC TO end local 23:59:59.999 as UTC]."
+  },
+  {
+   "id": "L-175",
+   "q": "PUT /api/members contact organizations organization-memberships sync contact.organizations empty",
+   "expect": [
+    "KB-4EDC989E"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-4EDC989E: a membership alone leaves contact.organizations empty, and 'Adding the organization id to contact.organizations with PUT /api/members' makes xAPI resolve it."
+  },
+  {
+   "id": "L-177",
+   "q": "products filter barcode: xAPI wildcard",
+   "expect": [
+    "KB-110E0652",
+    "KB-348505EB"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state that the xAPI products barcode:\"v\" filter honours * and ? as wildcards (\"* and ? are honoured as wildcards\")."
+  },
+  {
+   "id": "L-178",
+   "q": "Push Messages admin blade conditions mode incomplete condition row recipient estimate audience caption",
+   "expect": [
+    "KB-EB70C1F9",
+    "KB-735DF4D1"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "EB70C1F9 covers the incomplete row's effect on estimate and caption (\"silently dropped... caption reads 'Customers where Customer type is Contact.'\"); 735DF4D1 covers hint/Save/estimate depending on a complete condition."
+  },
+  {
+   "id": "L-179",
+   "q": "five failed sign-ins lockout duration /sign-in",
+   "expect": [
+    "KB-8646A9CB"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the policy \"5 failed attempts, 15-minute lockout\" and the resulting user_is_temporary_locked_out code."
+  },
+  {
+   "id": "L-180",
+   "q": "DELETE /api/loyalty-missions with progress",
+   "expect": [
+    "KB-608F7C05"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "\"DELETE /api/loyalty-missions returns 500 once a mission has mission transactions\" via a RESTRICT foreign key."
+  },
+  {
+   "id": "L-181",
+   "q": "Query.loyaltyBalance GraphQL storefront balance after the customer account is deleted and recreated with the same email",
+   "expect": [
+    "KB-EDDBBE75"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "\"if that account is deleted and recreated the new account starts at zero\" because the balance is keyed on the security-account user id; stated for the REST balance, not Query.loyaltyBalance directly."
+  },
+  {
+   "id": "L-182",
+   "q": "Punchout.Enabled store setting punchout",
+   "expect": [
+    "KB-C239652A"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only states Punchout.Enabled=true as a precondition for a working PunchOutSetupRequest start page; what the setting does when false is not stated."
+  },
+  {
+   "id": "L-183",
+   "q": "member address description vs name field storefront address selection modal shows description",
+   "expect": [
+    "KB-EFFB28BE"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "\"name and description field... stored independently\" and the storefront select-address Description column reads description."
+  },
+  {
+   "id": "L-184",
+   "q": "/search empty state header_empty reset storefront",
+   "expect": [
+    "KB-71011C1F"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Describes the barcode zero-hit empty state with a Reset search button navigating to /catalog; Q may mean the generic keyword search empty state, which no entry states."
+  },
+  {
+   "id": "L-185",
+   "q": "Does the loyalty points-history page show redeemed amounts signed at /account/points-history?",
+   "expect": [
+    "KB-29037452"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "\"Redeemed rows show the points amount unsigned... no minus sign\", by design."
+  },
+  {
+   "id": "L-186",
+   "q": "what does the Active column on /company/members show",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "27B4CD10: the column renders \"isLockedInOrganization ? Locked : contact.status\"; 97170665 gives the observed badge mapping (lock wins, Approved->Active, Invited, Blocked, Inactive)."
+  },
+  {
+   "id": "L-188",
+   "q": "createReturn GraphQL mutation xAPI returns quantity AvailableQuantity RETURN_QUANTITY_UNAVAILABLE",
+   "expect": [
+    "KB-F97CFAF6"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States createReturn with over-limit quantity \"returned 200 and created a Draft\" and only submitReturn refuses; the RETURN_QUANTITY_UNAVAILABLE code itself is not named."
+  },
+  {
+   "id": "L-191",
+   "q": "products(filter) price.EUR currency no price barcode not found /search?barcode=",
+   "expect": [
+    "KB-4F298EB0"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "In EUR the storefront sends \"price.EUR:(0 TO) barcode:...\" and renders 'No products found for barcode' for a product priced only in USD."
+  },
+  {
+   "id": "L-192",
+   "q": "Push Messages module API push message search topic",
+   "expect": [
+    "KB-9B9FAF0F"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Shows POST /api/push-message/search finds a return push \"with topic = the return number\"; Q is vague and no entry documents searching by topic as a criterion."
+  },
+  {
+   "id": "L-193",
+   "q": "What does the \"Active\" column on the storefront B2B company members list (/company/members) reflect — which entity field feeds it, and what does it show for a blocked/locked user account?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Column is fed by isLockedInOrganization then contact status/statusInOrganization; a locked security account \"leaves the row green and Active\" while a membership lock shows red Blocked."
+  },
+  {
+   "id": "L-195",
+   "q": "loyaltyMissionProgress isStarted false mission without progress row",
+   "expect": [
+    "KB-26B8BE64"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "\"Missions still in their window that have no progress row for the user are returned with isStarted false and 0%.\""
+  },
+  {
+   "id": "L-197",
+   "q": "organization assignableRoles store setting roles org maintainer can assign Invite member There are no roles available",
+   "expect": [
+    "KB-68D63D8C"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "assignableRoles is filtered by Customer.MembershipRolesWhitelist and an empty store override yields [] with 'There are no roles available.'"
+  },
+  {
+   "id": "L-198",
+   "q": "PUT /api/inventory/plenty inventory status Enabled addItem",
+   "expect": [
+    "KB-48A46F77"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States InventoryStatus is Disabled/Enabled/Ignored and \"Adding to cart silently does nothing when the inventory record is Disabled\"; it uses PATCH, not the plenty route."
+  },
+  {
+   "id": "L-199",
+   "q": "POST /api/search/indexes/index documentIds deleted product orphan index document removal",
+   "expect": [
+    "KB-31802239"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "\"documentIds does not remove it\"; a startDate/endDate window over the deletion removes the orphan documents."
+  },
+  {
+   "id": "L-200",
+   "q": "PaymentIn capturedDate — is it set only when a real gateway capture succeeds, or can it be set without funds being captured? /api/order/customerOrders",
+   "expect": [
+    "KB-1AC55A1D"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "capturedDate is stamped at the same instant as authorizedDate \"even when it only reached Authorized and was never captured\"."
+  },
+  {
+   "id": "L-201",
+   "q": "PUT /api/catalog/barcode-search/store/{storeId} validation unknown field 400 404 unknown store",
+   "expect": [
+    "KB-2CADFEBD"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States PUT 'rejects unknown or excluded fields ... with 400' and 'unknown store -> 404 even when the fields are also invalid'."
+  },
+  {
+   "id": "L-202",
+   "q": "loyaltyMissionProgress items product availabilityData null for PerSku goal item product",
+   "expect": [
+    "KB-E7007F44"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States availabilityData is NON_NULL and a deleted target product comes back as 'product: null', while an inactive one still returns flags."
+  },
+  {
+   "id": "L-203",
+   "q": "Admin Push Messages audience builder: which mode does a saved draft reopen in, and when is 'Back to conditions' offered?",
+   "expect": [
+    "KB-AC05FCD4"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States the reopen mode is re-derived from the stored query and 'Back to conditions' appears 'only while the typed phrase is condition-representable'."
+  },
+  {
+   "id": "L-205",
+   "q": "Is CyberSource CVV shown in plaintext in the Microform on /cart?",
+   "expect": [
+    "KB-1F264839"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the CyberSource Flex Microform security-code digits 'show in plain text while typing', and that this is accepted."
+  },
+  {
+   "id": "L-206",
+   "q": "changeWishlist legacy sharedWithId input",
+   "expect": [
+    "KB-A871AA8D"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the legacy sharedWithId on a Customer share 'is applied as sharingSetting.targets = [that org] (a one-element set), not dropped'."
+  },
+  {
+   "id": "L-207",
+   "q": "wishlist set to Private does the old /shared-list/ link stop working changeWishlist",
+   "expect": [
+    "KB-7A9D4927",
+    "KB-4895528A"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state that after Private the key resolves to null and that re-sharing revives the same key, so setting Private is 'a suspension, not a revocation'."
+  },
+  {
+   "id": "L-208",
+   "q": "loyaltyMissionProgress daysRemaining 0 status InProgress after endDate expiry job",
+   "expect": [
+    "KB-26B8BE64",
+    "KB-5A3931CE"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "Both state a mission past EndDate reads status InProgress with daysRemaining 0 until the expiry job runs."
+  },
+  {
+   "id": "L-211",
+   "q": "Admin SPA Push Messages 'New push message' blade — what does the Audience builder offer (modes, estimate headline, preview dialog)?",
+   "expect": [
+    "KB-AC05FCD4",
+    "KB-1178FECF"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "AC05FCD4 lists the four modes and 1178FECF describes the estimate breakdown and the preview dialog paging at 20 rows; no single entry covers the whole builder."
+  },
+  {
+   "id": "L-212",
+   "q": "BarcodeScannerEnabled BarcodeSearchFields store setting storefront scanner button",
+   "expect": [
+    "KB-16859F54"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States 'scannerEnabled false ... the Barcode scan button disappears from both bars' while /search?barcode= still works, and that settings are read at app load."
+  },
+  {
+   "id": "L-214",
+   "q": "colleague in same organization reads return(id) xAPI",
+   "expect": [
+    "KB-657521DF"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States a same-organization colleague's token 'got data.return = null' for another buyer's returns."
+  },
+  {
+   "id": "L-215",
+   "q": "/account/missions mission card layout, completed state, and mission modal behaviour",
+   "expect": [
+    "KB-011D79B2"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Covers only the SKU mission modal behaviour (absolute quantity, prefill on reopen); nothing states the card layout or the completed state."
+  },
+  {
+   "id": "L-216",
+   "q": "pushMessages query unreadOnly withHidden per-recipient read state",
+   "expect": [
+    "KB-21BA7389",
+    "KB-6AF43C39"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "21BA7389 gives the pushMessages args 'unreadOnly, withHidden' and the isRead/isHidden fields, and 6AF43C39 shows markPushMessageRead flips isRead 'on that one row only'; neither defines unreadOnly semantics."
+  },
+  {
+   "id": "L-217",
+   "q": "POST /api/push-message/preview-recipients memberQuery ElasticSearch8 wildcard starts with contains operators",
+   "expect": [
+    "KB-4BFCE2B2"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Gives the emitted shapes 'starts with -> field:\"a*\"; contains -> field:\"*a*\"' but does not say how ElasticSearch8 evaluates them in preview-recipients."
+  },
+  {
+   "id": "L-219",
+   "q": "changeWishlist addSharedWithIds sales rep unserved organization Access denied",
+   "expect": [
+    "KB-B4377884"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States 'Adding an unserved org (alone or with a served one) returns Access denied (Forbidden) and writes nothing'."
+  },
+  {
+   "id": "L-220",
+   "q": "store settings modules Catalog.Search.BarcodeScannerEnabled public store settings",
+   "expect": [
+    "KB-3FCE7089"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Only implies the barcode-search settings are 'exposed in public store settings'; no entry names Catalog.Search.BarcodeScannerEnabled or its module."
+  },
+  {
+   "id": "L-221",
+   "q": "/checkout/completed what does the storefront require to place an order",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States Place order stays disabled 'until shipping address + delivery method + payment method are all set' and that success lands on /checkout/completed.",
+   "qAsLogged": "C:/Program Files/Git/checkout/completed what does the storefront require to place an order"
+  },
+  {
+   "id": "L-222",
+   "q": "POST /api/search/indexes/index product index lag catalog link searchable",
+   "expect": [
+    "KB-25388E6C",
+    "KB-5D688448"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "25388E6C shows a product in a linked catalog indexed by documentIds is searchable 'on the first poll ~20 s later', and 5D688448 says search lags writes and needs the category linked into the virtual catalog."
+  },
+  {
+   "id": "L-223",
+   "q": "loyaltyMissionProgress daysRemaining endDate ceil days",
+   "expect": [
+    "KB-813DD6AC"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States daysRemaining is 'ceil((EndDate - UtcNow) in days), floored at 0'."
+  },
+  {
+   "id": "L-224",
+   "q": "MULTI_ORG user organization switcher account menu contact.organizations empty",
+   "expect": [
+    "KB-4EDC989E",
+    "KB-512D556A"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "4EDC989E says an empty contact.organizations leaves the user organization-less, and 512D556A says the switcher appears only for a user with more than one organization; the answer needs both."
+  },
+  {
+   "id": "L-225",
+   "q": "Admin Push Messages New push message audience builder: four modes, estimate headline, preview-recipients endpoint behaviour",
+   "expect": [
+    "KB-AC05FCD4",
+    "KB-1178FECF"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "AC05FCD4 lists the four modes and 1178FECF covers the estimate breakdown, preview paging and the preview-recipients 400 on a malformed phrase; no single entry covers everything asked."
+  },
+  {
+   "id": "L-226",
+   "q": "wishlists isOwner false access Write Organization scope wishlist sales rep list",
+   "expect": [
+    "KB-B59A1F9D",
+    "KB-A0FFEA0A"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "B59A1F9D covers an Organization-scope list seen with access Write and isOwner false, and A0FFEA0A that such a list appears in wishlists() with isOwner false; the sales-rep angle is not stated."
+  },
+  {
+   "id": "L-227",
+   "q": "order inPayments capturedDate is set while paymentStatus is Authorized — does the platform populate capturedDate on authorize-only payments?",
+   "expect": [
+    "KB-1AC55A1D"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-1AC55A1D states capturedDate is stamped at the same instant as authorizedDate on an Authorized, never-captured payment."
+  },
+  {
+   "id": "L-229",
+   "q": "GET /api/loyalty-program-operation-log/balance/user/{id} and Query.loyaltyBalance storeId — what does loyalty balance return per scope",
+   "expect": [
+    "KB-EC1EDCE2"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "EC1EDCE2 shows the organization balance route carries the org ledger while balance/user reads 0 for its members, but Query.loyaltyBalance storeId scoping is not stated."
+  },
+  {
+   "id": "L-230",
+   "q": "does the storefront request category image thumbnails with size suffix (e.g. _md) from cms-content/assets, and what happens when the thumbnail file does not exist",
+   "expect": [
+    "KB-3EA119C5"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-3EA119C5 states the category banner 'requested the original asset URL with no size suffix' while product cards use _md, but does not cover a missing thumbnail file."
+  },
+  {
+   "id": "L-233",
+   "q": "POST /api/loyalty-missions admin blade validation 400 message",
+   "expect": [
+    "KB-DCE536F0"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-DCE536F0 states the mission blade shows only '400: Bad request' and an empty Error details dialog instead of the errorMessage (KB-79DB4E17 notes later platform builds fix setError)."
+  },
+  {
+   "id": "L-234",
+   "q": "POST /api/notifications/journal return notification message stored status Error SMTP 535",
+   "expect": [
+    "KB-9B9FAF0F",
+    "KB-17555498"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state the return notification is stored in the notification journal with the return id 'status Error when SMTP rejects it', which answers the stored-with-Error question."
+  },
+  {
+   "id": "L-239",
+   "q": "organization assignableRoles empty for organization maintainer invite member roles",
+   "expect": [
+    "KB-68D63D8C"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-68D63D8C states assignableRoles(storeId) returns [] when the store's MembershipRolesWhitelist override exists but holds no values."
+  },
+  {
+   "id": "L-240",
+   "q": "xAPI products filter term wildcard gtin asterisk",
+   "expect": [
+    "KB-916CDCA1"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-916CDCA1 states * and ? inside a quoted filter term are honoured as wildcards, e.g. gtin:\"*\" returned 318."
+  },
+  {
+   "id": "L-242",
+   "q": "Mutation.addItem which mutation does the PDP stepper send",
+   "expect": [
+    "KB-98A231B6"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-98A231B6 states the B2B PDP stepper's first increment sends updateCartQuantity 'it did NOT call addItem'."
+  },
+  {
+   "id": "L-244",
+   "q": "/account/missions loyaltyMissionProgress daysRemaining expired mission card storefront",
+   "expect": [
+    "KB-5A3931CE",
+    "KB-26B8BE64"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "5A3931CE gives the ended-unswept card ('0 days left', enabled Open mission) and 26B8BE64 that after the sweep the mission turns Expired and drops out of loyaltyMissionProgress."
+  },
+  {
+   "id": "L-245",
+   "q": "Push Messages recipients preview dialog paging 20 rows per page POST /api/push-message/preview-recipients",
+   "expect": [
+    "KB-1178FECF"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-1178FECF states the audience preview dialog 'pages the whole audience at 20 rows a page' with labels '1-20 of 146' and no truncation."
+  },
+  {
+   "id": "L-247",
+   "q": "Admin SPA store Search configuration Barcode scanner blade missing from index badge read-only permission catalog:BrowseFilters",
+   "expect": [
+    "KB-417AC3F2",
+    "KB-C466AD5C"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "417AC3F2 states the MISSING FROM INDEX badge behaviour and C466AD5C the read-only rendering with BrowseFilters:Read but not Update."
+  },
+  {
+   "id": "L-249",
+   "q": "storefront login POST /connect/token password grant",
+   "expect": [
+    "KB-0407F36E"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-0407F36E states the /sign-in form calls REST POST /connect/token password-grant style, not a GraphQL mutation, with its error body shape."
+  },
+  {
+   "id": "L-251",
+   "q": "loyaltyMissionProgress items product null deleted product availabilityData",
+   "expect": [
+    "KB-E7007F44"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States that a PerSku goal item whose product was deleted returns 'product: null' while availabilityData is NON_NULL on a returned product."
+  },
+  {
+   "id": "L-254",
+   "q": "Organization-scope wishlist Write member changeWishlist scope becomes the list owner SetOwner",
+   "expect": [
+    "KB-B59A1F9D"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States a Write member sending changeWishlist with any scope succeeds and 'customerId/customerName become the caller's'."
+  },
+  {
+   "id": "L-255",
+   "q": "When an organization member is blocked (status Blocked / locked) from the Admin side, what does the storefront company members list show for them, and what does the GraphQL/REST API return?",
+   "expect": [
+    "KB-97170665"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "States the roster shows a red 'Blocked' badge and the API carries the block only in isLockedInOrganization while status fields stay Approved."
+  },
+  {
+   "id": "L-256",
+   "q": "storefront /cart Bank card (CyberSource) authorizePayment — is the sandbox outcome deterministic, or can the same card sometimes authorize to Processing and sometimes be held for review as Payment required?",
+   "expect": [
+    "KB-7F535D52"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States the same card and amount can reach Processing or be held at Payment required - 'NOT a deterministic property of the build'."
+  },
+  {
+   "id": "L-257",
+   "q": "loyaltyMissionProgress availabilityData availableQuantity trackInventory",
+   "expect": [
+    "KB-D12432BD"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States a trackInventory true PerSku target returns availabilityData availableQuantity 5 equal to seeded stock."
+  },
+  {
+   "id": "L-258",
+   "q": "xAPI products filter barcode:\"<value>\" exact mode — are * and ? in the scanned value treated as wildcards (EvalBarcodeFilterMiddleware, TermFilter, ElasticSearch8 HasWildcardValue)?",
+   "expect": [
+    "KB-348505EB",
+    "KB-110E0652"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Both state barcode exact mode honours * and ? as wildcards; KB-348505EB names EvalBarcodeFilterMiddleware TermFilter turned into a WildcardQuery by ElasticSearch8."
+  },
+  {
+   "id": "L-260",
+   "q": "return status New vs Requested: storefront createReturn / admin Add new return initial status VirtoCommerce.Return",
+   "expect": [
+    "KB-BDCD3057",
+    "KB-F97CFAF6"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-BDCD3057 states admin Add new return 'creates the return with status New' and KB-F97CFAF6 states buyer createReturn 'created a Draft'."
+  },
+  {
+   "id": "L-261",
+   "q": "/account/notifications push messages bell mark as read click row",
+   "expect": [
+    "KB-097CB5D6"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "097CB5D6 states tapping a bell popup entry marks it read without navigating, observed on the mobile header; clicking a row on the /account/notifications page itself is not covered."
+  },
+  {
+   "id": "L-262",
+   "q": "changeWishlist sharingSetting message persisted scope Customer addSharedWithIds",
+   "expect": [
+    "KB-0BC18481",
+    "KB-614BDEDE",
+    "KB-75B67E06"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "All three state the sharing message is persisted when changeWishlist carries scope Customer (with addSharedWithIds), with 0BC18481 giving the normalisation rules."
+  },
+  {
+   "id": "L-263",
+   "q": "what does GET /account/coupons show for a coupon code case",
+   "expect": [
+    "KB-F0C5CA5E"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States /account/coupons 'forces the code to uppercase' in display and copied value."
+  },
+  {
+   "id": "L-264",
+   "q": "Admin SPA Stores > Search configuration > Barcode scanner blade (/api/catalog/barcode-search/store) labels and modes",
+   "expect": [
+    "KB-2AEC62B4"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Lists the blade labels and the 'Full-text search' / 'Exact match on selected fields' modes with the 'Fields to match *' checklist."
+  },
+  {
+   "id": "L-266",
+   "q": "Admin Push Messages New blade audience builder: recipients picker label \"Add specific recipients (people or whole companies)\" vs \"Also add ...\" in Match by conditions / Advanced query mode",
+   "expect": [
+    "KB-003D1D01"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "States the picker reads 'Add specific recipients...' in Specific mode and 'Also add specific recipients...' in Match by conditions and Advanced query."
+  },
+  {
+   "id": "L-267",
+   "q": "DELETE /api/members organization delete memberships",
+   "expect": [
+    "KB-843D0515"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States DELETE /api/members on an org leaves 'the OrganizationMembership rows in the deleted org' surviving."
+  },
+  {
+   "id": "L-268",
+   "q": "Admin SPA vc-uk-htmleditor notification layout CodeMirror cursor position split tab mode",
+   "expect": [
+    "KB-4DFE4750"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States the vc-uk-htmleditor switches split/tab at 1000px editor width but says nothing about CodeMirror cursor position."
+  },
+  {
+   "id": "L-269",
+   "q": "/checkout route storefront checkout page",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States checkout is on /cart and 'There is no /checkout route to navigate to'."
+  },
+  {
+   "id": "L-270",
+   "q": "/account/missions card grid loading skeleton layout shift",
+   "expect": [
+    "KB-C4597892"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "States /account/missions renders no skeleton for the card grid and records CLS 0.115 when cards arrive."
+  },
+  {
+   "id": "L-272",
+   "q": "POST /api/platform/security/roles create role permissions platform:access",
+   "expect": [
+    "KB-49F6B6EF"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Only states 'PUT /api/platform/security/roles with a stable id upserts the role' and permissions read back via GET; nothing about POST create or platform:access."
+  },
+  {
+   "id": "L-274",
+   "q": "wishlist sharingSetting targets addSharedWithIds removeSharedWithIds delta semantics",
+   "expect": [
+    "KB-509D70C4",
+    "KB-B4377884"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-509D70C4 gives add/remove delta semantics (present-id add and absent-id remove are no-ops, case-insensitive) and KB-B4377884 says deltas without scope are silently ignored."
+  },
+  {
+   "id": "L-275",
+   "q": "What does the Active column on the storefront /company/members list reflect for an organization member — the contact's status, the ApplicationUser isActive flag, or the ASP.NET Identity lockout state?",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-97170665"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-27B4CD10 says the column renders 'isLockedInOrganization ? Locked : contact.status' and the account lockout never reaches it; KB-97170665 gives the observed badge rule from lock and statusInOrganization."
+  },
+  {
+   "id": "L-276",
+   "q": "/account/missions SKU modal Cart subtotal bare 0 formatCurrency",
+   "expect": [
+    "KB-CE2F9A45"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "CE2F9A45 states the SKU modal cart subtotal and total units render a bare 0 while the row total renders $0.00; formatCurrency is the asker's hypothesis, not the asserted fact."
+  },
+  {
+   "id": "L-277",
+   "q": "/company/members invite member role options organization maintainer",
+   "expect": [
+    "KB-68D63D8C"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-68D63D8C says assignableRoles is filtered by MembershipRolesWhitelist with defaults 'Organization employee, Organization maintainer, Purchasing agent'."
+  },
+  {
+   "id": "L-279",
+   "q": "barcode-scanner-modal camera denied Browse button disabled loading spinner storefront /search",
+   "expect": [
+    "KB-2B0274B9"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-2B0274B9: with no camera stream the modal shows a spinner 'on the Browse button indefinitely' and Browse stays disabled."
+  },
+  {
+   "id": "L-280",
+   "q": "vc-uk-htmleditor uikit-htmleditor.js CodeMirror Notification layout template editor split/tab mode maxsplitsize",
+   "expect": [
+    "KB-4DFE4750"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-4DFE4750: vc-uk-htmleditor initialises 'mode split and maxsplitsize 1000', split at >=1000px editor width, tab view below it."
+  },
+  {
+   "id": "L-281",
+   "q": "/company/members Active column after admin locks the user account",
+   "expect": [
+    "KB-27B4CD10",
+    "KB-4B889114"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Both state that locking the security account in Admin 'leaves the row green and Active' on /company/members."
+  },
+  {
+   "id": "L-282",
+   "q": "sales-rep customer orders filter /company/my-customers/:id/orders custom date range Start date End date field width clear button",
+   "expect": [
+    "KB-F9D75EA0"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-F9D75EA0 states 'The split fields carry no in-field clear button' and covers the footer Clear, but gives no field width."
+  },
+  {
+   "id": "L-283",
+   "q": "grant_type=punchout on /connect/token",
+   "expect": [
+    "KB-ACC12F26",
+    "KB-CA2AE929"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "adjudicated",
+   "note": "ACC12F26 gives the successful punchout grant (200 access_token for the mapped user) and CA2AE929 the 400 login_failed for an invalid or absent session_token."
+  },
+  {
+   "id": "L-286",
+   "q": "products(filter: \"fieldname:value\") term filter — is matching case-sensitive or case-insensitive on the active search provider (does ElasticSearch lowercase terms while Lucene does not)?",
+   "expect": [
+    "KB-916CDCA1"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-916CDCA1 says 'Values are matched case-insensitively on this deployment's search provider' (Elasticsearch 8), but makes no Lucene comparison."
+  },
+  {
+   "id": "L-288",
+   "q": "POST /api/punchout/cxml PunchOutSetupRequest and /connect/token grant_type=punchout behaviour",
+   "expect": [
+    "KB-C239652A",
+    "KB-62D97984"
+   ],
+   "partial": true,
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-C239652A gives the success path (StartPage URL that signs the mapped user in) and KB-62D97984 the rejection statuses; the grant_type=punchout side is covered only in passing."
+  },
+  {
+   "id": "L-289",
+   "q": "POST /api/punchout/cxml PunchOutSetupRequest cXML",
+   "expect": [
+    "KB-C239652A",
+    "KB-62D97984"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "C239652A states a valid PunchOutSetupRequest returns 200 with a StartPage URL, and 62D97984 gives the cXML Status for every rejection."
+  },
+  {
+   "id": "L-290",
+   "q": "/search?barcode= exact match barcode search results page redirect single match",
+   "expect": [
+    "KB-71011C1F"
+   ],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-71011C1F: 'Exactly one hit: the URL is replaced (router.replace) by the product's page' for exact barcode matching."
+  },
+  {
+   "id": "L-291",
+   "q": "POST /api/sales-rep with missing firstName/lastName — does it validate and return 400?",
+   "expect": [
+    "KB-5A0C4200"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-5A0C4200: 'POST/PUT /api/sales-rep answer empty names with 400 Validation failed: -- FirstName: First Name must not be empty.'"
+  },
+  {
+   "id": "L-295",
+   "q": "Why does a row click on /account/orders open a new tab (VcTable)?",
+   "expect": [
+    "KB-F3A9F204"
+   ],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-F3A9F204: row click 'opens the row's detail URL with window.open in a new tab ... BY DESIGN'."
+  },
+  {
+   "id": "L-296",
+   "q": "account/notifications push message markdown raw HTML img rendered VcMarkdownRender sanitize",
+   "expect": [
+    "KB-649D673C"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-649D673C: push shortMessage is rendered through 'markdown plus DOMPurify's html profile', and '<img> elements are kept'."
+  },
+  {
+   "id": "L-298",
+   "q": "GET /api/return/{id}/available-statuses legacy Completed return offers New and Processing backward transition",
+   "expect": [
+    "KB-21F4F161"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-21F4F161: 'a legacy Completed return without decided lines -> [New, Completed, Canceled, Processing, Cancelled]', and Completed -> New persisted."
+  },
+  {
+   "id": "L-300",
+   "q": "PUT /api/stores settings generic store settings replace",
+   "expect": [
+    "KB-2CBB229F"
+   ],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-2CBB229F: 'PUT /api/stores replaces the entity: fields omitted from the body are nulled'; the safe form is GET, merge, then PUT."
+  }
+ ],
+ "controls": [
+  {
+   "id": "L-009",
+   "q": "POST /api/platform/security/users/create userType Administrator isAdministrator passwordExpired",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes POST /api/platform/security/users/create with userType Administrator, isAdministrator or passwordExpired."
+  },
+  {
+   "id": "L-015",
+   "q": "loyalty missions /account/missions storefront Query.loyaltyMissionProgress public flag, mission reward points history",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states a mission public flag or how mission reward points appear in points history; entries cover daysRemaining, progress and unsigned redeemed rows only."
+  },
+  {
+   "id": "L-017",
+   "q": "/company/my-customers/{id}/orders status chip label zero-match raw English enum de-DE",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate covers status chip labels or de-DE localisation on the sales-rep customer orders page."
+  },
+  {
+   "id": "L-018",
+   "q": "salesRepTopSellerFilterRules returns empty list — are category rule chips configured by default?",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate mentions salesRepTopSellerFilterRules or category rule chips."
+  },
+  {
+   "id": "L-020",
+   "q": "POST /api/return/{id}/authorize approve decline per line validation error codes",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-700E5D52 gives only the permission gate and request body shape for /authorize, not per-line validation error codes."
+  },
+  {
+   "id": "L-027",
+   "q": "/account/orders order list pickup indicator",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate describes a pickup indicator on the /account/orders list; KB-1205B62A covers the order details page only."
+  },
+  {
+   "id": "L-028",
+   "q": "VcVariantPicker selected option aria-checked aria-pressed radiogroup",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states the variant picker's ARIA roles or aria-checked/aria-pressed state; KB-DEBE1CED only gives its data-test-id and purchasability."
+  },
+  {
+   "id": "L-038",
+   "q": "login on behalf confirmation modal Cancel OK buttons company members",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes a Login on behalf confirmation modal or its Cancel/OK buttons on company members; KB-97170665 only lists the menu entry."
+  },
+  {
+   "id": "L-040",
+   "q": "does the storefront pack size rule reject a cart quantity that is not a multiple, or silently round it",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate covers a pack size or quantity-multiple rule; KB-6FAB2EBA is about the million-quantity limit only."
+  },
+  {
+   "id": "L-044",
+   "q": "On the /search listing product card, what does the variations button label render and does it use plural forms (pages.catalog.variations_button)?",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "No body states the /search card variations button label or its plural forms; F78ED1CC only mentions 'N variations' on category cards."
+  },
+  {
+   "id": "L-045",
+   "q": "POST /api/loyalty-missions create Published mission endDate startDate",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate states how POST /api/loyalty-missions creates a Published mission with start/end dates; KB-D64B1613 covers only 400 validation."
+  },
+  {
+   "id": "L-047",
+   "q": "CLS home page features-block footer layout shift",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate measures CLS on the home page or a features block; the CLS entries cover /account/missions and /account/returns/:id."
+  },
+  {
+   "id": "L-048",
+   "q": "cart shipping cost FixedRate Ground changeCartCurrency EUR vs USD same amount 150",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate describes the FixedRate Ground shipping amount after changeCartCurrency between EUR and USD."
+  },
+  {
+   "id": "L-057",
+   "q": "/sign-in login-button validation error shift touch target",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate measures a layout shift or touch-target size for /sign-in validation errors; the sign-in entries cover endpoints and error codes."
+  },
+  {
+   "id": "L-064",
+   "q": "storefront homepage / — does the virtostart demo homepage render a 'Popular categories' section with category tiles, or a 'Daily Deals' product carousel?",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes the virtostart homepage sections; the virtostart entry is about missing configurable-product fixtures."
+  },
+  {
+   "id": "L-067",
+   "q": "storefront /sign-in login before email verification requireEmailVerification unverified user can log in connect/token",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "D24EDC70 explicitly says whether an unverified account is refused at sign-in was not established, so no body states the asked fact."
+  },
+  {
+   "id": "L-074",
+   "q": "quote request expiration Mutation.submitQuoteRequest",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate covers quote request expiration or submitQuoteRequest; the quote entry covers only draft quantity edits."
+  },
+  {
+   "id": "L-075",
+   "q": "/account/missions featured SKU modal in-stock badge shows no quantity availableQuantity 0 isInStock true",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-D12432BD covers only tracked stock reported as availableQuantity 5; nothing explains a badge with no quantity for availableQuantity 0 with isInStock true."
+  },
+  {
+   "id": "L-077",
+   "q": "/account/orders Filters popover outside click un-applied start date retained",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes what an outside click on the /account/orders Filters popover does to an un-applied start date; the date-picker entry covers only footer Clear."
+  },
+  {
+   "id": "L-083",
+   "q": "POST /api/carts totals",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate states how POST /api/carts computes or returns totals; KB-AD1FA66B covers stored totals only after a mutation via GET."
+  },
+  {
+   "id": "L-084",
+   "q": "What does the product-card variations button on the storefront catalog/search listing render — the i18n key pages.catalog.variations_button — and how does it pluralize for a single variation?",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate names the pages.catalog.variations_button key or its singular form; KB-F78ED1CC only mentions an 'N variations' card label."
+  },
+  {
+   "id": "L-090",
+   "q": "loyaltyMissionProgress currencyCode argument: which currency are items[].product prices and goal money fields rendered in on /account/missions",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate states which currency loyaltyMissionProgress product prices or goal money fields are rendered in for a given currencyCode."
+  },
+  {
+   "id": "L-094",
+   "q": "/account/missions over-stock quantity Total units Cart subtotal Targets met",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes the missions SKU modal's Total units, Cart subtotal or Targets met with an over-stock quantity; KB-CE2F9A45 only notes bare 0 rendering."
+  },
+  {
+   "id": "L-095",
+   "q": "storefront checkout fails when user has multiple carts competing carts",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "adjudicated",
+   "note": "No body states that checkout fails with competing carts; 2EDC661F only says Query.cart without a name returns the most recently touched cart."
+  },
+  {
+   "id": "L-098",
+   "q": "/search results page cumulative layout shift CLS footer shift empty state few results",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate measures CLS on the /search results page; CLS entries cover only /account/missions and /account/returns/:id."
+  },
+  {
+   "id": "L-102",
+   "q": "bulk order CSV upload maximum rows /bulk-order",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate mentions bulk order CSV upload or a row limit on /bulk-order."
+  },
+  {
+   "id": "L-103",
+   "q": "localized values for dictionary setting Order.Status — /api/platform/settings/localizedValues order status translations",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "adjudicated",
+   "note": "74D9B9B0 covers a 500 on saving Order.Status dictionary items, not what localized values the settings route returns."
+  },
+  {
+   "id": "L-106",
+   "q": "mobile hamburger My organizations switcher 375px",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "KB-512D556A covers the desktop header org prefix/switcher, not the mobile hamburger My organizations switcher at 375px."
+  },
+  {
+   "id": "L-110",
+   "q": "Does an order's payment amount (payment.sum / PaymentIn.Sum) have to equal the order total, or can a payment carry a different amount than the order total?",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "0DD47BD1 says the payment amount lives in PaymentIn.sum but no body states whether sum must equal or may differ from the order total."
+  },
+  {
+   "id": "L-114",
+   "q": "select address popup search no matches empty state",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-1447353E says search exists only in the checkout address popup but states nothing about its no-matches empty state."
+  },
+  {
+   "id": "L-123",
+   "q": "/sign-up email verification not enforced login unconfirmed emailConfirmed false",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-D24EDC70 says explicitly that what refuses an unconfirmed account at sign-in 'was not established', so no answer is stated."
+  },
+  {
+   "id": "L-124",
+   "q": "POST /api/catalog/products partial body gtin change persisted",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No entry states whether a partial POST /api/catalog/products body persists a gtin change; neighbours cover round-trip 500 and name trimming."
+  },
+  {
+   "id": "L-128",
+   "q": "loyaltyMissionProgress missionType label storefront /account/missions type chip en",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate states the missionType label or type chip text on /account/missions; entries cover daysRemaining, CLS and the SKU modal."
+  },
+  {
+   "id": "L-129",
+   "q": "AbstractTypeFactory OverrideType two modules override same base type which derived type TryCreateInstance returns",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate concerns AbstractTypeFactory OverrideType resolution between modules."
+  },
+  {
+   "id": "L-130",
+   "q": "/account/orders Apply button disabled on reopen of applied date range",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No entry states the Apply button state when an applied date range is reopened on /account/orders; KB-F9D75EA0 covers Clear scope and KB-09CEE315 covers invalid ranges on another page."
+  },
+  {
+   "id": "L-136",
+   "q": "POST /api/push-message/search filter topic keyword",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No entry states how POST /api/push-message/search filters by topic or keyword; KB-9B9FAF0F only mentions finding a push whose topic is the return number."
+  },
+  {
+   "id": "L-139",
+   "q": "salesRepCustomers filter chips only All rule on storefront /sales-rep/customers",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes filter chips or an 'All' rule on the sales-rep customers page."
+  },
+  {
+   "id": "L-141",
+   "q": "POST /api/catalog/properties short text property filterable product",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No entry states how to create a filterable short-text property via POST /api/catalog/properties; KB-84EA18E3 only covers barcode field listing."
+  },
+  {
+   "id": "L-144",
+   "q": "/account/missions mission card banner height",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate states the mission card banner height on /account/missions."
+  },
+  {
+   "id": "L-146",
+   "q": "storefront /cart pickup location selected summary shows address or name BOPIS pick point",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No entry states whether the /cart pickup summary shows the pick point's address or name."
+  },
+  {
+   "id": "L-152",
+   "q": "POST /api/loyalty-missions reward amount max validator name length",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-D64B1613 only says invalid missions get 400 with a raw FluentValidation array; no candidate states the reward-amount maximum or the name-length limit."
+  },
+  {
+   "id": "L-153",
+   "q": "xCart cart validation stock cache after inventory change, cart keeps old available quantity",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes xCart cart validation caching stale available quantity after an inventory change; KB-AD1FA66B is about promotion money, not stock."
+  },
+  {
+   "id": "L-155",
+   "q": "GetOrganizations searchPhrase organization switcher search returns no results",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate covers the GetOrganizations searchPhrase in the organization switcher returning nothing; neighbours cover the members Status filter and member search."
+  },
+  {
+   "id": "L-159",
+   "q": "/account/missions completed card circle-check icon unnamed img accessibility",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate mentions the completed-mission card's circle-check icon or its missing accessible name."
+  },
+  {
+   "id": "L-161",
+   "q": "/account/orders date filter persists after Back navigation VCST-4892",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate states whether the /account/orders date filter persists after Back navigation; KB-F3A9F204 is about rows opening in a new tab."
+  },
+  {
+   "id": "L-162",
+   "q": "Admin SPA Make return legacy return reason required empty reason accepted",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate says whether the Admin Make return flow requires or accepts an empty legacy return reason."
+  },
+  {
+   "id": "L-169",
+   "q": "/sign-up duplicate email already registered message login reset suggestion",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes the /sign-up duplicate-email message or a login/reset suggestion."
+  },
+  {
+   "id": "L-176",
+   "q": "requestPasswordReset forgot password repeated requests throttle rate limit /forgot-password",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate covers requestPasswordReset throttling; the lockout entry (KB-8646A9CB) is about failed sign-ins, not reset requests."
+  },
+  {
+   "id": "L-187",
+   "q": "/account/missions SKU modal progress bar percent",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No entry describes a progress bar or percent in the SKU mission modal; KB-C992D3B8 only says loyaltyMissionProgress percentage does not move on cart add."
+  },
+  {
+   "id": "L-189",
+   "q": "/account/orders/{id} print media sidebar navigation printed order details",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate addresses print media styles or sidebar navigation on the printed order details page."
+  },
+  {
+   "id": "L-190",
+   "q": "VcModal role=dialog accessible name aria-labelledby storefront modal",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate states VcModal's role=dialog accessible name or aria-labelledby wiring; VcModal entry KB-3C7B6A36 is about scroll cues."
+  },
+  {
+   "id": "L-194",
+   "q": "/account/missions SKU modal isBuyable false isInStock true badge stepper disabled",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No entry states how the SKU mission modal renders a target with isBuyable false and isInStock true (badge or disabled stepper)."
+  },
+  {
+   "id": "L-196",
+   "q": "/account/missions Open mission button accessible name",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate states the accessible name of the Open mission button on /account/missions."
+  },
+  {
+   "id": "L-210",
+   "q": "POST /api/push-message/preview-recipients breakdown: what is membersMatched vs peopleInScope vs extraLogins",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "Candidates only list the 'members matched / companies expanded / people in scope' labels and never define them; none mentions extraLogins."
+  },
+  {
+   "id": "L-213",
+   "q": "searchProducts suggestions dropdown autocomplete search bar categories",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes the search-bar suggestions or autocomplete dropdown content; they cover search history, barcode lookups and analytics only."
+  },
+  {
+   "id": "L-218",
+   "q": "currency switch cart items without price Something went wrong order summary",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate covers a currency switch leaving cart items unpriced or a 'Something went wrong' order summary."
+  },
+  {
+   "id": "L-231",
+   "q": "GraphQL GetOrganizations me.contact.organizations searchPhrase returns empty org switcher search",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate describes the GetOrganizations searchPhrase or an empty org-switcher search result; KB-512D556A only notes the switcher exists for multi-org users."
+  },
+  {
+   "id": "L-232",
+   "q": "email verification registration requireEmailVerification store setting login before confirmation",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-D24EDC70 explicitly records that what refuses an unconfirmed account at sign-in 'was not established', so no entry states whether login before confirmation is allowed."
+  },
+  {
+   "id": "L-235",
+   "q": "quote request expiration date storefront /account/quotes",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate mentions a quote request expiration date on /account/quotes."
+  },
+  {
+   "id": "L-236",
+   "q": "POST /connect/token grant_type=otp_email OTP sign-in lockout",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "OTP candidates cover wrong codes, replay and disclosure, and KB-8646A9CB covers password lockout, but none states lockout behaviour for the otp_email grant."
+  },
+  {
+   "id": "L-237",
+   "q": "organizationOrders locked member order history",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate states what organizationOrders returns for a locked member's order history; lock entries cover roster and sign-in only."
+  },
+  {
+   "id": "L-238",
+   "q": "Admin SPA Add new return Make return on order in status New, Order statuses allowing returns setting not enforced",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-85F02FDB and KB-BDCD3057 describe Add new return creating a New return, but none addresses order-status gating or the 'Order statuses allowing returns' setting."
+  },
+  {
+   "id": "L-241",
+   "q": "AbstractTypeFactory TryCreateInstance unregistered concrete type OverrideType first registration wins",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate concerns AbstractTypeFactory TryCreateInstance or OverrideType registration order."
+  },
+  {
+   "id": "L-243",
+   "q": "/account/missions SKU modal out-of-stock row InStock badge numeric 0 No longer available",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No missions-modal entry describes an out-of-stock row, its InStock badge or a 'No longer available' state."
+  },
+  {
+   "id": "L-246",
+   "q": "mergeCart missing userId HTTP 400",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "KB-9139A1A3 says secondCartId is required and userId names the destination, but no candidate states what a mergeCart without userId returns."
+  },
+  {
+   "id": "L-250",
+   "q": "/account/missions storefront missions page sign-in loyalty account",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Q is vague about signing a loyalty account into /account/missions; no candidate states sign-in or account prerequisites for that page."
+  },
+  {
+   "id": "L-252",
+   "q": "UpdateMemberAddresses VALIDATION error adding address /account/addresses",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate covers an UpdateMemberAddresses VALIDATION error; KB-19826CC0 only says duplicates are 'silently dropped' and KB-8246C473 is a REST org-address rule."
+  },
+  {
+   "id": "L-253",
+   "q": "org switcher search input threshold more than 10 organizations",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "Entries say the organizations-search appears for multi-org users but none states a more-than-10 threshold."
+  },
+  {
+   "id": "L-259",
+   "q": "/checkout/completed guest Show order redirects to sign-in confirmation page content",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No entry describes a guest clicking Show order on /checkout/completed and being redirected to sign-in; KB-50EBEEE9 covers the signed-in confirmation page only."
+  },
+  {
+   "id": "L-265",
+   "q": "/account/orders mobile filter active filter indicator chips",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No entry covers the /account/orders mobile filter indicator; KB-09CEE315 chips are on the sales-rep customer orders page."
+  },
+  {
+   "id": "L-271",
+   "q": "/account/missions mission modal Redeem products action",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes a Redeem products action in the missions modal; the SKU modal entries cover Add to cart only."
+  },
+  {
+   "id": "L-278",
+   "q": "addRequestToQuote / Add cart items to quote cart emptied",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate says whether adding cart items to a quote request empties the cart; KB-A4EB3766 covers emptying after checkout, which is a different flow."
+  },
+  {
+   "id": "L-284",
+   "q": "storefront New address dialog ZIP postal code phone format validation Create button disabled empty required fields no inline error",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes ZIP/phone format validation or inline errors in the storefront New address dialog; KB-50EBEEE9 mentions only the country/state requirement."
+  },
+  {
+   "id": "L-287",
+   "q": "/company/my-customers/<orgId>/orders date filter VcDateRangePicker Start date End date clipping",
+   "expect": [],
+   "source": "logs",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes clipping of the Start/End date fields; KB-09CEE315 and KB-F9D75EA0 cover the filter range and the Clear behaviour only."
+  },
+  {
+   "id": "L-292",
+   "q": "Loyalty balance organization mode: what does GET /api/loyalty-program-operation-log/balance/organization/{organizationId} and GraphQL loyaltyBalance return when Loyalty.LoyaltyBalanceCalculationMode = Organization",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate states what the organization balance route or loyaltyBalance returns in Organization calculation mode; KB-EC1EDCE2 covers deleted organizations in Customer mode."
+  },
+  {
+   "id": "L-294",
+   "q": "legacy Admin SPA Returns Add new return Customer orders picker search box keyword default quantity",
+   "expect": [],
+   "source": "logs",
+   "split": "dev",
+   "labelled": "agreed",
+   "note": "No candidate describes the Customer orders picker's search box keyword or the default quantity; KB-85F02FDB only notes that Approved is pre-filled with the requested quantity after creation."
+  },
+  {
+   "id": "L-297",
+   "q": "DELETE /api/carts soft delete carts search",
+   "expect": [],
+   "source": "logs",
+   "split": "calibration",
+   "labelled": "agreed",
+   "note": "No candidate describes DELETE /api/carts, soft deletion, or how deleted carts show in carts search."
+  }
+ ],
+ "contested": [
+  {
+   "id": "L-002",
+   "q": "wishlists() shared list appears for recipient isOwner false",
+   "expect": [
+    "KB-A0FFEA0A"
+   ],
+   "note": "Only A0FFEA0A states a non-owned list (Organization scope) appears in the recipient's wishlists() with isOwner false; if Q means the Customer share, D1DF95A5/2F64A447/2A9084BA instead state it is absent, so the label depends on the reading."
+  },
+  {
+   "id": "L-088",
+   "q": "vcst B2B-store cart taxTotal 0 fixed rate tax provider taxType product",
+   "expect": [
+    "KB-3E408000"
+   ],
+   "note": "3E408000 says two active providers on vcst B2B-store give taxTotal 0, while 1B18B821/5F7C8FC4 record FixedRate as inactive on the same store, and product taxType is not covered."
+  },
+  {
+   "id": "L-172",
+   "q": "can a shopper apply two coupon codes to one cart",
+   "expect": [
+    "KB-8264632C",
+    "KB-5ADBFB34"
+   ],
+   "note": "8264632C says the cart page has one coupon slot though the cart can hold several codes, and 5ADBFB34 says only one cart-subtotal reward applies under BestReward; the answer depends on reading Q as UI, API storage or reward stacking."
+  },
+  {
+   "id": "L-273",
+   "q": "POST /connect/token password grant DetailedErrors — is PasswordLoginOptions.DetailedErrors enabled on this deployment, and what does it change in the response",
+   "expect": [
+    "KB-8646A9CB",
+    "KB-9AF5645D"
+   ],
+   "note": "8646A9CB says detailed errors are on, 9AF5645D records vcptcore_qa1 with them off and contrasts on vs off for OTP only; Q names no deployment and the password-grant effect is not stated."
+  }
+ ],
+ "removed": [
+  {
+   "id": "L-228",
+   "q": "What does the \"Active\" column on the storefront B2B route /company/members reflect — org membership lock, contact status, or platform security account lockout?",
+   "why": "same intent as L-186/L-193 on the same entry"
+  },
+  {
+   "id": "L-248",
+   "q": "xapi products filter gtin term case insensitive",
+   "why": "same intent as L-055/L-240 on the same entry"
+  },
+  {
+   "id": "L-285",
+   "q": "api/catalog/barcode-search/store/{id} PUT validation unknown field 400 and GET defaults",
+   "why": "same intent as L-117/L-201 on the same entry"
+  },
+  {
+   "id": "L-293",
+   "q": "organization assignableRoles GraphQL empty",
+   "why": "same intent as L-058/L-239 on the same entry"
+  },
+  {
+   "id": "L-112",
+   "q": "/account/missions loyaltyMissionProgress AGENT-TEST-MSN-PROGRESS-COMPLETED status InProgress 0 percent for progress owner",
+   "why": "about a named test fixture (AGENT-TEST-*), not platform behaviour"
+  },
+  {
+   "id": "L-113",
+   "q": "carts:check probe carts agent-test-msn-e2e-probe pickup-probe COMPETING_CARTS per-run account",
+   "why": "about a test-run probe cart, not platform behaviour"
+  },
+  {
+   "id": "L-147",
+   "q": "sales rep documents library /company/documents agent-test-sr-docs sign in",
+   "why": "about a named test fixture (agent-test-*), not platform behaviour"
+  },
+  {
+   "id": "L-204",
+   "q": "storybook vcptcore-qa-storybook 503",
+   "why": "environment availability (a 503), not platform behaviour"
+  },
+  {
+   "id": "L-209",
+   "q": "cart named agent-test-msn-e2e-probe left by missions seeder probe order measurement",
+   "why": "about a test-run probe cart, not platform behaviour"
+  },
+  {
+   "id": "L-299",
+   "q": "homepage slider-block hero banner CTA AGENT-TEST-CMP-PROPNAME 404 image",
+   "why": "about a named test fixture (AGENT-TEST-*), not platform behaviour"
+  }
+ ]
+}
