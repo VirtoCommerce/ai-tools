@@ -23,6 +23,7 @@ The command becomes a thin router over three on-demand prompt files: sprint mode
 | Scope source | `bundles/v{N-1}` vs `bundles/vN` in `VirtoCommerce/vc-modules`. The previous bundle = the previous numeric key of `bundles/stable.json` on `master` |
 | Test environment | `vcptcore_regression` (TEST_ENV form). Today it runs Stable 15 (Platform 3.1039.12) |
 | Run sequence | A baseline regression on vN-1 → B `deploy:bundle` PR (a human merges) → C same regression + upgrade checks → D `release:compare` |
+| Regression scope | **Every feature ticket in the release**, Done or not. `release:cases` maps each to the suites and cases that cover it. Waves: **W1** Critical of every related suite → **W2** High → **W3** the release's direct cases that are neither (option C, 2026-10-05). The same waves run in A and C |
 | Plan output | `vc/shared/docs/Release plans/stable-{N}-test-plan.md` + `stable-{N}-summary.json` + `stable-{N}-scope.json` |
 | Forecast output | `vc/shared/docs/Release plans/stable-next-forecast-{YYYY-MM-DD}.md` + `-scope.json` (no summary, no regression consumer) |
 | Regression consumer | `/qa-regression stable:N` reads `stable-{N}-summary.json` → `suitesActivated[]` |
@@ -63,6 +64,8 @@ The command becomes a thin router over three on-demand prompt files: sprint mode
 | `scripts/release/classify.ts` (new) | Pure: cycle tickets, PR class, Jira lookup with bisection |
 | `scripts/release/scope.ts` (new) | Network assembly of a `ReleaseScope` |
 | `scripts/release/release-scope.ts` (new) | CLI `npm run release:scope` |
+| `scripts/release/release-cases.ts` (new) | CLI + core `npm run release:cases`: release features → related suites + cases, run waves |
+| `scripts/regression/filter-cases.ts` (modify) | export `tierOf` (the single Critical/P0 alias table) |
 | `scripts/release/compare-runs.ts` (new) | CLI + core `npm run release:compare` |
 | `scripts/deploy/lib/manifest.ts` (modify) | `add` / `remove` edit modes |
 | `scripts/deploy/bundle/plan.ts` (new) | Pure: env manifest × bundle → pin plan |
@@ -1164,6 +1167,306 @@ EOF
 
 ---
 
+### Task 5b: `npm run release:cases`: every feature in the release → suites + cases, Critical/High first
+
+**Why:** the user wants to run regression for **all** features in the stable, not only the untested ones, as a list of related suites *and* cases in priority order. Agreed 2026-10-05, option C:
+
+| Wave | Content |
+|---|---|
+| **W1** | Critical cases of every related suite |
+| **W2** | High cases of every related suite |
+| **W3** | The release's own *direct* cases that are not Critical/High (Medium, Low, or an unreadable Priority), so no feature's own test is dropped |
+
+Medium/Low cases of suites related only by module are reported, not run.
+
+A suite is **related** for one of three reasons:
+
+| Relation | Meaning |
+|---|---|
+| `direct` | One of its rows cites a feature ticket of the release |
+| `module` | `regression:select` picked it for a changed component repo with reason `change`/`widened` |
+| `floor` | Reason `risk-floor` (P0 / critical-ui-scope; a stable must not break those) |
+
+`history`/`rotation` picks are ignored: they are about the corpus, not the release. A feature ticket with **zero** direct cases is a coverage gap → §5.2.
+
+**Files:**
+- Create: `scripts/release/release-cases.ts` (pure core + CLI)
+- Modify: `scripts/regression/filter-cases.ts`. Export a `tierOf` lookup over its existing `TIER_OF` map, so the Critical/P0 alias table stays single-sourced.
+- Modify: `package.json` (`"release:cases": "npx tsx scripts/release/release-cases.ts",` after `release:scope`)
+- Test (temporary): `scripts/unit/tmp-release-cases.test.ts`
+
+**Interfaces:**
+- Consumes:
+  - `ReleaseScope` (Task 2) and `JIRA_KEY_RE` (Task 1)
+  - `parseSuite(text)`, `isCanonicalHeader(rawText)` from `scripts/test-cases/append-test-cases-to-suite.js`
+  - the `select-suites.ts --json` output shape (`selected[].id`, `selected[].reasons[].kind`, `widened`)
+  - `config/test-suites.json` `suites[]` (`id`, `name`, `file`, `layer`, `priority`)
+- Produces:
+  - `Tier`, `Why`, `ManifestSuite`, `SuiteRows`, `CaseRef`, `SuiteRef`, `TicketCoverage`, `ReleaseCases`
+  - `relatedBySelection(scope, run: (repo, path) => any): { related: Map<string, Set<Why>>; notes: string[] }`
+  - `buildReleaseCases(release, suites: SuiteRows[], related, tickets, now): ReleaseCases`
+  - CLI `release:cases --scope=<scope.json> [--out=<file>] [--json] [--no-select]`
+
+- [ ] **Step 1: Export the tier lookup from `scripts/regression/filter-cases.ts`**
+
+Directly after the `for (const [tier, spellings] of Object.entries(TIER_ALIASES)) {…}` block that fills `TIER_OF`, add:
+
+```ts
+/** The tier a raw Priority cell answers to (`Critical`/`P0` → `critical`, …), or undefined. Shared with release:cases. */
+export function tierOf(raw: string): string | undefined {
+  return TIER_OF.get(raw.trim().toLowerCase());
+}
+```
+
+`filter-cases.ts` runs its CLI only when it is the entry script (`isCli` guard), so importing it is safe.
+
+- [ ] **Step 2: Write the temporary failing test**
+
+```ts
+// scripts/unit/tmp-release-cases.test.ts — TEMPORARY, delete before commit
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { buildReleaseCases, relatedBySelection } from '../release/release-cases.ts';
+
+const suite = (id: string, priority = 'P1') => ({ id, name: `S${id}`, file: `x/${id}.csv`, layer: 'frontend', priority });
+const row = (id: string, priority: string, text = '') => ({ id, priority, text });
+
+test('direct rows by ticket key; Critical/High waves over all related suites; W3 = direct non-Critical/High', () => {
+  const suites = [
+    { suite: suite('010', 'P0'), rows: [row('A-1', 'Critical'), row('A-2', 'High', 'VCST-1 AC2'), row('A-3', 'Medium', 'see VCST-1'), row('A-4', 'Low')] },
+    { suite: suite('020'), rows: [row('B-1', 'High'), row('B-2', 'Medium')] },
+    { suite: suite('030'), rows: [row('C-1', 'Critical', 'VCST-2'), row('C-2', 'Low', 'VCST-2'), row('C-3', 'oops', 'VCST-2')] },
+    { suite: suite('040'), rows: [row('D-1', 'Critical')] },                                  // unrelated: no ticket, no selection
+  ];
+  const related = new Map([['020', new Set(['module' as const])], ['010', new Set(['floor' as const])]]);
+  const tickets = [{ key: 'VCST-1', done: true }, { key: 'VCST-2', done: false }, { key: 'VCST-3', done: false }];
+  const r = buildReleaseCases('Stable16', suites, related, tickets, new Date(0));
+  assert.deepEqual(r.suites.map((s) => `${s.id}:${s.why.join('+')}`), ['030:direct', '010:direct+floor', '020:module']);
+  assert.deepEqual(r.waves.critical, { suites: ['030', '010'], cases: 2 });
+  assert.deepEqual(r.waves.high, { suites: ['010', '020'], cases: 2 });
+  assert.deepEqual(r.waves.directRest, { suites: ['030', '010'], ids: ['C-2', 'C-3', 'A-3'] }); // run order = suite rank
+  assert.deepEqual(r.tickets.map((t) => `${t.key}:${t.cases.join(',')}`), ['VCST-1:A-2,A-3', 'VCST-2:C-1,C-2,C-3', 'VCST-3:']);
+  assert.ok(r.notes.some((n) => n.startsWith('030: 1 case(s) with an unreadable Priority')));
+});
+
+test('selection: change/widened → module, risk-floor → floor, history/rotation ignored; a failing repo is noted, not fatal', () => {
+  const scope: any = { components: [
+    { id: 'VirtoCommerce.Cart', kind: 'module', repo: 'vc-module-cart', status: 'CHANGED' },
+    { id: 'Theme', kind: 'theme', repo: 'vc-frontend', status: 'CHANGED' },
+    { id: 'VirtoCommerce.Same', kind: 'module', repo: 'vc-module-same', status: 'SAME' },
+    { id: 'VirtoCommerce.Boom', kind: 'module', repo: 'vc-module-boom', status: 'ADDED' },
+  ] };
+  const calls: string[] = [];
+  const run = (repo: string, path: string) => {
+    calls.push(`${repo}:${path}`);
+    if (repo === 'vc-module-boom') throw new Error('exit 2');
+    return { widened: repo === 'vc-frontend', selected: [
+      { id: '028', reasons: [{ kind: 'change' }] }, { id: '001', reasons: [{ kind: 'rotation' }] },
+      { id: '011', reasons: [{ kind: 'risk-floor' }, { kind: 'history' }] }] };
+  };
+  const { related, notes } = relatedBySelection(scope, run);
+  assert.deepEqual(calls, ['vc-module-cart:Cart', 'vc-frontend:client-app', 'vc-module-boom:Boom']);
+  assert.deepEqual([...related].map(([id, w]) => `${id}:${[...w].join('+')}`).sort(), ['011:floor', '028:module']);
+  assert.ok(notes.some((n) => n.startsWith('Theme: nothing mapped')));
+  assert.ok(notes.some((n) => n.startsWith('VirtoCommerce.Boom: regression:select failed')));
+});
+```
+
+- [ ] **Step 3: Run it and confirm it fails**
+
+Run: `npx tsx --test scripts/unit/tmp-release-cases.test.ts`
+Expected: FAIL, module not found
+
+- [ ] **Step 4: Write `scripts/release/release-cases.ts`**
+
+```ts
+#!/usr/bin/env node
+/**
+ * release-cases — every feature in a stable release → the regression suites and cases that cover it, in run order.
+ *
+ *   npm run release:cases -- --scope="vc/shared/docs/Release plans/stable-16-scope.json" --out="vc/shared/docs/Release plans/stable-16-cases.json"
+ *
+ * Related suites: `direct` (a row cites a release feature ticket) · `module` (regression:select picked it for a changed
+ * component repo, reason change/widened) · `floor` (reason risk-floor). history/rotation picks are about the corpus,
+ * not the release, so they are ignored.
+ * Waves (agreed 2026-10-05, VCST-6177): W1 Critical of every related suite → W2 High → W3 the direct cases that are
+ * neither (Medium/Low/unreadable), so no feature's own test is dropped. A feature ticket with no direct case is a gap.
+ * Flags: --no-select (direct only; skips the per-repo selector calls). Exit: 0 ok · 2 bad input.
+ */
+import '../lib/sync-stdio.mjs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { JIRA_KEY_RE } from '../lib/release-trace.ts';
+import { tierOf } from '../regression/filter-cases.ts';
+import { isCanonicalHeader, parseSuite } from '../test-cases/append-test-cases-to-suite.js';
+import type { ReleaseScope } from './types.ts';
+
+export type Tier = 'critical' | 'high' | 'medium' | 'low';
+export type Why = 'direct' | 'module' | 'floor';
+export interface ManifestSuite { id: string; name: string; file: string; layer: string; priority: string }
+export interface SuiteRows { suite: ManifestSuite; rows: { id: string; priority: string; text: string }[] }
+export interface CaseRef { id: string; suite: string; tier: Tier | null; tickets: string[] }
+export interface SuiteRef { id: string; name: string; layer: string; suitePriority: string; why: Why[]; counts: Record<Tier, number>; direct: Record<Tier, number> }
+export interface TicketCoverage { key: string; done: boolean | null; cases: string[] }
+export interface ReleaseCases {
+  schema: 1; release: string; generatedAt: string;
+  suites: SuiteRef[];
+  waves: { critical: { suites: string[]; cases: number }; high: { suites: string[]; cases: number }; directRest: { suites: string[]; ids: string[] } };
+  directCases: CaseRef[];
+  tickets: TicketCoverage[];
+  notes: string[];
+}
+
+const zero = (): Record<Tier, number> => ({ critical: 0, high: 0, medium: 0, low: 0 });
+
+/** Which suites regression:select relates to each changed component. `run` returns select-suites' --json output. */
+export function relatedBySelection(scope: Pick<ReleaseScope, 'components'>, run: (repo: string, path: string) => any): { related: Map<string, Set<Why>>; notes: string[] } {
+  const related = new Map<string, Set<Why>>();
+  const notes: string[] = [];
+  const add = (id: string, w: Why) => { if (!related.has(id)) related.set(id, new Set()); related.get(id)!.add(w); };
+  for (const c of scope.components) {
+    if (!c.repo || (c.status !== 'CHANGED' && c.status !== 'ADDED')) continue;
+    // The selector tokenises CamelCase and dotted names itself; the theme and platform get their root token.
+    const path = c.kind === 'theme' ? 'client-app' : c.kind === 'platform' ? 'platform' : c.id.replace(/^VirtoCommerce\./, '');
+    let out: any;
+    try { out = run(c.repo, path); } catch (e) { notes.push(`${c.id}: regression:select failed (${String((e as Error).message).split('\n')[0]}) — its module suites are not added`); continue; }
+    for (const s of out?.selected ?? []) {
+      for (const r of s.reasons ?? []) {
+        if (r.kind === 'change' || r.kind === 'widened') add(String(s.id), 'module');
+        else if (r.kind === 'risk-floor') add(String(s.id), 'floor');
+      }
+    }
+    if (out?.widened) notes.push(`${c.id}: nothing mapped "${path}" in ${c.repo} — the selector widened to the whole layer`);
+  }
+  return { related, notes };
+}
+
+export function buildReleaseCases(release: string, suites: SuiteRows[], related: ReadonlyMap<string, ReadonlySet<Why>>, tickets: { key: string; done: boolean | null }[], now: Date): ReleaseCases {
+  const want = new Set(tickets.map((t) => t.key));
+  const byTicket = new Map<string, string[]>(tickets.map((t) => [t.key, []]));
+  const notes: string[] = [];
+  const refs: SuiteRef[] = [];
+  const directCases: CaseRef[] = [];
+  for (const { suite, rows } of suites) {
+    const why = new Set<Why>(related.get(suite.id) ?? []);
+    const counts = zero(), direct = zero();
+    let unreadable = 0;
+    for (const r of rows) {
+      const tier = (tierOf(r.priority) ?? null) as Tier | null;
+      if (tier) counts[tier]++; else unreadable++;
+      const keys = [...new Set([...r.text.matchAll(JIRA_KEY_RE)].map((m) => m[1]))].filter((k) => want.has(k));
+      if (!keys.length) continue;
+      why.add('direct');
+      if (tier) direct[tier]++;
+      directCases.push({ id: r.id, suite: suite.id, tier, tickets: keys });
+      for (const k of keys) byTicket.get(k)!.push(r.id);
+    }
+    if (!why.size) continue;
+    if (unreadable) notes.push(`${suite.id}: ${unreadable} case(s) with an unreadable Priority — in no tier wave (direct ones go to W3)`);
+    refs.push({ id: suite.id, name: suite.name, layer: suite.layer, suitePriority: suite.priority, why: (['direct', 'module', 'floor'] as Why[]).filter((w) => why.has(w)), counts, direct });
+  }
+  // Run order: suites with a direct Critical case, then any direct suite, then by manifest priority (P0 first), then most Critical cases.
+  const rank = (s: SuiteRef): number[] => [s.direct.critical > 0 ? 0 : 1, s.why.includes('direct') ? 0 : 1, Number(/^p(\d)$/i.exec(s.suitePriority)?.[1] ?? 9), -s.counts.critical];
+  refs.sort((a, b) => { const ra = rank(a), rb = rank(b); for (let i = 0; i < ra.length; i++) if (ra[i] !== rb[i]) return ra[i] - rb[i]; return a.id.localeCompare(b.id); });
+  const wave = (t: Tier) => { const s = refs.filter((x) => x.counts[t] > 0); return { suites: s.map((x) => x.id), cases: s.reduce((n, x) => n + x.counts[t], 0) }; };
+  const order = new Map(refs.map((s, i) => [s.id, i]));
+  const rest = directCases.filter((c) => c.tier !== 'critical' && c.tier !== 'high').sort((a, b) => order.get(a.suite)! - order.get(b.suite)! || a.id.localeCompare(b.id));
+  return {
+    schema: 1, release, generatedAt: now.toISOString(), suites: refs,
+    waves: { critical: wave('critical'), high: wave('high'), directRest: { suites: [...new Set(rest.map((c) => c.suite))], ids: rest.map((c) => c.id) } },
+    directCases,
+    tickets: tickets.map((t) => ({ key: t.key, done: t.done, cases: byTicket.get(t.key)! })),
+    notes,
+  };
+}
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+function main(argv: string[]): number {
+  const flag = (n: string) => argv.find((a) => a.startsWith(`--${n}=`))?.slice(n.length + 3);
+  const scopePath = flag('scope');
+  if (!scopePath || !existsSync(scopePath)) { console.error('Usage: npm run release:cases -- --scope=<stable-N-scope.json> [--out=<file>] [--json] [--no-select]'); return 2; }
+  const scope = JSON.parse(readFileSync(scopePath, 'utf8')) as ReleaseScope;
+  const manifest = JSON.parse(readFileSync(resolve(REPO_ROOT, 'config/test-suites.json'), 'utf8')) as { suites: ManifestSuite[] };
+  const notes: string[] = [];
+  const suites: SuiteRows[] = [];
+  for (const s of manifest.suites) {
+    const p = resolve(REPO_ROOT, s.file);
+    if (!existsSync(p)) { notes.push(`${s.id}: ${s.file} missing`); continue; }
+    const text = readFileSync(p, 'utf8');
+    if (!isCanonicalHeader(text)) { notes.push(`${s.id}: legacy header — not read`); continue; }
+    suites.push({ suite: s, rows: parseSuite(text).rows.map((r: Record<string, string>) => ({ id: r.ID, priority: r.Priority ?? '', text: Object.values(r).join(' ') })) });
+  }
+  const sel = argv.includes('--no-select') ? { related: new Map<string, Set<Why>>(), notes: ['--no-select: direct cases only'] }
+    : relatedBySelection(scope, (repo, path) => JSON.parse(execFileSync(process.execPath, [resolve(REPO_ROOT, 'node_modules/tsx/dist/cli.mjs'), resolve(REPO_ROOT, 'scripts/regression/select-suites.ts'), '--repo', repo, '--path', path, '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 1 << 26 })));
+  const release = scope.mode === 'next' ? 'StableNext' : `Stable${scope.to.bundle.replace(/^v/, '')}`;
+  const r = buildReleaseCases(release, suites, sel.related, scope.tickets.map((t) => ({ key: t.key, done: t.done })), new Date());
+  r.notes.unshift(...notes, ...sel.notes);
+  const out = flag('out');
+  if (out) { mkdirSync(dirname(resolve(out)), { recursive: true }); writeFileSync(out, JSON.stringify(r, null, 2) + '\n'); }
+  if (argv.includes('--json')) { console.log(JSON.stringify(r, null, 2)); return 0; }
+  const gaps = r.tickets.filter((t) => !t.cases.length).map((t) => t.key);
+  console.log([
+    `${r.release}: ${r.suites.length} related suites (${r.suites.filter((s) => s.why.includes('direct')).length} direct) · ${r.directCases.length} direct cases`,
+    `W1 Critical: ${r.waves.critical.cases} cases in ${r.waves.critical.suites.length} suites → ${r.waves.critical.suites.join(',')}`,
+    `W2 High:     ${r.waves.high.cases} cases in ${r.waves.high.suites.length} suites → ${r.waves.high.suites.join(',')}`,
+    `W3 Direct:   ${r.waves.directRest.ids.length} cases → --ids ${r.waves.directRest.ids.join(',')}`,
+    `Tickets with no direct case (→ §5.2 gaps): ${gaps.length ? gaps.join(', ') : 'none'}`,
+    ...r.notes.map((n) => `note: ${n}`),
+    ...(out ? [`→ ${out}`] : []),
+  ].join('\n'));
+  return 0;
+}
+
+const isMain = (() => { try { return !!process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]); } catch { return false; } })();
+if (isMain) process.exitCode = main(process.argv.slice(2));
+```
+
+The selector is spawned through `node_modules/tsx/dist/cli.mjs` with `process.execPath`, with no shell and no `npx` lookup per call. If that path does not exist in this checkout, use `execFileSync('npx', ['tsx', …], { shell: process.platform === 'win32' })` instead, which is the same fallback the repo's Windows scripts use.
+
+- [ ] **Step 5: Run the test and confirm it passes**
+
+Run: `npx tsx --test scripts/unit/tmp-release-cases.test.ts`
+Expected: PASS (2 tests)
+
+- [ ] **Step 6: Add the npm script and run it on the Stable 16 scope from Task 5 Step 7**
+
+In `package.json`, after `"release:scope": …,`:
+
+```json
+    "release:cases": "npx tsx scripts/release/release-cases.ts",
+```
+
+```bash
+npm run release:cases -- --scope="$TEMP/stable-16-scope.json" --out="$TEMP/stable-16-cases.json"; echo "exit=$?"
+```
+Expected:
+- exit 0, and W1/W2/W3 lines whose suite ids all exist in `config/test-suites.json`.
+- A gaps line listing the feature tickets that no case cites.
+- A `widened` note for each new module the selector cannot place (e.g. OpenTelemetry). That is the selector failing open by design, not an error.
+
+- [ ] **Step 7: Delete the temporary test and commit**
+
+```bash
+rm scripts/unit/tmp-release-cases.test.ts
+git add scripts/release/release-cases.ts scripts/regression/filter-cases.ts package.json
+git commit -F - -- scripts/release/release-cases.ts scripts/regression/filter-cases.ts package.json <<'EOF'
+feat(release): npm run release:cases — release features → suites + cases, Critical/High first
+
+Every feature ticket in a stable maps to the cases that cite it (direct) and the suites the selector
+ties to its changed repo (module) or keeps as the risk floor. Run waves: W1 Critical of every related
+suite → W2 High → W3 the direct cases that are neither. A ticket no case cites is reported as a gap.
+
+Refs VCST-6177
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+EOF
+```
+
+---
+
 ### Task 6: `npm run release:compare` — baseline vs after regression delta
 
 **Files:**
@@ -1848,7 +2151,7 @@ Everything else the scope shows (feature tickets already Done in a sprint) is co
   the previous numeric key of `bundles/stable.json`, or `--from vM`.
 - `stable next`: Forecast (§Forecast below). Stop reading S2–S9.
 - **Release ticket:** the bundle PR's title key (Stable 16: VCST-6042). Read it with the Atlassian MCP for status, QA engineer and comments.
-- **Output:** `vc/shared/docs/Release plans/stable-{N}-test-plan.md`, `stable-{N}-summary.json`, `stable-{N}-scope.json`.
+- **Output:** `vc/shared/docs/Release plans/stable-{N}-test-plan.md`, `stable-{N}-summary.json`, `stable-{N}-scope.json`, `stable-{N}-cases.json`.
   Create the folder if missing. Duplicate guard as in the command.
 
 ## S2 — Scope (deterministic; never re-derived by hand)
@@ -1888,8 +2191,9 @@ S5 writes upgrade checks that state how the platform behaves, so this mode is a 
 | Legacy stubs | `breaking.rows[]` with a legacy-stub cell not `—`/`none` | §6 `U-NN`: a job queued on v{N-1} still runs after the upgrade |
 | New modules | `components[status=ADDED]` | §2.1 + §6 "installed and initialised" + a §3 domain row |
 | Removed modules | `components[status=REMOVED]` | §2.4: a suite that touches them now expects removal, not a regression |
-| Untested feature tickets | `tickets[done=false]` (+ `done=null`, listed separately) | §2.3 must-test list → §6 cases, or `/qa-test <KEY>` before sign-off |
-| Sprint-tested features | `tickets[done=true]` | §2.3 count only; regression covers them |
+| Every feature ticket | `tickets[]` (all of them, Done or not) | the regression scope via `release:cases` (S5): its direct cases + its module suites |
+| Not-Done feature tickets | `tickets[done=false]` (+ `done=null`, listed separately) | §2.3 must-test list: run its cases, or `/qa-test <KEY>` before sign-off |
+| Feature tickets with no direct case | `stable-<N>-cases.json` `tickets[].cases = []` | §5.2 coverage gap (`GAP-NN`): the feature shipped and no case cites it |
 | Untracked PRs | `prs[class=untracked]` | §2.5 list; a reviewer decides whether any title implies behaviour |
 
 ## S5 — Risk, suites, gaps, charters
@@ -1897,9 +2201,28 @@ S5 writes upgrade checks that state how the platform behaves, so this mode is a 
 - **Risk:** [`plan-sections.md`](plan-sections.md) §Risk, one row per domain. Stable adjustments:
   - Likelihood +1 (cap 5) for a domain whose modules carry both a cycle change and a runtime row.
   - An ADDED module's domain starts at L ≥ 4.
-- **§5.1 suites:**
-  - Take the union of `npm run regression:plan -- critical` and, for each component repo with a feature ticket or a runtime row, `npm run regression:select -- --repo <repo> --path <module short name, lower-case> --json`.
-  - Every id comes from those scripts. Split by layer as the shared rules require.
+- **§5.1 suites and cases (regression for every feature in the release):**
+
+  ```bash
+  npm run release:cases -- --scope="vc/shared/docs/Release plans/stable-<N>-scope.json" --out="vc/shared/docs/Release plans/stable-<N>-cases.json"
+  ```
+
+  Relations: a suite is `direct` (a row cites a release feature ticket), `module` (the selector ties it to a changed repo), or `floor` (P0 / critical-ui risk floor).
+  The waves, in this order:
+
+  | Wave | Scope |
+  |---|---|
+  | **W1** | Critical cases of every related suite |
+  | **W2** | High cases of every related suite |
+  | **W3** | The direct cases that are neither (Medium/Low/unreadable), so no feature's own test is dropped |
+
+  Medium/Low cases of suites related only by module are reported, not run.
+
+  §5.1 is written as the wave table:
+  - 5.1.1 Frontend and 5.1.2 Backend, split by the suite's layer.
+  - Columns: `| Suite | Name | Relation | Critical | High | Direct cases | Tickets |`.
+  - Rows in the script's run order.
+  - Every id comes from the script, never typed.
 - **§5.2 / §5.3:** [`plan-sections.md`](plan-sections.md) §Gap-diff and §Charters, over the Critical / High domains.
 
 ## S6 — Delegate §5.2, §5.3 and §6
@@ -1921,10 +2244,10 @@ The environment is `vcptcore_regression` (TEST_ENV form) unless the user names a
 
 | Phase | Action | Records |
 |---|---|---|
-| A — Baseline | `npm run deploy:bundle -- --env=vcptcore_regression --bundle=v<N-1>` (dry-run): the env must match the previous stable. Explain any non-EQUAL row in the plan. Then `TEST_ENV=vcptcore_regression` `/qa-regression stable:<N>` | `runs.baseline` = its RUN_ID |
+| A — Baseline | `npm run deploy:bundle -- --env=vcptcore_regression --bundle=v<N-1>` (dry-run): the env must match the previous stable. Explain any non-EQUAL row in the plan. Then, on `TEST_ENV=vcptcore_regression`, the waves in order: W1 `/qa-regression stable:<N> --cases critical` → W2 `/qa-regression stable:<N> --cases high` → W3 `/qa-regression <W3 suites> --ids <W3 ids>`. Stop after W1 if it shows a release blocker | `runs.baseline` = the RUN_ID of each wave |
 | B — Deploy | `npm run deploy:bundle -- --env=vcptcore_regression --bundle=v<N> --ref=<ref>` (dry-run) → show the table → **ask the user** → re-run with `--apply` → one PR. A human merges it. Wait until `/api/platform/modules` reports the new versions (`/qa-env-upgrade` reference). The theme follows the env's own mechanism when the command prints a theme note | `runs.deployPr` |
-| C — After | The same `/qa-regression stable:<N>`, then the §6 upgrade checks (Admin, jobs and settings: `qa-backend-expert` on `playwright-edge`) | `runs.after` |
-| D — Compare | `npm run release:compare -- --baseline=<A> --after=<C>`. REGRESSED → `/qa-triage-results`. STILL_FAILING is pre-existing and not a stable blocker by itself | verdict in §9 |
+| C — After | **Exactly the same waves** as A (same suites, same tiers, same W3 ids), then the §6 upgrade checks (Admin, jobs and settings: `qa-backend-expert` on `playwright-edge`) | `runs.after` = the RUN_ID of each wave |
+| D — Compare | Per wave: `npm run release:compare -- --baseline=<A wave run> --after=<C wave run>`. REGRESSED → `/qa-triage-results`. STILL_FAILING is pre-existing and not a stable blocker by itself. Different scope in A and C would make every difference unreadable, so never change a wave between them | verdict per wave in §9 |
 
 Run C within 30 days of A: `reports:prune` deletes older run folders. Phase B is an outward write, so it gets its own explicit yes.
 
@@ -1939,7 +2262,7 @@ Sections (keep every heading; write `_None in this release._` when empty):
 2. **Scope.**
    - 2.1 New modules
    - 2.2 Breaking & runtime changes
-   - 2.3 Feature tickets: must-test (not Done / unknown) vs sprint-tested (count)
+   - 2.3 Feature tickets: every ticket with its direct-case count; not-Done/unknown flagged as must-test; zero-case tickets flagged → §5.2
    - 2.4 Removed modules
    - 2.5 Untracked PRs
    - 2.6 Out of scope
@@ -1972,13 +2295,25 @@ Sections (keep every heading; write `_None in this release._` when empty):
   "upgradeChecks": [{"id": "U-01", "module": "", "check": "", "provenance": "SPEC", "owner": "qa-backend-expert"}],
   "domains": [{"name": "", "score": 0, "level": "Critical|High|Medium|Low"}],
   "suitesActivated": [],
+  "waves": {
+    "critical": {"suites": [], "cases": 0},
+    "high": {"suites": [], "cases": 0},
+    "directRest": {"suites": [], "ids": []}
+  },
+  "ticketsWithoutCases": [],
   "exploratoryCharters": [],
-  "runs": {"baseline": null, "deployPr": null, "after": null, "compare": null},
+  "runs": {
+    "baseline": {"critical": null, "high": null, "directRest": null},
+    "deployPr": null,
+    "after": {"critical": null, "high": null, "directRest": null},
+    "compare": {"critical": null, "high": null, "directRest": null}
+  },
   "artifacts": "vc/shared/docs/Release plans/"
 }
 ```
 
-`/qa-regression stable:<N>` reads `suitesActivated[]` and `environment`. Whoever runs a phase updates `runs.*` and §9 in the same edit.
+`waves` and `ticketsWithoutCases` are copied from `stable-{N}-cases.json`. `suitesActivated` = the union of the wave suites.
+`/qa-regression stable:<N> --cases critical|high` reads `waves.<tier>.suites` and `environment`. Whoever runs a phase updates `runs.*` and §9 in the same edit.
 
 ## S9 — Output summary to the user
 
@@ -1986,13 +2321,14 @@ Sections (keep every heading; write `_None in this release._` when empty):
 Stable {N} Test Plan — DRAFT  ({from} → v{N} @ {ref})
 Platform {a} → {b} · Theme {c} → {d}
 Components: {changed} changed · {added} added · {removed} removed
-Cycle tickets: … · Must-test tickets: {n} · Upgrade checks: {u}
-Critical-risk domains: […] · Suites: {s} · Charters: {e}
+Cycle tickets: … · Feature tickets: {f} ({n} not Done, {g} with no case) · Upgrade checks: {u}
+Critical-risk domains: […] · Charters: {e}
+W1 Critical: {c1} cases / {s1} suites · W2 High: {c2} / {s2} · W3 direct: {c3}
 
 Plan:    vc/shared/docs/Release plans/stable-{N}-test-plan.md
 Summary: vc/shared/docs/Release plans/stable-{N}-summary.json
 
-Next: Phase A → TEST_ENV=vcptcore_regression /qa-regression stable:{N}
+Next: Phase A → TEST_ENV=vcptcore_regression /qa-regression stable:{N} --cases critical   (then high, then W3)
       Phase B → npm run deploy:bundle -- --env=vcptcore_regression --bundle=v{N} --ref={ref}   (dry-run; --apply needs your yes)
 ```
 
@@ -2027,7 +2363,7 @@ and charters are shared: [`plan-sections.md`](../knowledge/execution/test-plan/p
 | Mode | Invocation | Scope source | Output |
 |---|---|---|---|
 | Sprint | `/qa-test-plan 26-20` · `Sprint26-20` · `current` · `last` | JIRA Done items + PRs merged in the sprint window | `vc/shared/docs/Sprint plans/sprint-{XX-YY}-test-plan.md` + `-summary.json` |
-| Stable | `/qa-test-plan stable 16 [--ref <vc-modules branch>]` | `npm run release:scope`: the bundle diff in `VirtoCommerce/vc-modules` | `vc/shared/docs/Release plans/stable-{N}-test-plan.md` + `-summary.json` + `-scope.json` |
+| Stable | `/qa-test-plan stable 16 [--ref <vc-modules branch>]` | `npm run release:scope` (the bundle diff in `VirtoCommerce/vc-modules`) → `npm run release:cases` (every release feature → suites + cases, Critical/High first) | `vc/shared/docs/Release plans/stable-{N}-test-plan.md` + `-summary.json` + `-scope.json` + `-cases.json` |
 | Forecast | `/qa-test-plan stable next` | `npm run release:scope -- next`: latest stable → latest releases | `vc/shared/docs/Release plans/stable-next-forecast-{YYYY-MM-DD}.md` |
 
 You run the orchestration inline. Delegate only the sections the mode file names to `test-management-specialist`,
@@ -2128,8 +2464,12 @@ Read by `/qa-regression` §1c. Moved verbatim from `qa-regression.md` on 2026-10
 **`stable:N`** reads `vc/shared/docs/Release plans/stable-{N}-summary.json` (`/qa-test-plan stable N`).
 - Missing → abort: "No stable plan for {N}. Run /qa-test-plan stable {N} first." There is no static fallback, because a stable's scope is its bundle diff, not a generic group.
 - Same `suitesActivated[]` validation, the same `--frontend`/`--backend` layer filter (3a below) and the same resolved-from log (4 below), with `Release:` in place of `Sprint:`.
+- A stable plan runs in **waves**.
+  - `stable:N --cases critical` resolves `waves.critical.suites` and `stable:N --cases high` resolves `waves.high.suites`. Each keeps only that tier's cases, through the normal `--cases` filter.
+  - W3 is not a tier. The plan writes it as an explicit `/qa-regression <waves.directRest.suites> --ids <waves.directRest.ids>`.
+  - `stable:N` with no `--cases` runs `suitesActivated[]` whole. Warn that this is broader than the plan's waves.
 - The summary's `environment` names where the plan's baseline and after-runs belong (`vcptcore_regression`). Warn when `TEST_ENV` differs: a stable's before/after delta is only meaningful on one env.
-- Log the RUN_ID so the operator can record it as `runs.baseline` / `runs.after`.
+- Log the RUN_ID so the operator can record it under `runs.baseline.<wave>` / `runs.after.<wave>`.
 ```
 
 Then paste current `qa-regression.md` lines 158-182 (from "The static `sprint` selection group…" to step 5) verbatim beneath it.
@@ -2204,6 +2544,14 @@ Expected:
 - `counts.added` ≥ 5.
 - `cycleTickets` ⊇ `VCST-6042`, `VCST-5901`.
 - `breaking.rows.length` ≥ 1 (the Stable 16 §4 table).
+
+- [ ] **Step 1b: Cases and waves**
+
+```bash
+npm run release:cases -- --scope="$TEMP/stable-16-scope.json" --out="$TEMP/stable-16-cases.json"; echo "exit=$?"
+node -e 'const c=require(process.env.TEMP+"/stable-16-cases.json"), m=new Set(require("./config/test-suites.json").suites.map(s=>s.id));const all=[...c.waves.critical.suites,...c.waves.high.suites,...c.waves.directRest.suites];console.log("unknown suite ids:", all.filter(i=>!m.has(i)), "| W1", c.waves.critical.cases, "W2", c.waves.high.cases, "W3", c.waves.directRest.ids.length, "| tickets w/o case", c.tickets.filter(t=>!t.cases.length).length)'
+```
+Expected: exit 0, `unknown suite ids: []`, and non-zero W1/W2.
 
 - [ ] **Step 2: Deploy plan (dry-run only)**
 
