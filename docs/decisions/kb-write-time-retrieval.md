@@ -394,6 +394,18 @@ body. Full record: `scripts/kb/bench/wave2-gate-result.json`.
   0.957), so every line above is the agent's. The next lever is the agent contract (what an
   `ambiguous` list must make easy to accept) and partial answers, not the ranker.
 
+**Against what `main` runs (`floor-1`, same set, same base, `verdict-bench`, base alone).** `floor-1`
+answered 13 of the 41 questions on its own and 11 of those were wrong (6 of them on controls, so 13/19
+controls end in `none`). It returned the right entry for 4 of 22 targets, which caps what any agent
+can resolve on it at 4/22; the M4 ranker showed the right entry for 19 of 22 and answered nothing
+alone. End to end the M4 configuration resolves 8/22 body-checked and 11/22 pick only. It misses the
+absolute gate but beats production on every line, at 376 tokens per ask against 444.
+
+**Base branch rebuilt on main again (2026-10-05, after both measurements above):** `vcst-6122-schema2`
+@ `6e810a6` = the 289 plans re-applied to main @ `e6e5e1d` (15 re-stamped: evidence added, bodies
+unchanged), 454 rows, 410 active; main's 46 newer entries carry no retrieval card yet. The wave2 log
+lines are kept. A merge commit, so the branch history is not rewritten.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get

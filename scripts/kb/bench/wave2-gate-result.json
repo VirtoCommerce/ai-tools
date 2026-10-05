@@ -139,5 +139,45 @@
    31,
    36
   ]
+ },
+ "floor1": {
+  "about": "floor-1 (what main runs) on the same set and base, verdict-bench, base alone (no agent): it answers, and the agent can only rely on what it returns",
+  "answerPrecision": [
+   2,
+   13
+  ],
+  "controlsNone": [
+   13,
+   19
+  ],
+  "targetsAnswered": [
+   2,
+   22
+  ],
+  "rightEntryReturned": [
+   4,
+   22
+  ],
+  "targetsRecall10": [
+   16,
+   22
+  ],
+  "meanTokens": 444
+ },
+ "verdictBench": {
+  "about": "the M4 ranker on the same set, verdict-bench, base alone",
+  "ambiguousShare": [
+   41,
+   41
+  ],
+  "rightEntryShown": [
+   19,
+   22
+  ],
+  "targetsRecall10": [
+   20,
+   22
+  ],
+  "meanTokens": 376
  }
 }
