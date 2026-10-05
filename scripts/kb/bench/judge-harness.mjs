@@ -18,6 +18,10 @@
 // opening beside verdict-bench's own.
 //
 //   KB_SYNTHETIC=1 node scripts/kb/bench/judge-harness.mjs items --base <dir> --ranker <file> --split dev,calibration --out <dir>
+//   KB_SYNTHETIC=1 node scripts/kb/bench/judge-harness.mjs items --decider floor-1 --base <dir> --split ... --out <dir>
+//           what `main` runs, end to end: floor-1 hands the agent its hits WITH their bodies and calls it an
+//           answer, so every answered ask becomes an item the agent must accept or reject, exactly like an
+//           `ambiguous` one (scored the same way); a miss needs no agent.
 //   node scripts/kb/bench/judge-harness.mjs bodies --base <dir> --out <dir> --picks <file>
 //   node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <file> [--confirm <file>]
 
@@ -32,7 +36,9 @@ import { parseEntry } from '../core/frontmatter.mjs';
 import { loadIndex, retrievable } from '../core/index-load.mjs';
 import { prepareVocabulary, readVocabulary } from '../core/query.mjs';
 import { prepareRetrieval, retrieve } from '../core/retrieve.mjs';
-import { verdictLines } from '../core/render.mjs';
+import { askLines, verdictLines } from '../core/render.mjs';
+import { rank, scoreRows as lexicalRows, TOP_N } from '../core/rank.mjs';
+import { describeHit } from '../core/verbs.mjs';
 import { decide } from '../core/verdict.mjs';
 import { RECALL_K, WAVE1_MISSES, labelledRows, tokensOf } from './verdict-bench.mjs';
 
@@ -59,7 +65,48 @@ async function bodyOf(reader, row) {
   return r.ok ? parseEntry(r.text, row.path).body : null;
 }
 
-async function items({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt }) {
+async function items(a) {
+  return a.decider === 'floor-1' ? itemsFloor1(a) : itemsVerdict(a);
+}
+
+/** floor-1 end to end: its answer is the list it returns, which the agent judges like `ambiguous`. */
+async function itemsFloor1({ base, splits, out, set: setFile, openTest, salt }) {
+  if (splits.includes('test') && !openTest) throw new Error('the test split is opened once, at the gate: pass --open-test');
+  const set = JSON.parse(await readFile(setFile, 'utf8'));
+  const { reader, locator, rows } = await openCatalogue(base);
+  if (splits.includes('test')) {
+    await appendFile(OPENINGS, `${JSON.stringify({ at: new Date().toISOString(), decider: 'judge-harness/floor-1', base: locator, set: set.snapshot ?? null })}\n`);
+  }
+  const blocks = [];
+  const key = [];
+  for (const row of labelledRows(set).filter((r) => splits.includes(r.split))) {
+    const candidates = lexicalRows(row.q, rows).slice(0, RECALL_K).map((h) => h.row.id);
+    const { hits, nearMiss } = rank(row.q, rows, { top: TOP_N });
+    const code = codeOf(row.id, salt);
+    let lines;
+    if (hits.length) {
+      const described = await Promise.all(hits.map(async (h) => {
+        const r = await reader.readEntry(h.row.path);
+        return r.ok ? describeHit(h, parseEntry(r.text, h.row.path)) : describeHit(h, null, { unavailable: 'body unavailable' });
+      }));
+      lines = askLines({ state: 'answer', hits: described });
+      blocks.push({ code, text: [`ITEM ${code}`, `QUESTION: ${row.q}`, ...lines].join('\n') });
+    } else {
+      lines = askLines({ state: 'miss', hits: [], nearMiss });
+    }
+    key.push({
+      code, id: row.id, kind: row.kind, split: row.split, source: row.source, partial: Boolean(row.partial), expect: row.expect ?? [],
+      verdict: hits.length ? 'ambiguous' : 'none', base: null, shown: hits.map((h) => h.row.id),
+      recalled: (row.expect ?? []).some((e) => candidates.includes(e)), tokens: tokensOf(lines), p: null,
+    });
+  }
+  blocks.sort((x, y) => x.code.localeCompare(y.code));
+  await writeFile(join(out, 'items.txt'), `${blocks.map((b) => b.text).join('\n\n')}\n`);
+  await writeFile(join(out, 'key.json'), `${JSON.stringify({ ranker: 'floor-1', splits, base: locator, rows: key }, null, 1)}\n`);
+  console.log(`${key.length} rows; ${blocks.length} answered items written (the agent judges each); misses ${key.filter((k) => k.verdict === 'none').length}`);
+}
+
+async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt }) {
   if (splits.includes('test') && !openTest) throw new Error('the test split is opened once, at the gate: pass --open-test');
   const set = JSON.parse(await readFile(setFile, 'utf8'));
   const ranker = JSON.parse(await readFile(rankerFile, 'utf8'));
@@ -181,7 +228,7 @@ function parseArgs(argv) {
     const k = rest[i];
     if (k === '--open-test') a.openTest = true;
     else if (k === '--split') a.splits = rest[++i].split(',').map((s) => s.trim()).filter(Boolean);
-    else if (['--base', '--ranker', '--out', '--picks', '--confirm', '--set', '--salt'].includes(k)) a[k.slice(2)] = rest[++i];
+    else if (['--base', '--ranker', '--out', '--picks', '--confirm', '--set', '--salt', '--decider'].includes(k)) a[k.slice(2)] = rest[++i];
     else throw new Error(`unknown argument ${k}`);
   }
   if (a.out) a.out = resolve(a.out);

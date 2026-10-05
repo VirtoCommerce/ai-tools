@@ -406,6 +406,34 @@ absolute gate but beats production on every line, at 376 tokens per ask against 
 unchanged), 454 rows, 410 active; main's 46 newer entries carry no retrieval card yet. The wave2 log
 lines are kept. A merge commit, so the branch history is not rewritten.
 
+## End to end against floor-1, on wave2 and on 210 questions from the logs (2026-10-05)
+
+`rank-labelled-set.logs300.json`: 300 real asks from main's logs, labelled by two independent Claude
+passes (agreement 277/300) and an adjudicator; 10 removed on validation; 209 targets (41 partial), 77
+controls, 4 contested, split by entry group. It played no part in fitting or tuning the ranker, so its
+dev + calibration rows are unseen by it; its test split (76 rows) is not opened. `judge-harness.mjs
+items --decider floor-1` gives the agent exactly what `main`'s `ask` prints (its hits WITH bodies) and
+scores it like `ambiguous`. Same Sonnet-class picker, same body check, for both. `e2e-result.json`.
+
+| body-checked | floor-1, wave2 | M4, wave2 | floor-1, logs dev+cal | **M4, logs dev+cal** | gate |
+|---|---|---|---|---|---|
+| picks precision | 4/5 | 8/9 | 108/118 (92%) | **122/126 (97%)** | >= 95% |
+| controls end in `none` | 19/19 | 19/19 | 56/56 | **54/56 (96%)** | >= 90% |
+| targets resolved, non-partial | 2/13 | 7/13 | 101/127 (80%) | **112/127 (88%)** | >= 80% |
+| right entry shown, non-partial | 2/13 | 12/13 | 105/127 | 118/127 | -- |
+| mean `ask` tokens | 444 | 379 | 754 | **387** | <= 400 |
+
+- **On the questions agents actually ask, the M4 configuration clears every gate line**, and it beats
+  floor-1 on every line but one (two controls relied on, against none) at half the payload. The base
+  answered alone 6 times, all right.
+- **wave2 is the hard case, not the typical one.** Its prose questions span two facts; the logs are
+  mostly coordinate-led keyword asks (`changeWishlist scope Customer addSharedWithIds ...`), which is
+  how agents use the base. Both rankers score far better on them; floor-1 most of all, because a
+  keyword ask is what it was built for.
+- **The body check is what makes the agent safe on M4** (pick only: 122/129 precision, controls 52/56);
+  on floor-1 the bodies are already in the payload, so the check changes little.
+- Next: open the logs300 test split ONCE as the gate.
+
 ## What this knowingly does not get
 
 ## What this knowingly does not get

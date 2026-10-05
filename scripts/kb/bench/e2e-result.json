@@ -1,0 +1,517 @@
+{
+ "about": "VCST-6122 end to end, 2026-10-05: the same Sonnet-class picker + body check on floor-1 (what main runs: its hits with bodies, judged by the agent) and on the M4 verdict ranker. wave2 = the 41-row held-out set (base 52b3683); logs300 = dev + calibration of rank-labelled-set.logs300.json (base 6e810a6), never used to fit or tune the ranker. Test split of logs300 not opened.",
+ "w2-floor1": {
+  "bodyChecked": {
+   "picksPrecision": [
+    4,
+    5
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    19,
+    19
+   ],
+   "resolvedNonPartial": [
+    2,
+    13
+   ],
+   "resolvedPartial": [
+    2,
+    9
+   ],
+   "resolvedAll": [
+    4,
+    22
+   ],
+   "shownNonPartial": [
+    2,
+    13
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 444,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "W2-10",
+     "kind": "target",
+     "relied": "KB-C1024558",
+     "expect": [
+      "KB-E7790BF6"
+     ]
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    4,
+    6
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    18,
+    19
+   ],
+   "resolvedNonPartial": [
+    2,
+    13
+   ],
+   "resolvedPartial": [
+    2,
+    9
+   ],
+   "resolvedAll": [
+    4,
+    22
+   ],
+   "shownNonPartial": [
+    2,
+    13
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 444,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "W2-10",
+     "kind": "target",
+     "relied": "KB-C1024558",
+     "expect": [
+      "KB-E7790BF6"
+     ]
+    },
+    {
+     "id": "W2-33",
+     "kind": "control",
+     "relied": "KB-8264632C",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "l3-floor1": {
+  "bodyChecked": {
+   "picksPrecision": [
+    108,
+    118
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    101,
+    127
+   ],
+   "resolvedPartial": [
+    7,
+    27
+   ],
+   "resolvedAll": [
+    108,
+    154
+   ],
+   "shownNonPartial": [
+    105,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 754,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-065",
+     "kind": "target",
+     "relied": "KB-EA467E9B",
+     "expect": [
+      "KB-A240F961"
+     ]
+    },
+    {
+     "id": "L-091",
+     "kind": "target",
+     "relied": "KB-4895528A",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-E8234FA0"
+     ]
+    },
+    {
+     "id": "L-149",
+     "kind": "target",
+     "relied": "KB-24B83B02",
+     "expect": [
+      "KB-EFD1A7FD",
+      "KB-5AB85ADC"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-207",
+     "kind": "target",
+     "relied": "KB-5EACBEDD",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-4895528A"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-222",
+     "kind": "target",
+     "relied": "KB-4C29749E",
+     "expect": [
+      "KB-25388E6C",
+      "KB-5D688448"
+     ]
+    },
+    {
+     "id": "L-234",
+     "kind": "target",
+     "relied": "KB-A4ABEFEA",
+     "expect": [
+      "KB-9B9FAF0F",
+      "KB-17555498"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    110,
+    121
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    101,
+    127
+   ],
+   "resolvedPartial": [
+    9,
+    27
+   ],
+   "resolvedAll": [
+    110,
+    154
+   ],
+   "shownNonPartial": [
+    105,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 754,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-065",
+     "kind": "target",
+     "relied": "KB-EA467E9B",
+     "expect": [
+      "KB-A240F961"
+     ]
+    },
+    {
+     "id": "L-079",
+     "kind": "target",
+     "relied": "KB-2CADFEBD",
+     "expect": [
+      "KB-3FCE7089"
+     ]
+    },
+    {
+     "id": "L-091",
+     "kind": "target",
+     "relied": "KB-4895528A",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-E8234FA0"
+     ]
+    },
+    {
+     "id": "L-149",
+     "kind": "target",
+     "relied": "KB-24B83B02",
+     "expect": [
+      "KB-EFD1A7FD",
+      "KB-5AB85ADC"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-207",
+     "kind": "target",
+     "relied": "KB-5EACBEDD",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-4895528A"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-222",
+     "kind": "target",
+     "relied": "KB-4C29749E",
+     "expect": [
+      "KB-25388E6C",
+      "KB-5D688448"
+     ]
+    },
+    {
+     "id": "L-234",
+     "kind": "target",
+     "relied": "KB-A4ABEFEA",
+     "expect": [
+      "KB-9B9FAF0F",
+      "KB-17555498"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  }
+ },
+ "l3-verdict": {
+  "bodyChecked": {
+   "picksPrecision": [
+    122,
+    126
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    54,
+    56
+   ],
+   "resolvedNonPartial": [
+    112,
+    127
+   ],
+   "resolvedPartial": [
+    10,
+    27
+   ],
+   "resolvedAll": [
+    122,
+    154
+   ],
+   "shownNonPartial": [
+    118,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    6,
+    6
+   ],
+   "wrong": [
+    {
+     "id": "L-109",
+     "kind": "target",
+     "relied": "KB-3F7C78F6",
+     "expect": [
+      "KB-D7F08A26"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-231",
+     "kind": "control",
+     "relied": "KB-4EDC989E",
+     "expect": []
+    },
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    122,
+    129
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    52,
+    56
+   ],
+   "resolvedNonPartial": [
+    112,
+    127
+   ],
+   "resolvedPartial": [
+    10,
+    27
+   ],
+   "resolvedAll": [
+    122,
+    154
+   ],
+   "shownNonPartial": [
+    118,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    6,
+    6
+   ],
+   "wrong": [
+    {
+     "id": "L-109",
+     "kind": "target",
+     "relied": "KB-3F7C78F6",
+     "expect": [
+      "KB-D7F08A26"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-282",
+     "kind": "target",
+     "relied": "KB-09CEE315",
+     "expect": [
+      "KB-F9D75EA0"
+     ]
+    },
+    {
+     "id": "L-045",
+     "kind": "control",
+     "relied": "KB-D64B1613",
+     "expect": []
+    },
+    {
+     "id": "L-136",
+     "kind": "control",
+     "relied": "KB-9B9FAF0F",
+     "expect": []
+    },
+    {
+     "id": "L-231",
+     "kind": "control",
+     "relied": "KB-4EDC989E",
+     "expect": []
+    },
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  }
+ }
+}
