@@ -1,0 +1,5 @@
+policy:
+  # The default is true when this file or this key is absent. install copies a file and migrate
+  # rewrites keystore entries, so both stay explicit-invocation-only. doctor has no such file on
+  # purpose — it is the diagnostic and writes nothing.
+  allow_implicit_invocation: false

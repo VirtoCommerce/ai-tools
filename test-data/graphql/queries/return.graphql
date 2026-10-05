@@ -1,0 +1,61 @@
+# name: return
+# category: returns
+# role: ORG_USER
+# purpose: Single return by id -- full detail incl. items[] (with attachments) and availableActions[]
+#   (name/isAvailable/unavailableReason). Resolves to NULL, not a thrown error, for a nonexistent id
+#   OR for a return owned by a different customer -- the two cases are indistinguishable to the caller
+#   (ownership is customer-id scoped, no store check; confirmed live 2026-09-25).
+# required-vars: RETURN_ID (String)
+# optional-vars: (none)
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-012, RET-GQL-013, RET-GQL-016, RET-GQL-017, RET-GQL-025, RET-GQL-026
+#   (050o-graphql-returns.csv)
+# runner-note: VCST-5628. availableActions is the live source of the Draft(edit/submit/cancel all
+#   available) -> Requested(cancel only) -> Cancelled(none, each carrying unavailableReason=WRONG_STATUS)
+#   matrix -- confirmed live 2026-09-25, action names are lowercase ("edit"/"submit"/"cancel").
+
+query {
+  return(id: "{{RETURN_ID}}") {
+    id
+    number
+    status
+    statusDisplayValue
+    createdDate
+    orderId
+    orderNumber
+    customerReference
+    customerComment
+    rejectReason
+    cancelReason
+    itemsQuantity
+    items {
+      id
+      orderLineItemId
+      productId
+      sku
+      name
+      imageUrl
+      measureUnit
+      orderedQuantity
+      quantity
+      approvedQuantity
+      itemState
+      reasonCode
+      reasonComment
+      rejectReason
+      serialNumber
+      attachments {
+        name
+        url
+        mimeType
+        size
+      }
+    }
+    availableActions {
+      name
+      isAvailable
+      unavailableReason
+    }
+  }
+}

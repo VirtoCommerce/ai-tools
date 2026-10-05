@@ -47,8 +47,9 @@ You need each of these before you start. If any are missing, the install will fa
 
 The plugin distributes as a Claude Code marketplace plugin (per [Claude Code plugin docs](https://code.claude.com/docs/en/plugin-marketplaces)). Two steps:
 
-> **Note:** the `ai-tools` marketplace currently lists only `vc-fix` (the bug-lifecycle subset — setup,
-> bug filing, autofix, verification, monitoring, self-diagnostics; see `plugins/vc-fix/`). The Install
+> **Note:** the `ai-tools` marketplace lists the plugins under `plugins/` — `.claude-plugin/marketplace.json`
+> says which; `vc-fix` is the bug-lifecycle one (setup, bug filing, autofix, verification, monitoring,
+> self-diagnostics; see `plugins/vc-fix/`). The Install
 > and Verify steps below are the `vc-fix` plugin onboarding. `vc-qa` — the full agent crew this guide
 > otherwise describes (regression, BA analysis, 110 suites) — is **not** marketplace-installable; its
 > content lives in this repo and is used from a direct clone, not `/plugin install`. Sections past

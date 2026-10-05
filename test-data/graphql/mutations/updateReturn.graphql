@@ -1,0 +1,33 @@
+# name: updateReturn
+# category: returns
+# role: ORG_USER
+# purpose: Edits a return's items/customerReference/customerComment WHILE STILL DRAFT. Refused
+#   WRONG_STATUS once the return has left Draft (Requested/Cancelled) -- confirmed live 2026-09-25:
+#   "Return '<id>' is 'Requested', only a draft can be changed." Refused RETURN_NOT_FOUND for a return
+#   owned by a different customer (same shape as a nonexistent id -- no ownership-specific error).
+# required-vars: RETURN_ID (String)
+# optional-vars: CUSTOMER_COMMENT (String), ITEMS (list of InputReturnItemType -- pass via [GQL-VARS])
+# last-validated: 2026-09-25
+# known-issues: (none)
+# used-by: RET-GQL-016, RET-GQL-024, RET-GQL-025 (050o-graphql-returns.csv)
+
+mutation {
+  updateReturn(command: {
+    returnId: "{{RETURN_ID}}"
+    customerComment: "AGENT-TEST edit"
+    items: [{
+      orderLineItemId: "{{ORDER_LINE_ITEM_ID}}"
+      quantity: 1
+      reasonCode: "NoLongerNeeded"
+    }]
+  }) {
+    id
+    status
+    customerComment
+    items {
+      orderLineItemId
+      quantity
+      reasonCode
+    }
+  }
+}

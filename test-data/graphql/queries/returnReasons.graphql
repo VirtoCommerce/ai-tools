@@ -1,0 +1,24 @@
+# name: returnReasons
+# category: returns
+# role: ORG_USER
+# purpose: Per-store return reason catalog -- code, localizedName, requiresComment. Live on this build
+#   2026-09-25: 5 codes (DamagedInTransit, FaultyOnArrival, NoLongerNeeded, OrderedByMistake,
+#   WrongItemDelivered); localizedName is currently byte-identical to code (PascalCase, not a
+#   human-readable label -- observed, not asserted as a defect). requiresComment=true currently ONLY
+#   for FaultyOnArrival on this store (matches the live Return.ReasonsRequiringComment setting value).
+# required-vars: STORE_ID (String)
+# optional-vars: CULTURE_NAME (String)
+# last-validated: 2026-09-25
+# known-issues: localizedName == code (PascalCase) -- not yet localized, root cause not diagnosed
+# used-by: RET-GQL-010, ORD-RET-005 storefront cross-check (050o-graphql-returns.csv,
+#   014c-orders-frontend-returns.csv)
+# runner-note: VCST-5628. Anonymous (no [AUTH]) call is refused with errors[0].extensions.code =
+#   Unauthorized, data: null -- NOT a silent empty array (confirmed live 2026-09-25).
+
+query {
+  returnReasons(storeId: "{{STORE_ID}}") {
+    code
+    localizedName
+    requiresComment
+  }
+}

@@ -156,7 +156,7 @@ When analyzing a module:
 
 Use **`playwright-firefox`** browser to explore the live storefront and map actual user flows, navigation structure, and UI state. This provides ground-truth data that code analysis alone cannot.
 
-**KB:** `npm run kb -- ask "<coordinate> …"` before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 **Storefront exploration checklist:**
 1. **Navigation & Information Architecture**
    - Browse the main menu, category tree, footer links

@@ -9,9 +9,17 @@
  *    literal one rots into a false BLOCKED/FAIL. Reference data by its stable business key
  *    (code / name / slug / SKU) and resolve the GUID at runtime if truly needed — see DV-020.
  *
+ * 3. Separates a BROKEN reference from an UNSEEDED environment. A reference whose field another env's
+ *    overlay carries but that has no value on THIS env is not a
+ *    suite defect — it is an env that has not been seeded for that suite. It is reported with the
+ *    exact command to seed it (`TEST_ENV=<env> npm run <alias.seed>`) and does not fail the gate, on
+ *    whichever env the gate runs. Unknown aliases, undeclared fields, fields no env has ever been
+ *    seeded with, and direct-CSV misses still fail.
+ *
  * Usage:
- *   npx tsx scripts/validate-td-refs.ts              # @td failures AND hardcoded IDs are fatal (default gate)
- *   npx tsx scripts/validate-td-refs.ts --warn-only  # downgrade hardcoded IDs to warnings (WIP escape hatch)
+ *   npx tsx scripts/validate-td-refs.ts                  # broken @td refs AND hardcoded IDs are fatal (default gate)
+ *   npx tsx scripts/validate-td-refs.ts --warn-only      # downgrade hardcoded IDs to warnings (WIP escape hatch)
+ *   npx tsx scripts/validate-td-refs.ts --require-seeded # an unseeded env is fatal too (pre-run check on the target env)
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -24,12 +32,15 @@ const ROOT = process.cwd();
 const SUITES_DIR = join(ROOT, "regression", "suites");
 const TEST_DATA_DIR = join(ROOT, "test-data");
 const WARN_ONLY = process.argv.includes("--warn-only");
+const REQUIRE_SEEDED = process.argv.includes("--require-seeded");
+const TARGET_ENV = process.env.TEST_ENV || "vcst";
+const NPM_SCRIPTS = new Set(Object.keys(JSON.parse(readFileSync(join(ROOT, "package.json"), "utf-8")).scripts ?? {}));
 
 // Layer the per-env overlay (aliases.<env>.json) the same way suites resolve at runtime — default to
 // the committed primary env `vcst` when TEST_ENV is unset (mirrors config.js / seed-common PRIMARY_ENV),
 // so @td() fields that live in the overlay (runtime GUIDs written by the seeders, e.g. LOY_SKU_PTS_UNIT.id)
 // resolve here instead of falsely failing against base-only aliases.json.
-const resolver = new TestDataResolver(TEST_DATA_DIR, process.env.TEST_ENV || "vcst");
+const resolver = new TestDataResolver(TEST_DATA_DIR, TARGET_ENV);
 
 // --- DV-013 hardcoded-ID scan config ---
 // UUID-style and bare 32-char-hex literals are entity GUIDs unless allowlisted below.
@@ -70,7 +81,14 @@ interface SuiteReport {
   resolved: number;
   failed: number;
   failures: string[];
+  unseeded: number;
 }
+
+// One seed command → the suites and aliases it would make resolvable on TARGET_ENV.
+interface SeedNeed { seed?: string; aliases: Set<string>; suites: Set<string>; seededOn: Set<string>; refs: number }
+const seedNeeds = new Map<string, SeedNeed>();
+
+const MISS_RE = /Failed to resolve @td\((.+?)\): /;
 
 function findCSVFiles(dir: string): string[] {
   const files: string[] = [];
@@ -112,20 +130,41 @@ for (const file of csvFiles) {
   resolver.clearWarnings();
   resolver.resolveCSV(content);
   const warnings = resolver.getWarnings();
+  const suiteFile = relative(ROOT, file).replace(/\\/g, "/");
+
+  const broken: string[] = [];
+  let unseeded = 0;
+  for (const w of warnings) {
+    const inner = w.match(MISS_RE)?.[1];
+    const miss = inner ? resolver.explainMiss(inner) : { kind: "broken" as const, reason: "unparsed" };
+    // A `seed` hint naming a script that does not exist is itself a broken reference.
+    if (miss.kind === "unseeded" && (!miss.seed || NPM_SCRIPTS.has(miss.seed))) {
+      unseeded++;
+      const key = miss.seed ?? `(no seed recorded) ${miss.alias}`;
+      const need = seedNeeds.get(key) ?? { seed: miss.seed, aliases: new Set(), suites: new Set(), seededOn: new Set(), refs: 0 };
+      need.aliases.add(miss.alias); need.suites.add(suiteFile); need.refs++;
+      for (const e of miss.seededOn) need.seededOn.add(e);
+      seedNeeds.set(key, need);
+    } else {
+      broken.push(miss.kind === "unseeded" ? `${w} [alias "seed" names a missing npm script: ${miss.seed}]` : w);
+    }
+  }
 
   const report: SuiteReport = {
-    file: relative(ROOT, file).replace(/\\/g, "/"),
+    file: suiteFile,
     totalRefs: refs.length,
     resolved: refs.length - warnings.length,
-    failed: warnings.length,
-    failures: warnings,
+    failed: broken.length,
+    failures: broken,
+    unseeded,
   };
 
   reports.push(report);
   totalRefs += refs.length;
   totalResolved += report.resolved;
-  totalFailed += warnings.length;
+  totalFailed += broken.length;
 }
+const totalUnseeded = reports.reduce((n, r) => n + r.unseeded, 0);
 
 // --- Output ---
 console.log("=== @td() Reference Validation Report ===\n");
@@ -133,6 +172,7 @@ console.log(`Suites scanned: ${csvFiles.length}`);
 console.log(`Suites with @td() refs: ${reports.length}`);
 console.log(`Total @td() references: ${totalRefs}`);
 console.log(`  Resolved: ${totalResolved}`);
+console.log(`  Unseeded: ${totalUnseeded}  (env ${TARGET_ENV} not seeded for them — see "Seed to run" below)`);
 console.log(`  Failed:   ${totalFailed}`);
 console.log();
 
@@ -144,10 +184,25 @@ if (reports.length === 0) {
 // Per-suite breakdown
 console.log("--- Per-Suite Breakdown ---\n");
 for (const r of reports) {
-  const status = r.failed === 0 ? "OK" : "FAIL";
-  console.log(`[${status}] ${r.file}: ${r.resolved}/${r.totalRefs} resolved`);
+  const status = r.failed > 0 ? "FAIL" : r.unseeded > 0 ? "UNSEEDED" : "OK";
+  const tail = r.unseeded > 0 ? ` (${r.unseeded} need seeding on ${TARGET_ENV})` : "";
+  console.log(`[${status}] ${r.file}: ${r.resolved}/${r.totalRefs} resolved${tail}`);
   for (const f of r.failures) {
     console.log(`       ${f}`);
+  }
+}
+
+// What to seed so the UNSEEDED suites resolve on TARGET_ENV — the gate's proposal, not a failure.
+if (seedNeeds.size > 0) {
+  console.log(`\n--- Seed to run on ${TARGET_ENV} (${REQUIRE_SEEDED ? "FAIL: --require-seeded" : "not failing the gate"}) ---\n`);
+  for (const need of [...seedNeeds.values()].sort((a, b) => b.refs - a.refs)) {
+    const cmd = need.seed
+      ? `TEST_ENV=${TARGET_ENV} npm run ${need.seed}`
+      : `no seeder recorded on the alias — add "seed": "<npm script>" to it in test-data/aliases.json`;
+    console.log(`  ${cmd}`);
+    console.log(`      ${need.refs} ref(s) in ${need.suites.size} suite(s): ${[...need.suites].map((s) => s.split("/").pop()).join(", ")}`);
+    console.log(`      aliases: ${[...need.aliases].sort().join(", ")}`);
+    console.log(`      already seeded on: ${need.seededOn.size ? [...need.seededOn].sort().join(", ") : "no env yet"}`);
   }
 }
 
@@ -416,4 +471,4 @@ if (evidenceHits.length === 0) {
 const idFatal =
   (idHits.length > 0 || aliasGuidHits.length > 0 || shapeHits.length > 0 || driftHits.length > 0 ||
     evidenceHits.length > 0) && !WARN_ONLY;
-process.exit(totalFailed > 0 || idFatal ? 1 : 0);
+process.exit(totalFailed > 0 || idFatal || (REQUIRE_SEEDED && totalUnseeded > 0) ? 1 : 0);
