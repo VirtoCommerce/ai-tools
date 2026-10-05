@@ -22,27 +22,31 @@
 // Fails OPEN on any error — a hook bug must never block legitimate work.
 
 import { readFileSync } from "node:fs";
-import { resolve, isAbsolute } from "node:path";
+import { resolve, isAbsolute, dirname } from "node:path";
 
 const ROOT = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 
+/** The `--secrets` path in the nearest `.mcp.json` that declares one, from ROOT upwards —
+ *  the servers may be declared by a parent workspace's `.mcp.json`, not only the repo's. */
+function declaredSecretsFile() {
+  for (let dir = ROOT, prev = null; dir !== prev; prev = dir, dir = dirname(dir)) {
+    try {
+      const mcp = JSON.parse(readFileSync(resolve(dir, ".mcp.json"), "utf8"));
+      for (const server of Object.values(mcp.mcpServers ?? {})) {
+        const args = server.args ?? [];
+        const i = args.indexOf("--secrets");
+        if (i !== -1 && args[i + 1]) return isAbsolute(args[i + 1]) ? args[i + 1] : resolve(ROOT, args[i + 1]);
+      }
+    } catch {
+      /* no (readable) .mcp.json at this level — keep walking */
+    }
+  }
+  return null;
+}
+
 /** Read the secrets dotenv the Playwright MCP servers were actually started with. */
 function loadSecrets() {
-  let file = resolve(ROOT, ".env.playwright.local");
-  try {
-    const mcp = JSON.parse(readFileSync(resolve(ROOT, ".mcp.json"), "utf8"));
-    for (const server of Object.values(mcp.mcpServers ?? {})) {
-      const args = server.args ?? [];
-      const i = args.indexOf("--secrets");
-      if (i !== -1 && args[i + 1]) {
-        const p = args[i + 1];
-        file = isAbsolute(p) ? p : resolve(ROOT, p);
-        break;
-      }
-    }
-  } catch {
-    /* fall back to the conventional path */
-  }
+  const file = declaredSecretsFile() ?? resolve(ROOT, ".env.playwright.local");
   const map = new Map();
   for (const line of readFileSync(file, "utf8").split(/\r?\n/)) {
     const m = /^([A-Za-z_0-9]+)=(.*)$/.exec(line);

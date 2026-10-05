@@ -7,7 +7,9 @@ import { CORE_REQUIRED_VARS, promoteEnvSuffix } from './scripts/lib/env-core.js'
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. process.env         — already wins (CI passes via -e flags)
+//   4. .env.playwright.${TEST_ENV} — this env's passwords (gitignored); resolveTestEnv()
+//                            exposes them as KEY_<ENV>, so the promotion below lifts them over 3.
+//   5. process.env         — already wins (CI passes via -e flags)
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //
