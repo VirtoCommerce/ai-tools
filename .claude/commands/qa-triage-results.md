@@ -38,7 +38,7 @@ mode). `--fix` is ignored in this mode, and the report says so.
 ## Phase 0 — Resolve the run
 > **Owner:** `qa-lead-orchestrator`
 
-1. **Ticket mode** → Phase 1 resolves the folder itself (the newest `reports/tickets/*/<KEY>/testing-checklist.md`); skip item 2. Otherwise resolve the target run dir: `latest` (default) → newest `REG-*`/`SMOKE-*`/`AREG-*` under `reports/regression/`; else the given `RUN_ID`. Abort with a clear message if none exists.
+1. **Ticket mode** → Phase 1 resolves the folder itself (the newest `reports/tickets/*/<KEY>/<env>/testing-checklist.md` for the session's `TEST_ENV`, else a pre-2026-10-05 `reports/tickets/*/<KEY>/testing-checklist.md`); skip item 2. Otherwise resolve the target run dir: `latest` (default) → newest `REG-*`/`SMOKE-*`/`AREG-*` under `reports/regression/`; else the given `RUN_ID`. Abort with a clear message if none exists.
 2. Confirm the run is complete (`reports/regression/test-run-status.json` `status: completed`, or the suite result files carry `completedAt`). If a run is still in progress, warn and triage only the completed suites. If it is `status: stalled` (marked by `npm run regression:reap` — the run died, it did not finish; `.claude/knowledge/execution/regression-pipelines.md`), say so in the verdict and triage only the suites whose results carry `completedAt`; never report the run as completed.
 
 ## Phase 1 — Collect failures + evidence (deterministic)
@@ -93,7 +93,7 @@ Route each CLASS by the **routing table in the skill's `.claude/skills/qa-triage
 ## Phase 6 — Triage report + verdict
 > **Owner:** `qa-lead-orchestrator`
 
-Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `reports/tickets/{SPRINT}/<KEY>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`):
+Write **`reports/regression/{RUN_ID}/triage-report.md`** — an addendum inside the existing regression-summary category (NOT a new report type). **Ticket mode:** `reports/tickets/{SPRINT}/<KEY>/<env>/triage-report.md` — a ticket-check report beside the checklist (`.claude/rules/reports.md` §1, category 6) — and the confirmed-bugs table carries each bug's investigation-package path in place of a draft link. Three tables (mirrors `/qa-monitoring`):
 1. **Confirmed real bugs** — case, severity, repo, root cause, draft link, trace ref.
 2. **Test-case fixes** — case, CLASS, suite, the fix (applied or recommended).
 3. **Dismissed** — case, CLASS (`FLAKY`/`ENV`/`KNOWN_ISSUE`), reason.

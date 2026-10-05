@@ -288,7 +288,7 @@ before this record existed, a skipped transition left no trace in any artifact, 
 
 | Wave | Issue in ONE message |
 |---|---|
-| **A** | 1 env health (`/vc-fix:qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (glob `reports/tickets/*/*/summary.json` across **all** sprints, 2 h window) |
+| **A** | 1 env health (`/vc-fix:qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (same ticket + env, **all** sprints, 2 h window) |
 | *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
 | **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
 
@@ -442,7 +442,7 @@ Three rules hold it ([`sequencing.md`](../skills/qa-test/sequencing.md) §Orderi
 | **3a** | Test data — **conditional on `data_surface`**, dispatched **beside `3x`** (browserless, so the seed runs inside the discovery box) | when `true`: **the orchestrator dispatches `test-data-engineer`** (`/qa-generate-data` → `/qa-seed-data`; a `1e-plan` `dataProfile` seeds via `.claude/skills/qa-seed-data/profile-seeding.md`), never sub-delegated. When `false`: **no dispatch**, and the run names the fixtures that cover the plan | `true` → seeded env, green `td:validate`. `false` → every planned case resolves against existing `@td()`/`{{VAR}}` data **or is live-discoverable**, **and** no chain link under test needs a divergence those values lack ([`authoring.md`](../skills/qa-test/authoring.md) §3a) |
 | **3x** | Discovery session (FULL only) | **orchestrator invokes `/qa-exploratory ticket <ticket-key>`** — that command owns the session; this pipeline owns only the charter | model amendments + `summary.json.discovery` + `reports/exploratory/SBTM-<ticket-key>-<date>.md` |
 | **A** | **The corpus step — ONE step, two phases: `2a` dispose what exists, then author the gaps.** Phase `2a` runs on **both** paths (FULL always; FAST under `--coverage`, which a `Review task` §5a and the `ui-kit` class §5c default ON); authoring is FULL-only, so on FAST this artifact is the triage alone | `test-management-specialist` — **one dispatch, one owner, the run's only writer on `regression/suites/**`** | `2a`'s dispositions + `regression/suites/<layer>/<module>/*.csv` as **`Draft`, and they STAY `Draft`** — `/qa-test` no longer promotes (`5g` removed 2026-09-10). The `Draft → Automated` flip happens **outside this run**: [`/qa-test-lifecycle`](qa-test-lifecycle.md) 6P, or a later **direct** [`/qa-regression`](qa-regression.md) at its Step 6.5 |
-| **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
+| **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/<env>/testing-checklist.md` |
 | **C1** | Ticket regression — **the exact set: every case this run wrote or changed** | orchestrator | scope assembled **at A's append** (§C1 — the exact set); one `/qa-regression … --ids` run, executed at `4c` |
 
 **There is no C2** — the change-scoped Critical sweep answered a *release* question, not this ticket's (§FAST mode).
@@ -673,7 +673,7 @@ and promotion deferred to the exit round
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same
   delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
 - **What persists:** `summary.json` + `testing-checklist.md` + screenshots under
-  `reports/tickets/{SPRINT}/<ticket-key>/`; the FULL-path Test Model to `reports/ba/test-models/`; new
+  `reports/tickets/{SPRINT}/<ticket-key>/<env>/`; the FULL-path Test Model to `reports/ba/test-models/`; new
   cases to `regression/suites/`; the 3x session report to `reports/exploratory/`. `ac-analysis.md` and
   `test-execution-report.md` are **never written**. Full table, and the per-axis `summary.json` blocks:
   [`skills/qa-test/SKILL.md`](../skills/qa-test/SKILL.md) §What persists · [`axes.md`](../skills/qa-test/axes.md) §5.

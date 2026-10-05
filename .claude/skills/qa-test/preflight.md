@@ -164,8 +164,8 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
     npm run graphql:fixtures:validate:refresh   # → the runner cache + the fixture gate — ~1.8s
     ```
 
-3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`). Resolve **before** the duplicate check.
-4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/*/summary.json` for the same ticket with a `date` in the last 2 hours. If found, warn user and show the previous verdict.
+3. **Resolve current sprint** — use `reports/tickets/Sprint-current` if present, else the latest `SprintXX-XX` folder; create if missing. This is `{SPRINT}` for output paths (`reports/tickets/{SPRINT}/`); the run's own folder is `reports/tickets/{SPRINT}/<ticket-key>/<env>/`, `<env>` being the `TEST_ENV` that `env:check` resolved (reports-policy §1). Resolve **before** the duplicate check.
+4. **Duplicate check — across ALL sprints.** Glob `reports/tickets/*/<ticket-key>/<env>/summary.json` (and a pre-2026-10-05 `reports/tickets/*/<ticket-key>/summary.json`) for a `date` in the last 2 hours — the same ticket on another env is a parallel run, not a duplicate. If found, warn user and show the previous verdict.
 
 ---
 

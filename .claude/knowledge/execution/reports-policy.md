@@ -14,7 +14,7 @@
 | 3 | BA report | `reports/ba/` — optionally in a **domain subfolder** (the established convention: `Configurable products/`, `Organization roles/`, `Page Builder (CMS)/`, `Sales-rep/`…; spaces are fine, quote the path in shell) | `/ba-analyze` deliverables, and **test-design models** — `reports/ba/test-models/<TICKET>-<date>.md`, the artifact `/qa-test` Step 1e now writes (target 80–160 lines; the cap is §2’s row, never restated here — it was transcribed as 220 and was stale from the day §2 raised it). Written on the **FULL path only** — required for every Epic and substantial feature, and for every Story bar the narrow case `.claude/knowledge/execution/ticket-routing.md` §5b downgrades (never one whose surface purpose is `UNDECLARED`); not built at all on FAST. It is a durable BA deliverable and is deliberately **exempt** from the `/qa-test` terminal-only rule below: a model that cannot be re-opened cannot be argued with, and the parameter model for a surface is reused across tickets. (Being a file also makes it *lintable in principle* — but `npm run model:lint` is **not implemented**, so that is an intention, not a gate; don't cite it as one.) <!-- doclint:may-not-exist --> Hand-authored standalone models may also live directly under `reports/ba/<domain>/` (the pre-existing convention). **And release notes** — `reports/ba/release-notes/`, a second named sub-path alongside `test-models/`: a per-ticket **fragment** `<ticket>-<layer>-release-note.md` (15–40 lines, cap 60) written by `ba-doc-writer` `doc_scope: release` when `/qa-test` 5-status points at it, plus a per-release **aggregate** `release-<label>.md` (40–80, cap 150) that links the fragments. One fragment per ticket **per layer** — the layer picks the audience (`.claude/knowledge/ba/virto-doc-style.md` §9.1), and it is the one place audience *is* the document, because a release note is read as a single *what shipped* record and splitting it four ways yields files nobody can reconcile. `/qa-test` writes only the machine half (`summary.json.layer` + its `release` block); all prose is `ba-doc-writer`'s, and a refused fragment (`verdict-not-pass` · `layer-unresolved` · `not-deployed` · `not-user-visible` · `no-version`) writes no file at all. **And per-ticket documentation** — the ordinary `reports/ba/<ticket>-<slug>-<audience>-guide.md` guides written by `ba-doc-writer` `doc_scope: ticket-doc` when `/qa-test` **5-docs** points at it, one file per audience, which are then **published as ONE tracker comment with a section per audience** (`.claude/knowledge/ba/virto-doc-style.md` §10). Not a release note and not in `release-notes/`: it answers *how do I use this*, prints **no version literals**, and may serve more than one audience — the ordinary §1 rule, not §9's one-note-per-layer inversion. An existing guide for the same surface is **amended, never forked**. Same refusals minus `no-version` **and minus `verdict-not-pass`** — a non-`PASS` run *scopes* the guide to its passing paths and names the omitted ones in a mandatory `Not documented` line rather than refusing the whole document; the per-instruction `PASS`-row rule is what keeps an unverified step out, and 5-docs runs only after a human has transitioned the ticket to TESTED |
 | 4 | Regression summary | `reports/regression/REG-*/` | One consolidated report per run |
 | 5 | Monitoring summary | `reports/monitoring/MONITOR-*/` | One consolidated report per `/qa-monitoring` (App Insights) run |
-| 6 | Per-ticket QA report | `reports/tickets/<Sprint>/<TICKET>/` (or `reports/tickets/<TICKET>/`) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Includes `/qa-test`'s own `design-report.md`** when its Step-4 visual lane ran (`visual_surface: true`) — it lands in the ticket folder beside `summary.json`, not in the `qa-design/<slug>-<date>/` tree a standalone `/qa-design` invocation uses, because dispatched from a run it is that ticket's evidence. **Plus `/qa-test`'s `testing-checklist.md`** (Artifact B): on the FAST path `/qa-test` authors no cases and writes no Test Model, so the executed checklist is the run's **only** durable record of what was checked. `/qa-test`'s *other* step artifacts stay terminal-only — see the carve-out below |
+| 6 | Per-ticket QA report | `reports/tickets/<Sprint>/<TICKET>/<env>/` (or `reports/tickets/<TICKET>/<env>/`) | A ticket-scoped audit that has its own standalone value beyond the run that produced it — `/qa-verify-fix`, or a ticket-scoped `/qa-design`/`/qa-accessibility`/`/qa-storybook` run. **Includes `/qa-test`'s own `design-report.md`** when its Step-4 visual lane ran (`visual_surface: true`) — it lands in the ticket folder beside `summary.json`, not in the `qa-design/<slug>-<date>/` tree a standalone `/qa-design` invocation uses, because dispatched from a run it is that ticket's evidence. **Plus `/qa-test`'s `testing-checklist.md`** (Artifact B): on the FAST path `/qa-test` authors no cases and writes no Test Model, so the executed checklist is the run's **only** durable record of what was checked. `/qa-test`'s *other* step artifacts stay terminal-only — see the carve-out below |
 | 7 | BL audit report | `reports/knowledge/BL-AUDIT-<date>.md` | One receipt per `/qa-review-bl` (BL sync) run |
 | 8 | Exploratory session report | `reports/exploratory/SBTM-*.md` | One report per `/qa-sbtm` / `/qa-exploratory` charter — read back by later sessions for the 24h duplicate-charter check |
 | 9 | Coverage generation report | `reports/coverage/COV-*/` | One consolidated `coverage-generation-report.md` per `/qa-coverage-gap` run (the run's own intermediate `gap-inventory.json`/`batch-*-results.json` are pipeline working data, not narrative report bloat — §2's cap applies to the markdown digest, not those) |
@@ -33,6 +33,11 @@
   `reports/tickets/<TICKET>/` (ad-hoc only — a hotfix or a verification outside any sprint). A
   root-level `reports/VCST-XXXX/` is matched by no category above, so nothing prunes it and no
   reader looks in it.
+- **A run writes into the ticket folder's env subfolder**, `<TICKET>/<env>/`, where `<env>` is the
+  run's resolved `TEST_ENV` (`vcst`, `vcptcore_dev`, …), so two runs of one ticket on two envs never
+  share a file. Ticket folders written before 2026-10-05 hold their files in `<TICKET>/` itself, and
+  the `vc-fix` plugin's commands (`/qa-verify-fix` …) still write that layout; a reader looks in both,
+  and a glob that must reach either uses `reports/tickets/**/summary.json`.
 
 ## 1a. `reports/bugs/open/` is foldered by severity — and the folder is a VIEW, never the source of truth
 
@@ -324,7 +329,7 @@ Failure traces (real FAIL only):
 
 Reports:
   Bug:           BUG-{Short-Description}.md   (in reports/bugs/open/{critical-high|medium|low}/ — §1a)
-  Ticket check:  {check-type}-report.md  (inside reports/tickets/<Sprint>/<TICKET>/ — /qa-verify-fix, /qa-design, /qa-storybook, etc.; /qa-test writes only the checklist + summary.json, see below)
+  Ticket check:  {check-type}-report.md  (inside reports/tickets/<Sprint>/<TICKET>/<env>/ — /qa-verify-fix, /qa-design, /qa-storybook, etc.; /qa-test writes only the checklist + summary.json, see below)
   Verify-fix:    verification-report.md + verification-summary.json + evidence.html  (the /qa-verify-fix triple, same folder)
   BL audit:      BL-AUDIT-YYYY-MM-DD.md  (inside reports/knowledge/)
   Exploratory:   SBTM-{charter}-YYYY-MM-DD.md  (inside reports/exploratory/)
@@ -332,7 +337,7 @@ Reports:
   Regression:    {suite-name}-report.md  or  regression-YYYY-MM-DD.md
   Investigation: {topic}-investigation-YYYY-MM-DD.md  (reports/performance/ for perf topics, else standalone — separate from bug)
 
-  Testing checklist: testing-checklist.md  (inside reports/tickets/<Sprint>/<TICKET>/ — /qa-test Artifact B)
+  Testing checklist: testing-checklist.md  (inside reports/tickets/<Sprint>/<TICKET>/<env>/ — /qa-test Artifact B)
   Test model:    <TICKET>-YYYY-MM-DD.md  (inside reports/ba/test-models/ — /qa-test Step 1e, FULL path)
   Ticket docs:   <ticket-lowercase>-<slug>-<audience>-guide.md  (inside reports/ba/ — the /qa-test 5-docs guides; the comment itself is not a file)
   Release note:  <ticket-lowercase>-<layer>-release-note.md  (inside reports/ba/release-notes/ — the per-ticket fragment)
@@ -341,7 +346,7 @@ Reports:
 Terminal-only, no file: `/qa-test-lifecycle` (labeled TLC-YYYY-MM-DD-HHMM in chat) and `/qa-test`'s
 ac-analysis + test-execution-report (both fold into one chat report). Persisting from `/qa-test`:
 summary.json + testing-checklist.md + screenshots (+ design-report.md when the visual lane ran) to
-reports/tickets/<Sprint>/<TICKET>/; the Test Model to reports/ba/test-models/; the 3x discovery report to
+reports/tickets/<Sprint>/<TICKET>/<env>/; the Test Model to reports/ba/test-models/; the 3x discovery report to
 reports/exploratory/; new test cases to regression/suites/ as category 2, not the ticket folder.
 ```
 

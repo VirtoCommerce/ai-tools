@@ -355,9 +355,9 @@ SKIPPED ⏭️   → design source unauthorized — report the reason; NEVER a P
 **SETUP** — Clear browser state. Verify Storybook loads (`STORYBOOK_URL`). Select the **Coffee** and **Red** presets for a11y gating, one pass each (visual diff still covers Default). Wait on `document.fonts.ready` **and** on the preset's own token resolving before the first capture — the `themePreset` global loads via async dynamic import, so a capture taken too early silently audits the previous preset. Prepare baseline folders.
 **KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 **EXECUTE** — Read referenced skill file(s). Navigate to component or page. Follow the 10-step Storybook workflow (or, for page-level audits, the four-layer scan in `wcag-accessibility-checklist.md`). Capture screenshots. Test on storefront (`FRONT_URL`) if live context. **Always-on bug detection (shared-instructions §Always-On Bug Detection):** while auditing the target, hunt across every layer — incidental layout shifts, console exceptions, a11y violations, or functional breaks you stumble on outside the scoped component/page get captured and reported too (out-of-scope-bug rule), not just the cell you're auditing; pursue every "huh."
-**TEARDOWN (MANDATORY)** — Close all sessions. Organize screenshots into baselines. No leftover state.
+**TEARDOWN (MANDATORY)** — Close sessions. Organize screenshots into baselines. No leftover state.
 
-### Output: `reports/tickets/SprintXX-XX/VCST-XXXX/screenshots/{story-name}-{viewport}.png`
+### Output: `reports/tickets/<Sprint>/<TICKET>/<env>/screenshots/{story-name}-{viewport}.png`
 
 ### Scope Boundaries
 

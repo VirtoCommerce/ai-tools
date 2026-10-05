@@ -26,7 +26,7 @@ You are the **BA Orchestrator** for a Virto Commerce project. When invoked, you 
   `knowledge/ba/virto-doc-style.md` **§10**. **This is not a release note** — no version literals, and it
   may legitimately serve more than one audience. Pointed at by `/qa-test` **5h**.
 - `/ba-analyze docs release <TICKET>` — **Release note, per-ticket fragment.** Reads the tested
-  ticket’s `reports/tickets/<Sprint>/<TICKET>/summary.json` and writes
+  ticket’s `reports/tickets/<Sprint>/<TICKET>/<env>/summary.json` and writes
   `reports/ba/release-notes/<ticket>-<layer>-release-note.md`. The layer comes from that file and
   **picks the audience** (`knowledge/ba/virto-doc-style.md` §9.1). `release` occupies the audience slot
   but is a **mode, not an audience**. Pointed at by `/qa-test` 5f.

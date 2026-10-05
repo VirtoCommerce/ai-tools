@@ -1,5 +1,5 @@
 {
-  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5-report's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5-report.0, both persisted at 5-report.3, and their only reader is /ba-analyze docs release. Replace <..> placeholders; 0/[]/null are empty defaults.",
+  "$comment": "Schema for /qa-test's summary.json (reports/tickets/{SPRINT}/<ticket-key>/<env>/summary.json). The ONLY narrative-adjacent artifact /qa-test persists (per .claude/rules/reports.md §1) — it must carry every field a later consumer needs: 1b's cross-sprint duplicate check reads `date`; 5-report's Feature Release Gate reads `regression`; 5g records `promotion`; `layer` is derived at 1b item 2b and `release` resolved at 5-report.0, both persisted at 5-report.3, and their only reader is /ba-analyze docs release. Replace <..> placeholders; 0/[]/null are empty defaults.",
   "ticket": "<ticket-key>",
   "ticket_type": "Bug|Story|Task|Technical task|Review task|Sub-task|Epic|Tweak",
   "flow": "feature-test|verify-fix|hotfix-verify|technical-change",
@@ -408,11 +408,11 @@
     "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
     "correlated_failures": []
   },
-  "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/screenshots/",
+  "screenshots": "reports/tickets/{SPRINT}/<ticket-key>/<env>/screenshots/",
   "report": {
     "$comment": "/qa-test-fast only (path FAST_GROUNDED); null elsewhere. The human-readable deliverables and the run's kb ledger: page_url is the Artifact page, shared with Anyone at Virto Commerce, verdict_md the <=60-line verdict file. kb lists the entry ids the run read, confirmed, disputed and captured (authoring-standard section 5, item 6).",
     "page_url": "https://claude.ai/... | null",
-    "verdict_md": "reports/tickets/{SPRINT}/<ticket-key>/verdict.md",
+    "verdict_md": "reports/tickets/{SPRINT}/<ticket-key>/<env>/verdict.md",
     "kb": { "read": [], "confirmed": [], "disputed": [], "captured": [] }
   }
 }
