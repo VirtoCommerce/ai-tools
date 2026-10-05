@@ -141,6 +141,19 @@ function couponExpiry(c) {
   return toIso(c.end_date, true);
 }
 
+// RELATIVE-date fixtures (an `expiry_*` edge_case_type, or a yesterday/today/tomorrow end date) are
+// re-anchored to "now" on every run, so they are EXCLUDED from the expired→valid heals below: a heal
+// that compared them against a fresh "tomorrow" would delete/re-add (or re-date) them every time the
+// previous anchor lapsed. They are positioned in time by the case, not kept fresh by the seeder
+// (.claude/rules/test-data.md FIFTH RULE).
+const RELATIVE_DATE = /^(yesterday|today|tomorrow)$/i;
+const isRelativeDated = (edgeCaseType, endDate) =>
+  /expiry_/i.test(edgeCaseType || '') || RELATIVE_DATE.test(String(endDate || '').trim());
+
+/** Expired live while the CSV declares it valid (blank or a future absolute end date)? (pure) */
+const expiredButDeclaredValid = (liveEnd, wantEnd, now = Date.now()) =>
+  !!liveEnd && Date.parse(liveEnd) < now && (!wantEnd || Date.parse(wantEnd) > now);
+
 // The store's own catalog (a virtual catalog on the B2B store) — what the storefront actually
 // shows. Discovered once per run from the env-configured STORE_ID, so nothing here is hardcoded
 // to a single environment.
@@ -312,6 +325,13 @@ async function completePromotion(promo, row) {
   full.isPublic = csvBool(row.is_public, full.isPublic);
   full.isExclusive = isExclusiveFromCsv(row.exclusivity);
   full.priority = Number(row.priority) || full.priority;
+  // Expiry heal (same narrow rule as coupons): a promotion that has EXPIRED live while the CSV now
+  // declares it valid takes the CSV end date (blank → open-ended). Relative-dated rows are excluded.
+  const wantEnd = toIso(row.end_date, true);
+  if (!isRelativeDated(null, row.end_date) && expiredButDeclaredValid(full.endDate, wantEnd)) {
+    flags.warnings.push(`endDate healed: expired live (${full.endDate}) → ${wantEnd || 'none'} per CSV`);
+    full.endDate = wantEnd || null;
+  }
 
   await api('PUT', '/api/marketing/promotions', full, { expectStatus: [200, 204] });
   return flags;
@@ -404,6 +424,22 @@ async function main() {
           removedStale++;
         }
         const present = new Set(existing.map((c) => c.code));
+        // Expiry drift heal: a coupon that has EXPIRED live while the CSV now declares it valid
+        // (no end date, or a future ABSOLUTE one) is otherwise "present" forever and every case using
+        // it fails on an expired code (REG-2026-10-02-2022 COU-020 FREESHIP, expired 2026-06-08).
+        // Coupons have no update route, so it is deleted and re-added below. Relative-dated coupons
+        // (expiry_past / expiry_future, yesterday/tomorrow) are skipped EXPLICITLY — couponExpiry()
+        // re-anchors them to now, so judging them would churn them every day.
+        for (const c of promoCoupons) {
+          if (isRelativeDated(c.edge_case_type, c.end_date)) continue;
+          const code = c.code.trim();
+          const liveC = existing.find((x) => x.code === code);
+          if (liveC && expiredButDeclaredValid(liveC.expirationDate, couponExpiry(c))) {
+            await api('DELETE', `/api/marketing/promotions/coupons/delete?ids=${encodeURIComponent(liveC.id)}`, null, { expectStatus: [200, 204] });
+            present.delete(code);
+            log(`    ↻ coupon ${code}: expired live (${liveC.expirationDate}) but valid in CSV → re-adding`);
+          }
+        }
         for (const c of promoCoupons) {
           const code = c.code.trim();
           if (present.has(code)) { verbose(`↻ coupon: ${code}`); }
