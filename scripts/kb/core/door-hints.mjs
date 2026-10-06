@@ -101,7 +101,10 @@ export function deeperUnder(rows, root, limit = 3) {
  */
 export function doorHints(result, input, { rows = null, namespaces } = {}) {
   const problems = (result.problems ?? []).map((p) => {
-    const root = anchorShape(p.normalized ?? p.coordinate).type === 'path' ? String(p.normalized ?? '') : '';
+    // The ROUTE, verb dropped: `POST /api` roots the same coordinates as `/api`, and `deeperUnder`
+    // compares against corpus keys with their verbs dropped too (PR #400 review).
+    const root = anchorShape(p.normalized ?? p.coordinate).type === 'path'
+      ? String(p.normalized ?? '').replace(/^[A-Za-z]+\s+/, '') : '';
     const deeper = rows && root && root !== '/' ? deeperUnder(rows, root) : [];
     return { ...p, fix: anchorFix(p, { deeper }) };
   });

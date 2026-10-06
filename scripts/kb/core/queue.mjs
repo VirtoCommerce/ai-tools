@@ -82,7 +82,11 @@ export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(Stri
  * Default ON (opt-out), and only an explicit falsy literal turns it off: an unset or mistyped value
  * leaves the team default in place rather than silently opting somebody out.
  */
-export const kbDisabled = (env = process.env) => /^(0|false|no|off)$/i.test(String(env.KB_ENABLED ?? '').trim());
+/** An env switch set to an OFF spelling (`0`, `false`, `no`, `off`). Unset means on. */
+export const isOff = (value) => /^(0|false|no|off)$/i.test(String(value ?? '').trim());
+export const kbDisabled = (env = process.env) => isOff(env.KB_ENABLED);
+/** `KB_REMIND=0`: only the end-of-turn reminder (`.claude/hooks/kb-remind.mjs`) is off. */
+export const remindDisabled = (env = process.env) => isOff(env.KB_REMIND);
 
 /**
  * THE OPERATOR'S YES, opt-in (PR #313 review). `KB_PUSH_CONFIRM=1` holds every push that has no
@@ -399,6 +403,13 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
  * this machine from here: the sidecar is local, and the same `q` is already on the ask's own line.
  */
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
+/**
+ * `<session>.reminded.json` -- the asks `kb-remind` already raised. ITS OWN FILE, written only by that
+ * hook (temp + rename), so the hook never rewrites the sidecar the kb processes are appending to: a
+ * read-modify-write of `meta.json` at Stop raced a background subagent's `noteLine` and could drop
+ * its asks or outcomes (PR #400 review).
+ */
+export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.json`);
 
 /** The sidecar, or `{}`. A torn or missing file is an absent pointer, never a failed verb. */
 export async function readMeta(env = process.env, session = sessionId(env)) {

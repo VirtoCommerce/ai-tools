@@ -15,6 +15,7 @@
 // relocated into the report, and it is the reason `unreachable` asks get their own panel row rather
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
+import { lastWord } from './loop.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -502,12 +503,17 @@ export function evidence(lines, idx) {
  */
 export function pairRetries(lines) {
   const byTime = (a, b) => String(a.at ?? '').localeCompare(String(b.at ?? ''));
-  const refused = lines.filter((l) => l.kind === 'capture-invalid').sort(byTime);
+  // Per SESSION, so each outcome scans its own session's refusals, not the window's (PR #400 review).
+  const refusedBy = new Map();
+  for (const l of lines.filter((x) => x.kind === 'capture-invalid').sort(byTime)) {
+    refusedBy.set(l._session, [...(refusedBy.get(l._session) ?? []), l]);
+  }
   const outcomes = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-refused').sort(byTime);
   const pairing = new Map();
   const closing = new Set();
-  const subj = (l) => String(l.subject ?? '');
-  const open = (o) => refused.filter((r) => !pairing.has(r) && r._session === o._session && String(r.at ?? '') < String(o.at ?? ''));
+  // Trimmed: the door logs a refused subject trimmed, a landed capture as typed (PR #400 review).
+  const subj = (l) => String(l.subject ?? '').trim();
+  const open = (o) => (refusedBy.get(o._session) ?? []).filter((r) => !pairing.has(r) && String(r.at ?? '') < String(o.at ?? ''));
   for (const o of outcomes) {
     for (const r of open(o).filter((x) => subj(x) === subj(o))) { pairing.set(r, 'subject'); closing.add(o); }
   }
@@ -666,7 +672,7 @@ export function refusals(lines, idx) {
 export function unhelpful(lines, idx) {
   const bySession = new Map();
   for (const l of lines) {
-    if (l.kind !== 'ask' && l.kind !== 'capture' && l.kind !== 'show') continue;
+    if (l.kind !== 'ask' && l.kind !== 'capture' && l.kind !== 'show' && l.kind !== 'none') continue;
     const s = l._session || '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
@@ -686,13 +692,14 @@ export function unhelpful(lines, idx) {
     // WHAT AN `ambiguous` ASK WAS ANSWERED WITH (VCST-6156). Under the verdict ranker almost every ask
     // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
     // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
-    const picked = new Map();
+    // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
+    const pointedAt = new Map();
     for (const e of events) {
-      if (e.kind !== 'show' || e.state !== 'answer' || !e.after || !e.id) continue;
+      if ((e.kind !== 'show' && e.kind !== 'none') || !e.after) continue;
       const k = String(e.after);
-      picked.set(k, [...(picked.get(k) ?? []), String(e.id)]);
+      pointedAt.set(k, [...(pointedAt.get(k) ?? []), e]);
     }
-    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : picked.get(String(ask.at)) ?? []);
+    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : lastWord(pointedAt.get(String(ask.at))).ids);
 
     for (const cap of events) {
       if (cap.kind !== 'capture' || !cap.id) continue;

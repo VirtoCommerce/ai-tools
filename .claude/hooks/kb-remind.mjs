@@ -5,7 +5,9 @@
  * WHY A HOOK (VCST-6156). The loop the base exists for is "ask -> nothing -> find out -> capture", and
  * measured 2026-09-30 .. 10-06 it closed in about three sessions of four: of 30 sessions with a miss,
  * 8 wrote nothing back. The prompts already carry the write step; what they cannot do is notice, at
- * the end, that a particular question was left open. `Stop` is the one moment that is observable.
+ * the end, that a particular question was left open. `Stop` is the one moment that is observable --
+ * and the only one that works: in those 8 sessions the agent never called the base again after the
+ * miss, so a reminder riding on a later kb response would have reached nobody.
  *
  * WHAT IT DOES. Reads this session's local sidecar (`<session>.meta.json`, see `core/queue.mjs`
  * `metaOutcomes`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed `ambiguous` list
@@ -13,45 +15,57 @@
  * step to capture what it found, or to say in a line that it did not find it out. Nothing is decided
  * for the agent -- only it knows whether it established the answer.
  *
+ * IT NEVER WRITES THE SIDECAR. The kb processes append to `meta.json` (a background subagent may be
+ * doing so at this very Stop); what this hook remembers -- the asks it already raised -- goes to its
+ * own `<session>.reminded.json`, written to a temp file and renamed into place (`remindedPath`).
+ *
  * THREE GUARDS, because a Stop hook that blocks is a hook that can trap a session:
  *   1. `stop_hook_active` (set by the harness while a Stop hook already made Claude continue) -> silent.
- *   2. Every question is raised ONCE: its ask `at` goes into `meta.reminded` BEFORE the reason is
- *      printed, so a crash after the write costs a reminder, never a loop.
+ *   2. Every question is raised ONCE: its ask `at` is recorded BEFORE the reason is printed, so a crash
+ *      after the write costs a reminder, never a loop.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine) or `KB_REMIND=0` (this hook only).
  *
  * WHAT THE OPERATOR SEES: Claude Code labels any blocking Stop hook "Stop hook error occurred" in its
  * UI -- the reminder, not a fault (verified live 2026-10-06; the model receives it as "Stop hook
  * feedback"). The reason opens with "kb reminder (not a failure)" for whoever expands it.
  *
- * Exits 0 whatever happens and prints NOTHING unless it is blocking; the sidecar read is a few KB.
- * `kb-flush.mjs` is the other Stop hook and stays silent by design -- the two never share stdout.
+ * Exits 0 whatever happens and prints NOTHING unless it is blocking; the reads are a few KB.
+ * `kb-flush.mjs` is the other kb Stop hook and stays silent by design -- the two never share stdout.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
-import { hasSessionId, hookEnv, kbDisabled, metaPath } from '../../scripts/kb/core/queue.mjs';
+import { readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { hasSessionId, hookEnv, kbDisabled, metaPath, remindDisabled, remindedPath } from '../../scripts/kb/core/queue.mjs';
 import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
 
-const remindOff = (env) => /^(0|false|no|off)$/i.test(String(env.KB_REMIND ?? '').trim());
+const REMEMBERED = 200;
+
+function readJson(path) {
+  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+}
 
 function main() {
   let payload = null;
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
   if (payload?.stop_hook_active) return;
-  if (kbDisabled(process.env) || remindOff(process.env)) return;
+  if (kbDisabled(process.env) || remindDisabled(process.env)) return;
 
   // The sidecar is keyed like the queue (`hookEnv` -> `sessionId`); with no session id anywhere the
   // key is a fresh process key and names no sidecar this session wrote.
   const env = hookEnv(process.env, payload);
   if (!hasSessionId(env)) return;
-  const path = metaPath(env);
-  let meta;
-  try { meta = JSON.parse(readFileSync(path, 'utf8')); } catch { return; }
+  const meta = readJson(metaPath(env));
   if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return;
 
-  const loops = openLoops(meta);
+  const path = remindedPath(env);
+  const before = readJson(path);
+  const raised = Array.isArray(before) ? before.map(String) : [];
+  const loops = openLoops(meta, { reminded: raised });
   if (!loops.length) return;
 
-  const reminded = [...(Array.isArray(meta.reminded) ? meta.reminded : []), ...loops.map((l) => l.at)].slice(-200);
-  try { writeFileSync(path, JSON.stringify({ ...meta, reminded }), 'utf8'); } catch { return; }
+  const tmp = `${path}.${process.pid}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify([...raised, ...loops.map((l) => l.at)].slice(-REMEMBERED)), 'utf8');
+    renameSync(tmp, path);
+  } catch { return; }
 
   process.stdout.write(JSON.stringify({ decision: 'block', reason: reminderText(loops) }));
 }

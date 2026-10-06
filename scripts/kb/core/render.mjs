@@ -11,7 +11,7 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
-import { SCOPE_SOURCE } from './door-hints.mjs';
+import { CONTRACT, SCOPE_SOURCE } from './door-hints.mjs';
 import { HEADLINE } from './exits.mjs';
 import { idList } from './index-load.mjs';
 
@@ -191,7 +191,7 @@ export function captureLines(r, opts = {}) {
  * gets the same facts from its tool schema and is not handed the card.
  */
 export const CONTRACT_CARD = [
-  '  the capture contract (in full: .claude/knowledge/execution/kb-capture-contract.md):',
+  `  the capture contract (in full: ${CONTRACT}):`,
   '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
   '               never a button label, field name or menu path -- those go in --claim',
   '    --deployment  the stand as the base spells it (vcst_qa, vcptcore_stable), not the bare TEST_ENV',
@@ -222,6 +222,17 @@ function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
       ? 'REFUSED — an entry already has this subject, so this capture would take its id.'
       : 'REFUSED — the base already holds this fact.';
     return [`${prefix}: ${head}`, '', `  ${r.message.split('\n').join('\n  ')}`];
+  }
+  if (r.state === 'dry-run') {
+    // What a real capture would print, minus the queue: the id it would take and the three hints --
+    // they are the reason to dry-run a payload at all (PR #400 review).
+    return [
+      `${prefix}: dry run -- would queue ${r.id} — ${r.entry?.subject ?? ''}`,
+      `  ${r.why}`,
+      ...readLines(r.read),
+      ...neighbourLines(r.alsoHere),
+      ...relatedLines(r.related),
+    ];
   }
   if (r.state !== 'queued') {
     const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];

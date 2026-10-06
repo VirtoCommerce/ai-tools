@@ -23,6 +23,7 @@ import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
+import { CONTRACT } from './core/door-hints.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
@@ -71,7 +72,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
-                        contract: .claude/knowledge/execution/kb-capture-contract.md
+                        contract: ${CONTRACT}
   npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]

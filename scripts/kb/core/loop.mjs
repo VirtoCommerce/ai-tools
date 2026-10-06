@@ -14,9 +14,30 @@
 // earlier miss. A reminder that fires on a need that was in fact written back would teach the agent
 // to ignore it; one that misses an occasional unrelated gap costs nothing.
 
+import { CONTRACT } from './door-hints.mjs';
 import { metaAsks, metaOutcomes } from './queue.mjs';
 
 const WRITES = new Set(['capture', 'capture-refused', 'confirm', 'dispute']);
+
+/**
+ * THE AGENT'S LAST WORD on one `ambiguous` ask, from the `show` / `none` lines that point at it
+ * (`after` = the ask's `at`). The LAST one counts, because the tool contract invites a look before
+ * the verdict: `kb_show --ask h` to read a candidate, then `kb_none --ask h` because it did not
+ * answer. Reading "any pick" made that ask look answered -- the very miss this exists to catch.
+ * Returns `{ verdict: 'picked', ids }` (the picks after the last `none`), `{ verdict: 'none' }`, or
+ * `{ verdict: 'open' }` when the agent said nothing. `ids` is empty for sidecar outcomes, which
+ * carry no entry id; the report's lines do.
+ */
+export function lastWord(pointed) {
+  const said = (pointed ?? [])
+    .filter((o) => o.kind === 'none' || (o.kind === 'show' && o.state === 'answer'))
+    .sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')));
+  if (!said.length) return { verdict: 'open', ids: [] };
+  const lastNone = said.map((o) => o.kind).lastIndexOf('none');
+  const picks = said.slice(lastNone + 1);
+  if (!picks.length) return { verdict: 'none', ids: [] };
+  return { verdict: 'picked', ids: picks.map((o) => o.id).filter(Boolean).map(String) };
+}
 
 /**
  * The asks still open, oldest first: `{ at, q, why }`, where `why` is
@@ -24,9 +45,9 @@ const WRITES = new Set(['capture', 'capture-refused', 'confirm', 'dispute']);
  *   'unresolved'  an `ambiguous` list was neither picked from nor rejected, and nothing written after.
  * An `ambiguous` ask the agent picked from (`show` with `state: answer` and `after` = the ask) is
  * answered. Asks the base could not be READ on (`unreachable`, no base) are not misses: there was no
- * answer to get. `reminded` lists ask `at`s already asked about, so each is raised at most once.
+ * answer to get. `reminded` lists ask `at`s already asked about (`kb-remind`'s own file), so each is raised at most once.
  */
-export function openLoops(meta, { reminded = meta?.reminded ?? [] } = {}) {
+export function openLoops(meta, { reminded = [] } = {}) {
   // A sidecar with no `outcomesSince` was kept by a client that recorded no outcomes, so it cannot say
   // whether anything was written back: it is raised about nothing. Asks before the mark likewise.
   const since = typeof meta?.outcomesSince === 'string' ? meta.outcomesSince : null;
@@ -38,10 +59,9 @@ export function openLoops(meta, { reminded = meta?.reminded ?? [] } = {}) {
     if (asked.has(a.at) || a.at < since) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
     if (outcomes.some((o) => WRITES.has(o.kind) && o.at > a.at)) continue;
-    const pointed = outcomes.filter((o) => o.after === a.at);
-    if (pointed.some((o) => o.kind === 'show' && o.state === 'answer')) continue;
-    const rejected = pointed.some((o) => o.kind === 'none');
-    out.push({ at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || rejected ? 'miss' : 'unresolved' });
+    const word = lastWord(outcomes.filter((o) => o.after === a.at));
+    if (a.state === 'ambiguous' && word.verdict === 'picked') continue;
+    out.push({ at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved' });
   }
   return out;
 }
@@ -60,7 +80,7 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
  * is no non-blocking way for a Stop hook to make the agent take one more step. The operator who opens
  * that notice reads this line first.
  */
-export function reminderText(loops, { contract = '.claude/knowledge/execution/kb-capture-contract.md' } = {}) {
+export function reminderText(loops, { contract = CONTRACT } = {}) {
   const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session got no answer from the knowledge base, and nothing was written back after them:`];
   for (const l of loops.slice(0, LISTED)) {
     lines.push(l.why === 'unresolved'
