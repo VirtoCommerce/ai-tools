@@ -330,7 +330,8 @@
     "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
     "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
     "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs",
-    "kb:sync-base": "node scripts/kb/sync-base.mjs"
+    "kb:sync-base": "node scripts/kb/sync-base.mjs",
+    "kb:cards": "node scripts/kb/cards.mjs"
   },
   "repository": {
     "type": "git",

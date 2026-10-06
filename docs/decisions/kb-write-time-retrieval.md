@@ -597,8 +597,9 @@ of `vc-knowledge` on `vcst-6122-schema2`:
 `kb:sync-base` accepts only evidence appended on `main` (the branch version of each entry wins,
 `main`'s new items are appended, and those of entries the branch superseded go to their successors).
 A changed body, field or deleted entry on `main` is refused and named -- resolve that one by hand.
-Then card every new entry it lists (4-6 questions, vocabulary concepts, closed surface) as
-`migrate-schema2` keep plans (`--stamp`, dry run, `--apply`), commit, push the branch, and confirm the
+Then card every new entry it lists: `npm run kb:cards -- --base <checkout> --list --out <dir>` writes a
+packet, an agent writes the plans from it, `npm run kb:cards -- --base <checkout> --apply <plans.json>
+--packet <dir>` checks and applies them; commit, push the branch, and confirm the
 PR shows no conflict. If `main` moves again before the merge, repeat this step.
 
 **4. Ship the data.** Mark #2 ready, merge with a merge commit (keeps the plan history). From that
