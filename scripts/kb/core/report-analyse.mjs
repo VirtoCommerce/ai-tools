@@ -508,7 +508,10 @@ export function pairRetries(lines) {
   for (const l of lines.filter((x) => x.kind === 'capture-invalid').sort(byTime)) {
     refusedBy.set(l._session, [...(refusedBy.get(l._session) ?? []), l]);
   }
-  const outcomes = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-refused').sort(byTime);
+  // The same outcomes `doorStats` counts: a push-time dedup refusal is the queued capture again, and
+  // letting it settle a refusal put it in `closing` but not in the outcomes -- `firstAttempt` could go
+  // negative (PR #400 review, cycle 3).
+  const outcomes = lines.filter((l) => (l.kind === 'capture' && l.id) || (l.kind === 'capture-refused' && l.when !== 'push')).sort(byTime);
   const pairing = new Map();
   const closing = new Set();
   // Trimmed: the door logs a refused subject trimmed, a landed capture as typed (PR #400 review).

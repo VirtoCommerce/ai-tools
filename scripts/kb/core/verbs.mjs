@@ -576,6 +576,9 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
   return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
 }
 
+/** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
+const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
 /**
  * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
  * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
@@ -583,8 +586,6 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
  * latest ask": in a batched wave the latest ask is somebody else's, which is how S4's verdict once
  * carried S5's timestamp.
  */
-const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
-
 export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
   const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
@@ -603,8 +604,11 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   if (!written.ok) return { state: 'unreachable', why: written.why };
   return {
     state: 'recorded',
-    ...(target ? { after: target.at, q: target.q } : {}),
-    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(pointer ? { after: pointer } : {}),
+    ...(target ? { q: target.q } : {}),
+    // Said as it happened: an unremembered ISO handle WAS recorded (PR #400 review, cycle 3).
+    ...(handle && !named && pointer ? { why: `recorded against handle ${handle.trim()}, which this session no longer remembers` } : {}),
+    ...(handle && !named && !pointer ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
     ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
   };
 }
