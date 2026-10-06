@@ -1,19 +1,20 @@
 {
   "$schema": "../../templates/mind-map.schema.json",
   "schema_version": "1.0",
-  "domain_slug": "returns",
-  "domain_map_rev": 1,
+  "domain_slug": "ret",
+  "domain_map_rev": 2,
   "generated": "2026-10-06",
+  "amended": "2026-10-06",
   "metadata": {
     "scope": "Both mechanisms on the Return entity: buyer self-service (VCST-5628), agent decisions and notifications (VCST-5883), legacy admin records. Orderless returns (VCST-5884) and the mandatory decline reason (VCST-5885) are out.",
-    "built_from": "returns.md rev 1 (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs.",
+    "built_from": "returns.md rev 1 (built), rev 2 (update 2026-10-06) (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs.",
     "kb_read": "2026-10-06 — 4 questions (authorize outcome, returnableItems eligibility, available-statuses / cancel, notifications); opened KB-21F4F161, KB-F97CFAF6, KB-17555498, KB-06CFE625; cited from headlines KB-700E5D52, KB-DF9F415E, KB-4E1FF232, KB-C6BB1914, KB-1F2EBF83, KB-85F02FDB",
-    "domain_map_note": "returns.md rev 1 predates both deployments: its §2b 'storefront not reachable' and 'agent approve/reject UNVERIFIED' are out of date — refresh it with /qa-domain-map returns.",
+    "domain_map_note": "Updated to returns.md rev 2 (Return 3.1004.0, theme 2.59.0-pr-2532). Slug renamed returns -> ret when Domain 28 (BL-RET) was declared.",
     "evidence_note": "Promoted cases record a promoting ticket and date, not a run id, so they are cited as {SPEC}; {OBSERVED} comes from kb entries, REG-2026-10-01-2133 and the domain map's live pass."
   },
   "nodes": [
     {
-      "id": "returns.returns",
+      "id": "ret.returns",
       "type": "feature",
       "name": "Returns (RMA)",
       "status": "CONFIRMED",
@@ -22,7 +23,7 @@
       "evidence": [
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §1",
+          "ref": "domain-map:ret@rev1 §1",
           "note": "both mechanisms live on one entity",
           "date": "2026-09-22"
         },
@@ -35,7 +36,7 @@
       ]
     },
     {
-      "id": "returns.buyer",
+      "id": "ret.buyer",
       "type": "capability",
       "name": "Buyer self-service returns",
       "status": "CONFIRMED",
@@ -55,7 +56,7 @@
       ]
     },
     {
-      "id": "returns.agent",
+      "id": "ret.agent",
       "type": "capability",
       "name": "Agent decision and follow-up",
       "status": "CONFIRMED",
@@ -74,7 +75,7 @@
       ]
     },
     {
-      "id": "returns.admin",
+      "id": "ret.admin",
       "type": "capability",
       "name": "Legacy admin return records",
       "status": "CONFIRMED",
@@ -82,7 +83,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §2a",
+          "ref": "domain-map:ret@rev1 §2a",
           "note": "api/return controller, Admin SPA Returns blade"
         },
         {
@@ -94,7 +95,7 @@
       ]
     },
     {
-      "id": "returns.config",
+      "id": "ret.config",
       "type": "capability",
       "name": "Store return policy and settings",
       "status": "CONFIRMED",
@@ -102,26 +103,26 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D2",
+          "ref": "domain-map:ret@rev1 §3 D2",
           "note": "8 store-level keys, read per store"
         },
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §2c",
+          "ref": "domain-map:ret@rev1 §2c",
           "note": "returnPolicy and returnReasons read live",
           "date": "2026-09-22"
         }
       ]
     },
     {
-      "id": "returns.state.draft",
+      "id": "ret.state.draft",
       "type": "state",
       "name": "Return: Draft",
       "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 2"
+          "ref": "domain-map:ret@rev1 §1 link 2"
         },
         {
           "class": "SPEC",
@@ -132,14 +133,14 @@
       "maturity": "new"
     },
     {
-      "id": "returns.state.requested",
+      "id": "ret.state.requested",
       "type": "state",
       "name": "Return: Requested",
       "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 5"
+          "ref": "domain-map:ret@rev1 §1 link 5"
         },
         {
           "class": "OBSERVED",
@@ -151,7 +152,7 @@
       "maturity": "new"
     },
     {
-      "id": "returns.state.new",
+      "id": "ret.state.new",
       "type": "state",
       "name": "Return: New (admin-created)",
       "status": "CONFIRMED",
@@ -170,7 +171,7 @@
       ]
     },
     {
-      "id": "returns.state.approved",
+      "id": "ret.state.approved",
       "type": "state",
       "name": "Return: Approved",
       "status": "CONFIRMED",
@@ -190,7 +191,7 @@
       "maturity": "new"
     },
     {
-      "id": "returns.state.partially-approved",
+      "id": "ret.state.partially-approved",
       "type": "state",
       "name": "Return: PartiallyApproved",
       "status": "CONFIRMED",
@@ -210,7 +211,7 @@
       "maturity": "new"
     },
     {
-      "id": "returns.state.rejected",
+      "id": "ret.state.rejected",
       "type": "state",
       "name": "Return: Rejected",
       "status": "CONFIRMED",
@@ -231,7 +232,7 @@
       "terminal": true
     },
     {
-      "id": "returns.state.cancelled",
+      "id": "ret.state.cancelled",
       "type": "state",
       "name": "Return: Cancelled",
       "status": "CONFIRMED",
@@ -252,7 +253,7 @@
       "terminal": true
     },
     {
-      "id": "returns.state.processing",
+      "id": "ret.state.processing",
       "type": "state",
       "name": "Return: Processing",
       "status": "CONFIRMED",
@@ -271,7 +272,7 @@
       ]
     },
     {
-      "id": "returns.state.completed",
+      "id": "ret.state.completed",
       "type": "state",
       "name": "Return: Completed",
       "status": "CONFIRMED",
@@ -292,7 +293,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.eligibility",
+      "id": "ret.buyer.eligibility",
       "name": "An order line becomes returnable",
       "chain_link": "1",
       "interfaces": [
@@ -304,7 +305,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1",
+          "ref": "domain-map:ret@rev1 §1 link 1",
           "note": "ReturnEligibilityService.GetIneligibilityReason"
         },
         {
@@ -316,7 +317,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.delivered-in-window",
+      "id": "ret.buyer.eligibility.delivered-in-window",
       "branch_kind": "happy",
       "technique": "EP",
       "name": "Delivered inside the window — fully returnable",
@@ -325,7 +326,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1"
+          "ref": "domain-map:ret@rev1 §1 link 1"
         },
         {
           "class": "SPEC",
@@ -336,7 +337,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.capped-by-delivered",
+      "id": "ret.buyer.eligibility.capped-by-delivered",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Returnable quantity is capped by delivered, not ordered",
@@ -357,7 +358,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.split-delivery",
+      "id": "ret.buyer.eligibility.split-delivery",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Split delivery — the window runs from the latest delivery, quantities sum",
@@ -373,7 +374,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.outside-window",
+      "id": "ret.buyer.eligibility.outside-window",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Delivery older than WindowDays — OutsideReturnWindow",
@@ -382,7 +383,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1",
+          "ref": "domain-map:ret@rev1 §1 link 1",
           "note": "ReturnableUntil = deliveryDate + WindowDays"
         },
         {
@@ -394,7 +395,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.not-delivered",
+      "id": "ret.buyer.eligibility.not-delivered",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Line without a delivery date — NotDelivered",
@@ -415,7 +416,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.order-status-not-allowed",
+      "id": "ret.buyer.eligibility.order-status-not-allowed",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "Order status outside AllowedOrderStatuses — OrderStatusNotAllowed",
@@ -424,7 +425,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1",
+          "ref": "domain-map:ret@rev1 §1 link 1",
           "note": "default Completed"
         },
         {
@@ -436,7 +437,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.line-cancelled",
+      "id": "ret.buyer.eligibility.line-cancelled",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Cancelled line excluded, sibling line still returnable",
@@ -445,7 +446,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1",
+          "ref": "domain-map:ret@rev1 §1 link 1",
           "note": "LineCancelled"
         },
         {
@@ -457,7 +458,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.shipment-status-filter",
+      "id": "ret.buyer.eligibility.shipment-status-filter",
       "branch_kind": "boundary",
       "technique": "DT",
       "name": "AllowedShipmentStatuses — blank means any, a list refuses other statuses",
@@ -466,7 +467,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §5 G7",
+          "ref": "domain-map:ret@rev1 §5 G7",
           "note": "default empty = any status"
         },
         {
@@ -478,7 +479,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.returns-off",
+      "id": "ret.buyer.eligibility.returns-off",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "Return.ReturnEnabled off — ReturnsDisabled, createReturn refused",
@@ -487,7 +488,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 1",
+          "ref": "domain-map:ret@rev1 §1 link 1",
           "note": "ReturnsDisabled reason"
         },
         {
@@ -496,11 +497,11 @@
           "note": "RET-GQL-028"
         }
       ],
-      "notes": "Feature-switch off branch: an order page offers no Return entry point (ORD-RET-002 covers the no-eligible-line case)."
+      "notes": "Feature-switch off branch: an order page offers no Return entry point (ORD-RET-002 covers the no-eligible-line case). Storefront module registers only when Return.ReturnEnabled is on (rev 2 §2b, source); the off rendering is G15."
     },
     {
       "type": "branch",
-      "id": "returns.buyer.eligibility.anonymous",
+      "id": "ret.buyer.eligibility.anonymous",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "Anonymous caller refused Unauthorized, not an empty result",
@@ -509,7 +510,7 @@
       "evidence": [
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §2c",
+          "ref": "domain-map:ret@rev1 §2c",
           "note": "returnReasons unauthenticated -> Unauthorized",
           "date": "2026-09-22"
         },
@@ -522,7 +523,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.draft",
+      "id": "ret.buyer.draft",
       "name": "Buyer builds and edits a draft",
       "chain_link": "2",
       "interfaces": [
@@ -531,16 +532,16 @@
       ],
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_after": "returns.state.draft",
+      "state_after": "ret.state.draft",
       "description": "createReturn / updateReturn; the return stays Draft until submitted.",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 2"
+          "ref": "domain-map:ret@rev1 §1 link 2"
         },
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §2c",
+          "ref": "domain-map:ret@rev1 §2c",
           "note": "argument shapes introspected",
           "date": "2026-09-22"
         },
@@ -553,7 +554,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.draft.invalid-quantity",
+      "id": "ret.buyer.draft.invalid-quantity",
       "branch_kind": "negative",
       "technique": "BVA",
       "name": "Zero or negative quantity refused INVALID_QUANTITY",
@@ -569,7 +570,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.draft.no-items",
+      "id": "ret.buyer.draft.no-items",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Empty line array refused NO_ITEMS",
@@ -585,7 +586,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.draft.over-limit-kept",
+      "id": "ret.buyer.draft.over-limit-kept",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "A quantity above the returnable one is stored on the draft; the cap applies at submit",
@@ -608,7 +609,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.draft.edit-after-draft",
+      "id": "ret.buyer.draft.edit-after-draft",
       "branch_kind": "state",
       "technique": "ST",
       "name": "updateReturn refused WRONG_STATUS once the return left Draft",
@@ -624,7 +625,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.draft.foreign-attachment",
+      "id": "ret.buyer.draft.foreign-attachment",
       "branch_kind": "negative",
       "technique": "EG",
       "name": "A file that belongs to another return is refused ATTACHMENT_NOT_AVAILABLE",
@@ -640,7 +641,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.hold",
+      "id": "ret.buyer.hold",
       "name": "Only open returns hold quantity",
       "chain_link": "3",
       "interfaces": [
@@ -652,7 +653,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 3",
+          "ref": "domain-map:ret@rev1 §1 link 3",
           "note": "NonHoldingStatuses"
         },
         {
@@ -665,7 +666,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.hold.lifecycle",
+      "id": "ret.buyer.hold.lifecycle",
       "branch_kind": "state",
       "technique": "ST",
       "name": "Draft holds nothing, submit holds the submitted quantity, cancel releases it",
@@ -681,7 +682,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.hold.decided-line",
+      "id": "ret.buyer.hold.decided-line",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "A decided line holds its approved quantity and releases the rest",
@@ -702,7 +703,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.hold.legacy-new",
+      "id": "ret.buyer.hold.legacy-new",
       "branch_kind": "integration",
       "technique": "EP",
       "name": "An admin-created New return holds units for returnableItems",
@@ -719,24 +720,35 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.hold.legacy-endpoint-counts-all",
+      "id": "ret.buyer.hold.legacy-endpoint-counts-all",
       "branch_kind": "integration",
       "technique": "DT",
       "name": "The legacy available-quantities endpoint counts returns of every status",
       "maturity": "new",
-      "status": "CONFIRMED",
+      "status": "OBSOLETE",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D1",
+          "ref": "domain-map:ret@rev1 §3 D1",
           "note": "GetItemsAvailableQuantities has no status filter; the module guide admits it"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D1",
+          "note": "admin and buyer figures equal; cancelled returns consume nothing",
+          "date": "2026-10-06"
         }
       ],
-      "notes": "Admin and buyer can see two different 'left to return' numbers on the same order whenever a cancelled or rejected return exists. Not reproduced live (D1)."
+      "notes": "Admin and buyer can see two different 'left to return' numbers on the same order whenever a cancelled or rejected return exists. Not reproduced live (D1).",
+      "obsolete": {
+        "date": "2026-10-06",
+        "reason": "On Return 3.1004.0 the legacy available-quantities endpoint counts holds the same way returnableItems does (domain map rev 2 D1, module guide + live on an order with 100+ cancelled returns).",
+        "replaced_by": "ret.admin.create.available-quantity-ignores-eligibility"
+      }
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.attach",
+      "id": "ret.buyer.attach",
       "name": "Buyer attaches evidence to a line",
       "chain_link": "4",
       "interfaces": [
@@ -748,7 +760,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 4",
+          "ref": "domain-map:ret@rev1 §1 link 4",
           "note": "ReturnAttachmentService via the File Experience API"
         },
         {
@@ -760,7 +772,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.attach.required-missing",
+      "id": "ret.buyer.attach.required-missing",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "AttachmentsRequired on and no file — submit refused ATTACHMENTS_REQUIRED",
@@ -769,7 +781,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 4",
+          "ref": "domain-map:ret@rev1 §1 link 4",
           "note": "default false"
         },
         {
@@ -781,7 +793,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.attach.disallowed-extension",
+      "id": "ret.buyer.attach.disallowed-extension",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Disallowed file extension rejected with a message",
@@ -797,7 +809,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.submit",
+      "id": "ret.buyer.submit",
       "name": "Buyer submits the return",
       "chain_link": "5",
       "interfaces": [
@@ -806,12 +818,12 @@
       ],
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.draft",
-      "state_after": "returns.state.requested",
+      "state_before": "ret.state.draft",
+      "state_after": "ret.state.requested",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 5"
+          "ref": "domain-map:ret@rev1 §1 link 5"
         },
         {
           "class": "OBSERVED",
@@ -828,7 +840,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.submit.reason-missing",
+      "id": "ret.buyer.submit.reason-missing",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "A line without a reason is refused INVALID_REQUEST",
@@ -837,7 +849,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 5",
+          "ref": "domain-map:ret@rev1 §1 link 5",
           "note": "submit requires a reason on every line"
         },
         {
@@ -849,7 +861,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.submit.comment-required",
+      "id": "ret.buyer.submit.comment-required",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "A reason in ReasonsRequiringComment needs a comment",
@@ -871,7 +883,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.submit.quantity-taken",
+      "id": "ret.buyer.submit.quantity-taken",
       "branch_kind": "negative",
       "technique": "EG",
       "name": "Quantity consumed meanwhile — RETURN_QUANTITY_UNAVAILABLE, or LINE_NOT_RETURNABLE when nothing is left; the draft survives",
@@ -893,7 +905,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.cancel",
+      "id": "ret.buyer.cancel",
       "name": "Buyer withdraws the return before a decision",
       "chain_link": "6",
       "interfaces": [
@@ -902,12 +914,12 @@
       ],
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.draft",
-      "state_after": "returns.state.cancelled",
+      "state_before": "ret.state.draft",
+      "state_after": "ret.state.cancelled",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 6"
+          "ref": "domain-map:ret@rev1 §1 link 6"
         },
         {
           "class": "SPEC",
@@ -924,7 +936,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.cancel.not-owner",
+      "id": "ret.buyer.cancel.not-owner",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "Another buyer's return — update, submit and cancel refused RETURN_NOT_FOUND",
@@ -933,7 +945,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §1 link 6",
+          "ref": "domain-map:ret@rev1 §1 link 6",
           "note": "ReturnAuthorizationHandler.IsOwnedBy"
         },
         {
@@ -945,7 +957,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.cancel.after-decision",
+      "id": "ret.buyer.cancel.after-decision",
       "branch_kind": "state",
       "technique": "ST",
       "name": "No active Cancel on a decided or cancelled return",
@@ -971,7 +983,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.buyer.read",
+      "id": "ret.buyer.read",
       "name": "Buyer sees own returns and their outcome",
       "chain_link": "7",
       "interfaces": [
@@ -994,7 +1006,7 @@
         },
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §2c",
+          "ref": "domain-map:ret@rev1 §2c",
           "note": "returns(storeId) shape live",
           "date": "2026-09-22"
         }
@@ -1002,7 +1014,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.unknown-id",
+      "id": "ret.buyer.read.unknown-id",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Nonexistent id resolves to null, not an error",
@@ -1018,7 +1030,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.other-buyer",
+      "id": "ret.buyer.read.other-buyer",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "Another buyer's return resolves to null",
@@ -1034,7 +1046,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.org-colleague",
+      "id": "ret.buyer.read.org-colleague",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "A colleague in the same organization cannot read a buyer's return",
@@ -1050,12 +1062,18 @@
           "class": "SPEC",
           "ref": "VCST-5883",
           "note": "ORD-RET-016 (Draft)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §1 Actors",
+          "note": "colleague: order(id) resolves, returnableItems [], return(id) null",
+          "date": "2026-10-06"
         }
       ]
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.cross-store",
+      "id": "ret.buyer.read.cross-store",
       "branch_kind": "permission",
       "technique": "EG",
       "name": "Own return read or cancelled by id from another store context",
@@ -1064,15 +1082,15 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D6",
+          "ref": "domain-map:ret@rev1 §3 D6",
           "note": "the handler checks ownership only, no storeId"
         }
       ],
-      "notes": "Domain map G4: needs a same-customer, two-store return pair; never reproduced."
+      "notes": "Domain map G4, still open at rev 2; the handler was not re-read at 3.1004.0 (D6)."
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.staff-created",
+      "id": "ret.buyer.read.staff-created",
       "branch_kind": "integration",
       "technique": "EP",
       "name": "A staff-created return and its decision appear in the buyer's account",
@@ -1088,7 +1106,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.re-request-released",
+      "id": "ret.buyer.read.re-request-released",
       "branch_kind": "happy",
       "technique": "FLOW",
       "name": "Units released by a partial decision can be requested on a new return, not beyond what remains",
@@ -1113,7 +1131,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.buyer.read.no-prices",
+      "id": "ret.buyer.read.no-prices",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "The storefront return contract carries no price, currency or total",
@@ -1129,7 +1147,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.agent.review",
+      "id": "ret.agent.review",
       "name": "Agent sees what the buyer asked for and why",
       "chain_link": "7",
       "interfaces": [
@@ -1152,7 +1170,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.agent.authorize",
+      "id": "ret.agent.authorize",
       "name": "Agent decides each line with an approved quantity",
       "chain_link": "7",
       "interfaces": [
@@ -1184,14 +1202,14 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.all-approved",
+      "id": "ret.agent.authorize.all-approved",
       "branch_kind": "happy",
       "technique": "DT",
       "name": "Every line approved in full — Approved, nothing released",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.requested",
-      "state_after": "returns.state.approved",
+      "state_before": "ret.state.requested",
+      "state_after": "ret.state.approved",
       "evidence": [
         {
           "class": "SPEC",
@@ -1208,14 +1226,14 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.mixed",
+      "id": "ret.agent.authorize.mixed",
       "branch_kind": "happy",
       "technique": "DT",
       "name": "One line full, one declined — PartiallyApproved",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.requested",
-      "state_after": "returns.state.partially-approved",
+      "state_before": "ret.state.requested",
+      "state_after": "ret.state.partially-approved",
       "evidence": [
         {
           "class": "SPEC",
@@ -1230,14 +1248,14 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.partial-in-line",
+      "id": "ret.agent.authorize.partial-in-line",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Fewer than requested on one line — PartiallyApproved, the rest released",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.requested",
-      "state_after": "returns.state.partially-approved",
+      "state_before": "ret.state.requested",
+      "state_after": "ret.state.partially-approved",
       "evidence": [
         {
           "class": "OBSERVED",
@@ -1254,14 +1272,14 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.all-declined",
+      "id": "ret.agent.authorize.all-declined",
       "branch_kind": "happy",
       "technique": "DT",
       "name": "Every line declined — Rejected, everything released",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.requested",
-      "state_after": "returns.state.rejected",
+      "state_before": "ret.state.requested",
+      "state_after": "ret.state.rejected",
       "evidence": [
         {
           "class": "SPEC",
@@ -1272,14 +1290,14 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.single-unit-declined",
+      "id": "ret.agent.authorize.single-unit-declined",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Single line of quantity 1 declined — Rejected, not PartiallyApproved",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.requested",
-      "state_after": "returns.state.rejected",
+      "state_before": "ret.state.requested",
+      "state_after": "ret.state.rejected",
       "evidence": [
         {
           "class": "SPEC",
@@ -1294,7 +1312,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.over-requested",
+      "id": "ret.agent.authorize.over-requested",
       "branch_kind": "negative",
       "technique": "BVA",
       "name": "Approved above requested refused, nothing persists",
@@ -1314,7 +1332,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.invalid-input",
+      "id": "ret.agent.authorize.invalid-input",
       "branch_kind": "negative",
       "technique": "BVA",
       "name": "Negative quantity, empty items or an undecided line refused",
@@ -1334,7 +1352,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.availability-recheck",
+      "id": "ret.agent.authorize.availability-recheck",
       "branch_kind": "negative",
       "technique": "BVA",
       "name": "Approving more than the order line still has is refused RETURN_QUANTITY_UNAVAILABLE",
@@ -1355,7 +1373,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.wrong-status",
+      "id": "ret.agent.authorize.wrong-status",
       "branch_kind": "state",
       "technique": "ST",
       "name": "A decided, Draft or Cancelled return cannot be authorized",
@@ -1375,7 +1393,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.no-permission",
+      "id": "ret.agent.authorize.no-permission",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "Back-office user without return:authorize or anonymous cannot decide",
@@ -1397,11 +1415,12 @@
           "ref": "VCST-5883",
           "note": "RET-AUTH-016, RET-ADM-008 (Draft)"
         }
-      ]
+      ],
+      "notes": "Still UNVERIFIED for a non-admin account on 3.1004.0 — no such user is provisioned (domain map G9)."
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.buyer-cannot-decide",
+      "id": "ret.agent.authorize.buyer-cannot-decide",
       "branch_kind": "permission",
       "technique": "DT",
       "name": "The buyer xAPI has no deciding mutation and a buyer token is refused on authorize",
@@ -1417,7 +1436,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.status-put-refused",
+      "id": "ret.agent.authorize.status-put-refused",
       "branch_kind": "state",
       "technique": "ST",
       "name": "Setting Approved, PartiallyApproved or Rejected through PUT is refused",
@@ -1433,13 +1452,13 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.authorize.admin-created",
+      "id": "ret.agent.authorize.admin-created",
       "branch_kind": "integration",
       "technique": "EP",
       "name": "An admin-created New return can be decided too",
       "maturity": "new",
       "status": "CONFIRMED",
-      "state_before": "returns.state.new",
+      "state_before": "ret.state.new",
       "evidence": [
         {
           "class": "SPEC",
@@ -1454,7 +1473,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.agent.edit",
+      "id": "ret.agent.edit",
       "name": "Agent edits a return through the admin",
       "interfaces": [
         "rest",
@@ -1478,7 +1497,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.edit.requested-quantity",
+      "id": "ret.agent.edit.requested-quantity",
       "branch_kind": "state",
       "technique": "DT",
       "name": "The buyer's requested quantity can be changed on a Requested return",
@@ -1495,7 +1514,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.edit.decided-line-locked",
+      "id": "ret.agent.edit.decided-line-locked",
       "branch_kind": "state",
       "technique": "ST",
       "name": "A decided line keeps its decision and quantity; only the price stays editable",
@@ -1516,7 +1535,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.edit.duplicate-line",
+      "id": "ret.agent.edit.duplicate-line",
       "branch_kind": "negative",
       "technique": "EG",
       "name": "A second line for an order line already on the return is refused",
@@ -1536,7 +1555,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.edit.malformed-body",
+      "id": "ret.agent.edit.malformed-body",
       "branch_kind": "negative",
       "technique": "EG",
       "name": "Empty, partial or foreign-line body refused 400 with a message, never 500",
@@ -1552,7 +1571,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.agent.next-status",
+      "id": "ret.agent.next-status",
       "name": "Only statuses that saving accepts are offered next",
       "interfaces": [
         "rest",
@@ -1578,7 +1597,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.next-status.forward-only",
+      "id": "ret.agent.next-status.forward-only",
       "branch_kind": "state",
       "technique": "ST",
       "name": "After a decision only forward statuses, never another decision status",
@@ -1594,12 +1613,18 @@
           "class": "SPEC",
           "ref": "VCST-5883",
           "note": "RET-AUTH-025, RET-ADM-006 (Draft)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D11",
+          "note": "PartiallyApproved -> [Completed, Processing, PartiallyApproved]",
+          "date": "2026-10-06"
         }
       ]
     },
     {
       "type": "branch",
-      "id": "returns.agent.next-status.no-legacy-canceled",
+      "id": "ret.agent.next-status.no-legacy-canceled",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "'Cancelled' offered at most once, never the legacy 'Canceled'",
@@ -1616,12 +1641,18 @@
           "class": "SPEC",
           "ref": "VCST-5883",
           "note": "RET-AUTH-017"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D11",
+          "note": "one Cancelled only on 3.1004.0",
+          "date": "2026-10-06"
         }
       ]
     },
     {
       "type": "branch",
-      "id": "returns.agent.next-status.cancel-requested",
+      "id": "ret.agent.next-status.cancel-requested",
       "branch_kind": "state",
       "technique": "ST",
       "name": "An agent cancels a Requested return from the status dropdown",
@@ -1643,17 +1674,24 @@
           "ref": "kb:KB-21F4F161",
           "note": "Requested -> [Requested] only",
           "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D11",
+          "note": "Return 3.1004.0: Requested -> [Requested]; CanSetStatus refuses leaving Requested",
+          "date": "2026-10-06"
         }
       ],
       "drift": {
         "expected": "An agent can move a Requested return to Cancelled (test model VCST-5883-2026-09-28 Part 0; RET-ADM-007)",
-        "observed": "available-statuses and the admin dropdown offer only [Requested] for a Requested return (kb:KB-21F4F161, 2026-10-01)",
+        "observed": "available-statuses and the admin dropdown offer only [Requested] for a Requested return — kb:KB-21F4F161 (2026-10-01) and domain-map:ret@rev2 §3 D11 on the released 3.1004.0 (2026-10-06); an agent ends a Requested return only by declining every line",
         "route": "VCST-5883"
-      }
+      },
+      "last_verified": "2026-10-06"
     },
     {
       "type": "behavior",
-      "id": "returns.agent.notify",
+      "id": "ret.agent.notify",
       "name": "The buyer is told about every status change",
       "interfaces": [
         "event",
@@ -1679,7 +1717,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.by-outcome",
+      "id": "ret.agent.notify.by-outcome",
       "branch_kind": "happy",
       "technique": "EP",
       "name": "Received, cancelled, partly approved and declined messages carry the outcome",
@@ -1695,7 +1733,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.quantities",
+      "id": "ret.agent.notify.quantities",
       "branch_kind": "happy",
       "technique": "EP",
       "name": "Partly approved message shows requested next to approved per line, with the unit",
@@ -1715,7 +1753,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.silent",
+      "id": "ret.agent.notify.silent",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "No message when the status does not change, on Draft edits or on admin creation",
@@ -1742,7 +1780,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.language",
+      "id": "ret.agent.notify.language",
       "branch_kind": "integration",
       "technique": "EP",
       "name": "Messages use the culture the buyer created the return in; null falls back to the store default",
@@ -1763,7 +1801,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.missing-template",
+      "id": "ret.agent.notify.missing-template",
       "branch_kind": "boundary",
       "technique": "EG",
       "name": "A locale without its own template still notifies, with the default text",
@@ -1784,12 +1822,18 @@
         {
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #17"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §2a",
+          "note": "five types, one default template each",
+          "date": "2026-10-06"
         }
       ]
     },
     {
       "type": "branch",
-      "id": "returns.agent.notify.email-off",
+      "id": "ret.agent.notify.email-off",
       "branch_kind": "negative",
       "technique": "PW",
       "name": "Return.SendNotifications off — push still sent once, no email",
@@ -1806,7 +1850,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.agent.fulfil",
+      "id": "ret.agent.fulfil",
       "name": "A decided return moves on to Processing and Completed",
       "interfaces": [
         "admin-ui",
@@ -1830,7 +1874,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.fulfil.released-stay-released",
+      "id": "ret.agent.fulfil.released-stay-released",
       "branch_kind": "state",
       "technique": "ST",
       "name": "Moving on does not hold the released units again",
@@ -1850,7 +1894,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.agent.fulfil.no-order-side-effect",
+      "id": "ret.agent.fulfil.no-order-side-effect",
       "branch_kind": "integration",
       "technique": "EG",
       "name": "Completing a return triggers no refund and no stock change",
@@ -1859,7 +1903,7 @@
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D9",
+          "ref": "domain-map:ret@rev1 §3 D9",
           "note": "no order-side event; resolution is free text"
         },
         {
@@ -1873,7 +1917,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.admin.create",
+      "id": "ret.admin.create",
       "name": "Admin creates a return from an order",
       "interfaces": [
         "admin-ui",
@@ -1881,7 +1925,7 @@
       ],
       "maturity": "released",
       "status": "CONFIRMED",
-      "state_after": "returns.state.new",
+      "state_after": "ret.state.new",
       "evidence": [
         {
           "class": "OBSERVED",
@@ -1903,7 +1947,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.create.order-first",
+      "id": "ret.admin.create.order-first",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "No return without an order and a checked line",
@@ -1920,7 +1964,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.create.quantity-clamped",
+      "id": "ret.admin.create.quantity-clamped",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "Quantity above the returnable one is clamped to the maximum",
@@ -1937,7 +1981,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.create.fully-held",
+      "id": "ret.admin.create.fully-held",
       "branch_kind": "boundary",
       "technique": "BVA",
       "name": "A line fully held by another return offers quantity 0",
@@ -1954,7 +1998,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.create.reason-optional",
+      "id": "ret.admin.create.reason-optional",
       "branch_kind": "negative",
       "technique": "EP",
       "name": "Reason is optional in the admin create form",
@@ -1971,7 +2015,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.admin.edit-status",
+      "id": "ret.admin.edit-status",
       "name": "Admin moves a legacy return between New, Processing, Completed and Cancelled",
       "interfaces": [
         "admin-ui",
@@ -1996,7 +2040,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.edit-status.backwards",
+      "id": "ret.admin.edit-status.backwards",
       "branch_kind": "state",
       "technique": "ST",
       "name": "Completed can be moved back to New or Processing",
@@ -2014,12 +2058,18 @@
           "ref": "kb:KB-21F4F161",
           "note": "Completed -> New persisted",
           "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D11",
+          "note": "legacy Completed still offers New",
+          "date": "2026-10-06"
         }
       ]
     },
     {
       "type": "branch",
-      "id": "returns.admin.edit-status.no-decision-statuses",
+      "id": "ret.admin.edit-status.no-decision-statuses",
       "branch_kind": "negative",
       "technique": "DT",
       "name": "Approved, PartiallyApproved and Rejected are never offered for a legacy return",
@@ -2036,7 +2086,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.edit-status.cancelled-terminal",
+      "id": "ret.admin.edit-status.cancelled-terminal",
       "branch_kind": "state",
       "technique": "ST",
       "name": "A cancelled return offers only Cancelled",
@@ -2053,7 +2103,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.admin.find",
+      "id": "ret.admin.find",
       "name": "Admin finds returns in the Returns list",
       "interfaces": [
         "admin-ui",
@@ -2077,7 +2127,7 @@
     },
     {
       "type": "branch",
-      "id": "returns.admin.find.status-filter",
+      "id": "ret.admin.find.status-filter",
       "branch_kind": "happy",
       "technique": "EP",
       "name": "Status filter lists only the chosen status, including the step-2 statuses",
@@ -2099,7 +2149,7 @@
     },
     {
       "type": "behavior",
-      "id": "returns.admin.delete",
+      "id": "ret.admin.delete",
       "name": "Returns are deleted only through REST",
       "interfaces": [
         "rest"
@@ -2118,13 +2168,18 @@
           "ref": "REG-2026-10-01-2133",
           "note": "RET-004 / RET-022 retired: no Delete in the Admin SPA",
           "date": "2026-10-01"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:ret@rev2 §3 D13",
+          "note": "controller [HttpDelete] + return:delete"
         }
       ],
-      "notes": "integrates with: orders — deleting the order alone leaves returns with empty Order number and Customer (KB-06CFE625)."
+      "notes": "integrates with: orders — deleting the order alone leaves returns with empty Order number and Customer (KB-06CFE625). The published PlatformUserGuide and the in-repo module guide both say a return cannot be deleted; the controller has [HttpDelete] guarded by return:delete (domain map rev 2 D13) — a documentation gap, not a behaviour conflict."
     },
     {
       "type": "behavior",
-      "id": "returns.config.policy",
+      "id": "ret.config.policy",
       "name": "The store's return policy and reason catalog are read per store",
       "chain_link": "1",
       "interfaces": [
@@ -2137,13 +2192,13 @@
       "evidence": [
         {
           "class": "OBSERVED",
-          "ref": "domain-map:returns@rev1 §2c",
+          "ref": "domain-map:ret@rev1 §2c",
           "note": "returnPolicy B2B-store = defaults",
           "date": "2026-09-22"
         },
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D2",
+          "ref": "domain-map:ret@rev1 §3 D2",
           "note": "persisted keys drop the second 'Return'"
         },
         {
@@ -2160,12 +2215,12 @@
     },
     {
       "type": "branch",
-      "id": "returns.config.policy.reason-labels",
+      "id": "ret.config.policy.reason-labels",
       "branch_kind": "boundary",
       "technique": "EP",
       "name": "Reason labels are per-culture admin text, falling back to the code",
       "maturity": "new",
-      "status": "CONFIRMED",
+      "status": "UNVERIFIED",
       "evidence": [
         {
           "class": "SPEC",
@@ -2176,663 +2231,748 @@
           "class": "SPEC",
           "ref": "VCST-5883",
           "note": "ORD-RET-011"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D4",
+          "note": "returnReasons(B2B-store): localizedName byte-identical to code; storefront has no reasons i18n",
+          "date": "2026-10-06"
         }
       ],
-      "notes": "Answers domain map D4 (localizedName equal to the code when no text is set)."
+      "notes": "Domain map rev 2 D4 saw localizedName equal to the code; RET-GQL-035 (promoted) asserts a per-culture label with cultureName set. The map does not say which culture its read used — re-read with cultureName en-US and ru-RU before trusting either. Answers rev 1 D4 only for the admin side."
     },
     {
       "type": "branch",
-      "id": "returns.config.policy.status-vocabulary",
+      "id": "ret.config.policy.status-vocabulary",
       "branch_kind": "boundary",
       "technique": "EP",
       "name": "returnStatuses labels every status the flow can set",
       "maturity": "new",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "DOC",
-          "ref": "domain-map:returns@rev1 §3 D3",
+          "ref": "domain-map:ret@rev1 §3 D3",
           "note": "AwaitingDelivery and Received exist in ReturnStatus.cs, not in the dictionary"
         },
         {
           "class": "SPEC",
           "ref": "VCST-5628",
           "note": "RET-GQL-036 — decision statuses are labelled"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:ret@rev2 §3 D3",
+          "note": "AwaitingDelivery / Received are constants the flow cannot reach yet; the module guide says to add them to the dictionary to use them"
         }
       ],
-      "notes": "D3 was read from source at ee6e377b; whether AwaitingDelivery / Received are still set by any path on Return 3.1003 was not rechecked."
+      "notes": "The dictionary still carries both Canceled and Cancelled (domain map rev 2 D18); the storefront filter and available-statuses show one."
+    },
+    {
+      "type": "branch",
+      "id": "ret.admin.create.available-quantity-ignores-eligibility",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "The admin available quantity ignores the delivered cap and the eligibility gates",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D10",
+          "note": "3 of 17 Completed orders differ: 10 vs buyer cap 4; 5 on a NOT_DELIVERED order; 2 on a cancelled line",
+          "date": "2026-10-06"
+        }
+      ],
+      "notes": "Whether the Admin blade enforces anything on save is domain map G16 (needs a mutation)."
+    },
+    {
+      "type": "branch",
+      "id": "ret.buyer.eligibility.entry-point-hidden",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Nothing returnable — the order page shows no Request return and no reason",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D15",
+          "note": "NOTHING_LEFT_TO_RETURN order: no button, no message",
+          "date": "2026-10-06"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "ORD-RET-002"
+        }
+      ],
+      "notes": "Four causes (nothing left, outside window, not delivered, order status) collapse onto one silent absence; the per-line text exists only in the wizard."
+    },
+    {
+      "type": "branch",
+      "id": "ret.config.policy.disabled-store",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "A store without the Return setting reads disabled but still lists reasons",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §3 D16",
+          "note": "returnPolicy(New-super).isEnabled=false; returnReasons(New-super) = 5 codes",
+          "date": "2026-10-06"
+        }
+      ],
+      "notes": "Whether createReturn is refused for such a store is UNVERIFIED on the map (mutation); ret.buyer.eligibility.returns-off covers the switched-off B2B-store path."
     }
   ],
   "edges": [
     {
-      "from": "returns.returns",
-      "to": "returns.buyer",
+      "from": "ret.returns",
+      "to": "ret.buyer",
       "type": "contains"
     },
     {
-      "from": "returns.returns",
-      "to": "returns.agent",
+      "from": "ret.returns",
+      "to": "ret.agent",
       "type": "contains"
     },
     {
-      "from": "returns.returns",
-      "to": "returns.admin",
+      "from": "ret.returns",
+      "to": "ret.admin",
       "type": "contains"
     },
     {
-      "from": "returns.returns",
-      "to": "returns.config",
+      "from": "ret.returns",
+      "to": "ret.config",
       "type": "contains"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.eligibility",
+      "from": "ret.buyer",
+      "to": "ret.buyer.eligibility",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.delivered-in-window",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.delivered-in-window",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.capped-by-delivered",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.capped-by-delivered",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.split-delivery",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.split-delivery",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.outside-window",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.outside-window",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.not-delivered",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.not-delivered",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.order-status-not-allowed",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.order-status-not-allowed",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.line-cancelled",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.line-cancelled",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.shipment-status-filter",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.shipment-status-filter",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.returns-off",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.returns-off",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.eligibility",
-      "to": "returns.buyer.eligibility.anonymous",
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.anonymous",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.draft",
+      "from": "ret.buyer",
+      "to": "ret.buyer.draft",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.draft",
-      "to": "returns.buyer.draft.invalid-quantity",
+      "from": "ret.buyer.draft",
+      "to": "ret.buyer.draft.invalid-quantity",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.draft",
-      "to": "returns.buyer.draft.no-items",
+      "from": "ret.buyer.draft",
+      "to": "ret.buyer.draft.no-items",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.draft",
-      "to": "returns.buyer.draft.over-limit-kept",
+      "from": "ret.buyer.draft",
+      "to": "ret.buyer.draft.over-limit-kept",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.draft",
-      "to": "returns.buyer.draft.edit-after-draft",
+      "from": "ret.buyer.draft",
+      "to": "ret.buyer.draft.edit-after-draft",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.draft",
-      "to": "returns.buyer.draft.foreign-attachment",
+      "from": "ret.buyer.draft",
+      "to": "ret.buyer.draft.foreign-attachment",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.hold",
+      "from": "ret.buyer",
+      "to": "ret.buyer.hold",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.hold",
-      "to": "returns.buyer.hold.lifecycle",
+      "from": "ret.buyer.hold",
+      "to": "ret.buyer.hold.lifecycle",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.hold",
-      "to": "returns.buyer.hold.decided-line",
+      "from": "ret.buyer.hold",
+      "to": "ret.buyer.hold.decided-line",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.hold",
-      "to": "returns.buyer.hold.legacy-new",
+      "from": "ret.buyer.hold",
+      "to": "ret.buyer.hold.legacy-new",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.hold",
-      "to": "returns.buyer.hold.legacy-endpoint-counts-all",
+      "from": "ret.buyer.hold",
+      "to": "ret.buyer.hold.legacy-endpoint-counts-all",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.attach",
+      "from": "ret.buyer",
+      "to": "ret.buyer.attach",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.attach",
-      "to": "returns.buyer.attach.required-missing",
+      "from": "ret.buyer.attach",
+      "to": "ret.buyer.attach.required-missing",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.attach",
-      "to": "returns.buyer.attach.disallowed-extension",
+      "from": "ret.buyer.attach",
+      "to": "ret.buyer.attach.disallowed-extension",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.submit",
+      "from": "ret.buyer",
+      "to": "ret.buyer.submit",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.submit",
-      "to": "returns.buyer.submit.reason-missing",
+      "from": "ret.buyer.submit",
+      "to": "ret.buyer.submit.reason-missing",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.submit",
-      "to": "returns.buyer.submit.comment-required",
+      "from": "ret.buyer.submit",
+      "to": "ret.buyer.submit.comment-required",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.submit",
-      "to": "returns.buyer.submit.quantity-taken",
+      "from": "ret.buyer.submit",
+      "to": "ret.buyer.submit.quantity-taken",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.cancel",
+      "from": "ret.buyer",
+      "to": "ret.buyer.cancel",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.cancel",
-      "to": "returns.buyer.cancel.not-owner",
+      "from": "ret.buyer.cancel",
+      "to": "ret.buyer.cancel.not-owner",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.cancel",
-      "to": "returns.buyer.cancel.after-decision",
+      "from": "ret.buyer.cancel",
+      "to": "ret.buyer.cancel.after-decision",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer",
-      "to": "returns.buyer.read",
+      "from": "ret.buyer",
+      "to": "ret.buyer.read",
       "type": "contains"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.unknown-id",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.unknown-id",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.other-buyer",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.other-buyer",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.org-colleague",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.org-colleague",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.cross-store",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.cross-store",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.staff-created",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.staff-created",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.re-request-released",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.re-request-released",
       "type": "branches_to"
     },
     {
-      "from": "returns.buyer.read",
-      "to": "returns.buyer.read.no-prices",
+      "from": "ret.buyer.read",
+      "to": "ret.buyer.read.no-prices",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.review",
+      "from": "ret.agent",
+      "to": "ret.agent.review",
       "type": "contains"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.authorize",
+      "from": "ret.agent",
+      "to": "ret.agent.authorize",
       "type": "contains"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.all-approved",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.all-approved",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.mixed",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.mixed",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.partial-in-line",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.partial-in-line",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.all-declined",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.all-declined",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.single-unit-declined",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.single-unit-declined",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.over-requested",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.over-requested",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.invalid-input",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.invalid-input",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.availability-recheck",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.availability-recheck",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.wrong-status",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.wrong-status",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.no-permission",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.no-permission",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.buyer-cannot-decide",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.buyer-cannot-decide",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.status-put-refused",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.status-put-refused",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.authorize",
-      "to": "returns.agent.authorize.admin-created",
+      "from": "ret.agent.authorize",
+      "to": "ret.agent.authorize.admin-created",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.edit",
+      "from": "ret.agent",
+      "to": "ret.agent.edit",
       "type": "contains"
     },
     {
-      "from": "returns.agent.edit",
-      "to": "returns.agent.edit.requested-quantity",
+      "from": "ret.agent.edit",
+      "to": "ret.agent.edit.requested-quantity",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.edit",
-      "to": "returns.agent.edit.decided-line-locked",
+      "from": "ret.agent.edit",
+      "to": "ret.agent.edit.decided-line-locked",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.edit",
-      "to": "returns.agent.edit.duplicate-line",
+      "from": "ret.agent.edit",
+      "to": "ret.agent.edit.duplicate-line",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.edit",
-      "to": "returns.agent.edit.malformed-body",
+      "from": "ret.agent.edit",
+      "to": "ret.agent.edit.malformed-body",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.next-status",
+      "from": "ret.agent",
+      "to": "ret.agent.next-status",
       "type": "contains"
     },
     {
-      "from": "returns.agent.next-status",
-      "to": "returns.agent.next-status.forward-only",
+      "from": "ret.agent.next-status",
+      "to": "ret.agent.next-status.forward-only",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.next-status",
-      "to": "returns.agent.next-status.no-legacy-canceled",
+      "from": "ret.agent.next-status",
+      "to": "ret.agent.next-status.no-legacy-canceled",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.next-status",
-      "to": "returns.agent.next-status.cancel-requested",
+      "from": "ret.agent.next-status",
+      "to": "ret.agent.next-status.cancel-requested",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.notify",
+      "from": "ret.agent",
+      "to": "ret.agent.notify",
       "type": "contains"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.by-outcome",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.by-outcome",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.quantities",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.quantities",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.silent",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.silent",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.language",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.language",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.missing-template",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.missing-template",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.notify",
-      "to": "returns.agent.notify.email-off",
+      "from": "ret.agent.notify",
+      "to": "ret.agent.notify.email-off",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent",
-      "to": "returns.agent.fulfil",
+      "from": "ret.agent",
+      "to": "ret.agent.fulfil",
       "type": "contains"
     },
     {
-      "from": "returns.agent.fulfil",
-      "to": "returns.agent.fulfil.released-stay-released",
+      "from": "ret.agent.fulfil",
+      "to": "ret.agent.fulfil.released-stay-released",
       "type": "branches_to"
     },
     {
-      "from": "returns.agent.fulfil",
-      "to": "returns.agent.fulfil.no-order-side-effect",
+      "from": "ret.agent.fulfil",
+      "to": "ret.agent.fulfil.no-order-side-effect",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin",
-      "to": "returns.admin.create",
+      "from": "ret.admin",
+      "to": "ret.admin.create",
       "type": "contains"
     },
     {
-      "from": "returns.admin.create",
-      "to": "returns.admin.create.order-first",
+      "from": "ret.admin.create",
+      "to": "ret.admin.create.order-first",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin.create",
-      "to": "returns.admin.create.quantity-clamped",
+      "from": "ret.admin.create",
+      "to": "ret.admin.create.quantity-clamped",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin.create",
-      "to": "returns.admin.create.fully-held",
+      "from": "ret.admin.create",
+      "to": "ret.admin.create.fully-held",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin.create",
-      "to": "returns.admin.create.reason-optional",
+      "from": "ret.admin.create",
+      "to": "ret.admin.create.reason-optional",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin",
-      "to": "returns.admin.edit-status",
+      "from": "ret.admin",
+      "to": "ret.admin.edit-status",
       "type": "contains"
     },
     {
-      "from": "returns.admin.edit-status",
-      "to": "returns.admin.edit-status.backwards",
+      "from": "ret.admin.edit-status",
+      "to": "ret.admin.edit-status.backwards",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin.edit-status",
-      "to": "returns.admin.edit-status.no-decision-statuses",
+      "from": "ret.admin.edit-status",
+      "to": "ret.admin.edit-status.no-decision-statuses",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin.edit-status",
-      "to": "returns.admin.edit-status.cancelled-terminal",
+      "from": "ret.admin.edit-status",
+      "to": "ret.admin.edit-status.cancelled-terminal",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin",
-      "to": "returns.admin.find",
+      "from": "ret.admin",
+      "to": "ret.admin.find",
       "type": "contains"
     },
     {
-      "from": "returns.admin.find",
-      "to": "returns.admin.find.status-filter",
+      "from": "ret.admin.find",
+      "to": "ret.admin.find.status-filter",
       "type": "branches_to"
     },
     {
-      "from": "returns.admin",
-      "to": "returns.admin.delete",
+      "from": "ret.admin",
+      "to": "ret.admin.delete",
       "type": "contains"
     },
     {
-      "from": "returns.config",
-      "to": "returns.config.policy",
+      "from": "ret.config",
+      "to": "ret.config.policy",
       "type": "contains"
     },
     {
-      "from": "returns.config.policy",
-      "to": "returns.config.policy.reason-labels",
+      "from": "ret.config.policy",
+      "to": "ret.config.policy.reason-labels",
       "type": "branches_to"
     },
     {
-      "from": "returns.config.policy",
-      "to": "returns.config.policy.status-vocabulary",
+      "from": "ret.config.policy",
+      "to": "ret.config.policy.status-vocabulary",
       "type": "branches_to"
     },
     {
-      "from": "returns.state.draft",
-      "to": "returns.state.requested",
+      "from": "ret.state.draft",
+      "to": "ret.state.requested",
       "type": "transitions_to",
-      "via": "returns.buyer.submit"
+      "via": "ret.buyer.submit"
     },
     {
-      "from": "returns.state.draft",
-      "to": "returns.state.cancelled",
+      "from": "ret.state.draft",
+      "to": "ret.state.cancelled",
       "type": "transitions_to",
-      "via": "returns.buyer.cancel"
+      "via": "ret.buyer.cancel"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.cancelled",
+      "from": "ret.state.requested",
+      "to": "ret.state.cancelled",
       "type": "transitions_to",
-      "via": "returns.buyer.cancel"
+      "via": "ret.buyer.cancel"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.approved",
+      "from": "ret.state.requested",
+      "to": "ret.state.approved",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.all-approved"
+      "via": "ret.agent.authorize.all-approved"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.partially-approved",
+      "from": "ret.state.requested",
+      "to": "ret.state.partially-approved",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.mixed"
+      "via": "ret.agent.authorize.mixed"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.partially-approved",
+      "from": "ret.state.requested",
+      "to": "ret.state.partially-approved",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.partial-in-line"
+      "via": "ret.agent.authorize.partial-in-line"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.rejected",
+      "from": "ret.state.requested",
+      "to": "ret.state.rejected",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.all-declined"
+      "via": "ret.agent.authorize.all-declined"
     },
     {
-      "from": "returns.state.requested",
-      "to": "returns.state.rejected",
+      "from": "ret.state.requested",
+      "to": "ret.state.rejected",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.single-unit-declined"
+      "via": "ret.agent.authorize.single-unit-declined"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.approved",
+      "from": "ret.state.new",
+      "to": "ret.state.approved",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.admin-created"
+      "via": "ret.agent.authorize.admin-created"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.partially-approved",
+      "from": "ret.state.new",
+      "to": "ret.state.partially-approved",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.admin-created"
+      "via": "ret.agent.authorize.admin-created"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.rejected",
+      "from": "ret.state.new",
+      "to": "ret.state.rejected",
       "type": "transitions_to",
-      "via": "returns.agent.authorize.admin-created"
+      "via": "ret.agent.authorize.admin-created"
     },
     {
-      "from": "returns.state.approved",
-      "to": "returns.state.processing",
+      "from": "ret.state.approved",
+      "to": "ret.state.processing",
       "type": "transitions_to",
-      "via": "returns.agent.fulfil"
+      "via": "ret.agent.fulfil"
     },
     {
-      "from": "returns.state.approved",
-      "to": "returns.state.completed",
+      "from": "ret.state.approved",
+      "to": "ret.state.completed",
       "type": "transitions_to",
-      "via": "returns.agent.fulfil"
+      "via": "ret.agent.fulfil"
     },
     {
-      "from": "returns.state.partially-approved",
-      "to": "returns.state.processing",
+      "from": "ret.state.partially-approved",
+      "to": "ret.state.processing",
       "type": "transitions_to",
-      "via": "returns.agent.fulfil"
+      "via": "ret.agent.fulfil"
     },
     {
-      "from": "returns.state.partially-approved",
-      "to": "returns.state.completed",
+      "from": "ret.state.partially-approved",
+      "to": "ret.state.completed",
       "type": "transitions_to",
-      "via": "returns.agent.fulfil"
+      "via": "ret.agent.fulfil"
     },
     {
-      "from": "returns.state.processing",
-      "to": "returns.state.completed",
+      "from": "ret.state.processing",
+      "to": "ret.state.completed",
       "type": "transitions_to",
-      "via": "returns.agent.fulfil"
+      "via": "ret.agent.fulfil"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.processing",
+      "from": "ret.state.new",
+      "to": "ret.state.processing",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.completed",
+      "from": "ret.state.new",
+      "to": "ret.state.completed",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.new",
-      "to": "returns.state.cancelled",
+      "from": "ret.state.new",
+      "to": "ret.state.cancelled",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.processing",
-      "to": "returns.state.new",
+      "from": "ret.state.processing",
+      "to": "ret.state.new",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.processing",
-      "to": "returns.state.completed",
+      "from": "ret.state.processing",
+      "to": "ret.state.completed",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.processing",
-      "to": "returns.state.cancelled",
+      "from": "ret.state.processing",
+      "to": "ret.state.cancelled",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.completed",
-      "to": "returns.state.new",
+      "from": "ret.state.completed",
+      "to": "ret.state.new",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.completed",
-      "to": "returns.state.processing",
+      "from": "ret.state.completed",
+      "to": "ret.state.processing",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.state.completed",
-      "to": "returns.state.cancelled",
+      "from": "ret.state.completed",
+      "to": "ret.state.cancelled",
       "type": "transitions_to",
-      "via": "returns.admin.edit-status",
+      "via": "ret.admin.edit-status",
       "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
     },
     {
-      "from": "returns.agent.notify",
+      "from": "ret.agent.notify",
       "to": "push.producer-returns",
       "type": "depends_on",
       "note": "the push half of every return notification is a PushMessage"
+    },
+    {
+      "from": "ret.admin.create",
+      "to": "ret.admin.create.available-quantity-ignores-eligibility",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.buyer.eligibility",
+      "to": "ret.buyer.eligibility.entry-point-hidden",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.config.policy",
+      "to": "ret.config.policy.disabled-store",
+      "type": "branches_to"
     }
   ]
 }
