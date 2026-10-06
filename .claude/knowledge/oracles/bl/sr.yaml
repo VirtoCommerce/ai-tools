@@ -45,7 +45,8 @@ rules:
       kind: manual
       ref: "*Half (a):* `salesRepCustomer`/`salesRepCustomerOrderStatistics` for an unserved org resolves null/empty (mirrors 050m SR-GQL-016/023); a per-org **locked** membership excludes that org while unlocked orgs still resolve; anonymous → auth error. *Half (b) — the CONTRAST is the test, and it is literal-free:* on ONE rep token in ONE window, `salesRepOrders` returns strictly fewer orders than `salesRepCustomerOrders`, and `salesRepCustomerOrders` returns **more than one distinct `customerId`** (a creator-scoped surface returns exactly one). Rep A's **statistics** still exclude rep B's orders in a shared org."
     violation_signal: "*Half (a)* — any surface returns data from an org the rep does not serve, or anonymous access returns data. *Half (b)* — a **statistics or ranking** figure includes orders/carts the rep did not create. **NOT a violation:** `salesRepCustomerOrders` / `salesRepCustomerOrder` returning an order the rep did not place — that is the surface's purpose."
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] B2C-LIST-052, B2C-LIST-053, B2C-LIST-054, B2C-LIST-057, B2C-LIST-070, B2C-LIST-071, B2C-LIST-074, B2C-LIST-078, WISH-039, WISH-041, WISH-043, WISH-049 failed in REG-2026-10-05-1613"
   - id: BL-SR-003
     title: Comparison returns the delta; `*ChangePercent` is NULL when the previous baseline is 0
     rule: "`comparison(current, previous)` always returns the absolute change (`totalChange`, `countChange`, `averageChange` as Money/scalar) plus a `*ChangePercent`. When the **previous** period baseline is 0, the percent is **null** (no divide-by-zero, no Infinity) while the absolute change is still the full current value."
@@ -243,6 +244,9 @@ rules:
       ref: Discovery queries return `localizedName` distinct from `name`; a rule chip / status / money value renders a human label, not `New`-style raw keys or `sales-rep.*` i18n paths.
     violation_signal: A raw enum/status key or unresolved i18n key shown in the UI; `formattedAmount` not localized.
     status: ACTIVE
+    verified:
+      date: 2026-10-05
+      by: REG-2026-10-05-1613
   - id: BL-SR-014
     title: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access`
     rule: |-

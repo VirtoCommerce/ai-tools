@@ -1,5 +1,5 @@
 # Targeted customer cannot use a Customer-scope list share: wishlist(listId) is Forbidden and the list is missing from their wishlists() — [High]
-**Filed:** VCST-6147 (sub-task of VCST-5925), 2026-10-01
+**Filed:** VCST-6147, 2026-10-01 (sub-task of VCST-5925; moved out 2026-10-06 to a standalone Bug, Relates VCST-5925 — needs a product decision, done separately)
 
 **Env:** vcptcore-qa · XCart 3.1037.0-pr-141-fb27 · Cart 3.1011.0-pr-194-8331 · SalesRep 3.1012.0-pr-21-f681 · 2026-10-01 14:50 UTC
 **Found by:** /qa-test VCST-5925 (WISH-33, 4a P-1, direct re-check) · **Provenance:** IN-SCOPE (VCST-5925 AC5, contract 3.1 + 3.2) · **Archetype:** SCOPE · kb: KB-2F64A447

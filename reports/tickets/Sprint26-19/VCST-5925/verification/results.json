@@ -1,0 +1,916 @@
+{
+  "build": "",
+  "served": [
+    {
+      "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+      "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+    },
+    {
+      "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+      "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+    },
+    {
+      "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+      "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+    },
+    {
+      "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+    },
+    {
+      "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+      "organizationName": "AGENT-TEST-Org-RepOnly-Primary"
+    }
+  ],
+  "A": "105c2c4e-23be-4258-8691-568a0ff190be",
+  "B": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+  "C": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+  "D": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+  "asc": [
+    "105c2c4e-23be-4258-8691-568a0ff190be",
+    "23525b44-f0d0-43a4-b45e-b162080a4d29",
+    "96f109a7-9010-4691-b6a1-bef25cca3d04"
+  ],
+  "insert": [
+    "96f109a7-9010-4691-b6a1-bef25cca3d04",
+    "23525b44-f0d0-43a4-b45e-b162080a4d29",
+    "105c2c4e-23be-4258-8691-568a0ff190be"
+  ],
+  "runs": [
+    {
+      "run": 1,
+      "steps": {
+        "create": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+          "scope": "Customer"
+        },
+        "reads": [
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          }
+        ],
+        "rename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+          "scope": "Customer"
+        },
+        "readAfterRename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+          "scope": "Customer"
+        },
+        "wishlistsQuery": {
+          "status": 200,
+          "errors": [],
+          "found": true,
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+        },
+        "legacy": [
+          {
+            "X": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          },
+          {
+            "X": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          },
+          {
+            "X": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+            "scope": "Customer"
+          }
+        ],
+        "legacyUpper": {
+          "X": "105C2C4E-23BE-4258-8691-568A0FF190BE",
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+          "scope": "Customer"
+        },
+        "legacyAbsent": {
+          "X": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+          "status": 200,
+          "errors": [
+            "INVALID_OPERATION:Error trying to resolve field 'changeWishlist'."
+          ],
+          "targets": []
+        },
+        "readAfterAbsent": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+          "scope": "Customer"
+        }
+      },
+      "listId": "ff67c100-47b1-4024-96ee-88e0f509d4cf"
+    },
+    {
+      "run": 2,
+      "steps": {
+        "create": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+          "scope": "Customer"
+        },
+        "reads": [
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          }
+        ],
+        "rename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+          "scope": "Customer"
+        },
+        "readAfterRename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+          "scope": "Customer"
+        },
+        "wishlistsQuery": {
+          "status": 200,
+          "errors": [],
+          "found": true,
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+        },
+        "legacy": [
+          {
+            "X": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          },
+          {
+            "X": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          },
+          {
+            "X": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+            "scope": "Customer"
+          }
+        ],
+        "legacyUpper": {
+          "X": "105C2C4E-23BE-4258-8691-568A0FF190BE",
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+          "scope": "Customer"
+        },
+        "legacyAbsent": {
+          "X": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+          "status": 200,
+          "errors": [
+            "INVALID_OPERATION:Error trying to resolve field 'changeWishlist'."
+          ],
+          "targets": []
+        },
+        "readAfterAbsent": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "0901c7a9-a4a3-4c6f-9ef2-abd8d0c253bb",
+          "scope": "Customer"
+        }
+      },
+      "listId": "6aa87554-c68e-4e70-b615-33a857e1ed40"
+    },
+    {
+      "run": 3,
+      "steps": {
+        "create": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+          "scope": "Customer"
+        },
+        "reads": [
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          },
+          {
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          }
+        ],
+        "rename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+          "scope": "Customer"
+        },
+        "readAfterRename": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+          "scope": "Customer"
+        },
+        "wishlistsQuery": {
+          "status": 200,
+          "errors": [],
+          "found": true,
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+        },
+        "legacy": [
+          {
+            "X": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          },
+          {
+            "X": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          },
+          {
+            "X": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "status": 200,
+            "errors": [],
+            "targets": [
+              "105c2c4e-23be-4258-8691-568a0ff190be",
+              "23525b44-f0d0-43a4-b45e-b162080a4d29",
+              "96f109a7-9010-4691-b6a1-bef25cca3d04"
+            ],
+            "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+            "scope": "Customer"
+          }
+        ],
+        "legacyUpper": {
+          "X": "105C2C4E-23BE-4258-8691-568A0FF190BE",
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+          "scope": "Customer"
+        },
+        "legacyAbsent": {
+          "X": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+          "status": 200,
+          "errors": [
+            "INVALID_OPERATION:Error trying to resolve field 'changeWishlist'."
+          ],
+          "targets": []
+        },
+        "readAfterAbsent": {
+          "status": 200,
+          "errors": [],
+          "targets": [
+            "105c2c4e-23be-4258-8691-568a0ff190be",
+            "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ],
+          "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "key": "8f5ee438-014b-4d67-bb1d-8df58ae7268b",
+          "scope": "Customer"
+        }
+      },
+      "listId": "303eef4a-1858-4fd4-b652-9daac9149aec"
+    }
+  ],
+  "extra": {
+    "add": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "remove": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "readAfterRemove": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "sharedWishlist": {
+      "status": 200,
+      "errors": [],
+      "id": "ff67c100-47b1-4024-96ee-88e0f509d4cf",
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ],
+      "key0": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43"
+    },
+    "single": {
+      "create": {
+        "status": 200,
+        "errors": [],
+        "targets": [
+          "105c2c4e-23be-4258-8691-568a0ff190be"
+        ],
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Customer"
+      },
+      "legacyOwn": {
+        "status": 200,
+        "errors": [],
+        "targets": [
+          "105c2c4e-23be-4258-8691-568a0ff190be"
+        ],
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Customer"
+      },
+      "toPrivate": {
+        "status": 200,
+        "errors": [],
+        "targets": [],
+        "sharedWithId": null,
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Private"
+      },
+      "toCustomer": {
+        "status": 200,
+        "errors": [],
+        "targets": [
+          "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        ],
+        "sharedWithId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Customer"
+      },
+      "toPrivate2": {
+        "status": 200,
+        "errors": [],
+        "targets": [],
+        "sharedWithId": null,
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Private"
+      },
+      "read": {
+        "status": 200,
+        "errors": [],
+        "targets": [],
+        "sharedWithId": null,
+        "key": "37b6b60f-a91f-462d-8668-e72a13be77f5",
+        "scope": "Private"
+      }
+    }
+  },
+  "created": [
+    "ff67c100-47b1-4024-96ee-88e0f509d4cf",
+    "6aa87554-c68e-4e70-b615-33a857e1ed40",
+    "303eef4a-1858-4fd4-b652-9daac9149aec",
+    "8b4273e1-28a3-416d-b160-101ab53cd0bf"
+  ],
+  "stats": {
+    "calls": 51,
+    "non200": 0
+  },
+  "followup": {
+    "addWithScope": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "readAfterAdd": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "legacyD_now_present_upper": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "legacyC_upper_nonfirst": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "removeWithScope": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "readAfterRemove": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    },
+    "sharedWishlist": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "cd3e2237-bce2-4a3a-b9ac-c58d665ab576"
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+      "key": "8d06b4fd-9958-48fb-9e1c-e03a9c216c43",
+      "scope": "Customer"
+    }
+  },
+  "ac4": {
+    "stamp": 1791246316429,
+    "orgCreate": 200,
+    "X": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+    "repCreate": 200,
+    "repId": "a3623040-4cdd-4f4b-9814-370f2dee9174",
+    "create": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        {
+          "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+        },
+        {
+          "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+          "name": "AGENT-TEST-6152-org-1791246316429"
+        }
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+    },
+    "listId": "1f871a77-0abb-4706-8525-3e83215c38b5",
+    "orgDelete": 204,
+    "readAfterDelete": [
+      {
+        "status": 200,
+        "errors": [],
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+            "name": null
+          }
+        ],
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+      },
+      {
+        "status": 200,
+        "errors": [],
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+            "name": null
+          }
+        ],
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+      }
+    ],
+    "wishlistsAfterDelete": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        {
+          "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+        },
+        {
+          "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+          "name": null
+        }
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+    },
+    "renameAfterDelete": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        {
+          "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+        },
+        {
+          "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+          "name": null
+        }
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+    },
+    "legacyDeleted": {
+      "status": 200,
+      "errors": [],
+      "targets": [
+        {
+          "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+          "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+        },
+        {
+          "id": "121746c4-7c20-4318-a401-a65b67f9b1d0",
+          "name": null
+        }
+      ],
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+    },
+    "listDelete": {
+      "status": 200,
+      "errors": [],
+      "data": {
+        "removeWishlist": true
+      }
+    },
+    "repDelete": 204,
+    "userDelete": "already gone (200)"
+  },
+  "final": {
+    "build": [
+      "VirtoCommerce.Cart 3.1011.0-pr-194-8331",
+      "VirtoCommerce.SalesRep 3.1012.0-pr-21-8964",
+      "VirtoCommerce.XCart 3.1038.0-pr-141-b404"
+    ],
+    "platform": "3.1076.0",
+    "unserved": "6d3eb463-be7e-4844-8936-edf0a44cac75",
+    "addUnserved": {
+      "status": 200,
+      "errors": [
+        "Forbidden:Access denied."
+      ]
+    },
+    "legacyUnserved": {
+      "status": 200,
+      "errors": [
+        "INVALID_OPERATION:Error trying to resolve field 'changeWishlist'."
+      ]
+    },
+    "readAfter": {
+      "status": 200,
+      "targets": [
+        "105c2c4e-23be-4258-8691-568a0ff190be",
+        "23525b44-f0d0-43a4-b45e-b162080a4d29",
+        "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+    },
+    "anonymous": {
+      "status": 200,
+      "errors": [
+        "Unauthorized:Anonymous access denied or access token has expired or is invalid."
+      ],
+      "data": {
+        "wishlist": null
+      }
+    },
+    "deleted": [
+      {
+        "id": "ff67c100-47b1-4024-96ee-88e0f509d4cf",
+        "status": 200,
+        "ok": true,
+        "errors": []
+      },
+      {
+        "id": "6aa87554-c68e-4e70-b615-33a857e1ed40",
+        "status": 200,
+        "ok": true,
+        "errors": []
+      },
+      {
+        "id": "303eef4a-1858-4fd4-b652-9daac9149aec",
+        "status": 200,
+        "ok": true,
+        "errors": []
+      },
+      {
+        "id": "8b4273e1-28a3-416d-b160-101ab53cd0bf",
+        "status": 200,
+        "ok": true,
+        "errors": []
+      }
+    ],
+    "leftover": []
+  }
+}
