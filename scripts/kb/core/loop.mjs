@@ -20,6 +20,13 @@
 import { CONTRACT } from './door-hints.mjs';
 
 /**
+ * How many of the session's latest asks are judged. Bounded because the journal is not, and the
+ * "raised once" record (`kb-remind` REMEMBERED) is: this must stay below it, or an ask that fell out
+ * of the record would be raised a second time (PR #400 review).
+ */
+export const LOOP_ASKS = 100;
+
+/**
  * THE AGENT'S LAST WORD on one `ambiguous` ask, from the `show` / `none` records that point at it.
  * The LAST one counts, because the tool contract invites a look before the verdict: `kb_show --ask h`
  * to read a candidate, then `kb_none --ask h` because it did not answer. Reading "any pick" made that
@@ -56,12 +63,16 @@ export function openLoops(journal, { reminded = [] } = {}) {
   for (const r of records) {
     if (r.kind === 'ask') { latestAsk = r; continue; }
     if (r.kind !== 'show' && r.kind !== 'none') continue;
+    // A LENIENT HEURISTIC for a handle-less show: by time, so with a background subagent or a batched
+    // wave sharing the session key, one agent's pick can close another agent's list -- the failure
+    // `none()` documents for its own handle-less call. A missed reminder, never a false one.
     const target = r.after ?? (r.kind === 'show' && latestAsk?.state === 'ambiguous' ? latestAsk.at : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
   const out = [];
+  const recent = new Set(records.filter((r) => r.kind === 'ask').slice(-LOOP_ASKS).map((r) => r.at));
   for (const a of records) {
-    if (a.kind !== 'ask' || raised.has(a.at)) continue;
+    if (a.kind !== 'ask' || !recent.has(a.at) || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
     if (records.some((r) => r.kind === 'write' && r.at > a.at)) continue;
     const word = lastWord(pointed.get(a.at));

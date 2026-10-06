@@ -34,14 +34,15 @@
  * Exits 0 whatever happens and prints NOTHING unless it is blocking; the reads are a few KB.
  * `kb-flush.mjs` is the other kb Stop hook and stays silent by design -- the two never share stdout.
  */
-import { readFileSync, readdirSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   hasSessionId, hookEnv, isSynthetic, kbDisabled, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
-import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
+import { LOOP_ASKS, openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
 
-const REMEMBERED = 200;
+// Must exceed LOOP_ASKS: an ask still inside the judged window must still be in the record.
+const REMEMBERED = LOOP_ASKS * 2;
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -49,7 +50,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function prune(dir, now = Date.now()) {
   const marker = join(dir, 'loop.pruned');
   try { if (now - statSync(marker).mtimeMs < DAY_MS) return; } catch { /* never pruned */ }
-  try { writeFileSync(marker, ''); utimesSync(marker, now / 1000, now / 1000); } catch { return; }
+  try { writeFileSync(marker, ''); } catch { return; }
   let names = [];
   try { names = readdirSync(dir); } catch { return; }
   for (const name of names) {
@@ -67,13 +68,16 @@ function main() {
   let payload = null;
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
   if (payload?.stop_hook_active) return;
-  if (kbDisabled(process.env) || remindDisabled(process.env) || isSynthetic(process.env)) return;
+  if (kbDisabled(process.env)) return;
+  // Pruned BEFORE the reminder's own off switches: the journal is written whenever the base is on,
+  // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned (PR #400 review).
+  prune(queueDir(process.env));
+  if (remindDisabled(process.env) || isSynthetic(process.env)) return;
 
   // The sidecar is keyed like the queue (`hookEnv` -> `sessionId`); with no session id anywhere the
   // key is a fresh process key and names no sidecar this session wrote.
   const env = hookEnv(process.env, payload);
   if (!hasSessionId(env)) return;
-  prune(queueDir(env));
   const journal = readLoop(env);
   if (!journal.length) return;
 
