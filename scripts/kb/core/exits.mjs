@@ -23,10 +23,14 @@ export const EXIT = Object.freeze({
 });
 
 /** The state names that may appear on a result, and nothing else is a state. */
-export const STATES = Object.freeze(['answer', 'miss', 'no-base', 'unreachable']);
+export const STATES = Object.freeze(['answer', 'ambiguous', 'miss', 'no-base', 'unreachable']);
 
 const BY_STATE = Object.freeze({
   answer: EXIT.ANSWER,
+  // The base was read and returned entries; which one answers is the caller's call (VCST-6122
+  // Decision 1a). Exit 0, as floor-1's list of three always was: exit 1 would send the caller off to
+  // capture a fact the base may well hold.
+  ambiguous: EXIT.ANSWER,
   miss: EXIT.NO_COVERAGE,
   'no-base': EXIT.NO_BASE,
   unreachable: EXIT.UNREACHABLE,
@@ -44,6 +48,7 @@ export function exitFor(state) {
 /** What the caller is told, in the words PLAN §3.5 puts in each row. */
 export const HEADLINE = Object.freeze({
   answer: 'answered from the base',
+  ambiguous: 'close entries, none certified to answer.',
   // BOTH DOORS ARE NAMED, for the same reason the always-loaded line names both (PLAN §5.1): the
   // MCP server does not reach a clone until somebody registers `.mcp.json`, and the CLI does not
   // exist inside an MCP client. Naming one of them is a dead end for whichever reader has the other.

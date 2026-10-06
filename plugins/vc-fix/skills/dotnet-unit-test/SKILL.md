@@ -39,12 +39,13 @@ fix has an objective red→green proof. This is **Gate 2** of the auto-fix ladde
    dotnet restore tests/VirtoCommerce.<Name>.Tests -p:NuGetAudit=false
    ```
 5. **Write a NEW test** (`[Fact]`/`[Theory]`, Moq for collaborators) in the test project asserting the
-   **expected** behavior. Name the class/method after the behavior + ticket
-   (`CouponDiscountTests.AppliesToPostTierAmount_VCST1234`); repo convention is `*Tests.cs` /
-   `*UnitTests.cs`. See `xunit-patterns.md`.
+   **expected** behavior. Name the class/method after the **subject + behavior only**
+   (`CouponDiscountTests.AppliesToPostTierAmount`) — **never the ticket key** in a class, method,
+   file name or comment (`knowledge/agents/developers/shared-instructions.md` §Minimal diff, rule 3a);
+   repo convention is `*Tests.cs` / `*UnitTests.cs`. See `xunit-patterns.md`.
 6. **Confirm RED** — scoped and filtered, so the loop stays fast (~seconds after first build):
    ```
-   dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~VCST1234"
+   dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~<TestClass>.<TestMethod>"
    ```
    The new test must fail on current code. **If it passes, the STR/RCA is wrong → re-investigate, do
    not proceed.**

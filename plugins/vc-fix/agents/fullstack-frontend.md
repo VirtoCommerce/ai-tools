@@ -187,7 +187,7 @@ Invoke the development skills:
 |---------|------|
 | Clone / branch / commit / push | **Bash** `git`, `gh repo clone` (via `skills/qa-fix-routing/repo-router.ts` semantics) |
 | Install / build | **Bash** `yarn install --frozen-lockfile \|\| npm ci`, `yarn build \|\| npm run build` (per `REPO_PROFILES.frontend`) |
-| Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (`-t <ticket-key>` to filter the repro) |
+| Typecheck / lint / test | **Bash** `yarn typecheck \|\| npx vue-tsc --noEmit`, repo lint cmd, `yarn test:unit \|\| npx vitest run` (scope the repro by file path) |
 | Find/read the seam (post-clone) | an LSP-backed symbol tool if available (e.g. Serena `get_symbols_overview`/`find_symbol`/`find_referencing_symbols`) — else `Grep`/`Glob`/`Read` |
 | Source edits | an LSP-backed symbol tool's precise edit if available (e.g. Serena `replace_symbol_body`/`insert_after_symbol`/`insert_before_symbol`) — else **Write/Edit** in `.fix-workspace/<repo-basename>/`, or `.fix-workspace/<module-repo>/<subApp.path>/` when routed to a module sub-app |
 | Repo read (pre-clone) | `mcp__github__search_code`, `get_file_contents`, `get_pull_request*` |

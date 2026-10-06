@@ -327,6 +327,8 @@ export function captureLoop(lines) {
     const ask = l.after ? askAt.get(`${l._session}\0${String(l.after)}`) : null;
     let link;
     if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss') {
+      // A verdict ranker's `ambiguous` arrives here already resolved to `miss` or `answer`
+      // (resolveVerdicts). An `unreachable` or disabled ask is not the loop: the base was never read.
       link = 'after-miss';
       if (isRefused) counts.refusedAfterMiss += 1; else counts.afterMiss += 1;
     } else {
@@ -1139,6 +1141,36 @@ export function windowStart(meta = {}) {
   return new Date(start).toISOString();
 }
 
+/**
+ * A verdict ranker's `ambiguous` ask, read as what it ENDED as (VCST-6122 Decision 1a).
+ *
+ * Under `ranker.json` an unanswered question is logged `ambiguous` and closed by the agent: a `show`
+ * pointing at it (`after` = the ask's `at`) is a reliance on that entry, a `none` pointing at it is
+ * "the base did not have it". Every panel here reads `state: 'miss'` / `'answer'`, so without this a
+ * base that publishes ranker.json would empty the miss queue, the near-miss panel and the per-topic
+ * miss counts overnight. The line is COPIED with the resolved state and keeps `verdict: 'ambiguous'`,
+ * so nothing downstream mistakes it for a floor-1 line. An ambiguous ask nobody closed is a miss: the
+ * base certified nothing and nobody relied on anything.
+ */
+export function resolveVerdicts(lines) {
+  const key = (l, at) => `${l._session}\0${String(at)}`;
+  const none = new Set();
+  const shown = new Map();
+  for (const l of lines) {
+    if (!l.after) continue;
+    if (l.kind === 'none') none.add(key(l, l.after));
+    else if (l.kind === 'show' && l.id && l.state === 'answer') shown.set(key(l, l.after), String(l.id));
+  }
+  return lines.map((l) => {
+    if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
+    const k = key(l, l.at);
+    const relied = !none.has(k) ? shown.get(k) : null;
+    return relied
+      ? { ...l, state: 'answer', matched: [relied], closedBy: 'show' }
+      : { ...l, state: 'miss', matched: [], closedBy: none.has(k) ? 'none' : 'unclosed' };
+  });
+}
+
 export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   const idx = indexLookup(rows);
   // SYNTHETIC LINES ARE EXCLUDED FROM EVERY PANEL AND COUNTED IN THE HEADER (PLAN §14.2).
@@ -1158,7 +1190,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
   // and a report that pattern-matched run handles would be the tool having an opinion about what a
   // run is, which is precisely what the field refuses to have.
   const run = typeof meta.run === 'string' && meta.run.trim() ? meta.run.trim() : null;
-  const real = run ? notSynthetic.filter((l) => l.run === run) : notSynthetic;
+  const real = resolveVerdicts(run ? notSynthetic.filter((l) => l.run === run) : notSynthetic);
   const panels = {
     misses: misses(real),
     nearMisses: nearMisses(real, idx),

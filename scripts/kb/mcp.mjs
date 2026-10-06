@@ -51,10 +51,10 @@ import { pathToFileURL } from 'node:url';
 
 import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, show, stat } from './core/verbs.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
@@ -119,6 +119,10 @@ export const TOOLS = Object.freeze([
       + 'Use it whenever you are about to assert, write or test something about platform behaviour that could be '
       + 'checked by observation — before grepping, before reasoning it out, before writing the assertion. '
       + 'Returns matching entries with their trust label, confirmation count and per-observation provenance. '
+      + 'When the base cannot tell whether any close entry states what you asked, it lists a few headlines '
+      + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
+      + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
+      + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
       + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
       + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
@@ -139,14 +143,30 @@ export const TOOLS = Object.freeze([
   {
     name: 'kb_show',
     description: 'Read one knowledge-base entry in full by its id (KB-XXXXXXXX), including its evidence trail and status. '
-      + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id.',
+      + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id. '
+      + 'Opening one of the headlines kb_ask listed is your pick: pass its ask handle so the pick is recorded against that question.',
     inputSchema: {
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
+        ask: str('The ask handle kb_ask printed ("ask handle: …"), when you are opening one of its headlines.'),
         topic: TOPIC,
       },
       required: ['id'],
+    },
+  },
+  {
+    name: 'kb_none',
+    description: 'Say that NONE of the headlines kb_ask listed answers your question. Recorded against that ask, so '
+      + 'the gap is visible to whoever fills it and the base learns from it. Then go find out, and record what you '
+      + 'found with kb_capture. Reads nothing and costs nothing.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        ask: str('The ask handle kb_ask printed ("ask handle: …"). Omit it to mean your latest kb_ask.'),
+        topic: TOPIC,
+      },
+      required: [],
     },
   },
   {
@@ -321,8 +341,12 @@ async function callTool(name, args, ctx) {
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
+    }
+    case 'kb_none': {
+      const r = await none({ env: ctx.env, ask: args?.ask, via: VIA, call: ctx.call, topic: args?.topic });
+      return text(noneLines(r, { prefix: 'kb_none' }), FAILED.has(r.state));
     }
     case 'kb_capture': {
       const r = await capture({

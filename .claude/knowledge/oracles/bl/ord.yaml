@@ -30,16 +30,27 @@ rules:
     status: ACTIVE
   - id: BL-ORD-002
     title: Cancellation restores inventory conditionally
-    rule: When an order is cancelled, inventory is restored ONLY if the "Adjust inventory on order cancellation" flag is enabled in store settings. Without the flag, cancellation does NOT restore stock — manual inventory adjustment required.
+    rule: |-
+      When an order is cancelled, the stock reserved for it is released automatically, for **every** line item of the order, not only the first. The adjustment is governed by **"Adjust inventory for orders"** — *"Update the inventory when the order status changes"* — a **global** Orders → General setting (Settings in the main menu), **not** a store-specific one: in that blade the store-specific settings carry a `Store` badge and this one does not. With the setting off, a status change (cancellation included) does not adjust stock, and any correction is manual.
     priority: P1-data
-    trust: INFERRED
-    source: []
+    trust: DECLARED
+    source:
+      - kind: doc
+        ref: 'PlatformUserGuide, order-management/settings (published) — Orders > General settings screenshot: "Adjust inventory for orders" — "Update the inventory when the order status changes", shown without the `Store` badge that marks store-specific settings in the same blade.'
+      - kind: ac
+        ref: PT-11051 (Done) — adjust inventory levels automatically when an order is cancelled, so inventory records reflect the stock actually available.
+      - kind: resolution
+        ref: VCST-1171 (Done) — fixed the adjustment applying only to the first product after cancellation when several products were reserved from the same fulfillment center.
+      - kind: code
+        ref: vc-module-order `ModuleConstants.cs` — `Order.AdjustInventory` (default `true`) is not in `StoreLevelSettings`; the handler reads it with a store-less `GetValueAsync`.
+      - kind: live
+        ref: 'Settings API on the QA environment, 2026-10-05 — `Order.AdjustInventory` is a module-level setting and absent from the store''s order settings. The effect of a cancellation on stock was NOT observed (a disposable-order write was not permitted this run).'
     scope:
       code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Data/Handlers/AdjustInventoryOrderChangedEventHandler.cs#GetReleaseRequests
     check:
       kind: manual
-      ref: Enable flag → cancel order → check FFC inventory (should increase). Disable flag → cancel order → inventory unchanged.
-    violation_signal: Inventory restored when flag is OFF; inventory NOT restored when flag is ON; stock count mismatch after cancellation.
+      ref: 'Read the global Orders > General "Adjust inventory for orders" value (Settings in the main menu, not the store''s Settings widget). With it on, on a disposable AGENT-TEST- order with two line items of tracked products from one fulfillment center: create → the reserved quantity rises for each line → cancel → each line''s reserved quantity is released. With it off (a disposable environment only; it is a platform-wide switch): cancel → stock unchanged.'
+    violation_signal: Reserved stock not released on cancellation while the setting is on; only the first line released; stock adjusted while the setting is off; the setting appears in, or behaves per, a store's settings.
     status: ACTIVE
   - id: BL-ORD-003
     title: Partial fulfillment rules
@@ -136,7 +147,7 @@ rules:
     title: Order status vocabulary
     rule: |-
       The order status vocabulary is an **admin-editable, localizable dictionary** (`Order.Status` setting, `IsDictionary = true`, `IsLocalizable = true`) — **not** a fixed enum. Every value in the dictionary is **settable** via the Admin Order → Status dropdown (the dropdown is populated from the dictionary), and a deployment may add, rename, or remove values. The platform ships a default seed of settable values — `New`, `Not payed`, `Pending`, `Processing`, `Ready to send`, `Cancelled`, `Partially sent`, `Completed` — which deployments commonly customize (e.g. `Payment required`, `Ready for pickup`, `Custom`). The exact list and count are therefore environment-configurable; the invariant is the dictionary mechanism, not a fixed set or count.
-      - **`Processing` is a normal settable dictionary value — NOT read-only/computed.** It is one of the seeded `Order.Status` values and is selectable from the Status dropdown. It also serves as the default `Order.InitialProcessingStatus` (the status auto-assigned when order processing begins — mirroring `Order.InitialStatus`, default `New`, at creation), but auto-assignment does not make it read-only: an admin can set it manually and it persists.
+      - **`Processing` is a normal settable dictionary value — NOT read-only/computed.** It is one of the seeded `Order.Status` values and is selectable from the Status dropdown of an editable order; an admin can set it manually and it persists. It is also the shipped default of `Order.InitialProcessingStatus`, which the Admin labels **"Initial status for orders with terminated payment"** — *"Set the status for all orders, where the payment was not processed"* — so that setting names the status an order takes when its payment was not processed, not the start of processing, and deployments commonly set it to `Payment required`.
     priority: P1-data
     trust: DECLARED
     source:
@@ -146,6 +157,14 @@ rules:
         ref: platform/user-guide/docs/order-management/settings.md (published) — General settings let administrators define order, shipment and payment statuses.
       - kind: doc
         ref: platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/Order/queries/orderStatuses.md (published) — order statuses are returned as localized key/value dictionary items.
+      - kind: doc
+        ref: 'PlatformUserGuide, order-management/settings (published) — Orders > General settings screenshot: "Customer order statuses" — "Define the list of available statuses for customer orders"; "Initial status for orders with terminated payment" — "Set the status for all orders, where the payment was not processed" (shown set to Payment required); "Customer order initial status" — "Set the initial status of a new customer order".'
+      - kind: ac
+        ref: VP-2021 (Done) — the admin can change the selected order's status by selecting it from the drop-down, and the change shows both in the back office and on the customer side.
+      - kind: ac
+        ref: VCST-130 (Done) — order statuses are a dynamic list localized from the backend, so a status modified on the backend needs no frontend development.
+      - kind: live
+        ref: 'Admin order blade on the QA environment, 2026-10-05 — the Status dropdown of a New and of a Payment required order offers all 8 configured dictionary values, Processing included (the list scrolls; 7 rows fit the viewport). A Completed order''s Status control is disabled. Save-and-persist was NOT re-run (a disposable-order write was not permitted this run).'
     scope:
       code_ref: vc-module-order:src/VirtoCommerce.OrdersModule.Core/ModuleConstants.cs#OrderStatus
     check:

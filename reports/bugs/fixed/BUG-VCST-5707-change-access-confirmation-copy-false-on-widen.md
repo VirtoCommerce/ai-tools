@@ -1,5 +1,7 @@
 # "Change who can access?" says recipients lose access when widening to "Anyone with link" — they don't — [Medium]
 
+## Status: FIXED · **Tracker:** VCST-6104
+
 **Env:** vcptcore-qa · theme 2.59.0-pr-2476-0604 · 2026-09-29
 **Found by:** /qa-test VCST-5707 (3x, 4a D3, C1 B2C-LIST-078) · **Provenance:** IN-SCOPE (new confirmation in vc-frontend PR #2476) · **Archetype:** LIFECYCLE
 
@@ -23,3 +25,9 @@ The fix changed the locale strings only; `revokesCurrentAudience` still opens th
 - Customers → Anyone with link (widen): "Change who can access?" / "The link stays the same. Some users may lose access." / Cancel · Change access. "Link stays the same" is TRUE. "Some users may lose access" is FALSE: ACME keeps Read, and TechFlow and anonymous users gain Read. The copy does not say the list becomes public or that links already sent now open for anyone, which is VCST-6104's Expected. Screenshot `reports/tickets/Sprint26-19/VCST-5925/screenshots/fe-copy-c4-customers-to-anyone-widen.png`.
 - Anyone with link → Customers (narrow): same copy, both sentences TRUE (`fe-copy-c5-anyone-to-customers-narrow.png`).
 - The inverse gap: removing an org inside Specific customers revokes it at once (Forbidden) with NO confirmation (`fe-copy-c3-remove-techflow-no-warning.png`). The warning fires where nobody loses access and is absent where someone does.
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2476 (unmerged), commits `43bcb9ca` (copy) + `e4a4cf58` (`widensToAnyone` / `revokesTargets` logic). Build `vc-theme-b2b-vue-2.59.0-pr-2476-0abb-0abbf215`.
+- **Tracker:** VCST-6104
+- **Verified:** 2026-10-05, `/qa-verify-fix` (via `/qa-test VCST-6104 localhost`), STR 3/3, checklist 10/10. Local storefront serving the PR build, proxied to the vcst-qa backend.
+- **Method:** Customer → Anyone with link and My organization → Anyone with link save with no confirmation; same sharing key; the guest opens the old link. Narrowing paths and recipient removal confirm with "The link stays the same. Some users may lose access." Evidence: `reports/tickets/Sprint26-20/VCST-6104/evidence.html`.
