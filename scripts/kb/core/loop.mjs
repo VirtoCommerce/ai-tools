@@ -27,11 +27,15 @@ const WRITES = new Set(['capture', 'capture-refused', 'confirm', 'dispute']);
  * answer to get. `reminded` lists ask `at`s already asked about, so each is raised at most once.
  */
 export function openLoops(meta, { reminded = meta?.reminded ?? [] } = {}) {
+  // A sidecar with no `outcomesSince` was kept by a client that recorded no outcomes, so it cannot say
+  // whether anything was written back: it is raised about nothing. Asks before the mark likewise.
+  const since = typeof meta?.outcomesSince === 'string' ? meta.outcomesSince : null;
+  if (!since) return [];
   const outcomes = metaOutcomes(meta);
   const asked = new Set(Array.isArray(reminded) ? reminded.map(String) : []);
   const out = [];
   for (const a of metaAsks(meta)) {
-    if (asked.has(a.at)) continue;
+    if (asked.has(a.at) || a.at < since) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
     if (outcomes.some((o) => WRITES.has(o.kind) && o.at > a.at)) continue;
     const pointed = outcomes.filter((o) => o.after === a.at);
@@ -50,9 +54,14 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
  * The reminder, short because a `Stop` hook's reason is read on every turn it fires and the harness
  * truncates hook text well under 2,000 characters. It names the questions, never a verdict on them:
  * the agent is the only party who knows whether it found the answer out.
+ *
+ * "NOT A FAILURE" IS LITERAL. Claude Code surfaces every blocking Stop hook as "Stop hook error
+ * occurred" in its UI (measured 2026-10-06, a live `claude -p` run: `hook_blocking_error`), and there
+ * is no non-blocking way for a Stop hook to make the agent take one more step. The operator who opens
+ * that notice reads this line first.
  */
 export function reminderText(loops, { contract = '.claude/knowledge/execution/kb-capture-contract.md' } = {}) {
-  const lines = [`kb: ${loops.length} question(s) this session got no answer from the knowledge base, and nothing was written back after them:`];
+  const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session got no answer from the knowledge base, and nothing was written back after them:`];
   for (const l of loops.slice(0, LISTED)) {
     lines.push(l.why === 'unresolved'
       ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`

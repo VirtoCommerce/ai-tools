@@ -450,6 +450,9 @@ async function noteLine(env, line) {
     const addTx = newTx && !known.includes(newTx);
     if (!ask && !outcome && !addTx) return;
     const next = { ...meta };
+    // WHERE THE OUTCOME RECORD STARTS: an older client kept asks and no outcomes, so in a session that
+    // spans the upgrade every earlier ask would read as never written back (`core/loop.mjs`).
+    if (!next.outcomesSince) next.outcomesSince = String(line.at);
     if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) }].slice(-ASK_MEMORY);
     if (outcome) {
       next.outcomes = [...metaOutcomes(meta), {

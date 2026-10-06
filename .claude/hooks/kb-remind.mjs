@@ -19,6 +19,10 @@
  *      printed, so a crash after the write costs a reminder, never a loop.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine) or `KB_REMIND=0` (this hook only).
  *
+ * WHAT THE OPERATOR SEES: Claude Code labels any blocking Stop hook "Stop hook error occurred" in its
+ * UI -- the reminder, not a fault (verified live 2026-10-06; the model receives it as "Stop hook
+ * feedback"). The reason opens with "kb reminder (not a failure)" for whoever expands it.
+ *
  * Exits 0 whatever happens and prints NOTHING unless it is blocking; the sidecar read is a few KB.
  * `kb-flush.mjs` is the other Stop hook and stays silent by design -- the two never share stdout.
  */
