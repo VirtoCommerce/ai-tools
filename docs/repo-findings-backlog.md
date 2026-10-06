@@ -316,12 +316,3 @@ Neither blocks the VCST-4933 work; both make `npm test` red for everyone, which 
   evidence that a seed ever ran *on this env* — and `td:validate:sales-rep` passes on the declaration alone,
   so nothing catches the gap until a run tries to log in. A liveness probe (`td:reconcile`-style) for the
   identity fixtures specifically would have turned a failed reachability lane into a pre-flight message.
-- **Sales-rep order seeders never set `lineItem.imageUrl`, so Top sellers shows only placeholder cubes** (found
-  2026-10-02, vcptcore-qa). `salesRepTopSellers.imageUrl` is the order line-item snapshot
-  (`vc-module-sales-rep` `SalesRepTopSellerService.BuildTopSeller` → `sample.ImageUrl`), not the catalog image.
-  Every order the `scripts/seed-data/sales-rep/*` seeders create (`createdBy=admin`, no `shoppingCartId`) carries
-  `imageUrl: null` on every line (e.g. `SO-992789`, `SO-992787`, `SO-619639`, `SO-619638`: 0 of 18 lines), although
-  the products have `imgSrc` (e.g. SKU `554664805`). A checkout-placed order copies the image from the cart, so
-  this is a fixture gap, not a confirmed product bug. It makes the image path of Top sellers untestable on seeded
-  data. Fix: have the seeders copy the product's `imgSrc` into each line item's `imageUrl`. Open product question
-  (not filed): should Top sellers fall back to the catalog image when the snapshot is empty (API/ERP-imported orders)?

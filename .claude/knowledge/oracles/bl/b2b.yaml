@@ -33,9 +33,6 @@ rules:
       ref: Org A has custom price list (Product X = $50). Store default has Product X = $75. Sign in as Org A member → Product X shows $50. Sign in as non-org user → Product X shows $75. Check a product NOT in org's price list → should show store default price.
     violation_signal: Org member sees store default price instead of org price; non-org user sees org prices; product without org price shows "Unavailable" instead of falling back to store default.
     status: ACTIVE
-    verified:
-      date: 2026-10-05
-      by: REG-2026-10-05-1613
   - id: BL-B2B-003
     title: Quote expiry makes quote non-convertible
     rule: Quotes (RFQ) have an expiration date set by the seller. After expiry, the buyer cannot convert the quote to an order — the "Convert to Order" action must be disabled or show an "Expired" message. Expired quotes remain visible in history but are not actionable. The seller can extend or reissue an expired quote.

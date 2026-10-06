@@ -52,9 +52,6 @@ rules:
       ref: Simulate email service outage → place order → order created successfully → confirmation page shown → order in Admin → email queued for retry (visible in notification feed as "Pending").
     violation_signal: Order fails because email service is down; 500 error at checkout due to notification failure; order transaction rolled back; customer sees error but order was actually created (inconsistent state).
     status: ACTIVE
-    verified:
-      date: 2026-10-05
-      by: REG-2026-10-05-1613
   - id: BL-NOTIF-004
     title: An admin Save must be observable through the API
     rule: A Save that reports success must have reached the server. No UI success signal — a success toast, an auto-closing blade, or a refreshed `Modified` column in the parent list — may be emitted for a change that exists only in client memory, and the signal must not depend on which entry path opened the editor. A surface that deliberately *stages* an edit for a parent blade to persist later must keep that staged state visible and recoverable (no auto-close that discards it) and must not advance a persisted-state indicator such as `Modified`.

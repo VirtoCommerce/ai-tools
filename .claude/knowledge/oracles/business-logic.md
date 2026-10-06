@@ -1788,7 +1788,6 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Docs:** platform/developer-guide/docs/GraphQL-Storefront-API-Reference-xAPI/SalesRep/queries/salesRepOrders.md (published) — returns the orders the sales representative created for their customers
 - **Source:** module README @`dev` — *"All statistics and rankings obey the same data-isolation rule … they count only the data the calling rep created (their own orders/carts), within the organizations they serve"* (L459), and *"Every statistics query is scoped two ways — to the organizations the rep serves (membership) and to the data the rep created"* (L489). The README does **not** mention `salesRepCustomerOrders` at all. Source: `SalesRepOrdersQueryHandler.BuildSearchCriteria` sets BOTH `criteria.OrganizationIds` and `criteria.CustomerId = request.UserId` (blob `8f7253d0`), whereas the customer-orders handler applies organization scope only. Live probe 2026-07-23; re-probed 2026-09-04.
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] B2C-LIST-052, B2C-LIST-053, B2C-LIST-054, B2C-LIST-057, B2C-LIST-070, B2C-LIST-071, B2C-LIST-074, B2C-LIST-078, WISH-039, WISH-041, WISH-043, WISH-049 failed in REG-2026-10-05-1613
 
 ### BL-SR-003: Comparison returns the delta; `*ChangePercent` is NULL when the previous baseline is 0 `[P1-data]`
 - **Rule:** `comparison(current, previous)` always returns the absolute change (`totalChange`, `countChange`, `averageChange` as Money/scalar) plus a `*ChangePercent`. When the **previous** period baseline is 0, the percent is **null** (no divide-by-zero, no Infinity) while the absolute change is still the full current value.
@@ -2385,7 +2384,7 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 2 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 1 |
 | Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 2 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
@@ -2393,4 +2392,4 @@ ticket or a docs page disputes (`status`).
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **20** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **19** |
