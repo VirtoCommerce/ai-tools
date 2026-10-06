@@ -448,11 +448,11 @@ async function queuedHere(question, { env }) {
 // within a minute; a CLI process asks once and never sees a hit, which is fine.
 const CACHE_TTL_MS = 60_000;
 const cached = new Map();
-async function remember(key, make, { now = Date.now() } = {}) {
+async function remember(key, make, { now = Date.now(), keep = () => true } = {}) {
   const hit = cached.get(key);
   if (hit && now - hit.at < CACHE_TTL_MS) return hit.value;
   const value = await make();
-  cached.set(key, { at: now, value });
+  if (keep(value)) cached.set(key, { at: now, value });
   return value;
 }
 /** Cheap identity of a loaded index: the same rows in the same order yield the same retrieval prep. */
@@ -533,7 +533,7 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
     const r = await opened.reader.readEntry(c.row.path);
     if (!r.ok) return null;
     try { return parseEntry(r.text, c.row.path); } catch { return null; }
-  })])));
+  }, { keep: (v) => v !== null })]))); // a failed read (a timeout) is retried next ask, not remembered for a minute
   const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
   const d = decide(prep, ranker, question, { retrieval: found, bodies });
   const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };

@@ -10,7 +10,8 @@
 //   4. `git merge --no-commit --no-ff <remote>/<main>`, then write every main-modified entry as the
 //      branch version + main's new evidence (+ hand-off to successors), re-flag duplicate sessions,
 //      rebuild index.json, stage the result;
-//   5. refuse to leave a half-merge: any other unmerged path aborts the merge and is named.
+//   5. refuse to leave a half-merge: a merge that did not start is reported, not written over; any
+//      other unmerged path, or any failure after the merge started, aborts the merge.
 // It NEVER commits or pushes: the base is public, so the staged merge is reviewed and committed by a
 // person (`git commit`), then pushed to the branch. New entries from main carry no retrieval card:
 // they are listed, and carded with migrate-schema2 keep plans.
@@ -81,20 +82,36 @@ function main() {
   if (a.dryRun) { console.log('dry run: nothing merged'); return 0; }
 
   const merged = tryGit('merge', '--no-commit', '--no-ff', target);
-  for (const [path, text] of r.writes) writeFileSync(join(a.base, path), text);
-  const all = readdirSync(join(a.base, 'entries')).filter((n) => n.endsWith('.md'))
-    .map((n) => buildRow(parseEntry(readFileSync(join(a.base, 'entries', n), 'utf8'), `entries/${n}`).data, `entries/${n}`));
-  const index = buildIndex(all);
-  writeFileSync(join(a.base, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
-  git('add', 'index.json', ...r.writes.keys());
-
-  const unmerged = git('diff', '--name-only', '--diff-filter=U').trim().split('\n').filter(Boolean);
-  if (unmerged.length) {
-    git('merge', '--abort');
-    console.error(`refused: git left ${unmerged.length} path(s) unmerged that this tool does not resolve; the merge was aborted`);
-    for (const p of unmerged) console.error(`  ${p}`);
-    if (!merged.ok) console.error(merged.out.trim().split('\n').slice(0, 5).map((l) => `  git: ${l}`).join('\n'));
+  const gitSaid = () => merged.out.trim().split('\n').filter(Boolean).slice(0, 5).map((l) => `  git: ${l}`).join('\n');
+  // A merge that failed before it started (no MERGE_HEAD) changed nothing: writing the entries now
+  // would leave branch-side edits staged with no merge to commit them into.
+  if (!tryGit('rev-parse', '-q', '--verify', 'MERGE_HEAD').ok) {
+    console.error('refused: git merge did not start; nothing was merged');
+    if (!merged.ok) console.error(gitSaid());
     return 1;
+  }
+  // From here a merge is in progress: any refusal or throw aborts it, never leaves it half done.
+  let index;
+  try {
+    for (const [path, text] of r.writes) writeFileSync(join(a.base, path), text);
+    if (r.writes.size) git('add', ...r.writes.keys());
+    // index.json is rebuilt below, so its own conflict is not one; any other unmerged path is.
+    const unmerged = git('diff', '--name-only', '--diff-filter=U').trim().split('\n').filter((p) => p && p !== 'index.json');
+    if (unmerged.length) {
+      git('merge', '--abort');
+      console.error(`refused: git left ${unmerged.length} path(s) unmerged that this tool does not resolve; the merge was aborted`);
+      for (const p of unmerged) console.error(`  ${p}`);
+      if (!merged.ok) console.error(gitSaid());
+      return 1;
+    }
+    const all = readdirSync(join(a.base, 'entries')).filter((n) => n.endsWith('.md'))
+      .map((n) => buildRow(parseEntry(readFileSync(join(a.base, 'entries', n), 'utf8'), `entries/${n}`).data, `entries/${n}`));
+    index = buildIndex(all);
+    writeFileSync(join(a.base, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
+    git('add', 'index.json');
+  } catch (err) {
+    tryGit('merge', '--abort');
+    throw new Error(`${err.message}\nthe merge was aborted`);
   }
   const uncarded = added.filter((p) => { try { return !(parseEntry(readFileSync(join(a.base, p), 'utf8'), p).data.questions ?? []).length; } catch { return true; } });
   console.log(`merged and staged: index.json rebuilt (${index.count} rows, schema ${index.schema}); ${r.writes.size} entr(ies) rewritten`);

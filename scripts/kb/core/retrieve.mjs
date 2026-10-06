@@ -185,7 +185,7 @@ export function retrieve(prep, question, { leaveOut = null, parsed = null, fusio
       // of the question's, or the question's is an ancestor of the entry's.
       else if (qNear.has(id) || (prep.vocab?.ancestors.get(id) ?? []).some((a) => qOwn.has(a))) score += w / 2;
     }
-    return conceptOwn[i].length || score ? score : 0;
+    return score;
   });
 
   const [rw, rs, ra, rc] = [ranksOf(words), ranksOf(sentence), ranksOf(anchors), ranksOf(concepts)];

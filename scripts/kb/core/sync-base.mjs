@@ -91,17 +91,27 @@ export function syncEvidence({ changed, branch }) {
   // place before the duplicate-session check reads them.
   const extended = [];
   for (const p of plan) if (append(p.path, p.fresh)) extended.push(p.id);
+  // A successor can itself be superseded (merged, then split): follow the chain to the ACTIVE
+  // entries, or the evidence lands on a retired file nobody counts.
+  const activeSuccessors = (id, from, seen = new Set()) => {
+    if (seen.has(id)) { problems.push(`${from}: its successor chain loops at ${id}`); return []; }
+    seen.add(id);
+    const e = load(`entries/${id}.md`);
+    if (!e) { problems.push(`${from}: its successor ${id} is not on the branch`); return []; }
+    if (e.data.status !== 'superseded') return [id];
+    const next = ids(e.data.supersededBy);
+    if (!next.length) { problems.push(`${from}: its successor ${id} is superseded by nothing`); return []; }
+    return next.flatMap((n) => activeSuccessors(n, from, seen));
+  };
   const handedOff = [];
   for (const p of plan) {
     const me = load(p.path).data;
     if (me.status !== 'superseded' || !p.fresh.length) continue;
-    const targets = ids(me.supersededBy);
-    const isMerge = targets.length === 1;
-    for (const t of targets) {
-      const tp = `entries/${t}.md`;
-      if (!load(tp)) { problems.push(`${p.id}: its successor ${t} is not on the branch`); continue; }
-      append(tp, p.fresh.map((x) => (isMerge ? { ...x, mergedFrom: p.id } : { ...x, splitFrom: p.id })));
-    }
+    const first = ids(me.supersededBy);
+    if (!first.length) { problems.push(`${p.id}: superseded by nothing, so main's new evidence has nowhere to go`); continue; }
+    const isMerge = first.length === 1; // the tag names what happened to THIS entry, as migrate-schema2 does
+    const targets = [...new Set(first.flatMap((t) => activeSuccessors(t, p.id)))];
+    for (const t of targets) append(`entries/${t}.md`, p.fresh.map((x) => (isMerge ? { ...x, mergedFrom: p.id } : { ...x, splitFrom: p.id })));
     handedOff.push(`${p.id} -> ${targets.join(', ')} (${isMerge ? 'merge' : 'split'})`);
   }
   if (problems.length) return { writes: new Map(), problems, extended: [], handedOff: [] };
