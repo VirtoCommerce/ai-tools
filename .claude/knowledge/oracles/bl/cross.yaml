@@ -63,6 +63,9 @@ rules:
       ref: Switch currency → all prices update → cart totals recalculate → shipping and tax adjust → products without new-currency prices show "Unavailable".
     violation_signal: Partial update (prices change but cart doesn't recalculate); shipping in old currency; tax on pre-switch amounts; mixed currency display.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CROSS-005
     title: Order placement triggers multi-system side effects
     rule: "When an order is successfully placed, the following side effects must all occur: (1) inventory decremented by ordered quantities, (2) order confirmation email sent to the customer, (3) GA4 `purchase` event fired with correct order ID, revenue, and items, (4) order appears in the customer's order history, (5) cart is cleared. All side effects must complete — partial execution (e.g., inventory decremented but email not sent) is a bug."
@@ -78,6 +81,9 @@ rules:
       ref: 'Place order → check inventory (decremented) → check email inbox (confirmation received) → check GA4 dataLayer (purchase event with correct data) → check "My Orders" (order listed) → check cart (empty). Verify in Admin: order exists with correct totals.'
     violation_signal: Inventory not decremented; email not sent; GA4 event missing or wrong revenue; order not in history; cart not cleared; any side effect missing.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CROSS-006
     title: Feature flag toggle → immediate behavior change
     rule: Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.
@@ -91,6 +97,9 @@ rules:
       ref: 'Toggle `quotesEnabled` OFF in Admin → refresh storefront → "Request Quote" button disappears. Toggle ON → button returns. For module flags: disable module → restart platform → verify effects.'
     violation_signal: Flag change requires restart when it shouldn't; flag change has no effect until cache expires; storefront caches flags beyond one page load.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CROSS-007
     title: Admin entity deletion → cascade cleanup
     rule: "When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database."
@@ -116,7 +125,8 @@ rules:
       kind: manual
       ref: As Org A, note cart, addresses, prices, theme → switch to Org B → verify ALL six contexts changed → switch back → ALL restored to Org A's state.
     violation_signal: Cart swaps but prices remain from previous org; addresses from wrong org; theme doesn't change; partial context swap of any kind.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SMK-020 failed in REG-2026-10-02-2022"
   - id: BL-CROSS-009
     title: Eventual consistency is bounded
     rule: "Any change to an entity — an admin edit (product, price, inventory, category, settings) **or a write through any API surface** (REST, xAPI/GraphQL) — must be reflected everywhere that entity is read within 120 seconds (2 reindex cycles). This bound covers search index, cache layers, CDN, **and per-entity read caches**: a write on one surface must invalidate the cached read of the *same* entity on every other surface — caches must expire on the entity's change event, not only on a same-surface write. After 120 seconds, any discrepancy (Admin vs storefront, or one API surface vs another) is a bug."
@@ -143,6 +153,9 @@ rules:
       ref: Call `placeOrder` twice with same cart token → only 1 order created, 1 inventory decrement, 1 payment charge. Simulate network timeout + retry → same result. Refresh the confirmation page → no new order.
     violation_signal: Duplicate orders on retry; double payment charge; inventory decremented twice; different results on identical retry.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CROSS-011
     title: Graceful degradation when dependent service is down
     rule: "When a dependent service is unavailable (Elasticsearch down, payment gateway timeout, email service failure, analytics endpoint unreachable), the platform must degrade gracefully: (1) search down → show \"Search unavailable\" message, catalog browsing via categories still works; (2) payment gateway down → show error at checkout, don't create orphan orders; (3) email down → order still placed, email queued for retry; (4) analytics down → order still placed, events lost (acceptable)."
@@ -153,7 +166,8 @@ rules:
       kind: manual
       ref: Simulate each service outage → verify core flow continues or shows meaningful error → no 500 errors, no white screens, no data corruption.
     violation_signal: White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SMK-001 failed in REG-2026-10-02-2022"
   - id: BL-CROSS-012
     title: Admin entity deletion never creates $0 products
     rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.

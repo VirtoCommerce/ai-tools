@@ -27,7 +27,8 @@ rules:
       kind: manual
       ref: With flag OFF → "Add to cart" → "Checkout" → redirect to sign-in. With flag ON → anonymous user can complete full checkout without account.
     violation_signal: Anonymous user reaches checkout when flag is OFF; guest order appears in a registered user's order history; saved addresses shown to guest.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] CHK-004, CHK-027, CHK-028, CHK-096 failed in REG-2026-10-02-2022"
   - id: BL-CHK-002
     title: Double-submit prevention (Place Order idempotency)
     rule: Clicking "Place Order" twice in rapid succession must NOT create two orders. The button must be disabled after first click, and the backend must enforce idempotency (same cart token → same order).
@@ -40,8 +41,10 @@ rules:
       kind: manual
       ref: Click "Place Order" → immediately click again → only 1 order created. Check Admin → Orders → verify single order. Check button state (disabled/loading after first click).
     violation_signal: Two orders with same items created; button remains clickable during processing; no loading indicator.
-    status: SUSPECT
-    suspect_reason: "[code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check"
+    status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CHK-003
     title: Address validation by country
     rule: Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -57,6 +60,9 @@ rules:
       ref: Select US → State and ZIP required. Select a country with no regions → State/Province hidden/optional, but ZIP/Postal code **still required**. Attempt to submit without ZIP → blocked before the payment step regardless of country.
     violation_signal: 'State/Province required for a country that has no regions; the address form is identical regardless of country (no region-conditional State field); ZIP silently not enforced. (Note: the earlier expectation that "countries without postal codes must not require ZIP" does NOT match the form — ZIP is always required.)'
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CHK-004
     title: Payment retry after decline
     rule: When a payment is declined by the gateway (insufficient funds, expired card, etc.), the user must be able to retry with a different card or correct the issue — without losing their cart or shipping selections. The checkout state (address, shipping method) must persist through payment retries. After 3 consecutive declines, the system may lock the checkout temporarily.
@@ -83,6 +89,9 @@ rules:
       ref: Enter domestic address → see standard/express options. Change to international address → shipping methods update → rates change. Select BOPIS → change to address far from any store → BOPIS option disappears.
     violation_signal: Shipping methods don't update when address changes; unavailable method remains selected; rates don't change for different destinations.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CHK-006
     title: Order total formula
     rule: "The order total must always equal: `subTotal (sum of the list totals of items flagged selectedForCheckout) + shipping subtotal + tax total + payment subtotal + fee total − discount total (the aggregate of line-item, shipping, payment, and cart-level discounts)`. Every component is an explicit line — no hidden or unexplained differences. The total displayed at checkout must match the total on the order confirmation page and in the Admin order detail. (Source: vc-module-cart `DefaultShoppingCartTotalsCalculator.CalculateTotals` — `cart.Total = SubTotal + ShippingSubTotal + TaxTotal + PaymentSubTotal + FeeTotal − DiscountTotal`.)"
@@ -99,7 +108,8 @@ rules:
       kind: manual
       ref: "Manually calculate: add all line totals + shipping + tax - discounts. Compare to displayed total. After placing order → check order confirmation → check Admin order detail → all three must match."
     violation_signal: Total doesn't match manual calculation; checkout total differs from confirmation page; Admin order shows different amount; unexplained $0.01+ discrepancy.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-050 failed in REG-2026-10-02-2022"
   - id: BL-CHK-007
     title: Minimum order amount enforcement
     rule: '**NOT native to Virto Commerce** (live-verified 2026-07-15: no store-level monetary minimum-order-amount setting and no native cart validator that blocks Place Order on a below-minimum subtotal — native cart validation is quantity/stock/price-based only: MinQuantity/MaxQuantity/PackSize, out-of-stock, price-changed). This invariant applies **ONLY to deployments that add a custom minimum-order validator/setting**. Where such a validator exists: when a store has a minimum order amount configured, the checkout "Place Order" button must be disabled (or checkout blocked) if the cart subtotal (after discounts) is below the minimum. The minimum applies to the subtotal, not the grand total (before shipping/tax). A clear message must indicate the minimum and the shortfall.'
@@ -128,3 +138,6 @@ rules:
       ref: Open address-selection popup with a user whose address book contains ≥1 US or CA address → "State/Province" facet visible with term values. Apply Country facet = non-US/CA country (e.g., GB) → "State/Province" facet disappears from DOM (not just empties). Remove Country filter → facet reappears. For a user with only non-US/CA addresses (e.g., Albania-only), facet must not be rendered at all.
     violation_signal: '"State/Province" facet visible with empty/zero values when result set has no non-null regionId; facet persists in DOM after filter narrows the set to null-region addresses only; facet missing when USA/Canada addresses are present.'
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022

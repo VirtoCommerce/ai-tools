@@ -28,7 +28,8 @@ rules:
       ref: scripts/invariants/page-walk.ts (npm run inv:run -- page-walk) with --filter <the facet term> --expected <its count>
       steps: Note facet count for Brand X = 15 → click filter → verify exactly 15 products listed. Apply a second filter (e.g., price range) → facet counts for all other facets update to reflect the combined filter.
     violation_signal: Facet shows 15 but filter returns 12 products; facet counts don't update after second filter; total count mismatches; empty facets still shown (count > 0 but no results).
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SRCH-023, SRCH-NEW-104 failed in REG-2026-10-02-2022"
   - id: BL-SRCH-002
     title: Zero-result query shows an intact empty state
     rule: 'When a search query returns zero results, the search-results page (rendered by `category.vue` → `category-products.vue`) must render an intact empty state and never a blank grid, broken layout, or error. It must display (1) a clear no-results message via a `VcEmptyView` (variant `search`, icon `outline-stock`) using i18n key `pages.catalog.no_products_filtered_message` when a keyword/filters are active (else `pages.catalog.no_products_message`), with the searched term echoed in the page heading via i18n key `pages.search.header_empty`; and (2) a recovery action — a reset button (i18n key `pages.catalog.no_products_button`) that clears the keyword/filters (emits `resetFilterKeyword`). NOTE: vc-frontend does **NOT** implement spelling "Did you mean…" suggestions nor a popular-products/categories fallback — do not assert them.'
@@ -47,7 +48,8 @@ rules:
       kind: manual
       ref: Search for a nonsense term → the `VcEmptyView` no-results message shows with the term echoed in the heading → page layout intact → the reset button is present and clears the keyword/filters. (Do not assert a "Did you mean…" suggestion — it does not exist.)
     violation_signal: Blank product grid; broken layout on zero results; no `VcEmptyView`/message on zero results; error/500 on uncommon search terms.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SRCH-019, SRCH-NEW-104 failed in REG-2026-10-02-2022"
   - id: BL-SRCH-003
     title: Search index consistency after catalog change
     rule: "After a product is created, updated, or deleted in Admin, the search index must reflect the change within the consistency window (BL-CROSS-009: 120s). Specifically: new product appears in search, updated product name/description changes in results, deleted product disappears from search. No ghost results for deleted products."
@@ -66,6 +68,9 @@ rules:
       steps: Create product → wait 120s → search by name → found. Update name → wait 120s → search by new name → found, old name → not found. Delete product → wait 120s → search → not found.
     violation_signal: New product not findable after 120s; deleted product still in search results; updated fields not reflected in search; ghost/phantom results.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-SRCH-004
     title: Search respects store and catalog scope
     rule: Search results are scoped to the current store's virtual catalog. Products from other stores or unlinked physical catalogs must never appear in search results. The search API requires `storeId` context — omitting it is an API contract violation.
@@ -82,7 +87,8 @@ rules:
       kind: manual
       ref: Search on Store A → only products from Store A's virtual catalog appear. Product in Store B's catalog → not in Store A's search. xAPI query without `storeId` → error, not unscoped results.
     violation_signal: Products from wrong store in search results; unscoped search returns cross-store data; xAPI returns results without storeId context.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] SRCH-014, SRCH-018, SRCH-021 failed in REG-2026-10-02-2022"
   - id: BL-SRCH-005
     title: Special characters in search queries
     rule: 'Search must handle special characters safely: quotes, ampersands, angle brackets, Unicode, emoji, and SQL/NoSQL injection patterns. Special characters should be escaped or treated as literal text — never interpreted as query operators (unless explicitly supported like `"exact phrase"` search). No 500 errors, no information leakage.'
@@ -100,6 +106,9 @@ rules:
       ref: Search for `<script>alert(1)</script>` → no XSS, shows "No results." Search for `'; DROP TABLE--` → no error, shows "No results." Search for product with `&` in name → found correctly.
     violation_signal: 500 error on special characters; XSS executes; search syntax injection; product with special chars in name not findable.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-SRCH-006
     title: A listing walked page by page returns each item exactly once
     priority: P1-data

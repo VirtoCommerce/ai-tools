@@ -19,7 +19,8 @@ rules:
       kind: manual
       ref: Org A has items in cart → switch to Org B → cart is empty (or shows Org B's cart). Org A's addresses not visible under Org B. Switch back → Org A's cart restored.
     violation_signal: Org A's cart items visible under Org B; addresses from wrong org shown; prices from wrong org applied.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] B2C-ORG-045, AUTH-036, AUTH-037, AUTH-038, AUTH-043, SMK-020 failed in REG-2026-10-02-2022"
   - id: BL-B2B-002
     title: Organization-specific pricing overrides store default
     rule: "When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → \"Unavailable.\" If the org price list doesn't cover a product, the store default applies as fallback."
@@ -33,6 +34,9 @@ rules:
       ref: Org A has custom price list (Product X = $50). Store default has Product X = $75. Sign in as Org A member → Product X shows $50. Sign in as non-org user → Product X shows $75. Check a product NOT in org's price list → should show store default price.
     violation_signal: Org member sees store default price instead of org price; non-org user sees org prices; product without org price shows "Unavailable" instead of falling back to store default.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-B2B-003
     title: Quote expiry makes quote non-convertible
     rule: Quotes (RFQ) have an expiration date set by the seller. After expiry, the buyer cannot convert the quote to an order — the "Convert to Order" action must be disabled or show an "Expired" message. Expired quotes remain visible in history but are not actionable. The seller can extend or reissue an expired quote.
@@ -110,7 +114,8 @@ rules:
       kind: manual
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
     violation_signal: JWT carries another org's permissions; `pageContext.user.permissions` diverges from the JWT (BUG-A condition — pageContext returned `[]` while the JWT held 8 maintainer perms).
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] B2C-ORG-051 failed in REG-2026-10-02-2022"
   - id: BL-B2B-008
     title: Org-scoped role change mutates only the target org's membership
     rule: Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -293,3 +298,6 @@ rules:
       ref: Set a membership's `Status` to a blocking value while the **contact's** status stays `Approved` → the effective status is the membership's (access is refused per BL-AUTH-013), proving tier 1 beats tier 2. Clear the membership's `Status` → the effective status follows the contact's. Read `Customer.OrganizationMembershipStatuses` → default `Approved`, allowed values the four-value set. Lock a membership whose status is `Approved` → refused on the lock axis with the status untouched.
     violation_signal: A contact-level status overrides an explicit membership status (tiers inverted — a per-org block silently ignored, or a healthy org blocked by an unrelated contact status); a null membership status is treated as blocking (or as a fifth state) instead of inheriting; a lock is written into the `Status` field, or a status value is used to express a lock, collapsing the two axes so one cannot be cleared without the other.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022

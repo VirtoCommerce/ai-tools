@@ -27,7 +27,8 @@ rules:
       kind: manual
       ref: In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
     violation_signal: Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-013, ORD-031, ORD-093, ORD-063, ORD-064, ORD-065, ORD-066, ORD-075, ORD-076, ORD-077, ORD-081 failed in REG-2026-10-02-2022"
   - id: BL-ORD-002
     title: Cancellation restores inventory conditionally
     rule: |-
@@ -52,6 +53,9 @@ rules:
       ref: 'Read the global Orders > General "Adjust inventory for orders" value (Settings in the main menu, not the store''s Settings widget). With it on, on a disposable AGENT-TEST- order with two line items of tracked products from one fulfillment center: create → the reserved quantity rises for each line → cancel → each line''s reserved quantity is released. With it off (a disposable environment only; it is a platform-wide switch): cancel → stock unchanged.'
     violation_signal: Reserved stock not released on cancellation while the setting is on; only the first line released; stock adjusted while the setting is off; the setting appears in, or behaves per, a store's settings.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-ORD-003
     title: Partial fulfillment rules
     rule: An order with multiple line items can be partially fulfilled — some items shipped while others remain pending. Each shipment tracks its own items and state independently (`New → Pick & Pack → Ready to Send → Send`, per BL-ORD-007). Virto does **NOT** auto-assign a "Partially shipped" order status — that value is not in the platform status vocabulary (BL-ORD-009). Partial-fulfillment progress is observed via per-shipment statuses; order-level completion is set at ORDER level as `OrderStatus = Completed` (a settable status), never derived from an aggregate "all shipments Delivered" (there is no `Delivered` shipment state — BL-ORD-007).
@@ -64,7 +68,8 @@ rules:
       kind: manual
       ref: Order with 3 items → create 2 shipments (items A+B in shipment 1, item C in shipment 2) → advance shipment 1 to `Send` → shipment 1 shows `Send`, shipment 2 still `New` (per-shipment states independent) → advance shipment 2 to `Send` → set the order's `OrderStatus = Completed`. Assert there is no "Partially shipped" order status and no "Delivered" shipment state.
     violation_signal: Order marked "Completed" while shipments are pending; partial shipment not reflected in order status; items missing from shipment tracking.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-004, ORD-027 failed in REG-2026-10-02-2022"
   - id: BL-ORD-004
     title: Refund conditions
     rule: Refund is only possible on a payment that has been captured. Partial refund amount must be ≤ captured amount minus any previous refunds. Full refund sets payment status to "Refunded." A voided payment cannot be refunded. Refund does not automatically restore inventory — that follows BL-ORD-002 cancellation rules separately.
@@ -98,7 +103,8 @@ rules:
       kind: manual
       ref: Place 3 orders on the same day → numbers share the day's date prefix and increment sequentially (e.g. `CO<date>-00001`, `-00002`, `-00003`). Cancel the middle order → place another same-day order → the next number continues the same-day sequence (not reused). Placing an order on a new day resets the counter to `00001` under the new date prefix — expected, not a bug.
     violation_signal: Duplicate order numbers *within the same reset period*; counter fails to reset at the configured boundary; order number changes after creation.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-029, ORD-050 failed in REG-2026-10-02-2022"
   - id: BL-ORD-006
     title: Payment state machine (detailed)
     rule: |-
@@ -123,6 +129,9 @@ rules:
       ref: For each illegal transition, attempt via API → expect 400/422 error. In Admin, verify buttons only show valid next states.
     violation_signal: Any illegal transition succeeds; Admin shows buttons for invalid states; API returns 200 on illegal transition.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-ORD-007
     title: Shipment state machine (detailed)
     rule: |-

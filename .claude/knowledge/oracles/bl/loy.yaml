@@ -278,6 +278,9 @@ rules:
       ref: "Place ONE order whose merchandise value falls BELOW the goal's target while its order total rises ABOVE it — a target placed strictly between the two readings is what makes the case decidable (`.claude/rules/test-data.md` §SECOND RULE). Read `loyaltyMissionProgress` for that user: `currentValue` must equal the order total, and the mission must reach `Completed` once that total meets or exceeds the target."
     violation_signal: "`currentValue` equals the order's merchandise value alone, excluding shipping/tax; a mission fails to complete on an order whose total cleared the target even though its goods did not; a discount that lowered what the customer paid does not lower `currentValue`."
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-LOY-017
     title: Mission accrual counts cash-currency spend only — loyalty-currency lines contribute nothing
     rule: "A mission goal MUST ignore line items priced in the loyalty currency. A points-priced line is a REDEMPTION, not a purchase: counting it lets a customer convert previously-earned points into fresh mission progress and a fresh reward, which is a self-feeding loop. This is the mission-path analogue of **BL-LOY-009**, which already states it for the loyalty-program earn path."

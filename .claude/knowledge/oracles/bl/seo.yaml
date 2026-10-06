@@ -59,6 +59,9 @@ rules:
       ref: Open a PDP → inspect the rendered (post-hydration) DOM head → `<meta property="og:url">` present and equal to the product's own resolved URL; **no** `<link rel="canonical">` is expected. Open the same product via a different category → `og:url` still points to that same product URL. Repeat on a category listing page.
     violation_signal: '`og:url` missing or pointing to the wrong URL; `og:url` differs for the same product across entry points (should be its single resolved URL). NOTE: the absence of a `<link rel="canonical">` tag is the documented default and is NOT a violation.'
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-SEO-004
     title: SEO link type controls URL format
     rule: The store setting `seoLinkType` controls how product and category URLs are generated. When changed, all storefront URLs must update to the new format. Old-format URLs should either redirect (301) to the new format or return 404 — never serve content at both old and new URLs simultaneously (duplicate content penalty).

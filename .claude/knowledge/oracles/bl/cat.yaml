@@ -40,6 +40,9 @@ rules:
       ref: Edit product name in physical catalog → open virtual catalog → name updated immediately. Delete product from physical catalog → virtual catalog no longer shows it. Add product to physical catalog in a linked category → appears in virtual catalog.
     violation_signal: Virtual catalog shows stale data after physical catalog edit; deleted product still appears in virtual catalog; changes require manual sync.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CAT-003
     title: Search index lag window
     rule: After an admin change (product create/update/delete, price change, stock update), there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, storefront search/listing may show stale results. However, PDP (direct product page) and cart always use live data. After reindex, search results must match the current state.
@@ -69,8 +72,10 @@ rules:
       kind: manual
       ref: Hide category in Admin → storefront menu no longer shows it → products still accessible via search or direct URL → subcategories also hidden from nav. Unhide → category and subcategories return to nav.
     violation_signal: Hidden category still in navigation menu; products in hidden category inaccessible via direct URL; subcategories still visible when parent is hidden.
-    status: SUSPECT
-    suspect_reason: "[code] vc-module-catalog@f3b31c3:src/VirtoCommerce.CatalogModule.Data/Search/Indexing/ProductDocumentBuilder.cs#IsVisible (:369-374) indexes a product as status 'hidden' unless product.IsActive && ParentCategoryIsActive (CatalogProduct.cs:465, category and all ancestors active), commented 'Product must inherit hidden flag from parent categories'; this contradicts the clause 'products within a hidden category remain accessible via ... search'. No human source decides it (VP-7347 covers only child categories inheriting hidden), re-run the check"
+    status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CAT-005
     title: Product requires virtual catalog assignment for storefront
     rule: A product that exists only in a physical catalog (not linked to any virtual catalog assigned to a store) will NOT appear on the storefront. The storefront reads from the single catalog assigned to the store, which may be a physical catalog directly or a virtual catalog built over one or more physical catalogs. Products must be in a category within the store's assigned catalog (or its linked physical catalog) to be visible.
@@ -88,6 +93,9 @@ rules:
       ref: Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
     violation_signal: Product visible on storefront without virtual catalog assignment; product appears in wrong store's catalog; physical-only product accessible via search.
     status: ACTIVE
+    verified:
+      date: 2026-10-03
+      by: REG-2026-10-02-2022
   - id: BL-CAT-006
     title: Configurable product requires all sections filled
     rule: A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.
