@@ -1,0 +1,38 @@
+{
+ "key": "VCST-5990",
+ "pass": 1,
+ "lastRun": "2026-10-06T12:58Z",
+ "claimedAt": "2026-10-06T12:58Z",
+ "runningBuild": {
+  "theme": "vc-theme-b2b-vue-2.59.0-pr-2476-43b1-43b1a918"
+ },
+ "prUnderTest": {
+  "repo": "VirtoCommerce/vc-frontend",
+  "number": 2533,
+  "artifact": "vc-theme-b2b-vue-2.59.0-pr-2533-0e46-0e4674cf.zip",
+  "state": "open"
+ },
+ "local": {
+  "env": "localhost",
+  "themeUrl": "https://vc3prerelease.blob.core.windows.net/packages/vc-theme-b2b-vue-2.59.0-pr-2533-0e46-0e4674cf.zip",
+  "expected": "fe-500b60b4c87c",
+  "marker": "fe-ab8c4e3e2c98",
+  "graphql": "ok",
+  "running": false,
+  "checkedAt": "2026-10-06T12:58Z"
+ },
+ "deployPr": {
+  "url": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6830",
+  "openedBy": "this routine (operator token)",
+  "state": "open",
+  "supersedes": "https://github.com/VirtoCommerce/vc-deploy-dev/pull/6687 (vc-ci, merge conflict)"
+ },
+ "baseline": "NOT CAPTURED - cart repro commits a quantity (write); cites ticket description measurements",
+ "jiraCommentId": "111494",
+ "jiraCommentAuthor": "Elena Mutykova",
+ "skipped_steps": [
+  "Step 0.2 /qa-env-check skill - direct endpoint probes in built-in browser instead (VM has no route to vcst-qa)",
+  "Step 2A Phase A live repro - write-only repro; cited ticket's own reproduction",
+  "Step 3-7 - deploy gate NOT DEPLOYED (Pass 1)"
+ ]
+}

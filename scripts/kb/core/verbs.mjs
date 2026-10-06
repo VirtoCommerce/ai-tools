@@ -8,7 +8,8 @@
 // (Git Data API, blobs -> tree -> commit -> ref) is a later session, and the queue is already the
 // durable record it will read.
 
-import { writeFile } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
@@ -23,6 +24,9 @@ import {
 } from './queue.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
+import { prepareVocabulary, readVocabulary } from './query.mjs';
+import { prepareRetrieval, retrieve } from './retrieve.mjs';
+import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -100,7 +104,7 @@ export function trustOf(evidence = []) {
  * the index's own count, says it is provisional, and raises no drift: the two numbers were never
  * compared, so they cannot be said to disagree.
  */
-function describeHit(hit, parsed, { unavailable = null } = {}) {
+export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
     ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
@@ -429,6 +433,174 @@ async function queuedHere(question, { env }) {
   }));
 }
 
+// ── the calibrated verdict (VCST-6122 M4, Decision 1a) ────────────────────────────────────────
+//
+// SWITCHED BY THE BASE, NOT BY THE CLIENT. A base that carries `ranker.json` gets the verdict; one
+// that does not -- every base before this change, and `main` today -- gets floor-1, byte for byte as
+// before. So this code can ship to every machine while the decision to turn it on stays a reviewed
+// data change in one place, and turning it off again is deleting one file. A ranker.json that cannot
+// be read or does not have the shape `decide` needs is treated as absent: the fallback is the ranker
+// that was running yesterday, never a half-configured one.
+
+// PER-PROCESS CACHES. The MCP server lives for a whole session and asks many times; without these it
+// fetched ranker.json (a 404 on every base without one, which is every base today), rebuilt the
+// retrieval index and re-read up to ten bodies on EVERY ask. A short TTL keeps a base update visible
+// within a minute; a CLI process asks once and never sees a hit, which is fine.
+const CACHE_TTL_MS = 60_000;
+const cached = new Map();
+async function remember(key, make, { now = Date.now(), keep = () => true } = {}) {
+  const hit = cached.get(key);
+  if (hit && now - hit.at < CACHE_TTL_MS) return hit.value;
+  const value = await make();
+  if (keep(value)) cached.set(key, { at: now, value });
+  return value;
+}
+/** Cheap identity of a loaded index: the same rows in the same order yield the same retrieval prep. */
+const rowsKey = (rows) => `${rows.length}:${rows.map((r) => r.id).join(',')}`;
+/** For tests: forget everything cached. */
+export const clearVerdictCaches = () => cached.clear();
+
+/** The base's verdict ranker, or null (absent, unreadable or malformed => floor-1). Cached per base. */
+export async function loadVerdictRanker(reader, { locator = null, env = null } = {}) {
+  return locator ? remember(`ranker\0${locator}`, () => readRankerRemembered(reader, locator, env)) : readVerdictRanker(reader);
+}
+
+// A REMOTE BASE WITHOUT ranker.json -- every base until the data PR lands -- answered a 404 on every
+// CLI ask, one extra sequential request each, because a CLI process lives for one ask and the
+// in-memory cache never gets a second look. The ABSENCE alone is remembered on disk beside the queue
+// for ABSENT_TTL_MS, per locator; a ranker that exists is always read fresh, so publishing one takes
+// effect within that window and deleting one takes effect at once.
+const ABSENT_TTL_MS = 10 * 60_000;
+const absentPath = (env) => join(queueDir(env ?? process.env), 'ranker-absent.json');
+function readAbsent(env) {
+  try { return JSON.parse(readFileSync(absentPath(env), 'utf8')) ?? {}; } catch { return {}; }
+}
+async function readRankerRemembered(reader, locator, env) {
+  const remote = /^https?:/i.test(String(locator));
+  if (remote) {
+    const at = readAbsent(env)[locator];
+    if (Number.isFinite(at) && Date.now() - at < ABSENT_TTL_MS) return null;
+  }
+  let missing = false;
+  const ranker = await readVerdictRanker(reader, { onMissing: () => { missing = true; } });
+  if (remote && missing) {
+    try {
+      await mkdir(queueDir(env ?? process.env), { recursive: true });
+      writeFileSync(absentPath(env), JSON.stringify({ ...readAbsent(env), [locator]: Date.now() }));
+    } catch { /* best effort: without the marker the next ask simply reads again */ }
+  }
+  return ranker;
+}
+
+async function readVerdictRanker(reader, { onMissing = () => {} } = {}) {
+  let read;
+  try { read = await reader.readIndex('ranker.json'); } catch { return null; }
+  if (!read?.ok) { if (read?.reason === 'missing') onMissing(); return null; }
+  try {
+    const r = JSON.parse(read.text);
+    const m = r?.model;
+    const n = Array.isArray(m?.features) ? m.features.length : -1;
+    // An OLDER client meets a NEWER ranker.json (clients ship first and lag the data, Decision 8):
+    // an unknown schema, fusion method or feature would be read as something else -- an unknown
+    // feature as 0, which shifts p and can certify a wrong answer. Unknown => absent => floor-1.
+    const shaped = r?.schema === 1 && typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
+      && m.features.every((f) => FEATURES.includes(f))
+      && [m.mean, m.std, m.weights].every((a) => Array.isArray(a) && a.length === n && a.every(Number.isFinite))
+      && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer))
+      // A std of 0 divides every feature into NaN and turns every ask ambiguous; a fusion or rerank
+      // that is present but not the shape `retrieve` / `rerankByBodies` read throws on every ask.
+      // Both are "malformed", so both fall back to floor-1 like any other unreadable ranker.
+      && m.std.every((s) => s > 0)
+      && (r.fusion === undefined || (r.fusion && typeof r.fusion === 'object' && ['linear', 'rrf'].includes(r.fusion.method)
+        && r.fusion.weights && typeof r.fusion.weights === 'object' && Object.values(r.fusion.weights).every(Number.isFinite)))
+      && (r.rerank === undefined || r.rerank === null
+        || (typeof r.rerank === 'object' && Number.isFinite(r.rerank.k) && r.rerank.k >= 0 && Number.isFinite(r.rerank.lambda)));
+    return shaped ? r : null;
+  } catch { return null; }
+}
+
+/** The model's own inputs, rounded, for the log line: what the verdict was decided ON -- the
+ * features THIS ranker.json reads, not a client constant, so a refit's log lines stay true. */
+const featureLine = (f, names) => Object.fromEntries(names.map((k) => [k, round2(f[k] ?? 0)]));
+
+/**
+ * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
+ * excerpts need them), decide, log the verdict with what it was decided on, render.
+ */
+async function askVerdict({ question, repair, cat, opened, ranker, env, started, via, call, topic, deployment }) {
+  const rows = retrievable(cat.rows);
+  const loc = String(opened.locator ?? '');
+  const prep = await remember(`prep\0${loc}\0${rowsKey(rows)}`,
+    async () => prepareRetrieval(rows, prepareVocabulary(await readVocabulary(opened.reader))));
+  const found = retrieve(prep, question, { fusion: ranker.fusion });
+  const head = found.candidates.slice(0, Math.max(ranker.rerank?.k ?? 0, AMBIGUOUS_TOP));
+  const parsed = new Map(await Promise.all(head.map(async (c) => [c.row.id, await remember(`entry\0${loc}\0${c.row.path}`, async () => {
+    const r = await opened.reader.readEntry(c.row.path);
+    if (!r.ok) return null;
+    try { return parseEntry(r.text, c.row.path); } catch { return null; }
+  }, { keep: (v) => v !== null })]))); // a failed read (a timeout) is retried next ask, not remembered for a minute
+  const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
+  const d = decide(prep, ranker, question, { retrieval: found, bodies });
+  const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
+  const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features, ranker.model.features) };
+
+  if (d.verdict === 'answer') {
+    const c = d.entries[0];
+    const hit = { row: c.row, score: round2(d.p), overlap: [], anchors: c.anchors.hits };
+    const p = parsed.get(c.row.id);
+    // The certified entry's body did not arrive (a timeout, drift, an unparseable file): the agent
+    // got a subject line, not an answer. Same honest state as floor-1 -- conclude nothing (exit 3).
+    if (!p) {
+      const missing = { ...describeHit(hit, null, { unavailable: 'body unavailable' }), unavailable: 'body unavailable' };
+      await log({ ...common, matched: [c.row.id], trustShown: [missing.trust.label], opened: [], state: 'unreachable', why: 'body unavailable', ms: Date.now() - started, ...stamp }, { env });
+      return { state: 'unreachable', verdict: 'answer', hits: [missing], rows: cat.rows.length, ...repair };
+    }
+    const described = describeHit(hit, p);
+    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: [c.row.id], state: 'answer', ms: Date.now() - started, ...stamp }, { env });
+    return { state: 'answer', verdict: 'answer', hits: [described], rows: cat.rows.length, ...repair };
+  }
+  if (d.verdict === 'ambiguous') {
+    const headlines = d.entries.map((c) => ({
+      id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: bodies.get(c.row.id) ?? null,
+    }));
+    // No headline is certified, so the agent may be about to go and find out: name what this session
+    // already captured and has not published, as the floor-1 miss does, or the same fact is captured twice.
+    const queued = await queuedHere(question, { env });
+    const written = await log({ ...common, shown: headlines.map((h) => h.id), state: 'ambiguous', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+    return { state: 'ambiguous', verdict: 'ambiguous', headlines, handle: written.line?.at ?? null, hits: [], queued, rows: cat.rows.length, ...repair };
+  }
+  const concepts = d.concepts.map((id) => prep.vocab.concepts.get(id)?.label ?? id);
+  const queued = await queuedHere(question, { env });
+  await log({ ...common, matched: [], state: 'miss', ms: Date.now() - started, ...stamp, ...(queued.length ? { queued: queued.map((q) => q.id) } : {}) }, { env });
+  return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
+}
+
+/**
+ * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
+ * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
+ * on the other side -- so it names its ask by HANDLE, the ask's own `at`, rather than "the session's
+ * latest ask": in a batched wave the latest ask is somebody else's, which is how S4's verdict once
+ * carried S5's timestamp.
+ */
+export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
+  const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
+  // WITHOUT A HANDLE, ONLY AN OPEN QUESTION: the latest ask, and only if it ended `ambiguous`. A none
+  // pinned to an ask the base answered, or to a miss, is a false label in the very data M6
+  // recalibrates on; recorded unpaired, it is merely unpaired.
+  const latest = asks.at(-1) ?? null;
+  const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
+  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  if (written.disabled) return { state: 'disabled', why: written.why };
+  if (!written.ok) return { state: 'unreachable', why: written.why };
+  return {
+    state: 'recorded',
+    ...(target ? { after: target.at, q: target.q } : {}),
+    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
+  };
+}
+
 export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
@@ -440,6 +612,11 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
   if (cat.state !== 'ok') {
     await log({ kind: 'ask', q: question, ...repair, state: cat.state, why: cat.why, ...ranked({ via, call, topic, deployment }) }, { env });
     return { state: cat.state, why: cat.why, hits: [], ...repair };
+  }
+
+  const verdictRanker = await loadVerdictRanker(opened.reader, { locator: opened.locator, env });
+  if (verdictRanker) {
+    return askVerdict({ question, repair, cat, opened, ranker: verdictRanker, env, started, via, call, topic, deployment });
   }
 
   const { hits, nearMiss } = rank(question, retrievable(cat.rows), { top });
@@ -533,34 +710,37 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+  // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
+  // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
     return { state: cat.state, why: cat.why };
   }
   // Retired entries are shown. Retrieval will not return one, but a reader holding an id is
   // entitled to see what is behind it -- including that it was retired.
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) {
-    await log({ kind: 'show', id, state: 'miss', ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'miss', ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'miss', why: `${id} is not in this base's index` };
   }
   const read = await opened.reader.readEntry(row.path);
   if (!read.ok) {
     // Both a 404 and a timeout leave the caller without the entry, so both are 'conclude
     // nothing'. What differs is the REMEDY, which is why the message is built separately.
-    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: read.detail, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: read.reason === 'missing' ? `${row.path} is not in the base — drift; run \`kb reindex\`` : read.detail };
   }
   let parsed;
   try {
     parsed = parseEntry(read.text, row.path);
   } catch (err) {
-    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...context({ via, call, topic }) }, { env });
+    await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...context({ via, call, topic }) }, { env });
+  await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 
@@ -634,9 +814,9 @@ export function askAbout(asks, { text, anchors = [] }) {
  */
 async function sessionAsks({ env }) {
   const byAt = new Map();
-  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? '') });
+  for (const a of metaAsks(await readMeta(env))) byAt.set(a.at, { at: a.at, q: String(a.q ?? ''), state: a.state ?? null });
   const { lines } = await readQueue({ env });
-  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? '') });
+  for (const l of lines) if (l.kind === 'ask' && l.at) byAt.set(String(l.at), { at: String(l.at), q: String(l.q ?? ''), state: l.state ?? null });
   return [...byAt.values()];
 }
 
@@ -931,6 +1111,20 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) return { state: 'invalid', why: `${id} is not in this base's index` };
+  // A split or merged entry is still served by `show`, so agents keep its id -- but evidence written
+  // to it lands on a retired file nobody counts. Name the active successor(s) instead.
+  if (row.status === 'superseded') {
+    const byId = new Map(cat.rows.map((r) => [r.id.toUpperCase(), r]));
+    const active = new Set();
+    const walk = (r, seen = new Set()) => {
+      if (!r || seen.has(r.id)) return;
+      seen.add(r.id);
+      if (r.status !== 'superseded') { active.add(r.id); return; }
+      for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
+    };
+    walk(row);
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+  }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
 

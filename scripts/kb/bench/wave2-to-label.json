@@ -1,0 +1,1216 @@
+{
+ "about": "Wave VCST-6122-wave2 (2026-10-01): 43 asks by six Sonnet-class agents against vcst-6122-schema2 with ranker verdict-1; every ask ended ambiguous and was closed by kb_show or kb_none BY HANDLE (log/20261001-b01b5d39.jsonl on the branch). LABELLED by the operator on 2026-10-05 from Claude-drafted proposals: expect = the entries that answer ([] = the base holds nothing), partial = answers only part of Q, contested rows carry expect null and stay out of every metric.",
+ "totals": {
+  "relied": 20,
+  "noneDirect": 14,
+  "showThenNone": 9,
+  "offList": 2
+ },
+ "rows": [
+  {
+   "n": 1,
+   "area": "catalog and search",
+   "q": "What does the storefront search page show when a query returns no products?",
+   "p": 0.37,
+   "shown": [
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    },
+    {
+     "id": "KB-7837F100",
+     "subject": "Barcode lookup hides unpriced products only because the storefront adds a price term; xAPI expansion itself does not"
+    },
+    {
+     "id": "KB-5D688448",
+     "subject": "catalog search is index-backed and lags writes, so it cannot confirm a just-created category or product"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "Only barcode-specific empty states are recorded (KB-71011C1F 'No products found for barcode <value>'); no entry states the keyword /search?q= zero-result view."
+  },
+  {
+   "n": 2,
+   "area": "catalog and search",
+   "q": "searchProducts GraphQL query: how are facet filters combined and what do the term facet counts represent?",
+   "p": 0.46,
+   "shown": [
+    {
+     "id": "KB-041DF407",
+     "subject": "Deleted products leave index docs that inflate facet counts when event-based indexation is off"
+    },
+    {
+     "id": "KB-1144B33E",
+     "subject": "storefront GraphQL is served at /graphql; /xapi/graphql is not a route"
+    },
+    {
+     "id": "KB-110E0652",
+     "subject": "products(filter barcode:) expands to OR of configured fields and honours * and ? wildcards"
+    }
+   ],
+   "opened": [
+    "KB-041DF407"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-041DF407 only covers stale deleted-product docs inflating term_facets; no entry states how facet filters combine (AND/OR) or what a facet count means in general."
+  },
+  {
+   "n": 3,
+   "area": "cart and promotions",
+   "q": "What happens in the cart when a customer applies an invalid or expired coupon code?",
+   "p": 0.47,
+   "shown": [
+    {
+     "id": "KB-35F20D97",
+     "subject": "what a coupon code that does not work does to a cart"
+    },
+    {
+     "id": "KB-938D7C06",
+     "subject": "the cart coupon sidebar shows the first four public coupons as cards, and none to anonymous shoppers"
+    },
+    {
+     "id": "KB-8264632C",
+     "subject": "how the storefront cart page renders an applied and an unapplied coupon"
+    }
+   ],
+   "opened": [
+    "KB-35F20D97"
+   ],
+   "agent": "relied KB-35F20D97",
+   "offList": [],
+   "expect": [
+    "KB-35F20D97",
+    "KB-8264632C"
+   ],
+   "labelNote": "KB-35F20D97: addCoupon 'answers HTTP 200 ... APPENDS the code' with isAppliedSuccessfully=false; KB-8264632C gives the cart-page side (validateCoupon first, 'This code does not match any active coupons')."
+  },
+  {
+   "n": 4,
+   "area": "pricing and loyalty",
+   "q": "Which price does the storefront show when a product has prices in several price lists assigned to the same catalog?",
+   "p": 0.55,
+   "shown": [
+    {
+     "id": "KB-6D5E2CD1",
+     "subject": "what makes a price list apply to a store, and what the storefront reads it through"
+    },
+    {
+     "id": "KB-71011C1F",
+     "subject": "Storefront /search?barcode=<value> resolves by exact match on the store's configured barcode fields: 1 hit replaces the URL with the product page, N hits list, 0 hits show a reset-able empty state"
+    },
+    {
+     "id": "KB-C440D4E3",
+     "subject": "there is no product search route under /api/catalog/products"
+    }
+   ],
+   "opened": [
+    "KB-6D5E2CD1"
+   ],
+   "agent": "relied KB-6D5E2CD1",
+   "offList": [],
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "labelNote": "KB-6D5E2CD1: among matching assignments 'priority, higher wins' (20000 beat 1), gated by scope, date window and condition."
+  },
+  {
+   "n": 5,
+   "area": "catalog and search",
+   "q": "Does the product detail page show Out of stock or hide the Add to cart button when available quantity is zero?",
+   "p": 0.36,
+   "shown": [
+    {
+     "id": "KB-F78ED1CC",
+     "subject": "On vcst-qa a configurable product's PDP has a real Add to cart button, while simple and variation PDPs add via the quantity stepper."
+    },
+    {
+     "id": "KB-191B1B4C",
+     "subject": "the master product is a row in its own variations list"
+    },
+    {
+     "id": "KB-8C530141",
+     "subject": "A store's stock is read from its main fulfillment center, and stock elsewhere leaves the product at zero"
+    }
+   ],
+   "opened": [
+    "KB-F78ED1CC"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No entry states the PDP rendering for a zero-stock product; KB-191B1B4C only notes out-of-stock variations in the panel have disabled quantity controls."
+  },
+  {
+   "n": 6,
+   "area": "checkout and payment",
+   "q": "Which shipping methods does the checkout page offer and how is the shipping cost calculated?",
+   "p": 0.81,
+   "shown": [
+    {
+     "id": "KB-6AA0D7FB",
+     "subject": "fixed rate shipping method option pricing"
+    },
+    {
+     "id": "KB-358A70CB",
+     "subject": "storefront order page projection of the shipment"
+    },
+    {
+     "id": "KB-50EBEEE9",
+     "subject": "Storefront checkout happens on the /cart page itself; there is no separate checkout route until the order completes."
+    }
+   ],
+   "opened": [
+    "KB-6AA0D7FB"
+   ],
+   "agent": "relied KB-6AA0D7FB",
+   "offList": [],
+   "expect": [
+    "KB-6AA0D7FB",
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "KB-6AA0D7FB: FixedRate prices per option via '.Ground.Rate and .Air.Rate' store settings (unset = 0); KB-50EBEEE9 lists 'Fixed Rate (Ground) $150.00 and Fixed Rate (Air)' on checkout."
+  },
+  {
+   "n": 7,
+   "area": "orders and returns",
+   "q": "On the storefront order history page, which order statuses are shown to the customer and how are they labelled?",
+   "p": 0.32,
+   "shown": [
+    {
+     "id": "KB-DB7B6317",
+     "subject": "the Admin order Status dropdown settables differ from the statuses orders display"
+    },
+    {
+     "id": "KB-574C8604",
+     "subject": "the operator's free-text cancellation reason is printed to the shopper under the order status"
+    },
+    {
+     "id": "KB-1205B62A",
+     "subject": "the storefront never shows a shipment tracking number, and Shipped has no configured status chip"
+    }
+   ],
+   "opened": [
+    "KB-DB7B6317"
+   ],
+   "agent": "relied KB-DB7B6317",
+   "offList": [],
+   "expect": [
+    "KB-1205B62A"
+   ],
+   "labelNote": "KB-1205B62A names the storefront status chips 'New, Processing, Pending, Cancelled, Completed, Payment required and Ready for pickup' (Shipped unstyled); KB-DB7B6317 only says labels differ without listing them.",
+   "partial": true
+  },
+  {
+   "n": 8,
+   "area": "organizations and members",
+   "q": "What roles can a company administrator assign to a new member when inviting a colleague on the storefront?",
+   "p": 0.33,
+   "shown": [
+    {
+     "id": "KB-6AFE7618",
+     "subject": "the organization roles whitelist filters the Admin org role picker, and an empty whitelist allows every role"
+    },
+    {
+     "id": "KB-02238DE5",
+     "subject": "storefront org-role gating granularity"
+    },
+    {
+     "id": "KB-B769C7B1",
+     "subject": "storefront org role and platform user role are one store"
+    }
+   ],
+   "opened": [
+    "KB-6AFE7618"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [
+    "KB-B769C7B1"
+   ],
+   "labelNote": "KB-B769C7B1: the storefront offers 'only a subset ... 3 of the ~15' roles, whatever GET /api/members/customers/invite/roles returns, but does not name them.",
+   "partial": true
+  },
+  {
+   "n": 9,
+   "area": "catalog and search",
+   "q": "How does a configurable product page validate required sections before add to cart, via the configurationSections of the product query?",
+   "p": 0.49,
+   "shown": [
+    {
+     "id": "KB-0C163966",
+     "subject": "the storefront product page of a configurable product"
+    },
+    {
+     "id": "KB-F78ED1CC",
+     "subject": "On vcst-qa a configurable product's PDP has a real Add to cart button, while simple and variation PDPs add via the quantity stepper."
+    },
+    {
+     "id": "KB-057A596A",
+     "subject": "a configurable File section accepts a fixed broad list of document and image types"
+    }
+   ],
+   "opened": [
+    "KB-0C163966"
+   ],
+   "agent": "relied KB-0C163966",
+   "offList": [],
+   "expect": [
+    "KB-0C163966"
+   ],
+   "labelNote": "KB-0C163966: a required section shows 'Complete all required options to finalize your selection' and offers no way to add; it does not describe the configurationSections query mechanism, and its add-control claim is disputed by KB-F78ED1CC.",
+   "partial": true
+  },
+  {
+   "n": 10,
+   "area": "cart and promotions",
+   "q": "GraphQL addCoupon mutation: what does the cart return for the applied coupon and its discount?",
+   "p": 0.33,
+   "shown": [
+    {
+     "id": "KB-E7790BF6",
+     "subject": "where an applied coupon and its reward live on a cart"
+    },
+    {
+     "id": "KB-C1024558",
+     "subject": "telling a coupon-driven discount from an automatic one on a cart"
+    },
+    {
+     "id": "KB-C55BBF2E",
+     "subject": "a sale price is carried as the list subtotal plus a line discount, not a reduced subtotal"
+    }
+   ],
+   "opened": [
+    "KB-E7790BF6"
+   ],
+   "agent": "relied KB-E7790BF6",
+   "offList": [],
+   "expect": [
+    "KB-E7790BF6"
+   ],
+   "labelNote": "KB-E7790BF6: the code lands in cart.coupons as CouponType {code, isAppliedSuccessfully} and the reward in cart.discounts whose 'coupon' field carries the code."
+  },
+  {
+   "n": 11,
+   "area": "pricing and loyalty",
+   "q": "What does the GraphQL query products return in price.actual and price.list for a tier price with quantity 10?",
+   "p": 0.23,
+   "shown": [
+    {
+     "id": "KB-16363E17",
+     "subject": "PUT /api/products/prices changes only the price lists in the payload and upserts rows by id"
+    },
+    {
+     "id": "KB-316B2DDB",
+     "subject": "one invalid storeId answers Unauthorized on Query.product and NULL_REFERENCE on Query.products"
+    },
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No candidate states tier (minQuantity) price behaviour in price.actual/price.list."
+  },
+  {
+   "n": 12,
+   "area": "checkout and payment",
+   "q": "What does the GraphQL mutation initializePayment return and what happens to the order status after payment?",
+   "p": 0.18,
+   "shown": [
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    },
+    {
+     "id": "KB-1144B33E",
+     "subject": "storefront GraphQL is served at /graphql; /xapi/graphql is not a route"
+    },
+    {
+     "id": "KB-7F535D52",
+     "subject": "CyberSource sandbox authorization on the storefront cart is non-deterministic between runs on one build: the same card and amount can authorize cleanly to Processing, or be held for review and leave the order at Payment required."
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-78638393 is about authorizePayment on CyberSource, a different mutation; no entry states what initializePayment returns. (operator overrode the draft)"
+  },
+  {
+   "n": 13,
+   "area": "orders and returns",
+   "q": "GraphQL operation searchOrders / orders query: what does it return for a B2B user regarding organization orders versus own orders?",
+   "p": 0.11,
+   "shown": [
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    },
+    {
+     "id": "KB-CD99436F",
+     "subject": "Refused addWishlistItem still persists the quantity change"
+    },
+    {
+     "id": "KB-1144B33E",
+     "subject": "storefront GraphQL is served at /graphql; /xapi/graphql is not a route"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": null,
+   "labelNote": "contested: KB-02238DE5 states the UI scope (only own orders) while Q asks the searchOrders GraphQL response; inferring API from UI is the sufficiency question under measurement.",
+   "contested": true
+  },
+  {
+   "n": 14,
+   "area": "organizations and members",
+   "q": "What happens when a blocked member tries to sign in to the storefront?",
+   "p": 0.16,
+   "shown": [
+    {
+     "id": "KB-B5B57F41",
+     "subject": "sign-in pins the user to their persisted default organization without checking it is blocked"
+    },
+    {
+     "id": "KB-06409954",
+     "subject": "three independent fields represent a blocked organization member"
+    },
+    {
+     "id": "KB-4B889114",
+     "subject": "company members Active column vs account locked state"
+    }
+   ],
+   "opened": [
+    "KB-4B889114"
+   ],
+   "agent": "relied KB-4B889114",
+   "offList": [],
+   "expect": null,
+   "labelNote": "contested: blocked has three meanings in the base (contact status, membership lock, account lockout; KB-06409954 vs KB-97170665): KB-B5B57F41 under one reading, KB-4B889114 under another; needs a live check.",
+   "contested": true
+  },
+  {
+   "n": 15,
+   "area": "catalog and search",
+   "q": "When a product has variations, which variation is preselected on the product page and how does the price change on switching?",
+   "p": 0.19,
+   "shown": [
+    {
+     "id": "KB-0C163966",
+     "subject": "the storefront product page of a configurable product"
+    },
+    {
+     "id": "KB-191B1B4C",
+     "subject": "the master product is a row in its own variations list"
+    },
+    {
+     "id": "KB-DEBE1CED",
+     "subject": "A master product page's variant picker never makes it purchasable, even with every option chosen"
+    }
+   ],
+   "opened": [
+    "KB-DEBE1CED"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-DEBE1CED says the master PDP picker never makes it purchasable; no entry states which variation is preselected. (operator overrode the draft)"
+  },
+  {
+   "n": 16,
+   "area": "cart and promotions",
+   "q": "How is a gift item from a promotion shown in the cart line items?",
+   "p": 0.8,
+   "shown": [
+    {
+     "id": "KB-75BD84BE",
+     "subject": "UCP cart projection omits promotion gift lines that exist in the platform cart"
+    },
+    {
+     "id": "KB-C4346EB2",
+     "subject": "A pre-checked auto-promotion gift on the cart page silently becomes a zero-price line of the placed order without showing in the cart table, count or subtotal"
+    },
+    {
+     "id": "KB-996BDF08",
+     "subject": "cart-level promotion reward placement"
+    }
+   ],
+   "opened": [
+    "KB-C4346EB2"
+   ],
+   "agent": "relied KB-C4346EB2",
+   "offList": [],
+   "expect": [
+    "KB-C4346EB2"
+   ],
+   "labelNote": "States the gift is not a cart table row but sits in a pre-checked '+ Add a gift' panel below the product table, and becomes an isGift:true $0 order line."
+  },
+  {
+   "n": 17,
+   "area": "pricing and loyalty",
+   "q": "How are loyalty points earned after an order is placed and when do they appear in the balance?",
+   "p": 0.15,
+   "shown": [
+    {
+     "id": "KB-EDDBBE75",
+     "subject": "a loyalty balance has no write API and cannot be reset"
+    },
+    {
+     "id": "KB-29037452",
+     "subject": "the loyalty points-history page shows redeemed amounts unsigned"
+    },
+    {
+     "id": "KB-CF3FAD18",
+     "subject": "loyalty cart validation errors show on /cart before Place order, which is disabled"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No body says how or when earned points post to the balance; KB-EDDBBE75 only says balances change 'through the earn and redeem handling on orders', with no timing."
+  },
+  {
+   "n": 18,
+   "area": "checkout and payment",
+   "q": "Can a customer add a new delivery address during checkout, and is it saved to the address book?",
+   "p": 0.53,
+   "shown": [
+    {
+     "id": "KB-1447353E",
+     "subject": "address keyword search and location facets are offered only in the checkout shipping address popup"
+    },
+    {
+     "id": "KB-CC9A98D3",
+     "subject": "order address copies per operation"
+    },
+    {
+     "id": "KB-19826CC0",
+     "subject": "the server silently drops a duplicate address added from the account addresses page"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "Answers only the first half: with no saved address 'the select a shipping address control opens a New address dialog'; nothing says whether it is saved to the address book.",
+   "partial": true
+  },
+  {
+   "n": 19,
+   "area": "catalog and search",
+   "q": "How does the inventory module compute availableQuantity with reserved quantity and fulfillment centers for the storefront?",
+   "p": 0.28,
+   "shown": [
+    {
+     "id": "KB-8C530141",
+     "subject": "A store's stock is read from its main fulfillment center, and stock elsewhere leaves the product at zero"
+    },
+    {
+     "id": "KB-25388E6C",
+     "subject": "UCP search_products reports indexed availability.available_quantity, and a new product indexed by documentIds appears within about 20 s"
+    },
+    {
+     "id": "KB-EE6A5543",
+     "subject": "Fulfillment-center search returns centers in arbitrary order and its projection omits code"
+    }
+   ],
+   "opened": [
+    "KB-8C530141"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-25388E6C is about UCP search_products and non-main fulfillment centers; no entry states the reserved-quantity arithmetic. (operator overrode the draft)"
+  },
+  {
+   "n": 20,
+   "area": "orders and returns",
+   "q": "POST /api/order/customerOrders/search what filters and response fields does it support",
+   "p": 0.22,
+   "shown": [
+    {
+     "id": "KB-71011C1F",
+     "subject": "Storefront /search?barcode=<value> resolves by exact match on the store's configured barcode fields: 1 hit replaces the URL with the product page, N hits list, 0 hits show a reset-able empty state"
+    },
+    {
+     "id": "KB-110E0652",
+     "subject": "products(filter barcode:) expands to OR of configured fields and honours * and ? wildcards"
+    },
+    {
+     "id": "KB-5D688448",
+     "subject": "catalog search is index-backed and lags writes, so it cannot confirm a just-created category or product"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No candidate lists the filters or response fields of POST /api/order/customerOrders/search; hits only mention it as an anchor."
+  },
+  {
+   "n": 21,
+   "area": "organizations and members",
+   "q": "GraphQL mutation inviteUser: what does it return when the email is already registered?",
+   "p": 0.04,
+   "shown": [
+    {
+     "id": "KB-1144B33E",
+     "subject": "storefront GraphQL is served at /graphql; /xapi/graphql is not a route"
+    },
+    {
+     "id": "KB-1F2EBF83",
+     "subject": "Legacy PUT /api/return with no id creates a return in status New, and raises no ReturnRegistered email or push"
+    },
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [
+    "KB-BAEBCDA7"
+   ],
+   "labelNote": "States re-inviting an address that already has an account is refused: 'inviteUser returns succeeded:false with DuplicateUserName AND DuplicateEmail'."
+  },
+  {
+   "n": 22,
+   "area": "cart and promotions",
+   "q": "On /cart page, what happens when quantity is changed to zero or above available stock?",
+   "p": 0.05,
+   "shown": [
+    {
+     "id": "KB-94C2ADCC",
+     "subject": "a guest on /cart gets no card form for cart-payment gateways and the order is booked unpaid"
+    },
+    {
+     "id": "KB-50EBEEE9",
+     "subject": "Storefront checkout happens on the /cart page itself; there is no separate checkout route until the order completes."
+    },
+    {
+     "id": "KB-7F535D52",
+     "subject": "CyberSource sandbox authorization on the storefront cart is non-deterministic between runs on one build: the same card and amount can authorize cleanly to Processing, or be held for review and leave the order at Payment required."
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "Only UCP over-stock entries exist; nothing describes the storefront /cart behaviour for quantity 0 or above stock."
+  },
+  {
+   "n": 23,
+   "area": "pricing and loyalty",
+   "q": "Can a customer redeem loyalty points at checkout, and how is the order total reduced?",
+   "p": 0.43,
+   "shown": [
+    {
+     "id": "KB-EDDBBE75",
+     "subject": "a loyalty balance has no write API and cannot be reset"
+    },
+    {
+     "id": "KB-CF3FAD18",
+     "subject": "loyalty cart validation errors show on /cart before Place order, which is disabled"
+    },
+    {
+     "id": "KB-D842824E",
+     "subject": "A mixed-currency order's total excludes loyalty-currency lines"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-D842824E is about mixed-currency order totals; no entry describes redeeming points at checkout. (operator overrode the draft)"
+  },
+  {
+   "n": 24,
+   "area": "catalog and search",
+   "q": "Does the catalog search at /catalog sort by relevance by default and does sort by price use indexed price or displayed price?",
+   "p": 0.05,
+   "shown": [
+    {
+     "id": "KB-6B0E2FF7",
+     "subject": "Storefront interactive controls at 375px are mostly 24-44 CSS px (UI-kit button tiers)"
+    },
+    {
+     "id": "KB-6D5E2CD1",
+     "subject": "what makes a price list apply to a store, and what the storefront reads it through"
+    },
+    {
+     "id": "KB-D9B90536",
+     "subject": "storefront xAPI accepts an unknown or malformed products sort argument without an error"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No body states the /catalog default sort or whether price sort uses indexed or displayed price; KB-D9B90536 covers only malformed sort arguments."
+  },
+  {
+   "n": 25,
+   "area": "checkout and payment",
+   "q": "What does the order confirmation page /checkout/completed show after placing an order?",
+   "p": 0.82,
+   "shown": [
+    {
+     "id": "KB-50EBEEE9",
+     "subject": "Storefront checkout happens on the /cart page itself; there is no separate checkout route until the order completes."
+    },
+    {
+     "id": "KB-EF925925",
+     "subject": "an open cart page is not re-confirmed before Place order"
+    },
+    {
+     "id": "KB-78638393",
+     "subject": "A CyberSource cart order whose authorizePayment is held for review by Decision Manager is created successfully but stays in status \"Payment required\"."
+    }
+   ],
+   "opened": [
+    "KB-50EBEEE9"
+   ],
+   "agent": "relied KB-50EBEEE9",
+   "offList": [],
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "States /checkout/completed shows 'Order <number> has been successfully submitted.' plus a 'Show order' link to /account/orders/<order-guid>."
+  },
+  {
+   "n": 26,
+   "area": "orders and returns",
+   "q": "Can a customer request a return for a delivered order and what happens to order status?",
+   "p": 0.13,
+   "shown": [
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    },
+    {
+     "id": "KB-4C5627CE",
+     "subject": "shipment lifecycle states and what moves them"
+    },
+    {
+     "id": "KB-D839801A",
+     "subject": "Return status dictionary shows Canceled and Cancelled as identical entries in de/ru"
+    }
+   ],
+   "opened": [
+    "KB-67D0AB31"
+   ],
+   "agent": "relied KB-67D0AB31",
+   "offList": [],
+   "expect": [
+    "KB-67D0AB31"
+   ],
+   "labelNote": "Shows the order page offers a 'Request return' button and shows no return status, but does not say what happens to the order's status after a return.",
+   "partial": true
+  },
+  {
+   "n": 27,
+   "area": "organizations and members",
+   "q": "Which members does the company members page /company/members list, and can the current user see themselves?",
+   "p": 0.2,
+   "shown": [
+    {
+     "id": "KB-02238DE5",
+     "subject": "storefront org-role gating granularity"
+    },
+    {
+     "id": "KB-97170665",
+     "subject": "A membership lock shows on the storefront members list as a red \"Blocked\" badge, and in xAPI only as Contact.isLockedInOrganization — the status fields stay \"Approved\"."
+    },
+    {
+     "id": "KB-512D556A",
+     "subject": "The storefront header's account button shows \"OrgName / UserName\" only for a multi-organization user; a single-organization member sees their name alone."
+    }
+   ],
+   "opened": [
+    "KB-02238DE5"
+   ],
+   "agent": "relied KB-02238DE5",
+   "offList": [],
+   "expect": [
+    "KB-02238DE5"
+   ],
+   "labelNote": "States /company/members renders 'the full roster - every colleague's name, email and role', but does not say whether the current user sees themselves.",
+   "partial": true
+  },
+  {
+   "n": 28,
+   "area": "cart and promotions",
+   "q": "Do automatic promotions reprice the cart immediately after changeCartItemQuantity?",
+   "p": 0.34,
+   "shown": [
+    {
+     "id": "KB-C1024558",
+     "subject": "telling a coupon-driven discount from an automatic one on a cart"
+    },
+    {
+     "id": "KB-35A09C64",
+     "subject": "promotion re-evaluation on cart read"
+    },
+    {
+     "id": "KB-D4A064A5",
+     "subject": "promotion discount rounding on the cart"
+    }
+   ],
+   "opened": [
+    "KB-35A09C64"
+   ],
+   "agent": "relied KB-35A09C64",
+   "offList": [],
+   "expect": [
+    "KB-35A09C64"
+   ],
+   "labelNote": "States 'Promotions are re-evaluated on every storefront cart read', so the cart returned by a quantity mutation reflects the current promotions."
+  },
+  {
+   "n": 29,
+   "area": "checkout and payment",
+   "q": "which payment methods are available at checkout and how does a card payment with the sandbox test card behave",
+   "p": 0.55,
+   "shown": [
+    {
+     "id": "KB-7F535D52",
+     "subject": "CyberSource sandbox authorization on the storefront cart is non-deterministic between runs on one build: the same card and amount can authorize cleanly to Processing, or be held for review and leave the order at Payment required."
+    },
+    {
+     "id": "KB-1F264839",
+     "subject": "the CyberSource card security-code field renders its input unmasked, and that is accepted"
+    },
+    {
+     "id": "KB-78638393",
+     "subject": "A CyberSource cart order whose authorizePayment is held for review by Decision Manager is created successfully but stays in status \"Payment required\"."
+    }
+   ],
+   "opened": [
+    "KB-C7E16C35"
+   ],
+   "agent": "relied KB-C7E16C35",
+   "offList": [
+    "KB-C7E16C35"
+   ],
+   "expect": [
+    "KB-535FF3AC",
+    "KB-7F535D52"
+   ],
+   "labelNote": "KB-535FF3AC lists the offered methods from availablePaymentMethods (and says the set differs per deployment), and KB-7F535D52 says a CyberSource sandbox test card 'can authorize cleanly to Processing, or be held for review'; the agent's KB-C7E16C35 covers only list order."
+  },
+  {
+   "n": 30,
+   "area": "pricing and loyalty",
+   "q": "POST /api/pricing/evaluate - how are price lists selected by pricing assignment priority and date range?",
+   "p": 0.3,
+   "shown": [
+    {
+     "id": "KB-3FCB032F",
+     "subject": "raising a price list assignment's priority makes its list win over another unconditional list at the same scope"
+    },
+    {
+     "id": "KB-6D5E2CD1",
+     "subject": "what makes a price list apply to a store, and what the storefront reads it through"
+    },
+    {
+     "id": "KB-ADFD93AB",
+     "subject": "org-specific pricing runs through the organization's user groups, not through organizationId"
+    }
+   ],
+   "opened": [
+    "KB-3FCB032F"
+   ],
+   "agent": "relied KB-3FCB032F",
+   "offList": [],
+   "expect": [
+    "KB-6D5E2CD1"
+   ],
+   "labelNote": "KB-6D5E2CD1 states both levers asked about: 'the date window -- setting endDate to a past instant ... fall straight back to the next-best pricelist' and 'priority, higher wins'; the agent's KB-3FCB032F covers priority only."
+  },
+  {
+   "n": 31,
+   "area": "orders and returns",
+   "q": "Admin order blade: how are order totals (subtotal, tax, shipping, discount, total) calculated and displayed?",
+   "p": 0.32,
+   "shown": [
+    {
+     "id": "KB-1B18B821",
+     "subject": "tax is provider-driven and silently zero without an active provider"
+    },
+    {
+     "id": "KB-EF925925",
+     "subject": "an open cart page is not re-confirmed before Place order"
+    },
+    {
+     "id": "KB-D60012DB",
+     "subject": "discount-row-withtax-is-never-written"
+    }
+   ],
+   "opened": [
+    "KB-1B18B821"
+   ],
+   "agent": "relied KB-1B18B821",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-0DD47BD1 says the totals agree across surfaces, not how they are calculated. (operator overrode the draft)"
+  },
+  {
+   "n": 32,
+   "area": "organizations and members",
+   "q": "When a user belongs to several organizations, how does switching organization work and what changes after the switch?",
+   "p": 0.25,
+   "shown": [
+    {
+     "id": "KB-B5B57F41",
+     "subject": "sign-in pins the user to their persisted default organization without checking it is blocked"
+    },
+    {
+     "id": "KB-8BE777BB",
+     "subject": "Switching organization from the storefront account menu BLANKS the header account control instead of relabelling it; the new org name only appears after a full page reload."
+    },
+    {
+     "id": "KB-512D556A",
+     "subject": "The storefront header's account button shows \"OrgName / UserName\" only for a multi-organization user; a single-organization member sees their name alone."
+    }
+   ],
+   "opened": [
+    "KB-8BE777BB"
+   ],
+   "agent": "relied KB-8BE777BB",
+   "offList": [],
+   "expect": [
+    "KB-8BE777BB",
+    "KB-B5B57F41"
+   ],
+   "labelNote": "KB-8BE777BB describes the account-menu Organizations listbox switch and what changes (theme swaps, cart badge clears, header blanks until reload), and KB-B5B57F41 adds that 'Switching organization persists organizationId server-side'."
+  },
+  {
+   "n": 33,
+   "area": "cart and promotions",
+   "q": "Can two coupons be applied to one cart at the same time?",
+   "p": 0.19,
+   "shown": [
+    {
+     "id": "KB-E7790BF6",
+     "subject": "where an applied coupon and its reward live on a cart"
+    },
+    {
+     "id": "KB-C1024558",
+     "subject": "telling a coupon-driven discount from an automatic one on a cart"
+    },
+    {
+     "id": "KB-35F20D97",
+     "subject": "what a coupon code that does not work does to a cart"
+    }
+   ],
+   "opened": [
+    "KB-E7790BF6"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-8264632C only says a cart can hold several codes; no entry states whether two coupons apply rewards at once. (operator overrode the draft)"
+  },
+  {
+   "n": 34,
+   "area": "checkout and payment",
+   "q": "GraphQL mutation addOrUpdateCartShipment: what happens when the selected shipping method is no longer available for the cart?",
+   "p": 0.07,
+   "shown": [
+    {
+     "id": "KB-1144B33E",
+     "subject": "storefront GraphQL is served at /graphql; /xapi/graphql is not a route"
+    },
+    {
+     "id": "KB-6AA0D7FB",
+     "subject": "fixed rate shipping method option pricing"
+    },
+    {
+     "id": "KB-358A70CB",
+     "subject": "storefront order page projection of the shipment"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No candidate describes addOrUpdateCartShipment's behaviour when the selected shipping method stops being available; the shipping entries cover only FixedRate pricing and how the order page projects the shipment."
+  },
+  {
+   "n": 35,
+   "area": "pricing and loyalty",
+   "q": "What does the loyalty points history page in the account show for each transaction?",
+   "p": 0.81,
+   "shown": [
+    {
+     "id": "KB-29037452",
+     "subject": "the loyalty points-history page shows redeemed amounts unsigned"
+    },
+    {
+     "id": "KB-EDDBBE75",
+     "subject": "a loyalty balance has no write API and cannot be reset"
+    },
+    {
+     "id": "KB-D842824E",
+     "subject": "A mixed-currency order's total excludes loyalty-currency lines"
+    }
+   ],
+   "opened": [
+    "KB-29037452"
+   ],
+   "agent": "relied KB-29037452",
+   "offList": [],
+   "expect": [
+    "KB-29037452"
+   ],
+   "labelNote": "KB-29037452 states what a row shows ('Redeemed rows show the points amount unsigned', direction 'only by the Type column', 'no per-row running balance') but does not list every column, such as date or order.",
+   "partial": true
+  },
+  {
+   "n": 36,
+   "area": "orders and returns",
+   "q": "What payment statuses can an order payment have and how does capturing or refunding a payment change the order?",
+   "p": 0.17,
+   "shown": [
+    {
+     "id": "KB-ADA91F7B",
+     "subject": "cancelling an order cancels its payment on a background job but never its shipment"
+    },
+    {
+     "id": "KB-C7E16C35",
+     "subject": "Cart payment methods render unselected and ordered alphabetically by method code, not by configured priority"
+    },
+    {
+     "id": "KB-EC76F588",
+     "subject": "there is no paymentMethodCode on an order payment, and shipment spells its sibling differently"
+    }
+   ],
+   "opened": [
+    "KB-ADA91F7B"
+   ],
+   "agent": "relied KB-ADA91F7B",
+   "offList": [],
+   "expect": [],
+   "labelNote": "KB-DB7B6317 is about order statuses; no entry lists payment statuses or refund effects. (operator overrode the draft)"
+  },
+  {
+   "n": 37,
+   "area": "organizations and members",
+   "q": "Can a company member be deleted from the organization, and what happens to their account and orders?",
+   "p": 0.39,
+   "shown": [
+    {
+     "id": "KB-843D0515",
+     "subject": "Deleting an org a Sales Rep serves leaves it in the rep record; a PUT /api/sales-rep that echoes it back 500s"
+    },
+    {
+     "id": "KB-EDDBBE75",
+     "subject": "a loyalty balance has no write API and cannot be reset"
+    },
+    {
+     "id": "KB-97170665",
+     "subject": "A membership lock shows on the storefront members list as a red \"Blocked\" badge, and in xAPI only as Contact.isLockedInOrganization — the status fields stay \"Approved\"."
+    }
+   ],
+   "opened": [
+    "KB-4A8606CA"
+   ],
+   "agent": "none",
+   "offList": [
+    "KB-4A8606CA"
+   ],
+   "expect": [
+    "KB-9912A219"
+   ],
+   "labelNote": "KB-9912A219 answers the deletion and account half: storefront Delete 'removes the organization membership and nothing else', and the security account survives with its role; it says nothing about the member's orders.",
+   "partial": true
+  },
+  {
+   "n": 38,
+   "area": "cart and promotions",
+   "q": "Which cart totals (subtotal, discount total, tax) are shown after a percentage discount is applied?",
+   "p": 0.26,
+   "shown": [
+    {
+     "id": "KB-D4A064A5",
+     "subject": "promotion discount rounding on the cart"
+    },
+    {
+     "id": "KB-A3CE7FBA",
+     "subject": "recovering a percentage rate from a discount amount"
+    },
+    {
+     "id": "KB-C55BBF2E",
+     "subject": "a sale price is carried as the list subtotal plus a line discount, not a reduced subtotal"
+    }
+   ],
+   "opened": [
+    "KB-D4A064A5"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [
+    "KB-D4A064A5",
+    "KB-C55BBF2E"
+   ],
+   "labelNote": "KB-D4A064A5 gives the shown totals after a 10% discount ('discountTotal and CartType.total are rounded to currency precision (30.00 and 269.97)'), and KB-C55BBF2E adds that the subtotal stays at list price and 'tax is recomputed on the discounted base'; neither gives a concrete tax figure.",
+   "partial": true
+  },
+  {
+   "n": 39,
+   "area": "checkout and payment",
+   "q": "Is the Place order button disabled until a payment method and shipping method are selected?",
+   "p": 0.91,
+   "shown": [
+    {
+     "id": "KB-50EBEEE9",
+     "subject": "Storefront checkout happens on the /cart page itself; there is no separate checkout route until the order completes."
+    },
+    {
+     "id": "KB-C7E16C35",
+     "subject": "Cart payment methods render unselected and ordered alphabetically by method code, not by configured priority"
+    },
+    {
+     "id": "KB-358A70CB",
+     "subject": "storefront order page projection of the shipment"
+    }
+   ],
+   "opened": [
+    "KB-50EBEEE9"
+   ],
+   "agent": "relied KB-50EBEEE9",
+   "offList": [],
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "labelNote": "KB-50EBEEE9: 'Place order stays disabled with 'Complete all required information to proceed.' until shipping address + delivery method + payment method are all set'."
+  },
+  {
+   "n": 40,
+   "area": "pricing and loyalty",
+   "q": "Does an organization-specific price list override the default price for users of that organization in the cart?",
+   "p": 0.53,
+   "shown": [
+    {
+     "id": "KB-ADFD93AB",
+     "subject": "org-specific pricing runs through the organization's user groups, not through organizationId"
+    },
+    {
+     "id": "KB-055845A3",
+     "subject": "a cart line can serve a unit price that is in neither the configuration nor the line's history"
+    },
+    {
+     "id": "KB-1834ABE5",
+     "subject": "no Admin surface shows the price a given shopper would actually be charged"
+    }
+   ],
+   "opened": [
+    "KB-ADFD93AB"
+   ],
+   "agent": "relied KB-ADFD93AB",
+   "offList": [],
+   "expect": [
+    "KB-ADFD93AB"
+   ],
+   "labelNote": "KB-ADFD93AB shows an organization's group gating a pricelist: the contact 'was served a pricelist gated on UserGroupsContains 'store-acme'' while an anonymous caller got the ungated list; this was observed on the served price rather than specifically in the cart."
+  },
+  {
+   "n": 41,
+   "area": "orders and returns",
+   "q": "Order details page in the account: is there a reorder button and what does it do with unavailable items?",
+   "p": 0.25,
+   "shown": [
+    {
+     "id": "KB-67D0AB31",
+     "subject": "Storefront order detail page has no return/RMA status display — GetFullOrder's CustomerOrderType exposes no return field, and no existing-return query exists"
+    },
+    {
+     "id": "KB-358A70CB",
+     "subject": "storefront order page projection of the shipment"
+    },
+    {
+     "id": "KB-1205B62A",
+     "subject": "the storefront never shows a shipment tracking number, and Shipped has no configured status chip"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No candidate mentions a reorder control or how unavailable items are handled; KB-67D0AB31 lists what the order detail page renders without any reorder button, but it never states that one is absent."
+  },
+  {
+   "n": 42,
+   "area": "organizations and members",
+   "q": "POST /api/invitations: is the invitation link single-use and does it expire?",
+   "p": 0.74,
+   "shown": [
+    {
+     "id": "KB-06FE6C8D",
+     "subject": "POST /connect/token grant_type=otp_email accepts the SAME code twice, issuing a fresh valid access token both times — the OTP is not invalidated after a successful sign-in (matches ECL-4.3 \"same OTP reused multiple times\")"
+    },
+    {
+     "id": "KB-BAEBCDA7",
+     "subject": "an organization invitation cannot be cancelled or resent"
+    },
+    {
+     "id": "KB-4A8606CA",
+     "subject": "an abandoned invitation can leave an account nothing can delete"
+    }
+   ],
+   "opened": [
+    "KB-BAEBCDA7"
+   ],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No entry states whether an organization invitation link is single-use or expires; KB-BAEBCDA7 covers only the missing cancel/resend controls, and KB-06FE6C8D is about OTP codes, not invitations."
+  },
+  {
+   "n": 43,
+   "area": "orders and returns",
+   "q": "Admin order blade: can an operator edit line item quantities or add a shipment after the order is placed, and which fields become read-only for Completed orders?",
+   "p": 0.45,
+   "shown": [
+    {
+     "id": "KB-97A675C1",
+     "subject": "Approve / decline commits immediately without confirmation and emails the decision"
+    },
+    {
+     "id": "KB-CC9A98D3",
+     "subject": "order address copies per operation"
+    },
+    {
+     "id": "KB-4CCC2DD6",
+     "subject": "what Cancel document on an order actually cancels"
+    }
+   ],
+   "opened": [],
+   "agent": "none",
+   "offList": [],
+   "expect": [],
+   "labelNote": "No entry covers editing line-item quantities, adding a shipment, or which fields go read-only on Completed orders; KB-4D26A022 only says an existing shipment's items are allocated by hand with 'an Add item button'."
+  }
+ ],
+ "labelled": {
+  "by": "operator, from Claude drafts",
+  "at": "2026-10-05",
+  "targets": 22,
+  "partial": 9,
+  "controls": 19,
+  "contested": 2
+ }
+}

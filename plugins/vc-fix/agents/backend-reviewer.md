@@ -56,6 +56,14 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    contains **NO** inline `position:absolute|fixed`, fixed-px `width/height/left/top`, or `ng-style` height
    hacks → otherwise REQUEST_CHANGES (this was the PR #101 failure). A layout/CSS change must also carry the
    **visual render-harness red→green screenshots** in the PR body; missing → REQUEST_CHANGES.
+4c. **No ticket key in test code** — REQUEST_CHANGES when a new or touched test carries the tracker key
+   (`VCST-1234`, `_VCST1234`, `(ABC-123)`, a bare Azure Boards id) in a `[Fact]`/`[Theory]` method
+   or test class name, `DisplayName`, file name or comment
+   — e.g. `AppliesToPostTierAmount_VCST1234()` (the storefront twin: `describe("… (VCST-6100)"`). Tests are named for the
+   subject + behavior; the key belongs in the branch, commit and PR only. On a platform fork-PR from a
+   client deployment a client key is also a §2a containment leak, not just a naming nit. Check the
+   added lines of the test files in `git diff <base>...HEAD` for the key, with and without its dash. Authoring rule:
+   `knowledge/agents/developers/shared-instructions.md` §Minimal diff rule 3a.
 5. **No breaking changes** — no public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any → REQUEST_CHANGES (Gate 0 boundary).
 6. **BL-* preserved** — the fix doesn't violate a `business-logic.md` invariant or re-introduce a
