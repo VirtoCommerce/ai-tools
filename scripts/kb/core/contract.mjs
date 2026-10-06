@@ -12,6 +12,7 @@ export const CONTRACT = '.claude/knowledge/execution/kb-capture-contract.md';
  * `canonicalStand` folds spelling only, never one name onto another (PR #400 review).
  */
 export const DEPLOYMENT_SOURCE = 'the stand you observed it on, spelled as the base spells it -- the `on <stand>` of an evidence '
-  + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); not the bare TEST_ENV value (`vcst` is not `vcst_qa`)';
+  + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); with no such line yet, the first label of the BACK_URL '
+  + 'host with `-` as `_` (vcst-qa.govirto.com -> vcst_qa); never the bare TEST_ENV value (`vcst` is not `vcst_qa`)';
 
 export const SCOPE_SOURCE = `at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;

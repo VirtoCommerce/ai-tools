@@ -11,7 +11,7 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
-import { CONTRACT, SCOPE_SOURCE } from './contract.mjs';
+import { CONTRACT, DEPLOYMENT_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
 import { idList } from './index-load.mjs';
 
@@ -194,7 +194,7 @@ export const CONTRACT_CARD = [
   `  the capture contract (in full: ${CONTRACT}):`,
   '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
   '               never a button label, field name or menu path -- those go in --claim',
-  '    --deployment  the stand as the base spells it (vcst_qa, vcptcore_stable), not the bare TEST_ENV',
+  `    --deployment  ${DEPLOYMENT_SOURCE}`,
   `    --scope    ${SCOPE_SOURCE}`,
   '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
 ];
