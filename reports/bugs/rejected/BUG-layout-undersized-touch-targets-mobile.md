@@ -1,5 +1,7 @@
 # Systemic undersized touch targets on mobile storefront (<44×44px) — P1/P2
 
+> **Not filed 2026-10-05 — QA owner decision (layout metric findings skipped).**
+
 **Severity:** P1 (revenue-critical qty stepper) / P2 (rest) · **Type:** Layout / Accessibility (BL-UI-006, WCAG 2.5.8)
 
 **Env:** vcst-qa @ Platform 3.1043.0, Theme 2.53.0-pr-2368

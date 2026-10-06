@@ -1,5 +1,7 @@
 # Sales-rep order filter chips: all three dismiss controls share one accessible name — High
 
+> **Not filed 2026-10-05 — QA owner decision (a11y naming, skipped).**
+
 ## Status: CONFIRMED
 
 **Not filed to any tracker** — draft only, awaiting a human decision.

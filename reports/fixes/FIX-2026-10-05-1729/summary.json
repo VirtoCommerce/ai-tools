@@ -1,0 +1,36 @@
+{
+  "ticket": "VCST-6173",
+  "repo": "VirtoCommerce/vc-frontend",
+  "kind": "frontend",
+  "branch": "claude/qa-autofix/VCST-6173",
+  "pr_url": "https://github.com/VirtoCommerce/vc-frontend/pull/2540",
+  "gates": {
+    "G0": "PASS",
+    "G1": "PASS",
+    "G2": "RED",
+    "G3": "GREEN",
+    "G4": "APPROVE",
+    "G5": "GREEN",
+    "G6": "N/A",
+    "G7": "STOP"
+  },
+  "proof_medium": "vitest",
+  "proof_provenance": "built-diff",
+  "proof_linkage": "cross-month and cross-year Last-week cases fail unless both bounds carry firstDayOfWeek's month and year",
+  "g2_proxy": false,
+  "status_transitions": [
+    {
+      "from": "Draft",
+      "to": null,
+      "skipped": "no in-progress/review transition available from Draft"
+    }
+  ],
+  "side_findings": [],
+  "ci": "all green; auto-tests (sqlserver, opensearch) failed once on unrelated test_cart_item_remove (locator not found, passed on 5 other cells), re-run once -> success",
+  "confidence": "HIGH",
+  "commits": [
+    "bd703eb",
+    "710ab0f"
+  ],
+  "scope": "Last week + Last month presets (Last month added to the ticket and PR on user request 2026-10-05)"
+}

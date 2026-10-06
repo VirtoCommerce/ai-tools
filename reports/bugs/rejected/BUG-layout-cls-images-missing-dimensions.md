@@ -1,5 +1,7 @@
 # Cumulative Layout Shift on home & catalog — late-landing `.features-block` displaces the page — P1
 
+> **Rejected 2026-10-05 by the QA owner:** the shift is the normal content load after the page spinner (CLS 0.485 measured with and without throttling, GIF `regression/REG-2026-10-02-2022/screenshots/LAYOUT-CLS-001-home-load.gif`). Not filed.
+
 **Severity:** P1 · **Type:** Layout / Web Vitals (BL-UI-001)
 
 **Env:** vcst-qa @ storefront build `index-CJ1Fcmg9.js` (2026-07-25). Measured by `npm run layout:run` (suite 048c, cases `LAYOUT-CLS-001` / `LAYOUT-CLS-002`), Chromium 1280×900, Fast-3G.

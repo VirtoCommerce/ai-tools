@@ -1,5 +1,7 @@
 # Sales Rep customer-orders: a zero-match result relabels the active status chip with the raw English enum — Medium
 
+**Jira:** [VCST-6175](https://virtocommerce.atlassian.net/browse/VCST-6175) — filed as **Low** 2026-10-05, re-confirmed in REG-2026-10-02-2022 (de-DE: Abgesagt → Cancelled on a zero-match search).
+
 **Env:** vcst-qa @ SalesRep 3.1008.0-pr-19-5e0f, XOrder 3.1011.0, Xapi 3.1020.0, Orders 3.1014.0,
 Theme 2.57.0-alpha.2490
 

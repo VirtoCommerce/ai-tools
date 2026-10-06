@@ -1,5 +1,7 @@
 # Variant picker selection state, group naming, and role composition are invisible to assistive technology — WCAG 2.2 Level A (4.1.2) [P1]
 
+**Jira:** [VCST-6174](https://virtocommerce.atlassian.net/browse/VCST-6174) — filed as **Low** 2026-10-05 (long-standing, present in Theme 2.40.0; not a regression).
+
 **Env:** vcst-qa, platform `3.1071.0-pr-3108-016f`, theme `2.58.0-pr-2467-1f40b001` (PR pre-release — see Notes; not the cause).
 
 ## Summary
