@@ -586,6 +586,9 @@ export function refusals(lines, idx) {
     subject: String(l.subject ?? ''),
     why: String(l.why ?? ''),
     problems: Array.isArray(l.problems) ? l.problems.map(String) : [],
+    // `retried` is kept in the report JSON (a consumer contract, pinned by kb-report.test.mjs); it is
+    // DERIVED from `pairedBy`, never computed separately: an exact, same-subject retry.
+    retried: pairing.get(l) === 'subject',
     pairedBy: pairing.get(l) ?? null,
     via: l.via ? String(l.via) : '?',
     who: l.who ? String(l.who) : '?',
