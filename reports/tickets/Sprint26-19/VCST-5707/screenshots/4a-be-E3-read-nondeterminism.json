@@ -1,0 +1,1451 @@
+{
+ "item": "E3-read-nondeterminism",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:33:26.224Z",
+ "note": "distribution of owner wishlist(listId) reads; b1 unchanged since E1 remove; b2 after refused mutation",
+ "calls": [
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "28322a16-95d2-4a86-9d93-ecdc732121be",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "28322a16-95d2-4a86-9d93-ecdc732121be",
+      "name": "AGENT-TEST-5707-b1",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "64fb0ab2-fba0-49d3-b314-2dd92596e4c5",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": "AGENT-TEST 5707 be m1",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 184,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "c": {
+      "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "scope": "Customer"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "http": 200,
+   "request": {
+    "op": "wishlist",
+    "listId": "662b68b2-1431-4986-89dc-f4118aecdad5",
+    "authorization": "Bearer <REDACTED>"
+   },
+   "headers": {
+    "server": "cloudflare",
+    "set-cookie": "vcptcore-qa-vcptcore-qa-loyalty-platform=179068…; Path=/; Secure; HttpOnly",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "662b68b2-1431-4986-89dc-f4118aecdad5",
+      "name": "AGENT-TEST-5707-b2",
+      "scope": "AnyoneAnonymous",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "5d3dc73b-30bd-4f4e-965e-1fed847ca01c",
+       "scope": "AnyoneAnonymous",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "item": "E4-target-reader-by-key",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:34:49.398Z",
+ "list": "AGENT-TEST-5707-b3",
+ "calls": [
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 206,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "k": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "id": "35985d99-6919-46ad-8f24-9f28452bc183",
+      "name": "AGENT-TEST-5707-b3",
+      "scope": "Customer",
+      "description": null,
+      "items": [
+       {
+        "id": "3e60958f-b88d-46f4-8e85-a19cda3a8cab",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 2
+       }
+      ],
+      "sharingSetting": {
+       "id": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb",
+       "scope": "Customer",
+       "access": "Read",
+       "isOwner": false,
+       "message": "AGENT-TEST 5707 be E4 message",
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "acme",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 188,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ sharingSetting { sharedWithId } } }",
+    "variables": {
+     "k": "82f312e2-feb1-43e6-8f3b-a28bb05ba9eb"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "sharedWishlist": {
+      "sharingSetting": {
+       "sharedWithId": null
+      }
+     }
+    }
+   }
+  }
+ ]
+}

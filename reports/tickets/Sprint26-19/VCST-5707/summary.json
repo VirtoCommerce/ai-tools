@@ -1,0 +1,1005 @@
+{
+  "ticket": "VCST-5707",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "FULL",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": "cross-layer (storefront + xAPI + 3 repos), access-control risk; Story default FULL",
+    "round2": "operator-chosen: FULL on the round-1 model (amend, not rebuild); 3x discovery skipped (fix-only delta, stated)"
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "sr",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "generated": "2026-09-18",
+    "age_days": 11,
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "recommended": false,
+    "built_in_run": false,
+    "build_outcome": "not-attempted",
+    "build_skipped_reason": "already-present",
+    "amended_in_run": true,
+    "amend_outcome": "AMENDED",
+    "amendments": [
+      "§3 +3j Lists sharing surface (CONFIRMED live)",
+      "§6 +D22 widening confirmation vs API (CONFIRMED both layers)",
+      "§10 +A9 write-back record; D9 corroborated, verdict unchanged"
+    ],
+    "sources": [
+      "reports/ba/test-models/VCST-5707-2026-09-29.md"
+    ],
+    "unmapped_surfaces": [
+      "Lists sharing as a whole: Rename/Share dialogs, 4 scopes, recipients list, stop-sharing/change-access confirmations, list-details Share button, card status labels",
+      "changeWishlist / sharedWishlist / wishlist / wishlists sharing contract (SharingSettingType.targets/message, add/removeSharedWithIds)",
+      "sendCustomerCommunication organizationIds + SalesRepMessageEmailNotification template",
+      "recipient page /shared-list/:key",
+      "Customer-scope picker source (one page of 100 served customers)"
+    ]
+  },
+  "shape_class": {
+    "value": "feature",
+    "surface_source": [
+      "vc-frontend PR #2476 feature diff (sales-rep module + shared/wishlists), not a ui-kit/token change"
+    ],
+    "skipped": []
+  },
+  "derived_oracle": null,
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-05",
+  "timing": {
+    "started_at": "2026-09-29T10:58:33Z",
+    "finished_at": "2026-09-30T00:40:00Z",
+    "steps": {
+      "step1": 45,
+      "step2": 5,
+      "step3": 30,
+      "step4": 245,
+      "step5": 60
+    },
+    "time_to_first_test_minutes": 28,
+    "first_evidence_minutes": 41,
+    "reachability_minutes": 5,
+    "agent_dispatches": 15,
+    "regression_predicted_minutes": null,
+    "regression_actual_minutes": 21,
+    "round2": {
+      "started_at": "2026-10-05T12:20:00Z",
+      "first_dispatch": "2026-10-05T12:46:00Z",
+      "c1_finished": "2026-10-05T13:30:00Z",
+      "agent_dispatches": 9
+    }
+  },
+  "environment": "vcptcore-qa (https://vcptcore-qa-storefront.govirto.com, store B2B-store)",
+  "build": {
+    "platform": "3.1076.0",
+    "theme": "2.59.0-pr-2476-0abb-0abbf215",
+    "relevant_modules": {
+      "VirtoCommerce.XCart": "3.1038.0-pr-141-b404",
+      "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+      "VirtoCommerce.SalesRep": "3.1012.0-pr-21-8964"
+    },
+    "deployed": {
+      "probed": "2026-10-05 /api/platform/modules (admin) + vc-deploy-dev@vcptcore-qa theme/artifact.json — deployed = PR heads"
+    }
+  },
+  "release": {
+    "layers": [],
+    "layer_source": [],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": {},
+    "platform_version": null,
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": null,
+    "fragment": null,
+    "refusal": "verdict FAIL — no release fragment for unmerged PRs",
+    "aggregated_into": null
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": [],
+    "comment_posted": false,
+    "refusal": "verdict FAIL with AC2/AC3 awaiting a PO decision on the shipped UI; operator chose no status transition — guides would document an unsettled surface (refuse rather than pad)"
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped_reason": "already in the in-testing status"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": true,
+      "actor": "qa-lead",
+      "skipped_reason": "operator chose comment only, no transition (FAIL row would be REOPEN)"
+    },
+    {
+      "hop": "opening",
+      "at": "1a",
+      "round": 2,
+      "from": "Testing",
+      "to": "Testing",
+      "transition": null,
+      "confirmed": false,
+      "actor": "qa-lead",
+      "skipped_reason": "already in the in-testing status (moved by operator 2026-10-05 15:30)"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "round": 2,
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "confirmed": true,
+      "actor": "qa-lead",
+      "skipped_reason": null
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert",
+    "ba-system-analyzer",
+    "ba-story-writer",
+    "qa-testing-expert",
+    "test-data-engineer",
+    "qa-backend-expert",
+    "ui-ux-expert",
+    "test-management-specialist",
+    "qa-lead-orchestrator",
+    "regression-orchestrator"
+  ],
+  "epic": {
+    "parent": "VCST-5142",
+    "siblings": {
+      "done": [
+        "VCST-5332"
+      ],
+      "in_progress": [
+        "VCST-5925",
+        "VCST-5728",
+        "VCST-5850",
+        "VCST-5923"
+      ],
+      "blocked_dependency": []
+    },
+    "roll_up": {
+      "is_epic_run": false,
+      "stories_tested_in_order": [],
+      "cross_story_e2e": "not-run",
+      "halted_at": null,
+      "verdict": "n/a"
+    }
+  },
+  "ac_analysis": {
+    "story_acs": 4,
+    "weak_acs": 3,
+    "gap_acs_added": 13,
+    "impl_coverage": {
+      "satisfied": 1,
+      "drift": 2,
+      "contradicts": 0,
+      "not_found": 1
+    },
+    "conditions_total": 45,
+    "conditions_with_evidence": 45,
+    "ac_dod_estimate": {
+      "ac_coverage_pct": 100,
+      "dod_total": 0,
+      "dod_met": 0,
+      "dod_pct": null,
+      "acs_met_as_written": "1 of 4 (AC4); AC1 FAIL, AC2 DRIFT, AC3 behaviour PASS / copy DRIFT"
+    }
+  },
+  "total_cases": 35,
+  "passed": 22,
+  "failed": 12,
+  "blocked": 0,
+  "iterations": {
+    "enabled": false,
+    "rounds": 2,
+    "max_rounds": 2,
+    "outcome": "passed-with-notes",
+    "per_round": [
+      {
+        "verdict": "FAIL",
+        "date": "2026-09-29",
+        "build": {
+          "platform": "3.1072.0",
+          "theme": "2.59.0-pr-2476-0604-0604e3f1",
+          "relevant_modules": {
+            "VirtoCommerce.XCart": "3.1037.0-pr-141-fb27",
+            "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+            "VirtoCommerce.SalesRep": "3.1012.0-pr-21-f681"
+          },
+          "deployed": {
+            "platform": "3.1072.0",
+            "relevant_modules": {
+              "VirtoCommerce.XCart": "3.1037.0-pr-141-fb27",
+              "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+              "VirtoCommerce.SalesRep": "3.1012.0-pr-21-f681"
+            },
+            "probed": "2026-09-30 /api/platform/modules (admin) — deployed = declared"
+          },
+          "releasedThrough": {
+            "ledger_generated": null,
+            "components": {},
+            "behind": [],
+            "breaking": []
+          }
+        },
+        "total_cases": 44,
+        "passed": 18,
+        "failed": 16,
+        "blocked": 7,
+        "regression": {
+          "c1": {
+            "suites": [
+              "007",
+              "050h"
+            ],
+            "ids": [
+              "B2C-LIST-062..080",
+              "B2C-LIST-025",
+              "B2C-LIST-047",
+              "B2C-LIST-050",
+              "B2C-LIST-054",
+              "B2C-LIST-055",
+              "B2C-LIST-057",
+              "B2C-LIST-059",
+              "B2C-LIST-060",
+              "B2C-LIST-061",
+              "B2C-LIST-004",
+              "B2C-LIST-040",
+              "B2C-LIST-042",
+              "B2C-LIST-052",
+              "B2C-LIST-053",
+              "B2C-LIST-056",
+              "B2C-LIST-058",
+              "WISH-036..044"
+            ],
+            "run_id": "REG-2026-09-29-1506",
+            "pass_rate": 0.41,
+            "skipped_reason": null,
+            "ambiguous": 3,
+            "ambiguous_ids": [
+              "B2C-LIST-054",
+              "B2C-LIST-057",
+              "B2C-LIST-069"
+            ],
+            "release_gate": {
+              "verdict": "NO-GO",
+              "change_scoped_regression": "not-assessed",
+              "blocked_share_pct": 16,
+              "blocked_triaged": 7,
+              "smoke": "not-assessed",
+              "nfr": "not-assessed",
+              "ratified_by": "qa-lead verifier (5-report) RATIFY"
+            }
+          }
+        },
+        "bugs_filed": [
+          {
+            "key": "VCST-6113",
+            "relationship": "sub-task",
+            "severity": "High",
+            "provenance": "in-scope",
+            "summary": "Refused changeWishlist leaves a modified cached list; next rename persists Customer scope with 0 targets",
+            "report": "reports/bugs/open/critical-high/BUG-VCST-5707-refused-changeWishlist-poisons-list-cache.md",
+            "note": "Subtask priority field not editable in VCST — Jira shows Medium; severity High stated in the body"
+          },
+          {
+            "key": "VCST-6114",
+            "relationship": "sub-task",
+            "severity": "Medium",
+            "provenance": "in-scope",
+            "summary": "Share notification does not name the organisation (AC1)",
+            "report": "reports/bugs/open/medium/BUG-VCST-5707-share-notification-has-no-organisation-name.md",
+            "note": "relates to VCST-5723 (Story: organization-aware shared-list notifications) — PO to decide where AC1 is closed"
+          },
+          {
+            "key": "VCST-6115",
+            "relationship": "sub-task",
+            "severity": "Medium",
+            "provenance": "in-scope",
+            "summary": "Change who can access? copy claims lost access when widening to Anyone with link",
+            "report": "reports/bugs/open/medium/BUG-VCST-5707-change-access-confirmation-copy-false-on-widen.md",
+            "note": "duplicate of VCST-6104 (filed earlier by Elena Mutykova from VCST-5728); left open per operator, QA comment cites VCST-6104"
+          },
+          {
+            "key": "VCST-6116",
+            "relationship": "standalone+relates",
+            "severity": "High",
+            "provenance": "out-of-scope",
+            "summary": "addWishlistItem / updateWishListItems persist before authorization (x-cart dev)",
+            "report": "reports/bugs/open/critical-high/BUG-xcart-addWishlistItem-persists-before-authorization.md"
+          },
+          {
+            "key": "VCST-6117",
+            "relationship": "standalone+relates",
+            "severity": "Medium",
+            "provenance": "bl-a11y",
+            "summary": "Share dialog focus not returned to trigger (WCAG 2.4.3)",
+            "report": "reports/bugs/open/medium/BUG-share-wishlist-dialog-focus-not-returned.md"
+          },
+          {
+            "key": "VCST-6118",
+            "relationship": "standalone+relates",
+            "severity": "Medium",
+            "provenance": "bl-a11y",
+            "summary": "Scope switcher implements neither tabs nor radio pattern (WCAG 4.1.2/2.1.1)",
+            "report": "reports/bugs/open/medium/BUG-share-wishlist-scope-switcher-not-tabs-or-radio.md"
+          },
+          {
+            "key": "VCST-6119",
+            "relationship": "standalone+relates",
+            "severity": "Medium",
+            "provenance": "bl-a11y",
+            "summary": "Customers picker opens on Tab focus and Tab cycles options until Escape",
+            "report": "reports/bugs/open/medium/BUG-share-wishlist-customer-picker-tab-cycles-options.md"
+          },
+          {
+            "key": "VCST-6125",
+            "relationship": "standalone+relates",
+            "severity": "High",
+            "provenance": "pre-existing",
+            "summary": "Write co-owner of an Organization-scope list takes ownership via changeWishlist(scope); owner locked out, list can be made public",
+            "report": "reports/bugs/open/critical-high/BUG-xcart-wishlist-coowner-scope-change-takes-ownership.md"
+          }
+        ],
+        "ac_analysis": {
+          "story_acs": 4,
+          "weak_acs": 3,
+          "gap_acs_added": 13,
+          "impl_coverage": {
+            "satisfied": 1,
+            "drift": 2,
+            "contradicts": 0,
+            "not_found": 1
+          },
+          "conditions_total": 45,
+          "conditions_with_evidence": 45,
+          "ac_dod_estimate": {
+            "ac_coverage_pct": 100,
+            "dod_total": 0,
+            "dod_met": 0,
+            "dod_pct": null,
+            "acs_met_as_written": "1 of 4 (AC4); AC1 FAIL, AC2 DRIFT, AC3 behaviour PASS / copy DRIFT"
+          }
+        },
+        "round": 1
+      },
+      {
+        "round": 2,
+        "verdict": "PASS WITH NOTES",
+        "date": "2026-10-05",
+        "oracle_change": {
+          "source": "PO via operator, 2026-10-05",
+          "decision": "shipped Share dialog + 'Stop sharing this list?' copy accepted in place of AC2/AC3 as written; AC1 carried by VCST-6114 / VCST-5723"
+        },
+        "ac_analysis": {
+          "description": "PASS",
+          "AC1": "OUT (VCST-6114, On hold)",
+          "AC2": "PASS (shipped Share dialog, PO-accepted)",
+          "AC3": "PASS (shipped copy, PO-accepted; Cancel keeps, Stop revokes)",
+          "AC4": "PASS",
+          "fix_rows": {
+            "VCST-6113": "PASS",
+            "VCST-6104": "PASS",
+            "VCST-6116": "PASS",
+            "VCST-6125": "PASS",
+            "VCST-6152": "PASS"
+          },
+          "checklist_round2": {
+            "total": 20,
+            "pass": 17,
+            "partial": 0,
+            "not_run": 1,
+            "notes": "R2-G3c NOT RUN (needs admin org delete); R2-D3a anonymous leg re-covered in C1 (B2C-LIST-076 PASS with AllowAnonymousUsers temporarily on)"
+          }
+        },
+        "bugs_filed": [],
+        "bugs_not_filed": [
+          {
+            "severity": "Low",
+            "summary": "After widening to Anyone with link the toast still says 'List shared with 1 customer.'",
+            "report": null
+          },
+          {
+            "severity": "Low",
+            "summary": "'Create list' disabled with no explanation at the list cap",
+            "report": null
+          },
+          {
+            "severity": "Low",
+            "summary": "Non-owner message-only changeWishlist returns 200 no-op instead of Forbidden",
+            "report": null
+          },
+          {
+            "severity": "Low",
+            "summary": "375px: 'Change access' button label wraps to two lines",
+            "report": null
+          }
+        ],
+        "env_changes": [
+          "Deleted 13 leftover AGENT-TEST-5707-*/REGC-040 lists of SR_REP_PRIMARY (operator-approved)",
+          "Stores.AllowAnonymousUsers on B2B-store: False → True for C1 → reverted to False (operator-approved)",
+          "Seeded ORG_REP_ONLY on vcptcore (SR_REP_PRIMARY now serves 5 orgs; rep tokens revoked by the PUT)",
+          "graphql-auth.ts alias-level password_env + SR_REP_EXCLUSIVE_TECHFLOW password_env"
+        ],
+        "open_items": [
+          "VCST-6117/6118/6119 a11y still reproduce (Medium, standalone, do not fail this ticket)",
+          "VCST-5925 §3.1/§3.2 recipient list-id path + own Lists (separate ticket)",
+          "PO: recipient edit (VCST-5335) vs read-only page; message on /shared-list; addSharedWithIds without scope; Organization scope grants Write; deleted-org GUID row (round 1, unfiled Medium, pending)"
+        ],
+        "tracker_comment": {
+          "id": "111379",
+          "posted": "2026-10-05",
+          "inline_images": 2,
+          "verified_from": "renderedBody"
+        }
+      }
+    ],
+    "note": "round 2 = retest on a new build after REOPEN (not --iterate); new tracker comment per tracker-ops rule 5"
+  },
+  "new_cases_authored": 6,
+  "promotion": {
+    "automated": [],
+    "reviewed": [],
+    "blocked": [],
+    "reverted": []
+  },
+  "regression": {
+    "c1": {
+      "suites": [
+        "007",
+        "050h"
+      ],
+      "ids": [
+        "B2C-LIST-004",
+        "040",
+        "042",
+        "056",
+        "058",
+        "078",
+        "054",
+        "057",
+        "063",
+        "066",
+        "069",
+        "074",
+        "076",
+        "079",
+        "047",
+        "050",
+        "059",
+        "061",
+        "052",
+        "053",
+        "070",
+        "071",
+        "081",
+        "WISH-036",
+        "037",
+        "038",
+        "039",
+        "041",
+        "042",
+        "043",
+        "045",
+        "046",
+        "047",
+        "048",
+        "049"
+      ],
+      "run_id": "REG-2026-10-05-1613",
+      "pass_rate": 0.63,
+      "ambiguous": 1,
+      "ambiguous_ids": [
+        "B2C-LIST-079"
+      ],
+      "release_gate": {
+        "verdict": "GO-WITH-NOTES",
+        "compute_metrics": "NOT EVALUATED (run absent from history.json)",
+        "fails_triaged": 13,
+        "smoke": "not-assessed",
+        "nfr": "not-assessed"
+      }
+    },
+    "triage": {
+      "known_fail": [
+        "B2C-LIST-052",
+        "053",
+        "054",
+        "070",
+        "071",
+        "WISH-039",
+        "WISH-043"
+      ],
+      "test_defect": [
+        "B2C-LIST-074",
+        "078 (copy changed by VCST-6104 fix)",
+        "WISH-041",
+        "WISH-049 (existing-target sharedWithId now a no-op; set preserved)"
+      ],
+      "pre_existing": [
+        "B2C-LIST-057 (textarea unnamed — existing BUG-vc-textarea-has-no-accessible-name-shared-ui-kit)"
+      ],
+      "po_question": [
+        "B2C-LIST-079"
+      ],
+      "app_insights": "skipped — APPINSIGHTS_API_KEY_* empty"
+    }
+  },
+  "regression_triage": {
+    "invoked": false,
+    "run_ids": [
+      "REG-2026-09-29-1506"
+    ],
+    "confirmed_bugs": [
+      "VCST-6113 (WISH-038)",
+      "VCST-6114 (B2C-LIST-070/053)",
+      "VCST-6115 (B2C-LIST-078)"
+    ],
+    "test_fixes_applied": [],
+    "dismissed": [
+      "test-defect: B2C-LIST-063 stale toast text; 074 My organization has an audience so confirm is correct; 069/076 Save disabled when unchanged; 057 axe blocked by hook",
+      "harness: WISH-036/039/042 runner cannot resolve SR_REP_EXCLUSIVE_TECHFLOW password (covered live in 4a-BE)",
+      "fixture: B2C-LIST-047/050/059/061 BLOCKED — SR_REP_ONLY_ORG not provisioned",
+      "RE-BASE resolved as intended change (cases to update): B2C-LIST-004, 040, 042, 056, 058",
+      "pre-existing: B2C-LIST-052/071/025 recipient own Lists, 054 read-only recipient (VCST-5925 3.2 / VCST-5335)",
+      "unstable: WISH-041 legacy on 2 targets returned no error (4a-BE saw INVALID_OPERATION) — likely the VCST-6113 cache mechanism"
+    ],
+    "report_path": "reports/regression/REG-2026-09-29-1506/regression-2026-09-29.md",
+    "note": "triaged inline by the orchestrator, not via /qa-triage-results --fix; test-defect fixes routed to /qa-review-tests 007 --fix (not applied in this run)"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6113",
+      "relationship": "sub-task",
+      "severity": "High",
+      "provenance": "in-scope",
+      "summary": "Refused changeWishlist leaves a modified cached list; next rename persists Customer scope with 0 targets",
+      "report": "reports/bugs/open/critical-high/BUG-VCST-5707-refused-changeWishlist-poisons-list-cache.md",
+      "note": "Subtask priority field not editable in VCST — Jira shows Medium; severity High stated in the body"
+    },
+    {
+      "key": "VCST-6114",
+      "relationship": "sub-task",
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "summary": "Share notification does not name the organisation (AC1)",
+      "report": "reports/bugs/open/medium/BUG-VCST-5707-share-notification-has-no-organisation-name.md",
+      "note": "relates to VCST-5723 (Story: organization-aware shared-list notifications) — PO to decide where AC1 is closed"
+    },
+    {
+      "key": "VCST-6115",
+      "relationship": "sub-task",
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "summary": "Change who can access? copy claims lost access when widening to Anyone with link",
+      "report": "reports/bugs/open/medium/BUG-VCST-5707-change-access-confirmation-copy-false-on-widen.md",
+      "note": "duplicate of VCST-6104 (filed earlier by Elena Mutykova from VCST-5728); left open per operator, QA comment cites VCST-6104"
+    },
+    {
+      "key": "VCST-6116",
+      "relationship": "standalone+relates",
+      "severity": "High",
+      "provenance": "out-of-scope",
+      "summary": "addWishlistItem / updateWishListItems persist before authorization (x-cart dev)",
+      "report": "reports/bugs/open/critical-high/BUG-xcart-addWishlistItem-persists-before-authorization.md"
+    },
+    {
+      "key": "VCST-6117",
+      "relationship": "standalone+relates",
+      "severity": "Medium",
+      "provenance": "bl-a11y",
+      "summary": "Share dialog focus not returned to trigger (WCAG 2.4.3)",
+      "report": "reports/bugs/open/medium/BUG-share-wishlist-dialog-focus-not-returned.md"
+    },
+    {
+      "key": "VCST-6118",
+      "relationship": "standalone+relates",
+      "severity": "Medium",
+      "provenance": "bl-a11y",
+      "summary": "Scope switcher implements neither tabs nor radio pattern (WCAG 4.1.2/2.1.1)",
+      "report": "reports/bugs/open/medium/BUG-share-wishlist-scope-switcher-not-tabs-or-radio.md"
+    },
+    {
+      "key": "VCST-6119",
+      "relationship": "standalone+relates",
+      "severity": "Medium",
+      "provenance": "bl-a11y",
+      "summary": "Customers picker opens on Tab focus and Tab cycles options until Escape",
+      "report": "reports/bugs/open/medium/BUG-share-wishlist-customer-picker-tab-cycles-options.md"
+    },
+    {
+      "key": "VCST-6125",
+      "relationship": "standalone+relates",
+      "severity": "High",
+      "provenance": "pre-existing",
+      "summary": "Write co-owner of an Organization-scope list takes ownership via changeWishlist(scope); owner locked out, list can be made public",
+      "report": "reports/bugs/open/critical-high/BUG-xcart-wishlist-coowner-scope-change-takes-ownership.md"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "L1–L9 (generic INVALID_OPERATION text; delta without scope silent no-op; missing toasts; ambiguous 'Shared' label; message not on /shared-list; '1 items selected'; sender-locale notification; My organization unnamed; Show all without aria-expanded)",
+      "report": "reports/bugs/open/low/BUG-VCST-5707-low-findings.md"
+    },
+    {
+      "severity": "n/a",
+      "provenance": "pre-existing",
+      "summary": "Recipient list-id path denied + shared list absent from recipient own Lists (VCST-5925 3.1/3.2)",
+      "report": "reports/bugs/open/critical-high/BUG-rep-shared-wishlist-grants-customer-no-access.md"
+    },
+    {
+      "severity": "n/a",
+      "provenance": "pre-existing",
+      "summary": "Duplicates: vc-textarea no accessible name; undersized touch targets; theme primary-button contrast 2.11:1",
+      "report": "reports/bugs/open/**/BUG-vc-textarea-has-no-accessible-name-shared-ui-kit.md, BUG-layout-undersized-touch-targets-mobile.md"
+    },
+    {
+      "severity": "unconfirmed",
+      "provenance": "out-of-scope",
+      "summary": "SR_REP_PRIMARY sign-in intermittently fails with INVALID_OPERATION on me.contact.selectedAddressId (2 of 4 in C1) — needs repro",
+      "report": null
+    },
+    {
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "summary": "Deleted target org renders as a raw GUID in the Share dialog (name, avatar, aria-label); card still counts it",
+      "report": null,
+      "pending": "awaiting operator filing decision"
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "Admin PUT /api/sales-rep (served-org edit) revokes the rep's live storefront token — rep signed out mid-work (PO: intended?)",
+      "report": null,
+      "pending": "awaiting operator filing decision"
+    },
+    {
+      "severity": "Medium",
+      "provenance": "out-of-scope",
+      "summary": "After an org is deleted the rep record keeps it; saving the rep unchanged returns HTTP 500 FK_MemberRelation_Member_AncestorId",
+      "report": null,
+      "pending": "awaiting operator filing decision"
+    },
+    {
+      "severity": "Low",
+      "provenance": "in-scope",
+      "summary": "A token minted before an org delete keeps Read on shares to that org until expiry (up to 30 min)",
+      "report": null
+    },
+    {
+      "severity": "n/a",
+      "provenance": "pre-existing",
+      "summary": "Write co-owner can removeWishlist the owner's Organization-scope list (UI offers Remove list) — product question",
+      "report": null
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "skipped_reason": null,
+    "lane": "playwright-edge",
+    "minutes": 13,
+    "checklist_conditions": [
+      {
+        "observed": "My organization scope never names the org; rep's active org used implicitly"
+      },
+      {
+        "observed": "notification language follows the sender's UI"
+      },
+      {
+        "observed": "message-only edit notifies nobody"
+      },
+      {
+        "observed": "emptying recipients keeps sharing; Share disabled with hint; Undo restores"
+      }
+    ],
+    "charter_sources": {
+      "matrix_gaps": [
+        "no-longer-served org / deleted org / co-owner — NOT REACHED (fixture gaps)"
+      ],
+      "reverse_edges": [
+        "remove recipient → Access denied — covered",
+        "Stop → sharedWishlist null — covered",
+        "re-share without org → no revival — covered"
+      ],
+      "hypothesis_rows": [
+        "#19 My organization — partially grounded",
+        "#22 multi-org active elsewhere — NOT REACHED"
+      ],
+      "ac_drift": [
+        "AC1 push has no org name — covered",
+        "AC2 no read-only details — covered",
+        "AC3 copy drift — covered",
+        "AC4 same key, nothing restored — covered"
+      ],
+      "rebase_rows": [
+        "007 B2C-LIST-040..061 + 050h WISH-003/009/32/33 dispositioned"
+      ]
+    },
+    "hypotheses_grounded": 1,
+    "hypotheses_remaining": 1,
+    "model_amendments": 5,
+    "scenarios_new": [
+      {
+        "id": "EXP-01",
+        "fate": "PROMOTE",
+        "case_id": "B2C-LIST-078",
+        "oracle_ref": "AC3"
+      },
+      {
+        "id": "EXP-02",
+        "fate": "PROMOTE",
+        "case_id": "B2C-LIST-080",
+        "oracle_ref": null
+      },
+      {
+        "id": "EXP-03",
+        "fate": "PROMOTE",
+        "case_id": "WISH-043",
+        "oracle_ref": null
+      },
+      {
+        "id": "EXP-04",
+        "fate": "PROMOTE",
+        "case_id": "WISH-038",
+        "oracle_ref": null
+      },
+      {
+        "id": "EXP-05",
+        "fate": "PROMOTE",
+        "case_id": "B2C-LIST-079",
+        "oracle_ref": null
+      },
+      {
+        "id": "EXP-06",
+        "fate": "PROMOTE",
+        "case_id": "WISH-044",
+        "oracle_ref": null
+      }
+    ],
+    "oracle_proposals": 4,
+    "bugs_surfaced": [
+      "AC1 no org name (VCST-6114)",
+      "change-access copy (VCST-6115)",
+      "recipient list-id path / own lists (pre-existing)"
+    ],
+    "report": "reports/exploratory/SBTM-VCST-5707-2026-09-29.md"
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "new Share/Rename dialogs and confirmations in vc-frontend PR #2476; design attachments on the ticket"
+    ],
+    "ran": true,
+    "skipped_reason": null,
+    "targets": [
+      "/account/lists card + gear menu",
+      "Share dialog (4 scopes, picker, recipients, message)",
+      "stop-sharing / change-access confirmations",
+      "Rename dialog",
+      "list details"
+    ],
+    "axes": {
+      "a11y": {
+        "ran": true,
+        "verdict": "FAIL",
+        "findings": 5,
+        "skipped_reason": null
+      },
+      "design_system": {
+        "ran": true,
+        "verdict": "FAIL",
+        "findings": 2,
+        "skipped_reason": "BL-UI-001 CLS not measured"
+      },
+      "design_spec": {
+        "ran": false,
+        "verdict": null,
+        "confirmed": 0,
+        "drift": 0,
+        "missing": 0,
+        "unspec": 0,
+        "known_divergence": 4,
+        "unresolved": 0,
+        "skipped_reason": "no Prototype link on the ticket (first attempt on DevTools BLOCKED(auth) by enforce-real-user hook; retried on playwright-edge)"
+      }
+    },
+    "a11y_findings": [
+      {
+        "invariant": "BL-A11Y-001",
+        "severity": "Medium",
+        "ticket": "VCST-6117",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-002",
+        "severity": "Medium",
+        "ticket": "VCST-6118",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-002",
+        "severity": "Medium",
+        "ticket": "VCST-6119",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-001",
+        "severity": "High",
+        "ticket": "duplicate of BUG-vc-textarea-has-no-accessible-name-shared-ui-kit",
+        "blocks": false
+      },
+      {
+        "invariant": "BL-A11Y-003",
+        "severity": "High",
+        "ticket": "pre-existing theme contrast (not filed)",
+        "blocks": false
+      }
+    ],
+    "invariant_failures": [
+      {
+        "invariant": "BL-UI-006",
+        "severity": "Medium",
+        "note": "touch targets <44px at 375 — kit-wide, duplicate of BUG-layout-undersized-touch-targets-mobile"
+      }
+    ],
+    "advisory": [
+      "Link field labelled 'Link' above Customers vs Figma 'Shareable link' below Message",
+      "radios in Figma mobile vs pill toggles live",
+      "no Notify via (PR-stated)",
+      "rows show city/region not email (PR-stated)"
+    ],
+    "report": "reports/tickets/Sprint26-19/VCST-5707/design-report.md"
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "changeWishlist input + SharingSettingType changed (x-cart #141, sales-rep #21)"
+    ],
+    "schema": {
+      "refreshed": false,
+      "unknown_reason": null,
+      "queries": 121,
+      "mutations": 154,
+      "note": "schema:check (TEST_ENV=vcptcore) OK — no drift, nothing written"
+    },
+    "fixtures": {
+      "refreshed": null,
+      "validated_against_env": "vcptcore",
+      "total": null,
+      "failed": 0,
+      "drift_in_scope": [],
+      "drift_out_of_scope": []
+    }
+  },
+  "coverage_triage": {
+    "surface": "true",
+    "surface_source": [
+      "dialog split removes 'List settings', test ids and Email/Push checkboxes that 007/050h assert"
+    ],
+    "scope": {
+      "domains": [
+        "sr"
+      ],
+      "modules": [],
+      "suites_named": [],
+      "observables": [
+        "share",
+        "List settings",
+        "Shared with customer",
+        "sharedWithId",
+        "changeWishlist",
+        "shared-list",
+        "Edit",
+        "sharingSetting"
+      ],
+      "oracles": [],
+      "cases_filter": null
+    },
+    "counts": {
+      "suites_scoped": 5,
+      "rows_scanned": 233,
+      "hits": 63,
+      "will_run": null,
+      "filtered_out": null,
+      "not_executing": null,
+      "never_audited": null
+    },
+    "dispositions": {
+      "confirmed": 40,
+      "repair": 10,
+      "rebase": 7,
+      "superseded": 6
+    },
+    "repaired": [
+      "B2C-LIST-025",
+      "B2C-LIST-047",
+      "B2C-LIST-050",
+      "B2C-LIST-054",
+      "B2C-LIST-055",
+      "B2C-LIST-057",
+      "B2C-LIST-059",
+      "B2C-LIST-060",
+      "B2C-LIST-061",
+      "WISH-009"
+    ],
+    "rebased_into_c1": [
+      "B2C-LIST-004",
+      "B2C-LIST-040",
+      "B2C-LIST-042",
+      "B2C-LIST-052",
+      "B2C-LIST-053",
+      "B2C-LIST-056",
+      "B2C-LIST-058"
+    ],
+    "superseded_proposals": [
+      "B2C-LIST-043",
+      "B2C-LIST-016",
+      "B2C-LIST-007",
+      "B2C-LIST-009",
+      "B2C-LIST-010",
+      "B2C-LIST-011"
+    ],
+    "unscannable": [],
+    "unmatched_observables": []
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": [
+      "recipient-side checks need members of targeted served orgs + an unserved org"
+    ],
+    "dispatched": true,
+    "fixtures_covering": [
+      "@td(SR_REP_PRIMARY)",
+      "@td(ACME_BUYER)",
+      "@td(SR_REP_EXCLUSIVE_TECHFLOW)",
+      "@td(ORG_ACME)",
+      "@td(ORG_TECHFLOW)",
+      "@td(ORG_BUILDRIGHT)",
+      "@td(ORG_ACMEWEST)",
+      "@td(SR_UNSERVED_ORG) (new alias)"
+    ],
+    "divergence_resolved": false,
+    "td_validate": "007/050h green; 13 unrelated suites fail pre-existing",
+    "seed_run": "gap re-run 2026-09-30: disposable fixtures rmunz9s7y (multi-org member, org-to-unserve, org-to-delete) provisioned via admin and torn down, zero residue; permanent buyer fixtures still lack memberships"
+  },
+  "business_rules_verified": [
+    "BL-SR-002",
+    "BL-SR-011"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": null,
+    "signals": {},
+    "skipped_reason": "APPINSIGHTS_API_KEY not configured for vcptcore"
+  },
+  "screenshots": "reports/tickets/Sprint26-19/VCST-5707/screenshots/",
+  "tracker": {
+    "comment_id": "110727"
+  }
+}

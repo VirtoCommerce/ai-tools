@@ -1,0 +1,181 @@
+{
+ "item": "G4b-non-owner-removeWishlist-refused",
+ "run": "r2muv92q96",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-10-05T12:53:57.381Z",
+ "build": "Platform 3.1076.0 / XCart 3.1038.0-pr-141-b404 / SalesRep 3.1012.0-pr-21-8964 / Cart 3.1011.0-pr-194-8331",
+ "list": "AGENT-TEST-5707-R2-G4-r2muv92q96",
+ "listId": "020da38d-c9ef-4573-ab81-75b521d9624d",
+ "calls": [
+  {
+   "who": "acme",
+   "note": "co-owner removeWishlist",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "at": "2026-10-05T12:53:56.334Z",
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "020da38d-c9ef-4573-ab81-75b521d9624d"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "removeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "removeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "tf",
+   "note": "other-org member removeWishlist",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "at": "2026-10-05T12:53:56.515Z",
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "020da38d-c9ef-4573-ab81-75b521d9624d"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "removeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "removeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "anon",
+   "note": "anonymous removeWishlist",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 685,
+   "at": "2026-10-05T12:53:57.200Z",
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "020da38d-c9ef-4573-ab81-75b521d9624d"
+     }
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Anonymous access denied or access token has expired or is invalid.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "removeWishlist"
+      ],
+      "extensions": {
+       "code": "Unauthorized",
+       "codes": [
+        "Unauthorized"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "removeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "repacme",
+   "note": "read el-GR",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "at": "2026-10-05T12:53:57.381Z",
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "l": "020da38d-c9ef-4573-ab81-75b521d9624d",
+     "c": "el-GR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "020da38d-c9ef-4573-ab81-75b521d9624d",
+      "name": "AGENT-TEST-5707-R2-G4-r2muv92q96-coren",
+      "scope": "Organization",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [
+       {
+        "id": "d383d99f-b14b-4dac-a4e5-9ec5ac856b35",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ],
+      "sharingSetting": {
+       "id": "c23be68d-cf88-48bc-95db-359c7982110f",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,159 @@
+{
+ "item": "G3b-admin-delete-org",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "runid": "rmunz9s7y",
+ "capturedAt": "2026-09-30T10:52:28.251Z",
+ "calls": [
+  {
+   "who": "admin(REST)",
+   "method": "GET",
+   "path": "/api/members/99d5002f-cdcb-4071-b874-b557dc66817f",
+   "requestBody": null,
+   "response": {
+    "description": "AGENT-TEST VCST-5707 run-scoped org (rmunz9s7y)",
+    "businessCategory": "QA disposable",
+    "ownerId": null,
+    "parentId": null,
+    "roles": [],
+    "objectType": "VirtoCommerce.CustomerModule.Core.Model.Organization",
+    "name": "AGENT-TEST-5707-Delete-rmunz9s7y",
+    "memberType": "Organization",
+    "outerId": null,
+    "status": "Active",
+    "addresses": [
+     {
+      "id": "70e2c36b-9f43-4851-8174-cbc29867a323",
+      "addressType": "Shipping",
+      "key": "70e2c36b-9f43-4851-8174-cbc29867a323",
+      "name": null,
+      "organization": "AGENT-TEST-5707-Delete-rmunz9s7y",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "city": "Denver",
+      "postalCode": "80202",
+      "zip": null,
+      "line1": "5707 Fixture Way",
+      "line2": null,
+      "regionId": "CO",
+      "regionName": "Colorado",
+      "firstName": "Agent",
+      "middleName": null,
+      "lastName": "Test",
+      "phone": "+1-555-5707-000",
+      "email": "agent-test-5707-delete-rmunz9s7y@test-agent.com",
+      "outerId": null,
+      "isDefault": true,
+      "description": null
+     },
+     {
+      "id": "97d28e4b-779d-4240-abde-21dc99580d8f",
+      "addressType": "Billing",
+      "key": "97d28e4b-779d-4240-abde-21dc99580d8f",
+      "name": null,
+      "organization": "AGENT-TEST-5707-Delete-rmunz9s7y",
+      "countryCode": "USA",
+      "countryName": "United States",
+      "city": "Denver",
+      "postalCode": "80202",
+      "zip": null,
+      "line1": "5707 Fixture Way",
+      "line2": null,
+      "regionId": "CO",
+      "regionName": "Colorado",
+      "firstName": "Agent",
+      "middleName": null,
+      "lastName": "Test",
+      "phone": "+1-555-5707-000",
+      "email": "agent-test-5707-delete-rmunz9s7y@test-agent.com",
+      "outerId": null,
+      "isDefault": true,
+      "description": null
+     }
+    ],
+    "phones": [
+     "+1-555-5707-000"
+    ],
+    "emails": [
+     "agent-test-5707-delete-rmunz9s7y@test-agent.com"
+    ],
+    "notes": [],
+    "groups": [
+     "store-acme"
+    ],
+    "iconUrl": null,
+    "relevanceScore": null,
+    "dynamicProperties": [],
+    "useDynamicPropertyAccessor": false,
+    "dynamicPropertyAccessor": {
+     "array": null,
+     "array1": null,
+     "boleto_options": null,
+     "Country": null,
+     "CustomerModule_Organization_Boolean_0_0_0": null,
+     "CustomerModule_Organization_DateTime_0_0_0": null,
+     "CustomerModule_Organization_Decimal_0_0_0": null,
+     "CustomerModule_Organization_Decimal_1_0_0": [],
+     "CustomerModule_Organization_Html_0_0_0": null,
+     "CustomerModule_Organization_Html_0_1_0": {
+      "values": {}
+     },
+     "CustomerModule_Organization_Image_0_0_0": null,
+     "CustomerModule_Organization_Integer_0_0_0": null,
+     "CustomerModule_Organization_Integer_1_0_0": [],
+     "CustomerModule_Organization_LongText_0_0_0": null,
+     "CustomerModule_Organization_LongText_0_1_0": {
+      "values": {}
+     },
+     "CustomerModule_Organization_ShortText_0_0_0": null,
+     "CustomerModule_Organization_ShortText_0_0_1": null,
+     "CustomerModule_Organization_ShortText_0_1_1": null,
+     "CustomerModule_Organization_ShortText_1_0_0": [],
+     "CustomerModule_Organization_ShortText_1_0_1": null,
+     "CustomerModule_Organization_ShortText_1_1_0": null,
+     "CustomerModule_Organization_ShortText_1_1_1": null,
+     "CustomerNumber": null,
+     "Dynamic array": null,
+     "GroupCodes": [],
+     "onboarding": null,
+     "RainCustomerId": null,
+     "show_hidden_supplier": null
+    },
+    "seoObjectType": "Organization",
+    "seoInfos": [],
+    "createdDate": "2026-09-30T10:44:12.5830017Z",
+    "modifiedDate": "2026-09-30T10:44:12.5830017Z",
+    "createdBy": "admin",
+    "modifiedBy": "admin",
+    "id": "99d5002f-cdcb-4071-b874-b557dc66817f"
+   }
+  },
+  {
+   "who": "admin(REST)",
+   "method": "DELETE",
+   "path": "/api/members?ids=99d5002f-cdcb-4071-b874-b557dc66817f",
+   "requestBody": null,
+   "response": null
+  },
+  {
+   "who": "admin(REST)",
+   "method": "GET",
+   "path": "/api/members/99d5002f-cdcb-4071-b874-b557dc66817f",
+   "requestBody": null,
+   "response": null
+  },
+  {
+   "who": "admin(REST)",
+   "method": "POST",
+   "path": "/api/members/search",
+   "requestBody": {
+    "keyword": "AGENT-TEST-5707-Delete",
+    "memberType": "Organization",
+    "take": 5
+   },
+   "response": {
+    "totalCount": 0,
+    "results": []
+   }
+  }
+ ]
+}

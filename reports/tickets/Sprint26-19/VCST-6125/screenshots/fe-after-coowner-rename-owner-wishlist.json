@@ -1,0 +1,40 @@
+{
+ "capturedAt": "2026-10-05T12:17:32.107Z",
+ "calls": [
+  {
+   "who": "owner @td(SR_REP_PRIMARY)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 338,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope items { id quantity } sharingSetting { id scope access isOwner targets { id name } } } }",
+    "variables": {
+     "l": "38057332-b01e-4ac2-b687-462dc964224e"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "38057332-b01e-4ac2-b687-462dc964224e",
+      "name": "AGENT-TEST-6125-FE-RENAMD",
+      "scope": "Organization",
+      "items": [
+       {
+        "id": "2e24f9d7-b509-4da2-99a7-b12dca57a647",
+        "quantity": 12
+       }
+      ],
+      "sharingSetting": {
+       "id": "628c3854-ab31-4eb2-b305-2615bcfcb56b",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}
