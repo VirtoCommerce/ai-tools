@@ -675,8 +675,7 @@ export function refusals(lines, idx) {
  *      reported as such rather than counted either way. Counting it as unhelpful would make the
  *      rate a function of push timing.
  *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's. An `ambiguous`
-      ask counts as answered by the entries the agent then opened with `kb_show --ask <its handle>`
-      (VCST-6156) -- the pick IS the answer under the verdict ranker; one left unpicked is a miss here.
+ *      ask arrives here already resolved by `resolveVerdicts` (its pick, or a miss).
  *
  * The rate is over DECIDABLE pairs — not over all asks. An ask nobody captured against is not
  * evidence either way, and putting it in the denominator would let the rate fall simply because the
@@ -685,7 +684,7 @@ export function refusals(lines, idx) {
 export function unhelpful(lines, idx) {
   const bySession = new Map();
   for (const l of lines) {
-    if (l.kind !== 'ask' && l.kind !== 'capture' && l.kind !== 'show' && l.kind !== 'none') continue;
+    if (l.kind !== 'ask' && l.kind !== 'capture') continue;
     const s = l._session || '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
@@ -706,9 +705,7 @@ export function unhelpful(lines, idx) {
     // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
     // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
     // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
-    // The SAME pointer rule as the reminder (`core/loop.mjs` `pointersByAsk`): one pick, read one way.
-    const pointedAt = pointersByAsk(events);
-    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : lastWord(pointedAt.get(String(ask.at))).ids);
+    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : []);
 
     for (const cap of events) {
       if (cap.kind !== 'capture' || !cap.id) continue;
@@ -1264,21 +1261,25 @@ export function windowStart(meta = {}) {
  * base certified nothing and nobody relied on anything.
  */
 export function resolveVerdicts(lines) {
-  const key = (l, at) => `${l._session}\0${String(at)}`;
-  const none = new Set();
-  const shown = new Map();
+  // ONE RULE with the reminder (`core/loop.mjs`): `pointersByAsk` decides which show / none speaks to
+  // which ask (a handle-less show included), and `lastWord` decides what the ask ENDED as -- the
+  // agent's last word, so a pick it then withdrew with `kb_none` is a miss and a none it then
+  // overrode with a pick is an answer. Before, "any none wins" here and "last word wins" in the hook
+  // classified one ask two ways (PR #400 review).
+  const bySession = new Map();
   for (const l of lines) {
-    if (!l.after) continue;
-    if (l.kind === 'none') none.add(key(l, l.after));
-    else if (l.kind === 'show' && l.id && l.state === 'answer') shown.set(key(l, l.after), String(l.id));
+    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none') continue;
+    const s = l._session ?? '';
+    if (!bySession.has(s)) bySession.set(s, []);
+    bySession.get(s).push(l);
   }
+  const pointers = new Map([...bySession].map(([s, ls]) => [s, pointersByAsk(ls)]));
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
-    const k = key(l, l.at);
-    const relied = !none.has(k) ? shown.get(k) : null;
-    return relied
-      ? { ...l, state: 'answer', matched: [relied], closedBy: 'show' }
-      : { ...l, state: 'miss', matched: [], closedBy: none.has(k) ? 'none' : 'unclosed' };
+    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)));
+    return word.verdict === 'picked' && word.ids.length
+      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
+      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
   });
 }
 
