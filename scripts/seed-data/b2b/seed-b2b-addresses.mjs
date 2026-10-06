@@ -73,6 +73,10 @@ function buildAddress(row) {
     email: row.email || undefined,
     isDefault: csvBool(row.is_default, false),
     name: row.description || undefined,
+    // The storefront's Select-address table and /company/info render the address `description`
+    // column, NOT `name` (REG-2026-10-02-2022 CHK-035: every Description cell empty while `name`
+    // carried the CSV value). Write both so either reader sees the declared, distinct value.
+    description: row.description || undefined,
     // Teardown marker (addresses-specs.mjs). Not part of the content key, so it cannot affect
     // idempotency — it exists so teardown can reclaim this address even after its CSV row is gone.
     outerId: seedOuterId(row),
@@ -106,7 +110,7 @@ async function getOrg(platformId) {
 }
 
 async function seed(byOrg, orgMap) {
-  let added = 0, backfilled = 0, orgsTouched = 0;
+  let added = 0, backfilled = 0, descBackfilled = 0, orgsTouched = 0;
   for (const [orgId, rows] of byOrg) {
     const org = orgMap.get(orgId);
     if (!org?.platformId) { log(`⚠ ${orgId}: no pinned platform_id in organizations.csv — skipped (seed orgs first)`); continue; }
@@ -116,10 +120,12 @@ async function seed(byOrg, orgMap) {
     const existing = Array.isArray(member.addresses) ? member.addresses : [];
     const have = new Set(existing.map(akey));
     const wantMarker = new Map(); // content key -> the marker that row should carry
+    const wantDesc = new Map();   // content key -> the declared description (backfilled when empty)
     const toAdd = [];
     for (const row of rows) {
       const addr = buildAddress(row);
       wantMarker.set(akey(addr), addr.outerId);
+      if (addr.description) wantDesc.set(akey(addr), addr.description);
       if (have.has(akey(addr))) { verbose(`  = ${orgId} already has ${row.address_id} (${addr.city}/${addr.addressType})`); continue; }
       toAdd.push(addr); have.add(akey(addr));
     }
@@ -131,25 +137,37 @@ async function seed(byOrg, orgMap) {
     // than a teardown gap, and the content key still covers that address while its CSV row lives.
     let marked = 0;
     const foreign = [];
+    let described = 0;
     const patched = existing.map((a) => {
       const want = wantMarker.get(akey(a));
-      if (!want || a.outerId === want) return a;
-      if (a.outerId && !isSeededOuterId(a.outerId)) { foreign.push(`${a.city}/${a.addressType} (outerId=${a.outerId})`); return a; }
-      marked++;
-      return { ...a, outerId: want };
+      if (!want) return a; // not one of our rows
+      // A FOREIGN outerId means another system owns this address: touch NOTHING on it — neither the
+      // marker nor the description (checked BEFORE any write, so the backfill below cannot reach it).
+      if (a.outerId && a.outerId !== want && !isSeededOuterId(a.outerId)) {
+        foreign.push(`${a.city}/${a.addressType} (outerId=${a.outerId})`);
+        return a;
+      }
+      let out = a;
+      if (a.outerId !== want) { marked++; out = { ...out, outerId: want }; }
+      // Description backfill: only onto OUR address (content-matches a CSV row, unmarked or carrying
+      // our marker) that has none — a non-empty description is never overwritten.
+      const d = wantDesc.get(akey(a));
+      if (d && !a.description) { described++; out = { ...out, description: d }; }
+      return out;
     });
     for (const f of foreign) log(`⚠ ${orgId}: leaving foreign outerId untouched — ${f}; teardown falls back to the content key for it`);
 
-    if (!toAdd.length && !marked) { verbose(`${orgId} (${org.name}): all ${rows.length} address(es) already present and marked`); continue; }
+    if (!toAdd.length && !marked && !described) { verbose(`${orgId} (${org.name}): all ${rows.length} address(es) already present and marked`); continue; }
     const what = [toAdd.length ? `adding ${toAdd.length} (${toAdd.map((a) => `${a.city}/${a.addressType}`).join(', ')})` : null,
-      marked ? `marking ${marked} existing for teardown` : null].filter(Boolean).join('; ');
+      marked ? `marking ${marked} existing for teardown` : null,
+      described ? `backfilling description on ${described}` : null].filter(Boolean).join('; ');
     log(`${org.name}: ${existing.length} existing → ${what}`);
     if (!DRY_RUN) {
       await api('POST', '/api/members', { ...member, addresses: [...patched, ...toAdd] }, { expectStatus: [200, 201, 204] });
     }
-    added += toAdd.length; backfilled += marked; orgsTouched++;
+    added += toAdd.length; backfilled += marked; descBackfilled += described; orgsTouched++;
   }
-  console.log(`\n✅ B2B addresses seed — ${added} address(es) added, ${backfilled} existing marked for teardown, across ${orgsTouched} org(s)${DRY_RUN ? ' [DRY RUN]' : ''}.`);
+  console.log(`\n✅ B2B addresses seed — ${added} address(es) added, ${backfilled} existing marked for teardown, ${descBackfilled} description(s) backfilled, across ${orgsTouched} org(s)${DRY_RUN ? ' [DRY RUN]' : ''}.`);
 }
 
 /**
