@@ -1,0 +1,32 @@
+{
+ "at": "2026-10-05T12:08:40.291Z",
+ "lists": {
+  "1": {
+   "id": "c25792c6-2eca-4af2-b322-ec83682851af",
+   "items": [
+    {
+     "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+     "quantity": 2
+    }
+   ]
+  },
+  "2": {
+   "id": "e29eed3f-3a18-4855-906c-7930f34f7a1c",
+   "items": [
+    {
+     "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+     "quantity": 2
+    }
+   ]
+  },
+  "3": {
+   "id": "c3c3c1fc-246e-4014-9b61-2f6fc2448d0d",
+   "items": [
+    {
+     "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+     "quantity": 2
+    }
+   ]
+  }
+ }
+}

@@ -26,8 +26,8 @@ the typecheck + lint + test (+ build) gate. This is **Gate 3** of `.claude/rules
      `core/api/graphql/**/types.ts`.
 3. **Green — fast inner loop first** (repro test only), then the affected suite:
    ```
-   npx vitest run -t VCST-1234            # the repro only
-   npx vitest run path/to/the.spec.ts     # the affected file's suite
+   npx vitest run path/to/the.spec.ts -t "<behavior>"  # the repro only
+   npx vitest run path/to/the.spec.ts                  # the affected file's suite
    ```
    Repro test passes; **ALL pre-existing tests/stories still pass and are UNMODIFIED**.
 4. **Gate — full verification** (all must pass), per `REPO_PROFILES.frontend`:

@@ -12,7 +12,7 @@
 // (PLAN §12 rule 5): a declared count is a second copy of something that already has a home, and
 // the second copy is the one that goes stale.
 
-import { normalizeScope } from './index-load.mjs';
+import { idList, normalizeScope, textList } from './index-load.mjs';
 
 /**
  * The two counts, from the evidence itself.
@@ -23,7 +23,10 @@ import { normalizeScope } from './index-load.mjs';
  * coin toss.
  */
 export function countEvidence(evidence = []) {
-  const items = Array.isArray(evidence) ? evidence : [];
+  // An item a MERGE carried in from a session that had already supported the survivor
+  // (`duplicateSession`, merge-entries.mjs) is kept for provenance and not counted: one agent seeing
+  // one fact once, filed twice, is one observation, not a corroboration.
+  const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
   const disputed = items.filter((e) => e?.contradicts).length;
   return { trust: items.length - disputed, disputed };
 }
@@ -40,15 +43,25 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  */
 export function buildRow(data, path) {
   const { trust, disputed } = countEvidence(data.evidence);
+  // The card and the retirement pointer are written only when the entry has them. A key on every
+  // row would change every row the first time a client from this change pushed, and a client from
+  // before it would take the key off again on its next push -- the same row flapping between two
+  // shapes until the whole team had pulled (VCST-6122 Decision 8).
+  const questions = textList(data.questions);
+  const concepts = idList(data.concepts);
+  const supersededBy = idList(data.supersededBy);
   return {
     id: String(data.id),
     path,
     subject: String(data.subject ?? ''),
     question: String(data.question ?? ''),
+    ...(questions.length ? { questions } : {}),
+    ...(concepts.length ? { concepts } : {}),
     anchors: [...new Set((data.anchors ?? []).map(anchorText).filter(Boolean))],
     scope: normalizeScope(data.appliesTo),
     plane: String(data.plane ?? 'experiential'),
     status: String(data.status ?? 'active'),
+    ...(supersededBy.length ? { supersededBy } : {}),
     trust,
     disputed,
   };
@@ -67,7 +80,11 @@ export const entryPath = (id) => `entries/${id}.md`;
  */
 export function buildIndex(rows, { generated = new Date().toISOString() } = {}) {
   const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
-  return { schema: 1, generated, count: sorted.length, entries: sorted };
+  // Schema 2 is DERIVED from the rows -- any row carrying a card or a retirement pointer -- never
+  // chosen by the caller: a pushing client must not turn a migrated index back into schema 1, nor
+  // stamp 2 on a base that holds no schema-2 field (VCST-6122 Decision 8).
+  const schema = sorted.some((r) => r.questions || r.concepts || r.supersededBy) ? 2 : 1;
+  return { schema, generated, count: sorted.length, entries: sorted };
 }
 
 /** The manifest. The plane -> index map is the extension point; `entries/` never moves (PLAN §2b). */

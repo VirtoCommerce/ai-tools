@@ -1,0 +1,624 @@
+# The knowledge base decides — write-time retrieval cards and a calibrated verdict
+
+**Date:** 2026-09-30 · **Status:** M0–M3 done; M4 measured 2026-10-01 and **amended** (Decision 1a,
+§M4 findings). Supersedes the agent-as-judge half of VCST-6087 (two-stage ask) for confident answers
+only; the judge survives, on a much smaller payload, for everything else.
+
+Never loaded by an agent. When this is built, the normative text will be `scripts/kb/**`, the MCP tool
+descriptions in `scripts/kb/mcp.mjs`, and one line in `CLAUDE.md` §Essential Rules → *Product context*.
+This file is the evidence behind the shape and the record of what was deliberately not taken.
+
+---
+
+## The question
+
+`kb ask` must answer three different things: *this entry answers you*, *these two differ and you must
+choose*, *the base holds nothing*. Today the base answers none of them. It returns ten candidates and
+three bodies, and the calling agent decides (`two-stage-1`, VCST-6087 phase 2, PR #337 -- measured, but
+not merged: `main` still ranks with `floor-1`). That is correct and
+safe, and it is expensive: about 1.4k tokens per ask whatever the outcome, including the 27 of 40 asks
+in the 2026-09-30 wave that ended in "none". Can the base decide by itself, cheaply, without losing the
+property the judge bought — no confident wrong answer?
+
+## What was already true before deciding anything
+
+**The judge is safe.** Phase 1 bench on `vc-knowledge@818d478` (194 entries), re-run 2026-09-30 after
+merging `main`: hybrid view at K=10 gives 9/11 targets, 8/8 controls, **0 wrong picks**; the 2026-09-29
+run gave 10/11 — the difference is one split case (`T-cart-long`). Live wave `VCST-6087-wave1`
+(40 asks over MCP): every ask got a verdict, 6/6 controls ended in `none`.
+
+**The judge is not the bottleneck; the index is.** The same wave found five questions whose answer
+exists in the base but never reached the candidate list — all paraphrases or vocabulary mismatches:
+
+| ask | wording used | entry that answers | its wording |
+|---|---|---|---|
+| P1 | two promo codes on one basket | `KB-8264632C` | coupon, cart |
+| P3 | company account admin invites a colleague | `KB-BAEBCDA7` | organization, invite |
+| P6 | pay later on account | `KB-50EBEEE9` | Manual payment, purchase order |
+| L1 | guest cart merged at sign-in | `KB-734A0813` | (not in top 10) |
+| L6 | purchasing agent's orders visible to colleagues | `KB-D080C209` | sales rep |
+
+The labelled set could not see this: none of its 19 rows is a paraphrase, which is why Stage 1 recall
+measured 11/11.
+
+**Entries are not atomic.** The README says one fact per entry; bodies say otherwise (median 874 chars,
+p90 1,664). `KB-001183CF` holds two facts — coupon validation is case-insensitive, and
+`/account/coupons` shows codes uppercased. Five of the wave's 13 picks were "partially holds".
+
+**The metadata that would help is present but unusable.** Every entry carries `anchors` and
+`appliesTo`, yet `scope` never reaches ranking, `surface` is spelled ten ways (`storefront-xapi`,
+`xapi`, `graphql`, `graphql-xapi`, …), and anchor normalisation lowercases GraphQL names
+(`Query.validateCoupon` → `query.validatecoupon`, `scripts/kb/core/anchors.mjs`). No synonym
+expansion exists anywhere (`docs/decisions/kb-procedural-plane.md` accepted "no synonym recall" for
+flows).
+
+**Why one score failed.** `scripts/kb/core/rank.mjs` records it: no floor on one lexical score separates
+answers from non-answers on this data. That is a statement about a *single magnitude*, and it matches
+the literature (raw similarity is a poor abstention signal). It is not a statement about a decision
+made over several *structural* signals, which is what the literature recommends instead.
+
+## The prior art, and what it says for a corpus this size
+
+- **FAQ retrieval** — question-to-question similarity is the strongest single signal when every
+  document already states the question it answers, combined with question-to-answer relevance
+  (Sakata et al., SIGIR 2019, arXiv 1905.02851). Our entries already carry `question`.
+- **Document-side expansion at write time** — generating the queries a document answers, then
+  **filtering** the ones that do not retrieve it, beats unfiltered expansion and shrinks the index
+  (doc2query--, arXiv 2301.03266; Doc2Query++, arXiv 2510.09557).
+- **Controlled vocabulary** — alias → concept normalisation, applied to both the query and the index,
+  is deterministic and needs no model; it is the classic fix for exactly the mismatches measured above.
+- **Abstention** — do not threshold one similarity; fit a small classifier over several signals
+  (sufficiency, margin, agreement) and choose its threshold for a target precision on a held-out set
+  (Sufficient Context, arXiv 2411.06037; selective prediction / conformal thresholds, arXiv 2404.04287).
+- **Fusion** — RRF until labels exist, then a tuned convex combination (Bruch et al., arXiv 2210.11934).
+- **Dense retrieval and cross-encoders** run locally in Node (`onnxruntime-node` ships Windows
+  binaries; `bge-small-en-v1.5` int8 ≈ 34 MB, `ms-marco-MiniLM-L-6-v2` int8 ≈ 23 MB), but their raw
+  scores are not calibrated, they add the first runtime dependency and a model download, and on
+  200–5k atomic entries with a vocabulary most of their gain is already bought. Deferred behind a gate
+  (Decision 7).
+
+## Decision 1 — the base returns a verdict, not a list
+
+`ask` returns exactly one of:
+
+| verdict | payload | ≈ tokens |
+|---|---|---|
+| `answer` | one entry: claim, trust, anchors, provenance | ~250 |
+| `ambiguous` | 2–3 headlines **and the concept that separates them** | ~150 |
+| `none` | "nothing recorded" + the question's own concepts that nothing in the base is filed under | ~50 |
+
+`kb_show` / `kb_none` survive only on `ambiguous`, which is the two-stage judge reduced to the one
+case where a judgement is genuinely needed. `answer` and `none` are logged as the base's own verdict,
+with the features that produced it, so every decision is auditable after the fact.
+
+### Decision 1a — amended after M4 (operator, 2026-10-01): the base answers alone only when it is sure
+
+M4 measured that the base cannot tell, from the question and the index, an entry that HOLDS the fact
+from one that is merely ABOUT the same thing (§M4 findings). It can find the right entry -- it is in the
+top 3 for 86% of targets -- but it cannot certify that a near-neighbour does not answer. So the three
+verdicts keep their names and change their jobs:
+
+| verdict | when | who decides |
+|---|---|---|
+| `answer` | the calibrated probability clears the threshold chosen for precision >= 0.95 | the base |
+| `ambiguous` | anything else the channels found | the base finds; the agent judges, on a compact payload (headlines, the question each entry answers) and confirms on the body it opens with `kb_show` |
+| `none` | no channel found anything | the base |
+
+"The base decides" now holds for `answer` and for the empty case. Whether a near-neighbour answers is
+the agent's call, as it was under `two-stage-1` -- the saving is the payload, not the judgement:
+three headlines instead of ten candidates and three bodies.
+
+## Decision 2 — one entry, one fact; multi-fact entries are split
+
+A split entry keeps its file with `status: superseded` and a `supersededBy` list; its children are new
+entries with new ids (the id rule is unchanged: a hash of the subject). `retrievable()` already drops
+non-`active` rows while `show` still serves them (`scripts/kb/core/index-load.mjs:149`), so an old id in
+a log, a report or a PR still resolves. Each child inherits the parent's `evidence` items verbatim,
+tagged `splitFrom: <parent id>`, so trust is not reset by a migration nobody observed.
+
+## Decision 3 — the capturing agent writes the retrieval card; the push checks it
+
+At capture the agent that just established the fact supplies, beside `subject`, `question` and `claim`:
+
+```yaml
+questions:            # >= 3; how this fact will be asked for
+  - text: Is a coupon code case-sensitive when applied?
+  - text: Do "SAVE10" and "save10" both work as promo codes?
+concepts:             # >= 1, ids from vocabulary.json
+  - id: coupon
+  - id: coupon.validation
+```
+
+Lists of flat objects, because the frontmatter subset allows nothing else
+(`scripts/kb/core/frontmatter.mjs`). The agent is the cheapest author: it holds the context, and it
+costs no API key and no infrastructure. The **push** runs the doc2query-- filter against the index it
+is about to write: a question whose top-ranked entry is *another* entry is dropped from the card; a
+card left with no question is refused with the entry it collides with — which is also a duplicate
+detector stronger than today's exact-key identity.
+
+**Amended by M4 (2026-10-01):** the rule as written is not usable on this corpus. A dry run on the
+migrated base (`scripts/kb/bench/card-filter.mjs`, 1,489 card questions) drops **58%** and leaves **61**
+entries with no question at all -- among them `KB-8264632C`, the answer to wave-1 miss P1. 621 of the
+862 drops lose to an entry sharing a concept: on 334 entries in dense clusters, "top-1 of 334" is a far
+stricter test than doc2query-- was designed for on a corpus of millions, and the verdict is mostly about
+the ranker that judges, which was not yet calibrated. Deferred until after calibration, with a softer
+rule to evaluate then: keep a question whose entry ranks in the top 3, and never empty a card
+(measured on the uncalibrated ranker: 36% dropped, 24 cards emptied -- still too many).
+
+Rejected: generating questions in the indexer with a model. It needs an API key on every machine that
+pushes, and a push without one would fail or write a card-less entry.
+
+## Decision 4 — a controlled vocabulary lives in the base
+
+`vocabulary.json` beside `index.json`: `concept id → aliases[] + parent + typical anchors`. Seeded from
+the concepts the migration assigns, the wave's misses and VirtoOZ terminology. At query time aliases
+map to concept ids before any ranking; at capture an unknown concept id is refused with the nearest
+existing ones (a new concept is a vocabulary edit, reviewed like an entry). The file is public: no
+client names, no client jargon.
+
+## Decision 5 — facets are closed and derived where possible
+
+- `surface` becomes a closed set — `storefront-ui | xapi | rest | admin-ui | ucp | vendor-ui` — with a
+  migration table for today's eighteen spellings (`background-jobs` → `rest`; `api` names UCP on some
+  entries and REST on others, so M2 resolves it per entry). Six, not four: UCP and the vendor portal
+  are surfaces of their own (operator, 2026-09-30). Other `appliesTo` axes stay as they are.
+- Anchors keep their case and gain a `kind` (`graphql-op`, `graphql-field`, `rest`, `page`, `setting`,
+  `blade`). The kind is **derived** by `scripts/kb/core/coordinates.mjs`, never typed by the agent.
+
+## Decision 6 — the verdict is a calibrated decision over structural signals
+
+Pipeline: parse the question (coordinates by kind, concepts via the vocabulary, surface hints) →
+three candidate channels (BM25 over `questions` + `subject` + concept tokens; anchor postings; concept
+postings) fused by RRF → a logistic regression over:
+
+1. **concept coverage** — the share of the question's concepts the top entry carries (the sufficiency
+   signal; it does not depend on question length, which is what broke floor-1);
+2. margin between the first and second fused scores;
+3. channel agreement (same top entry in two or more channels);
+4. coordinate match, surface match;
+5. **unmapped share** — content words of the question that map to no concept.
+
+Its coefficients and the two thresholds live in the base (`ranker.json`, versioned by the `rank` name
+on every ask line).
+
+**Amended by M4 (2026-10-01).** Two parts of this decision did not survive measurement:
+- **Fusion.** Equal-vote RRF put the right entry first for 17 of 37 dev targets; the words channel alone,
+  24. The coarse concept channel outvoted the precise one. Replaced by a weighted sum of max-normalised
+  channel scores (Bruch et al.), weights chosen on dev, with a fourth view of the words channel: BM25
+  against each card question SEPARATELY, the entry scoring its best sentence (question-to-question, the
+  FAQ-retrieval signal). Right entry first: 25/37 dev; in the top 3: 32/37; in the top 10: 37/37.
+- **Features.** Leave-one-out cross-validation on dev: the eight signals listed above give AUC at most
+  0.879; four length-independent sufficiency signals -- idf-weighted coverage, best-sentence strength,
+  best-sentence margin, fused margin -- give 0.907. Concept coverage, coordinate and surface match add
+  nothing on dev (which holds few coordinate questions, so that verdict is re-checked as the set grows).
+  The unmapped share is not a model input; it acts through its own rule. `kb calibrate` fits them offline on the labelled set and picks the `answer`
+threshold for **precision ≥ 0.95** on the held-out split. A high unmapped share pushes toward
+`ambiguous`, never `none`: a vocabulary gap must not be reported as "the base holds nothing".
+
+## Decision 7 — no new runtime dependency, no CI, no server; dense retrieval is gated
+
+Everything above is Node built-ins, computed by the client's own push (which already rebuilds
+`index.json`, `scripts/kb/core/push.mjs`). The base stays a public repo with no workflow (PLAN
+decision 4). Embeddings — and with them `onnxruntime-node` and a ~34 MB model download — are added
+only if, after Decisions 2–6, paraphrase recall@10 on the held-out set stays below 90%.
+
+## Decision 8 — the client ships first, the data moves second
+
+The entry writer's schema is closed: `stringifyFrontmatter` throws on an unknown field, and a push
+that confirms or disputes an entry rewrites its frontmatter (`scripts/kb/core/push.mjs:400`). A client
+from before this change would therefore **fail every confirm/dispute on a migrated entry**. Order:
+
+1. release a client that reads, carries and writes the new fields, and reads index schema 2 while
+   still reading schema 1; wait until the team has pulled it;
+2. migrate the data in one reviewed PR to `vc-knowledge`;
+3. only then make the new fields mandatory at capture.
+
+Old fields stay in the index (`subject`, `question`, `anchors`, `scope`), so a stale reader still ranks
+— worse, but it does not break.
+
+## How this is measured
+
+The labelled set grows from 19 to about 120 rows, **split by entry** so a question written for an
+entry's card never appears in its test: the 19 existing rows; the 40 wave-1 asks labelled by a human;
+paraphrases written by a different model than the one that writes cards; about 25% of rows with no
+answer in the base, including near neighbours. M4 brings its own bench over that set with the verdict
+metrics: selective precision and coverage, `none` precision on controls, `ambiguous` share, mean tokens
+per ask. It needs no judge, because the base decides.
+
+**M0, done 2026-09-30:** `scripts/kb/bench/rank-labelled-set.v2.json` -- 83 targets, 38 controls, 3
+contested rows kept out of every metric, pinned to `vc-knowledge@8c8f844`. It carries the `two-stage-1`
+baseline per split, measured with PR #337's benches (`eff4c333`) as a REFERENCE; the bar M4 replaces in
+production is `floor-1`, which is what `main` runs.
+
+## M4 findings (2026-10-01)
+
+Measured with `scripts/kb/bench/verdict-bench.mjs` on the migrated base (`vcst-6122-schema2` @
+`f188eb8`, 334 active entries), dev and calibration only -- the test split is opened once, at the gate.
+
+**The production bar** (`baselineFloor1` in the labelled set): `floor-1` answers 16 dev questions and
+11 of them wrongly, 7 on controls; 18 targets whose right entry it ranked FIRST are refused by its
+coverage floor; 15 entries carry `/cart` and an anchor passes unconditionally.
+
+**Finding is solved; deciding is not.**
+
+| | floor-1 dev | M4 dev | floor-1 cal | M4 cal |
+|---|---|---|---|---|
+| paraphrase recall@10 | 20/24 | 24/24 | 8/14 | 13/14 |
+| right entry in the top 3 | 7/37 | 32/37 | 2/22 | 19/22 |
+| right entry first | 5/37 | 25/37 | 2/22 | 10/22 |
+
+What cannot be decided from the question and the index is SUFFICIENCY: whether a near-neighbour entry
+states the fact asked or only shares its topic. Separating controls from targets whose right entry is in
+the top 3 reaches AUC ~0.73 on the four features above and ~0.70-0.79 when entry BODIES are added
+(idf-weighted coverage over card + body, the rarest missing word). The words that give a control away
+-- "filter", "csv", "captcha", "deleting" -- are visible to a reader and indistinguishable, by rarity, from
+the words a genuine paraphrase also misses. Holding controls in `none` >= 0.90 then resolves about 41%
+of targets; the opposite extreme resolves 86% and never says `none`. No threshold sits between them,
+because the separating signal is semantic. Hence Decision 1a.
+
+**The agent on the compact payload.** The 88 dev + calibration questions, the base's top 3 rendered
+without labels, judged by subagents in one batch (scratch harness, not committed). "Resolved" counts a
+labelled entry picked; "partial" targets are the 9 the set marks as held only in part.
+
+| payload (mean tokens incl. the question) | judge | picks right / made | controls -> none | resolved, all | resolved, non-partial |
+|---|---|---|---|---|---|
+| v1: subject + the question each entry answers (~210) | Sonnet | 39/45 | 27/29 | 39/59 | 38/50 |
+| v1, then confirmed on the opened body | Sonnet | 36/39 | 29/29 | 36/59 | 36/50 |
+| v2: v1 + the first ~240 chars of the body (~390) | Sonnet | 43/48 | 27/29 | 43/59 | 41/50 |
+| v2, then confirmed on the opened body | Sonnet | 36/37 | 29/29 | 36/59 | 36/50 |
+| v1 | Haiku | 37/46 | 26/29 | 37/59 | 35/50 |
+| v1, then confirmed on the opened body | Haiku | 36/42 | 28/29 | 36/59 | 35/50 |
+
+Read: the right entry is SHOWN for 51 of 59 targets (46 of 50 non-partial); a Sonnet-class agent on v2
+picks it for 41 of those 46 and is wrong 5 times, two of them on rows whose label is probably incomplete
+(`P-6D5E2CD1-1/-2` pick entries that state the asked fact) and two on controls the set already calls
+borderline (`W-L8`, `N-gift-untick`). Confirming on the body makes the agent safe and too strict at
+once: it removes every control pick and also seven right ones. A Haiku-class agent picks more and is
+wrong more -- 9 of 46 on v1, still 6 of 42 after its own body check, three of them in the price-list
+cluster around `KB-6D5E2CD1`, where the labels are the first thing to review.
+
+## What M4 ships, and what is still open
+
+The production shape, in one line per tier:
+1. **Find**: vocabulary-parsed question -> sentence BM25 + document BM25 + anchors (rarity-weighted) +
+   concepts, linear fusion (weights in `ranker.json`).
+2. **Answer alone** when the calibrated probability clears the precision-0.95 threshold.
+3. **Otherwise show** the top candidates compactly; the agent picks with `kb_show` (which carries the
+   body, trust and provenance) or ends with `kb_none`. **`none` alone** only when nothing was found.
+4. **Learn from it**: every `ambiguous` that ends in `kb_show` or `kb_none` is a label the log already
+   records; recalibrating on it is how the base's own `answer` share grows (M6).
+
+Open, and measured before the gate: the payload (v1 vs v2, three vs four candidates) and the wording of
+the agent's contract, which decides the strict-vs-safe balance above; the two probable label gaps; and
+whether a body re-rank of the top 10 (dev: right entry in the top 3 32 -> 35 of 37; calibration
+unchanged) is worth ten body reads per ask.
+
+## M4 gate result (2026-10-01) -- FAIL by one row on two lines; `floor-1` stays
+
+The frozen configuration (`scripts/kb/bench/ranker.m4-gate.json`: linear fusion, head re-rank by the
+bodies, threshold for precision 0.95; the one-line agent contract in `render.mjs`) was measured end to
+end on the test split, opened once (`.test-openings.jsonl`). Full record: `scripts/kb/bench/m4-gate-result.json`.
+
+| AC line | dev + calibration | **test** | gate |
+|---|---|---|---|
+| picks precision (relied on, after the body check) | 42/44 | **18/19 (94.7%)** | >= 95% -- **fail** |
+| a control answered by the base | 0 | 0 | 0 -- pass |
+| controls end in `none` / `kb_none` | 28/29 | 9/9 | >= 90% -- pass |
+| targets resolved, non-partial | 41/50 (82%) | **17/22 (77%)** | >= 80% -- **fail** |
+| paraphrase recall@10 | 37/38 | 15/16 | >= 90% -- pass |
+| mean `ask` payload, tokens | 380 | 387 | <= 400 -- pass |
+| every pre-migration id resolves through `show` | -- | 289/289 | pass |
+
+Read with the size of the split in mind: on test one row is 5 points of precision and 4.5 of
+resolution, so the gate missed by ONE row on each line. The single wrong reliance (`P-4B889114-1` on
+`KB-27B4CD10`, two entries about the storefront members list) may be a label gap; it is reported, not
+relabelled -- the split is opened once. The pick step alone resolves 18/22 at precision 19/21; the body
+check trades one resolution for one wrong pick. A Haiku-class agent on the same items (pick only): 14/17
+precision, controls 8/9, resolved 13/22 -- the contract is not safe for a weak agent without the body check.
+
+**What this means.** The base now finds what it holds (paraphrase recall 94-97% against floor-1's 57-83%)
+at a quarter of `two-stage-1`'s payload, and never answers a control alone. Whether that clears a
+precision bar of 0.95 cannot be settled on 33 rows; the next measurement needs a larger held-out set,
+which the logged `kb_show` / `kb_none` of a live wave provide for free (M6).
+
+## After the gate (2026-10-01): wired, switched off, base branch refreshed
+
+- **`ask` runs the verdict when the base carries `ranker.json`** (`loadVerdictRanker` in
+  `scripts/kb/core/verbs.mjs`); a base without one -- every base in production -- runs `floor-1`
+  byte for byte, and a malformed one is treated as absent. `ambiguous` is a new state (exit 0) that
+  prints an ask handle; `kb_show` takes it as `ask`, and `kb_none` (MCP) / `kb none` (CLI) is new.
+  Both log `after: <handle>`, so the pick or the none pairs with ITS ask, not the session's latest --
+  the M6 labels depend on that pairing.
+- **The base branch was rebuilt on main**, not hand-merged: the 16 plans whose entry gained one
+  confirmation or dispute on main were re-stamped (bodies checked unchanged), the migration re-applied,
+  and the two split parents' four children inherited the new evidence. 408 rows, 364 active (334 with
+  a card, 30 new entries without one); `kb reindex --dry-run` agrees; recorded as a merge commit, so
+  the branch history was not rewritten.
+- **Decision 8, observed rather than argued.** A pre-change client (main's code) reading the migrated
+  base does not crash, but it is BLIND: its closed frontmatter schema refuses `questions` /
+  `concepts`, so `ask` reports "the base was NOT read" whenever a migrated entry is a hit, and `show`
+  of a migrated entry does the same. By reading its `push`: a queued confirm on a migrated entry is
+  recorded as a problem and NOT applied, while the push itself succeeds -- the evidence is lost, with
+  only a `problems` count on the flush line. The order is therefore not a preference: the client PR
+  merges and the team pulls it before the data PR reaches main.
+
+## Live wave VCST-6122-wave2 (2026-10-01)
+
+`ranker.json` (= `ranker.m4-gate.json`) was published on `vcst-6122-schema2` (`ca6af2d`), and six
+Sonnet-class agents, one per area, each asked seven questions they needed before writing test cases,
+through the CLI with `KB_BASE` on the branch, `KB_SYNTHETIC=1`, `KB_RUN=VCST-6122-wave2`. The queue was
+pushed once, to the branch only (`52b3683`, 95 lines; none reached main).
+
+- 43 asks, **all `ambiguous`** -- the base never answered alone (mean p 0.36, max 0.91, threshold 0.957).
+- Every ask was closed BY HANDLE: 20 ended in a pick that was kept, 14 in `kb_none` without opening,
+  9 in a `kb_show` followed by `kb_none`. No dangling pointer; the pairing works.
+- Two agents opened an entry that was not among that ask's headlines (protocol slips, visible in the
+  log because `show` carries `after`).
+- **A `kb_show` not followed by `kb_none` is not a reliance.** One agent opened an entry, judged it
+  insufficient in its report, and never called `kb_none` -- three times. Read from the log, those
+  are picks. M6 must not label from `show` alone: either a reliance gets its own explicit signal, or
+  a show is a label only when a later `confirm`/citation follows it.
+- The rows are drafted for labelling in `scripts/kb/bench/wave2-to-label.json`; no row joins a
+  labelled set before the operator fills `expect`.
+
+## Gate re-run on wave2 (2026-10-05) -- FAIL; the judgement, not retrieval, is what fails
+
+The operator labelled the 43 wave2 rows (Claude drafted, the operator confirmed or overrode):
+22 targets (9 partial), 19 controls, 2 contested and kept out (`W2-13`: a UI fact offered for a
+GraphQL question; `W2-14`: "blocked" means three different things in the base). The set is
+`scripts/kb/bench/rank-labelled-set.wave2.json`, all `split: test`, opened once. The frozen M4
+configuration ran unchanged; a Sonnet-class subagent picked from `items.txt` and confirmed on the
+body. Full record: `scripts/kb/bench/wave2-gate-result.json`.
+
+| AC line | M4 test (33) | **wave2, body-checked** | wave2, pick only | the live agents | gate |
+|---|---|---|---|---|---|
+| picks precision | 18/19 | **8/9 (89%)** | 11/15 (73%) | 14/19 (74%) | >= 95% -- **fail** |
+| a control answered by the base | 0 | 0 | 0 | 0 | 0 -- pass |
+| controls end in `none` | 9/9 | 19/19 | 18/19 | 17/19 | >= 90% -- pass |
+| targets resolved, non-partial | 17/22 | **7/13 (54%)** | 9/13 (69%) | 10/13 (77%) | >= 80% -- **fail** |
+| a right entry among the headlines (non-partial) | -- | 12/13 | 12/13 | -- | -- |
+| mean `ask` payload, tokens | 387 | 379 | 379 | -- | <= 400 -- pass |
+
+- **Retrieval holds; the agent's decision does not.** The right entry was shown for 12 of 13
+  non-partial targets, but the body-checked agent relied on 7. It said `none` with the answer on the
+  list five times and rejected a right pick on the body three times. The live agents, with a real task
+  around the question, resolved more (10/13) and were wrong more (5 of 19). The strict-vs-safe trade
+  M4 described is the whole result on real questions; no agent configuration measured clears both lines.
+- **Real questions are wider than the bench's.** 9 of 22 targets are answered only in part (a
+  question asks two things, the base holds one), and partial targets resolve 1/9 body-checked. The
+  bench rows were written one fact at a time; wave2 asks were not.
+- **The one wrong reliance (`W2-16`, `KB-75BD84BE` for `KB-C4346EB2`) is probably a label gap:**
+  the question does not say storefront, and the picked entry states how the UCP cart shows the
+  same gift. Reported, not relabelled -- the set is opened once.
+- **`floor-1` stays.** A lower threshold cannot help: the base never answered alone (max p 0.91 against
+  0.957), so every line above is the agent's. The next lever is the agent contract (what an
+  `ambiguous` list must make easy to accept) and partial answers, not the ranker.
+
+**Against what `main` runs (`floor-1`, same set, same base, `verdict-bench`, base alone).** `floor-1`
+answered 13 of the 41 questions on its own and 11 of those were wrong (6 of them on controls, so 13/19
+controls end in `none`). It returned the right entry for 4 of 22 targets, which caps what any agent
+can resolve on it at 4/22; the M4 ranker showed the right entry for 19 of 22 and answered nothing
+alone. End to end the M4 configuration resolves 8/22 body-checked and 11/22 pick only. It misses the
+absolute gate but beats production on every line, at 376 tokens per ask against 444.
+
+**Base branch rebuilt on main again (2026-10-05, after both measurements above):** `vcst-6122-schema2`
+@ `6e810a6` = the 289 plans re-applied to main @ `e6e5e1d` (15 re-stamped: evidence added, bodies
+unchanged), 454 rows, 410 active; main's 46 newer entries carry no retrieval card yet. The wave2 log
+lines are kept. A merge commit, so the branch history is not rewritten.
+
+## End to end against floor-1, on wave2 and on 210 questions from the logs (2026-10-05)
+
+`rank-labelled-set.logs300.json`: 300 real asks from main's logs, labelled by two independent Claude
+passes (agreement 277/300) and an adjudicator; 10 removed on validation; 209 targets (41 partial), 77
+controls, 4 contested, split by entry group. It played no part in fitting or tuning the ranker, so its
+dev + calibration rows are unseen by it; its test split (76 rows) is not opened. `judge-harness.mjs
+items --decider floor-1` gives the agent exactly what `main`'s `ask` prints (its hits WITH bodies) and
+scores it like `ambiguous`. Same Sonnet-class picker, same body check, for both. `e2e-result.json`.
+
+| body-checked | floor-1, wave2 | M4, wave2 | floor-1, logs dev+cal | **M4, logs dev+cal** | gate |
+|---|---|---|---|---|---|
+| picks precision | 4/5 | 8/9 | 108/118 (92%) | **122/126 (97%)** | >= 95% |
+| controls end in `none` | 19/19 | 19/19 | 56/56 | **54/56 (96%)** | >= 90% |
+| targets resolved, non-partial | 2/13 | 7/13 | 101/127 (80%) | **112/127 (88%)** | >= 80% |
+| right entry shown, non-partial | 2/13 | 12/13 | 105/127 | 118/127 | -- |
+| mean `ask` tokens | 444 | 379 | 754 | **387** | <= 400 |
+
+- **On the questions agents actually ask, the M4 configuration clears every gate line**, and it beats
+  floor-1 on every line but one (two controls relied on, against none) at half the payload. The base
+  answered alone 6 times, all right.
+- **wave2 is the hard case, not the typical one.** Its prose questions span two facts; the logs are
+  mostly coordinate-led keyword asks (`changeWishlist scope Customer addSharedWithIds ...`), which is
+  how agents use the base. Both rankers score far better on them; floor-1 most of all, because a
+  keyword ask is what it was built for.
+- **The body check is what makes the agent safe on M4** (pick only: 122/129 precision, controls 52/56);
+  on floor-1 the bodies are already in the payload, so the check changes little.
+- Next: open the logs300 test split ONCE as the gate.
+
+## logs300 test gate (2026-10-05) -- FAIL on precision; M4 matches floor-1 on accuracy at 40% of the cost
+
+Opened once, same protocol, both rankers.
+
+| body-checked, test (76 rows) | floor-1 | M4 | gate |
+|---|---|---|---|
+| picks precision | 37/42 (88%) | **38/44 (86%)** | >= 95% -- **fail** |
+| controls end in `none` | 20/21 | 19/21 (90%) | >= 90% -- pass |
+| targets resolved, non-partial | 33/41 (80%) | 34/41 (83%) | >= 80% -- pass |
+| right entry shown, non-partial | 36/41 | 38/41 | -- |
+| mean `ask` tokens | 978 | **391** | <= 400 -- pass |
+
+- **The dev + calibration pass did not hold on test.** On test the two rankers are equal on accuracy
+  (within one row each way); M4 keeps its cost advantage (2.5x fewer tokens) and shows the right entry
+  slightly more often.
+- **Four of M4's six wrong reliances picked an entry that states the asked fact too, but is missing
+  from `expect`**: L-122 (`KB-0E177E02`), L-158 and L-186 (`KB-4B889114`), L-290 (`KB-1D53A1BE`).
+  With them the line would read 42/44. Not applied: the split is opened once, and a relabel after
+  opening is what the rule exists to prevent. The defect is in the labelling protocol -- labellers
+  named THE answer, not EVERY entry that states it -- and in the base, which holds several
+  overlapping entries on one fact (three on the `/company/members` Active column).
+- Two errors are real: controls L-110 and L-287, relied on an entry that shares the topic.
+- `floor-1` stays. Next: an exhaustive "every entry that states it" pass over all labels before the
+  next gate, merging the overlapping entries, and a fresh held-out set from the logs written after
+  today.
+
+## Merged base + exhaustive labels (2026-10-05)
+
+`scripts/kb/merge-entries.mjs` folded 21 entries that state the same fact as another into 17
+survivors on `vcst-6122-schema2` (`dc24ad1`; 389 active; every rewritten body passed an independent
+loss/invention check, 4 after correction; 13 contradictions listed in the base under
+`migration/merge/`). Every label set was remapped to the survivors and relabelled EXHAUSTIVELY
+(every entry that states the fact; 90 rows gained entries; operator decisions on the approved sets
+in `relabel-proposals-2026-10-05.json`). Then the same end-to-end run, logs300 dev + calibration:
+
+| body-checked, 204 rows | floor-1 | **M4** | gate |
+|---|---|---|---|
+| picks precision | 104/108 (96%) | **108/109 (99%)** | >= 95% |
+| controls end in `none` | 56/56 | 55/56 (98%) | >= 90% |
+| targets resolved, non-partial | 100/121 (83%) | **105/121 (87%)** | >= 80% |
+| right entry shown, non-partial | 102/121 | 115/121 | -- |
+| mean `ask` tokens | 783 | **390** | <= 400 |
+
+- With the duplicates gone and the labels exhaustive, M4 beats floor-1 on precision, resolution and
+  recall at half the payload; its one wrong reliance is a control (`L-246`).
+- **Not a gate.** The merges were found partly through wrong picks on these very rows and on the
+  test split, so this set is no longer held out for the base as it now stands. The gate needs a
+  fresh set: asks logged after 2026-10-05, labelled exhaustively from the start.
+
+**Cards for the rest (2026-10-05, base `6f0fbc2`).** The 74 active entries without a retrieval card
+got one (4-6 questions, vocabulary concepts, closed surface; `plans-11-cards.json`). Base alone, the
+right entry is in the returned list for 92% / 98% of logs300 dev / calibration targets (91% / 87%).
+
+**Letting the base answer alone more often does not survive held-out rows.** Re-fitted on v2 + logs300
+dev and calibration (205 targets, 84 controls), the answer threshold drops from 0.957 to 0.859 and the
+base answers 34-47% of dev / calibration targets alone, all right -- in sample. On the spent test
+splits the same ranker answers 22 logs300 rows with 2 wrong, both CONTROLS (`L-020`, `L-110`), and 5
+wave2 rows with 3 wrong. A confident answer on a control is the one outcome the AC allows zero of, so
+the re-fit is not published; `ranker.m4-gate.json` stays the base's ranker. Sufficiency is still not
+decidable from the index (M4), and more labels did not change that.
+
+## What this knowingly does not get
+
+## What this knowingly does not get
+
+- **Meaning beyond the vocabulary.** A synonym nobody added is a miss until M6 or until the report
+  proposes it. The mitigation is the unmapped-share rule and a vocabulary queue in `kb-report`.
+- **A tight confidence interval.** Precision estimated on ~120 rows is ±5 points; the threshold is
+  re-fitted as labels accumulate.
+- **Free capture.** A card costs the capturing agent a few more lines per entry.
+- **Stable ids across the migration.** Split entries get new ids; `supersededBy` carries the link.
+
+## Build order, and the stop condition at each stage
+
+| stage | what | stop / pass |
+|---|---|---|
+| M0 | labelled set to ~120 rows, split by entry, human-approved | set approved |
+| M1 | client: schema 2 read/write, derived anchor kinds, closed surface (no behaviour change) | released and pulled (Decision 8) |
+| M2 | migration of all entries: split, cards, concepts, surface; reviewed PR to `vc-knowledge` | PR merged; every old id resolves |
+| M3 | `vocabulary.json` seed | reviewed |
+| M4 | query pipeline + `kb calibrate` + three verdicts | **2026-10-01: failed by one row on picks precision (18/19) and on resolution (17/22); see §M4 gate result.** As amended 2026-10-01, measured END TO END on the test split (the base's verdict, then a Sonnet-class agent's choice on `ambiguous`): picks precision ≥ 0.95; controls end in `none` / `kb_none` ≥ 0.90; no control gets `answer` from the base; targets resolved ≥ 0.80 of non-partial targets (partial reported); paraphrase recall@10 ≥ 0.90; `ask` payload ≤ 400 tokens mean. **Fail ⇒ keep what `main` runs (`floor-1`).** |
+| M5 | capture v2: card mandatory, push-side filter | — |
+| M6 | `kb-report`: verdict panels, vocabulary and label queues | — |
+| M7 | dense channel | only if M4 misses paraphrase recall |
+
+## Sources
+
+VCST-6087 (Jira) and its phase-1/2 comment; bench run 2026-09-30 (`scripts/kb/bench-two-stage.mjs
+--view hybrid --k 10`, `vc-knowledge@818d478`); wave `VCST-6087-wave1` (`npm run kb:report -- --run
+VCST-6087-wave1 --days 1`); PLAN §3.5, §11, §14.4 (`_kbplan/PLAN.md`, outside the repo); arXiv
+1905.02851, 2301.03266, 2510.09557, 2411.06037, 2404.04287, 2210.11934; Anthropic, *Contextual
+Retrieval*.
+
+**A second `kb_show` (2026-10-05, base `17b4b7a`, logs300 dev + calibration, 202 `ambiguous` items).**
+A Sonnet-class agent ran the real CLI (`kb show`) on each item; arm A kept the one-open contract,
+arm B allowed one more open when the first body did not state the fact.
+
+| | A: one open | B: a second open allowed |
+|---|---|---|
+| picks precision | 127/130 (98%) | 132/136 (97%) |
+| controls end in `none` | 56/56 | 55/56 |
+| targets resolved, non-partial | 117/125 (94%) | 118/125 (94%) |
+| targets resolved, partial | 10/27 | 14/27 |
+| entries opened per ask | 0.74 | 0.93 (28 asks opened two) |
+
+- The second open buys one full target and four partial ones for 25% more opens, one more wrong
+  reliance and one control relied on. Not worth it as the default; the one-open contract stays.
+- Run as a live agent calling `kb show`, the one-open contract resolves 94% of non-partial targets,
+  against 87% when the pick and the body check were scored as two separate passes: the separate
+  body-check pass was stricter than an agent reading the body in its own flow.
+
+## Fresh held-out wave VCST-6122-wave3 (2026-10-05) -- M4 triples what floor-1 resolves; the absolute gate still fails
+
+Eight Sonnet-class QA agents, one per area, each asked 13 questions they needed before writing test
+cases, through the real CLI on `vcst-6122-schema2` @ `17b4b7a` (ranker verdict-1; `KB_SYNTHETIC=1`,
+`KB_NO_SWEEP=1`, `KB_PUSH_CONFIRM=1`, an isolated queue: nothing was pushed). 104 asks, every one closed
+by handle but one; one agent's self-report claimed a reliance the log does not show (scored from the
+log). Labelled exhaustively by two independent passes (77 agreed), 27 adjudicated: 64 targets (36
+partial), 34 controls, 6 contested. Never used to change the base or the ranker.
+`rank-labelled-set.wave3.json`, `wave3/asks.json`, `e2e-result.json`.
+
+| | **M4, the agents' live closings** | floor-1, same questions | gate |
+|---|---|---|---|
+| picks precision | 25/27 (93%) | 9/9 | >= 95% -- **fail** (by one row) |
+| controls end in `none` | 34/34 | 34/34 | >= 90% |
+| targets resolved, non-partial | 19/28 (68%) | 7/28 (25%) | >= 80% -- **fail** |
+| all targets resolved | 25/64 (39%) | 9/64 (14%) | -- |
+| right entry shown | 44/64 (69%) | 14/64 (22%) | -- |
+| mean `ask` tokens | 391 | 366 | <= 400 |
+
+- **Against production, M4 resolves almost three times as many targets** (25 vs 9) on questions
+  nobody had seen, with no confident wrong answer on a control from either.
+- One of M4's two wrong reliances is a probable label gap (`W3-043`: `KB-BE7DF8DA` states that an
+  anonymous `sharedWishlist(key)` returns the list); with it precision would read 26/27. Not relabelled.
+- **The base, not the ranker, now bounds the result.** 36 of 64 targets are answered only in part, and
+  5 of 28 full targets never reached the list. Fresh questions are wider than what the base holds;
+  the lever is coverage (capture) and the partial-answer contract, not retrieval.
+
+## Rollout runbook (2026-10-06)
+
+Two PRs, strictly in this order (Decision 8): the client `VirtoCommerce/ai-tools#393`, then the data
+`VirtoCommerce/vc-knowledge#2` (draft). Until a base carries `ranker.json` the client runs `floor-1`
+byte for byte, so step 1 is safe on its own.
+
+**1. Ship the client.** Merge #393 once CI is green. No behaviour changes for anyone.
+
+**2. Get the team onto it.** Everyone pulls `ai-tools` and restarts Claude Code (the MCP server is
+started once per session). Check on each machine: `npm run kb -- --help` lists `kb -- none`; a
+machine where it does not is on the old client. Wait until every active operator has it -- an old
+client reading the migrated base reports "the base was NOT read" on migrated hits and drops queued
+confirms on push. Proceed only when nobody is left behind.
+
+**3. Re-sync the data branch, right before merging it.** Base `main` moves daily. In a local checkout
+of `vc-knowledge` on `vcst-6122-schema2`:
+
+    npm run kb:sync-base -- --base <checkout> --dry-run
+    npm run kb:sync-base -- --base <checkout>
+    git -C <checkout> diff --cached        # review
+    git -C <checkout> commit
+
+`kb:sync-base` accepts only evidence appended on `main` (the branch version of each entry wins,
+`main`'s new items are appended, and those of entries the branch superseded go to their successors).
+A changed body, field or deleted entry on `main` is refused and named -- resolve that one by hand.
+Then card every new entry it lists: `npm run kb:cards -- --base <checkout> --list --out <dir>` writes a
+packet, an agent writes the plans from it, `npm run kb:cards -- --base <checkout> --apply <plans.json>
+--packet <dir>` checks and applies them; commit, push the branch, and confirm the
+PR shows no conflict. If `main` moves again before the merge, repeat this step.
+
+**4. Ship the data.** Mark #2 ready, merge with a merge commit (keeps the plan history). Every client
+on #393 then runs the verdict ranker within about ten minutes: an MCP process caches a ranker for 60 s,
+raw.githubusercontent.com for about 5 minutes, and a machine that recently saw "absent" keeps that for
+10 minutes.
+
+**5. Verify.** `npm run kb -- ask "<a real question>"` prints `close entries, none certified to
+answer` with an `ask handle`; `npm run kb -- reindex --dry-run --base <checkout>` (a local checkout of
+base `main`; the default base is read-only) agrees with the index; the next day's
+`npm run kb:report` still shows a non-empty miss queue (ambiguous asks closed by `none` count as
+misses).
+
+**Rollback.** Delete `ranker.json` from base `main` in one commit: every client is back on `floor-1`
+within the same window as step 4 (60 s in an MCP process, ~5 minutes at raw.githubusercontent.com;
+an absent ranker is not re-checked for 10 minutes, but that only delays turning it ON). The schema-2
+data stays -- the #393 client reads it either way. Reverting the data PR itself is not needed for a
+rollback and would strand the evidence written since.
+
+**Afterwards.** Make the card mandatory at capture (Decision 8, step 3) as its own change; settle the
+seven contradictions that need a UI/HAR check (`migration/merge/contradictions-2026-10-05.json`);
+recalibrate from the logged `show` / `none` pairs (M6) once a few hundred have accumulated.
