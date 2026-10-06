@@ -1,0 +1,254 @@
+<title>VCST-6152 Fix Evidence</title>
+<style>
+/* Layout: one reading column: verdict + build strip, root cause, before/after, tally, raw payloads */
+:root{--bg:#f6f7f9;--surface:#fff;--fg:#1b2129;--muted:#5b6573;--line:#dde2e8;--accent:#2f5d8a;--ok:#1d7a46;--okbg:#e3f3ea;--bad:#a83232;--badbg:#f8e5e5;--code:#eef1f5;
+--sans:"IBM Plex Sans",system-ui,sans-serif;--mono:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#13171c;--surface:#1a1f26;--fg:#e3e8ee;--muted:#9aa5b2;--line:#2c343e;--accent:#7fb0e0;--ok:#6fd39b;--okbg:#173326;--bad:#f08a8a;--badbg:#3a1d1d;--code:#11151a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#13171c;--surface:#1a1f26;--fg:#e3e8ee;--muted:#9aa5b2;--line:#2c343e;--accent:#7fb0e0;--ok:#6fd39b;--okbg:#173326;--bad:#f08a8a;--badbg:#3a1d1d;--code:#11151a;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--sans)}
+main{max-width:1100px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:grid;gap:24px}
+h1{font-size:1.45rem;margin:0;text-wrap:balance}h2{font-size:1.1rem;margin:0 0 8px}
+h4{margin:0 0 4px;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+p{margin:0;max-width:72ch}.muted{color:var(--muted)}code{font:13px var(--mono)}
+.strip{display:flex;flex-wrap:wrap;gap:6px 20px;font:13px var(--mono);color:var(--muted)}.strip b{color:var(--fg);font-weight:500}
+.pill{display:inline-block;padding:1px 9px;border-radius:999px;font:600 12px var(--mono)}.ok{background:var(--okbg);color:var(--ok)}.bad{background:var(--badbg);color:var(--bad)}
+.verdict{font-size:14px;padding:3px 12px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:18px;min-width:0}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}.mono{font:12.5px var(--mono)}
+td.red{color:var(--bad)}td.green{color:var(--ok)}
+details{border-top:1px solid var(--line);padding-top:10px;margin-top:10px}summary{cursor:pointer;font-weight:600}
+summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{font:12px var(--mono);color:var(--muted);font-weight:400}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}.pair>div{min-width:0}
+pre{background:var(--code);border:1px solid var(--line);border-radius:6px;padding:10px;font:12px/1.45 var(--mono);overflow:auto;max-height:420px;margin:0;white-space:pre}
+@media (max-width:720px){.pair{grid-template-columns:1fr}}
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<main>
+<header style="display:grid;gap:10px">
+<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><h1>VCST-6152 · Wishlist share targets: one order, position-independent legacy sharedWithId</h1><span class="pill ok verdict">VERIFIED</span></div>
+<div class="strip"><span>env <b>vcptcore-qa</b></span><span>Platform <b>3.1076.0</b></span><span>XCart <b>3.1038.0-pr-141-b404</b></span><span>Cart <b>3.1011.0-pr-194-8331</b></span><span>SalesRep <b>3.1012.0-pr-21-8964</b></span><span>PR <b>vc-module-x-cart#141</b> (fix commit cd42696)</span><span>2026-10-06</span></div>
+</header>
+<section><h2>Bug and root cause</h2>
+<p>A write (<code>createWishlist</code> / <code>changeWishlist</code>) returned share targets in insertion order. Every later <code>wishlist(listId)</code> read returned them newest first. The deprecated <code>sharedWithId</code> means the first target, so it named a different org depending on which response the client kept. <code>GetLegacyTargetDeltas</code> treated only the first target as a no-op, so re-sending the value from the client's own save was refused with <code>INVALID_OPERATION</code>.</p>
+<p class="muted" style="margin-top:8px">Fix: <code>WishlistType</code> orders targets by org id on every surface, and the legacy rule treats any present target as a no-op.</p></section>
+<section><h2>Before and after</h2><div class="scroll"><table><thead><tr><th>Check</th><th>Pre-fix (RED, XCart 3.1037.0-pr-141-fb27)</th><th>Fixed build (GREEN)</th></tr></thead><tbody>
+<tr><td>Target order, write response vs read</td><td class="red">A,B vs B,A (insertion vs newest first)</td><td class="green">identical, sorted by id; 3/3 runs plus a [C,B,A] create</td></tr>
+<tr><td>sharedWithId, write vs read</td><td class="red">A vs B</td><td class="green">same org on both</td></tr>
+<tr><td>Legacy re-send of the write-response sharedWithId</td><td class="red">HTTP 200 + INVALID_OPERATION</td><td class="green">no-op, no errors, 3/3</td></tr>
+<tr><td>Legacy re-send of the other, last-of-3 or upper-case target</td><td class="red">INVALID_OPERATION for any non-first target</td><td class="green">no-op, 3/3 each</td></tr>
+<tr><td>Legacy new org on a multi-target list</td><td>INVALID_OPERATION</td><td class="green">INVALID_OPERATION, nothing written (allowed by contract 2.3)</td></tr>
+</tbody></table></div>
+<p class="muted" style="margin-top:10px">RED source: <code>reports/bugs/fixed/BUG-VCST-5925-targets-order-unstable-legacy-sharedWithId-refused.md</code> (observed 2026-10-01, re-confirmed 2026-10-02) and kb KB-42230B0A. The pre-fix payloads were not saved to disk, so they are not reproduced here.</p></section>
+<section><h2>Run tally: 31/31 checks pass (3 runs + 1 order probe)</h2><div class="scroll"><table><thead><tr><th>Check</th><th>Passed</th><th>Result</th><th>Run 1 detail</th></tr></thead><tbody><tr><td>create-response order == read order</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">write=ACME,TECHFLOW read1=ACME,TECHFLOW read2=ACME,TECHFLOW</td></tr><tr><td>sharedWithId same on write &amp; read</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">write=ACME read=ACME</td></tr><tr><td>legacy resend write-response sharedWithId = no-op</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">errors=none after=ACME,TECHFLOW</td></tr><tr><td>legacy resend other present target = no-op</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">errors=none after=ACME,TECHFLOW</td></tr><tr><td>legacy resend present target UPPERCASE = no-op</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">errors=none after=ACME,TECHFLOW</td></tr><tr><td>legacy NEW org on multi-target refused, nothing written</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">errors=INVALID_OPERATION after=ACME,TECHFLOW</td></tr><tr><td>rename response order == read order</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">resp=ACME,TECHFLOW read=ACME,TECHFLOW</td></tr><tr><td>add 3rd target: response order == read order, 3 targets</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">resp=ACME,BUILDRIGHT,TECHFLOW read=ACME,BUILDRIGHT,TECHFLOW</td></tr><tr><td>legacy resend LAST of 3 targets = no-op</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">errors=none after=ACME,BUILDRIGHT,TECHFLOW</td></tr><tr><td>remove target: response == read, A gone</td><td class="num">3/3</td><td><span class="pill ok">PASS</span></td><td class="mono">resp=BUILDRIGHT,TECHFLOW read=BUILDRIGHT,TECHFLOW</td></tr><tr><td>3-target create [C,B,A]: response order == read order</td><td class="num">1/1</td><td><span class="pill ok">PASS</span></td><td class="mono">write=ACME,BUILDRIGHT,TECHFLOW read=ACME,BUILDRIGHT,TECHFLOW</td></tr></tbody></table></div></section>
+<section><h2>Captured request and response (run 1, fixed build)</h2>
+<details open><summary>1. createWishlist with addSharedWithIds [ACME, TECHFLOW] <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>mutation($c:InputCreateWishlistType!){createWishlist(command:$c){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "c": {
+    "storeId": "B2B-store",
+    "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "listName": "AGENT-TEST-VCST6152-r1-1791246142931",
+    "scope": "Customer",
+    "addSharedWithIds": [
+      "105c2c4e-23be-4258-8691-568a0ff190be",
+      "96f109a7-9010-4691-b6a1-bef25cca3d04"
+    ]
+  }
+}</pre></div><div><h4>Response</h4><pre>{
+  "data": {
+    "createWishlist": {
+      "id": "ce226ce4-c028-45db-af1b-76feaefb4067",
+      "name": "AGENT-TEST-VCST6152-r1-1791246142931",
+      "sharingSetting": {
+        "scope": "Customer",
+        "access": "Write",
+        "isOwner": true,
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "name": "AGENT-TEST-Org-TechFlow-20260310"
+          }
+        ]
+      }
+    }
+  }
+}</pre></div></div></details>
+<details open><summary>2. wishlist(listId) read <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>query($id:String!){wishlist(listId:$id){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "id": "ce226ce4-c028-45db-af1b-76feaefb4067"
+}</pre></div><div><h4>Response</h4><pre>{
+  "data": {
+    "wishlist": {
+      "id": "ce226ce4-c028-45db-af1b-76feaefb4067",
+      "name": "AGENT-TEST-VCST6152-r1-1791246142931",
+      "sharingSetting": {
+        "scope": "Customer",
+        "access": "Write",
+        "isOwner": true,
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "name": "AGENT-TEST-Org-TechFlow-20260310"
+          }
+        ]
+      }
+    }
+  }
+}</pre></div></div></details>
+<details open><summary>3. changeWishlist, legacy sharedWithId = value from the write response (the pre-fix RED step) <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>mutation($c:InputChangeWishlistType!){changeWishlist(command:$c){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "c": {
+    "listId": "ce226ce4-c028-45db-af1b-76feaefb4067",
+    "scope": "Customer",
+    "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+  }
+}</pre></div><div><h4>Response</h4><pre>{
+  "data": {
+    "changeWishlist": {
+      "id": "ce226ce4-c028-45db-af1b-76feaefb4067",
+      "name": "AGENT-TEST-VCST6152-r1-1791246142931",
+      "sharingSetting": {
+        "scope": "Customer",
+        "access": "Write",
+        "isOwner": true,
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "name": "AGENT-TEST-Org-TechFlow-20260310"
+          }
+        ]
+      }
+    }
+  }
+}</pre></div></div></details>
+<details open><summary>4. changeWishlist, legacy sharedWithId = a new served org on a 2-target list <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>mutation($c:InputChangeWishlistType!){changeWishlist(command:$c){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "c": {
+    "listId": "ce226ce4-c028-45db-af1b-76feaefb4067",
+    "scope": "Customer",
+    "sharedWithId": "23525b44-f0d0-43a4-b45e-b162080a4d29"
+  }
+}</pre></div><div><h4>Response</h4><pre>{
+  "errors": [
+    {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+        {
+          "line": 1,
+          "column": 39
+        }
+      ],
+      "path": [
+        "changeWishlist"
+      ],
+      "extensions": {
+        "code": "INVALID_OPERATION",
+        "codes": [
+          "INVALID_OPERATION"
+        ]
+      }
+    }
+  ],
+  "data": {
+    "changeWishlist": null
+  }
+}</pre></div></div></details>
+<details open><summary>5. createWishlist, inserted [BUILDRIGHT, TECHFLOW, ACME] <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>mutation($c:InputCreateWishlistType!){createWishlist(command:$c){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "c": {
+    "storeId": "B2B-store",
+    "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "listName": "AGENT-TEST-VCST6152-cba-1791246168109",
+    "scope": "Customer",
+    "addSharedWithIds": [
+      "23525b44-f0d0-43a4-b45e-b162080a4d29",
+      "96f109a7-9010-4691-b6a1-bef25cca3d04",
+      "105c2c4e-23be-4258-8691-568a0ff190be"
+    ]
+  }
+}</pre></div><div><h4>Response</h4><pre>{
+  "data": {
+    "createWishlist": {
+      "id": "b4951392-bebf-4b91-9342-d8b45733359f",
+      "name": "AGENT-TEST-VCST6152-cba-1791246168109",
+      "sharingSetting": {
+        "scope": "Customer",
+        "access": "Write",
+        "isOwner": true,
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "name": "AGENT-TEST-Org-BuildRight-20260310"
+          },
+          {
+            "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "name": "AGENT-TEST-Org-TechFlow-20260310"
+          }
+        ]
+      }
+    }
+  }
+}</pre></div></div></details>
+<details open><summary>6. Read of the same list <span class="tag">HTTP 200</span></summary><div class="pair"><div><h4>Request</h4><pre>query($id:String!){wishlist(listId:$id){id name sharingSetting{ scope access isOwner sharedWithId targets{ id name } }}}
+
+variables: {
+  "id": "b4951392-bebf-4b91-9342-d8b45733359f"
+}</pre></div><div><h4>Response</h4><pre>{
+  "data": {
+    "wishlist": {
+      "id": "b4951392-bebf-4b91-9342-d8b45733359f",
+      "name": "AGENT-TEST-VCST6152-cba-1791246168109",
+      "sharingSetting": {
+        "scope": "Customer",
+        "access": "Write",
+        "isOwner": true,
+        "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+        "targets": [
+          {
+            "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+          },
+          {
+            "id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "name": "AGENT-TEST-Org-BuildRight-20260310"
+          },
+          {
+            "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "name": "AGENT-TEST-Org-TechFlow-20260310"
+          }
+        ]
+      }
+    }
+  }
+}</pre></div></div></details>
+</section>
+<footer class="muted mono">Full payloads: reports/tickets/Sprint26-19/VCST-6152/payloads/phase-b-green-2026-10-06.json. Results: payloads/phase-b-results.json. All AGENT-TEST-VCST6152-* lists were removed after the run. Bearer tokens are not part of the capture.</footer>
+</main>

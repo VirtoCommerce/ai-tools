@@ -34,7 +34,7 @@ function setup(opts: { min?: number; max?: number }) {
   return { api, stop: () => scope.stop() };
 }
 
-describe("useQuantityValidationSchema — clamps to max (VCST-1234)", () => {
+describe("useQuantityValidationSchema — clamps to max", () => {
   test("rejects a quantity above maxQuantity", () => {
     const { api } = setup({ min: 1, max: 5 });
     expect(api.quantitySchema.value.isValidSync(6)).toBe(false); // fails on old code, passes after fix
@@ -49,7 +49,7 @@ import { describe, expect, test } from "vitest";
 import { mount } from "@vue/test-utils";
 import VcQuantityInput from "@/ui-kit/components/molecules/quantity-input/vc-quantity-input.vue";
 
-describe("VcQuantityInput — clamps to max (VCST-1234)", () => {
+describe("VcQuantityInput — clamps to max", () => {
   test("emits the clamped value, not the raw input", async () => {
     const wrapper = mount(VcQuantityInput, { props: { modelValue: 1, max: 5 } });
     await wrapper.get('[data-test-id="quantity-input"]').setValue(99);

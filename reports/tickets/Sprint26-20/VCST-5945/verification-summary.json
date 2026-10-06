@@ -1,0 +1,88 @@
+{
+  "ticket": "VCST-5945",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-05",
+  "environment": "http://localhost (local vc-frontend container, qa-local-env frontend-only) proxied to vcst-qa backend, store B2B-store",
+  "flow": "verify-fix",
+  "routed_from": "/qa-test VCST-5945 localhost (Bug x fix-ready -> ticket-routing.md §4)",
+  "build": {
+    "platform": "3.1076.0",
+    "theme": "2.59.0-pr-2534-e127-e1271b10",
+    "relevant_modules": {},
+    "pr_build": "vc-theme-b2b-vue-2.59.0-pr-2534-e127-e1271b10 (vc-frontend PR #2534, head e1271b10, open)",
+    "deploy_confirmation": "X-VC-Local-Theme: fe-074322e0c13b on / and /assets/index-HPadZDQN.js contains 2.59.0-pr-2534-e127-e1271b10",
+    "note": "PR not linked in Jira dev panel (resolve-task found none); found via GitHub search. resolve-theme 'pr 2534' returned the stale 9cf4e712 build, so the e1271b10 ZIP was pinned explicitly. Platform version is the vc-deploy-dev vcst-qa declared value; fix is frontend-only."
+  },
+  "agent_used": "qa-frontend-expert",
+  "browser": "playwright-chrome",
+  "test_window": {
+    "start": "2026-10-05T15:42:00Z",
+    "end": "2026-10-05T15:54:00Z",
+    "basis": "first and last screenshot mtimes; agent ran ~15.5 min in total"
+  },
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live): vcst-qa storefront 2.59.0-pr-2524-3069-30691594, same user + same measurement script — 31.8x18 px overlap (placeholder state), 8.2x18 px (selected-address state); also on file from /qa-bug 2026-09-10",
+  "checklist_total": 10,
+  "checklist_passed": 10,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    {
+      "summary": "Unprompted updateContact(selectedAddressId) + AddOrUpdateCartShipment ~15 s after one fresh home-page load on the fixed build, no click on the selector",
+      "attributed_to_fix": false,
+      "reason": "PR #2534 does not touch useShipToLocation / selection logic; seen once, not reproduced on later loads",
+      "data_effect": "@td(MULTI_ORG_TF_BR_ALT) contact now has its only address selected on vcst-qa; left as is by operator decision"
+    }
+  ],
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "unconfirmed",
+      "summary": "Storefront set the contact's selected ship-to address without user action (seen once)",
+      "reason": "not reproduced; operator chose note-only"
+    },
+    {
+      "severity": "Low",
+      "summary": "Home page scrolls horizontally at 1024 px (1105 vs 1009) because of a Builder.io content block",
+      "scope": "pre-existing, identical on pre-fix build; content, not this fix"
+    }
+  ],
+  "environment_noise": [
+    "QA environment badge overlays part of the utility bar on both builds (not graded)",
+    "3 catalog image load failures (2 DNS, 1 404) identical on both builds"
+  ],
+  "business_rules_verified": ["BL-UI-004"],
+  "kb": {
+    "confirmed": ["KB-512D556A"],
+    "disputed": [],
+    "captured": ["KB-95FBC464", "KB-A46DF150"]
+  },
+  "status_transitions": [
+    {
+      "at": "Step 3",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)",
+      "confirmed_by_operator": true
+    },
+    {
+      "at": "Step 6",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "confirmed_by_operator": true,
+      "note": "not Done: fix on unmerged PR #2534"
+    }
+  ],
+  "tracker_transition": {
+    "role": "tested",
+    "state": "Tested"
+  },
+  "tracker": {
+    "comment_id": "111367",
+    "inline_images": 2
+  },
+  "evidence": "reports/tickets/Sprint26-20/VCST-5945/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-5945/"
+}
