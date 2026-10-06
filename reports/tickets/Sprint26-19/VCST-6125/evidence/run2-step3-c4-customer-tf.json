@@ -1,0 +1,288 @@
+{
+ "item": "run2-step3-c4-customer-tf",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "build": "XCart 3.1038.0-pr-141-b404",
+ "capturedAt": "2026-10-05T12:14:00.978Z",
+ "command": {
+  "scope": "Customer",
+  "addSharedWithIds": [
+   "96f109a7-9010-4691-b6a1-bef25cca3d04"
+  ]
+ },
+ "calls": [
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 212,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "c": {
+      "listId": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 194,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "466347cf-c689-4b9e-af59-fd76f7807f51"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "name": "AGENT-TEST-6125-r2",
+      "scope": "Organization",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [
+       {
+        "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ],
+      "sharingSetting": {
+       "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 199,
+   "request": {
+    "query": "query($s:String!){ wishlists(storeId:$s, first:50){ totalCount items { id name scope customerId sharingSetting { id scope access isOwner } } } }",
+    "variables": {
+     "s": "B2B-store"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlists": {
+      "totalCount": 14,
+      "items": [
+       {
+        "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+        "name": "AGENT-TEST-6125-r2",
+        "scope": "Organization",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+         "scope": "Organization",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "57669275-f12f-4618-bb1c-c917ffcc7a21",
+        "name": "AGENT-TEST-5707-DELTA (5)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "bd326922-6436-45fb-ba75-8519f4f85c83",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "24ce06d9-49c9-493c-b714-465573ec0d35",
+        "name": "AGENT-TEST-5707-DELTA (4)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "462b8f5b-8b18-4155-acda-c954a2809165",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "722b783a-a015-46ec-a9c9-c8005fe9bdcd",
+        "name": "AGENT-TEST-5707-SWITCH (2)",
+        "scope": "AnyoneAnonymous",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "b8b833e8-0d5d-435b-b0a5-7413a2aeca1c",
+         "scope": "AnyoneAnonymous",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "a3cdbd34-e7a2-4197-a2f5-a121338272ad",
+        "name": "AGENT-TEST-5707-READS (2)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "6358a9eb-35b2-4028-ad48-86a28d9bea33",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "9b051085-2e0c-4d6f-ac7a-2c50f39b461d",
+        "name": "AGENT-TEST-5707-DELTA (3)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "ac0d6589-5172-4b50-931f-266d6b96f7be",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "11e44361-c3aa-4af5-90c7-fb576c84ed45",
+        "name": "AGENT-TEST-5707-SWITCH (1)",
+        "scope": "AnyoneAnonymous",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "91528c6b-8e61-4312-a0a3-65bb378fdc28",
+         "scope": "AnyoneAnonymous",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "cfe42170-ca33-4ede-9640-1f8d39a7623a",
+        "name": "AGENT-TEST-5707-READS (1)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "29173e30-45cc-4d5e-9b9b-eb7312b3c7d8",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "8866d588-39a7-4a82-afc0-4e4c00c8b208",
+        "name": "AGENT-TEST-5707-DELTA (2)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "31d4c36c-5d61-47c8-92f3-b246ce9bbb37",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "277a5d93-84d6-492b-ba11-786c20e7cd72",
+        "name": "AGENT-TEST-REGC-040",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "e62a6b98-028d-4d3c-9155-956a12921746",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "e7e1cfca-04f2-4f0c-b936-a37a6a296af6",
+        "name": "AGENT-TEST-5707-DELTA (1)",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "dd486603-7fcd-4534-a368-da5af499e3f3",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "2ac6d28b-20dc-426e-b73f-fbe13d2cbd7d",
+        "name": "AGENT-TEST-5707-SWITCH",
+        "scope": "AnyoneAnonymous",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "a66ae8c1-3c30-4b69-a55d-66bb7651a625",
+         "scope": "AnyoneAnonymous",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "853c7153-48d3-4eb4-a2f2-d746bf75223f",
+        "name": "AGENT-TEST-5707-READS",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "780bf60e-c9e7-4f3f-8b63-0b7f91318e82",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       },
+       {
+        "id": "0a2f4f6e-3513-4012-9e0d-18b35bb7f451",
+        "name": "AGENT-TEST-5707-DELTA",
+        "scope": "Customer",
+        "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "sharingSetting": {
+         "id": "47878c39-c914-4e75-b3ee-ed92cf25517f",
+         "scope": "Customer",
+         "access": "Write",
+         "isOwner": true
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ ]
+}

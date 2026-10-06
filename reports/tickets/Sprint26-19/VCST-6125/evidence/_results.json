@@ -1,0 +1,1120 @@
+{
+ "results": [
+  {
+   "label": "run1 setup",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "scope": "Organization",
+    "isOwner": true,
+    "customerName": "Priya Rao"
+   }
+  },
+  {
+   "label": "run1 coowner sees list",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "id": "85e2aba3-8f08-4448-a6d8-9b5798f31d92",
+    "scope": "Organization",
+    "access": "Write",
+    "isOwner": false
+   }
+  },
+  {
+   "label": "run1 c1-anyone (AnyoneAnonymous)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after c1-anyone",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c1-anyone in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c2-private (Private)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after c2-private",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c2-private in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c3-same-organization (Organization)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after c3-same-organization",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c3-same-organization in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c4-customer-tf (Customer+add)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after c4-customer-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c4-customer-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c5-addonly-tf (addSharedWithIds only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "bd3267c0-0e30-4117-8872-1fc65d810a13",
+    "name": "AGENT-TEST-6125-r1",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "47cb99c3-1332-435d-9a8d-27f554054b60",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "85e2aba3-8f08-4448-a6d8-9b5798f31d92",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run1 after c5-addonly-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c5-addonly-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c6-message (message only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "bd3267c0-0e30-4117-8872-1fc65d810a13",
+    "name": "AGENT-TEST-6125-r1",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "47cb99c3-1332-435d-9a8d-27f554054b60",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "85e2aba3-8f08-4448-a6d8-9b5798f31d92",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run1 after c6-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c6-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 c7-customer-message (Customer+message)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after c7-customer-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 after c7-customer-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run1 anonymous sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run1 anonymous wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run1 techflow-rep sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run1 techflow-rep wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run1 coowner removeWishlist",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run1 after coowner remove",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 coowner rename",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 after rename",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 rename persisted for owner",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run1 coowner add item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 coowner update qty",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 coowner remove item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 after item edits",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run1 owner scope->Private",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 owner scope->AnyoneAnonymous",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 control: anonymous reads owner-set AnyoneAnonymous list",
+   "kind": "control",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run1 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run1 owner removeWishlist",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 setup",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "scope": "Organization",
+    "isOwner": true,
+    "customerName": "Priya Rao"
+   }
+  },
+  {
+   "label": "run2 coowner sees list",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+    "scope": "Organization",
+    "access": "Write",
+    "isOwner": false
+   }
+  },
+  {
+   "label": "run2 c1-anyone (AnyoneAnonymous)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after c1-anyone",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c1-anyone in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c2-private (Private)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after c2-private",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c2-private in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c3-same-organization (Organization)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after c3-same-organization",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c3-same-organization in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c4-customer-tf (Customer+add)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after c4-customer-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c4-customer-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c5-addonly-tf (addSharedWithIds only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+    "name": "AGENT-TEST-6125-r2",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run2 after c5-addonly-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c5-addonly-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c6-message (message only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+    "name": "AGENT-TEST-6125-r2",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run2 after c6-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c6-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 c7-customer-message (Customer+message)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after c7-customer-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 after c7-customer-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run2 anonymous sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run2 anonymous wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run2 techflow-rep sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run2 techflow-rep wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run2 coowner removeWishlist",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run2 after coowner remove",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 coowner rename",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 after rename",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 rename persisted for owner",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run2 coowner add item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 coowner update qty",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 coowner remove item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 after item edits",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run2 owner scope->Private",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 owner scope->AnyoneAnonymous",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 control: anonymous reads owner-set AnyoneAnonymous list",
+   "kind": "control",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run2 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run2 owner removeWishlist",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 setup",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "scope": "Organization",
+    "isOwner": true,
+    "customerName": "Priya Rao"
+   }
+  },
+  {
+   "label": "run3 coowner sees list",
+   "kind": "setup",
+   "ok": true,
+   "got": {
+    "id": "be12cfcc-8f41-478a-85b8-905002b6eba7",
+    "scope": "Organization",
+    "access": "Write",
+    "isOwner": false
+   }
+  },
+  {
+   "label": "run3 c1-anyone (AnyoneAnonymous)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after c1-anyone",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c1-anyone in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c2-private (Private)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after c2-private",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c2-private in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c3-same-organization (Organization)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after c3-same-organization",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c3-same-organization in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c4-customer-tf (Customer+add)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after c4-customer-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c4-customer-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c5-addonly-tf (addSharedWithIds only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "8c01a1a3-6803-4507-91d5-3dd07ab32165",
+    "name": "AGENT-TEST-6125-r3",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "68da87cc-e9e1-4c99-a750-0df14ac89100",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "be12cfcc-8f41-478a-85b8-905002b6eba7",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run3 after c5-addonly-tf",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c5-addonly-tf in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c6-message (message only)",
+   "kind": "refusal",
+   "ok": false,
+   "error": null,
+   "data": {
+    "id": "8c01a1a3-6803-4507-91d5-3dd07ab32165",
+    "name": "AGENT-TEST-6125-r3",
+    "scope": "Organization",
+    "description": null,
+    "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+    "customerName": "Priya Rao",
+    "items": [
+     {
+      "id": "68da87cc-e9e1-4c99-a750-0df14ac89100",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    ],
+    "sharingSetting": {
+     "id": "be12cfcc-8f41-478a-85b8-905002b6eba7",
+     "scope": "Organization",
+     "access": "Write",
+     "isOwner": false,
+     "message": null,
+     "targets": []
+    }
+   }
+  },
+  {
+   "label": "run3 after c6-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c6-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 c7-customer-message (Customer+message)",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after c7-customer-message",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 after c7-customer-message in owner wishlists()",
+   "kind": "owner-check",
+   "ok": true
+  },
+  {
+   "label": "run3 anonymous sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run3 anonymous wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Anonymous access denied or access token has expired or is invalid. [Unauthorized]"
+  },
+  {
+   "label": "run3 techflow-rep sharedWishlist",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run3 techflow-rep wishlist(listId)",
+   "kind": "no-access",
+   "ok": true,
+   "error": "Access denied. [Forbidden]"
+  },
+  {
+   "label": "run3 coowner removeWishlist",
+   "kind": "refusal",
+   "ok": true,
+   "error": "Access denied. [Forbidden]",
+   "data": null
+  },
+  {
+   "label": "run3 after coowner remove",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 coowner rename",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 after rename",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 rename persisted for owner",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run3 coowner add item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 coowner update qty",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 coowner remove item",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 after item edits",
+   "kind": "owner-check",
+   "ok": true,
+   "got": {
+    "customerId": "=owner",
+    "customerName": "Priya Rao",
+    "isOwner": true,
+    "scope": "Organization"
+   }
+  },
+  {
+   "label": "run3 owner scope->Private",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 owner scope->AnyoneAnonymous",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 control: anonymous reads owner-set AnyoneAnonymous list",
+   "kind": "control",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "run3 owner scope->Organization",
+   "kind": "allowed",
+   "ok": true
+  },
+  {
+   "label": "run3 owner removeWishlist",
+   "kind": "allowed",
+   "ok": true,
+   "error": null
+  },
+  {
+   "label": "admin removes org list",
+   "kind": "allowed",
+   "ok": true,
+   "via": "xAPI removeWishlist",
+   "error": null
+  }
+ ],
+ "all5xx": [],
+ "files": [
+  "run1-step1-owner-setup.json",
+  "run1-step2-coowner-reads.json",
+  "run1-step3-c1-anyone.json",
+  "run1-step3-c2-private.json",
+  "run1-step3-c3-same-organization.json",
+  "run1-step3-c4-customer-tf.json",
+  "run1-step3-c5-addonly-tf.json",
+  "run1-step3-c6-message.json",
+  "run1-step3-c7-customer-message.json",
+  "run1-step5-anonymous-outsider.json",
+  "run1-step6-coowner-remove-list.json",
+  "run1-reg5-coowner-rename.json",
+  "run1-reg6-coowner-items.json",
+  "run1-reg7-owner-scope-and-remove.json",
+  "run2-step1-owner-setup.json",
+  "run2-step2-coowner-reads.json",
+  "run2-step3-c1-anyone.json",
+  "run2-step3-c2-private.json",
+  "run2-step3-c3-same-organization.json",
+  "run2-step3-c4-customer-tf.json",
+  "run2-step3-c5-addonly-tf.json",
+  "run2-step3-c6-message.json",
+  "run2-step3-c7-customer-message.json",
+  "run2-step5-anonymous-outsider.json",
+  "run2-step6-coowner-remove-list.json",
+  "run2-reg5-coowner-rename.json",
+  "run2-reg6-coowner-items.json",
+  "run2-reg7-owner-scope-and-remove.json",
+  "run3-step1-owner-setup.json",
+  "run3-step2-coowner-reads.json",
+  "run3-step3-c1-anyone.json",
+  "run3-step3-c2-private.json",
+  "run3-step3-c3-same-organization.json",
+  "run3-step3-c4-customer-tf.json",
+  "run3-step3-c5-addonly-tf.json",
+  "run3-step3-c6-message.json",
+  "run3-step3-c7-customer-message.json",
+  "run3-step5-anonymous-outsider.json",
+  "run3-step6-coowner-remove-list.json",
+  "run3-reg5-coowner-rename.json",
+  "run3-reg6-coowner-items.json",
+  "run3-reg7-owner-scope-and-remove.json",
+  "item8-admin-remove-org-list.json",
+  "cleanup.json"
+ ]
+}

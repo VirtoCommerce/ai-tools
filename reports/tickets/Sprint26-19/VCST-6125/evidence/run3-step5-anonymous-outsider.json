@@ -1,0 +1,161 @@
+{
+ "item": "run3-step5-anonymous-outsider",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "build": "XCart 3.1038.0-pr-141-b404",
+ "capturedAt": "2026-10-05T12:14:15.614Z",
+ "sharingKey": "sharingSetting.id of the run list",
+ "calls": [
+  {
+   "who": "anonymous",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 227,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope customerId items { id } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "k": "be12cfcc-8f41-478a-85b8-905002b6eba7"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Anonymous access denied or access token has expired or is invalid.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "sharedWishlist"
+      ],
+      "extensions": {
+       "code": "Unauthorized",
+       "codes": [
+        "Unauthorized"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "sharedWishlist": null
+    }
+   }
+  },
+  {
+   "who": "anonymous",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "8c01a1a3-6803-4507-91d5-3dd07ab32165"
+    },
+    "authorization": "none"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Anonymous access denied or access token has expired or is invalid.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlist"
+      ],
+      "extensions": {
+       "code": "Unauthorized",
+       "codes": [
+        "Unauthorized"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlist": null
+    }
+   }
+  },
+  {
+   "who": "techflow-rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 203,
+   "request": {
+    "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name scope customerId items { id } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "k": "be12cfcc-8f41-478a-85b8-905002b6eba7"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "sharedWishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "sharedWishlist": null
+    }
+   }
+  },
+  {
+   "who": "techflow-rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 189,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "8c01a1a3-6803-4507-91d5-3dd07ab32165"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Access denied.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlist"
+      ],
+      "extensions": {
+       "code": "Forbidden",
+       "codes": [
+        "Forbidden"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlist": null
+    }
+   }
+  }
+ ]
+}

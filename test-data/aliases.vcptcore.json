@@ -1116,5 +1116,9 @@
         "itemsCount": 2
       }
     ]
+  },
+  "ORG_REP_ONLY": {
+    "id": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+    "platform_id": "40ac896b-cb80-49db-b71d-1ff23e2b9352"
   }
 }

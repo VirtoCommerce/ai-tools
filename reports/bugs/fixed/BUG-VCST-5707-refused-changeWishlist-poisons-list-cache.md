@@ -28,3 +28,11 @@ Refusals validated earlier (unserved org, legacy id on a 2-target list, 1025-cha
 
 ## Fix Routing
 Likely `vc-module-x-cart` (sharing service / scope policy mutates the cached `CartAggregate` before validation throws) — validate on a copy, or evict the aggregate from cache on failure. UI reach is limited (Save is disabled on an empty set), but any API client or a race reaches it.
+
+## Resolution
+- **Tracker:** VCST-6113 → Tested (2026-10-02)
+- **Fixed in:** vc-module-x-cart#141 `cd984e3` (evict cached aggregate when a scope policy throws) + vc-module-sales-rep#21 `ff6da14` (validate before writing); deployed as XCart 3.1038.0-pr-141-3d86 / SalesRep 3.1012.0-pr-21-ff6d on vcptcore-qa
+- **Method:** API STR 3/3 GREEN vs the 2026-09-29 RED baseline; add+remove variant 12/12 steady; valid sharing transitions unaffected — `reports/tickets/Sprint26-19/VCST-6113/evidence.html`
+- PRs still open at verification time — re-check after merge.
+
+## Status: FIXED

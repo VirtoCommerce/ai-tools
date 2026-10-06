@@ -27,3 +27,11 @@ On an Organization-scope ("My organization") list, every member of that organiza
 
 ## Fix Routing
 `vc-module-x-cart` — require the caller to be the list owner (not merely Write) for any `changeWishlist` that carries `scope` / sharing fields, and do not re-assign the owner on a scope change by someone else.
+
+## Status: FIXED
+
+## Resolution
+- **Tracker:** VCST-6125 → Tested (2026-10-05, comment 111358)
+- **Fixed in:** vc-module-x-cart PR #141 @ `b40455e` (XCart `3.1038.0-pr-141-b404`; commits `690aa50` owner check on scope/sharing writes, `5a046d5` removeWishlist owner-only) + vc-frontend PR #2476 @ `0abbf21` (theme `2.59.0-pr-2476-0abb`; non-owner menu offers Rename only)
+- **Verified:** 2026-10-05 on vcptcore-qa, /qa-verify-fix — same xAPI requests as this report's RED, 3/3 runs: every co-owner scope/sharing write and removeWishlist → `Access denied.` [Forbidden], owner unchanged; rename + item edits still allowed. Evidence: `reports/tickets/Sprint26-19/VCST-6125/evidence.html`
+- **Product question answered:** co-owner `removeWishlist` is now refused (owner-only); admins can still remove any list.

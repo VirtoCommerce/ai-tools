@@ -1,0 +1,303 @@
+{
+ "item": "step0-owner-setup",
+ "capturedAt": "2026-10-05T12:14:22.943Z",
+ "calls": [
+  {
+   "who": "owner @td(SR_REP_PRIMARY)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 660,
+   "request": {
+    "query": "query($s:String!){ products(storeId:$s, first:20, filter:\"is:product\"){ items { id code name availabilityData { isBuyable isInStock } } } }",
+    "variables": {
+     "s": "B2B-store"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "products": {
+      "items": [
+       {
+        "id": "94c29b39-3bf9-4f48-bfb1-bf6b64ca2c47",
+        "code": "2200133715163",
+        "name": "Hermitage",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": false
+        }
+       },
+       {
+        "id": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "code": "5999086456519",
+        "name": "Notebook: Red panda A5 45 sheets",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "code": "151349",
+        "name": "Affligem  Dubbel 24x30cl Bottle",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "70b65462-b1ce-429c-8a27-b66891066c1f",
+        "code": "ALCOE9354",
+        "name": "10/50pcs Kawaii Cat Mood Meme Sticker Sticky Aesthetic Decorative Scrapbook Cute Sticker DIY Phone Stationery School Supplies",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "dbc7c633-7c8b-4eba-a932-40a9dfe5aa18",
+        "code": "ALCOE9750",
+        "name": "100 Sheets Angel Wing Decorative Stickers Moving Box Skateboard Guitar Water Cup Wholesale Stationery Sticker",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "58ccdd16-ea37-4198-bd92-857e0bcc26d3",
+        "code": "ALCOE6920",
+        "name": "100-500pcs 1inch Vintage Kraft Paper Handmade With Love Stickers for Package Thank You Stationery Adhesive Labels Baking Seals",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "612e954f-ff9b-4ed1-89bd-3e558be6108d",
+        "code": "PIC-96665767",
+        "name": "101/350 St Kilda Road, Melbourne, VIC 3004",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "b4afed98-bc25-45ac-b3fe-835416ef330b",
+        "code": "ALCE1598",
+        "name": "1024Wh Camping Portable Power Station 1000W (Peak 2000W) Lifepo4 Battery EU Warehouse Fast Shipping Emergency Energy",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "c9373181-cfdd-4371-8c48-ff141a258db9",
+        "code": "ALCE4660",
+        "name": "1024Wh Portable Power Station LiFePo4 Battery 1800W 220V Solar Generator Storage Energy 1600W 110V Backup PowerBank Camping Fish",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "f7a188b9-66eb-4a57-8dee-48d8f08171ab",
+        "code": "PA394470",
+        "name": "10-50Pcs 1M 3ft Type C USB C Charger Cable Cord Line For Samsung Galaxy S10 S20 S22 S23 Xiaomi Huawei Andriod phone",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "c6ad41e4-abeb-4510-8bfd-26566f6c3d3b",
+        "code": "ALCE1399",
+        "name": "1080P Digital Camera 16MP HD Smart Digital Camera Micro SLR Digital Camera for Photography Digital Camera 1080P Digital Camera",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "fce4690d-31c8-4ee3-8862-928509a09ee8",
+        "code": "ALCE6544",
+        "name": "1080P HD Mini Camera WiFi Smart Home Security Ip Webcam Remote Monitor Small Camcorder Night Vision Invisible Body Camera Espia",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "7e99516a-8cf3-4b87-9333-36d6b7bc5e02",
+        "code": "PA851723",
+        "name": "[World Premiere] OSCAL PILOT 2 Rugged Smartphone Helio G99 6.5'' 120Hz 8GB 256GB Mobile Phone with Dual LED Flashlights 8800mAh",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "97f47c75-68ce-45ea-82e9-a79c8e96d9f0",
+        "code": "PA571066",
+        "name": "[World Premiere] Oukitel WP35 5G Rugged Smartphone 11000 mAh 24GB+256GB Mobile Phone  Android 14 64 MP NFC Cell Phone",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "f742c417-502c-4733-9ff3-9f39ed87f671",
+        "code": "PA975459",
+        "name": "[World Premiere] Oukitel WP35 5G Rugged Smartphone 11000 mAh 24GB+256GB Mobile Phone  Android 14 64 MP NFC Cell Phone",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "ff6df3ef-51f9-433b-b26f-8281d4c774ab",
+        "code": "PA066014",
+        "name": "[World Premiere] UMIDIGI G6 5G Smartphone 5G Android 13 Dimensity 6100+ 6GB 128GB 6.57 90Hz 50MP Ultra-Clear Dual Camera NFC",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "957900bb-b242-4784-bea2-24a88a3ef7f0",
+        "code": "PA434261",
+        "name": "[World Premiere]UMIDIGIBISONX20 Rugged smartphone MTK Helio P60 Octa-Core 6GB 128GB 6.53\" HD Android 13 6000mAh Battery NFC ",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "ce4fcacb-9261-404d-bc08-43f381b3cf26",
+        "code": "ALCOE5037",
+        "name": "1 Book Retro Spiral Coil Kraft Paper Notebook Sketchbook Painting Diary Drawing Painting Graffiti Office School Stationery",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "9c0d0092-f218-45b3-9da7-4d91982575ce",
+        "code": "LBL-10496635",
+        "name": "1 Hopes Rise, Frankston South, VIC 3199",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       },
+       {
+        "id": "d2d2bec6-709b-4e4b-a0dc-dfc12490e752",
+        "code": "ALCE6578",
+        "name": "1 Set Cartoon Disposable Camera with 17 Sheets Film Portable Single Use Once Pictures Taking Fool Optical Cameras",
+        "availabilityData": {
+         "isBuyable": true,
+         "isInStock": true
+        }
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "owner @td(SR_REP_PRIMARY)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 612,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id name scope sharingSetting { id scope access isOwner targets { id name } } } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-6125-FE-ORG-muv7p4xf"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "38057332-b01e-4ac2-b687-462dc964224e",
+      "name": "AGENT-TEST-6125-FE-ORG-muv7p4xf",
+      "scope": "Private",
+      "sharingSetting": {
+       "id": "8b154761-c31c-43f5-8bcb-6acc46005a29",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "owner @td(SR_REP_PRIMARY)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 306,
+   "request": {
+    "query": "mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "38057332-b01e-4ac2-b687-462dc964224e",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "addWishlistItem": {
+      "id": "38057332-b01e-4ac2-b687-462dc964224e",
+      "items": [
+       {
+        "id": "2e24f9d7-b509-4da2-99a7-b12dca57a647",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "owner @td(SR_REP_PRIMARY)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 278,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope sharingSetting { id scope access isOwner targets { id name } } } }",
+    "variables": {
+     "c": {
+      "listId": "38057332-b01e-4ac2-b687-462dc964224e",
+      "scope": "Organization"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "38057332-b01e-4ac2-b687-462dc964224e",
+      "name": "AGENT-TEST-6125-FE-ORG-muv7p4xf",
+      "scope": "Organization",
+      "sharingSetting": {
+       "id": "628c3854-ab31-4eb2-b305-2615bcfcb56b",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}
