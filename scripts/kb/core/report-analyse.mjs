@@ -524,7 +524,9 @@ export function pairRetries(lines) {
     if (closing.has(o) || !o.after) continue;
     const first = open(o).find((x) => x.after === o.after);
     if (!first) continue;
-    for (const r of open(o).filter((x) => subj(x) === subj(first))) pairing.set(r, 'ask');
+    // The chain is the SAME subject after the SAME ask: a same-subject refusal that followed another
+    // ask is a different attempt and is not settled by this outcome (PR #400 review).
+    for (const r of open(o).filter((x) => x.after === o.after && subj(x) === subj(first))) pairing.set(r, 'ask');
     closing.add(o);
   }
   return { pairing, closing };
@@ -560,14 +562,16 @@ export function doorStats(lines, atDoor, closing = new Set()) {
   // contract asks for and the only one the log pairs exactly. `firstAttempt` counts an ask-paired
   // chain as settled instead, so one outcome is never counted both as a retry and as a lost intent.
   const outcomes = attempts.length - atDoor.length;
-  const lostIntents = new Set(atDoor.filter((r) => !r.pairedBy).map((r) => `${r.session} ${r.subject}`)).size;
+  // Keyed on the TRIMMED subject, as `pairRetries` pairs them (PR #400 review).
+  const fact = (r) => `${r.session} ${r.subject.trim()}`;
+  const lostIntents = new Set(atDoor.filter((r) => !r.pairedBy).map(fact)).size;
   const intents = outcomes + lostIntents;
   return {
     attempts: attempts.length,
     refused: atDoor.length,
     rate: attempts.length ? atDoor.length / attempts.length : null,
     // LOST FACTS, not refusals: one payload refused three times and never settled is one lost fact.
-    abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map((r) => `${r.session} ${r.subject}`)).size,
+    abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map(fact)).size,
     pairedByAsk: atDoor.filter((r) => r.pairedBy === 'ask').length,
     firstAttempt: intents ? (outcomes - closing.size) / intents : null,
     byDoor: split('via'),

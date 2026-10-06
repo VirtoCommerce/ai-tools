@@ -412,6 +412,12 @@ export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `
  * markers and raise an ask twice (PR #400 review).
  */
 export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.ndjson`);
+/**
+ * `<session>.owners.ndjson` -- which subagent transcript holds an open ask, `{ at, path }` per line,
+ * written by `kb-remind` the first time it finds one. Later stops look at that one file's tail instead
+ * of re-reading every subagent transcript in full (PR #400 review). Append-only, local.
+ */
+export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.owners.ndjson`);
 
 /**
  * `<session>.loop.ndjson` -- THE LOOP JOURNAL (VCST-6156): one short line per ask, per `show` /

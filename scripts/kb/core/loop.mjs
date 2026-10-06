@@ -19,12 +19,6 @@
 
 import { CONTRACT } from './contract.mjs';
 
-/**
- * How many of the session's latest asks are judged. Bounded because the journal is not, and the
- * "raised once" record (`kb-remind` REMEMBERED) is: this must stay below it, or an ask that fell out
- * of the record would be raised a second time (PR #400 review).
- */
-export const LOOP_ASKS = 100;
 
 /**
  * THE AGENT'S LAST WORD on one `ambiguous` ask, from the `show` / `none` records that point at it.
@@ -90,11 +84,12 @@ export function openLoops(journal, { reminded = [] } = {}) {
   const raised = new Set((Array.isArray(reminded) ? reminded : []).map(String));
   const pointed = pointersByAsk(records);
   const out = [];
-  const recent = new Set(records.filter((r) => r.kind === 'ask').slice(-LOOP_ASKS).map((r) => r.at));
   // ONE pass: an ask is closed by any write after it, so only the LAST write matters (PR #400 review).
   const lastWrite = records.reduce((m, r) => (r.kind === 'write' && r.at > m ? r.at : m), '');
   for (const a of records) {
-    if (a.kind !== 'ask' || !recent.has(a.at) || raised.has(a.at)) continue;
+    // EVERY ask is judged, however old: the raised record is unbounded, so an old miss is raised once
+    // and never again, and a window would only drop it silently (PR #400 review).
+    if (a.kind !== 'ask' || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
     if (lastWrite > a.at) continue;
     const word = lastWord(pointed.get(a.at));

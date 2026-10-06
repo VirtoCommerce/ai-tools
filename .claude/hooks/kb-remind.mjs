@@ -26,14 +26,15 @@
  * terminal, an unreadable path) and one held only by subagents that look FINISHED: transcript idle for
  * `SUBAGENT_IDLE_MS` and not busy -- a subagent that finished, crashed, was stopped, or whose
  * SubagentStop arrived without a transcript path. One still inside a long tool call is busy, however
- * quiet its transcript, and keeps its ask -- until that call's own timeout (at least the push's
- * background window) has passed, so a subagent killed mid-call is not deferred forever. Before, those were raised by nobody. A subagent's stop raises only what
+ * quiet its transcript, and keeps its ask -- until that call's own timeout (30 min when it set none)
+ * has passed, so a subagent killed mid-call is not deferred for long. Before, those were raised by nobody. A subagent's stop raises only what
  * its own transcript holds, and nothing when it cannot read it.
  *
  * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
  * per line (`remindedPath`), so stops finishing together never erase each other's markers. Once a day
  * it deletes journals idle for `KEEP_DAYS`, and a reminded file only together with its journal.
- * Transcripts are read only when there is something open to attribute.
+ * Transcripts are read only when there is something open to attribute; a subagent found to hold an
+ * ask is remembered in `<session>.owners.ndjson`, and later stops read only the tail of that one file.
  *
  * GUARDS, because a stop hook that blocks is a hook that can trap a session:
  *   1. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) -> silent.
@@ -48,20 +49,58 @@
  *
  * Exits 0 whatever happens and prints NOTHING unless it is blocking.
  */
-import { appendFileSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, fstatSync, openSync, readFileSync, readSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  hasSessionId, hookEnv, isSynthetic, kbDisabled, queueDir, readLoop, remindDisabled, remindedPath,
+  hasSessionId, hookEnv, isSynthetic, kbDisabled, ownersPath, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
 import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
-import { BACKGROUND_WINDOW_MS, carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
+import { BACKGROUND_DEFAULT_MS, carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
 
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBAGENT_IDLE_MS = 10 * 60 * 1000;
+const TAIL_BYTES = 512 * 1024;
 
 const ageOf = (path, now) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
 const readText = (path) => { try { return path ? readFileSync(path, 'utf8') : null; } catch { return null; } };
+
+/** The last TAIL_BYTES of a file -- where an agent's still-open tool call is. */
+function readTail(path) {
+  let fd;
+  try {
+    fd = openSync(path, 'r');
+    const size = fstatSync(fd).size;
+    const len = Math.min(size, TAIL_BYTES);
+    const buf = Buffer.alloc(len);
+    readSync(fd, buf, 0, len, size - len);
+    return buf.toString('utf8');
+  } catch { return null; } finally { if (fd !== undefined) try { closeSync(fd); } catch { /* closed */ } }
+}
+
+/**
+ * Is the agent of this transcript still at work? A `tool_use` with no `tool_result` yet -- a subagent
+ * inside one long tool call writes nothing, so age alone cannot say it finished. BUSY EXPIRES: a
+ * subagent killed mid-call keeps its dangling `tool_use` forever, so a call counts as open only for its
+ * own `timeout`, or `BACKGROUND_DEFAULT_MS` (30 min) when it set none (PR #400 review).
+ */
+function busyIn(text, age) {
+  if (text === null) return false;
+  const used = new Map();
+  const answered = new Set();
+  for (const raw of text.split('\n')) {
+    if (!raw.includes('"tool_use"') && !raw.includes('"tool_result"')) continue;
+    let rec;
+    try { rec = JSON.parse(raw); } catch { continue; }
+    for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
+      if (c?.type === 'tool_use' && c.id) used.set(c.id, Number(c.input?.timeout));
+      if (c?.type === 'tool_result' && c.tool_use_id) answered.add(c.tool_use_id);
+    }
+  }
+  const open = [...used].filter(([id]) => !answered.has(id))
+    .map(([, timeout]) => (Number.isFinite(timeout) && timeout > 0 ? timeout : BACKGROUND_DEFAULT_MS));
+  return open.length > 0 && age < Math.max(...open);
+}
 
 /** Delete journals idle for KEEP_DAYS, and a reminded file only once its journal is gone or idle too. */
 function prune(dir, now = Date.now()) {
@@ -75,8 +114,8 @@ function prune(dir, now = Date.now()) {
     const path = join(dir, name);
     if (name.endsWith('.loop.ndjson')) {
       if (idle(path)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    } else if (name.endsWith('.reminded.ndjson')) {
-      const journal = join(dir, `${name.slice(0, -'.reminded.ndjson'.length)}.loop.ndjson`);
+    } else if (name.endsWith('.reminded.ndjson') || name.endsWith('.owners.ndjson')) {
+      const journal = join(dir, `${name.replace(/\.(reminded|owners)\.ndjson$/, '')}.loop.ndjson`);
       if (idle(path) && idle(journal)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
     }
   }
@@ -88,34 +127,18 @@ function raisedAts(path) {
   return text === null ? [] : text.split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
-/**
- * A transcript read ONCE per stop: its text, its kb shell calls (parsed once, not per ask), and
- * whether its agent is still at work -- a `tool_use` with no `tool_result` yet. A subagent inside one
- * long tool call (a 10-minute seed, a regression run, a Monitor wait) writes nothing to its transcript,
- * so its age alone cannot say it finished (PR #400 review).
- */
+/** A transcript read in full ONCE per stop: its text, its kb shell calls, its age and whether it is busy. */
 function transcriptOf(path, now) {
   const text = readText(path);
   if (text === null) return null;
-  const used = new Map();
-  const answered = new Set();
-  for (const raw of text.split('\n')) {
-    if (!raw.includes('"tool_use"') && !raw.includes('"tool_result"')) continue;
-    let rec;
-    try { rec = JSON.parse(raw); } catch { continue; }
-    for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
-      if (c?.type === 'tool_use' && c.id) used.set(c.id, Number(c.input?.timeout));
-      if (c?.type === 'tool_result' && c.tool_use_id) answered.add(c.tool_use_id);
-    }
-  }
-  // BUSY EXPIRES. A subagent that crashed or was killed mid-call keeps a dangling tool_use forever, so
-  // "open call" alone would defer its asks at every later Stop and nobody would raise them (PR #400
-  // review). It counts as busy only while its transcript is younger than the longest open call's own
-  // timeout, and never less than BACKGROUND_WINDOW_MS -- the window the push join already trusts.
-  const open = [...used].filter(([id]) => !answered.has(id)).map(([, timeout]) => (Number.isFinite(timeout) ? timeout : 0));
   const age = ageOf(path, now);
-  const busy = open.length > 0 && age < Math.max(BACKGROUND_WINDOW_MS, ...open);
-  return { text, calls: kbShellCalls(text), busy, age };
+  return { path, text, calls: kbShellCalls(text), busy: busyIn(text, age), age };
+}
+
+/** A known owner's state from its file's tail only -- no full read (PR #400 review). */
+function statusOf(path, now) {
+  const age = ageOf(path, now);
+  return { age, busy: busyIn(readTail(path), age) };
 }
 
 /**
@@ -142,21 +165,47 @@ function subagentTranscripts(main, now) {
   return names.filter((n) => n.endsWith('.jsonl')).map((n) => transcriptOf(join(dir, n), now)).filter(Boolean);
 }
 
-/** The open asks THIS stop owns (see the header). */
-function owned(loops, { sub, transcript, now = Date.now() }) {
+/** ask `at` -> the subagent transcripts already found to hold it (`ownersPath`). */
+function readOwners(path) {
+  const owners = new Map();
+  for (const raw of (readText(path) ?? '').split('\n')) {
+    try { const o = JSON.parse(raw); if (o?.at && o?.path) owners.set(o.at, [...(owners.get(o.at) ?? []), o.path]); } catch { /* blank or torn */ }
+  }
+  return owners;
+}
+
+/**
+ * The open asks THIS stop owns (see the header). A subagent: what its own transcript holds. The main
+ * thread: what its transcript holds, plus every ask no LIVE subagent holds. The main transcript being
+ * unreadable no longer hands it the asks of subagents still at work -- the subagent rule still applies
+ * (PR #400 review); with no transcript path at all there is nothing to attribute by, and it takes all.
+ * A subagent holder found once is cached in `ownersPath`; later stops read only that file's tail.
+ */
+function owned(loops, { sub, transcript, ownersFile, now = Date.now() }) {
   const own = transcriptOf(transcript, now);
   if (sub) return own === null ? [] : loops.filter((l) => holds(own, l));
-  if (own === null) return loops;
+  if (!transcript) return loops;
   const mine = [];
   const rest = [];
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
-  const subs = subagentTranscripts(transcript, now);
   // FINISHED = idle for SUBAGENT_IDLE_MS AND no tool call still open. A holder that is busy keeps it.
   const finished = (s) => !s.busy && s.age > SUBAGENT_IDLE_MS;
+  const owners = readOwners(ownersFile);
+  const unknown = rest.filter((l) => !owners.has(l.at));
+  const scanned = unknown.length ? subagentTranscripts(transcript, now) : [];
+  const found = [];
+  for (const l of unknown) {
+    const holders = scanned.filter((s) => holds(s, l)).map((s) => s.path);
+    if (holders.length) { owners.set(l.at, holders); for (const p of holders) found.push({ at: l.at, path: p }); }
+  }
+  if (found.length) { try { appendFileSync(ownersFile, `${found.map((o) => JSON.stringify(o)).join('\n')}\n`, 'utf8'); } catch { /* re-scanned next time */ } }
+  const state = new Map();
+  for (const s of scanned) state.set(s.path, s);
+  const stateOf = (p) => { if (!state.has(p)) state.set(p, statusOf(p, now)); return state.get(p); };
   for (const l of rest) {
-    const holders = subs.filter((s) => holds(s, l));
-    if (!holders.length || holders.every(finished)) mine.push(l);
+    const holders = owners.get(l.at) ?? [];
+    if (!holders.length || holders.every((p) => finished(stateOf(p)))) mine.push(l);
   }
   return mine;
 }
@@ -184,7 +233,9 @@ function main() {
   // transcript this is every turn end (PR #400 review).
   const open = openLoops(journal, { reminded: raisedAts(path) });
   if (!open.length) return;
-  const loops = owned(open, { sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path });
+  const loops = owned(open, {
+    sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path, ownersFile: ownersPath(env),
+  });
   if (!loops.length) return;
 
   try { appendFileSync(path, `${loops.map((l) => l.at).join('\n')}\n`, 'utf8'); } catch { return; }
