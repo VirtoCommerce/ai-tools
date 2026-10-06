@@ -1,0 +1,2838 @@
+{
+  "$schema": "../../templates/mind-map.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "returns",
+  "domain_map_rev": 1,
+  "generated": "2026-10-06",
+  "metadata": {
+    "scope": "Both mechanisms on the Return entity: buyer self-service (VCST-5628), agent decisions and notifications (VCST-5883), legacy admin records. Orderless returns (VCST-5884) and the mandatory decline reason (VCST-5885) are out.",
+    "built_from": "returns.md rev 1 (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs.",
+    "kb_read": "2026-10-06 — 4 questions (authorize outcome, returnableItems eligibility, available-statuses / cancel, notifications); opened KB-21F4F161, KB-F97CFAF6, KB-17555498, KB-06CFE625; cited from headlines KB-700E5D52, KB-DF9F415E, KB-4E1FF232, KB-C6BB1914, KB-1F2EBF83, KB-85F02FDB",
+    "domain_map_note": "returns.md rev 1 predates both deployments: its §2b 'storefront not reachable' and 'agent approve/reject UNVERIFIED' are out of date — refresh it with /qa-domain-map returns.",
+    "evidence_note": "Promoted cases record a promoting ticket and date, not a run id, so they are cited as {SPEC}; {OBSERVED} comes from kb entries, REG-2026-10-01-2133 and the domain map's live pass."
+  },
+  "nodes": [
+    {
+      "id": "returns.returns",
+      "type": "feature",
+      "name": "Returns (RMA)",
+      "status": "CONFIRMED",
+      "maturity": "released",
+      "description": "One Return entity, two mechanisms: the legacy admin-created RMA record, and the buyer self-service request (VCST-5628) that an agent decides per line (VCST-5883).",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §1",
+          "note": "both mechanisms live on one entity",
+          "date": "2026-09-22"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "Admin SPA Returns on Return 3.1003",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "id": "returns.buyer",
+      "type": "capability",
+      "name": "Buyer self-service returns",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "buyer creates, submits and cancels own returns"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "submitReturn observed end to end",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "id": "returns.agent",
+      "type": "capability",
+      "name": "Agent decision and follow-up",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "per-line approve / decline, notifications"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-700E5D52",
+          "note": "authorize endpoint observed"
+        }
+      ]
+    },
+    {
+      "id": "returns.admin",
+      "type": "capability",
+      "name": "Legacy admin return records",
+      "status": "CONFIRMED",
+      "maturity": "released",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §2a",
+          "note": "api/return controller, Admin SPA Returns blade"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "list, blade and status dropdown walked",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "id": "returns.config",
+      "type": "capability",
+      "name": "Store return policy and settings",
+      "status": "CONFIRMED",
+      "maturity": "new",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D2",
+          "note": "8 store-level keys, read per store"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §2c",
+          "note": "returnPolicy and returnReasons read live",
+          "date": "2026-09-22"
+        }
+      ]
+    },
+    {
+      "id": "returns.state.draft",
+      "type": "state",
+      "name": "Return: Draft",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 2"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-015"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "returns.state.requested",
+      "type": "state",
+      "name": "Return: Requested",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 5"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "submitReturn Draft -> Requested",
+          "date": "2026-09-28"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "returns.state.new",
+      "type": "state",
+      "name": "Return: New (admin-created)",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "Make return creates it at once with status New",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1F2EBF83",
+          "note": "PUT /api/return without id creates status New"
+        }
+      ]
+    },
+    {
+      "id": "returns.state.approved",
+      "type": "state",
+      "name": "Return: Approved",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Approved -> [Approved, Completed, Processing]",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-024"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "returns.state.partially-approved",
+      "type": "state",
+      "name": "Return: PartiallyApproved",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "note": "500 ordered, 240 requested, 200 approved",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-003"
+        }
+      ],
+      "maturity": "new"
+    },
+    {
+      "id": "returns.state.rejected",
+      "type": "state",
+      "name": "Return: Rejected",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Rejected -> [Rejected] only",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #8",
+          "note": "no un-authorize: reverse edge absent, confirmed by 3x"
+        }
+      ],
+      "maturity": "new",
+      "terminal": true
+    },
+    {
+      "id": "returns.state.cancelled",
+      "type": "state",
+      "name": "Return: Cancelled",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "Cancelled offers only Cancelled (RET-009)",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Cancelled -> [Cancelled] on 2026-10-01",
+          "date": "2026-10-01"
+        }
+      ],
+      "terminal": true
+    },
+    {
+      "id": "returns.state.processing",
+      "type": "state",
+      "name": "Return: Processing",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "legacy status dropdown",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-011"
+        }
+      ]
+    },
+    {
+      "id": "returns.state.completed",
+      "type": "state",
+      "name": "Return: Completed",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "Processing -> Completed saved (RET-007)",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "a Completed legacy return still offers New and Processing",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.eligibility",
+      "name": "An order line becomes returnable",
+      "chain_link": "1",
+      "interfaces": [
+        "graphql"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "returnableItems(orderId) computes per-line eligibility and the returnable quantity.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1",
+          "note": "ReturnEligibilityService.GetIneligibilityReason"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4E1FF232",
+          "note": "delivery counted only through a shipment with a DeliveryDate"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.delivered-in-window",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Delivered inside the window — fully returnable",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-001, RET-GQL-008"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.capped-by-delivered",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Returnable quantity is capped by delivered, not ordered",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4E1FF232",
+          "note": "deliveredQuantity 0 without a delivery date"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.split-delivery",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Split delivery — the window runs from the latest delivery, quantities sum",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-003"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.outside-window",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Delivery older than WindowDays — OutsideReturnWindow",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1",
+          "note": "ReturnableUntil = deliveryDate + WindowDays"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-004 (Draft), RET-GQL-031"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.not-delivered",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Line without a delivery date — NotDelivered",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-4E1FF232",
+          "note": "Completed order, shipment without DeliveryDate"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-005"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.order-status-not-allowed",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "Order status outside AllowedOrderStatuses — OrderStatusNotAllowed",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1",
+          "note": "default Completed"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-006, RET-GQL-032"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.line-cancelled",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Cancelled line excluded, sibling line still returnable",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1",
+          "note": "LineCancelled"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-007"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.shipment-status-filter",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "name": "AllowedShipmentStatuses — blank means any, a list refuses other statuses",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §5 G7",
+          "note": "default empty = any status"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-033"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.returns-off",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "Return.ReturnEnabled off — ReturnsDisabled, createReturn refused",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 1",
+          "note": "ReturnsDisabled reason"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-028"
+        }
+      ],
+      "notes": "Feature-switch off branch: an order page offers no Return entry point (ORD-RET-002 covers the no-eligible-line case)."
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.eligibility.anonymous",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "Anonymous caller refused Unauthorized, not an empty result",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §2c",
+          "note": "returnReasons unauthenticated -> Unauthorized",
+          "date": "2026-09-22"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-029"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.draft",
+      "name": "Buyer builds and edits a draft",
+      "chain_link": "2",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_after": "returns.state.draft",
+      "description": "createReturn / updateReturn; the return stays Draft until submitted.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 2"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §2c",
+          "note": "argument shapes introspected",
+          "date": "2026-09-22"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-015, RET-GQL-016, RET-GQL-044"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.draft.invalid-quantity",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "name": "Zero or negative quantity refused INVALID_QUANTITY",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-020"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.draft.no-items",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Empty line array refused NO_ITEMS",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-021"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.draft.over-limit-kept",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A quantity above the returnable one is stored on the draft; the cap applies at submit",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "note": "13 of 12 and 261 of 260 created as Draft; submit refused",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "ORD-RET-003 — the storefront input clamps"
+        }
+      ],
+      "notes": "KB-F97CFAF6 is disputed on the storefront display only: the field can show 50 while the stored draft is clamped to 5. Whether createReturn itself should refuse is an open question (the module guide says submit runs 'the same checks')."
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.draft.edit-after-draft",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "updateReturn refused WRONG_STATUS once the return left Draft",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-024, ORD-RET-009"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.draft.foreign-attachment",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A file that belongs to another return is refused ATTACHMENT_NOT_AVAILABLE",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-027"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.hold",
+      "name": "Only open returns hold quantity",
+      "chain_link": "3",
+      "interfaces": [
+        "graphql"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "ReturnQuantityService.GetHeldQuantity: Draft, Cancelled and Rejected hold nothing; a decided line holds its approved quantity.",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 3",
+          "note": "NonHoldingStatuses"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "note": "500 ordered, 200 approved of 240 -> 300 returnable",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.hold.lifecycle",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Draft holds nothing, submit holds the submitted quantity, cancel releases it",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-014"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.hold.decided-line",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A decided line holds its approved quantity and releases the rest",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-004, RET-AUTH-005, RET-AUTH-024"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.hold.legacy-new",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "An admin-created New return holds units for returnableItems",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-06CFE625",
+          "note": "quantity 1 of 20 -> returnable 19",
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.hold.legacy-endpoint-counts-all",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "The legacy available-quantities endpoint counts returns of every status",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D1",
+          "note": "GetItemsAvailableQuantities has no status filter; the module guide admits it"
+        }
+      ],
+      "notes": "Admin and buyer can see two different 'left to return' numbers on the same order whenever a cancelled or rejected return exists. Not reproduced live (D1)."
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.attach",
+      "name": "Buyer attaches evidence to a line",
+      "chain_link": "4",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 4",
+          "note": "ReturnAttachmentService via the File Experience API"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-006"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.attach.required-missing",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "AttachmentsRequired on and no file — submit refused ATTACHMENTS_REQUIRED",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 4",
+          "note": "default false"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-018"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.attach.disallowed-extension",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Disallowed file extension rejected with a message",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-007"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.submit",
+      "name": "Buyer submits the return",
+      "chain_link": "5",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.draft",
+      "state_after": "returns.state.requested",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 5"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "submit raises the Registered email and push",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-019, ORD-RET-001"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.submit.reason-missing",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "A line without a reason is refused INVALID_REQUEST",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 5",
+          "note": "submit requires a reason on every line"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-017"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.submit.comment-required",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "A reason in ReasonsRequiringComment needs a comment",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-010"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-005"
+        }
+      ],
+      "notes": "Domain map D5 (only 1 of 3 default codes required a comment live) is answered by RET-GQL-010: requiresComment follows the store's own setting."
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.submit.quantity-taken",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Quantity consumed meanwhile — RETURN_QUANTITY_UNAVAILABLE, or LINE_NOT_RETURNABLE when nothing is left; the draft survives",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-022, RET-GQL-023"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "note": "over-limit draft refused at submit, stays Draft",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.cancel",
+      "name": "Buyer withdraws the return before a decision",
+      "chain_link": "6",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.draft",
+      "state_after": "returns.state.cancelled",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 6"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-026, ORD-RET-001"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "cancel of a Requested return notifies; a Draft cancel does not",
+          "date": "2026-09-28"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.cancel.not-owner",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "Another buyer's return — update, submit and cancel refused RETURN_NOT_FOUND",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §1 link 6",
+          "note": "ReturnAuthorizationHandler.IsOwnedBy"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-025"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.cancel.after-decision",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "No active Cancel on a decided or cancelled return",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-026 — Cancelled has no available action"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-015, ORD-RET-010"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #22",
+          "note": "3x observed a DISABLED Cancel return, availableActions.cancel=false"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.buyer.read",
+      "name": "Buyer sees own returns and their outcome",
+      "chain_link": "7",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "returns list, return(id) with status, approved quantity, decline reasons and availableActions.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-030, RET-GQL-037, RET-GQL-038, RET-GQL-040"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-008, ORD-RET-013, ORD-RET-018, ORD-RET-020"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §2c",
+          "note": "returns(storeId) shape live",
+          "date": "2026-09-22"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.unknown-id",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Nonexistent id resolves to null, not an error",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-012"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.other-buyer",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "Another buyer's return resolves to null",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-013"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.org-colleague",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "A colleague in the same organization cannot read a buyer's return",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-041"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-016 (Draft)"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.cross-store",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "name": "Own return read or cancelled by id from another store context",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D6",
+          "note": "the handler checks ownership only, no storeId"
+        }
+      ],
+      "notes": "Domain map G4: needs a same-customer, two-store return pair; never reproduced."
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.staff-created",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "A staff-created return and its decision appear in the buyer's account",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-017"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.re-request-released",
+      "branch_kind": "happy",
+      "technique": "FLOW",
+      "name": "Units released by a partial decision can be requested on a new return, not beyond what remains",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-039"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-014"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #14"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.buyer.read.no-prices",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "The storefront return contract carries no price, currency or total",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-043"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.review",
+      "name": "Agent sees what the buyer asked for and why",
+      "chain_link": "7",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-001, RET-AUTH-008"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #L5"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.authorize",
+      "name": "Agent decides each line with an approved quantity",
+      "chain_link": "7",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "POST /api/return/{id}/authorize; the return outcome is derived from all line decisions. A return is decided only through this call.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-700E5D52",
+          "note": "requires return:authorize"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "decisions raise PartiallyApproved / Rejected notifications",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-002..004"
+        }
+      ],
+      "notes": "No un-authorize exists: a wrong decline is corrected only by a new return, a wrong approval has no path at all (test model 3x)."
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.all-approved",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "Every line approved in full — Approved, nothing released",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.requested",
+      "state_after": "returns.state.approved",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-024, RET-ADM-002"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Approved observed",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.mixed",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "One line full, one declined — PartiallyApproved",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.requested",
+      "state_after": "returns.state.partially-approved",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-003"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #2"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.partial-in-line",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Fewer than requested on one line — PartiallyApproved, the rest released",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.requested",
+      "state_after": "returns.state.partially-approved",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-F97CFAF6",
+          "note": "200 of 240",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-004, RET-ADM-003"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.all-declined",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "Every line declined — Rejected, everything released",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.requested",
+      "state_after": "returns.state.rejected",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-005, RET-ADM-004"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.single-unit-declined",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Single line of quantity 1 declined — Rejected, not PartiallyApproved",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.requested",
+      "state_after": "returns.state.rejected",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-006"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #5"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.over-requested",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "name": "Approved above requested refused, nothing persists",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-001"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #6"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.invalid-input",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "name": "Negative quantity, empty items or an undecided line refused",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-002"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #7"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.availability-recheck",
+      "branch_kind": "negative",
+      "technique": "BVA",
+      "name": "Approving more than the order line still has is refused RETURN_QUANTITY_UNAVAILABLE",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-022"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #24",
+          "note": "3x reproduced 6 of 5 approved before the re-check"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.wrong-status",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A decided, Draft or Cancelled return cannot be authorized",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-007"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #8"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.no-permission",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "Back-office user without return:authorize or anonymous cannot decide",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-700E5D52",
+          "note": "return:update alone gets 403"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-DF9F415E",
+          "note": "no Approve / decline command in the blade"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-016, RET-ADM-008 (Draft)"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.buyer-cannot-decide",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "The buyer xAPI has no deciding mutation and a buyer token is refused on authorize",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-042"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.status-put-refused",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Setting Approved, PartiallyApproved or Rejected through PUT is refused",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-026"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.authorize.admin-created",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "An admin-created New return can be decided too",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "state_before": "returns.state.new",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-012, ORD-RET-017"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #15"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.edit",
+      "name": "Agent edits a return through the admin",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "decided line: Save changed the price only, decision kept",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-019, RET-AUTH-020"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.edit.requested-quantity",
+      "branch_kind": "state",
+      "technique": "DT",
+      "name": "The buyer's requested quantity can be changed on a Requested return",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-019"
+        }
+      ],
+      "notes": "Test model #25: the buyer is not re-notified of the changed request — no source says whether that is intended."
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.edit.decided-line-locked",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A decided line keeps its decision and quantity; only the price stays editable",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-020, RET-AUTH-035, RET-ADM-005"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.edit.duplicate-line",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "A second line for an order line already on the return is refused",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-018"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #24"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.edit.malformed-body",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "Empty, partial or foreign-line body refused 400 with a message, never 500",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-023"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.next-status",
+      "name": "Only statuses that saving accepts are offered next",
+      "interfaces": [
+        "rest",
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "GET /api/return/{id}/available-statuses, mirrored by the admin status dropdown.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Requested -> [Requested]; Approved -> [Approved, Completed, Processing]; Rejected -> [Rejected]",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-017, RET-AUTH-025"
+        }
+      ],
+      "notes": "KB-21F4F161 is disputed: before 2026-10-01 the list also offered the legacy spelling 'Canceled'; the 2026-10-01 observation no longer does."
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.next-status.forward-only",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "After a decision only forward statuses, never another decision status",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-025, RET-ADM-006 (Draft)"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.next-status.no-legacy-canceled",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "'Cancelled' offered at most once, never the legacy 'Canceled'",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "contradiction of 2026-10-01",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-017"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.next-status.cancel-requested",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "An agent cancels a Requested return from the status dropdown",
+      "maturity": "new",
+      "status": "DRIFT",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #Part 0 state diagram",
+          "note": "Requested -> Cancelled: cancel (buyer own / agent)"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-007 (Draft, never run)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Requested -> [Requested] only",
+          "date": "2026-10-01"
+        }
+      ],
+      "drift": {
+        "expected": "An agent can move a Requested return to Cancelled (test model VCST-5883-2026-09-28 Part 0; RET-ADM-007)",
+        "observed": "available-statuses and the admin dropdown offer only [Requested] for a Requested return (kb:KB-21F4F161, 2026-10-01)",
+        "route": "VCST-5883"
+      }
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.notify",
+      "name": "The buyer is told about every status change",
+      "interfaces": [
+        "event",
+        "job"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "Each change to Requested, Approved, PartiallyApproved, Rejected or Cancelled sends exactly one email and one push through Hangfire.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "one email + one push per change; push text = email subject",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-009"
+        }
+      ],
+      "notes": "KB-17555498 also records one decision in ~10 where both Hangfire jobs succeeded and sent nothing; a requeue sent both."
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.by-outcome",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Received, cancelled, partly approved and declined messages carry the outcome",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-028..031, ORD-RET-019"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.quantities",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Partly approved message shows requested next to approved per line, with the unit",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-031"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #9"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.silent",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "No message when the status does not change, on Draft edits or on admin creation",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "Draft create/edit/cancel, New creation and status-keeping PUTs send nothing",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1F2EBF83",
+          "note": "PUT create raises no ReturnRegistered"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-010"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.language",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "Messages use the culture the buyer created the return in; null falls back to the store default",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-C6BB1914",
+          "note": "createReturn cultureName, not the order languageCode"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-012, RET-AUTH-013"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.missing-template",
+      "branch_kind": "boundary",
+      "technique": "EG",
+      "name": "A locale without its own template still notifies, with the default text",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-17555498",
+          "note": "only the shipped template: English for every language",
+          "date": "2026-09-28"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-014"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #17"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.notify.email-off",
+      "branch_kind": "negative",
+      "technique": "PW",
+      "name": "Return.SendNotifications off — push still sent once, no email",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-015"
+        }
+      ],
+      "notes": "Feature-switch off branch. KB-17555498: a setting written through the settings API did not reach the handler within 10 minutes."
+    },
+    {
+      "type": "behavior",
+      "id": "returns.agent.fulfil",
+      "name": "A decided return moves on to Processing and Completed",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Approved -> Completed / Processing offered",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-011"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.fulfil.released-stay-released",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Moving on does not hold the released units again",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-AUTH-011"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5883-2026-09-28 #13"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.agent.fulfil.no-order-side-effect",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "name": "Completing a return triggers no refund and no stock change",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D9",
+          "note": "no order-side event; resolution is free text"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-018: no refund amount; RET-017 held — no requirement",
+          "date": "2026-10-01"
+        }
+      ],
+      "notes": "integrates with: orders — refund (no mind map); integrates with: inventory — restock (no mind map). Whether a restock is wanted waits on the PO (RET-017 HELD)."
+    },
+    {
+      "type": "behavior",
+      "id": "returns.admin.create",
+      "name": "Admin creates a return from an order",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "state_after": "returns.state.new",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "Make return creates it at once with status New (RET-001)",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-85F02FDB",
+          "note": "blade field set"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-1F2EBF83",
+          "note": "no POST; PUT without id upserts"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.create.order-first",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "No return without an order and a checked line",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-011",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.create.quantity-clamped",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "Quantity above the returnable one is clamped to the maximum",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-013",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.create.fully-held",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "A line fully held by another return offers quantity 0",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-012",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.create.reason-optional",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Reason is optional in the admin create form",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-014",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.admin.edit-status",
+      "name": "Admin moves a legacy return between New, Processing, Completed and Cancelled",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-006, RET-007",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "New/Processing/Completed -> [New, Completed, Cancelled, Processing]",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.edit-status.backwards",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Completed can be moved back to New or Processing",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-007",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-21F4F161",
+          "note": "Completed -> New persisted",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.edit-status.no-decision-statuses",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "name": "Approved, PartiallyApproved and Rejected are never offered for a legacy return",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-008",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.edit-status.cancelled-terminal",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A cancelled return offers only Cancelled",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-009",
+          "date": "2026-10-01"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.admin.find",
+      "name": "Admin finds returns in the Returns list",
+      "interfaces": [
+        "admin-ui",
+        "rest"
+      ],
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-005, RET-010, RET-019, RET-020, RET-021",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-009"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.admin.find.status-filter",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "Status filter lists only the chosen status, including the step-2 statuses",
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-010",
+          "date": "2026-10-01"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-009"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "returns.admin.delete",
+      "name": "Returns are deleted only through REST",
+      "interfaces": [
+        "rest"
+      ],
+      "maturity": "released",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-06CFE625",
+          "note": "DELETE /api/return?ids= removes it",
+          "date": "2026-10-02"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-01-2133",
+          "note": "RET-004 / RET-022 retired: no Delete in the Admin SPA",
+          "date": "2026-10-01"
+        }
+      ],
+      "notes": "integrates with: orders — deleting the order alone leaves returns with empty Order number and Customer (KB-06CFE625)."
+    },
+    {
+      "type": "behavior",
+      "id": "returns.config.policy",
+      "name": "The store's return policy and reason catalog are read per store",
+      "chain_link": "1",
+      "interfaces": [
+        "graphql",
+        "admin-ui"
+      ],
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "description": "returnPolicy / returnReasons / returnStatuses read the store-level Return.* settings at call time.",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:returns@rev1 §2c",
+          "note": "returnPolicy B2B-store = defaults",
+          "date": "2026-09-22"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D2",
+          "note": "persisted keys drop the second 'Return'"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-009, RET-GQL-034"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "RET-ADM-011"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "returns.config.policy.reason-labels",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "Reason labels are per-culture admin text, falling back to the code",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-035"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5883",
+          "note": "ORD-RET-011"
+        }
+      ],
+      "notes": "Answers domain map D4 (localizedName equal to the code when no text is set)."
+    },
+    {
+      "type": "branch",
+      "id": "returns.config.policy.status-vocabulary",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "name": "returnStatuses labels every status the flow can set",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "domain-map:returns@rev1 §3 D3",
+          "note": "AwaitingDelivery and Received exist in ReturnStatus.cs, not in the dictionary"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-036 — decision statuses are labelled"
+        }
+      ],
+      "notes": "D3 was read from source at ee6e377b; whether AwaitingDelivery / Received are still set by any path on Return 3.1003 was not rechecked."
+    }
+  ],
+  "edges": [
+    {
+      "from": "returns.returns",
+      "to": "returns.buyer",
+      "type": "contains"
+    },
+    {
+      "from": "returns.returns",
+      "to": "returns.agent",
+      "type": "contains"
+    },
+    {
+      "from": "returns.returns",
+      "to": "returns.admin",
+      "type": "contains"
+    },
+    {
+      "from": "returns.returns",
+      "to": "returns.config",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.eligibility",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.delivered-in-window",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.capped-by-delivered",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.split-delivery",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.outside-window",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.not-delivered",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.order-status-not-allowed",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.line-cancelled",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.shipment-status-filter",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.returns-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.eligibility",
+      "to": "returns.buyer.eligibility.anonymous",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.draft",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.draft",
+      "to": "returns.buyer.draft.invalid-quantity",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.draft",
+      "to": "returns.buyer.draft.no-items",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.draft",
+      "to": "returns.buyer.draft.over-limit-kept",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.draft",
+      "to": "returns.buyer.draft.edit-after-draft",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.draft",
+      "to": "returns.buyer.draft.foreign-attachment",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.hold",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.hold",
+      "to": "returns.buyer.hold.lifecycle",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.hold",
+      "to": "returns.buyer.hold.decided-line",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.hold",
+      "to": "returns.buyer.hold.legacy-new",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.hold",
+      "to": "returns.buyer.hold.legacy-endpoint-counts-all",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.attach",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.attach",
+      "to": "returns.buyer.attach.required-missing",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.attach",
+      "to": "returns.buyer.attach.disallowed-extension",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.submit",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.submit",
+      "to": "returns.buyer.submit.reason-missing",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.submit",
+      "to": "returns.buyer.submit.comment-required",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.submit",
+      "to": "returns.buyer.submit.quantity-taken",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.cancel",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.cancel",
+      "to": "returns.buyer.cancel.not-owner",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.cancel",
+      "to": "returns.buyer.cancel.after-decision",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer",
+      "to": "returns.buyer.read",
+      "type": "contains"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.unknown-id",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.other-buyer",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.org-colleague",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.cross-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.staff-created",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.re-request-released",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.buyer.read",
+      "to": "returns.buyer.read.no-prices",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.review",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.authorize",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.all-approved",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.mixed",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.partial-in-line",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.all-declined",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.single-unit-declined",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.over-requested",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.invalid-input",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.availability-recheck",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.wrong-status",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.no-permission",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.buyer-cannot-decide",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.status-put-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.authorize",
+      "to": "returns.agent.authorize.admin-created",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.edit",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent.edit",
+      "to": "returns.agent.edit.requested-quantity",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.edit",
+      "to": "returns.agent.edit.decided-line-locked",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.edit",
+      "to": "returns.agent.edit.duplicate-line",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.edit",
+      "to": "returns.agent.edit.malformed-body",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.next-status",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent.next-status",
+      "to": "returns.agent.next-status.forward-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.next-status",
+      "to": "returns.agent.next-status.no-legacy-canceled",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.next-status",
+      "to": "returns.agent.next-status.cancel-requested",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.notify",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.by-outcome",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.quantities",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.silent",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.language",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.missing-template",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "returns.agent.notify.email-off",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent",
+      "to": "returns.agent.fulfil",
+      "type": "contains"
+    },
+    {
+      "from": "returns.agent.fulfil",
+      "to": "returns.agent.fulfil.released-stay-released",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.agent.fulfil",
+      "to": "returns.agent.fulfil.no-order-side-effect",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin",
+      "to": "returns.admin.create",
+      "type": "contains"
+    },
+    {
+      "from": "returns.admin.create",
+      "to": "returns.admin.create.order-first",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin.create",
+      "to": "returns.admin.create.quantity-clamped",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin.create",
+      "to": "returns.admin.create.fully-held",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin.create",
+      "to": "returns.admin.create.reason-optional",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin",
+      "to": "returns.admin.edit-status",
+      "type": "contains"
+    },
+    {
+      "from": "returns.admin.edit-status",
+      "to": "returns.admin.edit-status.backwards",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin.edit-status",
+      "to": "returns.admin.edit-status.no-decision-statuses",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin.edit-status",
+      "to": "returns.admin.edit-status.cancelled-terminal",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin",
+      "to": "returns.admin.find",
+      "type": "contains"
+    },
+    {
+      "from": "returns.admin.find",
+      "to": "returns.admin.find.status-filter",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.admin",
+      "to": "returns.admin.delete",
+      "type": "contains"
+    },
+    {
+      "from": "returns.config",
+      "to": "returns.config.policy",
+      "type": "contains"
+    },
+    {
+      "from": "returns.config.policy",
+      "to": "returns.config.policy.reason-labels",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.config.policy",
+      "to": "returns.config.policy.status-vocabulary",
+      "type": "branches_to"
+    },
+    {
+      "from": "returns.state.draft",
+      "to": "returns.state.requested",
+      "type": "transitions_to",
+      "via": "returns.buyer.submit"
+    },
+    {
+      "from": "returns.state.draft",
+      "to": "returns.state.cancelled",
+      "type": "transitions_to",
+      "via": "returns.buyer.cancel"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.cancelled",
+      "type": "transitions_to",
+      "via": "returns.buyer.cancel"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.approved",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.all-approved"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.partially-approved",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.mixed"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.partially-approved",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.partial-in-line"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.rejected",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.all-declined"
+    },
+    {
+      "from": "returns.state.requested",
+      "to": "returns.state.rejected",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.single-unit-declined"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.approved",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.admin-created"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.partially-approved",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.admin-created"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.rejected",
+      "type": "transitions_to",
+      "via": "returns.agent.authorize.admin-created"
+    },
+    {
+      "from": "returns.state.approved",
+      "to": "returns.state.processing",
+      "type": "transitions_to",
+      "via": "returns.agent.fulfil"
+    },
+    {
+      "from": "returns.state.approved",
+      "to": "returns.state.completed",
+      "type": "transitions_to",
+      "via": "returns.agent.fulfil"
+    },
+    {
+      "from": "returns.state.partially-approved",
+      "to": "returns.state.processing",
+      "type": "transitions_to",
+      "via": "returns.agent.fulfil"
+    },
+    {
+      "from": "returns.state.partially-approved",
+      "to": "returns.state.completed",
+      "type": "transitions_to",
+      "via": "returns.agent.fulfil"
+    },
+    {
+      "from": "returns.state.processing",
+      "to": "returns.state.completed",
+      "type": "transitions_to",
+      "via": "returns.agent.fulfil"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.processing",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.completed",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.new",
+      "to": "returns.state.cancelled",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.processing",
+      "to": "returns.state.new",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.processing",
+      "to": "returns.state.completed",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.processing",
+      "to": "returns.state.cancelled",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.completed",
+      "to": "returns.state.new",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.completed",
+      "to": "returns.state.processing",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.state.completed",
+      "to": "returns.state.cancelled",
+      "type": "transitions_to",
+      "via": "returns.admin.edit-status",
+      "note": "a legacy return without decided lines (KB-21F4F161, 2026-10-01)"
+    },
+    {
+      "from": "returns.agent.notify",
+      "to": "push.producer-returns",
+      "type": "depends_on",
+      "note": "the push half of every return notification is a PushMessage"
+    }
+  ]
+}
