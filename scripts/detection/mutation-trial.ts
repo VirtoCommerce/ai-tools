@@ -36,6 +36,7 @@ import { classifyCase } from "../lib/case-classifier.js";
 import { flagValue, intFlag, rejectUnknownFlags } from "../lib/cli-args.ts";
 import { MUTANTS, mutantIds } from "./mutants.mjs";
 import { scoreTrial, stableCleanCases } from "./score.mjs";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 
 const TSX_CLI = fileURLToPath(new URL("../../node_modules/tsx/dist/cli.mjs", import.meta.url));
 const PRELOAD = pathToFileURL(fileURLToPath(new URL("./mutant-preload.mjs", import.meta.url))).href;
@@ -168,7 +169,7 @@ function main() {
   const meta = {
     suite: suite.id,
     file: suite.file,
-    testEnv: process.env.TEST_ENV ?? "vcst",
+    testEnv: resolveTestEnv("vcst"), // TEST_ENV, else .env.test-env, else vcst
     startedAt,
     finishedAt: new Date().toISOString(),
     repeat,

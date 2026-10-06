@@ -76,6 +76,7 @@
  */
 
 import { OWNER, loadEnvFiles, resolveEnvCoords } from '../lib/env.ts';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 import { fetchFile, getToken, ghJson, setToken } from '../lib/github.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import type { DeliverResult } from '../lib/deliver.ts';
@@ -227,8 +228,11 @@ export async function runPr(args: string[]): Promise<void> {
   const verify = has('verify');
   const key = args.find((a) => !a.startsWith('--'))?.toUpperCase();
 
-  loadEnvFiles(process.env.TEST_ENV || 'vcst');
-  const env = flag('env') || process.env.TEST_ENV || 'vcst';
+  // The session env as every entry point resolves it (TEST_ENV, else .env.test-env, else vcst): reading
+  // TEST_ENV alone sent a checkout whose env is set only in .env.test-env to vcst / vcst-qa.
+  const sessionEnv = resolveTestEnv('vcst');
+  loadEnvFiles(sessionEnv);
+  const env = flag('env') || sessionEnv;
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
   if (!getToken()) fail('No GIT_TOKEN — a PAT with product-repo read + push on your vc-deploy-dev fork (read .env.local).');
   const c = resolveEnvCoords(env, flag('password'));
