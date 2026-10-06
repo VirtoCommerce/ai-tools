@@ -1,11 +1,12 @@
 {
-  "_fixture": "ACCEPTED_QUOTE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Admin-priced RFQ that the buyer has accepted (ready to convert to an order). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. Quote REST route + status vocabulary confirmed LIVE on first run per quality-gates G6; orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "_fixture": "ACCEPTED_QUOTE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module), VCST-5482. Admin-priced RFQ READY for the buyer to accept = convert to an order (on this platform Approve places the order and sets \"Ordered\" in one step; there is no separate \"Accepted\" status). 3 lines with distinct quantities and proposals below list, for QUOTE-027/028. Owner = the account suite 015 signs in as (orders-specs.mjs QUOTE_OWNER_ALIAS → @td(ORG_USER_DEFAULT)), resolved at seed time to its login id + organization; the address email is stamped from that owner. Status \"Proposal sent\" is the only state in which the storefront offers Approve/Decline (see the QUOTE_FIXTURES comment). No runtime GUIDs here; created id → aliases.<env>.json.",
   "number": "AGENT-TEST-QTE-ACCEPTED",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
-  "status": "Ordered",
+  "languageCode": "{{CULTURE_NAME}}",
+  "status": "Proposal sent",
   "customerName": "AGENT-TEST Org Buyer",
-  "comment": "AGENT-TEST admin-priced RFQ accepted by buyer",
+  "comment": "AGENT-TEST admin-priced RFQ ready to accept and convert",
   "items": [
     {
       "sku": "AGENT-TEST-QTE-SKU-1",
@@ -15,7 +16,38 @@
       "listPrice": 49.99,
       "salePrice": 49.99,
       "proposalPrices": [
-        { "quantity": 20, "price": 39.99 }
+        {
+          "quantity": 20,
+          "price": 39.99
+        }
+      ]
+    },
+    {
+      "sku": "AGENT-TEST-QTE-SKU-2",
+      "productId": "agent-test-qte-prod-2",
+      "name": "AGENT-TEST Quoted Item 2",
+      "quantity": 7,
+      "listPrice": 129,
+      "salePrice": 129,
+      "proposalPrices": [
+        {
+          "quantity": 7,
+          "price": 109
+        }
+      ]
+    },
+    {
+      "sku": "AGENT-TEST-QTE-SKU-3",
+      "productId": "agent-test-qte-prod-3",
+      "name": "AGENT-TEST Quoted Item 3",
+      "quantity": 3,
+      "listPrice": 249,
+      "salePrice": 249,
+      "proposalPrices": [
+        {
+          "quantity": 3,
+          "price": 219
+        }
       ]
     }
   ],
@@ -26,12 +58,12 @@
       "lastName": "Org Buyer",
       "line1": "1 Test Way",
       "city": "New York",
+      "regionId": "NY",
       "regionName": "New York",
       "countryCode": "USA",
       "countryName": "United States",
       "postalCode": "10001",
-      "phone": "+1-206-555-0100",
-      "email": "{{ORG_USER_EMAIL}}"
+      "phone": "+1-206-555-0100"
     }
   ]
 }

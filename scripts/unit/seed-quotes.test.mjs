@@ -42,12 +42,3 @@ test('every committed quote fixture passes validateFixtureShape (spec ↔ fixtur
     assert.ok(ok, `${spec.alias}: ${problems.join('; ')}`);
   }
 });
-
-test('QUOTE fixtures declare the adminPriced / buyerAccepted transition flags', () => {
-  const adminResp = QUOTE_FIXTURES.find((s) => s.key === 'ADMIN-RESPONSE');
-  const accepted = QUOTE_FIXTURES.find((s) => s.key === 'ACCEPTED');
-  assert.equal(adminResp.adminPriced, true);
-  assert.equal(adminResp.buyerAccepted, false);
-  assert.equal(accepted.adminPriced, true);
-  assert.equal(accepted.buyerAccepted, true);
-});

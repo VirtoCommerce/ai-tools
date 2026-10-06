@@ -1,7 +1,7 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
 ORD-037,Return - Reason Selection Required,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; completed/delivered order exists; return feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
-[ACT] click on a delivered order
+Buyer logged in as {{USER_EMAIL}}; completed/delivered order @td(RETURNS_ORDER_SF_ORD037.number) exists; return feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
+[ACT] click on order @td(RETURNS_ORDER_SF_ORD037.number)
 [WAIT] Wait for the resulting view to settle
 [ACT] click 'Return' or 'Request Return'
 [WAIT] wait for return form
@@ -18,7 +18,7 @@ Buyer logged in as {{USER_EMAIL}}; completed/delivered order exists; return feat
 [STATE] submission succeeds after selecting a valid reason
 [DOM] selected reason visible in confirmation",[API] return mutation payload includes reason field; [CONSOLE] no errors on reason validation; [NETWORK] 2xx on return submission with reason,reason selection absent from return form; return accepted without any reason; dropdown has no predefined options; validation does not fire on empty reason,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
 ORD-038,Return - Status Tracking Display,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer signed in as {{USER_EMAIL}}; fixture RETURNS_AUTH_PARTIAL_LINE (order carrying a return already decided PartiallyApproved by an agent) exists on this account -- REPAIRED 2026-09-29: the return module is deployed (vc-module-return PR #27) and the prior {{ORDER_WITH_RETURN}} fixture was DEFERRED/never resolvable (test-data/README.md).",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};order=@td(RETURNS_AUTH_PARTIAL_LINE.orderNumber),"[NAV] Navigate to /account/orders
+Buyer signed in as {{USER_EMAIL}}; fixture RETURNS_AUTH_PARTIAL_LINE (order carrying a return already decided PartiallyApproved by an agent) exists on this account -- REPAIRED 2026-09-29: the return module is deployed (vc-module-return PR #27) and the prior fixture was DEFERRED/never resolvable (test-data/README.md).",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};order=@td(RETURNS_AUTH_PARTIAL_LINE.orderNumber),"[NAV] Navigate to /account/orders
 [ACT] locate order @td(RETURNS_AUTH_PARTIAL_LINE.orderNumber) and click to open detail
 [WAIT] wait for detail page
 [ASSERT] verify return status section or badge visible on order detail
@@ -32,8 +32,8 @@ Buyer signed in as {{USER_EMAIL}}; fixture RETURNS_AUTH_PARTIAL_LINE (order carr
 [DOM] return status badge visually distinct from order status
 [STATE] return appears in returns list if such page exists",[API] GET order detail includes return/RMA status data; [CONSOLE] no errors rendering return status section; [NETWORK] 2xx on order detail with return data,return status absent from order detail; RMA ID missing; returned items not listed; return status shows stale/incorrect state,none,"VCST-5883; SUPERSEDED proposal (5-triage, 2026-09-29, TRI-006 -- retirement is a human decision, not auto-applied): asserts return status on the ORDER page with no spec citation; superseded by 014c ORD-RET-012 (the [JOURNEY] case) and ORD-RET-015 (decided/cancelled action visibility), both of which assert the same surface against a real, current fixture and a {SPEC} oracle.",Draft
 ORD-039,Return - Partial Return Quantity Selection,Orders > Returns,Medium,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-Buyer logged in as {{USER_EMAIL}}; delivered order has line item with quantity >= 3; return feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
-[ACT] click on delivered order with item qty >= 3
+Buyer logged in as {{USER_EMAIL}}; delivered order @td(RETURNS_ORDER_SF_ORD039.number) has line item with quantity >= 3; return feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
+[ACT] click on order @td(RETURNS_ORDER_SF_ORD039.number) with item qty >= 3
 [WAIT] Wait for the resulting view to settle
 [ACT] click 'Return'
 [WAIT] wait for return form
@@ -48,8 +48,8 @@ Buyer logged in as {{USER_EMAIL}}; delivered order has line item with quantity >
 [DOM] return confirmation reflects partial quantity
 [STATE] remaining quantity (2) not included in return",[API] return mutation payload includes qty=1 for the item; [CONSOLE] no errors on partial quantity; [NETWORK] 2xx on partial return submission,quantity field does not allow partial return (forced to full qty); return created with full quantity despite entering partial; quantity field rejects values less than ordered qty,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
 ORD-040,Return - Window Expiry Enforcement,Orders > Returns,Medium,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-{{ORDER_PAST_RETURN_WINDOW}} env var set (completed order delivered 30+ days ago, past configured return window); buyer logged in as {{USER_EMAIL}}; RETURNS_FEATURE_ENABLED=true; return window policy configured for the store",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};past_return_order_id={{ORDER_PAST_RETURN_WINDOW}},"[NAV] Navigate to /account/orders
-[ACT] locate order {{ORDER_PAST_RETURN_WINDOW}} and click to open detail
+@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.number) env var set (completed order delivered 30+ days ago, past configured return window); buyer logged in as {{USER_EMAIL}}; RETURNS_FEATURE_ENABLED=true; return window policy configured for the store",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};past_return_order_id=@td(RETURNS_ORDER_B_OUTSIDE_WINDOW.number),"[NAV] Navigate to /account/orders
+[ACT] locate order @td(RETURNS_ORDER_B_OUTSIDE_WINDOW.number) and click to open detail
 [WAIT] wait for detail page
 [ASSERT] verify 'Return' button is either absent or disabled
 [ASSERT] verify message indicates return window has expired (e.g. 'Return period has ended')

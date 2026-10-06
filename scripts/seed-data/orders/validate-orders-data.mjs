@@ -11,6 +11,8 @@
  *      runtime GUID (those live in aliases.<env>.json).
  *   2. Each owned @td() alias exists in aliases.json as a JSON-fixture alias (`json` → the fixture),
  *      and pins NO runtime GUID in the committed base (id belongs in the env overlay).
+ *   1b. Each quote fixture meets its non-vacuity contract (validateQuoteFixtureContract: line count,
+ *      every proposal BELOW list, proposal qty = line qty), and QUOTE_OWNER_ALIAS is a registered alias.
  *   3. (informational) The committed vcst overlay carries each alias id so @td(<ALIAS>.id) resolves.
  *
  * Usage:  npm run td:validate:orders
@@ -21,7 +23,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseCsv } from 'csv-parse/sync';
 import {
-  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES,
+  ORDER_FIXTURES, QUOTE_FIXTURES, ALL_FIXTURES, OWNED_ALIASES, QUOTE_OWNER_ALIAS, validateQuoteFixtureContract,
   validateFixtureShape, findGuidLeaks, GUID_RE,
   RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
   validateReturnFixtureSet, validateReturnFixtureShape,
@@ -60,6 +62,19 @@ for (const [kind, list] of [['order', ORDER_FIXTURES], ['quote', QUOTE_FIXTURES]
     else ps.forEach((p) => fail(`${spec.alias}: ${p}`));
   }
 }
+
+// 1b. Quote non-vacuity contract + owner alias (a quote the buyer cannot see, or one whose quoted
+// prices equal list, answers none of suite 015's questions).
+console.log('\n[1b] Quote fixtures — non-vacuity contract + owner alias');
+for (const spec of QUOTE_FIXTURES) {
+  const rel = `test-data/${spec.fixtureFile}`;
+  if (!existsSync(join(ROOT, rel))) continue; // already failed in [1]
+  const { ok: cOk, problems: cps } = validateQuoteFixtureContract(spec, readJson(rel));
+  if (cOk) ok(`${spec.alias} — ${readJson(rel).items.length} lines, every proposal below list`);
+  else cps.forEach((p) => fail(`${spec.alias}: ${p}`));
+}
+if (aliases[QUOTE_OWNER_ALIAS]?.filter?.user_id) ok(`owner alias ${QUOTE_OWNER_ALIAS} → users.csv ${aliases[QUOTE_OWNER_ALIAS].filter.user_id}`);
+else fail(`QUOTE_OWNER_ALIAS ${QUOTE_OWNER_ALIAS} is not a users.csv-filtered alias in aliases.json — the seeder cannot resolve the quote owner`);
 
 // 2. Owned aliases are JSON-fixture aliases in the base registry, no pinned GUID.
 console.log('\n[2] aliases.json — owned aliases are JSON-fixture-backed, no runtime GUID pinned');
@@ -131,6 +146,21 @@ for (const spec of RETURN_ORDER_FIXTURES.filter((f) => f.consumedBySuite)) {
   const shallow = roles.filter((role) => orderedFor(spec, role) < consumers.length);
   if (shallow.length) fail(`${spec.alias}: ${shallow.map((r) => `${r} ordered ${orderedFor(spec, r)}`).join(', ')} < ${consumers.length} consuming rows in ${rel} — one pass of the suite can drain it`);
   else ok(`${spec.alias} — ${consumers.length} rows of ${rel} consume it; lines ordered ${roles.map((r) => orderedFor(spec, r)).join(' / ')} (each >= ${consumers.length})`);
+}
+
+// 4c. A per-case disposable order (consumedByCase) must point at a case that exists. A case that does
+// not (yet) reference its alias is a WARNING, not a failure: the CSV edit is the suite author's, and
+// until it lands the case still names whatever it named before.
+console.log('\n[4c] Per-case returns fixtures — the consuming case exists and references its alias');
+for (const spec of RETURN_ORDER_FIXTURES.filter((f) => f.consumedByCase)) {
+  const { suite: rel, id } = spec.consumedByCase;
+  if (!existsSync(join(ROOT, rel))) { fail(`${spec.alias}: consumedByCase suite ${rel} does not exist`); continue; }
+  let rows;
+  try { rows = parseCsv(readFileSync(join(ROOT, rel), 'utf8'), { columns: true, skip_empty_lines: true }); } catch (e) { fail(`${spec.alias}: ${rel} does not parse (${e.message})`); continue; }
+  const row = rows.find((r) => r.ID === id);
+  if (!row) { fail(`${spec.alias}: case ${id} not found in ${rel} — the fixture is consumed by nobody`); continue; }
+  if (suiteRowsConsuming(spec.alias, [{ id, text: Object.values(row).join('\n') }]).length) ok(`${spec.alias} — consumed by ${id} (${rel})`);
+  else warn(`${spec.alias}: ${id} does not reference @td(${spec.alias}.…) yet — the case still points at another order`);
 }
 
 console.log('\n[5] aliases.json — returns aliases registered, no runtime GUID pinned in the committed base');

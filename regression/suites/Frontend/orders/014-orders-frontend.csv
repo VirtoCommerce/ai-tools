@@ -100,10 +100,10 @@ CHK-040,Reorder - Current Prices,Orders > Reorder > Pricing,High,"BL-ORD-001, BL
 [DOM] Cart functional and can proceed to checkout","[API] addItemsToCart mutation succeeds; no price-mismatch error returned
 [API] Product price API returns current prices for reordered SKUs
 [CONSOLE] No errors on price calculation",System error thrown when prices differ; cart shows historical order prices instead of current; cart total uses stale prices,Remove items from cart,REQUIRES-COMPLETED-ORDER: Reorder button is gated by order status=Completed; resolve {{COMPLETED_ORDER}} via live-discover or seed (Coverage Gap Analysis),Draft
-CHK-041,Reorder - Partial Availability,Orders > Reorder > Availability,High,BL-ORD-001,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+CHK-041,Reorder - Partial Availability,Orders > Reorder > Availability,High,BL-ORD-001,,"[PRE:SIGNIN_AS:DISCONTINUED_ORDER_BUYER]
 [PRE:RESET_CART]
-{{ORDER_WITH_DISCONTINUED_ITEM}} env var set; user logged in as {{USER_EMAIL}}; reorder feature enabled","url={{FRONT_URL}}, user={{USER_EMAIL}}, password={{USER_PASSWORD}}, discontinued_order_id={{ORDER_WITH_DISCONTINUED_ITEM}}","[NAV] Navigate to {{FRONT_URL}}/account/orders
-[ACT] Locate order {{ORDER_WITH_DISCONTINUED_ITEM}} and click Reorder
+@td(DISCONTINUED_ITEM_ORDER.number) env var set; user logged in as @td(DISCONTINUED_ORDER_BUYER.email); reorder feature enabled","url={{FRONT_URL}}, user=@td(DISCONTINUED_ORDER_BUYER.email), password={{DEFAULT_TEST_PASSWORD}}, discontinued_order_id=@td(DISCONTINUED_ITEM_ORDER.number)","[NAV] Navigate to {{FRONT_URL}}/account/orders
+[ACT] Locate order @td(DISCONTINUED_ITEM_ORDER.number) and click Reorder
 [WAIT] Wait for reorder processing
 [ASSERT] Verify notification about unavailable item(s) is shown (identifies item by name or SKU)
 [NAV] Navigate to {{FRONT_URL}}/cart","[DOM] Warning/notification identifies unavailable item by name or SKU
@@ -173,10 +173,10 @@ ORD-001,Reorder - All Items Added to Cart at Current Prices,Orders > Reorder,Hig
 [MATH] quantities in cart = original order quantities for each line item
 [DOM] success notification or badge update visible after reorder
 [STATE] cart functional for checkout",[API] reorder mutation response contains all expected line items; [CONSOLE] no errors on cart page after reorder; [NETWORK] 2xx on add-to-cart requests,not all items added to cart after reorder; quantities defaulted to 1 instead of original values,clear cart after test,Coverage Gap Analysis,Draft
-ORD-002,Reorder - Discontinued Item Handled Gracefully,Orders > Reorder,High,BL-ORD-001,"ECL-7.1, ECL-14.2","[PRE:SIGNIN_AS:USER_DEFAULT]
+ORD-002,Reorder - Discontinued Item Handled Gracefully,Orders > Reorder,High,BL-ORD-001,"ECL-7.1, ECL-14.2","[PRE:SIGNIN_AS:DISCONTINUED_ORDER_BUYER]
 [PRE:RESET_CART]
-{{ORDER_WITH_DISCONTINUED_ITEM}} env var set; logged in as buyer ({{USER_EMAIL}}); reorder feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};discontinued_order_id={{ORDER_WITH_DISCONTINUED_ITEM}},"[NAV] Navigate to /account/orders
-[ACT] locate order {{ORDER_WITH_DISCONTINUED_ITEM}} and click 'Reorder all'
+@td(DISCONTINUED_ITEM_ORDER.number) env var set; logged in as buyer (@td(DISCONTINUED_ORDER_BUYER.email)); reorder feature enabled",url={{FRONT_URL}};user=@td(DISCONTINUED_ORDER_BUYER.email);password={{DEFAULT_TEST_PASSWORD}};discontinued_order_id=@td(DISCONTINUED_ITEM_ORDER.number),"[NAV] Navigate to /account/orders
+[ACT] locate order @td(DISCONTINUED_ITEM_ORDER.number) and click 'Reorder all'
 [WAIT] wait for cart page to load","[DOM] available items present in cart after reorder
 [STATE] discontinued item absent from cart line items
 [DOM] warning/notification message lists the unavailable item by name or SKU
@@ -267,8 +267,8 @@ ORD-008,Reorder into Cart with Items from Same Org - Merge Behavior Verified,Ord
 [STATE] Product Y still present with qty 1 unchanged
 [STATE] total line count = number of distinct SKUs only",[API] cart query after reorder returns distinct line items per SKU; [CONSOLE] no merge errors; [NETWORK] no 4xx on cart update; [API] mutation response errors[] is empty,Product X duplicated as two rows; Product Y quantity altered by reorder; pre-existing cart items lost,clear cart after test,Coverage Gap Analysis,Draft
 ORD-009,Return Request - Submit with Reason,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(COMPLETED_ORDER.number) env var set; buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled (RETURNS_FEATURE_ENABLED=true)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
-[ACT] locate order @td(COMPLETED_ORDER.number) and click to open detail
+@td(RETURNS_ORDER_SF_ORD009.number) env var set; buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled (RETURNS_FEATURE_ENABLED=true)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(RETURNS_ORDER_SF_ORD009.number),"[NAV] Navigate to /account/orders
+[ACT] locate order @td(RETURNS_ORDER_SF_ORD009.number) and click to open detail
 [WAIT] Wait for the order detail page to load
 [COND: returns feature enabled] verify 'Return' or 'Request Return' button visible on order detail
 [COND: returns feature enabled] [ACT] click 'Return'
@@ -284,22 +284,22 @@ ORD-009,Return Request - Submit with Reason,Orders > Returns,High,PROPOSED-BL-RT
 [STATE] return request status visible on order detail
 [STATE] confirmation message shown",[API] return mutation response errors[] is empty; [CONSOLE] no JS errors on return form submission; [NETWORK] 2xx on return endpoint,'Return' button absent when feature is enabled; return form missing line items; no confirmation shown after submission,none — return request is intentional test action,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
 ORD-010,Return Request - Partial Return,Orders > Returns,High,PROPOSED-BL-RTN-001,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
-@td(COMPLETED_ORDER.number) env var set (order must have 2+ line items); buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(COMPLETED_ORDER.number),"[NAV] Navigate to /account/orders
-[ACT] locate order @td(COMPLETED_ORDER.number) with 2+ line items and click detail
+@td(RETURNS_ORDER_SF_ORD010.number) env var set (order must have 2+ line items); buyer logged in as {{USER_EMAIL}}; return/RMA feature enabled",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}};completed_order=@td(RETURNS_ORDER_SF_ORD010.number),"[NAV] Navigate to /account/orders
+[ACT] locate order @td(RETURNS_ORDER_SF_ORD010.number) with 2+ line items and click detail
 [WAIT] Wait for the order detail page to load
-[KEY] note Item A and Item B
+[KEY] note @td(RETURNS_ORDER_SF_ORD010.lineASku) and @td(RETURNS_ORDER_SF_ORD010.lineBSku)
 [COND: returns feature enabled] [ACT] click 'Return'
 [WAIT] wait for return form
 [ASSERT] verify both items shown with checkboxes
-[ACT] select only Item A
+[ACT] select only @td(RETURNS_ORDER_SF_ORD010.lineASku)
 [ACT] enter return reason
 [ACT] submit
 [WAIT] wait for confirmation","[DOM] each line item individually selectable in return form
-[STATE] only Item A in submitted return request
-[STATE] Item B absent from return request
+[STATE] only @td(RETURNS_ORDER_SF_ORD010.lineASku) in submitted return request
+[STATE] @td(RETURNS_ORDER_SF_ORD010.lineBSku) absent from return request
 [DOM] return form blocks submission with zero items selected
-[STATE] confirmation shows only Item A
-[STATE] Item B not included",[API] return mutation payload includes only selected Item A line ID; [CONSOLE] no JS errors; [NETWORK] 2xx on partial return,return form all-or-nothing only; deselected Item B included; submit allowed with no items selected,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
+[STATE] confirmation shows only @td(RETURNS_ORDER_SF_ORD010.lineASku)
+[STATE] @td(RETURNS_ORDER_SF_ORD010.lineBSku) not included",[API] return mutation payload includes only selected @td(RETURNS_ORDER_SF_ORD010.lineASku) line ID; [CONSOLE] no JS errors; [NETWORK] 2xx on partial return,return form all-or-nothing only; deselected @td(RETURNS_ORDER_SF_ORD010.lineBSku) included; submit allowed with no items selected,none,ENV-BLOCKED: Returns module not installed on vcst-qa (Coverage Gap Analysis),Draft
 ORD-011,Order Cancellation - Cancel New Order,Orders > Cancellation,High,BL-ORD-002,ECL-7.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
 Buyer logged in as {{USER_EMAIL}}; order placed via CHK-022 or any New order exists; buyer-cancel feature enabled (STORE_CONFIG_BUYER_CANCEL=true)",url={{FRONT_URL}};user={{USER_EMAIL}};password={{USER_PASSWORD}},"[NAV] Navigate to /account/orders
 [ACT] click on an order with status 'New'

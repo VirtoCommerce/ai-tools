@@ -60,6 +60,9 @@ export const ORDER_FIXTURES = [
     fixtureFile: 'orders/completed-order.json',
     orderStatus: 'Completed',
     shipmentStatus: 'Delivered',
+    // ORD-003 asserts reorder carries each line's OWN quantity — equal quantities on every line make
+    // a "reorder at qty 1" bug indistinguishable from a correct one (SECOND RULE). Guarded below.
+    distinctLineQuantities: true,
     blockedCases: ['CHK-025', 'CHK-039', 'CHK-040', 'ORD-001', 'ORD-003', 'ORD-007', 'ORD-008', 'ORD-009', 'ORD-010', 'ORD-035'],
   },
   {
@@ -81,29 +84,105 @@ export const ORDER_FIXTURES = [
 ];
 
 /**
- * Quote state fixtures. `quoteStatus` is the platform admin status; `adminPriced` means the seeder
- * must apply per-line pricing after create; `buyerAccepted` means it must then mark the quote accepted.
+ * Quote state fixtures — WHO owns them and WHICH status they sit in, both decided by how the
+ * storefront reads a quote (vc-module-quote ExperienceApi, dev branch, read 2026-10-05):
+ *
+ *   OWNER. The buyer's quote list (`quotes` query) searches with CustomerId = the signed-in
+ *   ApplicationUser id AND OrganizationId = the token's current organization; opening one by id passes
+ *   QuoteAuthorizationHandler only when quote.CustomerId == that user id (or the user maintains
+ *   quote.OrganizationId). So a quote with organizationId null, or owned by another login, is invisible
+ *   in /account/quotes and "Something went wrong" on direct open — exactly REG-2026-10-05-1521.
+ *   The owner is therefore the account suite 015 SIGNS IN AS — `QUOTE_OWNER_ALIAS` — never
+ *   {{ORG_USER_EMAIL}}, which on vcst is a different account (aliases.json ORG_USER_DEFAULT notes).
+ *
+ *   STATUS. The storefront renders the raw status code as its label, and shows Approve / Decline only
+ *   when status === "Proposal sent" (vc-frontend view-quote.vue). ApproveQuoteCommandHandler accepts only
+ *   "Proposal sent" and, in ONE step, places the order and sets the quote to "Ordered"; Decline sets
+ *   "Declined". There is NO intermediate "Accepted" state on this platform: "accept" IS "convert to
+ *   order". So ACCEPTED_QUOTE — the fixture the convert-to-order cases consume — must also sit in
+ *   "Proposal sent"; a quote already "Ordered" has nothing left to convert (the old seed did that).
+ *   Allowed values on vcst (Quotes.Status): Processing, On hold, New, Declined, Proposal sent, Ordered.
+ *
+ *   BOTH ARE CONSUMABLE (.claude/rules/test-data.md §DISPOSABLE FIXTURES): QUOTE-006/008 move
+ *   QUOTE_WITH_ADMIN_RESPONSE to Ordered/Declined, QUOTE-007/027/028/030 move ACCEPTED_QUOTE to Ordered.
+ *   Re-running the seeder restores each one (status drift ⇒ replace), so re-seed between consumers.
+ *
+ * `adminPriced` — every line carries an admin proposal (proposalPrices). QuoteItem.SelectedTierPrice
+ * defaults to ProposalPrices[0] (it is not persisted), and Approve converts each line at that price and
+ * quantity (QuoteConverter.ToCartItem) — so a line with no proposal would convert at list price. `minLines` / `distinctLineQuantities` are the non-vacuity contract
+ * the drift guard enforces (QUOTE-028 needs 3+ lines whose quantities can be told apart).
+ * The fixture MUST carry `languageCode`: without it the buyer's `quote(id)` xAPI query fails with
+ * ARGUMENT_NULL (the detail page's "Something went wrong") even though the list query still shows it.
  */
+export const QUOTE_OWNER_ALIAS = 'ORG_USER_DEFAULT';
+export const QUOTE_STATUS_PROPOSAL_SENT = 'Proposal sent';
+
 export const QUOTE_FIXTURES = [
   {
     key: 'ADMIN-RESPONSE',
     alias: 'QUOTE_WITH_ADMIN_RESPONSE',
     fixtureFile: 'quotes/quote-admin-response.json',
-    quoteStatus: 'Processing',
+    quoteStatus: QUOTE_STATUS_PROPOSAL_SENT,
     adminPriced: true,
-    buyerAccepted: false,
+    minLines: 2,
     blockedCases: ['QUOTE-004', 'QUOTE-005', 'QUOTE-006', 'QUOTE-008', 'QUOTE-009', 'QUOTE-018', 'QUOTE-020', 'QUOTE-021', 'QUOTE-025'],
   },
   {
     key: 'ACCEPTED',
     alias: 'ACCEPTED_QUOTE',
     fixtureFile: 'quotes/quote-accepted.json',
-    quoteStatus: 'Ordered',
+    quoteStatus: QUOTE_STATUS_PROPOSAL_SENT,
     adminPriced: true,
-    buyerAccepted: true,
+    minLines: 3,
+    distinctLineQuantities: true,
     blockedCases: ['QUOTE-007', 'QUOTE-024', 'QUOTE-027', 'QUOTE-028', 'QUOTE-030'],
   },
 ];
+
+/**
+ * Non-vacuity contract of a quote fixture (PURE) — the drift guard runs it on the committed fixture.
+ * A line whose proposal equals its list price makes "checkout uses the quoted price, not the catalog
+ * price" (QUOTE-005/027) undecidable; too few lines make QUOTE-028's "all lines carried" vacuous.
+ */
+export function validateQuoteFixtureContract(spec, obj) {
+  const problems = [];
+  const items = Array.isArray(obj?.items) ? obj.items : [];
+  if (spec.minLines && items.length < spec.minLines) problems.push(`needs >= ${spec.minLines} lines (has ${items.length})`);
+  if (spec.adminPriced) {
+    items.forEach((it, i) => {
+      const tier = (it.proposalPrices || [])[0];
+      if (!tier || !(Number(tier.price) > 0)) { problems.push(`line ${i + 1}: adminPriced needs a proposalPrices[0] with a price`); return; }
+      if (!(Number(tier.price) < Number(it.listPrice))) problems.push(`line ${i + 1}: proposal ${tier.price} must be BELOW listPrice ${it.listPrice} — equal prices make quoted-vs-catalog undecidable`);
+      if (Number(tier.quantity) !== Number(it.quantity)) problems.push(`line ${i + 1}: proposal quantity ${tier.quantity} != line quantity ${it.quantity} (Approve converts at the tier quantity)`);
+    });
+  }
+  return { ok: problems.length === 0, problems };
+}
+
+/**
+ * Re-price quoted lines against the LIVE catalog price (PURE — deep-clones). The committed fixture only
+ * declares each line's proposal as a fraction of its list price; the absolute prices come from the
+ * store's price for the product actually picked, so the quote's "original" price IS the price the
+ * buyer sees on the PDP and the proposal sits strictly below it (QUOTE-005/027 compare the two).
+ * `listById` = Map(productId → catalog list price). A line whose product has no positive price keeps
+ * its fixture prices.
+ */
+export function applyCatalogPrices(fixtureObj, listById = new Map()) {
+  const body = structuredClone(fixtureObj);
+  const round2 = (n) => Math.round(n * 100) / 100;
+  for (const item of body.items || []) {
+    const catalog = Number(listById.get(item.productId));
+    const fixtureList = Number(item.listPrice);
+    if (!(catalog > 0) || !(fixtureList > 0)) continue;
+    const ratio = (tp) => Number(tp.price) / fixtureList;
+    item.proposalPrices = (item.proposalPrices || []).map((tp) => ({
+      ...tp, price: Math.max(0.01, Math.min(round2(catalog * ratio(tp)), round2(catalog - 0.01))),
+    }));
+    item.listPrice = catalog;
+    item.salePrice = catalog;
+  }
+  return body;
+}
 
 /** All fixtures flattened (for validators/iteration). */
 export const ALL_FIXTURES = [...ORDER_FIXTURES, ...QUOTE_FIXTURES];
@@ -117,7 +196,7 @@ export const OWNED_ALIASES = ALL_FIXTURES.map((f) => f.alias);
  * validator's optional second stage; this guarantees the fields the seeder + suites depend on.
  */
 export const ORDER_BODY_REQUIRED = ['number', 'storeId', 'currency', 'status', 'items', 'addresses'];
-export const QUOTE_BODY_REQUIRED = ['number', 'storeId', 'currency', 'status', 'items'];
+export const QUOTE_BODY_REQUIRED = ['number', 'storeId', 'currency', 'languageCode', 'status', 'items']; // languageCode: see QUOTE_FIXTURES
 
 /** A committed fixture must contain NO runtime GUID (those live in aliases.<env>.json only). */
 export const GUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,9 +252,40 @@ export function validateFixtureShape(spec, obj, kind /* 'order' | 'quote' */) {
   const expectedStatus = kind === 'order' ? spec.orderStatus : spec.quoteStatus;
   if (obj.status !== expectedStatus) problems.push(`status "${obj.status}" != spec "${expectedStatus}" (fix the spec OR the fixture — single source of truth)`);
   if (!Array.isArray(obj.items) || obj.items.length === 0) problems.push('items[] must be non-empty');
+  if (spec.distinctLineQuantities) {
+    const qtys = (obj.items || []).map((i) => Number(i.quantity));
+    if (qtys.length < 2 || new Set(qtys).size < 2) problems.push(`distinctLineQuantities: needs >=2 lines with DIFFERENT quantities (have ${qtys.join(', ') || 'none'}) — equal quantities make ORD-003 vacuous`);
+  }
+  if (kind === 'order' && ['Shipped', 'Completed'].includes(spec.orderStatus)) {
+    // A shipped/delivered order's storefront detail reads WHERE it went from the shipment's own
+    // deliveryAddress, not from order.addresses (kb KB-CC9A98D3: each operation keeps its own copy).
+    const noAddr = (obj.shipments || []).filter((sh) => !sh.deliveryAddress?.line1);
+    if (!(obj.shipments || []).length || noAddr.length) problems.push('every shipment of a Shipped/Completed order needs a deliveryAddress (CHK-013 reads it)');
+  }
   const leaks = findGuidLeaks(obj);
   if (leaks.length) problems.push(`${leaks.length} runtime GUID(s) leaked into the committed fixture (belong in aliases.<env>.json): ${leaks.map((l) => l.path).join(', ')}`);
   return { ok: problems.length === 0, problems };
+}
+
+/**
+ * Can `qty` of this product be added to a cart? (PURE.) A line seeded below the product's min order
+ * quantity (or above its max) makes every reorder case fail on PRODUCT_MIN_MAX_QTY instead of on the
+ * behaviour under test (REG-2026-10-02-2022 ORD-001/007, CHK-039: Xerox min 2 seeded at qty 1).
+ * min/max of 0 mean "no limit". A product whose limits are UNKNOWN (`null`/absent — the caller never
+ * read them) does NOT fit: an unread limit is not "no limit", and passing it would silently restore
+ * the bug this guards. Stock: when the product tracks inventory AND the caller stamped a numeric
+ * `availableQuantity`, the line must not exceed it (a reorder of an out-of-stock line fails on stock,
+ * not on the behaviour under test); no `availableQuantity` ⇒ stock is not judged.
+ */
+export function fitsLineQuantity(product, qty) {
+  if (!product || product.minQuantity == null || product.maxQuantity == null) return false;
+  const min = Number(product.minQuantity) || 0;
+  const max = Number(product.maxQuantity) || 0;
+  if (!(qty >= Math.max(min, 1) && (max === 0 || qty <= max))) return false;
+  if (product.trackInventory === true && Number.isFinite(product.availableQuantity)) {
+    return qty <= product.availableQuantity;
+  }
+  return true;
 }
 
 /**
@@ -184,14 +294,23 @@ export function validateFixtureShape(spec, obj, kind /* 'order' | 'quote' */) {
  * seeder live-discovers products that actually EXIST in the target env's catalog and this stamps each
  * item's product identity from them, so the seeded order/quote references browsable products (reorder,
  * PDP link, product image all resolve). Quantity / price / currency / productType are KEPT from the
- * fixture (deterministic totals). `products` = [{ id, sku, name, catalogId }]; fewer than items → cycle;
+ * fixture (deterministic totals). `products` = [{ id, sku, name, catalogId, minQuantity, maxQuantity,
+ * trackInventory?, availableQuantity? }] in a DETERMINISTIC order (the seeder sorts by code); each line
+ * takes the first DISTINCT product that `fitsLineQuantity` admits, then any that fits, then cycles;
  * empty (e.g. dry-run / bare catalog) → the fixture's placeholders are left untouched.
  */
 export function applyCatalogItems(fixtureObj, products = []) {
   const body = structuredClone(fixtureObj);
   if (!Array.isArray(body.items) || !products.length) return body;
+  const used = new Set();
   body.items = body.items.map((item, i) => {
-    const p = products[i % products.length];
+    // Prefer a DISTINCT product whose min/max order quantity admits this line's quantity; fall back to
+    // the old cycling only when nothing fits (a bare catalog), so the seed still produces a body.
+    const qty = Number(item.quantity) || 1;
+    const p = products.find((c) => !used.has(c.id) && fitsLineQuantity(c, qty))
+      || products.find((c) => fitsLineQuantity(c, qty))
+      || products[i % products.length];
+    if (p) used.add(p.id);
     if (!p) return item;
     return {
       ...item,
@@ -202,6 +321,45 @@ export function applyCatalogItems(fixtureObj, products = []) {
     };
   });
   return body;
+}
+
+/**
+ * Judge an EXISTING seeded order against the fixture (PURE) — the self-heal decision. It answers
+ * "is this order still a valid instance of the fixture?", never "is it what THIS run would build":
+ * line products are picked from a live catalog page, so comparing against a fresh pick rebuilt every
+ * order whenever the catalog moved (2026-10-05: PROCESSING_ORDER's id changed for no reason). Rebuild
+ * only when one of these is true:
+ *   - the owner or the order status drifted from the spec;
+ *   - the line QUANTITY multiset differs from the fixture's (a fixture edit — e.g. distinct quantities);
+ *   - a live line's product no longer exists (`productsById` has no entry for its productId);
+ *   - a live line's quantity violates that product's min/max order quantity (fitsLineQuantity);
+ *   - a Shipped/Completed order has no shipment, or a shipment without a deliveryAddress.
+ * `productsById` = Map(productId → { minQuantity, maxQuantity, ... }) re-read for THIS order's lines;
+ * pass `null` when the catalog could not be read, and the product checks are skipped (never guessed).
+ * Stock is deliberately NOT judged here — it moves under every order, and a rebuild on a stock dip is
+ * exactly the churn this replaces; stock is respected when a line's product is first chosen.
+ * Returns `{ rebuild, reasons[] }`.
+ */
+export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null } = {}) {
+  const reasons = [];
+  if (ownerId && live?.customerId !== ownerId) reasons.push(`owner ${live?.customerId || '(none)'} != ${ownerId}`);
+  if (live?.status !== spec.orderStatus) reasons.push(`status "${live?.status}" != "${spec.orderStatus}"`);
+  const qtys = (items) => (items || []).map((i) => Number(i.quantity)).sort((a, b) => a - b).join(',');
+  if (qtys(live?.items) !== qtys(fixtureObj?.items)) reasons.push(`line quantities [${qtys(live?.items)}] != fixture [${qtys(fixtureObj?.items)}]`);
+  if (productsById) {
+    for (const item of live?.items || []) {
+      const p = productsById.get(item.productId);
+      if (!p) { reasons.push(`line ${item.sku}: product ${item.productId} no longer exists`); continue; }
+      if (!fitsLineQuantity({ ...p, availableQuantity: undefined }, Number(item.quantity))) {
+        reasons.push(`line ${item.sku}: qty ${item.quantity} outside min ${p.minQuantity} / max ${p.maxQuantity}`);
+      }
+    }
+  }
+  if (['Shipped', 'Completed'].includes(spec.orderStatus)) {
+    const ships = live?.shipments || [];
+    if (!ships.length || ships.some((sh) => !sh.deliveryAddress?.line1)) reasons.push('a shipment lacks a deliveryAddress');
+  }
+  return { rebuild: reasons.length > 0, reasons };
 }
 
 /**
@@ -234,7 +392,7 @@ export function finalizeOrderBody(spec, fixtureObj, ctx = {}) {
 /**
  * Finalize a QUOTE create body from its fixture + runtime context (PURE). Stamps the runtime
  * customer/org attribution and the target status from the spec.
- * `ctx = { customerId, customerName, organizationId, organizationName }`.
+ * `ctx = { customerId, customerName, customerEmail, organizationId, organizationName }`.
  */
 export function finalizeQuoteBody(spec, fixtureObj, ctx = {}) {
   const body = structuredClone(fixtureObj);
@@ -247,6 +405,7 @@ export function finalizeQuoteBody(spec, fixtureObj, ctx = {}) {
   // QuoteItem.Currency / QuoteTierPrice.Currency columns are NOT NULL, so a create with items missing a
   // currency 500s at the DB layer ("Cannot insert NULL into column 'Currency'"). Currency is a single
   // quote-level fact, so we derive it here rather than repeat it per item in the committed fixture.
+  if (ctx.customerEmail) for (const a of body.addresses || []) a.email = ctx.customerEmail;
   const currency = body.currency;
   if (currency && Array.isArray(body.items)) {
     for (const item of body.items) {
@@ -511,6 +670,83 @@ export const RETURN_ORDER_FIXTURES = [
     rebuildWhenHeld: true,
     consumedBySuite: 'regression/suites/Backend/returns/073-returns.csv',
   },
+  // ── Storefront request-a-return cases (suites 014 / 014b). ONE order per case, because every one of
+  // these cases SUBMITS a return and none has a Cleanup: a shared order would be drained by the first
+  // case that runs (ORD-009 returns every item) and the next would find no "Request return" button.
+  // Each is Completed + fully delivered today (a line is returnable only once its shipment carries a
+  // DeliveryDate — `returnableItems` reports NOT_DELIVERED otherwise, which is why the shared
+  // COMPLETED_ORDER, whose shipment has no items and no date, can never open the return form), and each
+  // is REBUILT by the seeder whenever a previous run left a return on it that still holds units.
+  // `caseNeeds` is the precondition the consuming case states; the spec guard fails when the row stops
+  // meeting it. A..G stay reserved for the VCST-5628 suites, ADM073 for 073.
+  {
+    key: 'SF009',
+    alias: 'RETURNS_ORDER_SF_ORD009',
+    fixtureFile: 'orders/returns/return-order-sf009.json',
+    purpose: 'Storefront ORD-009 (submit a return for ALL items, with a reason). Two eligible lines, so '
+      + '"select all items" selects more than one thing; quantities differ so a return that silently '
+      + 'dropped one line is visible in the confirmation.',
+    orderStatus: RETURN_ALLOWED_STATUS,
+    lineX: { ordered: 4 },
+    lineY: { ordered: 2 },
+    shipments: [{
+      key: 'S1', offsetDays: 0, hasDeliveryDate: true, status: 'Delivered',
+      deliveredByRole: { [LINE_ROLE_X]: 4, [LINE_ROLE_Y]: 2 },
+    }],
+    expect: { isReturnable: true, returnableQuantity: 4, deliveredTotal: 4, orderedQuantity: 4, ineligibilityReason: null },
+    expectLineY: { isReturnable: true, returnableQuantity: 2, deliveredTotal: 2, orderedQuantity: 2, ineligibilityReason: null },
+    rebuildWhenHeld: true,
+    consumedByCase: { suite: 'regression/suites/Frontend/orders/014-orders-frontend.csv', id: 'ORD-009' },
+    caseNeeds: { eligibleLines: 2 },
+  },
+  {
+    key: 'SF010',
+    alias: 'RETURNS_ORDER_SF_ORD010',
+    fixtureFile: 'orders/returns/return-order-sf010.json',
+    purpose: 'Storefront ORD-010 (partial return — select only Item A of 2+). Two eligible lines of '
+      + 'different products and quantities, so "only Item A in the return, Item B absent" is decidable.',
+    orderStatus: RETURN_ALLOWED_STATUS,
+    lineX: { ordered: 6 },
+    lineY: { ordered: 2 },
+    shipments: [{
+      key: 'S1', offsetDays: 0, hasDeliveryDate: true, status: 'Delivered',
+      deliveredByRole: { [LINE_ROLE_X]: 6, [LINE_ROLE_Y]: 2 },
+    }],
+    expect: { isReturnable: true, returnableQuantity: 6, deliveredTotal: 6, orderedQuantity: 6, ineligibilityReason: null },
+    expectLineY: { isReturnable: true, returnableQuantity: 2, deliveredTotal: 2, orderedQuantity: 2, ineligibilityReason: null },
+    rebuildWhenHeld: true,
+    consumedByCase: { suite: 'regression/suites/Frontend/orders/014-orders-frontend.csv', id: 'ORD-010' },
+    caseNeeds: { eligibleLines: 2 },
+  },
+  {
+    key: 'SF037',
+    alias: 'RETURNS_ORDER_SF_ORD037',
+    fixtureFile: 'orders/returns/return-order-sf037.json',
+    purpose: 'Storefront ORD-037 (a reason is required; submit after choosing one). One eligible line — '
+      + 'the case is about the reason control, not line selection.',
+    orderStatus: RETURN_ALLOWED_STATUS,
+    lineX: { ordered: 2 },
+    shipments: [{ key: 'S1', offsetDays: 0, delivered: 2, hasDeliveryDate: true, status: 'Delivered' }],
+    expect: { isReturnable: true, returnableQuantity: 2, deliveredTotal: 2, orderedQuantity: 2, ineligibilityReason: null },
+    rebuildWhenHeld: true,
+    consumedByCase: { suite: 'regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv', id: 'ORD-037' },
+    caseNeeds: { eligibleLines: 1 },
+  },
+  {
+    key: 'SF039',
+    alias: 'RETURNS_ORDER_SF_ORD039',
+    fixtureFile: 'orders/returns/return-order-sf039.json',
+    purpose: 'Storefront ORD-039 (return 1 of 3 — the remaining 2 must not be included). Exactly 3 '
+      + 'ordered and delivered, the quantities the case names, so a return that sent the full quantity '
+      + 'instead of the typed 1 is observable.',
+    orderStatus: RETURN_ALLOWED_STATUS,
+    lineX: { ordered: 3 },
+    shipments: [{ key: 'S1', offsetDays: 0, delivered: 3, hasDeliveryDate: true, status: 'Delivered' }],
+    expect: { isReturnable: true, returnableQuantity: 3, deliveredTotal: 3, orderedQuantity: 3, ineligibilityReason: null },
+    rebuildWhenHeld: true,
+    consumedByCase: { suite: 'regression/suites/Frontend/orders/014b-orders-frontend-returns-filtering.csv', id: 'ORD-039' },
+    caseNeeds: { eligibleLines: 1, lineXQuantity: 3 },
+  },
 ];
 
 /** The one fixture suite 073 consumes (see its spec row). */
@@ -696,6 +932,29 @@ export function validateReturnFixtureSet(fixtures = RETURN_ORDER_FIXTURES, { win
     if (adm.lineY && adm.lineX.ordered === adm.lineY.ordered) P('ADM073: both lines ordered the same quantity — a "clamped back to N" reading can no longer tell which line it was');
     if (!adm.rebuildWhenHeld) P('ADM073: must be rebuildWhenHeld — an exhausted 073 order would otherwise survive every re-seed');
     if (!adm.consumedBySuite) P('ADM073: must name consumedBySuite, so its depth is checked against the suite that drains it');
+  }
+
+  // Storefront per-case orders (consumedByCase). Each must open the return form for its case: allowed
+  // status, every line FULLY delivered and eligible, no cancelled line, rebuilt when a run drained it,
+  // and the shape its case states (caseNeeds) — two lines of unequal quantity where the case selects
+  // among lines, the exact quantity where the case types a partial one.
+  for (const f of fixtures.filter((x) => x.consumedByCase)) {
+    const roles = [LINE_ROLE_X, LINE_ROLE_Y].filter((r) => orderedFor(f, r) !== undefined);
+    if (f.orderStatus !== RETURN_ALLOWED_STATUS) P(`${f.key}: order status must be "${RETURN_ALLOWED_STATUS}" — ${f.consumedByCase.id} needs the Request-return button`);
+    if (f.cancelledLine) P(`${f.key}: must not carry a cancelled line`);
+    if (!f.rebuildWhenHeld) P(`${f.key}: must be rebuildWhenHeld — ${f.consumedByCase.id} submits a return and has no Cleanup`);
+    for (const r of roles) if (deliveredTotalFor(f, r) !== orderedFor(f, r)) P(`${f.key}: ${r} delivered ${deliveredTotalFor(f, r)} != ordered ${orderedFor(f, r)} — must be FULLY delivered`);
+    if (!f.expect?.isReturnable || (f.lineY && !f.expectLineY?.isReturnable)) P(`${f.key}: every line must be expected returnable`);
+    const need = f.caseNeeds || {};
+    if (need.eligibleLines && roles.length !== need.eligibleLines) P(`${f.key}: ${f.consumedByCase.id} needs ${need.eligibleLines} eligible line(s), the spec has ${roles.length}`);
+    if (roles.length > 1 && f.lineX.ordered === f.lineY.ordered) P(`${f.key}: both lines ordered ${f.lineX.ordered} — which line went into the return becomes undecidable (SECOND RULE)`);
+    if (need.lineXQuantity !== undefined && f.lineX.ordered !== need.lineXQuantity) P(`${f.key}: ${f.consumedByCase.id} is written against ${need.lineXQuantity} ordered, the spec orders ${f.lineX.ordered}`);
+  }
+  const caseOwners = {};
+  for (const f of fixtures.filter((x) => x.consumedByCase)) {
+    const k = `${f.consumedByCase.suite}#${f.consumedByCase.id}`;
+    if (caseOwners[k]) P(`${f.key} and ${caseOwners[k]} are both consumed by ${k} — one order per case`);
+    caseOwners[k] = f.key;
   }
 
   // ── The window relationship. This is what a date LITERAL would silently break. ──

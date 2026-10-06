@@ -1,11 +1,12 @@
 {
-  "_fixture": "QUOTE_WITH_ADMIN_RESPONSE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module) for VCST-5482. Buyer-submitted RFQ that the admin has priced per line (proposalPrices). Submitter resolved at seed time from {{ORG_USER_EMAIL}}. The exact Quote REST route + field names (proposalPrices vs selectedTierPrice, status vocabulary) are confirmed LIVE on first run per quality-gates G6 — orders-specs.mjs is the single place to correct the status string. No runtime GUIDs here; created id → aliases.<env>.json.",
+  "_fixture": "QUOTE_WITH_ADMIN_RESPONSE — Swagger-shaped QuoteRequest body (VirtoCommerce.Quote module), VCST-5482. Buyer RFQ the admin has answered with per-line proposal prices (each below list). Owner = the account suite 015 signs in as (orders-specs.mjs QUOTE_OWNER_ALIAS → @td(ORG_USER_DEFAULT)), resolved at seed time to its login id + organization; the address email is stamped from that owner. Status \"Proposal sent\" is the only state in which the storefront offers Approve/Decline (see the QUOTE_FIXTURES comment). No runtime GUIDs here; created id → aliases.<env>.json.",
   "number": "AGENT-TEST-QTE-ADMIN-RESPONSE",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
-  "status": "Processing",
+  "languageCode": "{{CULTURE_NAME}}",
+  "status": "Proposal sent",
   "customerName": "AGENT-TEST Org Buyer",
-  "comment": "AGENT-TEST RFQ awaiting/holding admin per-line pricing",
+  "comment": "AGENT-TEST RFQ answered by admin with per-line proposal pricing",
   "items": [
     {
       "sku": "AGENT-TEST-QTE-SKU-1",
@@ -15,7 +16,10 @@
       "listPrice": 49.99,
       "salePrice": 49.99,
       "proposalPrices": [
-        { "quantity": 10, "price": 44.99 }
+        {
+          "quantity": 10,
+          "price": 44.99
+        }
       ]
     },
     {
@@ -23,10 +27,13 @@
       "productId": "agent-test-qte-prod-2",
       "name": "AGENT-TEST Quoted Item 2",
       "quantity": 5,
-      "listPrice": 129.0,
-      "salePrice": 129.0,
+      "listPrice": 129,
+      "salePrice": 129,
       "proposalPrices": [
-        { "quantity": 5, "price": 119.0 }
+        {
+          "quantity": 5,
+          "price": 119
+        }
       ]
     }
   ],
@@ -37,12 +44,12 @@
       "lastName": "Org Buyer",
       "line1": "1 Test Way",
       "city": "New York",
+      "regionId": "NY",
       "regionName": "New York",
       "countryCode": "USA",
       "countryName": "United States",
       "postalCode": "10001",
-      "phone": "+1-206-555-0100",
-      "email": "{{ORG_USER_EMAIL}}"
+      "phone": "+1-206-555-0100"
     }
   ]
 }

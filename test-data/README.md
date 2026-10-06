@@ -496,7 +496,7 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 
 ### Quote Fixtures (suite 015)
 
-All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses use their own vocabulary separate from order statuses.
+All seeded quotes are owned by the account suite 015 signs in as — `@td(ORG_USER_DEFAULT)` — by its LOGIN id **and** its organization; a quote missing either is invisible in the buyer's `/account/quotes` (`orders-specs.mjs` `QUOTE_FIXTURES` comment). Quote statuses use their own vocabulary separate from order statuses; the storefront offers Approve/Decline only on `Proposal sent`, and Approve places the order and sets `Ordered` in one step — there is no `Accepted` status.
 
 > **VCST-5482 — now SEEDED:** `QUOTE_WITH_ADMIN_RESPONSE` and `ACCEPTED_QUOTE` are provided by
 > `npm run seed:quotes` (`scripts/seed-data/orders/seed-quotes.mjs`) as `@td()` JSON-fixture aliases
@@ -507,8 +507,8 @@ All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses
 
 | Env Var | Fixture Spec | Quote Status | Quote Label | Suites Affected | Admin Path |
 |---------|-------------|-------------|-------------|-----------------|------------|
-| `QUOTE_WITH_ADMIN_RESPONSE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin has responded with per-line pricing | DEFERRED | "Quote Received" | 015: QUOTE-004, 005, 006, 008, 009, 018, 019, 020, 021, 025 | Admin > Quotes > [Quote] > enter per-line prices > submit response |
-| `ACCEPTED_QUOTE` | Quote submitted by `{{ORG_USER_EMAIL}}`; admin priced; buyer accepted | DEFERRED | "Ordered" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
+| `QUOTE_WITH_ADMIN_RESPONSE` | Quote owned by `@td(ORG_USER_DEFAULT)` + its org; 2 lines, admin proposal below the live catalog price | SEEDED | "Proposal sent" | 015: QUOTE-004, 005, 006, 008, 009, 018, 019, 020, 021, 025 | Admin > Quotes > [Quote] > enter per-line prices > submit response |
+| `ACCEPTED_QUOTE` | Quote owned by `@td(ORG_USER_DEFAULT)` + its org; 3 lines (distinct quantities), admin-priced, READY to accept = convert (consumed by the conversion cases — re-seed between them) | SEEDED | "Proposal sent" | 015: QUOTE-007, 024, 027, 028, 030 | Complete QUOTE_WITH_ADMIN_RESPONSE flow → buyer accepts |
 | `ACCEPTED_QUOTE_WITH_PO` | Accepted quote that was originally submitted with a PO number field populated | DEFERRED | "Ordered" | 015: QUOTE-029 | Same as ACCEPTED_QUOTE but with PO number entered during RFQ submission |
 | `ACCEPTED_QUOTE_OOS` | Accepted quote where at least one quoted item has since been set to OOS in inventory | DEFERRED | "Ordered" (with OOS item) | 015: QUOTE-026 | Create ACCEPTED_QUOTE; then Admin > Inventory > set that item stock=0 |
 | `EXPIRED_QUOTE` | Quote with admin-set expiry date that has already passed; system should auto-transition to Expired status | DEFERRED | "Expired" | 015: QUOTE-011, 022, 023 | Admin > Quotes > [Quote] > set expiry date to yesterday > save |

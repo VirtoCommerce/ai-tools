@@ -125,6 +125,13 @@ async function uploadEvidence(buyer, fileName) {
   const res = await fetch(`${BACK_URL}/api/files/${ATTACHMENT_SCOPE}`, { method: 'POST', headers: { Authorization: `Bearer ${buyer.token}` }, body: form });
   const j = await res.json().catch(() => null);
   const info = Array.isArray(j) ? j[0] : j;
+  // A Return build that does not register the scope (observed on vcst, Return 3.1003.0 release, 2026-10-05:
+  // 200 {succeeded:false, errorCode:"INVALID_SCOPE"}) cannot carry evidence at all — seed the return WITHOUT
+  // attachments rather than abort; submitReturn is then the judge of whether this build requires them.
+  if (res.ok && info?.errorCode === 'INVALID_SCOPE') {
+    log(`    ⚠ ${ATTACHMENT_SCOPE} scope is not registered on this build — seeding WITHOUT attachments`);
+    return null;
+  }
   if (!res.ok || !info?.succeeded) throw new Error(`upload ${fileName} → ${ATTACHMENT_SCOPE}: ${res.status} ${JSON.stringify(info).slice(0, 200)}`);
   return info.url;
 }
