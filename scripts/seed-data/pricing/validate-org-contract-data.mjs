@@ -26,6 +26,7 @@ import {
   CONTRACT, CONTRACT_GROUP, CONTRACTED_PRODUCT, CONTROL_PRODUCT, ORG_ONLY_PRODUCT, CONTRACT_BUYER,
   RUNTIME_FIELDS, anonymousTiers, contractTiers, priceDeltas, validateFixtureShape,
 } from './org-contract-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const GUID_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
@@ -118,7 +119,7 @@ if (leaked) fail(`${CONTRACT_BUYER.aliasName}.${leaked[0]} carries a literal cre
 else ok(`${CONTRACT_BUYER.aliasName} carries no password literal`);
 
 // 5. Overlay presence (informational — an unseeded env is a legitimate state).
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 console.log(`\n[6] aliases.${env}.json: runtime ids + read-back observations (informational)`);
 const overlayPath = join(ROOT, 'test-data', `aliases.${env}.json`);
 const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};

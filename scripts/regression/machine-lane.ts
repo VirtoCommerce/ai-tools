@@ -42,6 +42,7 @@ import { join } from "path";
 import { fileURLToPath } from "url";
 import { COLUMNS, parseSuite, serialiseRows, type Row } from "../test-cases/append-test-cases-to-suite.js";
 import type { CaseLane } from "../lib/suite-results-merge.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 
 /**
  * tsx's CLI entry, invoked through `process.execPath`.
@@ -231,7 +232,7 @@ function main(): void {
     suiteName: lanes.suiteName ?? "",
     runId,
     lane: "machine",
-    environment: process.env.TEST_ENV ?? "vcst",
+    environment: resolveTestEnv("vcst"), // TEST_ENV, else .env.test-env, else vcst
     startedAt,
     completedAt: new Date().toISOString(),
     totalCases: cases.length,
