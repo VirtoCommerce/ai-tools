@@ -489,6 +489,43 @@ export function evidence(lines, idx) {
  * is not a problem — it is §2's guard working, and simultaneously a direct measure of how often
  * `ask` fails to find something the base already holds.
  */
+/**
+ * THE DOOR'S OWN NUMBERS (VCST-6156): how many capture attempts the door turned away, split by door
+ * and by person, and how many of those were never settled. An ATTEMPT is a landed capture, a
+ * refusal at the door, or a dedup refusal -- the three things a capture call can end in.
+ *
+ * `firstAttempt` is the share of capture INTENTS that landed without a door refusal. An intent that
+ * was refused and retried is one intent, not two, so: intents = landed + dedup-refused + abandoned,
+ * and the refused-then-settled ones are taken off the top. It is the number the acceptance line
+ * "a valid capture on the first attempt" reads; `rate` is the plain refused-per-attempt share.
+ */
+export function doorStats(lines, atDoor) {
+  const attempts = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-refused' || l.kind === 'capture-invalid');
+  const split = (key) => {
+    const out = {};
+    for (const l of attempts) {
+      const k = l[key] ? String(l[key]) : '?';
+      out[k] ??= { attempts: 0, refused: 0 };
+      out[k].attempts += 1;
+      if (l.kind === 'capture-invalid') out[k].refused += 1;
+    }
+    return out;
+  };
+  const settledKeys = new Set(atDoor.filter((r) => r.retried).map((r) => `${r.session} ${r.subject}`));
+  const abandoned = atDoor.filter((r) => !r.retried).length;
+  const settled = attempts.length - atDoor.length;
+  const intents = settled + abandoned;
+  return {
+    attempts: attempts.length,
+    refused: atDoor.length,
+    rate: attempts.length ? atDoor.length / attempts.length : null,
+    abandoned,
+    firstAttempt: intents ? Math.max(0, settled - settledKeys.size) / intents : null,
+    byDoor: split('via'),
+    byWho: split('who'),
+  };
+}
+
 export function refusals(lines, idx) {
   const rows = [];
   const byTarget = new Map();
@@ -496,16 +533,25 @@ export function refusals(lines, idx) {
   // apart: nothing the base holds was re-discovered, the WRITE was malformed. `retried` says whether
   // the same session later got a capture with that subject through, which separates "the door's
   // message worked" from "the agent gave up and the fact was lost".
-  const landed = new Set(lines.filter((l) => l.kind === 'capture' && l.id)
-    .map((l) => `${l._session} ${String(l.subject ?? '')}`));
+  //
+  // A RETRY IS MATCHED BY SUBJECT OR BY THE ASK IT FOLLOWED (VCST-6156). Subject alone counted a
+  // retry with a reworded subject as abandoned; both lines carry `after` -- the `at` of the ask the
+  // write followed -- so a fix that also rewords the subject still pairs with its refusal. A retry
+  // the dedup then refused (`capture-refused`) is not a lost fact either: the base already holds it.
+  const outcomes = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-refused');
+  const settledBy = (l) => outcomes.some((o) => o._session === l._session
+    && (String(o.subject ?? '') === String(l.subject ?? '') || (l.after && o.after === l.after)));
   const atDoor = lines.filter((l) => l.kind === 'capture-invalid').map((l) => ({
     subject: String(l.subject ?? ''),
     why: String(l.why ?? ''),
     problems: Array.isArray(l.problems) ? l.problems.map(String) : [],
-    retried: landed.has(`${l._session} ${String(l.subject ?? '')}`),
+    retried: settledBy(l),
+    via: l.via ? String(l.via) : '?',
+    who: l.who ? String(l.who) : '?',
     session: l._session,
     at: String(l.at ?? ''),
   })).sort((a, b) => b.at.localeCompare(a.at));
+  const door = doorStats(lines, atDoor);
   for (const l of lines) {
     if (l.kind !== 'capture-refused') continue;
     const target = String(l.dupeOf ?? '');
@@ -526,6 +572,7 @@ export function refusals(lines, idx) {
     total: rows.length,
     atDoor,
     atDoorRetried: atDoor.filter((r) => r.retried).length,
+    door,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))
       .sort((a, b) => b.count - a.count),

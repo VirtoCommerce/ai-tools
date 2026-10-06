@@ -67,9 +67,11 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- show KB-XXXXXXXX [--ask <handle>] [--topic "<...>"] [--base <dir>] [--json]
   npm run kb -- none [--ask <handle>] [--topic "<...>"]     none of the listed entries answers
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
-                        --claim "<the claim, in prose>" --deployment <env>
+                        --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
-                        [--topic "<...>"]
+                        [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
+                        an anchor is a route, endpoint or GraphQL op, never a label or menu path;
+                        contract: .claude/knowledge/execution/kb-capture-contract.md
   npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
@@ -257,14 +259,15 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
     if (json) out(JSON.stringify(r, null, 2));
-    else emit(captureLines(r));
+    // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
+    else emit(captureLines(r, { card: true }));
     // A refusal is not a failure -- it is the design working (the ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation) -- but it is not a queued
     // capture either, and 0 would say it was.
     if (r.state === 'invalid' || r.state === 'refused') return EXIT.NO_COVERAGE;
-    return r.state === 'queued' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
+    return r.state === 'queued' || r.state === 'dry-run' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
   }
 
   if (verb === 'confirm' || verb === 'dispute') {

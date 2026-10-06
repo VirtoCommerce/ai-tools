@@ -184,10 +184,35 @@ export function captureLines(r, opts = {}) {
   return lines;
 }
 
-function captureBody(r, { prefix = 'kb capture' } = {}) {
-  if (r.state === 'invalid') {
-    return [`${prefix}: ${r.why}`, ...(r.problems ?? []).map((p) => `  ${p.coordinate} — ${p.kind}: ${p.why}`)];
+/**
+ * The write contract in six lines, printed under a CLI refusal: the CLI door has no input schema, so
+ * this is the only place a shell caller sees the contract before it retries (VCST-6156). The MCP door
+ * gets the same facts from its tool schema and is not handed the card.
+ */
+export const CONTRACT_CARD = [
+  '  the capture contract (in full: .claude/knowledge/execution/kb-capture-contract.md):',
+  '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
+  '               never a button label, field name or menu path -- those go in --claim',
+  '    --deployment  the stand as the base spells it (vcst_qa, vcptcore_stable), not the bare TEST_ENV',
+  '    --scope    at least one axis=value, e.g. surface=storefront-ui',
+  '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
+];
+
+function invalidCaptureLines(r, { prefix, card }) {
+  const lines = [`${prefix}: ${r.why}`];
+  for (const p of r.problems ?? []) {
+    lines.push(`  ${p.coordinate} — ${p.kind}: ${p.why}`);
+    if (p.fix) lines.push(`    fix: ${p.fix}`);
   }
+  for (const [field, source] of Object.entries(r.missing ?? {})) lines.push(`  ${field}: ${source}`);
+  if (r.suggest?.length) lines.push(`  your own text names: ${r.suggest.join(', ')} -- anchor there if the behaviour lives there`);
+  if (card) lines.push('', ...CONTRACT_CARD);
+  else if (r.contract) lines.push(`  contract: ${r.contract}`);
+  return lines;
+}
+
+function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
+  if (r.state === 'invalid') return invalidCaptureLines(r, { prefix, card });
   if (r.state === 'refused') {
     // A refusal is not a failure -- it is the design working. The ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation.

@@ -185,8 +185,10 @@ export const TOOLS = Object.freeze([
         subject: str('One line, the fact itself, as a claim — not a topic.'),
         question: str('The question this entry answers, phrased as somebody would ask it.'),
         claim: str('The observation in prose: what you did, what happened, and what follows.'),
-        deployment: str('Where you observed it, e.g. vcst_qa, vcptcore_stable.'),
-        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one.' },
+        deployment: str('Where you observed it, as the base spells the stand, e.g. vcst_qa, vcptcore_stable '
+          + '(the "on <stand>" of a kb_ask evidence line) -- not the bare TEST_ENV value.'),
+        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one. '
+          + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: str('How it was established. Default "observation".'),
         topic: TOPIC,
