@@ -23,9 +23,10 @@
  * SubagentStop, and the main thread's Stop does not raise -- and mark -- a still-working subagent's.
  *
  * NOTHING IS ORPHANED. The main thread also takes an open ask that NO transcript holds (a plain
- * terminal, an unreadable path) and one held only by subagents whose transcripts have been idle for
- * `SUBAGENT_IDLE_MS` -- a subagent that finished, crashed, was stopped, or whose SubagentStop arrived
- * without a transcript path. Before, those were raised by nobody. A subagent's stop raises only what
+ * terminal, an unreadable path) and one held only by subagents that look FINISHED: transcript idle for
+ * `SUBAGENT_IDLE_MS` and no tool call left without its result -- a subagent that finished, crashed,
+ * was stopped, or whose SubagentStop arrived without a transcript path. One still inside a long tool
+ * call is busy, however quiet its transcript, and keeps its ask. Before, those were raised by nobody. A subagent's stop raises only what
  * its own transcript holds, and nothing when it cannot read it.
  *
  * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
@@ -86,29 +87,56 @@ function raisedAts(path) {
   return text === null ? [] : text.split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
-/** Does this transcript hold this ask? MCP: its call id. CLI: a kb shell call carrying its question. */
-function holds(text, loop) {
-  if (text === null) return false;
-  if (loop.call) return text.includes(loop.call);
-  // The needle exactly as the push builds it (`cliKey`: quotes and escapes flattened).
-  const key = cliKey({ via: 'cli', kind: 'ask', q: loop.q });
-  return Boolean(key) && kbShellCalls(text).some((c) => c.verbs.has('ask') && carries(c.text, key.needle));
+/**
+ * A transcript read ONCE per stop: its text, its kb shell calls (parsed once, not per ask), and
+ * whether its agent is still at work -- a `tool_use` with no `tool_result` yet. A subagent inside one
+ * long tool call (a 10-minute seed, a regression run, a Monitor wait) writes nothing to its transcript,
+ * so its age alone cannot say it finished (PR #400 review).
+ */
+function transcriptOf(path, now) {
+  const text = readText(path);
+  if (text === null) return null;
+  const used = new Set();
+  const answered = new Set();
+  for (const raw of text.split('\n')) {
+    if (!raw.includes('"tool_use"') && !raw.includes('"tool_result"')) continue;
+    let rec;
+    try { rec = JSON.parse(raw); } catch { continue; }
+    for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
+      if (c?.type === 'tool_use' && c.id) used.add(c.id);
+      if (c?.type === 'tool_result' && c.tool_use_id) answered.add(c.tool_use_id);
+    }
+  }
+  return { text, calls: kbShellCalls(text), busy: [...used].some((id) => !answered.has(id)), age: ageOf(path, now) };
 }
 
-/** The subagent transcripts of the session whose main transcript is `main`, with their age. */
+/**
+ * Does this transcript hold this ask? MCP: its call id. CLI: a kb shell call that carries its question
+ * AND was running when the ask was logged -- the window `caller.mjs` gives the push join. Without the
+ * window, a subagent re-asking the question its brief named would hold the main thread's ask too.
+ */
+function holds(t, loop) {
+  if (!t) return false;
+  if (loop.call) return t.text.includes(loop.call);
+  // The needle exactly as the push builds it (`cliKey`: quotes and escapes flattened).
+  const key = cliKey({ via: 'cli', kind: 'ask', q: loop.q });
+  const at = Date.parse(loop.at);
+  return Boolean(key) && Number.isFinite(at) && t.calls.some((c) => c.verbs.has('ask')
+    && c.atMs <= at && at <= c.endMs && carries(c.text, key.needle));
+}
+
+/** The subagent transcripts of the session whose main transcript is `main`. */
 function subagentTranscripts(main, now) {
   if (!main) return [];
   const dir = join(main.replace(/\.jsonl$/, ''), 'subagents');
   let names = [];
   try { names = readdirSync(dir); } catch { return []; }
-  return names.filter((n) => n.endsWith('.jsonl'))
-    .map((n) => join(dir, n))
-    .map((path) => ({ text: readText(path), age: ageOf(path, now) }));
+  return names.filter((n) => n.endsWith('.jsonl')).map((n) => transcriptOf(join(dir, n), now)).filter(Boolean);
 }
 
 /** The open asks THIS stop owns (see the header). */
 function owned(loops, { sub, transcript, now = Date.now() }) {
-  const own = readText(transcript);
+  const own = transcriptOf(transcript, now);
   if (sub) return own === null ? [] : loops.filter((l) => holds(own, l));
   if (own === null) return loops;
   const mine = [];
@@ -116,9 +144,11 @@ function owned(loops, { sub, transcript, now = Date.now() }) {
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
   const subs = subagentTranscripts(transcript, now);
+  // FINISHED = idle for SUBAGENT_IDLE_MS AND no tool call still open. A holder that is busy keeps it.
+  const finished = (s) => !s.busy && s.age > SUBAGENT_IDLE_MS;
   for (const l of rest) {
-    const holders = subs.filter((s) => holds(s.text, l));
-    if (!holders.length || holders.every((s) => s.age > SUBAGENT_IDLE_MS)) mine.push(l);
+    const holders = subs.filter((s) => holds(s, l));
+    if (!holders.length || holders.every(finished)) mine.push(l);
   }
   return mine;
 }

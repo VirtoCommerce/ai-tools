@@ -46,14 +46,6 @@ export function lastWord(pointed) {
 }
 
 /**
- * The asks still open, oldest first: `{ at, q, why }`, where `why` is
- *   'miss'        the base held nothing (or the agent's last word was `kb_none`), nothing written after;
- *   'unresolved'  an `ambiguous` list was neither picked from nor rejected, and nothing written after.
- * A `show` without an ask handle is the agent's pick for its LATEST ask when that ask is `ambiguous` --
- * the reading `kb_none` already gives a handle-less call. Asks the base could not be READ on
- * (`unreachable`, no base) are not misses. `reminded` lists ask `at`s already raised.
- */
-/**
  * ask `at` -> the `show` / `none` records that speak to it -- ONE rule for the reminder and for
  * `report-analyse.mjs` `unhelpful`, which must read a pick the same way (PR #400 review). A record
  * names its ask by `after`; a handle-less `show` is the pick for the latest ask when that ask is
@@ -84,6 +76,13 @@ export function pointersByAsk(records) {
   return pointed;
 }
 
+/**
+ * The asks still open, oldest first: `{ at, q, why, call? }`, where `why` is
+ *   'miss'        the base held nothing (or the agent's last word was `kb_none`), nothing written after;
+ *   'unresolved'  an `ambiguous` list was neither picked from nor rejected, and nothing written after.
+ * Picks and rejections are read through `pointersByAsk`. Asks the base could not be READ on
+ * (`unreachable`, no base) are not misses. `reminded` lists ask `at`s already raised.
+ */
 export function openLoops(journal, { reminded = [] } = {}) {
   const records = (Array.isArray(journal) ? journal : [])
     .filter((r) => r && typeof r.at === 'string' && typeof r.kind === 'string')
