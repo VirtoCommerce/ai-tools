@@ -1,0 +1,41 @@
+# CODEOWNERS — who must approve a change to the paths that can hurt someone else.
+#
+# Deliberately NO `*` default: reports, suites and knowledge files are high-volume and need only the
+# ordinary one approval from anyone. Ownership is reserved for paths where a wrong change ships to
+# plugin users, weakens a containment boundary, or silently disables a gate.
+#
+# Rules: the LAST matching line wins, so specific paths come after general ones. Every line names at
+# least TWO owners — an author cannot approve their own PR, so a sole owner blocks their own work.
+# An owner without write access is ignored by GitHub; check the "CODEOWNERS errors" view after edits.
+
+# CI, workflows and this file itself.
+/.github/                                   @Lenajava1 @Dan-BV
+
+# Shared Claude Code config (hooks + enabledPlugins) and the project-scoped hooks it registers.
+/.claude/settings.json                      @Lenajava1 @Dan-BV
+/.claude/hooks/                             @Dan-BV @Lenajava1
+
+# Gates and their ratchet baselines (context:check, prompt-size budget) — a baseline may only shrink.
+/scripts/maintenance/                       @Lenajava1 @Dan-BV
+
+# Distributed plugins.
+/plugins/vc-fix/                            @Dan-BV @Lenajava1
+/plugins/vc-perf/                           @alexeyshibanov @Lenajava1
+/plugins/vc-secrets/                        @alexeyshibanov @Lenajava1
+
+# Release surface: catalog + per-plugin manifests. A version bump needs its {name}--v{version} tag
+# (docs/release-process.md §Step 5a), so a release maintainer sees every one.
+/.claude-plugin/                            @Lenajava1 @Dan-BV @alexeyshibanov
+/plugins/*/.claude-plugin/                  @Lenajava1 @Dan-BV @alexeyshibanov
+
+# Self-diagnostics containment — exists in BOTH plugins/vc-fix/ and .claude/ and must change in the
+# same commit (CLAUDE.md §Self-diagnostics). No gate checks the mirror since 2026-09-19; this review is
+# the remaining check. Both copies are listed so either half of a one-sided edit requests the owners.
+/plugins/vc-fix/hooks/session-telemetry.mjs @Dan-BV @Lenajava1
+/plugins/vc-fix/hooks/redact.mjs            @Dan-BV @Lenajava1
+/plugins/vc-fix/skills/vc-self-check/       @Dan-BV @Lenajava1
+/plugins/vc-fix/knowledge/diagnostics/      @Dan-BV @Lenajava1
+/.claude/hooks/session-telemetry.mjs        @Dan-BV @Lenajava1
+/.claude/hooks/redact.mjs                   @Dan-BV @Lenajava1
+/.claude/skills/vc-self-check/              @Dan-BV @Lenajava1
+/.claude/knowledge/diagnostics/             @Dan-BV @Lenajava1
