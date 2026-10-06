@@ -1,0 +1,244 @@
+{
+  "ticket": "VCST-5850",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "fast",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "fast",
+    "narrow_story_tokens": null,
+    "escalated_reason": null,
+    "note": "operator-scoped round-2 delta re-check (2026-10-06): round 1 was FULL (reports/tickets/Sprint26-19/VCST-5850/); since then only the theme moved (pr-2476-0abb -> pr-2476-43b1, a dev merge), backend unchanged"
+  },
+  "layer": "storefront",
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "theme delta = dev merge (VcButton loading a11y, top header, search dropdown, Returns icon alias); no Sales Rep communication code changed"
+    ],
+    "skipped": []
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json"
+  },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-06",
+  "environment": "vcptcore-qa (TEST_ENV=vcptcore, store B2B-store)",
+  "build": {
+    "declared": {
+      "theme": "vc-theme-b2b-vue-2.59.0-pr-2476-43b1-43b1a918 (vc-deploy-dev@vcptcore-qa theme/artifact.json, commit 2026-10-06T11:01:19Z)"
+    },
+    "deployed": {
+      "VirtoCommerce.SalesRep": "3.1012.0-pr-21-8964",
+      "VirtoCommerce.XCart": "3.1038.0-pr-141-b404",
+      "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+      "theme": "2.59.0-pr-2476-43b1-43b1a918 (storefront footer, observed live)"
+    },
+    "delta_since_round_1": {
+      "backend": "none (probed /api/platform/modules)",
+      "theme": "vc-frontend#2476 head 0abbf215 -> 43b1a918: merge of dev bringing VCST-6100 (#2529), VCST-6096 (#2528), VCST-5945 (#2534), VCST-6176 (#2544); 8 files, none in Sales Rep communication"
+    },
+    "prs": [
+      "VirtoCommerce/vc-module-sales-rep#21 (open)",
+      "VirtoCommerce/vc-module-x-cart#141 (open)",
+      "VirtoCommerce/vc-module-cart#194 (open)",
+      "VirtoCommerce/vc-frontend#2476 (open, head 43b1a918)"
+    ],
+    "deployed_equals_pr_head": true
+  },
+  "timing": {
+    "started_at": "2026-10-06T11:02:00Z",
+    "started_at_note": "estimated, not recorded at run start",
+    "test_window_start": "2026-10-06T11:18:10Z",
+    "test_window_end": "2026-10-06T11:32:00Z",
+    "finished_at": "2026-10-06T11:35:25Z",
+    "time_to_first_test_minutes": 16,
+    "first_evidence_minutes": 31,
+    "reachability_minutes": null,
+    "agent_dispatches": 1
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "skipped": true,
+      "reason": "already in the in-testing status (Testing)"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8, discovered live)",
+      "actor": "qa-lead (operator-confirmed)",
+      "reason": "PASS WITH NOTES; operator accepted the delivered scope without the To-Be Customers multi-select (2026-10-06), follow-up ticket needed"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (playwright-chrome)"
+  ],
+  "ac_analysis": {
+    "in_scope": [
+      {
+        "ac": "To-Be 1: Send a message field order Customers · Title · Message* · Send via*",
+        "state": "NOT IMPLEMENTED",
+        "evidence": "D1: fields are Title · Message* · Send via*, no Customers field (fe-D1-profile-send-modal.png)"
+      },
+      {
+        "ac": "To-Be 2.1: Customers drop-down with multi-select and select-all from My customers",
+        "state": "NOT IMPLEMENTED",
+        "evidence": "D1"
+      },
+      {
+        "ac": "To-Be 2.2: full-text search within the drop-down",
+        "state": "NOT IMPLEMENTED",
+        "evidence": "D1"
+      },
+      {
+        "ac": "To-Be 2.3: selected customers shown as chips below the drop-down",
+        "state": "NOT IMPLEMENTED",
+        "evidence": "D1"
+      },
+      {
+        "ac": "To-Be 3: opened from a My customers row, that customer is preselected (+chip) and more can be added",
+        "state": "NOT IMPLEMENTED",
+        "evidence": "D1, D4 (the row opens the single-org modal)"
+      },
+      {
+        "ac": "Delta regression: the three send entry points still dispatch correctly on theme 43b1",
+        "state": "MET",
+        "evidence": "D2, D3, D4, D5"
+      }
+    ],
+    "acceptance_field": "\"No requirements.\"",
+    "note": "The To-Be multi-select (round 1's standing finding, out of scope by operator decision) is still not implemented; re-confirmed on 43b1."
+  },
+  "total_cases": 8,
+  "passed": 8,
+  "failed": 0,
+  "blocked": 0,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "ran": false,
+      "reason": "empty exact set: FAST authors nothing and --coverage was not passed (no 2a REPAIR/RE-BASE)"
+    },
+    "release_gate": "not-assessed"
+  },
+  "coverage_triage": null,
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "title": "Message textarea has no accessible name (Send a message + Share dialogs); also New List Description, and the Send via* group has no name",
+      "draft": "reports/bugs/open/low/BUG-salesrep-message-textarea-no-accessible-name-VCST-5850.md",
+      "note": "carried from round 1, re-observed unchanged on 43b1"
+    },
+    {
+      "severity": "Low",
+      "title": "Whitespace-only organizationIds entry returns Forbidden instead of Organization is required",
+      "draft": "reports/bugs/open/low/BUG-salesrep-communication-whitespace-org-id-forbidden-VCST-5850.md",
+      "note": "carried from round 1, API-only, not re-tested (backend unchanged)"
+    },
+    {
+      "severity": "Low",
+      "title": "New List dialog shows 'This field is required' before the user types",
+      "draft": null,
+      "note": "single observation, no screenshot; VCST-5707 surface (out of scope); needs a repro before drafting"
+    }
+  ],
+  "discovery": null,
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "theme delta touches VcButton + top header (shared UI primitives)"
+    ],
+    "ran": false,
+    "reason": "FAST without --visual; D2/D5/D6 covered the delta's UI behaviour in the execution lane"
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "backend modules unchanged since round 1; theme delta does not touch GraphQL operations"
+    ],
+    "schema": null
+  },
+  "test_data": {
+    "data_surface": "false",
+    "fixtures": [
+      "SR_REP_PRIMARY",
+      "ACME_BUYER",
+      "ORG_ACME",
+      "ORG_TECHFLOW",
+      "ORG_BUILDRIGHT"
+    ],
+    "created_in_case": [
+      "lists AGENT-TEST-5850-R2-szoeo, AGENT-TEST-5850-R2-szoeb"
+    ],
+    "cleanup": "both lists deleted in the UI; push messages and email journal records remain as AGENT-TEST-5850-R2-* history",
+    "environment_notes": [
+      "@td(ACME_BUYER) cannot sign in on vcptcore-qa with the configured B2B_USER_PASSWORD (/connect/token 400 login_failed); D3 delivery was verified instead via the admin REST read POST /api/push-message/search + search-recipients",
+      "GET /firebase-messaging-sw.js returns 404 on this stand (push service worker not deployed)",
+      "first home page load after login was cold (SearchProducts 9.6 s, GetShortCart 8.4 s); warm loads 0.15-0.5 s",
+      "Returns surface absent for this account on B2B-store (/account/returns 404), so the VCST-6176 icon could not be observed; the build marker was taken from the footer version"
+    ]
+  },
+  "business_rules_verified": [
+    "BL-UI-003",
+    "BL-UI-004",
+    "BL-UI-005"
+  ],
+  "appinsights": {
+    "ran": false,
+    "reason": "APPINSIGHTS_API_KEY_* empty for TEST_ENV=vcptcore"
+  },
+  "tracker": {
+    "comment_posted": true,
+    "status_transition": "Testing -> Tested",
+    "comment_id": "111483",
+    "artifact": "vc-theme-b2b-vue-2.59.0-pr-2476-43b1-43b1a918",
+    "note": "new round-2 comment (tracker-ops §0 rule 5); first post rendered Markdown as wiki with no images, amended once in place to wiki + 2 inline images (renderedBody: 2 img, 0 error)"
+  },
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "har": "scratchpad copy VCST-5850-R2-session.har (not committed: may carry tokens)",
+    "push_delivery": {
+      "D2 AGENT-TEST-5850-R2-D2-k3420": "13 recipients, ACME_BUYER (Sarah Chen) included, SR_REP_PRIMARY (Priya Rao) absent",
+      "D4 AGENT-TEST-5850-R2-D4-e23o0": "5 recipients (TechFlow), rep absent",
+      "D5 AGENT-TEST-5850-R2-D5-8v6gb": "16 recipients = ACME 13 + TechFlow 5 - 2 shared members, rep absent",
+      "D5b AGENT-TEST-5850-R2-D5b-q7m2t": "16 recipients, same set, rep absent"
+    },
+    "kb": {
+      "confirmed": [
+        "KB-5F164230",
+        "KB-EFD1A7FD"
+      ],
+      "captured": [
+        "KB-D61EEFF8"
+      ],
+      "not_reobserved": [
+        "KB-A98E467C",
+        "KB-50D03D62",
+        "KB-20F8350F",
+        "KB-40FCBAE6"
+      ]
+    },
+    "dismissed_findings": [
+      {
+        "title": "QA-audit-test env badge overlaps 'Call us' at 1280",
+        "reason": "the env badge exists only on non-prod stands"
+      },
+      {
+        "title": "My customers envelope buttons are all named 'Send email'",
+        "reason": "the row supplies the org as context (WCAG 2.4.4 AA in-context); predates the delta"
+      }
+    ]
+  },
+  "documentation": {
+    "ran": false,
+    "reason": "5-docs pending operator decision (offered at close-out)"
+  }
+}
