@@ -37,7 +37,7 @@ Layered loader, keyed by `TEST_ENV` (default `vcst`). Validate: `npm run env:che
 Load order (later overrides earlier): `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` → `.env.playwright.${TEST_ENV}` (that env's passwords, applied as `KEY_<ENV>` promotion) → legacy `.env` (backwards-compat fallback). `.env.local` applies to EVERY env: a URL there overrides `.env.${TEST_ENV}` unless that file pins it as `BACK_URL_<ENV>=` (`resolveTestEnv()` warns otherwise).
 
 - **Per-env URLs/identifiers** (committed, no secrets): `.env.vcst` (current QA), `.env.vcptcore` (second QA), `.env.virtostart` (staging)
-- **Secrets** (passwords, API tokens): `.env.playwright.local`, `.env.local`, and per-env `.env.playwright.${TEST_ENV}` (one password file per env; also the Playwright MCP `--secrets` file for that env) — all gitignored
+- **Secrets** (passwords, API tokens): `.env.local`, and per-env `.env.playwright.<env>` (that env's passwords) — gitignored. The Playwright MCP `--secrets` file is generated from them: `.env.playwright.local` for one env (`npm run secrets:sync`), or `.env.playwright.all` for every env as `NAME_<ENV>` (`npm run secrets:sync:all`)
 - **Cross-env constants** (sandbox cards, builder.io): `.env.defaults`
 - Switch envs: `TEST_ENV=vcptcore npm run env:check` or `TEST_ENV=virtostart …`
 - Agents read variable values via `process.env.X` — they don't care which file it came from. Variable *names* are stable across envs.
