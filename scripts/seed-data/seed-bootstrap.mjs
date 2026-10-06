@@ -58,6 +58,8 @@ const TEARDOWN_STEPS = [
   // VCST-5748 OTP sign-in accounts — independent of every other domain; deletes only agent-test-otp-* accounts/contacts.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', args: ['--teardown'] },
   // Wishlists are carts referencing products AND a security account, so they go before both.
+  // Personal fixtures: additive addresses + saved lists on SHARED personas (removes only its own marker/names).
+  { name: 'personal-fixtures', script: 'personal-fixtures/seed-personal-fixtures.mjs', args: ['--teardown'] },
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
@@ -177,7 +179,7 @@ const STEPS = [
   // cases resolve. Reconcile-only (no content authoring); reports conflicts. Optional.
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', required: false, priority: 136 },
   // Order/quote STATE fixtures (VCST-5482) — after products (40) + company-users (100): orders are
-  // owned by USER_EMAIL, quotes submitted by ORG_USER_EMAIL, and line items point at real catalog
+  // owned by USER_EMAIL, quotes by @td(ORG_USER_DEFAULT) + its org, and line items point at real catalog
   // products. Optional: quotes need the Quote module deployed + Stores.EnableQuotes on the store.
   { name: 'orders', script: 'orders/seed-order-states.mjs', required: false, priority: 140 },
   // Sales Rep family. Sits with the order steps because it CREATES orders, and after products (40)
@@ -203,6 +205,10 @@ const STEPS = [
   // `required: false` because it hard-aborts on an env with no genuine second store
   // (STORE_ID_SECONDARY), which is a legitimate deployment shape — see seed-wishlists.mjs.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', required: false, priority: 150 },
+  // REG-2026-10-02-2022 personal fixtures — addresses + saved lists ADDED to shared personas (USER_DEFAULT,
+  // ORG_USER_DEFAULT) and a read-only zero-address check. Needs the personas (company-users) and the
+  // BUYABLE_* product ids (products), so it runs last.
+  { name: 'personal-fixtures', script: 'personal-fixtures/seed-personal-fixtures.mjs', required: false, priority: 155 },
   // VCST-5748 OTP sign-in accounts (the non-optIn SEEDED_ACCOUNTS of auth/otp-signin-specs.mjs — no
   // Administrator: the opt-in back-office accounts need --only). Self-contained: creates its own contacts/accounts on STORE_ID.
   { name: 'otp-signin', script: 'auth/seed-otp-signin.mjs', required: false, priority: 102 },
