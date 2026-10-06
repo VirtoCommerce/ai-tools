@@ -33,13 +33,14 @@ code, so the fix has an objective red→green proof. This is **Gate 2** of the a
    - **UI logic** (rendering, events, conditional display): `mount` / `shallowMount` from
      `@vue/test-utils` (or `@testing-library/vue`), asserting on `data-test-id` / emitted events.
    See `vitest-patterns.md` for both recipes + how to stub i18n / router / Pinia / `$cfg` / GraphQL.
-5. **Write a NEW test** asserting the **expected** behavior. Name it after the behavior + ticket so it
-   filters cleanly (e.g. `describe("VcQuantityInput — clamps to max (VCST-1234)", …)`). Add it next to
-   its subject as `*.spec.ts` / `*.test.ts`.
+5. **Write a NEW test** asserting the **expected** behavior. Name it after the **subject + behavior
+   only** (e.g. `describe("VcQuantityInput — clamps to max", …)`) — **never the ticket key** in a
+   `describe`/`test` string, file name or comment (`knowledge/agents/developers/shared-instructions.md`
+   §Minimal diff, rule 3a). Add it next to its subject as `*.spec.ts` / `*.test.ts`.
 6. **Confirm RED** — scoped and filtered so the loop stays fast:
    ```
-   npx vitest run -t VCST-1234            # by test-name substring
-   npx vitest run path/to/the.spec.ts     # or by file
+   npx vitest run path/to/the.spec.ts             # by file
+   npx vitest run path/to/the.spec.ts -t "clamps"  # narrowed by behavior-name substring
    ```
    The new test must fail on current code. **If it passes, the STR/RCA is wrong → re-investigate, do
    not proceed.**

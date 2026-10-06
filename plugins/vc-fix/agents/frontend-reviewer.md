@@ -59,6 +59,14 @@ BEFORE any PR is opened** and decide whether it may proceed. You own **Gate 4** 
    one-line comment.** Judge density against the surrounding file, not in the abstract — if the diff is
    visibly more commented than the code it sits in, it is over-commented. The authoring-side rule is
    `knowledge/agents/developers/shared-instructions.md` §Minimal diff; this is its Gate-4 enforcement.
+4b. **No ticket key in test code** — REQUEST_CHANGES when a new or touched test carries the tracker key
+   (`VCST-1234`, `_VCST1234`, `(ABC-123)`, a bare Azure Boards id) in a `describe` / `it` /
+   `test` string, file name or comment
+   — e.g. `describe("SearchDropdown search_bar impression (VCST-6100)", …)`. Tests are named for the
+   subject + behavior; the key belongs in the branch, commit and PR only. On a platform fork-PR from a
+   client deployment a client key is also a §2a containment leak, not just a naming nit. Check the
+   added lines of the test files in `git diff <base>...HEAD` for the key, with and without its dash. Authoring rule:
+   `knowledge/agents/developers/shared-instructions.md` §Minimal diff rule 3a.
 5. **Minimal & idiomatic** — no refactors, no formatting churn, no dep bumps / `yarn.lock` changes, no
    unrelated files; Vue 3 / `<script setup>` / Composition API / TS idioms match the repo (see
    `skills/vue-fix/vue3-best-practices.md`). No reactivity foot-guns (destructured

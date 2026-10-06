@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "rank": "verdict-1",
+  "fitted": "2026-10-01T08:37:12.075Z",
+  "set": "expect: vc-knowledge branch vcst-6122-schema2 (the schema-2 migration, VCST-6122 M2, 334 active entries). expectPre: vc-knowledge@8c8f844, the snapshot the reference baseline was measured on (289 entries).",
+  "target": {
+    "precision": 0.95
+  },
+  "fusion": {
+    "method": "linear",
+    "weights": {
+      "sentence": 1,
+      "document": 0,
+      "concepts": 0.25,
+      "anchors": 0.5
+    }
+  },
+  "rerank": {
+    "k": 10,
+    "lambda": 0.5
+  },
+  "model": {
+    "features": [
+      "idfCoverage",
+      "sentenceStrength",
+      "sentenceMargin",
+      "margin"
+    ],
+    "mean": [
+      0.4748979831634755,
+      0.1811689478871938,
+      0.10788765187390818,
+      0.193083665726644
+    ],
+    "std": [
+      0.18884292170516553,
+      0.06140699118354068,
+      0.28963403163552487,
+      0.14270634869186116
+    ],
+    "weights": [
+      1.226795441984602,
+      -0.5867821137532583,
+      0.550731280051938,
+      0.391280546763302
+    ],
+    "bias": -0.14772715835780398
+  },
+  "thresholds": {
+    "answer": 0.9573352630894495
+  },
+  "fit": {
+    "dev": {
+      "rows": 56,
+      "positives": 27
+    },
+    "calibration": {
+      "rows": 32,
+      "answeredAtThreshold": 1
+    }
+  }
+}

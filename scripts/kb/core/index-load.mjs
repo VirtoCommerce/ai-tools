@@ -12,6 +12,7 @@
 // confusion §3.5 exists to prevent.
 
 import { normalizeAnchor } from './anchors.mjs';
+import { anchorKind } from './coordinates.mjs';
 
 /** Rows carry everything needed to RANK an entry and nothing needed to READ one (PLAN §2). */
 const REQUIRED_ROW_FIELDS = ['id', 'path', 'subject'];
@@ -24,9 +25,14 @@ const REQUIRED_ROW_FIELDS = ['id', 'path', 'subject'];
  * @property {string} [question]
  * @property {string[]} anchors      raw, as written
  * @property {string[]} anchorKeys   normalised -- the identity and ranking key
+ * @property {(string|null)[]} anchorKinds  parallel to `anchors`, derived (coordinates.mjs `anchorKind`)
  * @property {string[]} scope        `axis=value`, normalised and sorted
+ * @property {string[]} surfaces     canonical, derived from `scope` (SURFACES)
  * @property {string} plane
  * @property {string} status
+ * @property {string[]} supersededBy ids; empty unless the entry was retired or split
+ * @property {string[]} questions    the retrieval card's questions (schema 2); empty on a schema-1 row
+ * @property {string[]} concepts     vocabulary concept ids (schema 2); empty on a schema-1 row
  * @property {number} trust          confirmations, computed at write time from evidence[]
  * @property {number} disputed
  * @property {string} index          which declared index this row came from
@@ -50,9 +56,48 @@ export function normalizeScope(scope) {
   return [...out].sort();
 }
 
+/**
+ * `surface` as a closed set (VCST-6122 Decision 5). The corpus spells the axis eighteen ways; the
+ * table maps every spelling that names ONE of these six unambiguously (UCP and the vendor portal are
+ * surfaces of their own; background jobs are observed through the platform REST API). A spelling it does not
+ * list -- `api` names UCP on some entries and the platform REST API on others -- canonicalises to
+ * nothing, which the per-entry migration (M2) resolves by reading the entry, never by guessing here.
+ *
+ * DERIVED AT LOAD, not stored in the index: a client from before this change rebuilds every row it
+ * touches without the field, so a stored copy would flap between the two versions on every push.
+ */
+export const SURFACES = ['storefront-ui', 'xapi', 'rest', 'admin-ui', 'ucp', 'vendor-ui'];
+export const SURFACE_SPELLINGS = {
+  // Every canonical value spells itself -- derived, so a value added to SURFACES cannot be missed.
+  ...Object.fromEntries(SURFACES.map((s) => [s, s])),
+  xapi: 'xapi', 'storefront-xapi': 'xapi', 'graphql-xapi': 'xapi', graphql: 'xapi',
+  rest: 'rest', 'rest-api': 'rest', 'platform-api': 'rest', 'platform-rest': 'rest', 'backend-api': 'rest', 'admin-api': 'rest',
+  'background-jobs': 'rest',
+  'admin-ui': 'admin-ui', 'admin-spa': 'admin-ui',
+  'ucp-mcp': 'ucp', 'ucp-rest': 'ucp',
+  'vendor-portal-ui': 'vendor-ui',
+};
+
+/** The canonical surfaces of a normalised scope, in SURFACES order. */
+export function surfacesOf(scope) {
+  const out = new Set();
+  for (const item of scope ?? []) {
+    const m = /^surface=(.+)$/.exec(item);
+    if (m && SURFACE_SPELLINGS[m[1]]) out.add(SURFACE_SPELLINGS[m[1]]);
+  }
+  return SURFACES.filter((s) => out.has(s));
+}
+
+/** `supersededBy`, `concepts`: a bare id, a list of ids, or a list of `{id}` -- one list of ids. */
+export const idList = (v) => asArray(v).map((x) => String(typeof x === 'object' && x ? x.id ?? '' : x ?? '').trim()).filter(Boolean);
+
+/** `questions`: a list of `{text}` or of bare strings -- one list of texts. */
+export const textList = (v) => asArray(v).map((x) => String(typeof x === 'object' && x ? x.text ?? '' : x ?? '').trim()).filter(Boolean);
+
 /** One raw index row -> the shape everything above this file uses. */
 export function normalizeRow(raw, { index = 'index.json' } = {}) {
   const anchors = asArray(raw.anchors).map(anchorText).filter(Boolean);
+  const scope = normalizeScope(raw.scope ?? raw.appliesTo);
   return {
     id: String(raw.id),
     path: String(raw.path),
@@ -60,9 +105,15 @@ export function normalizeRow(raw, { index = 'index.json' } = {}) {
     question: String(raw.question ?? ''),
     anchors,
     anchorKeys: [...new Set(anchors.map(normalizeAnchor).filter(Boolean))].sort(),
-    scope: normalizeScope(raw.scope ?? raw.appliesTo),
+    // Parallel to `anchors`, derived here for the reason `surfaces` is (see SURFACES).
+    anchorKinds: anchors.map(anchorKind),
+    scope,
+    surfaces: surfacesOf(scope),
     plane: String(raw.plane ?? 'experiential'),
     status: String(raw.status ?? 'active'),
+    supersededBy: idList(raw.supersededBy),
+    questions: textList(raw.questions),
+    concepts: idList(raw.concepts),
     trust: Number.isFinite(raw.trust) ? raw.trust : 0,
     disputed: Number.isFinite(raw.disputed) ? raw.disputed : 0,
     index,
@@ -102,6 +153,11 @@ export async function loadManifest(reader) {
 
 /**
  * Read `kb.json`, then every index it declares, and return the merged catalogue.
+ *
+ * Index schema 1 and 2 are read by the same path: schema 2 only ADDS optional row fields
+ * (`questions`, `concepts`, `supersededBy`), every one of which defaults to empty, so a schema-1 row
+ * is a schema-2 row without a card. That is what lets the data migrate after the client (VCST-6122
+ * Decision 8) -- and why nothing here compares `schema`.
  *
  * @returns {Promise<{state:'ok', manifest: object, rows: IndexRow[], indexes: string[]}
  *                 | {state:'no-base'|'unreachable', why: string}>}

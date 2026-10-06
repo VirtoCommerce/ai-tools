@@ -1,6 +1,6 @@
 # BUG — Top utility bar overlaps itself at 1280px when signed in
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Severity:** Medium · **Priority:** Medium · **Found:** 2026-09-09
 **Provenance:** **OUT-OF-SCOPE / pre-existing** — unrelated to the VCST-5317 PRs. Found incidentally during that run's Step 4.
@@ -57,3 +57,11 @@ Cosmetic but on the mandated test width and on every page, signed in, both organ
 - The breakpoint at which it starts and stops was **not** bisected — only 1280 (fails) and 1920 (clean) were measured.
 - Whether the long `AGENT-TEST-…` fixture names are load-bearing was not isolated; a production-length org name may not overflow. **This should be checked before the fix is sized** — it may be fixture-amplified rather than a general defect.
 - The QA environment badge occluding `Dashboard` may be a non-production artefact.
+
+## Resolution
+
+- **Fixed in:** vc-frontend PR #2534 (`fix/VCST-5945`, head `e1271b10`, theme `2.59.0-pr-2534-e127-e1271b10`) — still open at verification time. Names wrapper `xl:inline` → `xl:flex` so `truncate`/`max-width` apply; names capped at `max-w-32` between `xl` and `2xl` when org + user both show; ship-to placeholder gets `truncate`.
+- **Tracker:** VCST-5945 → Tested (2026-10-05). Comment 111367.
+- **Verified:** 2026-10-05 via `/qa-test VCST-5945 localhost` → `/qa-verify-fix`, local storefront proxied to vcst-qa. RED on vcst-qa `2.59.0-pr-2524` (31.8 × 18 px overlap; 8.2 × 18 px with an address selected) → GREEN 3/3 on the PR build, checklist 10/10.
+- **Open questions from this report, now answered:** production-length names do not trigger it (PR author, on `dev`); the failing range with the QA names was 1280–1499 (PR author); the QA badge is an environment artefact.
+- **Evidence:** `reports/tickets/Sprint26-20/VCST-5945/evidence.html`, `verification-summary.json`, `screenshots/`.

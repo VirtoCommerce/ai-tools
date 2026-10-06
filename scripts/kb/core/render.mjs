@@ -12,6 +12,7 @@
 
 import { MSYS_REMEDY } from './anchors.mjs';
 import { HEADLINE } from './exits.mjs';
+import { idList } from './index-load.mjs';
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
 export function hitLines(hit) {
@@ -56,8 +57,29 @@ export function hitLines(hit) {
 /** Said wherever a repair ran: the next command from the same shell will be mangled the same way. */
 const MSYS_NOTE = `  (your shell rewrote a leading "/" into a local path; it was undone. ${MSYS_REMEDY})`;
 
+/** What this session captured and has not published, said wherever the base certified no answer. */
+function queuedLines(queued) {
+  if (!(queued ?? []).length) return [];
+  return [
+    `  you captured this yourself earlier in THIS session and it is not published yet —`
+      + ` it is not in the base and nobody else can see it:`,
+    ...queued.map((q) => `    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`),
+  ];
+}
+
 export function askLines(r, { prefix = 'kb ask' } = {}) {
+  // A verdict ranker's `ambiguous` (VCST-6122 Decision 1a): the headlines, then the handle the pick
+  // or the `none` must carry so the log can pair them with THIS ask.
+  if (r.verdict === 'ambiguous') {
+    return [
+      ...verdictLines({ verdict: 'ambiguous', headlines: r.headlines }, { prefix }),
+      ...(r.repaired === 'msys' ? [MSYS_NOTE] : []),
+      ...(r.handle ? [`  ask handle: ${r.handle}  (pass it as \`ask\` to kb_show / kb_none, or as --ask on the CLI)`] : []),
+      ...queuedLines(r.queued),
+    ];
+  }
   const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];
+  if (r.verdict === 'none' && r.concepts?.length) lines.push(`  your question maps to concepts nothing in the base is filed under: ${r.concepts.join(', ')}`);
   if (r.why) lines.push(`  ${r.why}`);
   // Said on every state: the repair already ran, but the next command from the same shell will be
   // mangled the same way, and only the agent can change how it is typed.
@@ -77,13 +99,56 @@ export function askLines(r, { prefix = 'kb ask' } = {}) {
   // work, and the reader is the one party who can judge it. Named as a DRAFT and kept out of the
   // hit list: it carries no trust, no confirmations and no provenance a second person could check,
   // and the state stays `miss` because the base really does hold nothing yet.
-  if (r.state === 'miss' && (r.queued ?? []).length) {
-    lines.push(`  you captured this yourself earlier in THIS session and it is not published yet —`
-      + ` it is not in the base and nobody else can see it:`);
-    for (const q of r.queued) lines.push(`    ${q.id}  ${q.subject}${q.at ? `  (queued ${q.at})` : ''}`);
-  }
+  if (r.state === 'miss') lines.push(...queuedLines(r.queued));
   for (const hit of r.hits ?? []) lines.push(...hitLines(hit));
   return lines;
+}
+
+/** How many characters of an entry's body an `ambiguous` headline carries. */
+export const EXCERPT_CHARS = 200;
+
+/** The opening of a body, on one line, cut at a word boundary. Bodies lead with the fact itself. */
+export function excerpt(body, max = EXCERPT_CHARS) {
+  const flat = String(body ?? '').replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max).replace(/\s+\S*$/, '')} …` : flat;
+}
+
+/**
+ * The agent's half of an `ambiguous` verdict, said where the agent reads it: the base found these and
+ * cannot certify that any of them states the fact (VCST-6122 Decision 1a). Short because it is paid on
+ * every ask; the full rule belongs in the MCP tool description, paid once per session. M4 measured a
+ * Sonnet-class agent on exactly this text -- changing it changes what the gate measured.
+ */
+// BOTH DOORS ARE NAMED (exits.mjs, PLAN §5.1): `kb_show` / `kb_none` exist only on the MCP server and
+// `npm run kb -- show|none` only on the CLI, so naming one is a dead end for the reader with the other.
+export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open the one most likely to state your fact '
+  + '(kb_show <id>, or `npm run kb -- show <id> --ask <handle>`) and rely on it only if its body does; '
+  + 'if none could, say so (kb_none, or `npm run kb -- none --ask <handle>`). Same topic is not an answer.';
+
+/**
+ * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit
+ * always was; `ambiguous` is a few headlines -- subject, the question each answers, the opening of its
+ * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
+ * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
+ *
+ * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
+ */
+export function verdictLines(v, { prefix = 'kb ask' } = {}) {
+  if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
+  if (v.verdict === 'ambiguous') {
+    return [
+      `${prefix}: ${AMBIGUOUS_CONTRACT}`,
+      ...v.headlines.flatMap((h) => [
+        `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
+        ...(h.question ? [`      answers: ${h.question}`] : []),
+        ...(h.body ? [`      says: ${excerpt(h.body)}`] : []),
+      ]),
+    ];
+  }
+  return [
+    `${prefix}: ${HEADLINE.miss}`,
+    ...(v.concepts?.length ? [`  your question maps to concepts nothing in the base is filed under: ${v.concepts.join(', ')}`] : []),
+  ];
 }
 
 export function showLines(r, { prefix = 'kb show' } = {}) {
@@ -100,6 +165,9 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
     `scope:    ${r.row.scope.join(', ')}`,
   ];
+  // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
+  const next = idList(r.entry.supersededBy);
+  if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
   for (const e of r.entry.evidence ?? []) {
     lines.push(`  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'} at ${e.at ?? '?'}`
       + `${e.note ? ` — ${e.note}` : ''}`);
@@ -217,5 +285,15 @@ function evidenceBody(verb, r) {
     `kb ${verb}: queued on ${r.id} (${r.row.subject})`,
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
+  ];
+}
+
+/** `kb none` / `kb_none`: what was recorded, and against which ask. */
+export function noneLines(r, { prefix = 'kb none' } = {}) {
+  if (r.state !== 'recorded') return [`${prefix}: ${HEADLINE[r.state] ?? r.state}`, ...(r.why ? [`  ${r.why}`] : [])];
+  return [
+    `${prefix}: recorded — none of the entries answers${r.q ? ` "${r.q}"` : ''}.`,
+    ...(r.why ? [`  ${r.why}`] : []),
+    '  Now go find out, and record what you find with kb_capture (or `npm run kb -- capture`).',
   ];
 }

@@ -1,6 +1,6 @@
 # VcButton in loading state has no accessible name (scanner modal Browse button) `[Medium]`
 
-## Status: CONFIRMED — VCST-6096 · fix PR VirtoCommerce/vc-frontend#2528 (In review, 2026-10-01)
+## Status: FIXED — VCST-6096 · fix PR VirtoCommerce/vc-frontend#2528 (verified 2026-10-05, PR still open)
 
 **Severity:** Medium (P2) · **Type:** Accessibility, WCAG 4.1.2 Name, Role, Value · axe-core `button-name` (**critical**) · **Archetype:** `RENDER` (accessible name)
 **Found by:** /qa-test VCST-2945 (2026-09-28) · **standalone, pre-existing** UI-kit defect (see Provenance)
@@ -81,3 +81,10 @@ defect doesn't fail VCST-2945 and is filed standalone (a11y findings never block
 - **Routing confidence:** HIGH (single file; shared component, so review the Storybook stories)
 
 Found by: /qa-test VCST-2945 (2026-09-28)
+
+## Resolution
+
+- **Fixed in:** vc-frontend PR #2528 (theme `2.59.0-pr-2528-9ed3-9ed3b99e`), still open at verification time. `vc-button.vue` hides loading content with `opacity-0` instead of `invisible`, so the label stays in the accessibility tree, and sets `aria-busy="true"` while loading.
+- **Tracker:** VCST-6096 → Tested (2026-10-05). Comment 111378.
+- **Verified:** 2026-10-05 via `/qa-test VCST-6096 localhost` → `/qa-verify-fix`, local storefront proxied to vcst-qa. RED on vcst-qa `2.59.0-pr-2524` (unnamed Browse, axe `button-name` critical) → GREEN 3/3 on the PR build ("Browse files", `aria-busy="true"`, axe 0), checklist 10/10, button size unchanged (161 × 44).
+- **Evidence:** `reports/tickets/Sprint26-20/VCST-6096/evidence.html`, `verification-summary.json`, `axe-*.json`, `screenshots/`.

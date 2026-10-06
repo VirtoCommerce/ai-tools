@@ -297,6 +297,14 @@ CI does NOT run on PRs** — it's push-only — so don't wait on it.)
    already says; add a comment only for genuinely non-obvious *why* (a subtle guard, a workaround, a
    BL-* / edge-case rationale). No "// added for <ticket-key>", no step-by-step play-by-play, no
    re-commenting untouched code. Match the density of the surrounding file.
+3a. **No ticket key in test code.** A new test's `describe`/`it`/`test` strings, xUnit class/method
+   names, test file names and comments name the **subject + behavior** only — never `VCST-1234`,
+   `_VCST1234`, `(ABC-123)` or a bare Azure Boards id. The key goes in the branch, the commit and the
+   PR title/body — nowhere in the diff. Why: a test outlives its ticket and must say what it guards
+   without the tracker (the ticket's link to the test is the commit, which `git blame` already
+   resolves); the target repos don't name tests this way; and a client tracker key in a platform
+   fork-PR is a client identifier leaving the client's project (`.claude/rules/quality-gates.md`
+   §2a). Scope the repro run by file path / test name, never by key.
 4. **No breaking changes.** No public REST/GraphQL/DTO/contract change, DB schema/migration, domain
    event shape, or `module.manifest` change. Any of these → STOP (Gate 0 boundary).
 5. **No secrets.** Never read, echo, or commit credentials/connection strings/`.env*`/`*.Development.json`.

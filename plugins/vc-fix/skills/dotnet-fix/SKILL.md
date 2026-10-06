@@ -23,7 +23,7 @@ pass the build/test gate. This is **Gate 3** of `.claude/rules/quality-gates.md`
      `-p:NuGetAudit=false` to every command, CLI-only, never edit build props.
 3. **Green — fast inner loop first** (repro test only), then the full project:
    ```
-   dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~VCST1234"
+   dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~<TestClass>.<TestMethod>"
    dotnet test tests/VirtoCommerce.<Name>.Tests --nologo -p:NuGetAudit=false
    ```
    Repro test passes; **ALL pre-existing tests still pass and are UNMODIFIED**.

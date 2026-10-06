@@ -3,9 +3,9 @@
 // credential path is the cost this design refuses.
 //
 // AUTHORITY below is Entra-specific, and describeTokenError parses /AADSTS\d+/ out of the error
-// body. The declaration schema commits the same way — vc-secrets.mjs requires a GUID tenantId and
-// keys registrations by it — so this is a single-provider design rather than one layer's shortcut.
-// In scope for the declared use, and deliberately not generalised here.
+// body. The declaration schema commits the same way — the launcher (lib/config.mjs) requires a GUID
+// tenantId and keys registrations by it — so this is a single-provider design rather than one layer's
+// shortcut. In scope for the declared use, and deliberately not generalised here.
 import crypto from "node:crypto";
 import https from "node:https";
 import os from "node:os";
