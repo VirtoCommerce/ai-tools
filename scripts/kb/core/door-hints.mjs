@@ -17,7 +17,7 @@
 
 import { anchorShape, deeperByRoot, normalizeAnchor, routeOf } from './coordinates.mjs';
 import { coordinatesIn } from './query.mjs';
-import { CONTRACT, SCOPE_SOURCE } from './contract.mjs';
+import { CONTRACT, DEPLOYMENT_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 
 export { CONTRACT, SCOPE_SOURCE };
 
@@ -29,8 +29,7 @@ export const FIELD_SOURCE = {
   subject: 'one line stating the fact, as a claim',
   question: 'the question this entry answers, as the next agent would ask it, coordinate included',
   claim: 'what you did and what happened; button labels and menu paths go here',
-  deployment: 'the stand you observed it on, spelled as the base spells it -- the `on <stand>` of an evidence '
-    + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); not the bare TEST_ENV value (`vcst` is not `vcst_qa`)',
+  deployment: DEPLOYMENT_SOURCE,
   anchor: 'the route or request the behaviour lives at (/account/orders, POST /api/carts, Query.products)',
 };
 

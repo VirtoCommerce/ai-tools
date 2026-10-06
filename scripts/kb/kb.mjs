@@ -73,8 +73,8 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
-  npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
+  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--topic "<...>"]
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]

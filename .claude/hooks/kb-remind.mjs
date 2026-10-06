@@ -180,9 +180,11 @@ function main() {
 
   const path = remindedPath(env);
   const sub = payload?.hook_event_name === 'SubagentStop';
-  const loops = owned(openLoops(journal, { reminded: raisedAts(path) }), {
-    sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path,
-  });
+  // Nothing open -> no transcript is read: on a session with a long journal and a multi-MB
+  // transcript this is every turn end (PR #400 review).
+  const open = openLoops(journal, { reminded: raisedAts(path) });
+  if (!open.length) return;
+  const loops = owned(open, { sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path });
   if (!loops.length) return;
 
   try { appendFileSync(path, `${loops.map((l) => l.at).join('\n')}\n`, 'utf8'); } catch { return; }

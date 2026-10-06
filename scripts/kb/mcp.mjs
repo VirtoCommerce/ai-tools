@@ -53,6 +53,7 @@ import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
+import { DEPLOYMENT_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
@@ -187,8 +188,7 @@ export const TOOLS = Object.freeze([
         subject: str('One line, the fact itself, as a claim — not a topic.'),
         question: str('The question this entry answers, phrased as somebody would ask it.'),
         claim: str('The observation in prose: what you did, what happened, and what follows.'),
-        deployment: str('Where you observed it, as the base spells the stand, e.g. vcst_qa, vcptcore_stable '
-          + '(the "on <stand>" of a kb_ask evidence line) -- not the bare TEST_ENV value.'),
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one. '
           + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
@@ -207,7 +207,7 @@ export const TOOLS = Object.freeze([
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed it.'),
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
         topic: TOPIC,
       },
@@ -223,7 +223,7 @@ export const TOOLS = Object.freeze([
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed the contradiction.'),
+        deployment: str(`Where you observed the contradiction: ${DEPLOYMENT_SOURCE}.`),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
         topic: TOPIC,
       },
