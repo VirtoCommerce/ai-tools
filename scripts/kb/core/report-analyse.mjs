@@ -539,7 +539,10 @@ export function pairRetries(lines) {
  * settled only by the `after` heuristic -- likely, not certain, retries.
  */
 export function doorStats(lines, atDoor, closing = new Set()) {
-  const attempts = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-refused' || l.kind === 'capture-invalid');
+  // A dedup refusal at PUSH time (`when: 'push'`) is the SAME call as the `capture` that queued it, not
+  // a second attempt: counting it double-counted the call and added a `?` door (PR #400 review).
+  const attempts = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-invalid'
+    || (l.kind === 'capture-refused' && l.when !== 'push'));
   const split = (key) => {
     const out = {};
     for (const l of attempts) {
@@ -696,11 +699,15 @@ export function unhelpful(lines, idx) {
     // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
     // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
     // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
+    // A handle-less `show` is the pick for the latest ask when that ask is `ambiguous` -- the same rule
+    // `core/loop.mjs` applies, so the panel and the reminder read one pick the same way.
     const pointedAt = new Map();
-    for (const e of events) {
-      if ((e.kind !== 'show' && e.kind !== 'none') || !e.after) continue;
-      const k = String(e.after);
-      pointedAt.set(k, [...(pointedAt.get(k) ?? []), e]);
+    let latestAsk = null;
+    for (const e of [...events].sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')))) {
+      if (e.kind === 'ask') { latestAsk = e; continue; }
+      if (e.kind !== 'show' && e.kind !== 'none') continue;
+      const k = e.after ? String(e.after) : e.kind === 'show' && latestAsk?.state === 'ambiguous' ? String(latestAsk.at) : null;
+      if (k) pointedAt.set(k, [...(pointedAt.get(k) ?? []), e]);
     }
     const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : lastWord(pointedAt.get(String(ask.at))).ids);
 

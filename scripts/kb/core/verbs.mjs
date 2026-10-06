@@ -583,6 +583,8 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
  * latest ask": in a batched wave the latest ask is somebody else's, which is how S4's verdict once
  * carried S5's timestamp.
  */
+const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
 export async function none({ env = process.env, ask: handle = null, via = null, call = null, topic = null } = {}) {
   const asks = (await sessionAsks({ env })).sort((a, b) => String(a.at).localeCompare(String(b.at)));
   const named = typeof handle === 'string' && handle.trim() ? asks.find((a) => a.at === handle.trim()) : null;
@@ -591,7 +593,12 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   // recalibrates on; recorded unpaired, it is merely unpaired.
   const latest = asks.at(-1) ?? null;
   const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
-  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  // A HANDLE THE SESSION NO LONGER REMEMBERS (the sidecar keeps the last ASK_MEMORY asks, the queue
+  // is flushed) is still the agent's explicit pointer, and it is a timestamp, not prose: recorded as
+  // `after`, so the ask it names is closed instead of being reminded about (PR #400 review). One that
+  // is not an `at` at all is recorded without it, as before.
+  const pointer = target?.at ?? (handle && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
+  const written = await log({ kind: 'none', ...(pointer ? { after: pointer } : {}), ...context({ via, call, topic }) }, { env });
   if (written.disabled) return { state: 'disabled', why: written.why };
   if (!written.ok) return { state: 'unreachable', why: written.why };
   return {

@@ -10,18 +10,26 @@
  * miss, so a reminder riding on a later kb response would have reached nobody.
  *
  * WHAT IT DOES. Reads this session's loop journal (`<session>.loop.ndjson`, append-only, see
- * `core/queue.mjs` `loopPath`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed `ambiguous` list
- * with nothing written after it, returns `{"decision":"block","reason":…}`: the agent takes ONE more
- * step to capture what it found, or to say in a line that it did not find it out. Nothing is decided
- * for the agent -- only it knows whether it established the answer.
+ * `core/queue.mjs` `loopPath`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed
+ * `ambiguous` list with nothing written after it, returns `{"decision":"block","reason":…}`: the agent
+ * takes ONE more step to capture what it found, or to say in a line that it did not find it out.
+ *
+ * EACH AGENT IS ASKED ABOUT ITS OWN MISSES. Registered on `Stop` (the main thread) AND `SubagentStop`.
+ * An ask made through MCP carries its tool-use id (`call`); Claude Code writes the main thread to
+ * `transcript_path` and every subagent to its own `agent_transcript_path` (`core/caller.mjs` measured
+ * 12 of 12 ids resolving that way). So an ask is raised only at the stop whose transcript holds its
+ * call id. Before this, the main thread's Stop raised -- and marked as raised -- the misses of
+ * background subagents still at work, which then were never raised to the agent that owned them
+ * (PR #400 review). An ask with no call id (the CLI door) cannot be attributed and is raised at the
+ * main thread's Stop only. A transcript is read only when there is something open to attribute.
  *
  * IT WRITES ONLY ITS OWN FILE. The journal is the kb processes'; what this hook remembers -- the
  * asks it already raised -- goes to `<session>.reminded.json`, temp file + rename (`remindedPath`).
- * Once a day it also deletes journal and reminded files untouched for `KEEP_DAYS`, which nothing else
- * ever would.
+ * Once a day it deletes journals idle for `KEEP_DAYS`, and a reminded file only together with its
+ * journal: a long session whose record outlived its last reminder must not be reminded again.
  *
- * THREE GUARDS, because a Stop hook that blocks is a hook that can trap a session:
- *   1. `stop_hook_active` (set by the harness while a Stop hook already made Claude continue) -> silent.
+ * GUARDS, because a stop hook that blocks is a hook that can trap a session:
+ *   1. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) -> silent.
  *   2. Every question is raised ONCE: its ask `at` is recorded BEFORE the reason is printed, so a crash
  *      after the write costs a reminder, never a loop.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
@@ -31,8 +39,7 @@
  * UI -- the reminder, not a fault (verified live 2026-10-06; the model receives it as "Stop hook
  * feedback"). The reason opens with "kb reminder (not a failure)" for whoever expands it.
  *
- * Exits 0 whatever happens and prints NOTHING unless it is blocking; the reads are a few KB.
- * `kb-flush.mjs` is the other kb Stop hook and stays silent by design -- the two never share stdout.
+ * Exits 0 whatever happens and prints NOTHING unless it is blocking.
  */
 import { readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -46,22 +53,42 @@ const REMEMBERED = LOOP_ASKS * 2;
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Delete loop journals and reminded files idle for KEEP_DAYS -- at most once a day, by a marker's mtime. */
+const ageOf = (path, now) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
+
+/** Delete journals idle for KEEP_DAYS, and a reminded file only once its journal is gone or idle too. */
 function prune(dir, now = Date.now()) {
   const marker = join(dir, 'loop.pruned');
-  try { if (now - statSync(marker).mtimeMs < DAY_MS) return; } catch { /* never pruned */ }
+  if (ageOf(marker, now) < DAY_MS) return;
   try { writeFileSync(marker, ''); } catch { return; }
   let names = [];
   try { names = readdirSync(dir); } catch { return; }
+  const idle = (path) => ageOf(path, now) > KEEP_DAYS * DAY_MS;
   for (const name of names) {
-    if (!name.endsWith('.loop.ndjson') && !name.endsWith('.reminded.json')) continue;
     const path = join(dir, name);
-    try { if (now - statSync(path).mtimeMs > KEEP_DAYS * DAY_MS) unlinkSync(path); } catch { /* raced or gone */ }
+    if (name.endsWith('.loop.ndjson')) {
+      if (idle(path)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
+    } else if (name.endsWith('.reminded.json')) {
+      const journal = join(dir, `${name.slice(0, -'.reminded.json'.length)}.loop.ndjson`);
+      if (idle(path) && idle(journal)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
+    }
   }
 }
 
 function readJson(path) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+}
+
+/**
+ * The open asks THIS stop owns. `transcript` is the stopping agent's own transcript; `main` says
+ * whether it is the main thread. With no readable transcript the main thread keeps every open ask
+ * and a subagent raises nothing -- a missed reminder rather than one sent to the wrong agent.
+ */
+function owned(loops, { transcript, main }) {
+  if (!loops.some((l) => l.call)) return main ? loops : [];
+  let text = null;
+  try { text = transcript ? readFileSync(transcript, 'utf8') : null; } catch { text = null; }
+  if (text === null) return main ? loops : [];
+  return loops.filter((l) => (l.call ? text.includes(l.call) : main));
 }
 
 function main() {
@@ -70,12 +97,12 @@ function main() {
   if (payload?.stop_hook_active) return;
   if (kbDisabled(process.env)) return;
   // Pruned BEFORE the reminder's own off switches: the journal is written whenever the base is on,
-  // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned (PR #400 review).
+  // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned.
   prune(queueDir(process.env));
   if (remindDisabled(process.env) || isSynthetic(process.env)) return;
 
-  // The sidecar is keyed like the queue (`hookEnv` -> `sessionId`); with no session id anywhere the
-  // key is a fresh process key and names no sidecar this session wrote.
+  // The journal is keyed like the queue (`hookEnv` -> `sessionId`); SubagentStop carries the PARENT's
+  // session id, so a subagent reads the same journal as its main thread.
   const env = hookEnv(process.env, payload);
   if (!hasSessionId(env)) return;
   const journal = readLoop(env);
@@ -84,7 +111,11 @@ function main() {
   const path = remindedPath(env);
   const before = readJson(path);
   const raised = Array.isArray(before) ? before.map(String) : [];
-  const loops = openLoops(journal, { reminded: raised });
+  const sub = payload?.hook_event_name === 'SubagentStop';
+  const loops = owned(openLoops(journal, { reminded: raised }), {
+    transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path,
+    main: !sub,
+  });
   if (!loops.length) return;
 
   const tmp = `${path}.${process.pid}.tmp`;

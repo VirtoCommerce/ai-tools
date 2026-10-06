@@ -15,11 +15,12 @@
 // The normative statement of the contract is `.claude/knowledge/execution/kb-capture-contract.md`;
 // the strings here are the door's short form of it and cite it rather than restate it.
 
-import { anchorShape, normalizeAnchor } from './coordinates.mjs';
+import { anchorShape, deeperByRoot, normalizeAnchor } from './coordinates.mjs';
 import { SURFACES } from './index-load.mjs';
 import { coordinatesIn } from './query.mjs';
 
-export const CONTRACT = '.claude/knowledge/execution/kb-capture-contract.md';
+export { CONTRACT } from './contract.mjs';
+import { CONTRACT } from './contract.mjs';
 
 const LABEL_FIX = 'a label is not a coordinate: put it in `claim`, and anchor the fact at the route of the page it '
   + 'was on (/account/orders) or the request it sent (POST /api/carts, Mutation.addCoupon)';
@@ -72,7 +73,10 @@ export function anchorsInText(input, { namespaces } = {}) {
   const have = new Set((input.anchors ?? []).map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')));
   const out = [];
   for (const field of ['subject', 'question', 'claim']) {
-    for (const { raw } of coordinatesIn(input[field], { namespaces })) {
+    // Before the corpus is read (`namespaces` unknown) a one-segment page (`/cart`) is still proposed:
+    // the label refusal is exactly where an agent wrote the page in its question (PR #400 review). If it
+    // turns out to be a namespace, the retry is refused with the namespace hint -- a suggestion, not a pass.
+    for (const { raw } of coordinatesIn(input[field], { namespaces: namespaces ?? new Set() })) {
       if (!have.has(normalizeAnchor(raw)) && !out.includes(raw)) out.push(raw);
     }
   }
@@ -81,16 +85,10 @@ export function anchorsInText(input, { namespaces } = {}) {
 
 /** Up to `limit` coordinates the corpus holds under a one-segment root, shortest first. */
 export function deeperUnder(rows, root, limit = 3) {
-  const prefix = `${String(root).toLowerCase().replace(/\/+$/, '')}/`;
-  const found = new Set();
-  for (const row of rows ?? []) {
-    if (row.status && row.status !== 'active') continue;
-    for (const key of row.anchorKeys ?? []) {
-      const path = String(key).replace(/^[A-Za-z]+\s+/, '');
-      if (path.toLowerCase().startsWith(prefix)) found.add(key);
-    }
-  }
-  return [...found].sort((a, b) => a.length - b.length || a.localeCompare(b)).slice(0, limit);
+  // The walk is `coordinates.mjs` `deeperByRoot`, shared with `namespaceRoots` (PR #400 review).
+  const seg = String(root).replace(/^[A-Za-z]+\s+/, '').split('/').filter(Boolean)[0]?.toLowerCase();
+  const found = [...(deeperByRoot(rows, { activeOnly: true }).get(seg)?.values() ?? [])];
+  return found.sort((a, b) => a.length - b.length || a.localeCompare(b)).slice(0, limit);
 }
 
 /**

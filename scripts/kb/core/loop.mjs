@@ -17,7 +17,7 @@
 // earlier miss. A reminder that fires on a need that was in fact written back would teach the agent
 // to ignore it; one that misses an occasional unrelated gap costs nothing.
 
-import { CONTRACT } from './door-hints.mjs';
+import { CONTRACT } from './contract.mjs';
 
 /**
  * How many of the session's latest asks are judged. Bounded because the journal is not, and the
@@ -71,13 +71,18 @@ export function openLoops(journal, { reminded = [] } = {}) {
   }
   const out = [];
   const recent = new Set(records.filter((r) => r.kind === 'ask').slice(-LOOP_ASKS).map((r) => r.at));
+  // ONE pass: an ask is closed by any write after it, so only the LAST write matters (PR #400 review).
+  const lastWrite = records.reduce((m, r) => (r.kind === 'write' && r.at > m ? r.at : m), '');
   for (const a of records) {
     if (a.kind !== 'ask' || !recent.has(a.at) || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
-    if (records.some((r) => r.kind === 'write' && r.at > a.at)) continue;
+    if (lastWrite > a.at) continue;
     const word = lastWord(pointed.get(a.at));
     if (a.state === 'ambiguous' && word.verdict === 'picked') continue;
-    out.push({ at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved' });
+    out.push({
+      at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved',
+      ...(a.call ? { call: a.call } : {}),
+    });
   }
   return out;
 }

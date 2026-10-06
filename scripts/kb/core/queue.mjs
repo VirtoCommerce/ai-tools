@@ -428,7 +428,11 @@ const WROTE = new Set(['capture', 'confirm', 'dispute']);
 export function loopRecord(line) {
   const at = String(line.at ?? '');
   if (!at) return null;
-  if (line.kind === 'ask') return { at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) };
+  // `call` (the MCP tool-use id) says WHOSE ask it was: `kb-remind` finds it in the main transcript or
+  // in one subagent's, so each agent is reminded of its own misses only (PR #400 review).
+  if (line.kind === 'ask') {
+    return { at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}), ...(line.call ? { call: String(line.call) } : {}) };
+  }
   if (line.kind === 'show' || line.kind === 'none') {
     return { at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}) };
   }
