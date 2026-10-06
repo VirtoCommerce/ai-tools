@@ -57,6 +57,16 @@
       "confirmed": false,
       "actor": "qa-lead",
       "at_time": "2026-10-01T12:52:04Z"
+    },
+    {
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "8 Finish test",
+      "confirmed": true,
+      "actor": "qa-lead (operator-confirmed)",
+      "at_time": "2026-10-06T03:50+03:00",
+      "note": "VCST-6152 verified; VCST-6147 (AC5) moved out to a standalone Bug, Relates; comment 111393"
     }
   ],
   "agents_dispatched": [
@@ -253,12 +263,20 @@
   "bugs_filed": [
     {
       "key": "VCST-6147",
-      "relationship": "sub-task",
+      "relationship": "relates",
       "severity": "High",
       "provenance": "in-scope",
       "summary": "Targeted customer cannot use a Customer-scope share: wishlist(listId) Access denied, missing from wishlists() (AC5)",
       "report": "reports/bugs/open/critical-high/BUG-VCST-5925-targeted-customer-cannot-use-grant.md",
-      "note": "Subtask priority not editable — Jira shows Medium; High stated in the body"
+      "note": "Subtask priority not editable — Jira shows Medium; High stated in the body; 2026-10-06: moved out of VCST-5925 (sub-task -> standalone Bug, Relates link) — needs a product decision, done separately"
+    },
+    {
+      "key": "VCST-6152",
+      "relationship": "sub-task",
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "summary": "Legacy sharedWithId save refused at random: targets order differs between save response and read (AC10 / contract 2.3)",
+      "report": "reports/bugs/open/medium/BUG-VCST-5925-targets-order-unstable-legacy-sharedWithId-refused.md"
     }
   ],
   "bugs_not_filed": [],
@@ -308,14 +326,8 @@
   },
   "tracker": {
     "comment_posted": false,
-    "pending_filing": [
-      {
-        "severity": "Medium",
-        "provenance": "in-scope",
-        "summary": "Share targets order unstable; legacy sharedWithId re-send refused",
-        "report": "reports/bugs/open/medium/BUG-VCST-5925-targets-order-unstable-legacy-sharedWithId-refused.md"
-      }
-    ]
+    "pending_filing": [],
+    "comment_id": "111127"
   },
   "reruns": [
     {
@@ -409,6 +421,37 @@
       },
       "verdict": "FAIL (AC5 / VCST-6147); AC3 DRIFT pending consumer acceptance",
       "cleanup": "verified — all agent-created lists removed"
+    },
+    {
+      "date": "2026-10-06",
+      "kind": "verify-fix + AC re-check on XCart 3.1038.0-pr-141-b404",
+      "vcst_6152": "VERIFIED 3/3 (verification-summary.json)",
+      "recheck": {
+        "AC6": "PASS x2",
+        "AC7": "PASS x2 + WISH-044 8/8 x2",
+        "AC11": "PASS x2",
+        "privacy_owner_only_targets": "PASS x2",
+        "VCST_6147": "still reproduces (moved out, Relates)"
+      },
+      "evidence": [
+        "verification-report.md",
+        "verification/payloads.json",
+        "verification/recheck-payloads.json"
+      ],
+      "kb": {
+        "captured": [
+          "KB-51888868"
+        ],
+        "confirmed": [
+          "KB-D1DF95A5",
+          "KB-B4377884",
+          "KB-1B066196",
+          "KB-8F61528A"
+        ],
+        "disputed": [
+          "KB-42230B0A"
+        ]
+      }
     }
   ]
 }

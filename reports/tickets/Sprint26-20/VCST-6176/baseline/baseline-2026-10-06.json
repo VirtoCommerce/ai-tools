@@ -1,0 +1,6 @@
+{"ticket":"VCST-6176","capturedAt":"2026-10-06T08:10Z","env":"vcst-qa","url":"https://vcst-qa-storefront.govirto.com/account/orders","storefrontVersion":"2.59.0-pr-2524-3069-30691594","result":"RED - bug reproduced",
+ "sidebar":[{"item":"Orders","iconClass":"vc-icon vc-icon--size--sm vc-icon--outline","viewBox":"0 0 24 24"},
+            {"item":"Returns","iconClass":"vc-icon vc-icon--size--sm","viewBox":"0 0 20 20","note":"no vc-icon--outline; legacy solid receipt-refund glyph"},
+            {"item":"Lists","iconClass":"vc-icon vc-icon--size--sm vc-icon--outline","viewBox":"0 0 24 24"},
+            {"item":"Quote requests","iconClass":"vc-icon vc-icon--size--sm vc-icon--outline","viewBox":"0 0 24 24"}],
+ "screenshot":"baseline-2026-10-06-sidebar.jpg"}
