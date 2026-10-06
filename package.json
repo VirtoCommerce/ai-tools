@@ -329,7 +329,8 @@
     "seed:push-audience": "node scripts/seed-data/push-messages/seed-push-audience.mjs",
     "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
     "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
-    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs"
+    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs",
+    "kb:sync-base": "node scripts/kb/sync-base.mjs"
   },
   "repository": {
     "type": "git",

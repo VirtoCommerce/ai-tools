@@ -571,3 +571,49 @@ partial), 34 controls, 6 contested. Never used to change the base or the ranker.
 - **The base, not the ranker, now bounds the result.** 36 of 64 targets are answered only in part, and
   5 of 28 full targets never reached the list. Fresh questions are wider than what the base holds;
   the lever is coverage (capture) and the partial-answer contract, not retrieval.
+
+## Rollout runbook (2026-10-06)
+
+Two PRs, strictly in this order (Decision 8): the client `VirtoCommerce/ai-tools#393`, then the data
+`VirtoCommerce/vc-knowledge#2` (draft). Until a base carries `ranker.json` the client runs `floor-1`
+byte for byte, so step 1 is safe on its own.
+
+**1. Ship the client.** Merge #393 once CI is green. No behaviour changes for anyone.
+
+**2. Get the team onto it.** Everyone pulls `ai-tools` and restarts Claude Code (the MCP server is
+started once per session). Check on each machine: `npm run kb -- --help` lists `kb -- none`; a
+machine where it does not is on the old client. Wait until every active operator has it -- an old
+client reading the migrated base reports "the base was NOT read" on migrated hits and drops queued
+confirms on push. Proceed only when nobody is left behind.
+
+**3. Re-sync the data branch, right before merging it.** Base `main` moves daily. In a local checkout
+of `vc-knowledge` on `vcst-6122-schema2`:
+
+    npm run kb:sync-base -- --base <checkout> --dry-run
+    npm run kb:sync-base -- --base <checkout>
+    git -C <checkout> diff --cached        # review
+    git -C <checkout> commit
+
+`kb:sync-base` accepts only evidence appended on `main` (the branch version of each entry wins,
+`main`'s new items are appended, and those of entries the branch superseded go to their successors).
+A changed body, field or deleted entry on `main` is refused and named -- resolve that one by hand.
+Then card every new entry it lists (4-6 questions, vocabulary concepts, closed surface) as
+`migrate-schema2` keep plans (`--stamp`, dry run, `--apply`), commit, push the branch, and confirm the
+PR shows no conflict. If `main` moves again before the merge, repeat this step.
+
+**4. Ship the data.** Mark #2 ready, merge with a merge commit (keeps the plan history). From that
+moment every client on #393 runs the verdict ranker.
+
+**5. Verify.** `npm run kb -- ask "<a real question>"` prints `close entries, none certified to
+answer` with an `ask handle`; `npm run kb -- reindex --dry-run` agrees with the index; the next day's
+`npm run kb:report` still shows a non-empty miss queue (ambiguous asks closed by `none` count as
+misses).
+
+**Rollback.** Delete `ranker.json` from base `main` in one commit: every client is back on `floor-1`
+at its next ask (a present ranker is never cached; only an absent one is, for 10 minutes). The schema-2
+data stays -- the #393 client reads it either way. Reverting the data PR itself is not needed for a
+rollback and would strand the evidence written since.
+
+**Afterwards.** Make the card mandatory at capture (Decision 8, step 3) as its own change; settle the
+seven contradictions that need a UI/HAR check (`migration/merge/contradictions-2026-10-05.json`);
+recalibrate from the logged `show` / `none` pairs (M6) once a few hundred have accumulated.
