@@ -12,4 +12,8 @@ export interface LoadedEnv {
   sourceOf(key: string): string;
 }
 
-export declare function loadEnv(options?: { fallback?: string }): LoadedEnv;
+export declare function loadEnv(options?: {
+  fallback?: string;
+  /** For runners CI drives with `-e`: values already in the process environment beat every file and file pin. */
+  ambientWins?: boolean;
+}): LoadedEnv;
