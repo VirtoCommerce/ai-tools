@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { TestDataResolver } from "../scripts/lib/test-data-resolver.js";
-import { resolveTestEnv } from "../scripts/lib/resolve-test-env.js";
+import { loadEnv } from "../scripts/lib/load-env.mjs";
 import { mergeHistoryRows, type RunEntry } from "../scripts/lib/regression-triage.js";
 import { extractExistingIds } from "../scripts/test-cases/append-test-cases-to-suite.ts";
 import {
@@ -65,12 +65,14 @@ const RUN_DIR = join("reports", "regression", RUN_ID);
 
 // --- Environment URLs ---
 //
-// URLs are env-driven — config.js loads FRONT_URL/BACK_URL from .env.${TEST_ENV}.
+// URLs are env-driven: loadEnv() layers .env.defaults → .env.${TEST_ENV} → .env.local with their
+// KEY_<ENV> pins, gap-fill only, so CI's `-e FRONT_URL/BACK_URL` (full-cycle.yml, customer-template.yml)
+// still win. Nothing loaded those files here before: a local run failed the URL check below even with
+// the URLs in .env.${TEST_ENV}, where its own message says to put them.
 // NEVER hardcode a specific customer environment (e.g. vcst-qa) here: TEST_ENVIRONMENT
-// only selects WHICH env-var pair to read; the values always come from the target
-// TEST_ENV's config. Missing vars are caught by validateEnv() below.
-// Resolves process.env.TEST_ENV > .env.test-env (team/per-dev default) > 'vcst'.
-const TEST_ENV = resolveTestEnv("vcst");
+// only selects WHICH env-var pair to read. Missing vars are caught by validateEnv() below.
+// TEST_ENV resolves process.env.TEST_ENV > .env.test-env (team/per-dev default) > 'vcst'.
+const { testEnv: TEST_ENV } = loadEnv({ fallback: "vcst", ambientWins: true });
 
 const ENV_URLS: Record<string, { front: string; back: string }> = {
   qa: {
