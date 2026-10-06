@@ -26,7 +26,7 @@ import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
 import { prepareRetrieval, retrieve } from './retrieve.mjs';
-import { AMBIGUOUS_TOP, MODEL_FEATURES, decide } from './verdict.mjs';
+import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 
 // ── Trust, as it is shown ─────────────────────────────────────────────────────────────────────
 //
@@ -500,14 +500,18 @@ async function readVerdictRanker(reader, { onMissing = () => {} } = {}) {
     const r = JSON.parse(read.text);
     const m = r?.model;
     const n = Array.isArray(m?.features) ? m.features.length : -1;
-    const shaped = typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
+    // An OLDER client meets a NEWER ranker.json (clients ship first and lag the data, Decision 8):
+    // an unknown schema, fusion method or feature would be read as something else -- an unknown
+    // feature as 0, which shifts p and can certify a wrong answer. Unknown => absent => floor-1.
+    const shaped = r?.schema === 1 && typeof r?.rank === 'string' && n > 0 && Number.isFinite(m.bias)
+      && m.features.every((f) => FEATURES.includes(f))
       && [m.mean, m.std, m.weights].every((a) => Array.isArray(a) && a.length === n && a.every(Number.isFinite))
       && r.thresholds && (r.thresholds.answer === null || Number.isFinite(r.thresholds.answer))
       // A std of 0 divides every feature into NaN and turns every ask ambiguous; a fusion or rerank
       // that is present but not the shape `retrieve` / `rerankByBodies` read throws on every ask.
       // Both are "malformed", so both fall back to floor-1 like any other unreadable ranker.
       && m.std.every((s) => s > 0)
-      && (r.fusion === undefined || (r.fusion && typeof r.fusion === 'object' && typeof r.fusion.method === 'string'
+      && (r.fusion === undefined || (r.fusion && typeof r.fusion === 'object' && ['linear', 'rrf'].includes(r.fusion.method)
         && r.fusion.weights && typeof r.fusion.weights === 'object' && Object.values(r.fusion.weights).every(Number.isFinite)))
       && (r.rerank === undefined || r.rerank === null
         || (typeof r.rerank === 'object' && Number.isFinite(r.rerank.k) && r.rerank.k >= 0 && Number.isFinite(r.rerank.lambda)));
@@ -515,8 +519,9 @@ async function readVerdictRanker(reader, { onMissing = () => {} } = {}) {
   } catch { return null; }
 }
 
-/** The model's own inputs, rounded, for the log line: what the verdict was decided ON. */
-const featureLine = (f) => Object.fromEntries(MODEL_FEATURES.map((k) => [k, round2(f[k] ?? 0)]));
+/** The model's own inputs, rounded, for the log line: what the verdict was decided ON -- the
+ * features THIS ranker.json reads, not a client constant, so a refit's log lines stay true. */
+const featureLine = (f, names) => Object.fromEntries(names.map((k) => [k, round2(f[k] ?? 0)]));
 
 /**
  * `ask` under a verdict ranker: retrieve, read the head's bodies (the re-rank and the headline
@@ -537,14 +542,21 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
   const bodies = new Map([...parsed].map(([id, p]) => [id, p?.body ?? null]));
   const d = decide(prep, ranker, question, { retrieval: found, bodies });
   const stamp = { rank: ranker.rank, ...context({ via, call, topic }), ...stand(deployment) };
-  const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features) };
+  const common = { kind: 'ask', q: question, ...repair, verdict: d.verdict, p: round2(d.p), f: featureLine(d.features, ranker.model.features) };
 
   if (d.verdict === 'answer') {
     const c = d.entries[0];
     const hit = { row: c.row, score: round2(d.p), overlap: [], anchors: c.anchors.hits };
     const p = parsed.get(c.row.id);
-    const described = p ? describeHit(hit, p) : { ...describeHit(hit, null, { unavailable: 'body unavailable' }), unavailable: 'body unavailable' };
-    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: p ? [c.row.id] : [], state: 'answer', ms: Date.now() - started, ...stamp }, { env });
+    // The certified entry's body did not arrive (a timeout, drift, an unparseable file): the agent
+    // got a subject line, not an answer. Same honest state as floor-1 -- conclude nothing (exit 3).
+    if (!p) {
+      const missing = { ...describeHit(hit, null, { unavailable: 'body unavailable' }), unavailable: 'body unavailable' };
+      await log({ ...common, matched: [c.row.id], trustShown: [missing.trust.label], opened: [], state: 'unreachable', why: 'body unavailable', ms: Date.now() - started, ...stamp }, { env });
+      return { state: 'unreachable', verdict: 'answer', hits: [missing], rows: cat.rows.length, ...repair };
+    }
+    const described = describeHit(hit, p);
+    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: [c.row.id], state: 'answer', ms: Date.now() - started, ...stamp }, { env });
     return { state: 'answer', verdict: 'answer', hits: [described], rows: cat.rows.length, ...repair };
   }
   if (d.verdict === 'ambiguous') {

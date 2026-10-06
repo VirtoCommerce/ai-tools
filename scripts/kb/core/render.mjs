@@ -128,8 +128,8 @@ export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open
 /**
  * The three verdicts (VCST-6122 Decisions 1 and 1a). An `answer` is ONE entry, rendered exactly as a hit
  * always was; `ambiguous` is a few headlines -- subject, the question each answers, the opening of its
- * body, the concept that tells it apart -- for the agent to open one of; `none` names the nearest
- * concepts the base does hold, so "nothing recorded" is distinguishable from "recorded under another name".
+ * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
+ * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
  *
  * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */

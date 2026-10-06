@@ -85,7 +85,7 @@ made over several *structural* signals, which is what the literature recommends 
 |---|---|---|
 | `answer` | one entry: claim, trust, anchors, provenance | ~250 |
 | `ambiguous` | 2–3 headlines **and the concept that separates them** | ~150 |
-| `none` | "nothing recorded" + the nearest concepts the base does hold | ~50 |
+| `none` | "nothing recorded" + the question's own concepts that nothing in the base is filed under | ~50 |
 
 `kb_show` / `kb_none` survive only on `ambiguous`, which is the two-stage judge reduced to the one
 case where a judgement is genuinely needed. `answer` and `none` are logged as the base's own verdict,
@@ -114,7 +114,7 @@ A split entry keeps its file with `status: superseded` and a `supersededBy` list
 entries with new ids (the id rule is unchanged: a hash of the subject). `retrievable()` already drops
 non-`active` rows while `show` still serves them (`scripts/kb/core/index-load.mjs:149`), so an old id in
 a log, a report or a PR still resolves. Each child inherits the parent's `evidence` items verbatim,
-with a `note` naming the parent, so trust is not reset by a migration nobody observed.
+tagged `splitFrom: <parent id>`, so trust is not reset by a migration nobody observed.
 
 ## Decision 3 — the capturing agent writes the retrieval card; the push checks it
 
@@ -602,16 +602,20 @@ packet, an agent writes the plans from it, `npm run kb:cards -- --base <checkout
 --packet <dir>` checks and applies them; commit, push the branch, and confirm the
 PR shows no conflict. If `main` moves again before the merge, repeat this step.
 
-**4. Ship the data.** Mark #2 ready, merge with a merge commit (keeps the plan history). From that
-moment every client on #393 runs the verdict ranker.
+**4. Ship the data.** Mark #2 ready, merge with a merge commit (keeps the plan history). Every client
+on #393 then runs the verdict ranker within about ten minutes: an MCP process caches a ranker for 60 s,
+raw.githubusercontent.com for about 5 minutes, and a machine that recently saw "absent" keeps that for
+10 minutes.
 
 **5. Verify.** `npm run kb -- ask "<a real question>"` prints `close entries, none certified to
-answer` with an `ask handle`; `npm run kb -- reindex --dry-run` agrees with the index; the next day's
+answer` with an `ask handle`; `npm run kb -- reindex --dry-run --base <checkout>` (a local checkout of
+base `main`; the default base is read-only) agrees with the index; the next day's
 `npm run kb:report` still shows a non-empty miss queue (ambiguous asks closed by `none` count as
 misses).
 
 **Rollback.** Delete `ranker.json` from base `main` in one commit: every client is back on `floor-1`
-at its next ask (a present ranker is never cached; only an absent one is, for 10 minutes). The schema-2
+within the same window as step 4 (60 s in an MCP process, ~5 minutes at raw.githubusercontent.com;
+an absent ranker is not re-checked for 10 minutes, but that only delays turning it ON). The schema-2
 data stays -- the #393 client reads it either way. Reverting the data PR itself is not needed for a
 rollback and would strand the evidence written since.
 

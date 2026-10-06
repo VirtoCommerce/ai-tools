@@ -36,7 +36,7 @@ import { coordinatesOf, githubApi } from './github-api.mjs';
 import { findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from './index-build.mjs';
-import { normalizeRow } from './index-load.mjs';
+import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
@@ -455,17 +455,25 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       const { data } = parseEntry(text, where);
       if (data.status === 'superseded') {
         seen.add(id);
-        const next = (data.supersededBy ?? []).map((x) => (typeof x === 'object' ? x.id : x)).filter(Boolean);
+        // idList: merge-entries writes a single string, migrate-schema2 a list of {id}.
+        const next = idList(data.supersededBy);
         if (!next.length || next.some((n) => seen.has(n))) {
           problems.push({ id, why: `${id} is superseded with no usable successor; the item was not applied` });
           return false;
         }
         const handed = item.mergedFrom || item.splitFrom ? item
           : { ...item, ...(next.length === 1 ? { mergedFrom: id } : { splitFrom: id }) };
+        // All successors or none: a split whose second child fails must not leave the first written.
+        const saved = { files: new Map(files), raw: new Map(raw), working: working.slice() };
         let wrote = false;
         for (const n of next) {
           const r = await addEvidence(n, entryPath(n), handed, n, seen);
-          if (r === false) return false;
+          if (r === false) {
+            files.clear(); for (const [k, v] of saved.files) files.set(k, v);
+            raw.clear(); for (const [k, v] of saved.raw) raw.set(k, v);
+            working.splice(0, working.length, ...saved.working);
+            return false;
+          }
           if (r === true) wrote = true;
         }
         return wrote ? true : 'already';
