@@ -1,0 +1,57 @@
+{
+  "case": "C6-section-omitted",
+  "label": "REQUIRED File section OMITTED entirely (pre-existing control)",
+  "env": {
+    "back": "https://vcptcore-qa.govirto.com",
+    "store": "B2B-store",
+    "buyer": "test-john.mitchell-20260310@test-agent.com",
+    "module": "VirtoCommerce.XCart 3.1037.0-pr-144-a0ce"
+  },
+  "note": "Authorization header redacted; bearer token not captured.",
+  "uploads": [],
+  "request": {
+    "endpoint": "POST /graphql",
+    "query": "mutation($command:InputAddItemType!){addItem(command:$command){id itemsCount validationErrors{errorCode errorMessage objectId objectType} items{sku quantity configurationItems{sectionId type customText files{name url size}}}}}",
+    "variables": {
+      "command": {
+        "storeId": "B2B-store",
+        "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+        "cartName": "v6000-1790249087986-C6-section-omitted",
+        "currencyCode": "USD",
+        "cultureName": "en-US",
+        "productId": "28d6bc0c-37d3-4ddd-8b86-3a459e82d77b",
+        "quantity": 1,
+        "configurationSections": [
+          {
+            "sectionId": "a3c3b040-91ad-43cb-904a-79af8bf448ab",
+            "type": "Product",
+            "option": {
+              "productId": "86610048-1001-4bcb-9b5d-44cc658c5999",
+              "quantity": 1
+            }
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "httpStatus": 200,
+    "body": {
+      "data": {
+        "addItem": {
+          "id": "e059caed-e198-494a-9977-23843ea0f624",
+          "itemsCount": 0,
+          "validationErrors": [
+            {
+              "errorCode": "CONFIGURATION_SECTION_REQUIRED",
+              "errorMessage": "Required sections are missing",
+              "objectId": null,
+              "objectType": "LineItem"
+            }
+          ],
+          "items": []
+        }
+      }
+    }
+  }
+}

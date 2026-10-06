@@ -1,0 +1,154 @@
+{
+ "item": "run2-reg6-coowner-items",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "build": "XCart 3.1038.0-pr-141-b404",
+ "capturedAt": "2026-10-05T12:14:06.626Z",
+ "calls": [
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 1039,
+   "request": {
+    "query": "mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+      "quantity": 1
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "addWishlistItem": {
+      "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "items": [
+       {
+        "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       },
+       {
+        "id": "16a32520-0b08-4b28-8dc3-ef8158b46345",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 1
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 360,
+   "request": {
+    "query": "mutation($c:InputUpdateWishlistItemsType!){ updateWishListItems(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "items": [
+       {
+        "lineItemId": "16a32520-0b08-4b28-8dc3-ef8158b46345",
+        "quantity": 5
+       }
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "updateWishListItems": {
+      "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "items": [
+       {
+        "id": "16a32520-0b08-4b28-8dc3-ef8158b46345",
+        "productId": "4423a6c7-85fa-4230-aa37-15a930cce963",
+        "quantity": 5
+       },
+       {
+        "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "coowner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 317,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistItemType!){ removeWishlistItem(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "lineItemId": "16a32520-0b08-4b28-8dc3-ef8158b46345"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlistItem": {
+      "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "items": [
+       {
+        "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 216,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "466347cf-c689-4b9e-af59-fd76f7807f51"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "466347cf-c689-4b9e-af59-fd76f7807f51",
+      "name": "AGENT-TEST-6125-r2-ren",
+      "scope": "Organization",
+      "description": "co-owner edit",
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [
+       {
+        "id": "8c5e47e7-d213-4a46-956d-717e0a7beedd",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ],
+      "sharingSetting": {
+       "id": "36ddb470-d41c-4253-b01b-eae41fd6f107",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+{
+  "ticket": "VCST-5759",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-09-28",
+  "environment": "https://vcptcore-qa.govirto.com",
+  "build": {
+    "platform": "3.1072.0",
+    "theme": "vc-theme-b2b-vue-2.59.0-pr-2458-61e8",
+    "relevant_modules": { "VirtoCommerce.SalesRep": "3.1011.0-pr-17-47fb" },
+    "pr_build": "VirtoCommerce.SalesRep_3.1011.0-pr-17-47fb.zip"
+  },
+  "pull_request": {
+    "repo": "VirtoCommerce/vc-module-sales-rep",
+    "number": 17,
+    "state": "open",
+    "merged": false,
+    "review": "APPROVED",
+    "head_sha": "47fb02ad"
+  },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "RED (pre-fix, live) — vcptcore-qa1 @ VirtoCommerce.SalesRep 3.1009.0-pr-16-b624",
+  "checklist_total": 20,
+  "checklist_passed": 20,
+  "checklist_failed": 0,
+  "regression_issues": [],
+  "side_effects": [
+    "P3 cosmetic: blade validation copy prints the raw model key — 'The firstName field is required' — beside a label reading 'First name'."
+  ],
+  "declared_limitations_confirmed": [
+    "PUT /api/members still clears a rep's names (204) on the fixed build, after which the storefront fails with INVALID_OPERATION again — the validator guards only the /api/sales-rep aggregate path. Declared out of scope by the PR; the root cause (non-null xAPI fields over nullable Contact columns) is untouched.",
+    "/api/members does not recompute fullName, so a contact can hold a stale fullName with both name parts null. Pre-existing, unrelated to this PR.",
+    "Existing nameless reps are not repaired. Not exercisable on vcptcore-qa — all 22 reps there have both names."
+  ],
+  "environment_notes": [
+    "vcptcore-qa: the classic AngularJS manager (/#!/) forces admin to #!/changepassword ('password has expired'). VC-Shell is not gated by it, so verification was unaffected; rotate before any classic-blade work."
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "knowledge_captured": ["KB-A8B46253", "KB-5A0C4200", "KB-C60BA776", "KB-686E788D"],
+  "test_data_teardown": "All agent-test-sr5759-* fixtures deleted (HTTP 204) on both stands. vcptcore-qa back to 22 reps, vcptcore-qa1 to 14, zero nameless on either.",
+  "tracker_transition": null,
+  "evidence": "reports/tickets/Sprint26-19/VCST-5759/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-19/VCST-5759/"
+}

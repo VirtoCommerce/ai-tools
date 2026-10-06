@@ -1,0 +1,643 @@
+{
+ "item": "E8-legacy-sharedWithId-3-repeats",
+ "run": "r2muv92q96",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-10-05T12:53:46.400Z",
+ "build": "Platform 3.1076.0 / XCart 3.1038.0-pr-141-b404 / SalesRep 3.1012.0-pr-21-8964 / Cart 3.1011.0-pr-194-8331",
+ "list": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+ "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+ "calls": [
+  {
+   "who": "rep",
+   "note": "create",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 199,
+   "at": "2026-10-05T12:53:43.727Z",
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-5707-R2-E8-r2muv92q96"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Private",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "f965f2d7-dc64-42f0-b5a1-7618b79bee96",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "share A+TF",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 282,
+   "at": "2026-10-05T12:53:44.010Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "addSharedWithIds": [
+       "105c2c4e-23be-4258-8691-568a0ff190be",
+       "96f109a7-9010-4691-b6a1-bef25cca3d04"
+      ]
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "read ",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 209,
+   "at": "2026-10-05T12:53:44.219Z",
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "l": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+     "c": null
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 1: sharedWithId=second target",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 212,
+   "at": "2026-10-05T12:53:44.431Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 1: sharedWithId=new served BR",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 209,
+   "at": "2026-10-05T12:53:44.640Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "23525b44-f0d0-43a4-b45e-b162080a4d29"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "read ja-JP",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 212,
+   "at": "2026-10-05T12:53:44.852Z",
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "l": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+     "c": "ja-JP"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 2: sharedWithId=second target",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 220,
+   "at": "2026-10-05T12:53:45.072Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 2: sharedWithId=new served BR",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 213,
+   "at": "2026-10-05T12:53:45.285Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "23525b44-f0d0-43a4-b45e-b162080a4d29"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "read ko-KR",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 244,
+   "at": "2026-10-05T12:53:45.529Z",
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "l": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+     "c": "ko-KR"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 3: sharedWithId=second target",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 250,
+   "at": "2026-10-05T12:53:45.779Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "96f109a7-9010-4691-b6a1-bef25cca3d04"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "repeat 3: sharedWithId=new served BR",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 202,
+   "at": "2026-10-05T12:53:45.981Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "23525b44-f0d0-43a4-b45e-b162080a4d29"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Error trying to resolve field 'changeWishlist'.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 40
+       }
+      ],
+      "path": [
+       "changeWishlist"
+      ],
+      "extensions": {
+       "code": "INVALID_OPERATION",
+       "codes": [
+        "INVALID_OPERATION"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "changeWishlist": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "read zh-CN",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 200,
+   "at": "2026-10-05T12:53:46.181Z",
+   "request": {
+    "query": "query($l:String!,$c:String){ wishlist(listId:$l, cultureName:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "l": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+     "c": "zh-CN"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "note": "sharedWithId=first target (control)",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 219,
+   "at": "2026-10-05T12:53:46.400Z",
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message sharedWithId targets { id name subtitle } } } }",
+    "variables": {
+     "c": {
+      "listId": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "scope": "Customer",
+      "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "8e8e4887-8c98-46aa-be35-e3e8781352ee",
+      "name": "AGENT-TEST-5707-R2-E8-r2muv92q96",
+      "scope": "Customer",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [],
+      "sharingSetting": {
+       "id": "9845679d-cff3-4653-8114-91951002c117",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York"
+        },
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California"
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ]
+}

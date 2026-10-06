@@ -1,0 +1,100 @@
+{
+ "item": "G2b-rep-token-probe",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "runid": "rmunz9s7y",
+ "capturedAt": "2026-09-30T10:51:41.646Z",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 566,
+   "request": {
+    "query": "{ me { userName } }",
+    "variables": {},
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "me": {
+      "userName": "Anonymous"
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 502,
+   "request": {
+    "query": "query($s:String!){ wishlists(storeId:$s, first:50){ totalCount items { id name scope sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } } }",
+    "variables": {
+     "s": "B2B-store"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Anonymous access denied or access token has expired or is invalid.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 20
+       }
+      ],
+      "path": [
+       "wishlists"
+      ],
+      "extensions": {
+       "code": "Unauthorized",
+       "codes": [
+        "Unauthorized"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "wishlists": null
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql/sales-rep",
+   "http": 200,
+   "ms": 192,
+   "request": {
+    "query": "{ salesRepCustomers(storeId: \"B2B-store\", first:50) { totalCount items { organizationId organizationName } } }",
+    "variables": {},
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "errors": [
+     {
+      "message": "Anonymous access denied or access token has expired or is invalid.",
+      "locations": [
+       {
+        "line": 1,
+        "column": 3
+       }
+      ],
+      "path": [
+       "salesRepCustomers"
+      ],
+      "extensions": {
+       "code": "Unauthorized",
+       "codes": [
+        "Unauthorized"
+       ]
+      }
+     }
+    ],
+    "data": {
+     "salesRepCustomers": null
+    }
+   }
+  }
+ ]
+}

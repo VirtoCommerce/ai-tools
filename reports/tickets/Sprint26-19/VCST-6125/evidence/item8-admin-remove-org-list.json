@@ -1,0 +1,197 @@
+{
+ "item": "item8-admin-remove-org-list",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "build": "XCart 3.1038.0-pr-141-b404",
+ "capturedAt": "2026-10-05T12:14:21.066Z",
+ "via": "xAPI removeWishlist",
+ "calls": [
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 209,
+   "request": {
+    "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id name scope customerId customerName sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "c": {
+      "storeId": "B2B-store",
+      "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "listName": "AGENT-TEST-6125-admin"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "createWishlist": {
+      "id": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "name": "AGENT-TEST-6125-admin",
+      "scope": "Private",
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "sharingSetting": {
+       "id": "2003c3b1-c662-4f2d-8b8d-cd5001bfc489",
+       "scope": "Private",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 310,
+   "request": {
+    "query": "mutation($c:InputAddWishlistItemType!){ addWishlistItem(command:$c){ id items { id productId quantity } } }",
+    "variables": {
+     "c": {
+      "listId": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+      "quantity": 1
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "addWishlistItem": {
+      "id": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "items": [
+       {
+        "id": "fb549c91-f32a-4b85-81b6-1b376472b987",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ]
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 306,
+   "request": {
+    "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "c": {
+      "listId": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "scope": "Organization"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "changeWishlist": {
+      "id": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "name": "AGENT-TEST-6125-admin",
+      "scope": "Organization",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [
+       {
+        "id": "fb549c91-f32a-4b85-81b6-1b376472b987",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ],
+      "sharingSetting": {
+       "id": "cdef4705-75c9-4103-97dd-e29fb237dd8f",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 228,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "b4630a50-fa30-4022-96e0-9ed11dc0a773"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "b4630a50-fa30-4022-96e0-9ed11dc0a773",
+      "name": "AGENT-TEST-6125-admin",
+      "scope": "Organization",
+      "description": null,
+      "customerId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+      "customerName": "Priya Rao",
+      "items": [
+       {
+        "id": "fb549c91-f32a-4b85-81b6-1b376472b987",
+        "productId": "b6dc4971-e000-4204-bdba-5db131fa56e9",
+        "quantity": 1
+       }
+      ],
+      "sharingSetting": {
+       "id": "cdef4705-75c9-4103-97dd-e29fb237dd8f",
+       "scope": "Organization",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": []
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "admin",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 271,
+   "request": {
+    "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+    "variables": {
+     "c": {
+      "listId": "b4630a50-fa30-4022-96e0-9ed11dc0a773"
+     }
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "removeWishlist": true
+    }
+   }
+  },
+  {
+   "who": "owner",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 222,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description customerId customerName items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name } } } }",
+    "variables": {
+     "l": "b4630a50-fa30-4022-96e0-9ed11dc0a773"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": null
+    }
+   }
+  }
+ ]
+}

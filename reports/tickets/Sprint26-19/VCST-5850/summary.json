@@ -1,0 +1,241 @@
+{
+  "ticket": "VCST-5850",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": "reach"
+  },
+  "layer": "cross-layer",
+  "shape_class": {
+    "value": "none",
+    "surface_source": [
+      "sales-rep module + share dialog; no design-system/token change"
+    ],
+    "skipped": []
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json"
+  },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-06",
+  "environment": "vcptcore-qa (store B2B-store)",
+  "build": {
+    "deployed": {
+      "platform": "3.1076.0",
+      "VirtoCommerce.SalesRep": "3.1012.0-pr-21-8964",
+      "VirtoCommerce.XCart": "3.1038.0-pr-141-b404",
+      "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+      "theme": "vc-theme-b2b-vue-2.59.0-pr-2476-0abb"
+    },
+    "prs": [
+      "VirtoCommerce/vc-module-sales-rep#21 (open, head 896449d0)",
+      "VirtoCommerce/vc-module-x-cart#141 (open, head b40455e6)",
+      "VirtoCommerce/vc-module-cart#194 (open, head 8331910b)",
+      "VirtoCommerce/vc-frontend#2476 (open, VCST-5707, head 0abbf215)"
+    ],
+    "deployed_equals_pr_head": true
+  },
+  "timing": {
+    "started_at": "2026-10-06T00:20:00Z",
+    "test_window_start": "2026-10-06T00:52:16Z",
+    "test_window_end": "2026-10-06T01:06:37Z",
+    "time_to_first_test_minutes": 32,
+    "reachability_minutes": null,
+    "agent_dispatches": 2
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "skipped": true,
+      "reason": "already in the in-testing status (Testing)"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "skipped": true,
+      "reason": "operator decision 2026-10-06: keep in Testing until the To-Be Customers multi-select in the Send a message popup is implemented",
+      "actor": "qa-lead (operator-confirmed)"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (playwright-chrome)",
+    "qa-backend-expert (REST/GraphQL, no browser)"
+  ],
+  "ac_analysis": {
+    "in_scope": [
+      {
+        "ac": "Send push/email to several customers at once (backend organizationIds)",
+        "state": "MET",
+        "evidence": "A1-A9"
+      },
+      {
+        "ac": "Profile Quick action Send email dispatches to that customer",
+        "state": "MET",
+        "evidence": "P1-P5"
+      },
+      {
+        "ac": "My customers envelope dispatches to the clicked customer",
+        "state": "MET",
+        "evidence": "M1-M3"
+      },
+      {
+        "ac": "List share to specific customers notifies newly added customers once, rep excluded",
+        "state": "MET",
+        "evidence": "S1-S8"
+      }
+    ],
+    "not_tested_by_operator_decision": [
+      "Send a message popup field order Customers/Title/Message*/Send via*",
+      "Customers multi-select with Select all and full-text search",
+      "Chips below the drop-down for selected customers",
+      "Opening from a customer row pre-selects that customer"
+    ],
+    "not_tested_reason": "not implemented in any vc-frontend branch; deployed theme only sends organizationIds:[props.organizationId]",
+    "deviations": [
+      "Operator re-scoped the run on 2026-10-06 to: Customer profile Send email, My customers envelope, List Share to Specific customers. The To-Be multi-select Customers field in the Send a message popup was excluded (not implemented in any vc-frontend branch).",
+      "FULL-only steps 1r/1c/1d/1e/1e-plan/3x/A-authoring/3-cases/5-report verifier not run; no new regression cases authored — route back is /qa-test-lifecycle."
+    ]
+  },
+  "total_cases": 26,
+  "passed": 26,
+  "failed": 0,
+  "blocked": 0,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "ran": false,
+      "reason": "empty exact set: no cases authored, 2a dispositions all CONFIRMED (no REPAIR/RE-BASE)"
+    },
+    "release_gate": "not-assessed"
+  },
+  "coverage_triage": {
+    "ran": true,
+    "mode": "inline",
+    "dispositions": {
+      "CONFIRMED": [
+        "050m SR-GQL-042..049",
+        "089 SR-FE-031..041",
+        "091 SR-CP-024..027",
+        "007 list sharing"
+      ],
+      "REPAIR": [],
+      "RE-BASE": []
+    },
+    "reason": "legacy organizationId kept (deprecated) and unioned with organizationIds, so existing rows still execute",
+    "gaps": [
+      "no case for multi-org organizationIds",
+      "no case for member dedup across orgs",
+      "no case for the 1000-organization cap",
+      "no case for mixed served/unserved all-or-nothing Forbidden"
+    ]
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "severity": "Low",
+      "title": "Message textarea has no accessible name (Send a message + Share dialogs)",
+      "draft": "reports/bugs/open/low/BUG-salesrep-message-textarea-no-accessible-name-VCST-5850.md"
+    },
+    {
+      "severity": "Low",
+      "title": "Whitespace-only organizationIds entry returns Forbidden instead of Organization is required",
+      "draft": "reports/bugs/open/low/BUG-salesrep-communication-whitespace-org-id-forbidden-VCST-5850.md"
+    },
+    {
+      "severity": "Low",
+      "title": "Share dialog stays open over the sign-in page after a 401",
+      "draft": null,
+      "note": "VCST-5707 surface (out of scope); observed during env session invalidation"
+    }
+  ],
+  "discovery": null,
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      "vc-frontend#2476 .vue changes in the share dialog + communication modal"
+    ],
+    "ran": false,
+    "reason": "operator-scoped functional run"
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "InputSendCustomerCommunicationType changed (sales-rep#21)"
+    ],
+    "schema": {
+      "refreshed": false,
+      "note": "contract read from the PR diff and exercised live (A1-A9)"
+    }
+  },
+  "test_data": {
+    "data_surface": "false",
+    "fixtures": [
+      "SR_REP_PRIMARY",
+      "ACME_BUYER",
+      "SR_REP_EXCLUSIVE_TECHFLOW",
+      "ORG_ACME",
+      "ORG_TECHFLOW",
+      "ORG_BUILDRIGHT",
+      "SR_UNSERVED_ORG",
+      "ORG_REP_ONLY"
+    ],
+    "created_in_case": [
+      "AGENT-TEST-5850 dual-org contact+user",
+      "no-email contact in ORG_REP_ONLY",
+      "lists AGENT-TEST-5850-1/-2"
+    ],
+    "cleanup": "verified — contacts/users/lists deleted; push + journal records remain as AGENT-TEST-5850-* history",
+    "environment_notes": [
+      "Email transport on vcptcore-qa fails (Azure ClientSecretCredential invalid_client); SalesRepMessageEmailNotification goes Pending→Error while the mutation reports emailSent:true (handed off, not delivered). Email verified by journal records only.",
+      "Rendered SalesRep email body has a stray default layout appended (Default…Default3).",
+      "SR_REP_PRIMARY session was invalidated three times by a concurrent agent (VCST-5925/6152 runs); every affected step re-run successfully.",
+      "organizationId deprecation is not visible via introspection (__InputValue has no isDeprecated on this GraphQL server)."
+    ]
+  },
+  "business_rules_verified": [],
+  "appinsights": {
+    "ran": false,
+    "reason": "not configured for this run"
+  },
+  "tracker": {
+    "comment_posted": true,
+    "status_transition": null,
+    "reason": "posted on operator request; ticket kept in Testing",
+    "comment_id": "111396"
+  },
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "kb": {
+      "read": [
+        "KB-50D03D62",
+        "KB-EFD1A7FD",
+        "KB-A98E467C",
+        "KB-20F8350F",
+        "KB-40FCBAE6"
+      ],
+      "confirmed": [
+        "KB-A98E467C",
+        "KB-20F8350F",
+        "KB-EFD1A7FD"
+      ],
+      "disputed": [
+        "KB-5AB85ADC"
+      ],
+      "captured": [
+        "KB-4C919BA6",
+        "KB-FFB91770",
+        "KB-3D0750BD",
+        "KB-5F164230"
+      ],
+      "erroneous_queued": "KB-50D03D62 confirm queued by mistake — operator to remove from the local kb queue"
+    }
+  }
+}

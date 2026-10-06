@@ -1,0 +1,33 @@
+{
+  "ticket": "VCST-6011",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-01",
+  "environment": "vcptcore-qa (BACK_URL Admin / Page Builder Designer, store B2B-store)",
+  "build": {
+    "platform": "3.1072.0",
+    "theme": "n/a (Admin-side fix)",
+    "relevant_modules": { "VirtoCommerce.PageBuilderModule": "3.1030.0-pr-165-1ab4" },
+    "pr_build": "vc-module-pagebuilder PR #165 @ 1ab4e68 (open, not merged) — confirmed live via /api/platform/modules"
+  },
+  "agent_used": ["qa-testing-expert (playwright-firefox)", "qa-backend-expert (playwright-edge)"],
+  "str_result": "3/3 (Firefox) + 3/3 (Edge)",
+  "baseline_reproduction": "from-qa-bug — VCST-4933 run 2026-09-17 on PageBuilderModule 3.1025.0-pr-159-7361 (BUG-VCST-4933-03)",
+  "checklist_total": 10,
+  "checklist_passed": 8,
+  "checklist_failed": 1,
+  "checklist_notes": 1,
+  "regression_issues": [
+    "Firefox: native right-click opens the section menu and it closes 8-13 ms later (0/3, under Playwright; may differ in real Windows Firefox)"
+  ],
+  "side_effects": [
+    "Paste is never disabled without clipboard access (PR comment says it is); Firefox Paste click waits >10 s with no feedback; Edge denied click logs NotAllowedError only",
+    "Low confidence: pasting a Features section refused ('Template Pages cannot contain section features') while Add block accepts it"
+  ],
+  "bugs_filed": [],
+  "business_rules_verified": [],
+  "tracker_transition": { "role": "tested", "state": "TESTED" },
+  "evidence": "reports/tickets/Sprint26-19/VCST-6011/evidence.html",
+  "evidence_artifact": null,
+  "cleanup": "AGENT-TEST-VCST-6011-ff-k7q2 / -edge-k7q2 pages archived; both Shared Components deleted",
+  "artifacts": "reports/tickets/Sprint26-19/VCST-6011/"
+}

@@ -1,0 +1,80 @@
+{
+  "case": "C2-zero-only-run3",
+  "label": "REQUIRED File section, ONLY a fresh 0-byte file",
+  "env": {
+    "back": "https://vcptcore-qa.govirto.com",
+    "store": "B2B-store",
+    "buyer": "test-john.mitchell-20260310@test-agent.com",
+    "module": "VirtoCommerce.XCart 3.1037.0-pr-144-a0ce"
+  },
+  "note": "Authorization header redacted; bearer token not captured.",
+  "uploads": [
+    {
+      "succeeded": true,
+      "errorCode": null,
+      "errorMessage": null,
+      "errorParameter": null,
+      "scope": "product-configuration",
+      "name": "zero-byte-fixture.txt",
+      "contentType": "text/plain",
+      "size": 0,
+      "url": "/api/files/f6ac6f7674dd4ac9b61a6278f5c114c9",
+      "publicUrl": "/api/files/f6ac6f7674dd4ac9b61a6278f5c114c9",
+      "ownerEntityId": null,
+      "ownerEntityType": null,
+      "id": "f6ac6f7674dd4ac9b61a6278f5c114c9"
+    }
+  ],
+  "request": {
+    "endpoint": "POST /graphql",
+    "query": "mutation($command:InputAddItemType!){addItem(command:$command){id itemsCount validationErrors{errorCode errorMessage objectId objectType} items{sku quantity configurationItems{sectionId type customText files{name url size}}}}}",
+    "variables": {
+      "command": {
+        "storeId": "B2B-store",
+        "userId": "143bc845-7ba3-4982-ae9a-a9446a399705",
+        "cartName": "v6000-1790249087986-C2-zero-only-run3",
+        "currencyCode": "USD",
+        "cultureName": "en-US",
+        "productId": "28d6bc0c-37d3-4ddd-8b86-3a459e82d77b",
+        "quantity": 1,
+        "configurationSections": [
+          {
+            "sectionId": "a3c3b040-91ad-43cb-904a-79af8bf448ab",
+            "type": "Product",
+            "option": {
+              "productId": "86610048-1001-4bcb-9b5d-44cc658c5999",
+              "quantity": 1
+            }
+          },
+          {
+            "sectionId": "656d7dea-7d68-4c11-98dc-1252b1440172",
+            "type": "File",
+            "fileUrls": [
+              "/api/files/f6ac6f7674dd4ac9b61a6278f5c114c9"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "response": {
+    "httpStatus": 200,
+    "body": {
+      "data": {
+        "addItem": {
+          "id": "858d0bc7-c4ff-4301-9a00-44aa1d7e686c",
+          "itemsCount": 0,
+          "validationErrors": [
+            {
+              "errorCode": "CONFIGURATION_SECTION_FILES_REQUIRED",
+              "errorMessage": "Configuration section requires to add at list one file",
+              "objectId": "656d7dea-7d68-4c11-98dc-1252b1440172",
+              "objectType": "ProductConfigurationSection"
+            }
+          ],
+          "items": []
+        }
+      }
+    }
+  }
+}
