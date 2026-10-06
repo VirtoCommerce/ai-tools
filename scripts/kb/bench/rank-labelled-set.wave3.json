@@ -1,0 +1,1217 @@
+{
+ "about": "VCST-6122 wave3 held-out set (2026-10-05): 104 asks by 8 Sonnet-class QA agents preparing test cases (8 areas), live against vcst-6122-schema2 @ 17b4b7a with ranker verdict-1 (KB_RUN=VCST-6122-wave3, synthetic, never pushed). Labelled exhaustively by two independent Claude passes, 27 disagreements adjudicated; never used to change the base or the ranker. All rows split test.",
+ "snapshot": "vcst-6122-schema2@17b4b7a",
+ "targets": [
+  {
+   "id": "W3-004",
+   "q": "Which payment methods are available at checkout on the B2B storefront (card, manual/invoice)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-535FF3AC lists 'Bank card (Authorize.Net)', 'Bank card (CyberSource)', 'Bank card (Datatrans)', 'Manual', 'Pay with points', 'Bank card (Skyflow)' and notes the set varies per deployment.",
+   "expect": [
+    "KB-535FF3AC",
+    "KB-50EBEEE9",
+    "KB-C7E16C35"
+   ]
+  },
+  {
+   "id": "W3-005",
+   "q": "What does the order confirmation page show after placing an order?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-50EBEEE9 says /checkout/completed shows 'Order <number> has been successfully submitted.' with a 'Show order' link, and KB-EF925925 adds that 'The confirmation page carries no money at all'.",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-EF925925"
+   ]
+  },
+  {
+   "id": "W3-006",
+   "q": "How is the delivery address selected or added during checkout, GraphQL operation addOrUpdateCartShipment?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only the UI side is covered: with no saved address 'the select a shipping address control opens a New address dialog directly', and the picker popup has search and facets; no candidate describes addOrUpdateCartShipment.",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-1447353E"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-008",
+   "q": "Which shipping methods are offered at checkout and how is the price calculated?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-50EBEEE9 lists 'Fixed Rate (Ground) $150.00 and Fixed Rate (Air)', and KB-6AA0D7FB explains that FixedRate prices each option through a store Rate setting, where an unset setting is 0.",
+   "expect": [
+    "KB-6AA0D7FB",
+    "KB-50EBEEE9"
+   ]
+  },
+  {
+   "id": "W3-009",
+   "q": "How does the cart enforce minimum and maximum order quantity on a line item?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only a store-level maximum is stated: 'A store-level line item limit rejects a quantity of 1,000,000 or more on addItem' through validationErrors; product min/max quantity is not covered.",
+   "expect": [
+    "KB-6FAB2EBA"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-011",
+   "q": "What happens when a customer applies an invalid or expired coupon code via addCoupon mutation?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-35F20D97 says addCoupon answers 200 with no errors and stores the dead code with isAppliedSuccessfully=false, and KB-8264632C restates that the mutation would store a wrong code and shows how a stored dead code renders.",
+   "expect": [
+    "KB-35F20D97",
+    "KB-8264632C"
+   ]
+  },
+  {
+   "id": "W3-012",
+   "q": "GraphQL createOrderFromCart mutation: what does it return and what happens to the cart afterwards?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-A4EB3766 answers the cart half (emptied in place with a fresh checkoutId); no candidate describes the mutation's return payload beyond peripheral fragments.",
+   "expect": [
+    "KB-A4EB3766"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-013",
+   "q": "Can multiple coupons be applied to the same cart at once (stacking)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "A cart can store several coupon codes (KB-35F20D97, KB-8264632C) but under the default BestReward policy only one cart-subtotal reward applies (KB-5ADBFB34); line-level coupon stacking is not covered.",
+   "expect": [
+    "KB-5ADBFB34",
+    "KB-35F20D97",
+    "KB-8264632C"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-014",
+   "q": "Is the purchase order number required at checkout for B2B organization users?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Required only for Manual: 'Choosing Manual reveals an extra Enter a purchase order number textbox in Payment details and re-disables Place order'.",
+   "expect": [
+    "KB-50EBEEE9"
+   ]
+  },
+  {
+   "id": "W3-015",
+   "q": "How are gift items from promotions added to the cart and can they be removed?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The '+ Add a gift' panel offers the auto-promotion gift with 'its checkbox ALREADY CHECKED on arrival' and it becomes a zero-price isGift line; no candidate states whether it can be removed.",
+   "expect": [
+    "KB-C4346EB2"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-017",
+   "q": "How is cart total calculated: subtotal, discount, tax, shipping order of operations?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-C55BBF2E says 'tax is recomputed on the discounted base' and 'subtotal minus discount plus tax plus shipping equals the grand total', and KB-A3CE7FBA says a cart reward is computed after item-level rewards.",
+   "expect": [
+    "KB-C55BBF2E",
+    "KB-A3CE7FBA"
+   ]
+  },
+  {
+   "id": "W3-018",
+   "q": "How does the manual payment method (invoice) behave when placing an order, payment status?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Manual payment asks for a PO number and the order opens New with Pay now (KB-50EBEEE9), and DefaultManualPaymentMethod payments stay at status New with null authorized/captured dates (KB-1AC55A1D).",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-1AC55A1D"
+   ]
+  },
+  {
+   "id": "W3-020",
+   "q": "Can a user without permission to place orders reach the checkout page /checkout?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The only relevant fact is 'There is no /checkout route to navigate to'; no candidate covers permission gating of placing orders.",
+   "expect": [
+    "KB-50EBEEE9"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-021",
+   "q": "How are taxes and totals shown in the order summary on the checkout page?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The candidates give pieces of the checkout summary (list-price subtotal and total formula, the 'not final' tax small print, the subTotal/discountTotal/taxTotal/total it carries) but not a full description of tax display.",
+   "expect": [
+    "KB-C55BBF2E",
+    "KB-EF925925",
+    "KB-0DD47BD1"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-022",
+   "q": "How is the loyalty points balance shown in the storefront account and which GraphQL query returns it?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only the display is covered ('a single overall Balance figure at the top of the page'); no candidate names the GraphQL query that returns the balance.",
+   "expect": [
+    "KB-29037452"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-023",
+   "q": "What does the points history list contain and how is it ordered and paged in the account loyalty page?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Rows show unsigned amounts with direction 'conveyed only by the Type column (Redeemed vs Earned)' and no running balance; ordering and paging are not stated.",
+   "expect": [
+    "KB-29037452"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-024",
+   "q": "How do missions on the storefront missions page get their progress and completion state?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'Only a placed order accrues progress', an OrderValueGoal accrues order.Total and a PerSkuGoal counts line quantities, and loyaltyMissionProgress reports InProgress/Completed/Expired and isStarted with a percentage.",
+   "expect": [
+    "KB-26B8BE64",
+    "KB-C992D3B8",
+    "KB-D842824E"
+   ]
+  },
+  {
+   "id": "W3-026",
+   "q": "What happens when a user redeems a reward and has insufficient points?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "LOYALTY_INSUFFICIENT_BALANCE 'renders inline directly above Place order and Place order is disabled', and 'a points total equal to the balance is allowed, one point more is blocked'.",
+   "expect": [
+    "KB-CF3FAD18"
+   ]
+  },
+  {
+   "id": "W3-028",
+   "q": "Does the loyalty balance calculation differ for organization-level versus user-level mode?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Organization-mode balances read the session organization and fall back to personal scope (KB-4EDC989E) and org and user balances are separate ledgers (KB-EC1EDCE2), but the calculation difference itself is not described.",
+   "expect": [
+    "KB-4EDC989E",
+    "KB-EC1EDCE2"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-029",
+   "q": "How does the storefront notifications page list notifications and mark them as read?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The page lists messages newest first, the inbox query and markPushMessageRead mechanics are described, and tapping a bell entry marks it read, but the page's own read control is not fully described.",
+   "expect": [
+    "KB-22E1D313",
+    "KB-6AF43C39",
+    "KB-21BA7389",
+    "KB-097CB5D6"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-030",
+   "q": "How are push notifications delivered to the storefront and what is the unread counter behaviour?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Delivery within seconds to the xAPI inbox and bell, unread rows with isRead=false, the badge showing the unread count and the absence of an unreadCount field are covered, but how the counter updates is not fully described.",
+   "expect": [
+    "KB-6AF43C39",
+    "KB-F6F89D31",
+    "KB-22E1D313",
+    "KB-097CB5D6",
+    "KB-4C2EF958",
+    "KB-21BA7389"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-031",
+   "q": "What GraphQL operation returns the push notification inbox for the current user?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-21BA7389: 'A customer token ... reads its own push inbox with pushMessages(first, after, keyword, sort, unreadOnly, withHidden, cultureName) on /graphql'.",
+   "expect": [
+    "KB-21BA7389",
+    "KB-6AF43C39",
+    "KB-CB05268E"
+   ]
+  },
+  {
+   "id": "W3-034",
+   "q": "Is the loyalty section visible in the account menu for anonymous or non-loyalty users, and what route does the missions page use?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-26B8BE64 and KB-C4597892 place the missions page at '/account/missions', but no candidate states whether the loyalty section shows for anonymous or non-loyalty users.",
+   "expect": [
+    "KB-26B8BE64",
+    "KB-C4597892"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-035",
+   "q": "How does the company members list on the storefront page /company/members paginate and sort, and which columns does it show?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Columns (name, email, role, Active/status, Actions) are covered, but no candidate states pagination or sorting of the roster.",
+   "expect": [
+    "KB-02238DE5",
+    "KB-BBBC4225",
+    "KB-27B4CD10",
+    "KB-97170665",
+    "KB-D8FDFA6F"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-036",
+   "q": "What does the invite colleagues flow do and which GraphQL mutation sends an invitation?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-BAEBCDA7 says 'inviteUser' sends a RegistrationInvitationEmailNotification, and KB-972CF223 says 'Inviting a member creates BOTH a contact and a security account immediately'.",
+   "expect": [
+    "KB-BAEBCDA7",
+    "KB-972CF223"
+   ]
+  },
+  {
+   "id": "W3-038",
+   "q": "What happens when inviting an email address that already belongs to an existing user?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-BAEBCDA7: 'Re-inviting the same address is refused - inviteUser returns succeeded:false with DuplicateUserName AND DuplicateEmail ... The dialog surfaces only the DuplicateEmail message'.",
+   "expect": [
+    "KB-BAEBCDA7"
+   ]
+  },
+  {
+   "id": "W3-039",
+   "q": "What sort options does the products query accept and what is the default order on the category page?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-D9B90536 shows the 'field:asc|desc' sort form (name:asc, price:asc) and the sort:\"\" default order for Query.products, but not the category page's default sort.",
+   "expect": [
+    "KB-D9B90536"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-040",
+   "q": "createWishlist GraphQL mutation: required fields and validation errors",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-0BC18481 says 'createWishlist accepts scope Customer + addSharedWithIds + message in one call' and that the message is capped at 1024 with INVALID_OPERATION, but it does not list createWishlist's required fields.",
+   "expect": [
+    "KB-0BC18481"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-041",
+   "q": "Share a list with a colleague by email: what access levels exist (view/edit)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Access levels are Read and Write as computed per caller, with share targets getting Read, but no candidate describes sharing with a colleague by email.",
+   "expect": [
+    "KB-032FBB96",
+    "KB-B59A1F9D",
+    "KB-2F64A447"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-042",
+   "q": "Which roles can be assigned to a company member and what permissions does each role grant?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-68D63D8C lists the defaults 'Organization employee, Organization maintainer, Purchasing agent', KB-B769C7B1 says the storefront offers a 3-role subset, and KB-02238DE5 says an employee lacks Invite members and the Actions column; there is no full permission matrix.",
+   "expect": [
+    "KB-68D63D8C",
+    "KB-B769C7B1",
+    "KB-02238DE5"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-043",
+   "q": "Can a wishlist share link be opened by an anonymous user?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-7A12CF52: 'Scope AnyoneAnonymous: sharedWishlist resolves in full for a caller with no account at all', while Organization gives Unauthorized and Private gives null.",
+   "expect": [
+    "KB-7A12CF52",
+    "KB-F8F2CE8B",
+    "KB-91DF8883",
+    "KB-2F64A447",
+    "KB-032FBB96"
+   ]
+  },
+  {
+   "id": "W3-044",
+   "q": "Revoking a share link or removing a colleague from a shared list: what happens to their access?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-91DF8883: 'a removed organization loses read immediately with no warning'; KB-7A9D4927: switching to Private 'is a suspension, not a revocation' and only removeWishlist revokes.",
+   "expect": [
+    "KB-8F61528A",
+    "KB-91DF8883",
+    "KB-D7F08A26",
+    "KB-F2FA8EBD",
+    "KB-7A9D4927",
+    "KB-2F64A447"
+   ]
+  },
+  {
+   "id": "W3-045",
+   "q": "Rename a list: which operation and does the list id change?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-B59A1F9D: 'A rename-only changeWishlist (listName/description) does not change ownership' names the operation, but no candidate says whether the list id changes.",
+   "expect": [
+    "KB-B59A1F9D",
+    "KB-CD99436F",
+    "KB-B811FD82"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-047",
+   "q": "Deleting a list that is shared: what do other users see?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-7A9D4927: 'Deleting the list IS a real revocation: after removeWishlist the same key resolves to null for an anonymous caller'.",
+   "expect": [
+    "KB-7A9D4927"
+   ]
+  },
+  {
+   "id": "W3-049",
+   "q": "Maximum number of items or lists per user",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-1898248D: Create list 'disables once the signed-in user owns as many lists as the store's per-user lists limit allows', with no number and no per-list item limit.",
+   "expect": [
+    "KB-1898248D"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-050",
+   "q": "Sales representative hub: page route and which customers are listed as served",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-EA467E9B: the per-organization sales-rep membership 'is also what makes the organization one of the rep's customers', and the hub is /company/my-customers; KB-A240F961 names the hub routes.",
+   "expect": [
+    "KB-EA467E9B",
+    "KB-A240F961"
+   ]
+  },
+  {
+   "id": "W3-051",
+   "q": "Sales representative viewing a served customer's orders: permissions and data shown",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "A serving rep has full buyer rights on the customer's orders including payment (KB-D080C209), and the hub lists Order #, Date, Status, Total linking to buyer order details (KB-A240F961).",
+   "expect": [
+    "KB-D080C209",
+    "KB-A240F961"
+   ]
+  },
+  {
+   "id": "W3-052",
+   "q": "Sales representative sending a message to a served customer: where does it appear?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-24B83B02: 'The message reaches the recipient only as push text on /account/notifications', not on the shared-list page.",
+   "expect": [
+    "KB-24B83B02",
+    "KB-5AB85ADC",
+    "KB-A98E467C",
+    "KB-EFD1A7FD",
+    "KB-50D03D62"
+   ]
+  },
+  {
+   "id": "W3-056",
+   "q": "Can a blocked member be unblocked and does the unblock restore their previous role?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Unblock is shown to flip the member back to Active (and to end a pending invitation), but no entry establishes whether the previous role is restored.",
+   "expect": [
+    "KB-97170665",
+    "KB-27B4CD10",
+    "KB-DA14E8B7"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-057",
+   "q": "Does the storefront search support partial words or typos in keyword search on the products query?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-1EA7184C: 'a 12-digit prefix of the same GTIN returned the same product' shows some partial matching in full-text query; typo tolerance is not addressed by any candidate.",
+   "expect": [
+    "KB-1EA7184C"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-058",
+   "q": "What happens when two price lists are assigned to the same catalog with different priorities - which price does the pricing evaluation return?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-6D5E2CD1: '(4) priority, higher wins -- an assignment at priority 20000 beat a matching unconditional one at priority 1 for the same product'.",
+   "expect": [
+    "KB-6D5E2CD1"
+   ]
+  },
+  {
+   "id": "W3-059",
+   "q": "How does organization switching work for a user who belongs to multiple organizations?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-8BE777BB: the account menu 'renders an Organizations section with a type-ahead search plus a listbox'; KB-B5B57F41: 'Switching organization persists organizationId server-side'; KB-0080ED6D: next sign-in sends the last-used organization_id.",
+   "expect": [
+    "KB-8BE777BB",
+    "KB-B5B57F41",
+    "KB-0080ED6D",
+    "KB-512D556A"
+   ]
+  },
+  {
+   "id": "W3-060",
+   "q": "Does POST /api/pricing/evaluate return the lowest price across price lists or the one from the highest priority assignment?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-6D5E2CD1: 'raising an assignment's priority ... made its list win over another unconditional list at the same scope, as seen in POST /api/pricing/evaluate'.",
+   "expect": [
+    "KB-6D5E2CD1"
+   ]
+  },
+  {
+   "id": "W3-062",
+   "q": "After switching organization, what happens to the cart and the prices shown?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-8BE777BB: after switching 'the per-organization white-label theme swapped ... and the cart badge cleared'; nothing states how prices change on switch.",
+   "expect": [
+    "KB-8BE777BB"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-063",
+   "q": "How does a price list assignment with start and end dates behave outside its validity window?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-6D5E2CD1: 'setting endDate to a past instant on an otherwise-matching assignment made the storefront fall straight back to the next-best pricelist'; KB-055845A3 shows the same fallback on the product page after expiry.",
+   "expect": [
+    "KB-6D5E2CD1",
+    "KB-055845A3"
+   ]
+  },
+  {
+   "id": "W3-068",
+   "q": "What does /api/inventory/products return for a product with stock in several fulfillment centers?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-48A46F77: the inventory record id 'GET /api/inventory/products/{productId} lists per fulfillment center'.",
+   "expect": [
+    "KB-48A46F77"
+   ]
+  },
+  {
+   "id": "W3-070",
+   "q": "What does removeCartItem return and does the cart recalculate totals afterwards?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-A613223B: 'A follow-up cart-state mutation that returns items - ... removeCartItem - returns the settled line items with their ids'; recalculation of totals is not stated.",
+   "expect": [
+    "KB-A613223B"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-071",
+   "q": "How does a barcode search on /search?barcode= behave for an unknown barcode?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "A zero-hit barcode shows 'No products found for barcode <value>' with the empty view and a Reset search that goes to /catalog, also with no fields configured or with an extra q.",
+   "expect": [
+    "KB-71011C1F",
+    "KB-16859F54",
+    "KB-9CD03E2B"
+   ]
+  },
+  {
+   "id": "W3-072",
+   "q": "Can a company admin edit or delete a company address used in an existing order?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-CC9A98D3: order addresses are snapshots and 'a later change to the member's address book never propagates to a placed order'; whether the admin may edit or delete such an address is not stated.",
+   "expect": [
+    "KB-CC9A98D3"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-075",
+   "q": "How does a customer request a return for a delivered order and what happens to the order afterward?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The wizard clamp, the delivered-quantity cap and the unchanged order page with a still-active Request return button are covered, but the full request flow is not.",
+   "expect": [
+    "KB-67D0AB31",
+    "KB-6323ED21",
+    "KB-8A2F58EA"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-077",
+   "q": "What store settings can be changed via /api/stores and what happens to a store when its catalog is changed?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-2CBB229F: 'PUT /api/stores replaces the entity: fields omitted from the body are nulled'; nothing states what happens when a store's catalog is changed.",
+   "expect": [
+    "KB-2CBB229F",
+    "KB-F91252E5",
+    "KB-3FCE7089"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-079",
+   "q": "What happens to a cart line when the product becomes unavailable or price changes (validationErrors)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only the price-change half is stated: 'the cart's unit price can disagree with the product page ... a cart mutation does' fix it; nothing covers unavailable products or validationErrors for them.",
+   "expect": [
+    "KB-055845A3"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-083",
+   "q": "How is a percentage cart promotion with a minimum subtotal condition evaluated in the cart?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The candidates cover how the percentage reward is computed, placed, rounded and re-evaluated on each cart read, but none covers evaluating the minimum-subtotal condition.",
+   "expect": [
+    "KB-A3CE7FBA",
+    "KB-996BDF08",
+    "KB-35A09C64",
+    "KB-D4A064A5"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-084",
+   "q": "What does the GraphQL query for organization members return and how is it filtered by status?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "organization.contacts returns status, statusInOrganization, isLockedInOrganization and securityAccounts, and the storefront status filter reads contact status, but no server-side status filter argument is described.",
+   "expect": [
+    "KB-97170665",
+    "KB-90B0D8F5",
+    "KB-D8FDFA6F",
+    "KB-27B4CD10",
+    "KB-0B6067F8",
+    "KB-82111688"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-086",
+   "q": "Does the products query return products not visible to an anonymous B2B store user or inactive products?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only the visibility half is stated: 'xAPI then excludes those products for anonymous shoppers and for any contact whose groups lack the tag'; inactive products in Query.products are not covered.",
+   "expect": [
+    "KB-9FDE89B8"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-087",
+   "q": "How does the clearCart mutation behave and what does the cart look like afterwards?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only 'Clear cart, which drops the coupons along with every line item' and 'On an empty cart the coupon box is not rendered' describe clearCart's effect.",
+   "expect": [
+    "KB-8264632C"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-088",
+   "q": "What does the REST endpoint /api/order/customerOrders/search return and what permissions does it need?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "For what the search returns: 'The keyword matches order numbers by prefix ... Results came back newest createdDate first'; required permissions are not stated.",
+   "expect": [
+    "KB-F7E4DB8E"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-090",
+   "q": "What does the cart page /cart show for an anonymous user versus signed in with coupon field?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'For an anonymous shopper no preset cards render and the coupons query is not sent; only the Custom code field shows', while signed-in shoppers get the first four promotionCoupons cards.",
+   "expect": [
+    "KB-938D7C06"
+   ]
+  },
+  {
+   "id": "W3-094",
+   "q": "Can a B2B user see orders placed by other users of the same organization in order history?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The All orders / My orders toggle on /account/orders is removed for an Organization employee (KB-02238DE5), and any member of the placing organization has buyer rights on an order (KB-D080C209).",
+   "expect": [
+    "KB-02238DE5",
+    "KB-D080C209"
+   ]
+  },
+  {
+   "id": "W3-096",
+   "q": "How is the order number generated and displayed on the storefront order history?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'Every operation on an order is numbered PREFIX + yymmdd + dash + a five-digit sequence -- CO for the CustomerOrder'; how the number is displayed in the storefront history is not covered.",
+   "expect": [
+    "KB-16AEF0C2"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-098",
+   "q": "What does POST /connect/token return for wrong password versus locked-out user, and how many failed attempts lock an account?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "A wrong password returns 400 login_failed, and after 5 failed attempts the account gets user_is_temporary_locked_out for 15 minutes; KB-0407F36E's user_is_locked_out is a stated expectation that KB-8646A9CB explains as the fixed former behaviour.",
+   "expect": [
+    "KB-8646A9CB",
+    "KB-0407F36E",
+    "KB-7A4C260E"
+   ]
+  },
+  {
+   "id": "W3-099",
+   "q": "How long does an access token from /connect/token live and does a refresh_token grant work?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The candidates say a token 'keeps working until its lifetime ends' and that 'the same long-lived refresh token is issued', but give no lifetime value and no successful refresh_token grant.",
+   "expect": [
+    "KB-7564A9BF",
+    "KB-9D80EE6B"
+   ],
+   "partial": true
+  },
+  {
+   "id": "W3-100",
+   "q": "What happens to the search index when a product is updated via the API - how long until it is searchable, and how do I trigger reindex via /api/search/indexes/index?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "With event indexation off a change reaches the index only at the next scheduled run (up to ~59 min), a targeted documentIds request makes it searchable within seconds, and deletions need a startDate/endDate window.",
+   "expect": [
+    "KB-4C29749E",
+    "KB-31802239",
+    "KB-25388E6C",
+    "KB-306353A9",
+    "KB-5D688448"
+   ]
+  },
+  {
+   "id": "W3-102",
+   "q": "When a role's permissions are changed in Admin, does an already logged-in user's token reflect the change?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "'The member's live session keeps the role its token was minted with, so re-authenticate before asserting on the new role' covers a role reassignment, not an edit to a role's permission set.",
+   "expect": [
+    "KB-B769C7B1"
+   ],
+   "partial": true
+  }
+ ],
+ "controls": [
+  {
+   "id": "W3-001",
+   "q": "What does the products GraphQL query return when a keyword search matches nothing?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-316B2DDB covers an unknown filter field returning totalCount 0, a neighbouring argument, not a keyword search that matches nothing.",
+   "expect": []
+  },
+  {
+   "id": "W3-007",
+   "q": "What does the addItemToCart GraphQL mutation return when the requested quantity exceeds available stock?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-6FAB2EBA covers the store's 1,000,000 line-item limit, not stock, and KB-DAD0D552 covers the UCP surface only, so no body states what the storefront add mutation returns when the quantity is over stock.",
+   "expect": []
+  },
+  {
+   "id": "W3-010",
+   "q": "What happens when checkout is attempted with an empty cart?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes trying to check out with an empty cart; KB-8264632C only says 'On an empty cart the coupon box is not rendered at all'.",
+   "expect": []
+  },
+  {
+   "id": "W3-016",
+   "q": "What happens at checkout when a product in the cart goes out of stock?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only the UCP surface states an out-of-stock checkout refusal (KB-DAD0D552), and nothing covers storefront checkout when a cart item runs out of stock.",
+   "expect": []
+  },
+  {
+   "id": "W3-019",
+   "q": "What happens to the card payment when the payment gateway declines the card at checkout?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Candidates cover CyberSource being 'held for review' and authorizing non-deterministically, but none describes a gateway decline.",
+   "expect": []
+  },
+  {
+   "id": "W3-025",
+   "q": "When a mission is completed, how are reward points credited to the user balance?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes crediting mission reward points; KB-EDDBBE75 only says 'Balances change only through the earn and redeem handling on orders'.",
+   "expect": []
+  },
+  {
+   "id": "W3-027",
+   "q": "How are loyalty points expired and where does the expiry date show up in the storefront?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes loyalty points expiry; the only expiry content is card MM/YY and mission EndDate, not points.",
+   "expect": []
+  },
+  {
+   "id": "W3-032",
+   "q": "Can a user delete or dismiss a notification from the notifications page, and does it persist?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes deleting or dismissing a notification; isHidden/withHidden appear only as query fields with no dismiss behaviour stated.",
+   "expect": []
+  },
+  {
+   "id": "W3-033",
+   "q": "What happens to points earned for an order when the order is cancelled or refunded?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate says what happens to earned loyalty points on order cancellation or refund; KB-EDDBBE75 only says balances change 'through the earn and redeem handling on orders'.",
+   "expect": []
+  },
+  {
+   "id": "W3-037",
+   "q": "How are facets returned by the products query on the search results page, and which facet types exist (terms, range)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes the facet structure or facet types of Query.products; KB-31802239 only mentions in passing that term facets counted ghost documents.",
+   "expect": []
+  },
+  {
+   "id": "W3-046",
+   "q": "What happens when a user creates a wishlist with a duplicate name?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate covers creating a wishlist with a duplicate name; KB-1898248D covers only the per-user list limit.",
+   "expect": []
+  },
+  {
+   "id": "W3-048",
+   "q": "Adding a product to a list that is out of stock or inactive",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate covers adding an out-of-stock or inactive product to a wishlist; KB-48A46F77 covers only cart add with a Disabled inventory record.",
+   "expect": []
+  },
+  {
+   "id": "W3-053",
+   "q": "Moving a wishlist item to cart: quantity and price handling",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only saved-for-later is covered (KB-A272971F: 'After moveFromSavedForLater the restored active-cart line carries configurationItems'), which is a different surface from a wishlist and says nothing about quantity or price on the move.",
+   "expect": []
+  },
+  {
+   "id": "W3-061",
+   "q": "How does a facet filter selection get encoded in the search page URL and in the products filter argument?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes how a facet selection is encoded; KB-71011C1F only notes that 'A barcode request ignores ?facets='.",
+   "expect": []
+  },
+  {
+   "id": "W3-064",
+   "q": "How does the storefront GraphQL query orders filter and paginate a customer's order history (filter, sort, first/after)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Only salesRepCustomerOrders' createddate filter is described (KB-09CEE315), a different query from the customer's orders query and with no sort or first/after paging.",
+   "expect": []
+  },
+  {
+   "id": "W3-065",
+   "q": "How does the changeCartItemQuantity mutation behave when quantity is set to zero?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes changeCartItemQuantity with quantity zero; KB-A613223B only says it 'returns the settled line items'.",
+   "expect": []
+  },
+  {
+   "id": "W3-066",
+   "q": "What are the page size and pagination defaults for products(first, after) and the totalCount on the search page?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states the default page size of products(first, after) or the search page totalCount behaviour.",
+   "expect": []
+  },
+  {
+   "id": "W3-067",
+   "q": "How are company addresses managed on the storefront page /company/addresses?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Candidates cover /account/addresses, /company/info's Description column and POST /api/members rules, none describes managing addresses on /company/addresses.",
+   "expect": []
+  },
+  {
+   "id": "W3-069",
+   "q": "Can a customer cancel an order from the storefront and which statuses allow cancellation (cancelOrder mutation)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Order cancellation is described only from Admin ('Cancel document on the order blade', KB-ADA91F7B); no candidate covers a storefront cancelOrder mutation or the allowed statuses.",
+   "expect": []
+  },
+  {
+   "id": "W3-073",
+   "q": "How is available quantity computed when reserved or in-transit quantity is set on an inventory record?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate gives how available quantity is computed from reserved or in-transit quantity; the reserved values cited are always 0.",
+   "expect": []
+  },
+  {
+   "id": "W3-074",
+   "q": "How does the cart handle product pack size or quantity step rules when adding quantity?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate mentions pack size or quantity step rules on the cart.",
+   "expect": []
+  },
+  {
+   "id": "W3-076",
+   "q": "What validation errors appear for the invite form with an invalid email?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "The email validation messages present belong to the OTP sign-in form ('Enter a valid email address, e.g. johndoe@gmail.com'), not to the member invite form.",
+   "expect": []
+  },
+  {
+   "id": "W3-078",
+   "q": "What does a product card show for a product without price or out of stock on the B2B store?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "KB-F78ED1CC lists card shapes only for configurable, master and purchasable products ('bare price + stepper + In stock'); no candidate describes the card for an unpriced or out-of-stock product.",
+   "expect": []
+  },
+  {
+   "id": "W3-081",
+   "q": "Can a user remove or block themselves, or the last organization admin?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate says whether a user can block or remove themselves or the last organization maintainer; they cover lock fields, roster badges and Delete semantics.",
+   "expect": []
+  },
+  {
+   "id": "W3-082",
+   "q": "Does the category page products query include products from child categories?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states whether the storefront category page products query includes child-category products; searchInChildren appears only for REST listentries.",
+   "expect": []
+  },
+  {
+   "id": "W3-085",
+   "q": "Which order notifications (emails) are sent when an order is placed, shipped or cancelled?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Notification candidates cover return status changes and the journal API, not order placed/shipped/cancelled emails.",
+   "expect": []
+  },
+  {
+   "id": "W3-089",
+   "q": "How are facet counts affected after another facet is selected on the search results page?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes how facet counts change after another facet is selected; KB-31802239 only notes that ghost documents inflate term facets.",
+   "expect": []
+  },
+  {
+   "id": "W3-092",
+   "q": "Is keyword search on the products query case-insensitive and how does it treat special characters?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Case-insensitivity and wildcards are stated only for quoted filter terms and barcode filters, a neighbouring surface, not for keyword search.",
+   "expect": []
+  },
+  {
+   "id": "W3-093",
+   "q": "Does the order history page filter by status and by date range in the storefront?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "The only date filter described is the sales rep customer orders page, a neighbouring surface, and no status filter on buyer order history is described.",
+   "expect": []
+  },
+  {
+   "id": "W3-095",
+   "q": "What does the order history list show when the customer has no orders (empty state)?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate describes the empty state of the storefront order history list.",
+   "expect": []
+  },
+  {
+   "id": "W3-097",
+   "q": "Can a customer reorder or add order items back to cart from order details?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states whether a reorder or add-to-cart action exists on the order details page.",
+   "expect": []
+  },
+  {
+   "id": "W3-101",
+   "q": "Which permissions are required to call GET /api/security/users and what status code is returned without them?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate states which permission GET /api/platform/security/users requires or what status code it returns without it.",
+   "expect": []
+  },
+  {
+   "id": "W3-103",
+   "q": "What does POST /api/platform/security/users create return when username or email already exists, and what password policy rules reject a password?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "No candidate covers the user-create response for a duplicate username or email, or password policy rejections.",
+   "expect": []
+  },
+  {
+   "id": "W3-104",
+   "q": "How does a fulfillment center deactivation or deletion affect inventory records and store availability?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "agreed",
+   "note": "Fulfillment-center candidates cover which centers count toward stock and search order, not the effect of deactivating or deleting a center.",
+   "expect": []
+  }
+ ],
+ "contested": [
+  {
+   "id": "W3-002",
+   "q": "What order statuses exist and what is the default status of a newly placed order?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-DB7B6317 lists the order statuses, while the default differs between KB-50EBEEE9 (opens in New) and KB-78638393 (orders are created in Payment required before authorization resolves).",
+   "expect": [
+    "KB-DB7B6317",
+    "KB-50EBEEE9",
+    "KB-78638393"
+   ]
+  },
+  {
+   "id": "W3-003",
+   "q": "What order status does a newly placed order get after storefront checkout?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-50EBEEE9 says the placed order opens in New while KB-78638393 states generally that orders are created in Payment required, so the answer depends on whether the payment path is read as part of Q.",
+   "expect": [
+    "KB-50EBEEE9",
+    "KB-78638393"
+   ]
+  },
+  {
+   "id": "W3-054",
+   "q": "What happens to a member's access when an organization admin blocks them?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-06409954/KB-27B4CD10 say a storefront block locks the account so sign-in is refused, while KB-B5B57F41 and KB-4EDC989E describe a user who still signs in but gets Forbidden or no active organization, so the consequence depends on which lock axis is meant.",
+   "expect": [
+    "KB-06409954",
+    "KB-27B4CD10",
+    "KB-B5B57F41",
+    "KB-4EDC989E"
+   ]
+  },
+  {
+   "id": "W3-055",
+   "q": "What does the search results page show for the empty state when no products are found?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Only the barcode-mode empty state ('No products found for barcode' plus the search empty view and Reset search) is described, so the label depends on whether Q includes the barcode route.",
+   "expect": [
+    "KB-71011C1F",
+    "KB-16859F54",
+    "KB-4F298EB0"
+   ]
+  },
+  {
+   "id": "W3-080",
+   "q": "What are the return statuses and how do they transition?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "KB-21F4F161 maps each status to its allowed next statuses and says the admin dropdown matches, but for a New return it lists both Canceled and Cancelled while KB-85F02FDB/KB-BDCD3057 say the dropdown offers only New, Completed, Cancelled, Processing.",
+   "expect": [
+    "KB-21F4F161",
+    "KB-93804F07",
+    "KB-85F02FDB",
+    "KB-BDCD3057",
+    "KB-DF9F415E"
+   ]
+  },
+  {
+   "id": "W3-091",
+   "q": "How does the order details page display line items, totals, taxes and discounts?",
+   "source": "wave3",
+   "split": "test",
+   "labelled": "adjudicated",
+   "note": "Storefront fragments (line items and order summary, gift line outside the product table) and Admin fragments (line-items header vs order header, rounded vs unrounded discounts) answer parts, and which apply depends on whether Q means the storefront or the Admin order page.",
+   "expect": [
+    "KB-67D0AB31",
+    "KB-C4346EB2",
+    "KB-F1542157",
+    "KB-4982C91F"
+   ]
+  }
+ ]
+}

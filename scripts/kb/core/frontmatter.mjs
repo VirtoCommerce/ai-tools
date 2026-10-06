@@ -15,10 +15,18 @@ export const FIELD_ORDER = [
   'subject',
   'plane',
   'question',
+  // THE RETRIEVAL CARD (VCST-6122 Decision 3): `questions` is a list of `{text}` -- how this fact
+  // will be asked for -- and `concepts` a list of `{id}` from the base's vocabulary. Read, carried
+  // and written from M1; nothing requires them until capture v2 (M5). They are here BEFORE any entry
+  // carries them because the schema is closed: a client that did not know them would throw on the
+  // first confirm of a migrated entry (Decision 8).
+  'questions',
+  'concepts',
   'status',
   // Where a retired entry's fact went. A FIELD and not prose, because the refusal a writer meets
   // has to be able to follow it: a message that names a retired entry and cannot say what replaced
-  // it sends the writer to a file nothing serves.
+  // it sends the writer to a file nothing serves. A bare id, or -- when an entry is SPLIT into
+  // several (VCST-6122 Decision 2) -- a list of `{id}`; readers take either (`idList`).
   'supersededBy',
   'refutableBy',
   'appliesTo',
