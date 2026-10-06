@@ -696,19 +696,17 @@ export function checkModels(input: CheckInput, ctx: Context): CheckResult {
  * ------------------------------------------------------------------ */
 
 /**
- * This deployment's tracker keys: `JIRA_PROJECT_KEY` from the env layers + the profile's tracker key.
- * The layers are PARSED, in config.js's order, rather than config.js imported: config.js exits the
- * process when a secret is missing, which is every CI run and every fresh clone.
+ * This deployment's tracker keys: `JIRA_PROJECT_KEY` from the env + the profile's tracker key.
+ * The env comes from load-env.mjs — config.js's layers and `KEY_<ENV>` promotion — rather than config.js
+ * imported: config.js exits the process when a secret is missing, which is every CI run and every fresh clone.
  */
 async function trackerKeys(): Promise<Set<string>> {
   const keys = new Set<string>();
   try {
-    const { parse } = await import("dotenv");
-    const { resolveTestEnv } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "resolve-test-env.js")).href);
+    const { loadEnv } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "load-env.mjs")).href);
     const { loadProjectProfile } = await import(pathToFileURL(join(ROOT, "scripts", "lib", "project-profile.mjs")).href);
-    const layers = [".env.defaults", `.env.${resolveTestEnv("vcst")}`, ".env.local"].map((f) => readIf(join(ROOT, f)));
-    const merged = Object.assign({}, ...layers.filter((t): t is string => t !== null).map((t) => parse(t)), process.env);
-    for (const k of [merged.JIRA_PROJECT_KEY, loadProjectProfile(ROOT)?.tracker?.projectKey]) if (k) keys.add(k);
+    loadEnv({ fallback: "vcst" });
+    for (const k of [process.env.JIRA_PROJECT_KEY, loadProjectProfile(ROOT)?.tracker?.projectKey]) if (k) keys.add(k);
   } catch {
     // An unreadable env or profile ⇒ no key is trusted, and every tracker-only route warns. Loud, not guessed.
   }
