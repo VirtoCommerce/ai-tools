@@ -1,0 +1,856 @@
+{
+ "item": "E8-E9-poison-check",
+ "env": "vcptcore (BACK_URL from .env.vcptcore)",
+ "capturedAt": "2026-09-29T11:38:12.409Z",
+ "aggregate": {
+  "b4": {
+   "Customer ACME,TF msgLen=0": 10
+  },
+  "b5": {
+   "Customer ACME msgLen=0": 10
+  }
+ },
+ "note": "standard-key owner reads after the refused E8 legacy writes (b4) and refused 1025-char message (b5)",
+ "calls": [
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 810,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 507,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 174,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 180,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 177,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 181,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 173,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "4effe25e-2c3e-4a85-8278-fc225fdc62d8"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "4effe25e-2c3e-4a85-8278-fc225fdc62d8",
+      "name": "AGENT-TEST-5707-b4",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "759f183c-0298-4f31-85a4-ff9bc892d398",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+         "name": "AGENT-TEST-Org-TechFlow-20260310",
+         "subtitle": "San Francisco, California",
+         "imageUrl": null
+        },
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 182,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 204,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 179,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 178,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 185,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 190,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 175,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 176,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  },
+  {
+   "who": "rep",
+   "path": "/graphql",
+   "http": 200,
+   "ms": 205,
+   "request": {
+    "query": "query($l:String!){ wishlist(listId:$l){ id name scope description items { id productId quantity } sharingSetting { id scope access isOwner message targets { id name subtitle imageUrl } } } }",
+    "variables": {
+     "l": "86401a64-9541-4201-a118-bcdaa2952f81"
+    },
+    "authorization": "Bearer <REDACTED>"
+   },
+   "response": {
+    "data": {
+     "wishlist": {
+      "id": "86401a64-9541-4201-a118-bcdaa2952f81",
+      "name": "AGENT-TEST-5707-b5",
+      "scope": "Customer",
+      "description": null,
+      "items": [],
+      "sharingSetting": {
+       "id": "efed98c6-3c0a-4f74-887c-4f051c49a880",
+       "scope": "Customer",
+       "access": "Write",
+       "isOwner": true,
+       "message": null,
+       "targets": [
+        {
+         "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+         "name": "AGENT-TEST-Org-AcmeCorp-20260310",
+         "subtitle": "New York, New York",
+         "imageUrl": null
+        }
+       ]
+      }
+     }
+    }
+   }
+  }
+ ]
+}

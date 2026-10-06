@@ -1,0 +1,457 @@
+{
+  "ticket": "VCST-5925",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": null,
+    "escalated_reason": "Story default FULL; adds new chain links (multi-recipient grants, assignment-loss revoke)"
+  },
+  "layer": "api",
+  "shape_class": {
+    "value": "none",
+    "sources": [
+      "backend-only PRs x-cart#141, cart#194, sales-rep#21; no UI files"
+    ]
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json"
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-01",
+  "environment": "vcptcore-qa (https://vcptcore-qa.govirto.com/graphql, store B2B-store)",
+  "build": {
+    "deployed": {
+      "probed": "2026-10-01 /api/platform/modules (admin)",
+      "relevant_modules": {
+        "VirtoCommerce.XCart": "3.1037.0-pr-141-fb27",
+        "VirtoCommerce.Cart": "3.1011.0-pr-194-8331",
+        "VirtoCommerce.SalesRep": "3.1012.0-pr-21-f681"
+      }
+    },
+    "pr_heads": {
+      "vc-module-x-cart#141": "fb27713",
+      "vc-module-cart#194": "8331910",
+      "vc-module-sales-rep#21": "f68178a"
+    },
+    "note": "deployed = PR heads; vc-deploy-dev PRs #6492/#6510 target vcst-qa, vcptcore-qa carries the same module builds"
+  },
+  "timing": {
+    "started_at": "2026-10-01T12:45:00Z",
+    "test_window_start": "2026-10-01T12:56:03Z",
+    "time_to_first_test_minutes": 11,
+    "reachability_minutes": 1,
+    "agent_dispatches": 1
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "4 On QA",
+      "confirmed": false,
+      "actor": "qa-lead",
+      "at_time": "2026-10-01T12:52:04Z"
+    },
+    {
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "8 Finish test",
+      "confirmed": true,
+      "actor": "qa-lead (operator-confirmed)",
+      "at_time": "2026-10-06T03:50+03:00",
+      "note": "VCST-6152 verified; VCST-6147 (AC5) moved out to a standalone Bug, Relates; comment 111393"
+    }
+  ],
+  "agents_dispatched": [
+    {
+      "agent": "qa-backend-expert",
+      "track": "4a",
+      "lane": "none (API only)"
+    }
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub"
+  },
+  "ac_analysis": {
+    "total": 12,
+    "pass": 10,
+    "fail": 1,
+    "items": [
+      {
+        "ac": "AC1 adding does not revoke",
+        "result": "PASS",
+        "evidence": "P-1"
+      },
+      {
+        "ac": "AC2 link stable",
+        "result": "PASS",
+        "evidence": "P-2; key = sharingSetting.id"
+      },
+      {
+        "ac": "AC3 sharingSettings[] + sharedWith",
+        "result": "DRIFT",
+        "evidence": "P-3: shipped sharingSetting.targets[] instead of sharingSettings[].sharedWith; core-declared (1.2 met); contract comment offers alternative shape — consumer (Ivan) to accept"
+      },
+      {
+        "ac": "AC4 targets resolve regardless of assignment",
+        "result": "PASS",
+        "evidence": "P-4 un-served + deleted org"
+      },
+      {
+        "ac": "AC5 targeted customer can use the grant",
+        "result": "FAIL",
+        "evidence": "WISH-33 + P-1: wishlist(listId) Forbidden, absent from wishlists(); only sharedWishlist(key) works (KB-2F64A447)"
+      },
+      {
+        "ac": "AC6 revoke survives losing assignment",
+        "result": "PASS",
+        "evidence": "P-4"
+      },
+      {
+        "ac": "AC7 revoking immediate",
+        "result": "PASS",
+        "evidence": "WISH-044 + P-1"
+      },
+      {
+        "ac": "AC8 one scope at a time",
+        "result": "PASS",
+        "evidence": "P-5"
+      },
+      {
+        "ac": "AC9 partial write leaves the rest alone",
+        "result": "PASS",
+        "evidence": "P-6 (target order flips — bug), WISH-043 behaviour"
+      },
+      {
+        "ac": "AC10 legacy singular write explicit",
+        "result": "PASS",
+        "evidence": "P-8 new id refused, grants kept; but a present non-first id is refused — bug"
+      },
+      {
+        "ac": "AC11 access = viewer's own",
+        "result": "PASS",
+        "evidence": "P-1"
+      },
+      {
+        "ac": "AC12 failures are GraphQL errors",
+        "result": "PASS",
+        "evidence": "P-9: all refusals HTTP 200 + errors[]"
+      }
+    ],
+    "drift": [
+      "AC3: sharingSettings[]/sharedWith not shipped — sharingSetting.targets[]",
+      "legacy no-op only for the first target",
+      "1000-id cap on addSharedWithIds only"
+    ],
+    "kb": {
+      "confirmed": [
+        "KB-2F64A447",
+        "KB-B4377884",
+        "KB-0BC18481",
+        "KB-4895528A",
+        "KB-8F61528A"
+      ],
+      "captured": [
+        "KB-42230B0A",
+        "KB-509D70C4",
+        "KB-BE7DF8DA"
+      ]
+    },
+    "drift_pending_acceptance": 1
+  },
+  "total_cases": 10,
+  "passed": 3,
+  "failed": 4,
+  "blocked": 3,
+  "new_cases_authored": 0,
+  "regression": {
+    "c1": {
+      "ran": true,
+      "runner": "scripts/graphql/graphql-runner.ts --case (sequential)",
+      "ids": [
+        "WISH-33",
+        "WISH-036",
+        "WISH-037",
+        "WISH-038",
+        "WISH-039",
+        "WISH-040",
+        "WISH-041",
+        "WISH-042",
+        "WISH-043",
+        "WISH-044"
+      ],
+      "pass": [
+        "WISH-037",
+        "WISH-038",
+        "WISH-044"
+      ],
+      "fail": [
+        "WISH-33",
+        "WISH-040",
+        "WISH-041",
+        "WISH-043"
+      ],
+      "blocked": [
+        "WISH-036",
+        "WISH-039",
+        "WISH-042"
+      ],
+      "note": "existing Draft cases (uncommitted, VCST-5707) — no /qa-regression RUN_ID"
+    }
+  },
+  "regression_triage": {
+    "items": [
+      {
+        "id": "WISH-33",
+        "class": "real-product-bug",
+        "note": "AC5 / contract 3.2"
+      },
+      {
+        "id": "WISH-040",
+        "class": "test-defect",
+        "note": "message literal {{RUN_ID}} unresolved; earlier runs' pushes collide (count 2). VCST-5850 scope"
+      },
+      {
+        "id": "WISH-041",
+        "class": "test-defect",
+        "note": "legacy_multi sends the FIRST target (by-design no-op); must send a third org — P-8 shows the refusal works"
+      },
+      {
+        "id": "WISH-043",
+        "class": "test-defect",
+        "note": "{HYPOTHESIS} 'errors non-empty' contradicted by VCST-5925 AC9/2.1 {SPEC}: no-scope write is untouched, no error"
+      },
+      {
+        "id": "WISH-036/039/042",
+        "class": "env-fixture",
+        "note": "SR_REP_EXCLUSIVE_TECHFLOW has no resolvable password; substance covered by P-1/P-5 with an in-case TechFlow reader"
+      }
+    ]
+  },
+  "coverage_triage": {
+    "ran": true,
+    "dispositions": {
+      "CONFIRMED": [
+        "WISH-33",
+        "WISH-037",
+        "WISH-038",
+        "WISH-039",
+        "WISH-044"
+      ],
+      "REPAIR": [
+        "WISH-040",
+        "WISH-041",
+        "WISH-036",
+        "WISH-039",
+        "WISH-042"
+      ],
+      "RE-BASE": [
+        "WISH-043"
+      ]
+    },
+    "applied": false,
+    "reason": "050h holds uncommitted VCST-5707 Draft rows — one-author rule; edits proposed to the operator, not applied"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6147",
+      "relationship": "relates",
+      "severity": "High",
+      "provenance": "in-scope",
+      "summary": "Targeted customer cannot use a Customer-scope share: wishlist(listId) Access denied, missing from wishlists() (AC5)",
+      "report": "reports/bugs/open/critical-high/BUG-VCST-5925-targeted-customer-cannot-use-grant.md",
+      "note": "Subtask priority not editable — Jira shows Medium; High stated in the body; 2026-10-06: moved out of VCST-5925 (sub-task -> standalone Bug, Relates link) — needs a product decision, done separately"
+    },
+    {
+      "key": "VCST-6152",
+      "relationship": "sub-task",
+      "severity": "Medium",
+      "provenance": "in-scope",
+      "summary": "Legacy sharedWithId save refused at random: targets order differs between save response and read (AC10 / contract 2.3)",
+      "report": "reports/bugs/open/medium/BUG-VCST-5925-targets-order-unstable-legacy-sharedWithId-refused.md"
+    }
+  ],
+  "bugs_not_filed": [],
+  "discovery": {
+    "ran": false,
+    "skipped_reason": "folded into 4a probes P-3/P-4 (charter sources: AC3 drift, assignment loss, deleted org)"
+  },
+  "visual": {
+    "surface": "false",
+    "surface_source": [
+      "no .vue/.scss/UI files in any PR"
+    ],
+    "ran": false
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "SharingSettingType + Input*WishlistType changed (x-cart#141)"
+    ],
+    "schema": {
+      "refreshed": false,
+      "note": "live introspection in P-3; cached runner schema validated the cases"
+    }
+  },
+  "test_data": {
+    "data_surface": "false",
+    "fixtures": [
+      "SR_REP_PRIMARY",
+      "ACME_BUYER",
+      "ORG_ACME",
+      "ORG_TECHFLOW",
+      "SR_UNSERVED_ORG"
+    ],
+    "created_in_case": [
+      "AGENT-TEST-5925 TechFlow contact+user",
+      "AGENT-TEST-5925-ORG-*"
+    ],
+    "cleanup": "verified — 0 lists/orgs left, rep served set restored",
+    "td_validate": "050h/050m resolved; 13 unrelated suites fail on vcptcore only"
+  },
+  "business_rules_verified": [
+    "BL-SR-002"
+  ],
+  "appinsights": {
+    "ran": false,
+    "skipped_reason": "az CLI failed locally (PermissionError on cliextensions/azure-devops metadata); no 5xx seen in any of the run's /graphql calls"
+  },
+  "tracker": {
+    "comment_posted": false,
+    "pending_filing": [],
+    "comment_id": "111127"
+  },
+  "reruns": [
+    {
+      "date": "2026-10-02",
+      "kind": "delta (same backend build; theme 2.59.0-pr-2476-31b5)",
+      "reason": "contract comment 108733 points not covered on 2026-10-01 + confirmation copy (VCST-6104)",
+      "build": {
+        "XCart": "3.1037.0-pr-141-fb27",
+        "Cart": "3.1011.0-pr-194-8331",
+        "SalesRep": "3.1012.0-pr-21-f681",
+        "theme": "2.59.0-pr-2476-31b5-31b5550c",
+        "pr_heads_not_deployed": {
+          "vc-module-x-cart#141": "bb199f6 (VCST-6113)",
+          "vc-module-sales-rep#21": "ff6da14 (VCST-6113)"
+        }
+      },
+      "agents_dispatched": [
+        {
+          "agent": "qa-backend-expert",
+          "track": "4a",
+          "lane": "none (API)"
+        },
+        {
+          "agent": "qa-frontend-expert",
+          "track": "4a",
+          "lane": "playwright-chrome"
+        }
+      ],
+      "probes": {
+        "D-1 (1.1)": "INFO/DRIFT — sharingSetting not deprecated, no plural; sharedWithId deprecated \"Use targets\"",
+        "D-2 (3.4 existing rows)": "INFO — no mixed-scope/stray rows on stand (420 lists, 36 shared, 1 row each)",
+        "D-3 (3.2 traps)": "PASS — Private deletes target rows, re-share does not resurrect; wishlists() part BLOCKED by VCST-6147",
+        "D-4 (2.3)": "FAIL — medium bug confirmed; write response insertion order vs reads newest-first",
+        "D-5 (1.2 imageUrl)": "INFO undecidable — no org icons",
+        "D-6 (3.3)": "PASS — 56 responses all HTTP 200 + errors[]",
+        "BL-SR-002": "PASS"
+      },
+      "copy": {
+        "C-1 Private->Customers": "no dialog, OK",
+        "C-2 add org": "no dialog, OK",
+        "C-3 remove org": "NO warning though org loses access",
+        "C-4 widen to Anyone": "\"Change who can access?\" / \"The link stays the same. Some users may lose access.\" — 2nd sentence FALSE, public exposure not stated",
+        "C-5 narrow": "same copy, TRUE",
+        "C-6/C-7 ->Private": "\"Stop sharing this list?\" / \"Everyone the list is shared with will lose access. You can share it again any time.\" — TRUE",
+        "C-8 re-share Anyone": "no dialog; old links work again (by design 2.4, not stated)",
+        "C-9 cancel": "nothing saved"
+      },
+      "vcst_6104": "PARTIALLY FIXED — copy-only change, logic unchanged; recommend reopen (status change needs operator confirmation)",
+      "c1": {
+        "run_id": "VCST-5925-C1-20261002",
+        "pass": [
+          "WISH-037",
+          "WISH-038",
+          "WISH-044"
+        ],
+        "fail": [
+          "WISH-33",
+          "WISH-040",
+          "WISH-041",
+          "WISH-043"
+        ],
+        "blocked": [
+          "WISH-036",
+          "WISH-039",
+          "WISH-042"
+        ],
+        "note": "identical to 2026-10-01; triage unchanged (WISH-33 product bug VCST-6147; 040/041/043 test defects; 036/039/042 fixture SR_REP_EXCLUSIVE_TECHFLOW has no password alias). WISH-043 title was repaired in-tree but its assertion still expects errors[]"
+      },
+      "appinsights": {
+        "ran": true,
+        "via": "REST api.applicationinsights.io (az CLI extension broken; AZURE_EXTENSION_DIR workaround for the token)",
+        "finding": "PurchaseSchema.AuthorizeAsync Access denied is logged resultCode 500 (08:37, 08:48) while the wire returned HTTP 200 + errors[] (D-6); validation errors likewise logged 500 while the wire returns 400 — telemetry resultCode != wire status. Contract 3.3 \"one auth denial reportedly returned 500 from PurchaseSchema.AuthorizeAsync\" is likely this telemetry record."
+      },
+      "kb": {
+        "confirmed": [
+          "KB-42230B0A",
+          "KB-BE7DF8DA",
+          "KB-5EACBEDD"
+        ],
+        "captured": [
+          "KB-D3328AFF",
+          "KB-D7F08A26",
+          "KB-E8234FA0",
+          "KB-91DF8883"
+        ],
+        "disputed": [
+          "KB-7A9D4927",
+          "KB-AA3C8721",
+          "KB-F2FA8EBD"
+        ]
+      },
+      "verdict": "FAIL (AC5 / VCST-6147); AC3 DRIFT pending consumer acceptance",
+      "cleanup": "verified — all agent-created lists removed"
+    },
+    {
+      "date": "2026-10-06",
+      "kind": "verify-fix + AC re-check on XCart 3.1038.0-pr-141-b404",
+      "vcst_6152": "VERIFIED 3/3 (verification-summary.json)",
+      "recheck": {
+        "AC6": "PASS x2",
+        "AC7": "PASS x2 + WISH-044 8/8 x2",
+        "AC11": "PASS x2",
+        "privacy_owner_only_targets": "PASS x2",
+        "VCST_6147": "still reproduces (moved out, Relates)"
+      },
+      "evidence": [
+        "verification-report.md",
+        "verification/payloads.json",
+        "verification/recheck-payloads.json"
+      ],
+      "kb": {
+        "captured": [
+          "KB-51888868"
+        ],
+        "confirmed": [
+          "KB-D1DF95A5",
+          "KB-B4377884",
+          "KB-1B066196",
+          "KB-8F61528A"
+        ],
+        "disputed": [
+          "KB-42230B0A"
+        ]
+      }
+    }
+  ]
+}
