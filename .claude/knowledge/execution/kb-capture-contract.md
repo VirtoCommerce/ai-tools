@@ -90,6 +90,13 @@ same-subject retry is the only one `kb:report` pairs with its refusal exactly; a
 matched only heuristically, by the ask both followed, and still counts as abandoned in the strict
 number.
 
+## At the end of a turn
+
+Every `ambiguous` list ends in a `kb_show` pick or a `kb_none`. A miss that nothing was written back
+after — or a list left unclosed — is raised once, at the end of the turn, by the `kb-remind` Stop hook
+([`../../hooks/kb-remind.mjs`](../../hooks/kb-remind.mjs)): capture what you established, or say in one
+line that you did not establish it. `KB_REMIND=0` turns the hook off on a machine.
+
 ## Open decision — `method: source`
 
 A dotted type name passes the anchor check, so a fact read from source code can be written today, but

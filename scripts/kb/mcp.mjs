@@ -123,6 +123,8 @@ export const TOOLS = Object.freeze([
       + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
       + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
       + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
+      + 'Every listed ask ENDS in one of the two -- a kb_show pick or a kb_none -- before you move on: an ask left with '
+      + 'neither is recorded as unresolved, nobody can tell whether the base helped, and the session is reminded of it at the end of your turn. '
       + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
       + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '

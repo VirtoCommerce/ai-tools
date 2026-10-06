@@ -91,6 +91,14 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-flush.mjs\""
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/kb-remind.mjs\""
+          }
+        ]
       }
     ],
     "SessionStart": [

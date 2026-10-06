@@ -420,6 +420,18 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
   .filter((a) => a && typeof a.at === 'string' && a.at);
 
 /**
+ * WHAT CAME OF THE SESSION'S ASKS (VCST-6156): every `show`, `none` and write, by `at`, `kind`, the
+ * ask it points at (`after`) and its `state`. The queue is flushed on every `Stop`, so by the end of a
+ * turn the lines that say whether a miss was ever written back are already gone from it; the sidecar
+ * keeps them, locally, for `kb-remind` to read. Kinds and timestamps only -- no subject, no claim.
+ */
+export const OUTCOME_MEMORY = 200;
+const OUTCOME_KINDS = new Set(['show', 'none', 'capture-refused', 'confirm', 'dispute']);
+const isOutcome = (line) => OUTCOME_KINDS.has(line.kind) || (line.kind === 'capture' && Boolean(line.id));
+export const metaOutcomes = (meta) => (Array.isArray(meta?.outcomes) ? meta.outcomes : [])
+  .filter((o) => o && typeof o.at === 'string' && o.at && typeof o.kind === 'string');
+
+/**
  * Record what the sidecar keeps about the line just written: an ask's `at`/`q`, and a CLI line's
  * transcript id (`metaTranscripts` below says why). ONE read and ONE write per line, so this adds no second
  * window in which two parallel kb processes of one session overwrite each other's update. Best
@@ -428,16 +440,23 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
  */
 async function noteLine(env, line) {
   const ask = line.kind === 'ask';
+  const outcome = isOutcome(line);
   const tx = line.via === 'cli' ? String(env.CLAUDE_CODE_SESSION_ID ?? '').trim() : '';
   const newTx = TRANSCRIPT_ID.test(tx) ? tx : '';
-  if (!ask && !newTx) return;
+  if (!ask && !outcome && !newTx) return;
   try {
     const meta = await readMeta(env);
     const known = metaTranscripts(meta);
     const addTx = newTx && !known.includes(newTx);
-    if (!ask && !addTx) return;
+    if (!ask && !outcome && !addTx) return;
     const next = { ...meta };
     if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) }].slice(-ASK_MEMORY);
+    if (outcome) {
+      next.outcomes = [...metaOutcomes(meta), {
+        at: String(line.at), kind: String(line.kind),
+        ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
+      }].slice(-OUTCOME_MEMORY);
+    }
     if (addTx) next.transcripts = [...known, newTx].slice(-TRANSCRIPT_MEMORY);
     await writeFile(metaPath(env), JSON.stringify(next), 'utf8');
   } catch { /* the pointer is lost, the line is not */ }

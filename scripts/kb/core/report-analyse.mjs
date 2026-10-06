@@ -655,7 +655,9 @@ export function refusals(lines, idx) {
  *      queued but not yet pushed, or pushed after the index snapshot — is UNDECIDABLE, and is
  *      reported as such rather than counted either way. Counting it as unhelpful would make the
  *      rate a function of push timing.
- *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's.
+ *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's. An `ambiguous`
+      ask counts as answered by the entries the agent then opened with `kb_show --ask <its handle>`
+      (VCST-6156) -- the pick IS the answer under the verdict ranker; one left unpicked is a miss here.
  *
  * The rate is over DECIDABLE pairs — not over all asks. An ask nobody captured against is not
  * evidence either way, and putting it in the denominator would let the rate fall simply because the
@@ -664,7 +666,7 @@ export function refusals(lines, idx) {
 export function unhelpful(lines, idx) {
   const bySession = new Map();
   for (const l of lines) {
-    if (l.kind !== 'ask' && l.kind !== 'capture') continue;
+    if (l.kind !== 'ask' && l.kind !== 'capture' && l.kind !== 'show') continue;
     const s = l._session || '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
@@ -681,6 +683,16 @@ export function unhelpful(lines, idx) {
     // ordering or windowing is involved: either the capture names a line in this set or it does not.
     const askAt = new Map();
     for (const e of events) if (e.kind === 'ask' && e.at) askAt.set(String(e.at), e);
+    // WHAT AN `ambiguous` ASK WAS ANSWERED WITH (VCST-6156). Under the verdict ranker almost every ask
+    // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
+    // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
+    const picked = new Map();
+    for (const e of events) {
+      if (e.kind !== 'show' || e.state !== 'answer' || !e.after || !e.id) continue;
+      const k = String(e.after);
+      picked.set(k, [...(picked.get(k) ?? []), String(e.id)]);
+    }
+    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : picked.get(String(ask.at)) ?? []);
 
     for (const cap of events) {
       if (cap.kind !== 'capture' || !cap.id) continue;
@@ -710,13 +722,14 @@ export function unhelpful(lines, idx) {
 
       // The base said it held nothing and the agent went and found out. That is the loop working,
       // and it belongs to `captureLoop`, not here.
-      if (ask.state !== 'answer' || !(ask.matched ?? []).length) { afterMiss += 1; continue; }
+      const matched = matchedOf(ask);
+      if (!matched.length) { afterMiss += 1; continue; }
 
       const pool = new Set();
-      for (const id of ask.matched ?? []) for (const a of idx.anchorsOf(id)) pool.add(a);
+      for (const id of matched) for (const a of idx.anchorsOf(id)) pool.add(a);
       // An ask whose OWN matched rows are not in the index cannot be judged either — the pool
       // would be empty for a reason that has nothing to do with the ranker.
-      const matchedKnown = (ask.matched ?? []).filter((id) => idx.has(id)).length;
+      const matchedKnown = matched.filter((id) => idx.has(id)).length;
 
       const capAnchors = idx.anchorsOf(cap.id);
       if (!idx.has(cap.id) || capAnchors.size === 0 || matchedKnown === 0) {
@@ -725,7 +738,7 @@ export function unhelpful(lines, idx) {
           verdict: 'undecidable',
           session,
           question: String(ask.q ?? ''),
-          matched: (ask.matched ?? []).map(String),
+          matched: matched.map(String),
           captureId: String(cap.id),
           captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
           captureAnchors: [...capAnchors],
@@ -742,8 +755,8 @@ export function unhelpful(lines, idx) {
         verdict: overlap.length ? 'helpful' : 'unhelpful',
         session,
         question: String(ask.q ?? ''),
-        matched: (ask.matched ?? []).map(String),
-        matchedSubjects: (ask.matched ?? []).map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
+        matched: matched.map(String),
+        matchedSubjects: matched.map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
         captureId: String(cap.id),
         captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
         captureAnchors: [...capAnchors],
