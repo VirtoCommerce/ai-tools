@@ -23,13 +23,18 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
  * override. It reads its files from the cwd; the three layers here are read from the repo root.
  * Never exits.
  *
- * @param {{ fallback?: string }} [options] TEST_ENV to use when nothing selects one
+ * `ambientWins` is for runners that CI drives with `-e` (ci/run-regression.ts, ci/run-monitor.ts): what
+ * the process environment already held beats every file and every file's pin, and the files only fill
+ * the gaps — config.js's documented intent for CI ("process.env wins"), which its overrides do not do.
+ *
+ * @param {{ fallback?: string, ambientWins?: boolean }} [options] TEST_ENV to use when nothing selects one
  * @returns {{ testEnv: string, promoted: Set<string>, sourceOf: (key: string) => string }}
  *   `promoted` holds the base keys that took a `KEY_<ENV>` value; `sourceOf(key)` names what
  *   supplied a key's current value, e.g. 'BACK_URL from .env.local' or
  *   'BACK_URL_VCPTCORE_DEV from .env.vcptcore_dev' — print it next to any target you act on.
  */
-export function loadEnv({ fallback = 'vcst' } = {}) {
+export function loadEnv({ fallback = 'vcst', ambientWins = false } = {}) {
+  const ambient = ambientWins ? { ...process.env } : null;
   const testEnv = resolveTestEnv(fallback);
   const layers = [];
   for (const [file, override] of [['.env.defaults', false], [`.env.${testEnv}`, true], ['.env.local', true]]) {
@@ -37,11 +42,14 @@ export function loadEnv({ fallback = 'vcst' } = {}) {
     layers.push({ file, parsed: parsed ?? {} });
   }
 
+  if (ambient) Object.assign(process.env, ambient);
+
   const suffix = `_${testEnv.toUpperCase()}`;
   const promoted = new Set();
   for (const [key, value] of Object.entries(process.env)) {
     if (key.endsWith(suffix) && value) {
       const base = key.slice(0, -suffix.length);
+      if (ambient && base in ambient && !(key in ambient)) continue; // a file's pin never beats the environment
       process.env[base] = value;
       promoted.add(base);
     }
