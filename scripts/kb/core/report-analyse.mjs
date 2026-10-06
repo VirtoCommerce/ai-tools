@@ -15,7 +15,7 @@
 // relocated into the report, and it is the reason `unreachable` asks get their own panel row rather
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
-import { lastWord } from './loop.mjs';
+import { lastWord, pointersByAsk } from './loop.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -702,16 +702,8 @@ export function unhelpful(lines, idx) {
     // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
     // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
     // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
-    // A handle-less `show` is the pick for the latest ask when that ask is `ambiguous` -- the same rule
-    // `core/loop.mjs` applies, so the panel and the reminder read one pick the same way.
-    const pointedAt = new Map();
-    let latestAsk = null;
-    for (const e of [...events].sort((a, b) => String(a.at ?? '').localeCompare(String(b.at ?? '')))) {
-      if (e.kind === 'ask') { latestAsk = e; continue; }
-      if (e.kind !== 'show' && e.kind !== 'none') continue;
-      const k = e.after ? String(e.after) : e.kind === 'show' && latestAsk?.state === 'ambiguous' ? String(latestAsk.at) : null;
-      if (k) pointedAt.set(k, [...(pointedAt.get(k) ?? []), e]);
-    }
+    // The SAME pointer rule as the reminder (`core/loop.mjs` `pointersByAsk`): one pick, read one way.
+    const pointedAt = pointersByAsk(events);
     const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : lastWord(pointedAt.get(String(ask.at))).ids);
 
     for (const cap of events) {

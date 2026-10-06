@@ -53,22 +53,43 @@ export function lastWord(pointed) {
  * the reading `kb_none` already gives a handle-less call. Asks the base could not be READ on
  * (`unreachable`, no base) are not misses. `reminded` lists ask `at`s already raised.
  */
+/**
+ * ask `at` -> the `show` / `none` records that speak to it -- ONE rule for the reminder and for
+ * `report-analyse.mjs` `unhelpful`, which must read a pick the same way (PR #400 review). A record
+ * names its ask by `after`; a handle-less `show` is the pick for the latest ask when that ask is
+ * `ambiguous` -- the reading `kb_none` already gives a handle-less call.
+ *
+ * A LENIENT HEURISTIC for that handle-less show: by time, so with a background subagent or a batched
+ * wave sharing the session key, one agent's pick can close another agent's list -- the failure
+ * `none()` documents for its own handle-less call. A missed reminder, never a false one.
+ *
+ * KNOWN LIMIT: an ask's identity is its millisecond `at` (it is also the public ask handle M6 labels
+ * on). `at` strictly increases within one kb process, but two processes on one session key can log
+ * in the same millisecond; one agent's `kb_none`, or one raise, then also covers the other's ask.
+ * Changing the handle's shape would change the M6 data, so it is left, and it can only hide a
+ * reminder, never invent one.
+ */
+export function pointersByAsk(records) {
+  const sorted = (Array.isArray(records) ? records : [])
+    .filter((r) => r && typeof r.at === 'string')
+    .sort((a, b) => a.at.localeCompare(b.at));
+  const pointed = new Map();
+  let latestAsk = null;
+  for (const r of sorted) {
+    if (r.kind === 'ask') { latestAsk = r; continue; }
+    if (r.kind !== 'show' && r.kind !== 'none') continue;
+    const target = r.after ? String(r.after) : (r.kind === 'show' && latestAsk?.state === 'ambiguous' ? String(latestAsk.at) : null);
+    if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
+  }
+  return pointed;
+}
+
 export function openLoops(journal, { reminded = [] } = {}) {
   const records = (Array.isArray(journal) ? journal : [])
     .filter((r) => r && typeof r.at === 'string' && typeof r.kind === 'string')
     .sort((a, b) => a.at.localeCompare(b.at));
   const raised = new Set((Array.isArray(reminded) ? reminded : []).map(String));
-  const pointed = new Map();
-  let latestAsk = null;
-  for (const r of records) {
-    if (r.kind === 'ask') { latestAsk = r; continue; }
-    if (r.kind !== 'show' && r.kind !== 'none') continue;
-    // A LENIENT HEURISTIC for a handle-less show: by time, so with a background subagent or a batched
-    // wave sharing the session key, one agent's pick can close another agent's list -- the failure
-    // `none()` documents for its own handle-less call. A missed reminder, never a false one.
-    const target = r.after ?? (r.kind === 'show' && latestAsk?.state === 'ambiguous' ? latestAsk.at : null);
-    if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
-  }
+  const pointed = pointersByAsk(records);
   const out = [];
   const recent = new Set(records.filter((r) => r.kind === 'ask').slice(-LOOP_ASKS).map((r) => r.at));
   // ONE pass: an ask is closed by any write after it, so only the LAST write matters (PR #400 review).

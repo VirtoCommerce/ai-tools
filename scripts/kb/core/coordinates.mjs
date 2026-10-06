@@ -63,7 +63,7 @@ export function deeperByRoot(rows, { activeOnly = false } = {}) {
 }
 
 // The route of a coordinate, with any leading HTTP verb dropped; null when it is not a route.
-function routeOf(raw) {
+export function routeOf(raw) {
   const s = String(raw ?? '').trim();
   const path = /^[A-Za-z]+\s+(\S+)$/.exec(s)?.[1] ?? s;
   return path.startsWith('/') ? path : null;

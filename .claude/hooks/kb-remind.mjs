@@ -15,45 +15,51 @@
  * takes ONE more step to capture what it found, or to say in a line that it did not find it out.
  *
  * EACH AGENT IS ASKED ABOUT ITS OWN MISSES. Registered on `Stop` (the main thread) AND `SubagentStop`.
- * An ask made through MCP carries its tool-use id (`call`); Claude Code writes the main thread to
- * `transcript_path` and every subagent to its own `agent_transcript_path` (`core/caller.mjs` measured
- * 12 of 12 ids resolving that way). So an ask is raised only at the stop whose transcript holds its
- * call id. Before this, the main thread's Stop raised -- and marked as raised -- the misses of
- * background subagents still at work, which then were never raised to the agent that owned them
- * (PR #400 review). An ask with no call id (the CLI door) cannot be attributed and is raised at the
- * main thread's Stop only. A transcript is read only when there is something open to attribute.
+ * Claude Code writes the main thread to `transcript_path` and every subagent to its own
+ * `agent_transcript_path` under `<session>/subagents/` (`core/caller.mjs` measured 12 of 12 ids that
+ * way). An ask belongs to the transcript that HOLDS it: an MCP ask by its tool-use id (`call`), a CLI
+ * ask by the shell call that ran it -- found with `caller.mjs` `kbShellCalls` / `carries`, the same
+ * join the push uses to attribute CLI lines. So a subagent is reminded of its own misses at its own
+ * SubagentStop, and the main thread's Stop does not raise -- and mark -- a still-working subagent's.
  *
- * IT WRITES ONLY ITS OWN FILE. The journal is the kb processes'; what this hook remembers -- the
- * asks it already raised -- goes to `<session>.reminded.json`, temp file + rename (`remindedPath`).
- * Once a day it deletes journals idle for `KEEP_DAYS`, and a reminded file only together with its
- * journal: a long session whose record outlived its last reminder must not be reminded again.
+ * NOTHING IS ORPHANED. The main thread also takes an open ask that NO transcript holds (a plain
+ * terminal, an unreadable path) and one held only by subagents whose transcripts have been idle for
+ * `SUBAGENT_IDLE_MS` -- a subagent that finished, crashed, was stopped, or whose SubagentStop arrived
+ * without a transcript path. Before, those were raised by nobody. A subagent's stop raises only what
+ * its own transcript holds, and nothing when it cannot read it.
+ *
+ * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
+ * per line (`remindedPath`), so stops finishing together never erase each other's markers. Once a day
+ * it deletes journals idle for `KEEP_DAYS`, and a reminded file only together with its journal.
+ * Transcripts are read only when there is something open to attribute.
  *
  * GUARDS, because a stop hook that blocks is a hook that can trap a session:
  *   1. `stop_hook_active` (set by the harness while a stop hook already made Claude continue) -> silent.
- *   2. Every question is raised ONCE: its ask `at` is recorded BEFORE the reason is printed, so a crash
+ *   2. Every question is raised ONCE: its ask `at` is appended BEFORE the reason is printed, so a crash
  *      after the write costs a reminder, never a loop.
  *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
  *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
- * WHAT THE OPERATOR SEES: Claude Code labels any blocking Stop hook "Stop hook error occurred" in its
+ * WHAT THE OPERATOR SEES: Claude Code labels any blocking stop hook "Stop hook error occurred" in its
  * UI -- the reminder, not a fault (verified live 2026-10-06; the model receives it as "Stop hook
  * feedback"). The reason opens with "kb reminder (not a failure)" for whoever expands it.
  *
  * Exits 0 whatever happens and prints NOTHING unless it is blocking.
  */
-import { readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   hasSessionId, hookEnv, isSynthetic, kbDisabled, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
-import { LOOP_ASKS, openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
+import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
+import { carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
 
-// Must exceed LOOP_ASKS: an ask still inside the judged window must still be in the record.
-const REMEMBERED = LOOP_ASKS * 2;
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
+const SUBAGENT_IDLE_MS = 10 * 60 * 1000;
 
 const ageOf = (path, now) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
+const readText = (path) => { try { return path ? readFileSync(path, 'utf8') : null; } catch { return null; } };
 
 /** Delete journals idle for KEEP_DAYS, and a reminded file only once its journal is gone or idle too. */
 function prune(dir, now = Date.now()) {
@@ -67,28 +73,54 @@ function prune(dir, now = Date.now()) {
     const path = join(dir, name);
     if (name.endsWith('.loop.ndjson')) {
       if (idle(path)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    } else if (name.endsWith('.reminded.json')) {
-      const journal = join(dir, `${name.slice(0, -'.reminded.json'.length)}.loop.ndjson`);
+    } else if (name.endsWith('.reminded.ndjson')) {
+      const journal = join(dir, `${name.slice(0, -'.reminded.ndjson'.length)}.loop.ndjson`);
       if (idle(path) && idle(journal)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
     }
   }
 }
 
-function readJson(path) {
-  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
+/** The asks already raised: every line of the append-only record. */
+function raisedAts(path) {
+  const text = readText(path);
+  return text === null ? [] : text.split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
-/**
- * The open asks THIS stop owns. `transcript` is the stopping agent's own transcript; `main` says
- * whether it is the main thread. With no readable transcript the main thread keeps every open ask
- * and a subagent raises nothing -- a missed reminder rather than one sent to the wrong agent.
- */
-function owned(loops, { transcript, main }) {
-  if (!loops.some((l) => l.call)) return main ? loops : [];
-  let text = null;
-  try { text = transcript ? readFileSync(transcript, 'utf8') : null; } catch { text = null; }
-  if (text === null) return main ? loops : [];
-  return loops.filter((l) => (l.call ? text.includes(l.call) : main));
+/** Does this transcript hold this ask? MCP: its call id. CLI: a kb shell call carrying its question. */
+function holds(text, loop) {
+  if (text === null) return false;
+  if (loop.call) return text.includes(loop.call);
+  // The needle exactly as the push builds it (`cliKey`: quotes and escapes flattened).
+  const key = cliKey({ via: 'cli', kind: 'ask', q: loop.q });
+  return Boolean(key) && kbShellCalls(text).some((c) => c.verbs.has('ask') && carries(c.text, key.needle));
+}
+
+/** The subagent transcripts of the session whose main transcript is `main`, with their age. */
+function subagentTranscripts(main, now) {
+  if (!main) return [];
+  const dir = join(main.replace(/\.jsonl$/, ''), 'subagents');
+  let names = [];
+  try { names = readdirSync(dir); } catch { return []; }
+  return names.filter((n) => n.endsWith('.jsonl'))
+    .map((n) => join(dir, n))
+    .map((path) => ({ text: readText(path), age: ageOf(path, now) }));
+}
+
+/** The open asks THIS stop owns (see the header). */
+function owned(loops, { sub, transcript, now = Date.now() }) {
+  const own = readText(transcript);
+  if (sub) return own === null ? [] : loops.filter((l) => holds(own, l));
+  if (own === null) return loops;
+  const mine = [];
+  const rest = [];
+  for (const l of loops) (holds(own, l) ? mine : rest).push(l);
+  if (!rest.length) return mine;
+  const subs = subagentTranscripts(transcript, now);
+  for (const l of rest) {
+    const holders = subs.filter((s) => holds(s.text, l));
+    if (!holders.length || holders.every((s) => s.age > SUBAGENT_IDLE_MS)) mine.push(l);
+  }
+  return mine;
 }
 
 function main() {
@@ -109,21 +141,13 @@ function main() {
   if (!journal.length) return;
 
   const path = remindedPath(env);
-  const before = readJson(path);
-  const raised = Array.isArray(before) ? before.map(String) : [];
   const sub = payload?.hook_event_name === 'SubagentStop';
-  const loops = owned(openLoops(journal, { reminded: raised }), {
-    transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path,
-    main: !sub,
+  const loops = owned(openLoops(journal, { reminded: raisedAts(path) }), {
+    sub, transcript: sub ? payload?.agent_transcript_path : payload?.transcript_path,
   });
   if (!loops.length) return;
 
-  const tmp = `${path}.${process.pid}.tmp`;
-  try {
-    writeFileSync(tmp, JSON.stringify([...raised, ...loops.map((l) => l.at)].slice(-REMEMBERED)), 'utf8');
-    renameSync(tmp, path);
-  } catch { return; }
-
+  try { appendFileSync(path, `${loops.map((l) => l.at).join('\n')}\n`, 'utf8'); } catch { return; }
   process.stdout.write(JSON.stringify({ decision: 'block', reason: reminderText(loops) }));
 }
 

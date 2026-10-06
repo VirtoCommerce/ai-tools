@@ -11,7 +11,7 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
-import { CONTRACT, SCOPE_SOURCE } from './door-hints.mjs';
+import { CONTRACT, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
 import { idList } from './index-load.mjs';
 

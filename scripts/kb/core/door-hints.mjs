@@ -15,12 +15,11 @@
 // The normative statement of the contract is `.claude/knowledge/execution/kb-capture-contract.md`;
 // the strings here are the door's short form of it and cite it rather than restate it.
 
-import { anchorShape, deeperByRoot, normalizeAnchor } from './coordinates.mjs';
-import { SURFACES } from './index-load.mjs';
+import { anchorShape, deeperByRoot, normalizeAnchor, routeOf } from './coordinates.mjs';
 import { coordinatesIn } from './query.mjs';
+import { CONTRACT, SCOPE_SOURCE } from './contract.mjs';
 
-export { CONTRACT } from './contract.mjs';
-import { CONTRACT } from './contract.mjs';
+export { CONTRACT, SCOPE_SOURCE };
 
 const LABEL_FIX = 'a label is not a coordinate: put it in `claim`, and anchor the fact at the route of the page it '
   + 'was on (/account/orders) or the request it sent (POST /api/carts, Mutation.addCoupon)';
@@ -34,8 +33,6 @@ export const FIELD_SOURCE = {
     + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); not the bare TEST_ENV value (`vcst` is not `vcst_qa`)',
   anchor: 'the route or request the behaviour lives at (/account/orders, POST /api/carts, Query.products)',
 };
-
-export const SCOPE_SOURCE = `at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;
 
 /**
  * The fix for ONE rejected anchor, worded from its kind and shape. `deeper` lists coordinates the
@@ -83,11 +80,14 @@ export function anchorsInText(input, { namespaces } = {}) {
   return out.slice(0, 3);
 }
 
-/** Up to `limit` coordinates the corpus holds under a one-segment root, shortest first. */
-export function deeperUnder(rows, root, limit = 3) {
-  // The walk is `coordinates.mjs` `deeperByRoot`, shared with `namespaceRoots` (PR #400 review).
-  const seg = String(root).replace(/^[A-Za-z]+\s+/, '').split('/').filter(Boolean)[0]?.toLowerCase();
-  const found = [...(deeperByRoot(rows, { activeOnly: true }).get(seg)?.values() ?? [])];
+/**
+ * Up to `limit` coordinates the corpus holds under a one-segment root, shortest first. `deeper` is a
+ * `coordinates.mjs` `deeperByRoot` map, built ONCE per refusal by the caller rather than per anchor
+ * (PR #400 review); `root` goes through the same `routeOf` the map's keys did.
+ */
+export function deeperUnder(deeper, root, limit = 3) {
+  const seg = (routeOf(root) ?? '').split('/').filter(Boolean)[0]?.toLowerCase();
+  const found = [...(deeper?.get(seg)?.values() ?? [])];
   return found.sort((a, b) => a.length - b.length || a.localeCompare(b)).slice(0, limit);
 }
 
@@ -99,12 +99,11 @@ export function deeperUnder(rows, root, limit = 3) {
  *   contract        where the whole contract is written
  */
 export function doorHints(result, input, { rows = null, namespaces } = {}) {
+  // `POST /api` roots the same coordinates as `/api`: `deeperUnder` reads the root through `routeOf`.
+  const byRoot = rows ? deeperByRoot(rows, { activeOnly: true }) : null;
   const problems = (result.problems ?? []).map((p) => {
-    // The ROUTE, verb dropped: `POST /api` roots the same coordinates as `/api`, and `deeperUnder`
-    // compares against corpus keys with their verbs dropped too (PR #400 review).
-    const root = anchorShape(p.normalized ?? p.coordinate).type === 'path'
-      ? String(p.normalized ?? '').replace(/^[A-Za-z]+\s+/, '') : '';
-    const deeper = rows && root && root !== '/' ? deeperUnder(rows, root) : [];
+    const root = anchorShape(p.normalized ?? p.coordinate).type === 'path' ? String(p.normalized ?? '') : '';
+    const deeper = byRoot && root && root !== '/' ? deeperUnder(byRoot, root) : [];
     return { ...p, fix: anchorFix(p, { deeper }) };
   });
   const suggest = problems.length || result.missing?.includes('anchor') ? anchorsInText(input, { namespaces }) : [];

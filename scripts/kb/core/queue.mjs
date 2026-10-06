@@ -72,6 +72,9 @@ export const MUTATIONS = Object.freeze(['capture', 'confirm', 'dispute']);
  */
 export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(String(env.KB_SYNTHETIC ?? '').trim());
 
+/** An env switch set to an OFF spelling (`0`, `false`, `no`, `off`). Unset means on. */
+export const isOff = (value) => /^(0|false|no|off)$/i.test(String(value ?? '').trim());
+
 /**
  * THE OFF SWITCH (PR #313 review). `KB_ENABLED=0` — set durably in `.claude/settings.local.json`
  * `env`, which reaches hooks and MCP servers as well as the session — takes this machine out of the
@@ -82,8 +85,6 @@ export const isSynthetic = (env = process.env) => /^(1|true|yes|on)$/i.test(Stri
  * Default ON (opt-out), and only an explicit falsy literal turns it off: an unset or mistyped value
  * leaves the team default in place rather than silently opting somebody out.
  */
-/** An env switch set to an OFF spelling (`0`, `false`, `no`, `off`). Unset means on. */
-export const isOff = (value) => /^(0|false|no|off)$/i.test(String(value ?? '').trim());
 export const kbDisabled = (env = process.env) => isOff(env.KB_ENABLED);
 /** `KB_REMIND=0`: only the end-of-turn reminder (`.claude/hooks/kb-remind.mjs`) is off. */
 export const remindDisabled = (env = process.env) => isOff(env.KB_REMIND);
@@ -405,10 +406,12 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
  */
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
 /**
- * `<session>.reminded.json` -- the asks `kb-remind` already raised. ITS OWN FILE, written only by that
- * hook (temp + rename): the hook never writes a file a kb process writes too (PR #400 review).
+ * `<session>.reminded.ndjson` -- the asks `kb-remind` already raised, one `at` per line. ITS OWN FILE, and
+ * APPEND-ONLY like the journal: a Stop and a SubagentStop (or two subagents) finishing together each
+ * append their own lines, where a read-modify-write would let the last rename erase the other's
+ * markers and raise an ask twice (PR #400 review).
  */
-export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.json`);
+export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.ndjson`);
 
 /**
  * `<session>.loop.ndjson` -- THE LOOP JOURNAL (VCST-6156): one short line per ask, per `show` /
