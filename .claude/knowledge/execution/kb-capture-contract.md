@@ -101,5 +101,6 @@ line that you did not establish it. `KB_REMIND=0` turns the hook off on a machin
 
 A dotted type name passes the anchor check, so a fact read from source code can be written today, but
 the `kb_capture` description asks for something verified on a live deployment, and `method` is free
-text that nothing validates or weighs. Until this is decided, **capture only what you observed live**;
+text that nothing validates or weighs. Decided 2026-10-06: source facts will be admitted as their own,
+labelled kind of evidence — tracked in VCST-6186. Until that ships, **capture only what you observed live**;
 a source-only fact goes in your own output, not the base.
