@@ -1,0 +1,1031 @@
+{
+ "about": "VCST-6122 end to end, 2026-10-05: the same Sonnet-class picker + body check on floor-1 (what main runs: its hits with bodies, judged by the agent) and on the M4 verdict ranker. wave2 = the 41-row held-out set (base 52b3683); logs300 = dev + calibration of rank-labelled-set.logs300.json (base 6e810a6), never used to fit or tune the ranker. Test split of logs300 not opened.",
+ "w2-floor1": {
+  "bodyChecked": {
+   "picksPrecision": [
+    4,
+    5
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    19,
+    19
+   ],
+   "resolvedNonPartial": [
+    2,
+    13
+   ],
+   "resolvedPartial": [
+    2,
+    9
+   ],
+   "resolvedAll": [
+    4,
+    22
+   ],
+   "shownNonPartial": [
+    2,
+    13
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 444,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "W2-10",
+     "kind": "target",
+     "relied": "KB-C1024558",
+     "expect": [
+      "KB-E7790BF6"
+     ]
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    4,
+    6
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    18,
+    19
+   ],
+   "resolvedNonPartial": [
+    2,
+    13
+   ],
+   "resolvedPartial": [
+    2,
+    9
+   ],
+   "resolvedAll": [
+    4,
+    22
+   ],
+   "shownNonPartial": [
+    2,
+    13
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 444,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "W2-10",
+     "kind": "target",
+     "relied": "KB-C1024558",
+     "expect": [
+      "KB-E7790BF6"
+     ]
+    },
+    {
+     "id": "W2-33",
+     "kind": "control",
+     "relied": "KB-8264632C",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "l3-floor1": {
+  "bodyChecked": {
+   "picksPrecision": [
+    108,
+    118
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    101,
+    127
+   ],
+   "resolvedPartial": [
+    7,
+    27
+   ],
+   "resolvedAll": [
+    108,
+    154
+   ],
+   "shownNonPartial": [
+    105,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 754,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-065",
+     "kind": "target",
+     "relied": "KB-EA467E9B",
+     "expect": [
+      "KB-A240F961"
+     ]
+    },
+    {
+     "id": "L-091",
+     "kind": "target",
+     "relied": "KB-4895528A",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-E8234FA0"
+     ]
+    },
+    {
+     "id": "L-149",
+     "kind": "target",
+     "relied": "KB-24B83B02",
+     "expect": [
+      "KB-EFD1A7FD",
+      "KB-5AB85ADC"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-207",
+     "kind": "target",
+     "relied": "KB-5EACBEDD",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-4895528A"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-222",
+     "kind": "target",
+     "relied": "KB-4C29749E",
+     "expect": [
+      "KB-25388E6C",
+      "KB-5D688448"
+     ]
+    },
+    {
+     "id": "L-234",
+     "kind": "target",
+     "relied": "KB-A4ABEFEA",
+     "expect": [
+      "KB-9B9FAF0F",
+      "KB-17555498"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    110,
+    121
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    101,
+    127
+   ],
+   "resolvedPartial": [
+    9,
+    27
+   ],
+   "resolvedAll": [
+    110,
+    154
+   ],
+   "shownNonPartial": [
+    105,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 754,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-065",
+     "kind": "target",
+     "relied": "KB-EA467E9B",
+     "expect": [
+      "KB-A240F961"
+     ]
+    },
+    {
+     "id": "L-079",
+     "kind": "target",
+     "relied": "KB-2CADFEBD",
+     "expect": [
+      "KB-3FCE7089"
+     ]
+    },
+    {
+     "id": "L-091",
+     "kind": "target",
+     "relied": "KB-4895528A",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-E8234FA0"
+     ]
+    },
+    {
+     "id": "L-149",
+     "kind": "target",
+     "relied": "KB-24B83B02",
+     "expect": [
+      "KB-EFD1A7FD",
+      "KB-5AB85ADC"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-207",
+     "kind": "target",
+     "relied": "KB-5EACBEDD",
+     "expect": [
+      "KB-7A9D4927",
+      "KB-4895528A"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-222",
+     "kind": "target",
+     "relied": "KB-4C29749E",
+     "expect": [
+      "KB-25388E6C",
+      "KB-5D688448"
+     ]
+    },
+    {
+     "id": "L-234",
+     "kind": "target",
+     "relied": "KB-A4ABEFEA",
+     "expect": [
+      "KB-9B9FAF0F",
+      "KB-17555498"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  }
+ },
+ "l3-verdict": {
+  "bodyChecked": {
+   "picksPrecision": [
+    122,
+    126
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    54,
+    56
+   ],
+   "resolvedNonPartial": [
+    112,
+    127
+   ],
+   "resolvedPartial": [
+    10,
+    27
+   ],
+   "resolvedAll": [
+    122,
+    154
+   ],
+   "shownNonPartial": [
+    118,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    6,
+    6
+   ],
+   "wrong": [
+    {
+     "id": "L-109",
+     "kind": "target",
+     "relied": "KB-3F7C78F6",
+     "expect": [
+      "KB-D7F08A26"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-231",
+     "kind": "control",
+     "relied": "KB-4EDC989E",
+     "expect": []
+    },
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    122,
+    129
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    52,
+    56
+   ],
+   "resolvedNonPartial": [
+    112,
+    127
+   ],
+   "resolvedPartial": [
+    10,
+    27
+   ],
+   "resolvedAll": [
+    122,
+    154
+   ],
+   "shownNonPartial": [
+    118,
+    127
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    6,
+    6
+   ],
+   "wrong": [
+    {
+     "id": "L-109",
+     "kind": "target",
+     "relied": "KB-3F7C78F6",
+     "expect": [
+      "KB-D7F08A26"
+     ]
+    },
+    {
+     "id": "L-164",
+     "kind": "target",
+     "relied": "KB-D7F08A26",
+     "expect": [
+      "KB-5EACBEDD",
+      "KB-0BC18481"
+     ]
+    },
+    {
+     "id": "L-282",
+     "kind": "target",
+     "relied": "KB-09CEE315",
+     "expect": [
+      "KB-F9D75EA0"
+     ]
+    },
+    {
+     "id": "L-045",
+     "kind": "control",
+     "relied": "KB-D64B1613",
+     "expect": []
+    },
+    {
+     "id": "L-136",
+     "kind": "control",
+     "relied": "KB-9B9FAF0F",
+     "expect": []
+    },
+    {
+     "id": "L-231",
+     "kind": "control",
+     "relied": "KB-4EDC989E",
+     "expect": []
+    },
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "logs300-test-floor1": {
+  "bodyChecked": {
+   "picksPrecision": [
+    37,
+    42
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    20,
+    21
+   ],
+   "resolvedNonPartial": [
+    33,
+    41
+   ],
+   "resolvedPartial": [
+    4,
+    14
+   ],
+   "resolvedAll": [
+    37,
+    55
+   ],
+   "shownNonPartial": [
+    36,
+    41
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 978,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-089",
+     "kind": "target",
+     "relied": "KB-4F298EB0",
+     "expect": [
+      "KB-7837F100"
+     ]
+    },
+    {
+     "id": "L-122",
+     "kind": "target",
+     "relied": "KB-0E177E02",
+     "expect": [
+      "KB-2F64A447",
+      "KB-A0FFEA0A"
+     ]
+    },
+    {
+     "id": "L-158",
+     "kind": "target",
+     "relied": "KB-97170665",
+     "expect": [
+      "KB-27B4CD10"
+     ]
+    },
+    {
+     "id": "L-288",
+     "kind": "target",
+     "relied": "KB-ACC12F26",
+     "expect": [
+      "KB-C239652A",
+      "KB-62D97984"
+     ]
+    },
+    {
+     "id": "L-110",
+     "kind": "control",
+     "relied": "KB-0DD47BD1",
+     "expect": []
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    41,
+    48
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    18,
+    21
+   ],
+   "resolvedNonPartial": [
+    33,
+    41
+   ],
+   "resolvedPartial": [
+    8,
+    14
+   ],
+   "resolvedAll": [
+    41,
+    55
+   ],
+   "shownNonPartial": [
+    36,
+    41
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 978,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-089",
+     "kind": "target",
+     "relied": "KB-4F298EB0",
+     "expect": [
+      "KB-7837F100"
+     ]
+    },
+    {
+     "id": "L-122",
+     "kind": "target",
+     "relied": "KB-0E177E02",
+     "expect": [
+      "KB-2F64A447",
+      "KB-A0FFEA0A"
+     ]
+    },
+    {
+     "id": "L-158",
+     "kind": "target",
+     "relied": "KB-97170665",
+     "expect": [
+      "KB-27B4CD10"
+     ]
+    },
+    {
+     "id": "L-288",
+     "kind": "target",
+     "relied": "KB-ACC12F26",
+     "expect": [
+      "KB-C239652A",
+      "KB-62D97984"
+     ]
+    },
+    {
+     "id": "L-110",
+     "kind": "control",
+     "relied": "KB-0DD47BD1",
+     "expect": []
+    },
+    {
+     "id": "L-238",
+     "kind": "control",
+     "relied": "KB-BDCD3057",
+     "expect": []
+    },
+    {
+     "id": "L-287",
+     "kind": "control",
+     "relied": "KB-09CEE315",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "logs300-test-verdict": {
+  "bodyChecked": {
+   "picksPrecision": [
+    38,
+    44
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    19,
+    21
+   ],
+   "resolvedNonPartial": [
+    34,
+    41
+   ],
+   "resolvedPartial": [
+    4,
+    14
+   ],
+   "resolvedAll": [
+    38,
+    55
+   ],
+   "shownNonPartial": [
+    38,
+    41
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 391,
+   "baseAnswers": [
+    1,
+    1
+   ],
+   "wrong": [
+    {
+     "id": "L-122",
+     "kind": "target",
+     "relied": "KB-0E177E02",
+     "expect": [
+      "KB-2F64A447",
+      "KB-A0FFEA0A"
+     ]
+    },
+    {
+     "id": "L-158",
+     "kind": "target",
+     "relied": "KB-4B889114",
+     "expect": [
+      "KB-27B4CD10"
+     ]
+    },
+    {
+     "id": "L-186",
+     "kind": "target",
+     "relied": "KB-4B889114",
+     "expect": [
+      "KB-27B4CD10",
+      "KB-97170665"
+     ]
+    },
+    {
+     "id": "L-290",
+     "kind": "target",
+     "relied": "KB-1D53A1BE",
+     "expect": [
+      "KB-71011C1F"
+     ]
+    },
+    {
+     "id": "L-110",
+     "kind": "control",
+     "relied": "KB-0DD47BD1",
+     "expect": []
+    },
+    {
+     "id": "L-287",
+     "kind": "control",
+     "relied": "KB-09CEE315",
+     "expect": []
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    40,
+    46
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    19,
+    21
+   ],
+   "resolvedNonPartial": [
+    34,
+    41
+   ],
+   "resolvedPartial": [
+    6,
+    14
+   ],
+   "resolvedAll": [
+    40,
+    55
+   ],
+   "shownNonPartial": [
+    38,
+    41
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 391,
+   "baseAnswers": [
+    1,
+    1
+   ],
+   "wrong": [
+    {
+     "id": "L-122",
+     "kind": "target",
+     "relied": "KB-0E177E02",
+     "expect": [
+      "KB-2F64A447",
+      "KB-A0FFEA0A"
+     ]
+    },
+    {
+     "id": "L-158",
+     "kind": "target",
+     "relied": "KB-4B889114",
+     "expect": [
+      "KB-27B4CD10"
+     ]
+    },
+    {
+     "id": "L-186",
+     "kind": "target",
+     "relied": "KB-4B889114",
+     "expect": [
+      "KB-27B4CD10",
+      "KB-97170665"
+     ]
+    },
+    {
+     "id": "L-290",
+     "kind": "target",
+     "relied": "KB-1D53A1BE",
+     "expect": [
+      "KB-71011C1F"
+     ]
+    },
+    {
+     "id": "L-110",
+     "kind": "control",
+     "relied": "KB-0DD47BD1",
+     "expect": []
+    },
+    {
+     "id": "L-287",
+     "kind": "control",
+     "relied": "KB-09CEE315",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "testNote": "logs300 test split opened once on 2026-10-05 (.test-openings.jsonl). Not relabelled after opening. Of the six wrong M4 reliances, four picked an entry that also states the asked fact but is missing from expect (L-122 KB-0E177E02, L-158 and L-186 KB-4B889114, L-290 KB-1D53A1BE): probable label gaps, reported, not applied.",
+ "merged-logs300-devcal-floor1": {
+  "base": "vcst-6122-schema2@062c845",
+  "bodyChecked": {
+   "picksPrecision": [
+    104,
+    108
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    56,
+    56
+   ],
+   "resolvedNonPartial": [
+    100,
+    121
+   ],
+   "resolvedPartial": [
+    4,
+    27
+   ],
+   "resolvedAll": [
+    104,
+    148
+   ],
+   "shownNonPartial": [
+    102,
+    121
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 783,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wrong": [
+    {
+     "id": "L-011",
+     "kind": "target",
+     "relied": "KB-B4377884",
+     "expect": [
+      "KB-509D70C4"
+     ]
+    },
+    {
+     "id": "L-173",
+     "kind": "target",
+     "relied": "KB-1E9580BB",
+     "expect": [
+      "KB-6AF43C39"
+     ]
+    },
+    {
+     "id": "L-217",
+     "kind": "target",
+     "relied": "KB-1178FECF",
+     "expect": [
+      "KB-4BFCE2B2"
+     ]
+    },
+    {
+     "id": "L-267",
+     "kind": "target",
+     "relied": "KB-92164C90",
+     "expect": [
+      "KB-843D0515"
+     ]
+    }
+   ]
+  }
+ },
+ "merged-logs300-devcal-verdict": {
+  "base": "vcst-6122-schema2@062c845",
+  "bodyChecked": {
+   "picksPrecision": [
+    108,
+    109
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    55,
+    56
+   ],
+   "resolvedNonPartial": [
+    105,
+    121
+   ],
+   "resolvedPartial": [
+    3,
+    27
+   ],
+   "resolvedAll": [
+    108,
+    148
+   ],
+   "shownNonPartial": [
+    115,
+    121
+   ],
+   "paraphraseRecall10": [
+    0,
+    0
+   ],
+   "meanAskTokens": 390,
+   "baseAnswers": [
+    5,
+    5
+   ],
+   "wrong": [
+    {
+     "id": "L-246",
+     "kind": "control",
+     "relied": "KB-9139A1A3",
+     "expect": []
+    }
+   ]
+  }
+ },
+ "wave3": {
+  "about": "Fresh held-out wave VCST-6122-wave3 (2026-10-05): 104 live asks by 8 Sonnet QA agents on vcst-6122-schema2 @ 17b4b7a; 98 scored (6 contested). M4 = the agents' own live closings (kb show / kb none, from the log). floor-1 = the same questions through judge-harness --decider floor-1 with a Sonnet picker.",
+  "M4live": {
+   "picksPrecision": [
+    25,
+    27
+   ],
+   "controlsNone": [
+    34,
+    34
+   ],
+   "resolvedNonPartial": [
+    19,
+    28
+   ],
+   "resolvedAll": [
+    25,
+    64
+   ],
+   "shownNonPartial": [
+    23,
+    28
+   ],
+   "meanAskTokens": 391,
+   "wrong": [
+    "W3-043 KB-BE7DF8DA (probable label gap: its body states that anonymous sharedWishlist(key) returns the list with access Read)",
+    "W3-045 KB-C075BDF9"
+   ]
+  },
+  "floor1": {
+   "picksPrecision": [
+    9,
+    9
+   ],
+   "controlsNone": [
+    34,
+    34
+   ],
+   "resolvedNonPartial": [
+    7,
+    28
+   ],
+   "resolvedAll": [
+    9,
+    64
+   ],
+   "rightEntryReturned": [
+    14,
+    64
+   ],
+   "meanAskTokens": 366
+  }
+ }
+}

@@ -22,8 +22,8 @@ import { OWN_FLUSH_AFTER_MS, SWEEP_AFTER_MS, flush, postVerbSweepAllowed, sweepI
 import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
-import { askLines, captureLines, evidenceLines, showLines } from './core/render.mjs';
-import { TOPIC_MAX, ask, capture, confirm, dispute, reindex, show, stat } from './core/verbs.mjs';
+import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
+import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -64,7 +64,8 @@ const USAGE = `kb — the knowledge base (PLAN v1)
 
   npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
                                  [--base <dir>] [--top 3] [--json]
-  npm run kb -- show KB-XXXXXXXX [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- show KB-XXXXXXXX [--ask <handle>] [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- none [--ask <handle>] [--topic "<...>"]     none of the listed entries answers
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <env>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
@@ -73,6 +74,8 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
+  npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
+                                                    fit the verdict on dev, threshold it on calibration
   npm run kb -- push [--dry-run] [--no-sweep]       send the queue to the base as ONE commit
 
 exit: 0 answered · 1 no coverage (or capture refused as a duplicate) · 2 no base · 3 unreachable
@@ -166,6 +169,38 @@ async function main(argv) {
     return exitFor(r.state);
   }
 
+  if (verb === 'calibrate') {
+    // OFFLINE AND OPERATOR-ONLY (VCST-6122 Decision 6). It reads the base and the labelled set and
+    // PRINTS the ranker; it writes `ranker.json` only where `--out` points, because ranker.json is
+    // base data and base data changes only with the operator's yes. The test split is never read.
+    const { readFile, writeFile } = await import('node:fs/promises');
+    const { loadIndex, retrievable } = await import('./core/index-load.mjs');
+    const { prepareVocabulary, readVocabulary } = await import('./core/query.mjs');
+    const { prepareRetrieval } = await import('./core/retrieve.mjs');
+    const { calibrate } = await import('./core/calibrate.mjs');
+    const { labelledRows } = await import('./bench/verdict-bench.mjs');
+    if (!opened.reader) { out(`kb calibrate: ${HEADLINE['no-base']}`); return EXIT.NO_BASE; }
+    const cat = await loadIndex(opened.reader);
+    if (cat.state !== 'ok') { out(`kb calibrate: ${HEADLINE[cat.state] ?? cat.state}`); if (cat.why) out(`  ${cat.why}`); return exitFor(cat.state); }
+    const setPath = typeof args.flags.set === 'string' ? args.flags.set : new URL('./bench/rank-labelled-set.v2.json', import.meta.url);
+    const set = JSON.parse(await readFile(setPath, 'utf8'));
+    const prep = prepareRetrieval(retrievable(cat.rows), prepareVocabulary(await readVocabulary(opened.reader)));
+    // Every body, once: the head re-rank reads them, and an offline verb can afford what ask cannot.
+    const { parseEntry } = await import('./core/frontmatter.mjs');
+    const bodies = new Map();
+    await Promise.all(retrievable(cat.rows).map(async (row) => {
+      const r = await opened.reader.readEntry(row.path);
+      if (r.ok) { try { bodies.set(row.id, parseEntry(r.text, row.path).body); } catch { /* an unreadable body only weakens the re-rank */ } }
+    }));
+    const ranker = calibrate(prep, labelledRows(set), { snapshot: set.snapshot ?? null, bodies });
+    const text = `${JSON.stringify(ranker, null, 2)}
+`;
+    if (typeof args.flags.out === 'string') { await writeFile(args.flags.out, text); out(`kb calibrate: wrote ${args.flags.out}`); }
+    else out(text.trimEnd());
+    out(`  ${ranker.rank}: answer threshold ${ranker.thresholds.answer ?? 'unreachable (the base never answers alone)'}; dev ${ranker.fit.dev.positives}/${ranker.fit.dev.rows} positive; calibration answers at threshold ${ranker.fit.calibration.answeredAtThreshold}/${ranker.fit.calibration.rows}`);
+    return EXIT.ANSWER;
+  }
+
   if (verb === 'reindex') {
     // The repair verb the drift messages name. It REPORTS what moved rather than only succeeding:
     // a row that vanished is either the drift being fixed or an entry that stopped parsing, and
@@ -201,10 +236,20 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened, { via: VIA, topic: args.flags.topic });
+    const r = await show(id, opened, { via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
+  }
+
+  if (verb === 'none') {
+    // The pair of an `ambiguous` ask that ends in nothing (VCST-6122 Decision 1a). Exit 1 -- the base
+    // holds nothing on this, which is what the caller has just concluded -- so a script can branch on
+    // it the way it branches on a miss.
+    const r = await none({ via: VIA, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, topic: args.flags.topic });
+    if (json) { out(JSON.stringify(r, null, 2)); return r.state === 'recorded' ? EXIT.NO_COVERAGE : exitFor(r.state); }
+    emit(noneLines(r));
+    return r.state === 'recorded' ? EXIT.NO_COVERAGE : exitFor(r.state);
   }
 
   if (verb === 'capture') {

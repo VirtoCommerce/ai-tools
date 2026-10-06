@@ -52,8 +52,8 @@ const allDown = () => ({
 
 // ─── the map itself ───────────────────────────────────────────────────────────────────────────
 
-test('the four states map to the four codes', () => {
-  assert.deepEqual(STATES.map(exitFor), [EXIT.ANSWER, EXIT.NO_COVERAGE, EXIT.NO_BASE, EXIT.UNREACHABLE]);
+test('the five states map to the four codes; ambiguous is read, so it is never a miss', () => {
+  assert.deepEqual(STATES.map(exitFor), [EXIT.ANSWER, EXIT.ANSWER, EXIT.NO_COVERAGE, EXIT.NO_BASE, EXIT.UNREACHABLE]);
   assert.deepEqual([EXIT.ANSWER, EXIT.NO_COVERAGE, EXIT.NO_BASE, EXIT.UNREACHABLE], [0, 1, 2, 3]);
 });
 
