@@ -32,6 +32,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import { join, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { parse as parseCsv } from "csv-parse/sync";
+import { resolveTestEnv } from "./resolve-test-env.js";
 
 export const REG_ROOT = join("reports", "regression");
 export const TRIAGE_STORE_PATH = join(REG_ROOT, ".triage-fingerprints.json");
@@ -948,6 +949,10 @@ export function appendSuiteHistory(runId: string, env: string, runDir: string): 
 // ---------------------------------------------------------------------------
 
 function main(): void {
+  // Resolve the session env as every other entry point does (TEST_ENV, else .env.test-env, else
+  // vcst) before anything below reads process.env.TEST_ENV. Without it a checkout that selects its
+  // env only in .env.test-env collected from the vcst run folder and labelled history rows vcst.
+  resolveTestEnv("vcst");
   const [cmd, runArg, ...rest] = process.argv.slice(2);
   if (!cmd || (cmd !== "collect" && cmd !== "history")) {
     console.error("Usage:\n  regression-triage.ts collect <RUN_ID|latest> [--record]\n  regression-triage.ts collect --ticket <TICKET|ticket-dir> [--max-batch N]\n  regression-triage.ts history <RUN_ID|latest> [--env <env>]");
