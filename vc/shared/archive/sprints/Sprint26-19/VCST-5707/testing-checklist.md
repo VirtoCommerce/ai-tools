@@ -63,7 +63,7 @@
 | E5 | Target reader via `wishlist(listId)` | #11 | FAIL (known, VCST-5925 3.1) — "Access denied." |
 | E6 | Non-target served-org member reads by link → no data | #11 | PASS (`4a-be-E6-non-target-reader.json`) |
 | E7 | Target reader's own `wishlists()` / `/account/lists` | #12 | FAIL (known, VCST-5925 3.2 / VCST-5335) — totalCount 0 |
-| E8 | Legacy `sharedWithId`: 1 target replaces; 2 targets refused | #20 | PASS on one observation (`4a-be-E8-legacy-sharedWithId.json`); **conflicting** C1 WISH-041 (no error on 2 targets) — unresolved, cross-ref VCST-6113 |
+| E8 | Legacy `sharedWithId`: 1 target replaces; 2 targets refused | #20 | PASS on one observation (`4a-be-E8-legacy-sharedWithId.json`); **conflicting** C1 WISH-041 (no error on 2 targets) — resolved in round 2 (R2-E8: existing target = no-op, new org refused; VCST-6152) |
 | E9 | `addSharedWithIds` without `scope` | #25 | Recorded — HTTP 200, silent no-op (Low L2) |
 | E10 | Reader write attempt refused, nothing changed | #11 | **FAIL** — refused `addWishlistItem` still persists quantity (pre-existing x-cart) → VCST-6116 |
 | E11 | No HTTP 5xx; errors are `errors[]` | 5925 3.3 | PASS — 330/331 HTTP 200 (the 400 was a probe typo) |
@@ -88,3 +88,34 @@
 - All former FIXTURE-GAP scenarios, the non-owner Write co-owner and email are now in section G (2026-09-30).
 - The permanent buyer fixtures (TECHFLOW_BUYER, ACMEWEST_ADMIN, BUILDRIGHT_ADMIN, MULTI_ORG_TF_BR) still have no usable membership on vcptcore. `seed:b2b:memberships` can fix it now that admin works; not run in this ticket.
 - Visual / a11y / 375 px layout — `design-report.md` (VCST-6117/6118/6119 filed; textarea name, touch targets, theme contrast = pre-existing duplicates).
+
+---
+
+## Round 2 — 2026-10-05 (new build; PO accepted the shipped UI for AC2/AC3; AC1 → VCST-6114/5723)
+
+**Result (round 2):** 17 PASS · 1 PASS-with-note (E8) · 1 NOT RUN (G3c) + C1 → **verdict PASS WITH NOTES**.
+
+**Env:** vcptcore-qa · Platform 3.1076.0 · theme `2.59.0-pr-2476-0abb` · XCart `3.1038.0-pr-141-b404` · SalesRep `3.1012.0-pr-21-8964` · Cart `pr-194-8331` (deployed = declared). **Model:** round-2 amendment, rows #29–#35. Same actors as round 1.
+
+| # | Condition | Model | Lane | Verdict |
+|---|---|---|---|---|
+| R2-A2 | Shipped Share dialog shows current sharing (scope, recipients, message) and lets the owner remove recipients / stop sharing — accepted as AC2 | #4 #7 | FE | PASS — scope, recipients (name, city, Remove), message 21/250; remove + save OK (`r2-4a-fe-R2-A2-*`) |
+| R2-A3 | Stop-sharing confirmation (shipped copy accepted) → Cancel keeps, Stop revokes every reader | #13 #14 | FE+BE | PASS — Cancel keeps (reader opens), Stop revokes: both readers + anon get null by key (`r2-4a-fe-R2-A3-*`, `r2-4a-be-A3-stop-revokes-every-reader.json`) |
+| R2-A4 | Re-share after stop: same link, new recipient reads, old recipients/message not restored | #16 | FE | PASS — same key, picker empty, 0/250; TechFlow reads, AcmeCorp 403 (`r2-4a-fe-R2-A4-*`) |
+| R2-B | Add TechFlow to an AcmeCorp share → both read the same link (the ticket's bug) | #2 | FE+BE | PASS — both readers on the same key; card "Shared with 2 customers" (`r2-4a-fe-R2-B-*`, `r2-4a-be-E1-B-6152-targets-order.json`) |
+| R2-D3a | Customer → Anyone with link: **no** "will lose access" claim (VCST-6104) | #24 | FE | PASS — Customer → Anyone saves with no confirmation; previous recipient keeps Read; anonymous FE read: PASS per C1 B2C-LIST-076 run note only, no artifact (AllowAnonymousUsers temporarily True for C1, reverted to False 2026-10-05, verified); BE anonymous refusals evidenced in R2-E4/E6, R2-E10 (`r2-4a-fe-R2-D3a-*`) |
+| R2-D3b | Customer → My organization: copy matches the actual effect (target orgs lose access) | #24 #15 | FE+BE | PASS — "Change who can access? The link stays the same. Some users may lose access."; TechFlow denied, AcmeCorp reads (with **Write**) (`r2-4a-be-D3b-*`, `r2-4a-fe-R2-D3b-*`) |
+| R2-D3c | Anyone → Customer / → Private and My org → Customer: the warning still appears where an audience IS lost | #15 | FE | PASS — Anyone→Customer and Org→Customer warn; →Private shows "Stop sharing this list?"; NEW: removing a recipient inside Specific customers also warns (e4a4cf5) (`r2-4a-fe-R2-D3c-*`) |
+| R2-E3 | Refused empty-Customer save → list unchanged; next rename keeps scope + targets; link still works (VCST-6113) | #32 | BE | PASS — refused empty set + refused unserved add leave the list intact; rename keeps scope/targets/message (`r2-4a-be-E3-refused-empty-set-cache.json`) |
+| R2-E8 | Legacy `sharedWithId` on a 2-target list → refused deterministically, list unchanged (3 repeats) | #34 | BE | PASS (note) — new org via legacy `sharedWithId` refused 3/3; an EXISTING target is now accepted as a deterministic no-op (set preserved) — round 1 refused it; both shapes are allowed by the VCST-6152 contract (no position-dependent outcome); WISH-041/049 to accept either shape (`r2-4a-be-E8-*`, C1 WISH-041/049) |
+| R2-E10 | Reader / other-org / anonymous `addWishlistItem` + `updateWishListItems` → refused, nothing persisted (VCST-6116) | #31 | BE | PASS — reader / other org Forbidden, anonymous Unauthorized; owner readback qty unchanged (`r2-4a-be-E10-*`) |
+| R2-G4a | Write co-owner on a "My organization" list: `changeWishlist(scope/targets/message)` → refused, owner unchanged, rep keeps the list (VCST-6125) | #29 | BE | PASS — every scope-bearing co-owner edit Forbidden; owner, scope, key unchanged (`r2-4a-be-G4a-*`) |
+| R2-G4b | Non-owner `removeWishlist` → refused, list intact | #30 | BE | PASS — co-owner / other member / anon cannot removeWishlist (`r2-4a-be-G4b-*`) |
+| R2-G4c | Non-owner (co-owner + reader) sees neither Share nor Remove list in the UI | #23 #30 | FE | PASS — co-owner card menu = Rename only; reader page has no actions (`r2-4a-fe-R2-G4c-*`) |
+| R2-E1 | add A, add B, remove A → exact target set; order of `targets` equal in save response and next read (VCST-6152) | #1–#3 #33 | BE | PASS — exact sets each step; `targets` order equal in save and 3 reads (`r2-4a-be-E1-B-6152-targets-order.json`) |
+| R2-E2 | Unserved org add (with a served one) → "Access denied.", nothing written | #21 | BE | PASS — "Access denied.", nothing written (`r2-4a-be-E2-*`) |
+| R2-E4/E6 | Target reader reads by link; non-target served-org member gets no data; anonymous denied on Customer scope | #11 | BE | PASS — target reads by key; non-target Forbidden; anon Unauthorized; list-id path still denied for the target (known VCST-5925 3.1) (`r2-4a-be-E4-E6-*`) |
+| R2-C8 | Only newly added orgs are notified; re-save of the same set notifies nobody | #10 | BE | PASS — only TechFlow +1 on add; re-save same set +0 for all (`r2-4a-be-C8-notify-delta.json`) |
+| R2-UI | Share dialog: bottom padding kept when content scrolls (≥4 recipients) at 1920/375; confirmation dialogs render the new copy | #35 | 4v | PASS — 16 px bottom padding kept when scrolled at 375/768; dialogs render at 1920/375 (Low: "Change access" wraps at 375) — design-report.md §Round 2 |
+| R2-G3c | Deleted target org row in the Share dialog (round 1: raw GUID) — still reproduces? | V7 | FE (if fixture cheap) | NOT RUN — needs an admin org delete; round-1 finding stands (unfiled, pending) |
+| R2-C1 | Exact-set regression: the 44 round-1 cases after 2a (REPAIR / RE-BASE resolved as intended change) | — | 4c | REG-2026-10-05-1613 — 22/35 PASS; 13 non-pass all triaged: 7 known-fail, 4 test-defect (074/078 copy, WISH-041/049 no-op), 057 pre-existing a11y, 079 PO question |

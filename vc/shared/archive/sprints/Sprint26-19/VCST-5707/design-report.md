@@ -36,3 +36,20 @@ Fixture: list `AGENT-TEST-5707-v1`, shared to AcmeCorp/AcmeWest/BuildRight/TechF
 
 ## Evidence
 `screenshots/4v-*.png` (lists, gear menu, Share x4 tabs, picker open/4 selected, recipients collapsed/expanded, message cap 250/250, empty hint, one recipient, Stop-sharing + Change-access confirms, Rename, details page; 1920/768/375).
+
+## Round 2 — 2026-10-05
+
+Theme 2.59.0-pr-2476-0abb, vcptcore-qa, playwright-edge, SR_REP_PRIMARY (real sign-in, bare `SR_REP_PASSWORD`). Screenshots `screenshots/r2-4v-*.png`. vs. DESIGN: SKIPPED (no Claude Design link on the ticket).
+
+**Deviation:** "Create list" was disabled for the whole session (13 lists on the account, no tooltip/message; a disabled control = stop), so NO `AGENT-TEST-5707-R2-V` list was created. Dialogs were driven on existing `AGENT-TEST-5707-DELTA` (round-1/functional fixture). No list was deleted. Side effect, my error: one Save widened DELTA to "Anyone with link" with no confirmation; I restored it to Specific customers = TechFlow, message "AGENT-TEST-5707 delta" (modified date now Oct 5; recipients may have got notifications). `DELTA (5)` shows "2 customers"/Oct 5 - not touched by me.
+
+| # | Row | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Share dialog, 4 recipients + 172-char message, scrolled to bottom | PASS | 375: scrolled to end, last text 16.4 px above content bottom, above footer, no clipping; 768: gap 16 px; 1920: fits without scroll, ~16 px. No horizontal overflow at any width. `r2-4v-share-4rec-msg-1920`, `-scrolled-bottom-768`, `-scrolled-bottom-375` |
+| 2 | Confirmations at 1920/375 | PASS (partial) | Stop sharing (1920, 375) and Change who can access? narrow (1920, 375): no overflow, both buttons in view, copy complete ("The link stays the same. Some users may lose access."). At 375 "Change access" wraps to 2 lines in the button (cosmetic, Low). WIDEN not verified: Specific customers -> Anyone with link saved immediately, no dialog - if a widen warning is specified, it did not appear (ask PO/dev). |
+| 3 | Card status + menu, owner vs non-owner | PASS owner / SKIPPED non-owner | Owner menu = Rename / Share / Remove list, no gaps, 1920 + 375 (`r2-4v-lists-full-1920`, `-card-menu-owner-375`). No non-owner list on this account and no reader login on this lane. |
+| 4a | VCST-6117 focus return | STILL REPRODUCES (partial) | Cancel of the nested confirm leaves focus on BODY while Share dialog is open. Closing Share via Cancel now returns focus to the card menu button. |
+| 4b | VCST-6118 scope switcher | STILL REPRODUCES | Still 4 `button[aria-pressed]`, name embeds state ("Private, selected"). |
+| 4c | VCST-6119 picker Tab | STILL REPRODUCES | Tab from combobox -> Clear -> options; Tab cycles the 4 options and never reaches Cancel/Share while the picker is open. |
+
+New findings: (a) Create list disabled with no explanation (Low, UX; cause unconfirmed, likely list cap). (b) widen save has no confirmation (see row 2). Console: 0 errors.
