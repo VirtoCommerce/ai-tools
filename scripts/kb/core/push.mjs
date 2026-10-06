@@ -37,6 +37,7 @@ import { findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
 import { buildIndex, buildRow, entryPath } from './index-build.mjs';
 import { normalizeRow } from './index-load.mjs';
+import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
 import {
   DISABLED_WHY, HELD_WHY, MUTATIONS, composeLine, isSynthetic, pushConfirmRequired, kbDisabled, log, metaTranscripts, orderQueue, queueDir, queuePath, readMeta,
@@ -396,7 +397,9 @@ export function appendEvidence(text, item, where) {
   // in a public append-only base (PR #313 review). `at` is an ISO-ms stamp minted once per verb, so
   // a genuine second observation always differs on it.
   if ((data.evidence ?? []).some((e) => sameEvidence(e, item))) return { text, data, already: true };
-  const next = { ...data, evidence: [...(data.evidence ?? []), item] };
+  // A handed-off item (`mergedFrom`) from a session this entry already counts is the same observer
+  // twice: flagged, kept for provenance, not counted (as sync-base / merge-entries do).
+  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), item]) };
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 
@@ -441,11 +444,32 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
   /** Read through the working set first: a file this push already rewrote is the current one. */
   const current = async (path) => (files.has(path) ? files.get(path) : read(path));
 
-  const addEvidence = async (id, path, item, where) => {
+  const addEvidence = async (id, path, item, where, seen = new Set()) => {
     const text = await current(path);
     if (text == null) { problems.push({ id, why: `${path} is not in the base — index drift` }); return false; }
     let applied;
     try {
+      // A confirm / dispute queued before its entry was split or merged (VCST-6122): written here it
+      // would land on a retired file nobody counts. Hand it to the ACTIVE successor(s) instead,
+      // tagged as sync-base / migrate-schema2 tag a hand-off.
+      const { data } = parseEntry(text, where);
+      if (data.status === 'superseded') {
+        seen.add(id);
+        const next = (data.supersededBy ?? []).map((x) => (typeof x === 'object' ? x.id : x)).filter(Boolean);
+        if (!next.length || next.some((n) => seen.has(n))) {
+          problems.push({ id, why: `${id} is superseded with no usable successor; the item was not applied` });
+          return false;
+        }
+        const handed = item.mergedFrom || item.splitFrom ? item
+          : { ...item, ...(next.length === 1 ? { mergedFrom: id } : { splitFrom: id }) };
+        let wrote = false;
+        for (const n of next) {
+          const r = await addEvidence(n, entryPath(n), handed, n, seen);
+          if (r === false) return false;
+          if (r === true) wrote = true;
+        }
+        return wrote ? true : 'already';
+      }
       applied = appendEvidence(text, item, where);
     } catch (err) {
       problems.push({ id, why: `${path} did not parse: ${err.message}` });
