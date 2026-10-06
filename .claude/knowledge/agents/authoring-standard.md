@@ -110,7 +110,7 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    There the read fires on **deviation**: a FAIL, a BLOCKED step, an unexpected result, an incidental
    observation — and immediately before every capture, so nothing is recorded twice.
 4. **Name the MCP door first:** `mcp__kb__kb_ask`. The `kb` tools are deferred, so they are loaded
-   with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
+   with `ToolSearch` → `select:mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_none,mcp__kb__kb_capture,mcp__kb__kb_confirm,mcp__kb__kb_dispute`.
    The CLI, `npm run kb -- ask "<coordinate> <question>"`, is the fallback when the `kb` server is not
    connected (fresh clone before a restart, CI, shell-only work). **Why MCP first** (VCST-6146): an MCP
    call carries its tool-use id, so the log can say which agent asked. In one week (25 Sep – 1 Oct

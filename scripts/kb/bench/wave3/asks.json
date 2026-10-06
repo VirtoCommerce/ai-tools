@@ -1,0 +1,1594 @@
+[
+ {
+  "id": "W3-001",
+  "q": "What does the products GraphQL query return when a keyword search matches nothing?",
+  "topic": "catalog regression",
+  "p": 0.65,
+  "shown": [
+   "KB-1EA7184C",
+   "KB-3BFF73A3",
+   "KB-4F298EB0"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-002",
+  "q": "What order statuses exist and what is the default status of a newly placed order?",
+  "topic": "orders regression",
+  "p": 0.15,
+  "shown": [
+   "KB-1205B62A",
+   "KB-DB7B6317",
+   "KB-50EBEEE9"
+  ],
+  "opened": [
+   "KB-DB7B6317"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-003",
+  "q": "What order status does a newly placed order get after storefront checkout?",
+  "topic": "checkout regression",
+  "p": 0.85,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-CC9A98D3",
+   "KB-A4EB3766"
+  ],
+  "opened": [
+   "KB-78638393"
+  ],
+  "relied": "KB-78638393",
+  "closed": true
+ },
+ {
+  "id": "W3-004",
+  "q": "Which payment methods are available at checkout on the B2B storefront (card, manual/invoice)?",
+  "topic": "checkout regression",
+  "p": 0.4,
+  "shown": [
+   "KB-535FF3AC",
+   "KB-78638393",
+   "KB-0DD47BD1"
+  ],
+  "opened": [
+   "KB-535FF3AC"
+  ],
+  "relied": "KB-535FF3AC",
+  "closed": true
+ },
+ {
+  "id": "W3-005",
+  "q": "What does the order confirmation page show after placing an order?",
+  "topic": "checkout regression",
+  "p": 0.89,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-EF925925",
+   "KB-0DD47BD1"
+  ],
+  "opened": [
+   "KB-50EBEEE9"
+  ],
+  "relied": "KB-50EBEEE9",
+  "closed": true
+ },
+ {
+  "id": "W3-006",
+  "q": "How is the delivery address selected or added during checkout, GraphQL operation addOrUpdateCartShipment?",
+  "topic": "checkout regression",
+  "p": 0.22,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-1144B33E",
+   "KB-CC9A98D3"
+  ],
+  "opened": [
+   "KB-50EBEEE9"
+  ],
+  "relied": "KB-50EBEEE9",
+  "closed": true
+ },
+ {
+  "id": "W3-007",
+  "q": "What does the addItemToCart GraphQL mutation return when the requested quantity exceeds available stock?",
+  "topic": "cart regression",
+  "p": 0.59,
+  "shown": [
+   "KB-DAD0D552",
+   "KB-48A46F77",
+   "KB-97A675C1"
+  ],
+  "opened": [
+   "KB-DAD0D552"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-008",
+  "q": "Which shipping methods are offered at checkout and how is the price calculated?",
+  "topic": "checkout regression",
+  "p": 0.42,
+  "shown": [
+   "KB-1447353E",
+   "KB-6AA0D7FB",
+   "KB-358A70CB"
+  ],
+  "opened": [
+   "KB-6AA0D7FB"
+  ],
+  "relied": "KB-6AA0D7FB",
+  "closed": true
+ },
+ {
+  "id": "W3-009",
+  "q": "How does the cart enforce minimum and maximum order quantity on a line item?",
+  "topic": "cart regression",
+  "p": 0.58,
+  "shown": [
+   "KB-DAD0D552",
+   "KB-AB35BCDC",
+   "KB-6FAB2EBA"
+  ],
+  "opened": [
+   "KB-6FAB2EBA"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-010",
+  "q": "What happens when checkout is attempted with an empty cart?",
+  "topic": "checkout regression",
+  "p": 0.3,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-132A40B3",
+   "KB-A4EB3766"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-011",
+  "q": "What happens when a customer applies an invalid or expired coupon code via addCoupon mutation?",
+  "topic": "cart regression",
+  "p": 0.44,
+  "shown": [
+   "KB-35F20D97",
+   "KB-A3004A3B",
+   "KB-50CD6A34"
+  ],
+  "opened": [
+   "KB-35F20D97"
+  ],
+  "relied": "KB-35F20D97",
+  "closed": true
+ },
+ {
+  "id": "W3-012",
+  "q": "GraphQL createOrderFromCart mutation: what does it return and what happens to the cart afterwards?",
+  "topic": "checkout regression",
+  "p": 0.06,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-1144B33E",
+   "KB-A4EB3766"
+  ],
+  "opened": [
+   "KB-A4EB3766"
+  ],
+  "relied": "KB-A4EB3766",
+  "closed": true
+ },
+ {
+  "id": "W3-013",
+  "q": "Can multiple coupons be applied to the same cart at once (stacking)?",
+  "topic": "cart regression",
+  "p": 0.08,
+  "shown": [
+   "KB-AA57B0E5",
+   "KB-C1024558",
+   "KB-E7790BF6"
+  ],
+  "opened": [
+   "KB-AA57B0E5"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-014",
+  "q": "Is the purchase order number required at checkout for B2B organization users?",
+  "topic": "checkout regression",
+  "p": 0.15,
+  "shown": [
+   "KB-78638393",
+   "KB-7F535D52",
+   "KB-535FF3AC"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-015",
+  "q": "How are gift items from promotions added to the cart and can they be removed?",
+  "topic": "cart regression",
+  "p": 0.52,
+  "shown": [
+   "KB-75BD84BE",
+   "KB-B4490B0B",
+   "KB-C4346EB2"
+  ],
+  "opened": [
+   "KB-C4346EB2"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-016",
+  "q": "What happens at checkout when a product in the cart goes out of stock?",
+  "topic": "checkout regression",
+  "p": 0.1,
+  "shown": [
+   "KB-8C530141",
+   "KB-DAD0D552",
+   "KB-A4EB3766"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-017",
+  "q": "How is cart total calculated: subtotal, discount, tax, shipping order of operations?",
+  "topic": "cart regression",
+  "p": 0.46,
+  "shown": [
+   "KB-1B18B821",
+   "KB-D4A064A5",
+   "KB-B9C8ECD3"
+  ],
+  "opened": [
+   "KB-D4A064A5"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-018",
+  "q": "How does the manual payment method (invoice) behave when placing an order, payment status?",
+  "topic": "checkout regression",
+  "p": 0.28,
+  "shown": [
+   "KB-0DD47BD1",
+   "KB-535FF3AC",
+   "KB-78638393"
+  ],
+  "opened": [
+   "KB-535FF3AC"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-019",
+  "q": "What happens to the card payment when the payment gateway declines the card at checkout?",
+  "topic": "checkout regression",
+  "p": 0.72,
+  "shown": [
+   "KB-94C2ADCC",
+   "KB-7F535D52",
+   "KB-78638393"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-020",
+  "q": "Can a user without permission to place orders reach the checkout page /checkout?",
+  "topic": "checkout regression",
+  "p": 0.44,
+  "shown": [
+   "KB-50EBEEE9",
+   "KB-DF9F415E",
+   "KB-C7E16C35"
+  ],
+  "opened": [
+   "KB-50EBEEE9"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-021",
+  "q": "How are taxes and totals shown in the order summary on the checkout page?",
+  "topic": "checkout regression",
+  "p": 0.39,
+  "shown": [
+   "KB-0DD47BD1",
+   "KB-EF925925",
+   "KB-8793DFE7"
+  ],
+  "opened": [
+   "KB-0DD47BD1"
+  ],
+  "relied": "KB-0DD47BD1",
+  "closed": true
+ },
+ {
+  "id": "W3-022",
+  "q": "How is the loyalty points balance shown in the storefront account and which GraphQL query returns it?",
+  "topic": "loyalty regression",
+  "p": 0.26,
+  "shown": [
+   "KB-EDDBBE75",
+   "KB-EC1EDCE2",
+   "KB-58A94337"
+  ],
+  "opened": [
+   "KB-EDDBBE75"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-023",
+  "q": "What does the points history list contain and how is it ordered and paged in the account loyalty page?",
+  "topic": "loyalty regression",
+  "p": 0.38,
+  "shown": [
+   "KB-29037452",
+   "KB-EDDBBE75",
+   "KB-EC1EDCE2"
+  ],
+  "opened": [
+   "KB-29037452"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-024",
+  "q": "How do missions on the storefront missions page get their progress and completion state?",
+  "topic": "loyalty regression",
+  "p": 0.09,
+  "shown": [
+   "KB-C992D3B8",
+   "KB-306AC615",
+   "KB-608F7C05"
+  ],
+  "opened": [
+   "KB-C992D3B8"
+  ],
+  "relied": "KB-C992D3B8",
+  "closed": true
+ },
+ {
+  "id": "W3-025",
+  "q": "When a mission is completed, how are reward points credited to the user balance?",
+  "topic": "loyalty regression",
+  "p": 0.41,
+  "shown": [
+   "KB-EDDBBE75",
+   "KB-EC1EDCE2",
+   "KB-CF3FAD18"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-026",
+  "q": "What happens when a user redeems a reward and has insufficient points?",
+  "topic": "loyalty regression",
+  "p": 0.77,
+  "shown": [
+   "KB-EDDBBE75",
+   "KB-CF3FAD18",
+   "KB-29037452"
+  ],
+  "opened": [
+   "KB-CF3FAD18"
+  ],
+  "relied": "KB-CF3FAD18",
+  "closed": true
+ },
+ {
+  "id": "W3-027",
+  "q": "How are loyalty points expired and where does the expiry date show up in the storefront?",
+  "topic": "loyalty regression",
+  "p": 0.09,
+  "shown": [
+   "KB-EDDBBE75",
+   "KB-C7BFA751",
+   "KB-26B8BE64"
+  ],
+  "opened": [
+   "KB-26B8BE64"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-028",
+  "q": "Does the loyalty balance calculation differ for organization-level versus user-level mode?",
+  "topic": "loyalty regression",
+  "p": 0.15,
+  "shown": [
+   "KB-EC1EDCE2",
+   "KB-4EDC989E",
+   "KB-EDDBBE75"
+  ],
+  "opened": [
+   "KB-EC1EDCE2"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-029",
+  "q": "How does the storefront notifications page list notifications and mark them as read?",
+  "topic": "loyalty regression",
+  "p": 0.06,
+  "shown": [
+   "KB-6AF43C39",
+   "KB-21BA7389",
+   "KB-097CB5D6"
+  ],
+  "opened": [
+   "KB-21BA7389"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-030",
+  "q": "How are push notifications delivered to the storefront and what is the unread counter behaviour?",
+  "topic": "loyalty regression",
+  "p": 0.25,
+  "shown": [
+   "KB-24B83B02",
+   "KB-097CB5D6",
+   "KB-6AF43C39"
+  ],
+  "opened": [
+   "KB-6AF43C39"
+  ],
+  "relied": "KB-6AF43C39",
+  "closed": true
+ },
+ {
+  "id": "W3-031",
+  "q": "What GraphQL operation returns the push notification inbox for the current user?",
+  "topic": "loyalty regression",
+  "p": 0.17,
+  "shown": [
+   "KB-6AF43C39",
+   "KB-21BA7389",
+   "KB-1F2EBF83"
+  ],
+  "opened": [
+   "KB-21BA7389"
+  ],
+  "relied": "KB-21BA7389",
+  "closed": true
+ },
+ {
+  "id": "W3-032",
+  "q": "Can a user delete or dismiss a notification from the notifications page, and does it persist?",
+  "topic": "loyalty regression",
+  "p": 0.05,
+  "shown": [
+   "KB-6AF43C39",
+   "KB-22E1D313",
+   "KB-649D673C"
+  ],
+  "opened": [
+   "KB-22E1D313"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-033",
+  "q": "What happens to points earned for an order when the order is cancelled or refunded?",
+  "topic": "loyalty regression",
+  "p": 0.15,
+  "shown": [
+   "KB-29037452",
+   "KB-EDDBBE75",
+   "KB-ADA91F7B"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-034",
+  "q": "Is the loyalty section visible in the account menu for anonymous or non-loyalty users, and what route does the missions page use?",
+  "topic": "loyalty regression",
+  "p": 0.13,
+  "shown": [
+   "KB-EDDBBE75",
+   "KB-306AC615",
+   "KB-8BE777BB"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-035",
+  "q": "How does the company members list on the storefront page /company/members paginate and sort, and which columns does it show?",
+  "topic": "company regression",
+  "p": 0.49,
+  "shown": [
+   "KB-27B4CD10",
+   "KB-97170665",
+   "KB-D8FDFA6F"
+  ],
+  "opened": [
+   "KB-27B4CD10"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-036",
+  "q": "What does the invite colleagues flow do and which GraphQL mutation sends an invitation?",
+  "topic": "company regression",
+  "p": 0.07,
+  "shown": [
+   "KB-1144B33E",
+   "KB-BAEBCDA7",
+   "KB-D8FDFA6F"
+  ],
+  "opened": [
+   "KB-BAEBCDA7"
+  ],
+  "relied": "KB-BAEBCDA7",
+  "closed": true
+ },
+ {
+  "id": "W3-037",
+  "q": "How are facets returned by the products query on the search results page, and which facet types exist (terms, range)?",
+  "topic": "catalog regression",
+  "p": 0.3,
+  "shown": [
+   "KB-58989663",
+   "KB-31802239",
+   "KB-71011C1F"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-038",
+  "q": "What happens when inviting an email address that already belongs to an existing user?",
+  "topic": "company regression",
+  "p": 0.33,
+  "shown": [
+   "KB-BAEBCDA7",
+   "KB-19826CC0",
+   "KB-9912A219"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": false
+ },
+ {
+  "id": "W3-039",
+  "q": "What sort options does the products query accept and what is the default order on the category page?",
+  "topic": "catalog regression",
+  "p": 0.87,
+  "shown": [
+   "KB-D9B90536",
+   "KB-59E4B5FC",
+   "KB-1C28E89D"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-040",
+  "q": "createWishlist GraphQL mutation: required fields and validation errors",
+  "topic": "lists regression",
+  "p": 0.07,
+  "shown": [
+   "KB-DCE536F0",
+   "KB-ADAFFBFF",
+   "KB-9139A1A3"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-041",
+  "q": "Share a list with a colleague by email: what access levels exist (view/edit)?",
+  "topic": "lists regression",
+  "p": 0.29,
+  "shown": [
+   "KB-B59A1F9D",
+   "KB-24B83B02",
+   "KB-C075BDF9"
+  ],
+  "opened": [
+   "KB-B59A1F9D"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-042",
+  "q": "Which roles can be assigned to a company member and what permissions does each role grant?",
+  "topic": "company regression",
+  "p": 0.33,
+  "shown": [
+   "KB-B769C7B1",
+   "KB-49F6B6EF",
+   "KB-EA467E9B"
+  ],
+  "opened": [
+   "KB-B769C7B1"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-043",
+  "q": "Can a wishlist share link be opened by an anonymous user?",
+  "topic": "lists regression",
+  "p": 0.22,
+  "shown": [
+   "KB-E8234FA0",
+   "KB-799D20A6",
+   "KB-2F64A447"
+  ],
+  "opened": [
+   "KB-BE7DF8DA"
+  ],
+  "relied": "KB-BE7DF8DA",
+  "closed": true
+ },
+ {
+  "id": "W3-044",
+  "q": "Revoking a share link or removing a colleague from a shared list: what happens to their access?",
+  "topic": "lists regression",
+  "p": 0.41,
+  "shown": [
+   "KB-2F64A447",
+   "KB-B59A1F9D",
+   "KB-F2FA8EBD"
+  ],
+  "opened": [
+   "KB-D7F08A26"
+  ],
+  "relied": "KB-D7F08A26",
+  "closed": true
+ },
+ {
+  "id": "W3-045",
+  "q": "Rename a list: which operation and does the list id change?",
+  "topic": "lists regression",
+  "p": 0.36,
+  "shown": [
+   "KB-B59A1F9D",
+   "KB-B811FD82",
+   "KB-BE7DF8DA"
+  ],
+  "opened": [
+   "KB-C075BDF9"
+  ],
+  "relied": "KB-C075BDF9",
+  "closed": true
+ },
+ {
+  "id": "W3-046",
+  "q": "What happens when a user creates a wishlist with a duplicate name?",
+  "topic": "lists regression",
+  "p": 0.32,
+  "shown": [
+   "KB-1898248D",
+   "KB-F8F2CE8B",
+   "KB-BE7DF8DA"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-047",
+  "q": "Deleting a list that is shared: what do other users see?",
+  "topic": "lists regression",
+  "p": 0.2,
+  "shown": [
+   "KB-D7F08A26",
+   "KB-EAA7BA2F",
+   "KB-2F64A447"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-048",
+  "q": "Adding a product to a list that is out of stock or inactive",
+  "topic": "lists regression",
+  "p": 0.12,
+  "shown": [
+   "KB-8C530141",
+   "KB-48A46F77",
+   "KB-191B1B4C"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-049",
+  "q": "Maximum number of items or lists per user",
+  "topic": "lists regression",
+  "p": 0.45,
+  "shown": [
+   "KB-84E540DD",
+   "KB-1898248D",
+   "KB-2073D7AD"
+  ],
+  "opened": [
+   "KB-1898248D"
+  ],
+  "relied": "KB-1898248D",
+  "closed": true
+ },
+ {
+  "id": "W3-050",
+  "q": "Sales representative hub: page route and which customers are listed as served",
+  "topic": "lists regression",
+  "p": 0.59,
+  "shown": [
+   "KB-D080C209",
+   "KB-843D0515",
+   "KB-EA467E9B"
+  ],
+  "opened": [
+   "KB-EA467E9B"
+  ],
+  "relied": "KB-EA467E9B",
+  "closed": true
+ },
+ {
+  "id": "W3-051",
+  "q": "Sales representative viewing a served customer's orders: permissions and data shown",
+  "topic": "lists regression",
+  "p": 0.32,
+  "shown": [
+   "KB-D080C209",
+   "KB-EA467E9B",
+   "KB-843D0515"
+  ],
+  "opened": [
+   "KB-D080C209"
+  ],
+  "relied": "KB-D080C209",
+  "closed": true
+ },
+ {
+  "id": "W3-052",
+  "q": "Sales representative sending a message to a served customer: where does it appear?",
+  "topic": "lists regression",
+  "p": 0.13,
+  "shown": [
+   "KB-50D03D62",
+   "KB-D080C209",
+   "KB-843D0515"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-053",
+  "q": "Moving a wishlist item to cart: quantity and price handling",
+  "topic": "lists regression",
+  "p": 0.07,
+  "shown": [
+   "KB-AB35BCDC",
+   "KB-A272971F",
+   "KB-055845A3"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-054",
+  "q": "What happens to a member's access when an organization admin blocks them?",
+  "topic": "company regression",
+  "p": 0.54,
+  "shown": [
+   "KB-DA14E8B7",
+   "KB-D080516B",
+   "KB-97170665"
+  ],
+  "opened": [
+   "KB-97170665"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-055",
+  "q": "What does the search results page show for the empty state when no products are found?",
+  "topic": "catalog regression",
+  "p": 0.47,
+  "shown": [
+   "KB-C298769B",
+   "KB-71011C1F",
+   "KB-16859F54"
+  ],
+  "opened": [
+   "KB-71011C1F"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-056",
+  "q": "Can a blocked member be unblocked and does the unblock restore their previous role?",
+  "topic": "company regression",
+  "p": 0.59,
+  "shown": [
+   "KB-DA14E8B7",
+   "KB-27B4CD10",
+   "KB-82111688"
+  ],
+  "opened": [
+   "KB-DA14E8B7"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-057",
+  "q": "Does the storefront search support partial words or typos in keyword search on the products query?",
+  "topic": "catalog regression",
+  "p": 0.81,
+  "shown": [
+   "KB-1EA7184C",
+   "KB-4F298EB0",
+   "KB-316B2DDB"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-058",
+  "q": "What happens when two price lists are assigned to the same catalog with different priorities - which price does the pricing evaluation return?",
+  "topic": "platform regression",
+  "p": 0.92,
+  "shown": [
+   "KB-6D5E2CD1",
+   "KB-055845A3",
+   "KB-ADFD93AB"
+  ],
+  "opened": [
+   "KB-6D5E2CD1"
+  ],
+  "relied": "KB-6D5E2CD1",
+  "closed": true
+ },
+ {
+  "id": "W3-059",
+  "q": "How does organization switching work for a user who belongs to multiple organizations?",
+  "topic": "company regression",
+  "p": 0.45,
+  "shown": [
+   "KB-8BE777BB",
+   "KB-F7449926",
+   "KB-ADFD93AB"
+  ],
+  "opened": [
+   "KB-8BE777BB"
+  ],
+  "relied": "KB-8BE777BB",
+  "closed": true
+ },
+ {
+  "id": "W3-060",
+  "q": "Does POST /api/pricing/evaluate return the lowest price across price lists or the one from the highest priority assignment?",
+  "topic": "platform regression",
+  "p": 0.48,
+  "shown": [
+   "KB-6D5E2CD1",
+   "KB-ADFD93AB",
+   "KB-1834ABE5"
+  ],
+  "opened": [
+   "KB-6D5E2CD1"
+  ],
+  "relied": "KB-6D5E2CD1",
+  "closed": true
+ },
+ {
+  "id": "W3-061",
+  "q": "How does a facet filter selection get encoded in the search page URL and in the products filter argument?",
+  "topic": "catalog regression",
+  "p": 0.28,
+  "shown": [
+   "KB-7837F100",
+   "KB-31802239",
+   "KB-1447353E"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-062",
+  "q": "After switching organization, what happens to the cart and the prices shown?",
+  "topic": "company regression",
+  "p": 0.14,
+  "shown": [
+   "KB-055845A3",
+   "KB-8BE777BB",
+   "KB-737F80EE"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-063",
+  "q": "How does a price list assignment with start and end dates behave outside its validity window?",
+  "topic": "platform regression",
+  "p": 0.17,
+  "shown": [
+   "KB-F9D75EA0",
+   "KB-09CEE315",
+   "KB-6D5E2CD1"
+  ],
+  "opened": [
+   "KB-6D5E2CD1"
+  ],
+  "relied": "KB-6D5E2CD1",
+  "closed": true
+ },
+ {
+  "id": "W3-064",
+  "q": "How does the storefront GraphQL query orders filter and paginate a customer's order history (filter, sort, first/after)?",
+  "topic": "orders regression",
+  "p": 0.25,
+  "shown": [
+   "KB-A8B46253",
+   "KB-1144B33E",
+   "KB-D9B90536"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-065",
+  "q": "How does the changeCartItemQuantity mutation behave when quantity is set to zero?",
+  "topic": "cart regression",
+  "p": 0.3,
+  "shown": [
+   "KB-AA7CCB07",
+   "KB-011D79B2",
+   "KB-98A231B6"
+  ],
+  "opened": [
+   "KB-98A231B6"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-066",
+  "q": "What are the page size and pagination defaults for products(first, after) and the totalCount on the search page?",
+  "topic": "catalog regression",
+  "p": 0.16,
+  "shown": [
+   "KB-916CDCA1",
+   "KB-191B1B4C",
+   "KB-6161BC89"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-067",
+  "q": "How are company addresses managed on the storefront page /company/addresses?",
+  "topic": "company regression",
+  "p": 0.36,
+  "shown": [
+   "KB-EFFB28BE",
+   "KB-1447353E",
+   "KB-8246C473"
+  ],
+  "opened": [
+   "KB-EFFB28BE"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-068",
+  "q": "What does /api/inventory/products return for a product with stock in several fulfillment centers?",
+  "topic": "platform regression",
+  "p": 0.26,
+  "shown": [
+   "KB-48A46F77",
+   "KB-8C530141",
+   "KB-D12432BD"
+  ],
+  "opened": [
+   "KB-8C530141"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-069",
+  "q": "Can a customer cancel an order from the storefront and which statuses allow cancellation (cancelOrder mutation)?",
+  "topic": "orders regression",
+  "p": 0.44,
+  "shown": [
+   "KB-F8707174",
+   "KB-F7988EA2",
+   "KB-574C8604"
+  ],
+  "opened": [
+   "KB-574C8604"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-070",
+  "q": "What does removeCartItem return and does the cart recalculate totals afterwards?",
+  "topic": "cart regression",
+  "p": 0.12,
+  "shown": [
+   "KB-AD1FA66B",
+   "KB-58A94337",
+   "KB-1B18B821"
+  ],
+  "opened": [
+   "KB-AD1FA66B"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-071",
+  "q": "How does a barcode search on /search?barcode= behave for an unknown barcode?",
+  "topic": "catalog regression",
+  "p": 0.26,
+  "shown": [
+   "KB-71011C1F",
+   "KB-16859F54",
+   "KB-110E0652"
+  ],
+  "opened": [
+   "KB-71011C1F"
+  ],
+  "relied": "KB-71011C1F",
+  "closed": true
+ },
+ {
+  "id": "W3-072",
+  "q": "Can a company admin edit or delete a company address used in an existing order?",
+  "topic": "company regression",
+  "p": 0.19,
+  "shown": [
+   "KB-8246C473",
+   "KB-CC9A98D3",
+   "KB-02238DE5"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-073",
+  "q": "How is available quantity computed when reserved or in-transit quantity is set on an inventory record?",
+  "topic": "platform regression",
+  "p": 0.42,
+  "shown": [
+   "KB-8C530141",
+   "KB-48A46F77",
+   "KB-25388E6C"
+  ],
+  "opened": [
+   "KB-48A46F77"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-074",
+  "q": "How does the cart handle product pack size or quantity step rules when adding quantity?",
+  "topic": "cart regression",
+  "p": 0.43,
+  "shown": [
+   "KB-98A231B6",
+   "KB-734A0813",
+   "KB-0C163966"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-075",
+  "q": "How does a customer request a return for a delivered order and what happens to the order afterward?",
+  "topic": "orders regression",
+  "p": 0.12,
+  "shown": [
+   "KB-67D0AB31",
+   "KB-06CFE625",
+   "KB-8A2F58EA"
+  ],
+  "opened": [
+   "KB-8A2F58EA"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-076",
+  "q": "What validation errors appear for the invite form with an invalid email?",
+  "topic": "company regression",
+  "p": 0.22,
+  "shown": [
+   "KB-35F20D97",
+   "KB-ADAFFBFF",
+   "KB-CF3FAD18"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-077",
+  "q": "What store settings can be changed via /api/stores and what happens to a store when its catalog is changed?",
+  "topic": "platform regression",
+  "p": 0.33,
+  "shown": [
+   "KB-2D446A42",
+   "KB-2CBB229F",
+   "KB-F91252E5"
+  ],
+  "opened": [
+   "KB-2CBB229F"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-078",
+  "q": "What does a product card show for a product without price or out of stock on the B2B store?",
+  "topic": "catalog regression",
+  "p": 0.29,
+  "shown": [
+   "KB-8C530141",
+   "KB-191B1B4C",
+   "KB-7837F100"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-079",
+  "q": "What happens to a cart line when the product becomes unavailable or price changes (validationErrors)?",
+  "topic": "cart regression",
+  "p": 0.41,
+  "shown": [
+   "KB-A1B35892",
+   "KB-AB35BCDC",
+   "KB-59E4B5FC"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-080",
+  "q": "What are the return statuses and how do they transition?",
+  "topic": "orders regression",
+  "p": 0.14,
+  "shown": [
+   "KB-21F4F161",
+   "KB-58A94337",
+   "KB-85F02FDB"
+  ],
+  "opened": [
+   "KB-21F4F161"
+  ],
+  "relied": "KB-21F4F161",
+  "closed": true
+ },
+ {
+  "id": "W3-081",
+  "q": "Can a user remove or block themselves, or the last organization admin?",
+  "topic": "company regression",
+  "p": 0.33,
+  "shown": [
+   "KB-97170665",
+   "KB-0BC18481",
+   "KB-DA14E8B7"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-082",
+  "q": "Does the category page products query include products from child categories?",
+  "topic": "catalog regression",
+  "p": 0.3,
+  "shown": [
+   "KB-3EA119C5",
+   "KB-C440D4E3",
+   "KB-A38254C8"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-083",
+  "q": "How is a percentage cart promotion with a minimum subtotal condition evaluated in the cart?",
+  "topic": "cart regression",
+  "p": 0.29,
+  "shown": [
+   "KB-996BDF08",
+   "KB-A3CE7FBA",
+   "KB-F1542157"
+  ],
+  "opened": [
+   "KB-996BDF08"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-084",
+  "q": "What does the GraphQL query for organization members return and how is it filtered by status?",
+  "topic": "company regression",
+  "p": 0.21,
+  "shown": [
+   "KB-67D0AB31",
+   "KB-1144B33E",
+   "KB-27B4CD10"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-085",
+  "q": "Which order notifications (emails) are sent when an order is placed, shipped or cancelled?",
+  "topic": "orders regression",
+  "p": 0.17,
+  "shown": [
+   "KB-17555498",
+   "KB-4C5627CE",
+   "KB-A4ABEFEA"
+  ],
+  "opened": [
+   "KB-17555498"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-086",
+  "q": "Does the products query return products not visible to an anonymous B2B store user or inactive products?",
+  "topic": "catalog regression",
+  "p": 0.16,
+  "shown": [
+   "KB-316B2DDB",
+   "KB-E7007F44",
+   "KB-9FDE89B8"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-087",
+  "q": "How does the clearCart mutation behave and what does the cart look like afterwards?",
+  "topic": "cart regression",
+  "p": 0.17,
+  "shown": [
+   "KB-A4EB3766",
+   "KB-F1071A5D",
+   "KB-972CF223"
+  ],
+  "opened": [
+   "KB-A4EB3766"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-088",
+  "q": "What does the REST endpoint /api/order/customerOrders/search return and what permissions does it need?",
+  "topic": "orders regression",
+  "p": 0.26,
+  "shown": [
+   "KB-F7E4DB8E",
+   "KB-6E63AFF4",
+   "KB-59E4B5FC"
+  ],
+  "opened": [
+   "KB-F7E4DB8E"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-089",
+  "q": "How are facet counts affected after another facet is selected on the search results page?",
+  "topic": "catalog regression",
+  "p": 0.37,
+  "shown": [
+   "KB-31802239",
+   "KB-B77CC09C",
+   "KB-4F298EB0"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-090",
+  "q": "What does the cart page /cart show for an anonymous user versus signed in with coupon field?",
+  "topic": "cart regression",
+  "p": 0.13,
+  "shown": [
+   "KB-938D7C06",
+   "KB-94C2ADCC",
+   "KB-1F264839"
+  ],
+  "opened": [
+   "KB-938D7C06"
+  ],
+  "relied": "KB-938D7C06",
+  "closed": true
+ },
+ {
+  "id": "W3-091",
+  "q": "How does the order details page display line items, totals, taxes and discounts?",
+  "topic": "orders regression",
+  "p": 0.28,
+  "shown": [
+   "KB-F1542157",
+   "KB-D60012DB",
+   "KB-B9C8ECD3"
+  ],
+  "opened": [
+   "KB-F1542157"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-092",
+  "q": "Is keyword search on the products query case-insensitive and how does it treat special characters?",
+  "topic": "catalog regression",
+  "p": 0.65,
+  "shown": [
+   "KB-110E0652",
+   "KB-4F298EB0",
+   "KB-8F33647E"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-093",
+  "q": "Does the order history page filter by status and by date range in the storefront?",
+  "topic": "orders regression",
+  "p": 0.53,
+  "shown": [
+   "KB-F9D75EA0",
+   "KB-09CEE315",
+   "KB-41DDD2A9"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-094",
+  "q": "Can a B2B user see orders placed by other users of the same organization in order history?",
+  "topic": "orders regression",
+  "p": 0.41,
+  "shown": [
+   "KB-657521DF",
+   "KB-ADFD93AB",
+   "KB-CC9A98D3"
+  ],
+  "opened": [
+   "KB-657521DF"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-095",
+  "q": "What does the order history list show when the customer has no orders (empty state)?",
+  "topic": "orders regression",
+  "p": 0.51,
+  "shown": [
+   "KB-358A70CB",
+   "KB-D992AF44",
+   "KB-B38AEE58"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-096",
+  "q": "How is the order number generated and displayed on the storefront order history?",
+  "topic": "orders regression",
+  "p": 0.34,
+  "shown": [
+   "KB-56979CB9",
+   "KB-16AEF0C2",
+   "KB-A240F961"
+  ],
+  "opened": [
+   "KB-16AEF0C2"
+  ],
+  "relied": "KB-16AEF0C2",
+  "closed": true
+ },
+ {
+  "id": "W3-097",
+  "q": "Can a customer reorder or add order items back to cart from order details?",
+  "topic": "orders regression",
+  "p": 0.18,
+  "shown": [
+   "KB-C4346EB2",
+   "KB-4D26A022",
+   "KB-AB35BCDC"
+  ],
+  "opened": [],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-098",
+  "q": "What does POST /connect/token return for wrong password versus locked-out user, and how many failed attempts lock an account?",
+  "topic": "platform regression",
+  "p": 0.67,
+  "shown": [
+   "KB-0407F36E",
+   "KB-9AF5645D",
+   "KB-8646A9CB"
+  ],
+  "opened": [
+   "KB-8646A9CB"
+  ],
+  "relied": "KB-8646A9CB",
+  "closed": true
+ },
+ {
+  "id": "W3-099",
+  "q": "How long does an access token from /connect/token live and does a refresh_token grant work?",
+  "topic": "platform regression",
+  "p": 0.37,
+  "shown": [
+   "KB-4E1FD1E8",
+   "KB-ACC12F26",
+   "KB-CA2AE929"
+  ],
+  "opened": [
+   "KB-0407F36E"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-100",
+  "q": "What happens to the search index when a product is updated via the API - how long until it is searchable, and how do I trigger reindex via /api/search/indexes/index?",
+  "topic": "platform regression",
+  "p": 0.31,
+  "shown": [
+   "KB-25388E6C",
+   "KB-31802239",
+   "KB-4C29749E"
+  ],
+  "opened": [
+   "KB-4C29749E"
+  ],
+  "relied": "KB-4C29749E",
+  "closed": true
+ },
+ {
+  "id": "W3-101",
+  "q": "Which permissions are required to call GET /api/security/users and what status code is returned without them?",
+  "topic": "platform regression",
+  "p": 0.41,
+  "shown": [
+   "KB-49F6B6EF",
+   "KB-BC6FC633",
+   "KB-DF9F415E"
+  ],
+  "opened": [
+   "KB-49F6B6EF"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-102",
+  "q": "When a role's permissions are changed in Admin, does an already logged-in user's token reflect the change?",
+  "topic": "platform regression",
+  "p": 0.6,
+  "shown": [
+   "KB-ED01C2A4",
+   "KB-ACC12F26",
+   "KB-4E1FD1E8"
+  ],
+  "opened": [
+   "KB-ED01C2A4"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-103",
+  "q": "What does POST /api/platform/security/users create return when username or email already exists, and what password policy rules reject a password?",
+  "topic": "platform regression",
+  "p": 0.28,
+  "shown": [
+   "KB-2C4FA5E9",
+   "KB-9560787E",
+   "KB-FB8014EB"
+  ],
+  "opened": [
+   "KB-2C4FA5E9"
+  ],
+  "relied": null,
+  "closed": true
+ },
+ {
+  "id": "W3-104",
+  "q": "How does a fulfillment center deactivation or deletion affect inventory records and store availability?",
+  "topic": "platform regression",
+  "p": 0.66,
+  "shown": [
+   "KB-8C530141",
+   "KB-D12432BD",
+   "KB-EE6A5543"
+  ],
+  "opened": [
+   "KB-8C530141"
+  ],
+  "relied": null,
+  "closed": true
+ }
+]

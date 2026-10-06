@@ -1,0 +1,42 @@
+diff --git a/client-app/modules/returns/menu.test.ts b/client-app/modules/returns/menu.test.ts
+new file mode 100644
+index 0000000..cd7e965
+--- /dev/null
++++ b/client-app/modules/returns/menu.test.ts
+@@ -0,0 +1,24 @@
++import { flushPromises, mount } from "@vue/test-utils";
++import { describe, it, expect } from "vitest";
++import { menuItems } from "./menu";
++import VcIcon from "@/ui-kit/components/atoms/icon/vc-icon.vue";
++
++// Same name as the "Request return" button's prepend-icon (components/request-return-button.vue).
++const REQUEST_RETURN_BUTTON_ICON = "receipt-refund";
++
++const menuIcons = [
++  ...(menuItems.header?.desktop?.purchasing?.children ?? []),
++  ...(menuItems.header?.mobile?.purchasing?.children ?? []),
++].map((item) => item?.icon);
++
++describe("Returns icons", () => {
++  it.each([...new Set([...menuIcons, REQUEST_RETURN_BUTTON_ICON])])(
++    "renders %s as an outline (Lucide) icon, like the other account menu items",
++    async (name) => {
++      const wrapper = mount(VcIcon, { props: { name } });
++      await flushPromises();
++
++      expect(wrapper.classes()).toContain("vc-icon--outline");
++    },
++  );
++});
+diff --git a/client-app/ui-kit/utilities/icon-aliases.ts b/client-app/ui-kit/utilities/icon-aliases.ts
+index 7d2bf90..9a4b036 100644
+--- a/client-app/ui-kit/utilities/icon-aliases.ts
++++ b/client-app/ui-kit/utilities/icon-aliases.ts
+@@ -58,6 +58,7 @@ export const ICON_ALIASES: Readonly<Record<string, string>> = {
+   process: "refresh-cw",
+   profile: "id-card",
+   "purchase-request": "receipt",
++  "receipt-refund": "undo-2",
+   "receipt-tax": "ticket-percent",
+   reset: "rotate-ccw",
+   "round-check": "circle-check",
