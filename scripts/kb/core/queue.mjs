@@ -347,6 +347,15 @@ export async function log(record, { env = process.env, who, run } = {}) {
  * The line `log` would append, built and NOT written. `log` is its one writer; the other caller is
  * a dry-run push (VCST-6103), which must show the lines a real push would add without adding them.
  */
+// A line's `at` is also an ambiguous ask's HANDLE: `kb_show` / `kb_none` name their ask by it. Two
+// parallel `kb_ask` calls in one MCP process can log in the same millisecond, and then a pick pairs
+// with the wrong ask -- so within a process `at` strictly increases (+1 ms on a tie).
+let lastAt = 0;
+function nextAt() {
+  lastAt = Math.max(Date.now(), lastAt + 1);
+  return new Date(lastAt).toISOString();
+}
+
 export function composeLine(record, { env = process.env, who, run } = {}) {
   // All three marks are stamped LAST and by the single writer, so no verb can forget one and no
   // verb can fake one: `synthetic` because an env var must cover every line a benchmark run
@@ -361,7 +370,7 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
   // is a bound the log does not have.
   const handle = run === undefined ? runOf(env) : String(run ?? '').trim().slice(0, RUN_MAX).trim();
   return {
-    at: new Date().toISOString(),
+    at: nextAt(),
     ...record,
     ...(handle ? { run: handle } : {}),
     ...(me ? { who: me } : {}),

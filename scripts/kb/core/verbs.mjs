@@ -1099,6 +1099,20 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   }
   const row = cat.rows.find((r) => r.id.toUpperCase() === String(id).toUpperCase());
   if (!row) return { state: 'invalid', why: `${id} is not in this base's index` };
+  // A split or merged entry is still served by `show`, so agents keep its id -- but evidence written
+  // to it lands on a retired file nobody counts. Name the active successor(s) instead.
+  if (row.status === 'superseded') {
+    const byId = new Map(cat.rows.map((r) => [r.id.toUpperCase(), r]));
+    const active = new Set();
+    const walk = (r, seen = new Set()) => {
+      if (!r || seen.has(r.id)) return;
+      seen.add(r.id);
+      if (r.status !== 'superseded') { active.add(r.id); return; }
+      for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
+    };
+    walk(row);
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+  }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
 

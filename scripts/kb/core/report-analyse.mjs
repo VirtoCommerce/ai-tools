@@ -326,9 +326,9 @@ export function captureLoop(lines) {
 
     const ask = l.after ? askAt.get(`${l._session}\0${String(l.after)}`) : null;
     let link;
-    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state !== 'answer') {
-      // `miss`, and a verdict ranker's `ambiguous`: the base certified no answer, so a capture after
-      // it is the loop working -- the same reading the unhelpful panel applies (`ask.state !== 'answer'`).
+    if (!l.after) { link = 'unlinked'; counts.unlinked += 1; } else if (!ask) { link = 'dangling'; counts.dangling += 1; } else if (ask.state === 'miss') {
+      // A verdict ranker's `ambiguous` arrives here already resolved to `miss` or `answer`
+      // (resolveVerdicts). An `unreachable` or disabled ask is not the loop: the base was never read.
       link = 'after-miss';
       if (isRefused) counts.refusedAfterMiss += 1; else counts.afterMiss += 1;
     } else {
