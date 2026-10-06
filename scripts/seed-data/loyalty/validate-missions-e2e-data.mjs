@@ -44,9 +44,10 @@ import {
   unitsToComplete, unitsJustBelow, discountBand,
   PRODUCT_INDEX_DOCUMENT_TYPE, SILENTLY_INERT_INDEX_DOCUMENT_TYPES,
 } from './missions-e2e-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const ENV = process.env.TEST_ENV || 'vcst';
+const ENV = resolveTestEnv('vcst');
 
 const problems = [];
 const warnings = [];

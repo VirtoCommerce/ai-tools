@@ -23,9 +23,10 @@ import {
   MISSIONS, MISSION_BY_ALIAS, RUN_ALIAS, TARGETS, ALL_ALIASES, NAME_PREFIX, DAY_OFFSET_SLACK_HOURS,
   runtimeFieldsFor, validateSpecShape, severityFor,
 } from './missions-deadline-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
-const ENV = process.env.TEST_ENV || 'vcst';
+const ENV = resolveTestEnv('vcst');
 const GUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const problems = [];
 const warnings = [];
