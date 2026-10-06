@@ -309,7 +309,7 @@ function panelRefusals(p) {
     ${p.door?.attempts ? doorBlock(p.door) : ''}
     ${p.atDoor.length ? table(['what was written', 'why', 'problem kind', 'retried', 'session', 'when'], p.atDoor.map((r) => [
     `<span class="q">${esc(r.subject)}</span>`, esc(r.why), esc(r.problems.join(', ')),
-    r.retried ? 'yes' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
+    r.retried ? 'yes' : r.pairedBy === 'ask' ? 'likely' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
   ])) : ''}
   </section>`;
 }
@@ -320,7 +320,7 @@ function doorBlock(d) {
     .map(([k, v]) => [esc(k), esc(v.attempts), esc(v.refused), esc(pct(v.refused / v.attempts))]);
   return `<p class="metric"><strong>Door:</strong> ${esc(d.refused)} of ${esc(d.attempts)} capture attempt(s)
       refused = ${esc(pct(d.rate))}; first-attempt success ${esc(pct(d.firstAttempt))};
-      ${d.abandoned ? `<strong class="bad">${esc(d.abandoned)} abandoned</strong>` : '0 abandoned'}.</p>
+      ${d.abandoned ? `<strong class="bad">${esc(d.abandoned)} abandoned</strong>` : '0 abandoned'}${d.pairedByAsk ? ` (${esc(d.pairedByAsk)} of them <em>likely</em> retried under a reworded subject: matched only by the ask they followed)` : ''}.</p>
     ${table(['door', 'attempts', 'refused', 'rate'], split(d.byDoor))}
     ${table(['who', 'attempts', 'refused', 'rate'], split(d.byWho))}`;
 }
@@ -521,7 +521,7 @@ export function renderText(report) {
   if (d?.attempts) {
     const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
     out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
-      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} abandoned`);
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} likely reworded retries)` : ''}`);
   }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:

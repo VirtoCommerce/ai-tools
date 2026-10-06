@@ -85,8 +85,10 @@ A behaviour that spans two coordinates (a UI action and the mutation it sends) c
 The refusal prints, per rejected anchor, a `fix:` line; for a missing field, where its value comes
 from; and any coordinate your own subject / question / claim already names. Fix the payload, retry
 **once** with the same `subject`. Scripted work that writes in batches checks each payload first with
-`npm run kb -- capture … --dry-run`, which runs every check and logs and queues nothing. A refused capture is never abandoned: the fact you held is lost with it, and a reworded
-subject makes the retry invisible to `kb:report`.
+`npm run kb -- capture … --dry-run`, which runs every check and logs and queues nothing. A refused capture is never abandoned: the fact you held is lost with it. Keep the `subject`: a
+same-subject retry is the only one `kb:report` pairs with its refusal exactly; a reworded one is
+matched only heuristically, by the ask both followed, and still counts as abandoned in the strict
+number.
 
 ## Open decision — `method: source`
 
