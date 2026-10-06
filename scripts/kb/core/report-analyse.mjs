@@ -560,7 +560,8 @@ export function doorStats(lines, atDoor, closing = new Set()) {
     attempts: attempts.length,
     refused: atDoor.length,
     rate: attempts.length ? atDoor.length / attempts.length : null,
-    abandoned: atDoor.filter((r) => r.pairedBy !== 'subject').length,
+    // LOST FACTS, not refusals: one payload refused three times and never settled is one lost fact.
+    abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map((r) => `${r.session} ${r.subject}`)).size,
     pairedByAsk: atDoor.filter((r) => r.pairedBy === 'ask').length,
     firstAttempt: intents ? (outcomes - closing.size) / intents : null,
     byDoor: split('via'),
@@ -585,7 +586,6 @@ export function refusals(lines, idx) {
     subject: String(l.subject ?? ''),
     why: String(l.why ?? ''),
     problems: Array.isArray(l.problems) ? l.problems.map(String) : [],
-    retried: pairing.get(l) === 'subject',
     pairedBy: pairing.get(l) ?? null,
     via: l.via ? String(l.via) : '?',
     who: l.who ? String(l.who) : '?',
@@ -612,7 +612,7 @@ export function refusals(lines, idx) {
     rows,
     total: rows.length,
     atDoor,
-    atDoorRetried: atDoor.filter((r) => r.retried).length,
+    atDoorRetried: atDoor.filter((r) => r.pairedBy === 'subject').length,
     door,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))

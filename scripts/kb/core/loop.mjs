@@ -6,8 +6,11 @@
 // rejects (`kb_none`) leaves an ask whose outcome nobody can read. Both are invisible to the agent
 // while it works and obvious at the end of its turn -- which is where `kb-remind` asks about them.
 //
-// READS ONLY THE LOCAL SIDECAR (`<session>.meta.json`): the asks it remembers and their outcomes.
-// The queue itself is flushed at every `Stop`, so it cannot answer "was this ever written back".
+// READS ONLY THE SESSION'S LOOP JOURNAL (`<session>.loop.ndjson`, `core/queue.mjs` `loopPath`): an
+// append-only record of asks, picks, rejections and writes. The queue itself is flushed at every
+// `Stop`, so it cannot answer "was this ever written back"; and the journal is append-only so that no
+// kb process of the session can erase another's line. A client that predates it writes nothing there,
+// so it can produce no reminder at all -- never a false one.
 //
 // LENIENT ON PURPOSE. An agent rephrases one need four or five times and then writes ONE entry, and
 // a write's `after` points at the last ask only -- so ANY write later in the session closes every
@@ -15,18 +18,14 @@
 // to ignore it; one that misses an occasional unrelated gap costs nothing.
 
 import { CONTRACT } from './door-hints.mjs';
-import { metaAsks, metaOutcomes } from './queue.mjs';
-
-const WRITES = new Set(['capture', 'capture-refused', 'confirm', 'dispute']);
 
 /**
- * THE AGENT'S LAST WORD on one `ambiguous` ask, from the `show` / `none` lines that point at it
- * (`after` = the ask's `at`). The LAST one counts, because the tool contract invites a look before
- * the verdict: `kb_show --ask h` to read a candidate, then `kb_none --ask h` because it did not
- * answer. Reading "any pick" made that ask look answered -- the very miss this exists to catch.
- * Returns `{ verdict: 'picked', ids }` (the picks after the last `none`), `{ verdict: 'none' }`, or
- * `{ verdict: 'open' }` when the agent said nothing. `ids` is empty for sidecar outcomes, which
- * carry no entry id; the report's lines do.
+ * THE AGENT'S LAST WORD on one `ambiguous` ask, from the `show` / `none` records that point at it.
+ * The LAST one counts, because the tool contract invites a look before the verdict: `kb_show --ask h`
+ * to read a candidate, then `kb_none --ask h` because it did not answer. Reading "any pick" made that
+ * ask look answered -- the very miss this exists to catch. Returns `{ verdict: 'picked', ids }` (the
+ * picks after the last `none`), `{ verdict: 'none' }`, or `{ verdict: 'open' }`. `ids` is empty for
+ * journal records, which carry no entry id; the report's log lines do.
  */
 export function lastWord(pointed) {
   const said = (pointed ?? [])
@@ -41,25 +40,31 @@ export function lastWord(pointed) {
 
 /**
  * The asks still open, oldest first: `{ at, q, why }`, where `why` is
- *   'miss'        the base held nothing (or the agent said `kb_none`) and nothing was written after;
+ *   'miss'        the base held nothing (or the agent's last word was `kb_none`), nothing written after;
  *   'unresolved'  an `ambiguous` list was neither picked from nor rejected, and nothing written after.
- * An `ambiguous` ask the agent picked from (`show` with `state: answer` and `after` = the ask) is
- * answered. Asks the base could not be READ on (`unreachable`, no base) are not misses: there was no
- * answer to get. `reminded` lists ask `at`s already asked about (`kb-remind`'s own file), so each is raised at most once.
+ * A `show` without an ask handle is the agent's pick for its LATEST ask when that ask is `ambiguous` --
+ * the reading `kb_none` already gives a handle-less call. Asks the base could not be READ on
+ * (`unreachable`, no base) are not misses. `reminded` lists ask `at`s already raised.
  */
-export function openLoops(meta, { reminded = [] } = {}) {
-  // A sidecar with no `outcomesSince` was kept by a client that recorded no outcomes, so it cannot say
-  // whether anything was written back: it is raised about nothing. Asks before the mark likewise.
-  const since = typeof meta?.outcomesSince === 'string' ? meta.outcomesSince : null;
-  if (!since) return [];
-  const outcomes = metaOutcomes(meta);
-  const asked = new Set(Array.isArray(reminded) ? reminded.map(String) : []);
+export function openLoops(journal, { reminded = [] } = {}) {
+  const records = (Array.isArray(journal) ? journal : [])
+    .filter((r) => r && typeof r.at === 'string' && typeof r.kind === 'string')
+    .sort((a, b) => a.at.localeCompare(b.at));
+  const raised = new Set((Array.isArray(reminded) ? reminded : []).map(String));
+  const pointed = new Map();
+  let latestAsk = null;
+  for (const r of records) {
+    if (r.kind === 'ask') { latestAsk = r; continue; }
+    if (r.kind !== 'show' && r.kind !== 'none') continue;
+    const target = r.after ?? (r.kind === 'show' && latestAsk?.state === 'ambiguous' ? latestAsk.at : null);
+    if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
+  }
   const out = [];
-  for (const a of metaAsks(meta)) {
-    if (asked.has(a.at) || a.at < since) continue;
+  for (const a of records) {
+    if (a.kind !== 'ask' || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
-    if (outcomes.some((o) => WRITES.has(o.kind) && o.at > a.at)) continue;
-    const word = lastWord(outcomes.filter((o) => o.after === a.at));
+    if (records.some((r) => r.kind === 'write' && r.at > a.at)) continue;
+    const word = lastWord(pointed.get(a.at));
     if (a.state === 'ambiguous' && word.verdict === 'picked') continue;
     out.push({ at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved' });
   }

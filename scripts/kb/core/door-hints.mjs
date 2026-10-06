@@ -15,7 +15,7 @@
 // The normative statement of the contract is `.claude/knowledge/execution/kb-capture-contract.md`;
 // the strings here are the door's short form of it and cite it rather than restate it.
 
-import { anchorShape } from './coordinates.mjs';
+import { anchorShape, normalizeAnchor } from './coordinates.mjs';
 import { SURFACES } from './index-load.mjs';
 import { coordinatesIn } from './query.mjs';
 
@@ -68,11 +68,12 @@ export function anchorFix(problem, { deeper = [] } = {}) {
  * route they meant is right there. Only structured coordinates qualify -- the same test the door uses.
  */
 export function anchorsInText(input, { namespaces } = {}) {
-  const have = new Set((input.anchors ?? []).map((a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim()));
+  // Compared NORMALISED: `{FRONT_URL}/cart` already passed is `/cart` in the text (PR #400 review).
+  const have = new Set((input.anchors ?? []).map((a) => normalizeAnchor(typeof a === 'string' ? a : a?.coordinate ?? '')));
   const out = [];
   for (const field of ['subject', 'question', 'claim']) {
     for (const { raw } of coordinatesIn(input[field], { namespaces })) {
-      if (!have.has(raw) && !out.includes(raw)) out.push(raw);
+      if (!have.has(normalizeAnchor(raw)) && !out.includes(raw)) out.push(raw);
     }
   }
   return out.slice(0, 3);

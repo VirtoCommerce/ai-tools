@@ -9,21 +9,23 @@
  * and the only one that works: in those 8 sessions the agent never called the base again after the
  * miss, so a reminder riding on a later kb response would have reached nobody.
  *
- * WHAT IT DOES. Reads this session's local sidecar (`<session>.meta.json`, see `core/queue.mjs`
- * `metaOutcomes`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed `ambiguous` list
+ * WHAT IT DOES. Reads this session's loop journal (`<session>.loop.ndjson`, append-only, see
+ * `core/queue.mjs` `loopPath`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed `ambiguous` list
  * with nothing written after it, returns `{"decision":"block","reason":…}`: the agent takes ONE more
  * step to capture what it found, or to say in a line that it did not find it out. Nothing is decided
  * for the agent -- only it knows whether it established the answer.
  *
- * IT NEVER WRITES THE SIDECAR. The kb processes append to `meta.json` (a background subagent may be
- * doing so at this very Stop); what this hook remembers -- the asks it already raised -- goes to its
- * own `<session>.reminded.json`, written to a temp file and renamed into place (`remindedPath`).
+ * IT WRITES ONLY ITS OWN FILE. The journal is the kb processes'; what this hook remembers -- the
+ * asks it already raised -- goes to `<session>.reminded.json`, temp file + rename (`remindedPath`).
+ * Once a day it also deletes journal and reminded files untouched for `KEEP_DAYS`, which nothing else
+ * ever would.
  *
  * THREE GUARDS, because a Stop hook that blocks is a hook that can trap a session:
  *   1. `stop_hook_active` (set by the harness while a Stop hook already made Claude continue) -> silent.
  *   2. Every question is raised ONCE: its ask `at` is recorded BEFORE the reason is printed, so a crash
  *      after the write costs a reminder, never a loop.
- *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine) or `KB_REMIND=0` (this hook only).
+ *   3. Off switches: `KB_ENABLED=0` (the base is off on this machine), `KB_REMIND=0` (this hook only),
+ *      and `KB_SYNTHETIC=1`: a calibration or bench run must not take an extra step it did not ask for.
  *
  * WHAT THE OPERATOR SEES: Claude Code labels any blocking Stop hook "Stop hook error occurred" in its
  * UI -- the reminder, not a fault (verified live 2026-10-06; the model receives it as "Stop hook
@@ -32,11 +34,30 @@
  * Exits 0 whatever happens and prints NOTHING unless it is blocking; the reads are a few KB.
  * `kb-flush.mjs` is the other kb Stop hook and stays silent by design -- the two never share stdout.
  */
-import { readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { hasSessionId, hookEnv, kbDisabled, metaPath, remindDisabled, remindedPath } from '../../scripts/kb/core/queue.mjs';
+import { readFileSync, readdirSync, renameSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import {
+  hasSessionId, hookEnv, isSynthetic, kbDisabled, queueDir, readLoop, remindDisabled, remindedPath,
+} from '../../scripts/kb/core/queue.mjs';
 import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
 
 const REMEMBERED = 200;
+const KEEP_DAYS = 14;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Delete loop journals and reminded files idle for KEEP_DAYS -- at most once a day, by a marker's mtime. */
+function prune(dir, now = Date.now()) {
+  const marker = join(dir, 'loop.pruned');
+  try { if (now - statSync(marker).mtimeMs < DAY_MS) return; } catch { /* never pruned */ }
+  try { writeFileSync(marker, ''); utimesSync(marker, now / 1000, now / 1000); } catch { return; }
+  let names = [];
+  try { names = readdirSync(dir); } catch { return; }
+  for (const name of names) {
+    if (!name.endsWith('.loop.ndjson') && !name.endsWith('.reminded.json')) continue;
+    const path = join(dir, name);
+    try { if (now - statSync(path).mtimeMs > KEEP_DAYS * DAY_MS) unlinkSync(path); } catch { /* raced or gone */ }
+  }
+}
 
 function readJson(path) {
   try { return JSON.parse(readFileSync(path, 'utf8')); } catch { return null; }
@@ -46,19 +67,20 @@ function main() {
   let payload = null;
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
   if (payload?.stop_hook_active) return;
-  if (kbDisabled(process.env) || remindDisabled(process.env)) return;
+  if (kbDisabled(process.env) || remindDisabled(process.env) || isSynthetic(process.env)) return;
 
   // The sidecar is keyed like the queue (`hookEnv` -> `sessionId`); with no session id anywhere the
   // key is a fresh process key and names no sidecar this session wrote.
   const env = hookEnv(process.env, payload);
   if (!hasSessionId(env)) return;
-  const meta = readJson(metaPath(env));
-  if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return;
+  prune(queueDir(env));
+  const journal = readLoop(env);
+  if (!journal.length) return;
 
   const path = remindedPath(env);
   const before = readJson(path);
   const raised = Array.isArray(before) ? before.map(String) : [];
-  const loops = openLoops(meta, { reminded: raised });
+  const loops = openLoops(journal, { reminded: raised });
   if (!loops.length) return;
 
   const tmp = `${path}.${process.pid}.tmp`;

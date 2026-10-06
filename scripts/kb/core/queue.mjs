@@ -344,6 +344,7 @@ export async function log(record, { env = process.env, who, run } = {}) {
     return { ok: false, path, line, why: `${err.code ?? 'EUNKNOWN'}: ${err.message}` };
   }
   await noteLine(env, line);
+  await noteLoop(env, line);
   return { ok: true, path, line };
 }
 
@@ -405,11 +406,51 @@ export function composeLine(record, { env = process.env, who, run } = {}) {
 export const metaPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.meta.json`);
 /**
  * `<session>.reminded.json` -- the asks `kb-remind` already raised. ITS OWN FILE, written only by that
- * hook (temp + rename), so the hook never rewrites the sidecar the kb processes are appending to: a
- * read-modify-write of `meta.json` at Stop raced a background subagent's `noteLine` and could drop
- * its asks or outcomes (PR #400 review).
+ * hook (temp + rename): the hook never writes a file a kb process writes too (PR #400 review).
  */
 export const remindedPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.reminded.json`);
+
+/**
+ * `<session>.loop.ndjson` -- THE LOOP JOURNAL (VCST-6156): one short line per ask, per `show` /
+ * `none`, and per write that reached the queue, for `kb-remind` to read at `Stop`. APPEND-ONLY, and
+ * that is the whole design: `meta.json` is rewritten whole by every kb process of the session (the MCP
+ * server, the CLI, background subagents), so two of them interleaving lose one update -- and a lost
+ * write would turn into a false reminder, a lost ask into a missed one. A small `appendFile` cannot
+ * erase another process's line. Not a `.jsonl`, so the queue, the push and `kb-flush` never take it
+ * for queue work. Local only: an ask's question, never a subject, claim or id.
+ *
+ * A WRITE is a line that queued something -- a `capture` / `confirm` / `dispute` carrying its
+ * `payload` -- or a dedup refusal (the base already holds the fact). A confirm the base could not be
+ * read for carries a `state` and no payload, and closes nothing (PR #400 review).
+ */
+export const loopPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.loop.ndjson`);
+const WROTE = new Set(['capture', 'confirm', 'dispute']);
+export function loopRecord(line) {
+  const at = String(line.at ?? '');
+  if (!at) return null;
+  if (line.kind === 'ask') return { at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) };
+  if (line.kind === 'show' || line.kind === 'none') {
+    return { at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}) };
+  }
+  if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  return null;
+}
+async function noteLoop(env, line) {
+  const rec = loopRecord(line);
+  if (!rec) return;
+  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* a lost record costs a reminder, never the line */ }
+}
+/** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
+export function readLoop(env = process.env, session = sessionId(env)) {
+  let text = '';
+  try { text = readFileSync(loopPath(env, session), 'utf8'); } catch { return []; }
+  const out = [];
+  for (const raw of text.split('\n')) {
+    if (!raw.trim()) continue;
+    try { const r = JSON.parse(raw); if (r && typeof r.at === 'string' && typeof r.kind === 'string') out.push(r); } catch { /* torn */ }
+  }
+  return out;
+}
 
 /** The sidecar, or `{}`. A torn or missing file is an absent pointer, never a failed verb. */
 export async function readMeta(env = process.env, session = sessionId(env)) {
@@ -431,18 +472,6 @@ export const metaAsks = (meta) => (Array.isArray(meta?.asks) ? meta.asks : [])
   .filter((a) => a && typeof a.at === 'string' && a.at);
 
 /**
- * WHAT CAME OF THE SESSION'S ASKS (VCST-6156): every `show`, `none` and write, by `at`, `kind`, the
- * ask it points at (`after`) and its `state`. The queue is flushed on every `Stop`, so by the end of a
- * turn the lines that say whether a miss was ever written back are already gone from it; the sidecar
- * keeps them, locally, for `kb-remind` to read. Kinds and timestamps only -- no subject, no claim.
- */
-export const OUTCOME_MEMORY = 200;
-const OUTCOME_KINDS = new Set(['show', 'none', 'capture-refused', 'confirm', 'dispute']);
-const isOutcome = (line) => OUTCOME_KINDS.has(line.kind) || (line.kind === 'capture' && Boolean(line.id));
-export const metaOutcomes = (meta) => (Array.isArray(meta?.outcomes) ? meta.outcomes : [])
-  .filter((o) => o && typeof o.at === 'string' && o.at && typeof o.kind === 'string');
-
-/**
  * Record what the sidecar keeps about the line just written: an ask's `at`/`q`, and a CLI line's
  * transcript id (`metaTranscripts` below says why). ONE read and ONE write per line, so this adds no second
  * window in which two parallel kb processes of one session overwrite each other's update. Best
@@ -451,26 +480,16 @@ export const metaOutcomes = (meta) => (Array.isArray(meta?.outcomes) ? meta.outc
  */
 async function noteLine(env, line) {
   const ask = line.kind === 'ask';
-  const outcome = isOutcome(line);
   const tx = line.via === 'cli' ? String(env.CLAUDE_CODE_SESSION_ID ?? '').trim() : '';
   const newTx = TRANSCRIPT_ID.test(tx) ? tx : '';
-  if (!ask && !outcome && !newTx) return;
+  if (!ask && !newTx) return;
   try {
     const meta = await readMeta(env);
     const known = metaTranscripts(meta);
     const addTx = newTx && !known.includes(newTx);
-    if (!ask && !outcome && !addTx) return;
+    if (!ask && !addTx) return;
     const next = { ...meta };
-    // WHERE THE OUTCOME RECORD STARTS: an older client kept asks and no outcomes, so in a session that
-    // spans the upgrade every earlier ask would read as never written back (`core/loop.mjs`).
-    if (!next.outcomesSince) next.outcomesSince = String(line.at);
     if (ask) next.asks = [...metaAsks(meta), { at: String(line.at), q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}) }].slice(-ASK_MEMORY);
-    if (outcome) {
-      next.outcomes = [...metaOutcomes(meta), {
-        at: String(line.at), kind: String(line.kind),
-        ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
-      }].slice(-OUTCOME_MEMORY);
-    }
     if (addTx) next.transcripts = [...known, newTx].slice(-TRANSCRIPT_MEMORY);
     await writeFile(metaPath(env), JSON.stringify(next), 'utf8');
   } catch { /* the pointer is lost, the line is not */ }
