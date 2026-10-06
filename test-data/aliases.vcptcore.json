@@ -551,10 +551,6 @@
     "decays_at_utc": "2026-09-23T00:00:00.000Z",
     "owner_rep_email": "agent-test-sr-primary@example.com"
   },
-  "SR_UNSERVED_ORG": {
-    "id": "c00b995b-fc31-430e-89b8-4a8802e9a843",
-    "platform_id": "c00b995b-fc31-430e-89b8-4a8802e9a843"
-  },
   "_demo_sales_rep_ledger": {
     "profile": "sales-rep-demo",
     "env": "vcptcore",
@@ -1116,9 +1112,5 @@
         "itemsCount": 2
       }
     ]
-  },
-  "ORG_REP_ONLY": {
-    "id": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
-    "platform_id": "40ac896b-cb80-49db-b71d-1ff23e2b9352"
   }
 }
