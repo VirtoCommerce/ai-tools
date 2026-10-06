@@ -24,9 +24,10 @@
  *
  * NOTHING IS ORPHANED. The main thread also takes an open ask that NO transcript holds (a plain
  * terminal, an unreadable path) and one held only by subagents that look FINISHED: transcript idle for
- * `SUBAGENT_IDLE_MS` and no tool call left without its result -- a subagent that finished, crashed,
- * was stopped, or whose SubagentStop arrived without a transcript path. One still inside a long tool
- * call is busy, however quiet its transcript, and keeps its ask. Before, those were raised by nobody. A subagent's stop raises only what
+ * `SUBAGENT_IDLE_MS` and not busy -- a subagent that finished, crashed, was stopped, or whose
+ * SubagentStop arrived without a transcript path. One still inside a long tool call is busy, however
+ * quiet its transcript, and keeps its ask -- until that call's own timeout (at least the push's
+ * background window) has passed, so a subagent killed mid-call is not deferred forever. Before, those were raised by nobody. A subagent's stop raises only what
  * its own transcript holds, and nothing when it cannot read it.
  *
  * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
@@ -53,7 +54,7 @@ import {
   hasSessionId, hookEnv, isSynthetic, kbDisabled, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
 import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
-import { carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
+import { BACKGROUND_WINDOW_MS, carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
 
 const KEEP_DAYS = 14;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -96,18 +97,25 @@ function raisedAts(path) {
 function transcriptOf(path, now) {
   const text = readText(path);
   if (text === null) return null;
-  const used = new Set();
+  const used = new Map();
   const answered = new Set();
   for (const raw of text.split('\n')) {
     if (!raw.includes('"tool_use"') && !raw.includes('"tool_result"')) continue;
     let rec;
     try { rec = JSON.parse(raw); } catch { continue; }
     for (const c of Array.isArray(rec?.message?.content) ? rec.message.content : []) {
-      if (c?.type === 'tool_use' && c.id) used.add(c.id);
+      if (c?.type === 'tool_use' && c.id) used.set(c.id, Number(c.input?.timeout));
       if (c?.type === 'tool_result' && c.tool_use_id) answered.add(c.tool_use_id);
     }
   }
-  return { text, calls: kbShellCalls(text), busy: [...used].some((id) => !answered.has(id)), age: ageOf(path, now) };
+  // BUSY EXPIRES. A subagent that crashed or was killed mid-call keeps a dangling tool_use forever, so
+  // "open call" alone would defer its asks at every later Stop and nobody would raise them (PR #400
+  // review). It counts as busy only while its transcript is younger than the longest open call's own
+  // timeout, and never less than BACKGROUND_WINDOW_MS -- the window the push join already trusts.
+  const open = [...used].filter(([id]) => !answered.has(id)).map(([, timeout]) => (Number.isFinite(timeout) ? timeout : 0));
+  const age = ageOf(path, now);
+  const busy = open.length > 0 && age < Math.max(BACKGROUND_WINDOW_MS, ...open);
+  return { text, calls: kbShellCalls(text), busy, age };
 }
 
 /**
