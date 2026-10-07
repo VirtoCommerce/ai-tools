@@ -162,7 +162,7 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
 
 ## Phase 5: Write Results
 
-1. **Bank what the run established**, even on a PASS (`authoring-standard.md` §5.3): match ⇒ `kb_confirm`, contradiction ⇒ `kb_dispute`, none ⇒ re-ask, then `kb_capture` (`.claude/knowledge/execution/kb-capture-contract.md`). Public base: nothing client-specific; ids in `kb`.
+1. **Bank what the run established**, even on a PASS (`authoring-standard.md` §5.3): match ⇒ `kb_confirm`, contradiction ⇒ `kb_dispute`, none ⇒ re-ask, then `kb_capture` (anchor = route/request, not a label: `kb-capture-contract.md`). Public base: nothing client-specific; ids in `kb`.
 2. JSON to `{{OUTPUT_FILE}}`:
 
 ```json

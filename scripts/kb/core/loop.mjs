@@ -91,10 +91,8 @@ export function openLoops(journal, { reminded = [] } = {}) {
     // and never again, and a window would only drop it silently (PR #400 review).
     if (a.kind !== 'ask' || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
-    // This session already captured it and it is still queued: answered, not open -- for a MISS only.
-    // On an `ambiguous` list the queued note is a note, never a hit (`queuedHere`): the list still
-    // ends in a pick or a `kb_none` (PR #400 review).
-    if (a.queued && a.state === 'miss') continue;
+    // This session already captured it and it is still queued: answered, not open.
+    if (a.queued) continue;
     if (lastWrite > a.at) continue;
     const word = lastWord(pointed.get(a.at));
     if (a.state === 'ambiguous' && word.verdict === 'picked') continue;

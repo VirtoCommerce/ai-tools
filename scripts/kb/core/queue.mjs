@@ -22,7 +22,7 @@
 
 import { randomBytes } from 'node:crypto';
 import { appendFile, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
-import { existsSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -454,36 +454,9 @@ export function loopRecord(line) {
   if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
   return null;
 }
-const LOOP_KEEP_MS = 14 * 24 * 60 * 60 * 1000;
-const DAY_MS = 24 * 60 * 60 * 1000;
-/**
- * RETENTION BELONGS TO THE WRITER (PR #400 review): journals are written by every `log()`, in CI and
- * shell-only runs too, where the `kb-remind` hook is not registered -- so the pass runs here, at most
- * once a day per queue dir (`loop.pruned`). A journal idle 14 days goes; its `reminded` / `owners`
- * files only once the journal is gone or idle too.
- */
-export function pruneLoops(dir, now = Date.now()) {
-  const ageOf = (path) => { try { return now - statSync(path).mtimeMs; } catch { return Infinity; } };
-  const marker = join(dir, 'loop.pruned');
-  if (ageOf(marker) < DAY_MS) return;
-  try { writeFileSync(marker, ''); } catch { return; }
-  let names = [];
-  try { names = readdirSync(dir); } catch { return; }
-  const idle = (path) => ageOf(path) > LOOP_KEEP_MS;
-  for (const name of names) {
-    const path = join(dir, name);
-    if (name.endsWith('.loop.ndjson')) {
-      if (idle(path)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    } else if (name.endsWith('.reminded.ndjson') || name.endsWith('.owners.ndjson')) {
-      const journal = join(dir, `${name.replace(/\.(reminded|owners)\.ndjson$/, '')}.loop.ndjson`);
-      if (idle(path) && idle(journal)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    }
-  }
-}
 async function noteLoop(env, line) {
   const rec = loopRecord(line);
   if (!rec) return;
-  try { pruneLoops(queueDir(env)); } catch { /* retention never costs the line */ }
   try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* a lost record costs a reminder, never the line */ }
 }
 /** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
