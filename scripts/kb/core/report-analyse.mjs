@@ -1218,8 +1218,8 @@ export function doors(lines) {
  * (`none`), or left it -- `unclosed`. Read from `resolveVerdicts`' `closedBy`, the one rule the
  * reminder shares, so this panel and the miss queue never disagree about an ask. `wroteAfter` counts
  * the unclosed lists the session later wrote ABOUT: a confirm or dispute of an entry the list showed,
- * or a capture whose `after` names the ask -- the agent worked from the list's excerpt and wrote anyway,
- * the case the confirm gate exists for. "Any later write" was measured first and is no signal: on
+ * or a capture whose `after` names the ask -- written about without closing the list (before the confirm
+ * gate, from the list's excerpt alone; since it, the entry was opened but the choice was never made). "Any later write" was measured first and is no signal: on
  * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
  * 17 there, which no session-level number shows. (The ticket counted 20 unclosed by its own reading;
  * this panel and the reminder read an ask one way, `pointersByAsk` + `lastWord`.)

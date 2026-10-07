@@ -422,10 +422,11 @@ function panelLists(p) {
     <p class="lede">An <code>ambiguous</code> ask hands the agent a short list; it is closed by opening one
       entry (<code>kb_show</code>) or by saying none fits (<code>kb_none</code>). An unclosed list is a miss
       in every panel above. <em>wrote after</em> counts unclosed lists the session later wrote about &mdash; a
-      confirm or dispute of an entry the list showed, or a capture pointing at the ask: work done from the
-      list's excerpt rather than from an entry.</p>
+      confirm or dispute of an entry the list showed, or a capture pointing at the ask &mdash; without
+      closing the list. Since the confirm gate the entry itself was opened before a confirm or dispute;
+      what is missing is the choice that tells the base which question it answered.</p>
     <p class="metric"><strong>${esc(p.unclosed)}</strong> of <strong>${esc(p.asks)}</strong> list(s) unclosed
-      (${esc(share(p))}); ${esc(p.show)} opened, ${esc(p.none)} closed by none, ${esc(p.wroteAfter)} written after unclosed.</p>
+      (${esc(share(p))}); ${esc(p.show)} opened, ${esc(p.none)} closed by none, ${esc(p.wroteAfter)} written about without closing the list.</p>
     ${p.gate?.refused ? `<p class="metric">Confirm gate: <strong>${esc(p.gate.refused)}</strong> confirm/dispute refused as
       not opened, over ${esc(p.gate.facts)} entr(ies) a session tried to confirm or dispute; ${esc(p.gate.landed)}
       later landed on the same entry, ${esc(p.gate.abandoned)} never did.</p>` : ''}
@@ -567,7 +568,7 @@ export function renderText(report) {
     const worst = p.lists.rows.filter((r) => r.unclosed).slice(0, 3)
       .map((r) => `${r.agent ?? 'unattributed'} ${r.unclosed}/${r.asks}`).join(', ');
     out.push(`  lists          ${p.lists.unclosed}/${p.lists.asks} unclosed = ${pct(p.lists.unclosedShare)}`
-      + ` (${p.lists.show} opened, ${p.lists.none} none, ${p.lists.wroteAfter} written after unclosed)${worst ? `; ${worst}` : ''}`);
+      + ` (${p.lists.show} opened, ${p.lists.none} none, ${p.lists.wroteAfter} written about unclosed)${worst ? `; ${worst}` : ''}`);
   }
   if (p.lists?.gate?.refused) {
     out.push(`  confirm gate   ${p.lists.gate.refused} refused as not opened over ${p.lists.gate.facts} entr(ies); `

@@ -1159,7 +1159,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
     };
     walk(row);
-    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show) and ${kind} it` : ' and has no active successor'}` };
   }
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an

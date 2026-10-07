@@ -102,7 +102,9 @@ export function pointersByAsk(records) {
     if (id) disputes.set(String(id).toUpperCase(), [...(disputes.get(String(id).toUpperCase()) ?? []), r.at]);
   }
   if (disputes.size) {
-    const shows = [...pointed.values()].flat().filter((r) => r.kind === 'show' && r.id);
+    // Only a show that answered: a journal record of a failed show carries no id, a log line does, and
+    // hook and report must pick the same open.
+    const shows = [...pointed.values()].flat().filter((r) => r.kind === 'show' && r.state === 'answer' && r.id);
     const opened = new Set();
     for (const [id, ats] of disputes) {
       for (const d of ats) {
