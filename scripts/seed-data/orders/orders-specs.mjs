@@ -221,7 +221,9 @@ export function fitsLineQuantity(product, qty) {
  * fixture (deterministic totals). `products` = [{ id, sku, name, catalogId, minQuantity, maxQuantity,
  * trackInventory?, availableQuantity? }] in a DETERMINISTIC order (the seeder sorts by code); each line
  * takes the first DISTINCT product that `fitsLineQuantity` admits, then any that fits, then cycles;
- * empty (e.g. dry-run / bare catalog) → the fixture's placeholders are left untouched.
+ * empty (e.g. dry-run / bare catalog) → the fixture's placeholders are left untouched. The two
+ * fallbacks can put one product on two lines; check `duplicateLineProducts` on the result — a reorder
+ * merges such lines into one, so "each line keeps its own quantity" becomes undecidable.
  */
 export function applyCatalogItems(fixtureObj, products = []) {
   const body = structuredClone(fixtureObj);
@@ -247,6 +249,12 @@ export function applyCatalogItems(fixtureObj, products = []) {
   return body;
 }
 
+/** productIds that appear on more than one line of `items` (PURE). [] when every line is distinct. */
+export function duplicateLineProducts(items = []) {
+  const ids = items.map((i) => i?.productId).filter(Boolean);
+  return [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+}
+
 /**
  * Judge an EXISTING seeded order against the fixture (PURE) — the self-heal decision. It answers
  * "is this order still a valid instance of the fixture?", never "is it what THIS run would build":
@@ -257,6 +265,7 @@ export function applyCatalogItems(fixtureObj, products = []) {
  *   - the line QUANTITY multiset differs from the fixture's (a fixture edit — e.g. distinct quantities);
  *   - a live line's product no longer exists (`productsById` has no entry for its productId);
  *   - a live line's quantity violates that product's min/max order quantity (fitsLineQuantity);
+ *   - two live lines share one product (a reorder merges them — duplicateLineProducts);
  *   - a Shipped/Completed order has no shipment, or a shipment without a deliveryAddress.
  * `productsById` = Map(productId → { minQuantity, maxQuantity, ... }) re-read for THIS order's lines;
  * pass `null` when the catalog could not be read, and the product checks are skipped (never guessed).
@@ -270,6 +279,8 @@ export function judgeExistingOrder(spec, fixtureObj, live, productsById, { owner
   if (live?.status !== spec.orderStatus) reasons.push(`status "${live?.status}" != "${spec.orderStatus}"`);
   const qtys = (items) => (items || []).map((i) => Number(i.quantity)).sort((a, b) => a - b).join(',');
   if (qtys(live?.items) !== qtys(fixtureObj?.items)) reasons.push(`line quantities [${qtys(live?.items)}] != fixture [${qtys(fixtureObj?.items)}]`);
+  const dup = duplicateLineProducts(live?.items);
+  if (dup.length) reasons.push(`product(s) ${dup.join(', ')} on more than one line`);
   if (productsById) {
     for (const item of live?.items || []) {
       const p = productsById.get(item.productId);

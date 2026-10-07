@@ -24,11 +24,12 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose,
-  ROOT, DRY_RUN, TEARDOWN, ONLY, writeEnvAliasOverride, verifyRemoved, discoverCatalogProducts,
-  findOrdersByExactNumber, idsParam,
+  ROOT, DRY_RUN, TEARDOWN, ONLY, writeEnvAliasOverride, verifyRemoved,
+  findOrdersByExactNumber, readProductsById, discoverLineCandidates,
 } from '../../lib/seed-common.mjs';
 import {
   ORDER_FIXTURES, orderNumber, resolveTokens, finalizeOrderBody, applyCatalogItems, fitsLineQuantity, judgeExistingOrder,
+  duplicateLineProducts,
 } from './orders-specs.mjs';
 
 /** Load a Swagger-shaped fixture object from test-data/. */
@@ -43,58 +44,12 @@ async function resolveOwner(email) {
   return u && u.id ? { id: u.id, name: u.userName || email } : { id: null, name: null };
 }
 
-/**
- * Re-read products by id (GET /api/catalog/products?ids=…, the full ItemInfo record — min/max order
- * quantity + trackInventory). Returns Map(id → product), or `null` when the read failed (the caller
- * then skips product checks rather than guessing). A product absent from the Map no longer exists.
- */
-async function readProducts(ids) {
-  const uniq = [...new Set(ids.filter(Boolean))];
-  if (!uniq.length) return new Map();
-  try {
-    const res = await api('GET', `/api/catalog/products?${idsParam(uniq)}&respGroup=ItemInfo`);
-    return new Map((Array.isArray(res) ? res : []).filter((p) => p?.id).map((p) => [p.id, p]));
-  } catch (e) {
-    log(`  WARN: could not re-read products ${uniq.join(', ')} (${String(e.message).slice(0, 120)}) — product checks skipped`);
-    return null;
-  }
-}
-
-/**
- * Line-item candidates for a NEW order, discovered lazily (only when an order is actually created or
- * rebuilt) and DETERMINISTICALLY (sorted by code — an unsorted search page shifts with every catalog
- * change). Each candidate carries its min/max order quantity (re-read when the search projection did
- * not carry it, so `fitsLineQuantity` never judges an unread limit) and, for inventory-tracked
- * products, `availableQuantity` = Σ(inStock − reserved) across fulfillment centers.
- */
+/** Line-item candidates for a NEW order — discovered lazily (only when an order is actually created
+ * or rebuilt), once per run. See seed-common.mjs discoverLineCandidates. */
 let _candidates = null;
 async function lineCandidates(maxItems) {
-  if (_candidates) return _candidates;
-  const found = await discoverCatalogProducts(api, maxItems * 5, { sort: 'code:asc' });
-  const unread = found.filter((p) => p.minQuantity == null || p.maxQuantity == null || p.trackInventory == null);
-  if (unread.length) {
-    const full = await readProducts(unread.map((p) => p.id));
-    for (const p of unread) {
-      const f = full?.get(p.id);
-      if (f) Object.assign(p, { minQuantity: f.minQuantity ?? 0, maxQuantity: f.maxQuantity ?? 0, trackInventory: f.trackInventory ?? false });
-    }
-  }
-  const tracked = found.filter((p) => p.trackInventory === true);
-  if (tracked.length) {
-    try {
-      const inv = await api('GET', `/api/inventory/products?${idsParam(tracked.map((p) => p.id))}`);
-      const avail = new Map();
-      for (const r of Array.isArray(inv) ? inv : []) {
-        avail.set(r.productId, (avail.get(r.productId) || 0) + (Number(r.inStockQuantity) || 0) - (Number(r.reservedQuantity) || 0));
-      }
-      for (const p of tracked) p.availableQuantity = avail.get(p.id) ?? 0;
-    } catch (e) {
-      log(`  WARN: inventory read failed (${String(e.message).slice(0, 120)}) — stock not judged for line picks`);
-    }
-  }
-  _candidates = found;
-  if (found.length) verbose(`line-item candidates (code-sorted): ${found.map((p) => p.sku).join(', ')}`);
-  return found;
+  if (!_candidates) _candidates = await discoverLineCandidates(api, maxItems * 5);
+  return _candidates;
 }
 
 async function ensureOrder(spec, owner, maxItems) {
@@ -113,7 +68,7 @@ async function ensureOrder(spec, owner, maxItems) {
     // Judge the EXISTING order (owner, status, quantity multiset, products still exist and admit their
     // quantity, shipment address) — never against what this run would pick from the catalog today.
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
-    const productsById = await readProducts((full?.items || []).map((i) => i.productId));
+    const productsById = await readProductsById(api, (full?.items || []).map((i) => i.productId));
     const { rebuild, reasons } = judgeExistingOrder(spec, obj, full, productsById, { ownerId: owner.id });
     if (!rebuild) {
       log(`  order ${number} exists and is a valid instance of the fixture → ${existing.id} (kept)`);
@@ -133,6 +88,10 @@ async function ensureOrder(spec, owner, maxItems) {
     for (const it of withItems.items || []) {
       if (!fitsLineQuantity(byId.get(it.productId), Number(it.quantity))) log(`  WARN: order ${number} line ${it.sku} qty ${it.quantity} — no discovered product admits it (min/max/stock); reorder cases on it will fail`);
     }
+    // One product on two lines is not a WARN: a reorder merges them, so the cases on this order cannot
+    // decide anything. Refuse before the create — the existing order (if any) stays in place.
+    const dup = duplicateLineProducts(withItems.items);
+    if (dup.length) throw new Error(`order ${number}: no ${(withItems.items || []).length} DISTINCT discovered products admit the line quantities (${dup.join(', ')} would repeat) — seed the catalog, then re-run`);
   }
   const body = finalizeOrderBody(spec, withItems, { customerId: owner.id, customerName: owner.name || obj.customerName });
 
