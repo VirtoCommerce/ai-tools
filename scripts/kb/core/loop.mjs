@@ -90,10 +90,11 @@ export function pointersByAsk(records) {
   // OPENED TO DISPUTE IS NOT A PICK (VCST-6191 review). The confirm gate makes an agent open an entry
   // before it may dispute it, and it opens it from the list it came from -- so without this, the list
   // would read "answered by X" in the very pairs M6 learns from, right after the agent found X wrong.
-  // A show whose entry the session disputes LATER is dropped from the ask's pointers; if no other pick
-  // is left, the ask reads `none` from the first disputed open -- the list held no answer the agent could
-  // stand on. Dropped rather than rewritten in place, so a real pick made BEFORE the disputed open
-  // (`show A`, `show B`, `dispute B`) still stands. Disputes come from a log line (`dispute` + `id`) or a
+  // The open a dispute was made AFTER -- the latest show of that entry before it, one per dispute -- is
+  // dropped from its ask's pointers; if no other pick is left, the ask reads `none` from that open. Only
+  // that one: an earlier pick of the same entry, hours before and for another question, still stands.
+  // Dropped rather than rewritten in place, so a real pick made before it (`show A`, `show B`,
+  // `dispute B`) still stands too. Disputes come from a log line (`dispute` + `id`) or a
   // journal `write` that names `disputed`; a failed dispute (a `state`, nothing written) does not count.
   const disputes = new Map();
   for (const r of sorted) {
@@ -101,7 +102,16 @@ export function pointersByAsk(records) {
     if (id) disputes.set(String(id).toUpperCase(), [...(disputes.get(String(id).toUpperCase()) ?? []), r.at]);
   }
   if (disputes.size) {
-    const isDisputed = (r) => r.kind === 'show' && r.id && (disputes.get(String(r.id).toUpperCase()) ?? []).some((d) => d > r.at);
+    const shows = [...pointed.values()].flat().filter((r) => r.kind === 'show' && r.id);
+    const opened = new Set();
+    for (const [id, ats] of disputes) {
+      for (const d of ats) {
+        const before = shows.filter((r) => String(r.id).toUpperCase() === id && r.at < d)
+          .reduce((m, r) => (!m || r.at > m.at ? r : m), null);
+        if (before) opened.add(before);
+      }
+    }
+    const isDisputed = (r) => opened.has(r);
     for (const [at, recs] of pointed) {
       const dropped = recs.filter(isDisputed);
       if (!dropped.length) continue;
@@ -134,13 +144,13 @@ export function openLoops(journal, { reminded = [] } = {}) {
     // and never again, and a window would only drop it silently (PR #400 review).
     if (a.kind !== 'ask' || raised.has(a.at)) continue;
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
-    // This session already captured it and it is still queued: answered, not open.
-    if (a.queued) continue;
     const word = lastWord(pointed.get(a.at));
     if (a.state === 'ambiguous' && word.verdict === 'picked') continue;
-    // An unclosed list stays open whatever was written after it; a miss is closed by any later write.
+    // An unclosed list stays open whatever was written after it -- or queued before it: a list is
+    // closed by a choice, the one rule `resolveVerdicts` reads too. A miss is closed by any later write,
+    // or by this session's own capture still in the queue (answered, not open).
     const unclosed = a.state === 'ambiguous' && word.verdict === 'open';
-    if (!unclosed && lastWrite > a.at) continue;
+    if (!unclosed && (a.queued || lastWrite > a.at)) continue;
     out.push({
       at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved',
       ...(a.call ? { call: a.call } : {}),

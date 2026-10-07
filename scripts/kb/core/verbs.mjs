@@ -870,23 +870,11 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  * a contradiction is likelier with what was read a minute ago than with what was read at the start.
  */
 async function openedThisSession({ env }) {
-  const { lines } = await readQueue({ env });
   // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
-  // The confirm gate needs the whole session and reads the journal too (`openedEver`).
-  const out = [];
-  const seen = new Set();
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const l = lines[i];
-    const ids = l.kind === 'ask' ? (l.opened ?? [])
-      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
-        : [];
-    for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id.toUpperCase())) continue;
-      seen.add(id.toUpperCase());
-      out.push(id);
-    }
-  }
-  return out;
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`). One walk for
+  // both stores -- queue lines and journal records share the shape it reads (`loop.mjs` `openedIds`).
+  const { lines } = await readQueue({ env });
+  return openedIds(lines);
 }
 
 /**
@@ -894,8 +882,8 @@ async function openedThisSession({ env }) {
  * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
  * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
  */
-async function openedEver({ env }) {
-  const ids = [...openedIds(readLoop(env)), ...(await openedThisSession({ env }))];
+async function openedEver({ env, journal = readLoop(env) }) {
+  const ids = [...openedIds(journal), ...(await openedThisSession({ env }))];
   return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
@@ -1176,7 +1164,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
-  // it, the list's handle included when a list showed it. Nothing is logged: nothing was written.
+  // it, the list's handle included when a list showed it. The refusal is logged as `<kind>-invalid`
+  // (id + reason code, never prose) so kb:report can count the gate; no evidence is written.
   // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
   // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
   // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
@@ -1184,9 +1173,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
   // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
   // show in one command could never satisfy the confirm in the next. The gate guards agents.
-  if (hasSessionId(env) && !(await openedEver({ env })).has(row.id.toUpperCase())) {
-    const h = askThatShowed(readLoop(env), row.id);
-    // Logged, ids only, so kb:report can count who hits the gate and whether the confirm followed.
+  const journal = hasSessionId(env) ? readLoop(env) : [];
+  if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
+    const h = askThatShowed(journal, row.id);
     await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
     return {
       state: 'invalid',
