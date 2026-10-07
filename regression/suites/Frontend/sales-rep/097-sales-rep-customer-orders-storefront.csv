@@ -608,3 +608,362 @@ SR-CO-038,Sales Rep Customer-Orders Date Filter — Out-of-Span Value Clamps to 
 [COND: bounds enforced] [DOM] no day cell outside the configured span is selectable
 [COND: bounds not enforced] [STATE] document the premise result plainly (0 disabled cells = bounds not passed on this build) rather than reporting a false PASS against an unenforced rule","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","grid strands on an out-of-span date with no recovery path, or silently accepts one that later produces a zero-row/confusing result, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5097 · Archetype:CONFIG · Technique:EP | Behavior:sr.customer-orders.date-range,Draft
+SR-CO-039,[JOURNEY] Custom date range picked in the calendar filters the cross-customer orders grid and discloses the range as two chips in the input format,Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves customers whose orders (seeded AGENT-TEST-SRO-TZ-VCPTCORE-* fixtures) were created on at least three distinct local days. The three days and the in-window count are LIVE-DISCOVERED, never typed from memory. At least one served order must fall OUTSIDE the chosen window, otherwise a filter that does nothing would pass (the data must be able to tell the right implementation from the wrong one). Viewport 1920 (split layout), locale en-US, so the input format is MM/DD/YYYY.","rep=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","--- SCREEN: Cross-Customer Orders List ---
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered at least one row
+[KEY] live-discover, from the rep's own served orders via salesRepCustomerOrders, the distinct local creation days (browser timezone). Pick three days D1 < D2 < D3 that all carry orders; record EXPECTED_IN_WINDOW = number of served orders whose local creation day is within [D1, D3] inclusive, and EXPECTED_OUTSIDE = number of served orders outside it
+[ASSERT] EXPECTED_IN_WINDOW >= 3 and EXPECTED_OUTSIDE >= 1, otherwise record BLOCKED with reason 'window cannot discriminate' and stop
+[KEY] record the unfiltered totalCount (UNFILTERED_TOTAL)
+--- SCREEN: Filters Drawer, Custom Date ---
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] click the 'Open calendar' button of the Start date field
+[WAIT] the calendar grid is visible
+[ACT] click the day cell for D1 in the calendar
+[WAIT] the Start date input shows D1
+[ACT] click the 'Open calendar' button of the End date field
+[WAIT] the calendar grid is visible
+[ACT] click the day cell for D3 in the calendar
+[WAIT] the End date input shows D3
+[KEY] record the text of the Start date input (START_INPUT) and of the End date input (END_INPUT), and the Apply button enabled state
+[ASSERT] Apply is enabled and neither input is aria-invalid=true before continuing
+[ACT] click Apply
+[WAIT] the grid re-renders filtered
+--- SCREEN: Filtered List With Chips ---
+[KEY] intercept the outgoing salesRepCustomerOrders request and record its createddate filter argument (FILTER_ARG) and the response totalCount (FILTERED_TOTAL)
+[KEY] record the creation date of every rendered row across all pages (ROW_DAYS) and the full text of every chip in the active-filter chip row (CHIPS)","[MATH] FILTERED_TOTAL = EXPECTED_IN_WINDOW, and FILTERED_TOTAL < UNFILTERED_TOTAL -- the range actually narrowed the list and kept both boundary days {SPEC}
+[REL] every value in ROW_DAYS, read as a local day, lies within [D1, D3] inclusive -- no order from outside the window is rendered {SPEC}
+[REL] FILTER_ARG carries a lower bound equal to the start of local day D1 and an upper bound equal to the end of local day D3 (23:59:59.999 local), expressed in UTC through the browser's own offset -- the picked days, not the UTC calendar days {OBSERVED}
+[FORMAT] CHIPS contains exactly two date chips, 'Start: <START_INPUT>' and 'End: <END_INPUT>', whose date text is byte-equal to the input text read before Apply and matches ^\d{2}/\d{2}/\d{4}$ (zero-padded) {SPEC}
+[STATE] after reopening the drawer the Created date still reads 'Custom date' with START_INPUT and END_INPUT -- picker, chips and grid describe the same range {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Mid-journey: the grid row count after Apply equals UNFILTERED_TOTAL (the picker committed nothing)
+Mid-journey: chips show dates different from the dates picked, or only one chip renders for a two-bound range
+Rows from outside [D1, D3] remain in ROW_DAYS
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:SILENT · Technique:FLOW · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-040,"Split date range exposes a Date range group, aria-haspopup dialog and per-field contextual calendar names",Sales Rep > Customer Orders > Storefront,High,BL-A11Y-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920 (split layout, 640px and above), locale en-US. No filter applied. This case reads the accessibility tree and DOM attributes of the Created date control; it applies nothing.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[KEY] record the accessibility-tree role and accessible name of every element inside the Created date control, and every role=group name in the drawer (GROUPS)
+[KEY] read the aria-haspopup and aria-invalid attributes of the Start date input and of the End date input from the DOM (INPUT_ATTRS)
+[KEY] read the computed accessible name of each of the two calendar-trigger buttons (START_BTN_NAME, END_BTN_NAME)","[DOM] exactly one element with role=group named 'Date range' contains both the Start date input and the End date input -- one picker, not two independent date fields {OBSERVED}
+[DOM] both date inputs carry aria-haspopup=""dialog"" in the split layout {OBSERVED}
+[STATE] aria-invalid is false on both inputs at rest, before anything is typed {OBSERVED}
+[REL] START_BTN_NAME and END_BTN_NAME are both non-empty, both begin with 'Open calendar', are NOT equal to each other, and START_BTN_NAME names the Start date while END_BTN_NAME names the End date -- a screen-reader user can tell the two buttons apart {SPEC}
+[DOM] no element inside the Created date control has an accessible name that is only 'Open calendar' with no field context {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Both calendar buttons are announced identically as 'Open calendar'
+The two date inputs are not inside a named group, or the group has no name
+aria-haspopup absent from the inputs in the split layout
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:RENDER · Technique:EP · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-041,Date range separator is hidden from assistive technology in split and combined layouts,Sales Rep > Customer Orders > Storefront,Medium,BL-A11Y-002,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+No filter applied. The case is run at both layouts, 1920 (split) and 375 (combined), because the separator is a different element in each.",rep=@td(SR_REP_PRIMARY.email),"--- SCREEN: Split Layout ---
+[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[KEY] read, from the DOM (not from an accessibility snapshot), the aria-hidden attribute of the dash element between the Start date and End date inputs (SEP_SPLIT), and whether any element carrying the old class sales-rep-orders-filters__separator or sales-rep-orders-filters__date exists in the drawer (OLD_CLASSES_SPLIT)
+--- SCREEN: Combined Layout ---
+[VIEWPORT] 375
+[WAIT] the drawer re-renders in the combined layout
+[KEY] read the aria-hidden attribute of the dash element inside the single combined field (SEP_COMBINED)","[DOM] SEP_SPLIT is aria-hidden=""true"" -- the dash between the fields is not exposed to assistive technology {OBSERVED}
+[DOM] SEP_COMBINED is aria-hidden=""true"" -- the combined layout hides its separator too {OBSERVED}
+[STATE] OLD_CLASSES_SPLIT is empty -- the hand-rolled em-dash element of the previous two-picker filter no longer exists {SPEC}
+[STATE] the verdict is read from the DOM attribute only: an accessibility snapshot that prints the dash is NOT evidence of exposure, because the snapshot serialises hidden text {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","aria-hidden absent or false on the separator in either layout
+The old sales-rep-orders-filters__separator element is still present
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the viewport to 1920x1080.,VCST-6001 · Archetype:RENDER · Technique:EG · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-042,"Typed start and end dates produce chips whose dates read exactly as the inputs, zero-padded",Sales Rep > Customer Orders > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920, locale en-US (input mask MM/DD/YYYY). The typed dates are chosen so that BOTH month and day are single-digit: START_TYPED is month 01, day 05 of the current calendar year and END_TYPED is month 02, day 09 of the same year. Two-digit pairs such as 12/25 would make a padding regression invisible.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type START_TYPED into the Start date input using the keyboard (digits only, the mask supplies the slashes)
+[ACT] move focus out of the Start date input so the value commits
+[ACT] type END_TYPED into the End date input
+[ACT] move focus out of the End date input
+[KEY] record the text of the Start date input (START_INPUT) and of the End date input (END_INPUT) as the fields display them
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record the text of every chip in the active-filter chip row (CHIPS) and intercept the salesRepCustomerOrders request, recording FILTER_ARG","[REL] the Start chip reads 'Start: ' followed by exactly START_INPUT and the End chip reads 'End: ' followed by exactly END_INPUT -- the chip says what the rep typed {SPEC}
+[FORMAT] each chip date matches ^\d{2}/\d{2}/\d{4}$; in particular neither chip contains an unpadded 1/5/ or 2/9/ form {OBSERVED}
+[REL] FILTER_ARG lower bound is the start of local January 5 and the upper bound the end of local February 9 of the current year, through the browser's own UTC offset {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Chip reads 'Start: 1/5/<year>' while the input reads '01/05/<year>'
+Chip date differs from the typed day by one (timezone shift)
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:PARITY · Technique:EP · Behavior:sr.customer-orders.filter-chips,Draft
+SR-CO-043,A start date later than the end date marks the range invalid and keeps Apply disabled with no request sent,Sales Rep > Customer Orders > Storefront,High,BL-A11Y-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920. No filter applied. The inverted pair is START_TYPED = month 02, day 09 and END_TYPED = month 01, day 05 of the current calendar year (start is later than end). Network capture is available to count salesRepCustomerOrders POST requests.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[KEY] record the cumulative count of salesRepCustomerOrders POST requests (REQ_BEFORE)
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type START_TYPED into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type END_TYPED into the End date input
+[ACT] move focus out of the End date input
+[KEY] record the error text shown under the date group (ERR_TEXT), how many error rows exist (ERR_ROWS), the aria-invalid attribute of both inputs, the Apply button enabled state, and the count of NEW salesRepCustomerOrders requests since REQ_BEFORE (REQ_NEW)
+[ACT] correct the End date input to a date on or after START_TYPED
+[ACT] move focus out of the End date input
+[KEY] record the same observations again (ERR_ROWS_AFTER, aria-invalid after, Apply state after)","[DOM] ERR_TEXT is exactly 'End date must be on or after start date' and ERR_ROWS = 1 -- one message under the group, supplied by the picker itself {OBSERVED}
+[DOM] aria-invalid=""true"" on the Start date input and aria-invalid=""true"" on the End date input while the range is inverted {OBSERVED}
+[STATE] Apply is disabled while the range is inverted {SPEC}
+[REL] REQ_NEW = 0 -- no salesRepCustomerOrders request is sent for an inverted range {SPEC}
+[STATE] the previous filter-level text 'Invalid date range.' and the raw key sales_rep.customer_orders.filters.invalid_range are NOT displayed -- the removed message is neither shown nor leaked as a key {SPEC}
+[STATE] after correction ERR_ROWS_AFTER = 0, aria-invalid is false on both inputs and Apply is enabled -- the invalid state recovers {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Apply enabled for start later than end, or a request is sent with an inverted createddate range
+No error text at all (validity lost when the filter's own check was deleted)
+Raw i18n key shown in the error row
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:BOUNDARY · Technique:DT · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-044,"An impossible typed date such as 02/31 blocks Apply, flags both inputs invalid and recovers on correction",Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920. No filter applied (so 'applied filter unchanged' is observable as zero chips and zero new requests). IMPOSSIBLE_TYPED is month 02, day 31 of the current calendar year. Network capture is available.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[KEY] record the cumulative count of salesRepCustomerOrders POST requests (REQ_BEFORE)
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type IMPOSSIBLE_TYPED into the Start date input
+[ACT] move focus out of the Start date input
+[KEY] record ERR_TEXT, the aria-invalid attribute of the Start date input AND of the End date input, the Apply enabled state, the drawer Reset enabled state (RESET_STATE, context only), the chip count in the chip row, and the count of NEW requests since REQ_BEFORE
+[ACT] replace the Start date input value with month 02, day 28 of the current calendar year
+[ACT] move focus out of the Start date input
+[KEY] record ERR_TEXT, the aria-invalid attributes and the Apply enabled state again","[DOM] ERR_TEXT names an invalid date (observed wording 'Invalid date format'); it is not the start-after-end message, because the date does not exist rather than being out of order {OBSERVED}
+[DOM] aria-invalid=""true"" on the Start date input and aria-invalid=""true"" on the End date input, which is still empty {OBSERVED}
+[STATE] Apply is disabled and the chip count is 0 and no new salesRepCustomerOrders request was sent -- the impossible date never becomes an applied filter {SPEC}
+[STATE] after correcting to 02/28 the error row is gone, aria-invalid is false on both inputs and Apply is enabled (a start-only draft is applicable) {OBSERVED}
+[STATE] RESET_STATE is recorded but NOT asserted: whether the drawer Reset should be able to clear a draft that holds only an invalid date is an open product question {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","02/31 silently rolls over to 03/03 (or another day) and Apply becomes enabled
+aria-invalid set on only one input
+The chip row shows a chip for the impossible date
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:BOUNDARY · Technique:BVA · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-045,A one-sided range applies as open-ended and the calendar footer Clear does not apply until Apply,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920. No filter applied. ONE_SIDED_START is a local day that carries at least one served order and at least one served order exists BEFORE it, so an open-ended lower bound can be told from a closed one (live-discover from the rep's own orders). Network capture is available. The open-ended behaviour is OBSERVED on the build, not yet a recorded product decision, so its assertions stay {OBSERVED} and one stays {HYPOTHESIS} until the PO decides.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type ONE_SIDED_START into the Start date input
+[KEY] the End date input stays empty
+[KEY] record the Apply enabled state while the caret is still inside the field, then move focus out of the field and record it again (APPLY_TYPING, APPLY_COMMITTED)
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] intercept the salesRepCustomerOrders request and record FILTER_ARG, totalCount (ONE_SIDED_TOTAL), the pager's page count, and the chips in the chip row (CHIPS)
+[ACT] open the Filters drawer
+[ACT] open the Start date calendar
+[ACT] click the calendar footer 'Clear'
+[WAIT] the Start date input is empty
+[KEY] record the count of NEW requests since the click (REQ_AFTER_CLEAR), the chips and the rendered row count (ROWS_AFTER_CLEAR) and the Apply enabled state (APPLY_AFTER_CLEAR)
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record FILTER_ARG (FILTER_ARG_CLEARED) and the chips","[REL] FILTER_ARG has a lower bound equal to the start of local day ONE_SIDED_START and NO upper bound (open-ended on the right) {OBSERVED}
+[STATE] CHIPS contains exactly one chip, 'Start: <ONE_SIDED_START as the input shows it>', and no End chip {OBSERVED}
+[MATH] ONE_SIDED_TOTAL = count of served orders on or after ONE_SIDED_START, and the pager page count = ceil(ONE_SIDED_TOTAL / page size) {OBSERVED}
+[STATE] APPLY_COMMITTED is enabled once focus leaves the field (the value commits on change, not per keystroke) {OBSERVED}
+[REL] REQ_AFTER_CLEAR = 0 and CHIPS and ROWS_AFTER_CLEAR are unchanged by the footer Clear -- Clear edits the draft only, it applies nothing until Apply {OBSERVED}
+[REL] FILTER_ARG_CLEARED carries no createddate term and no chips remain after Apply {OBSERVED}
+[STATE] a start-only range is accepted as a supported input rather than treated as a validation error {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Apply stays disabled for a start-only draft after focus leaves the field
+The request carries an upper bound the rep never entered, or the grid is empty for a start-only range that has orders
+Footer Clear changes the grid or fires a request before Apply
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:LIFECYCLE · Technique:ST · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-046,"After an invalid custom range, switching to a preset and back to Custom date leaves Apply in the state the current range warrants",Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920. No filter applied. LATER_TYPED and EARLIER_TYPED are two single-digit-month dates of the current calendar year with LATER_TYPED after EARLIER_TYPED (typed as start and end respectively, so the Custom range is inverted and invalid); VALID_START and VALID_END are a valid ordered pair. The defect shape is a validity flag that survives the picker being unmounted when a preset replaces Custom date.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type LATER_TYPED into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type EARLIER_TYPED into the End date input
+[ACT] move focus out of the End date input
+[KEY] record the Apply enabled state (APPLY_INVALID) and aria-invalid on both inputs
+[ACT] select the Created date preset 'Last week'
+[KEY] record the Apply enabled state (APPLY_PRESET)
+[ACT] select the Created date preset 'Custom date' again
+[KEY] record the contents of the Start date and End date inputs, aria-invalid on both inputs, and the Apply enabled state (APPLY_BACK)
+[ACT] type VALID_START into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type VALID_END into the End date input
+[ACT] move focus out of the End date input
+[KEY] record aria-invalid on both inputs, ERR_ROWS and the Apply enabled state (APPLY_VALID)","[STATE] APPLY_INVALID is disabled {OBSERVED}
+[STATE] APPLY_PRESET is enabled -- a valid preset that differs from the applied filter can be applied although the abandoned Custom draft was invalid {OBSERVED}
+[DOM] after returning to 'Custom date' the inputs are empty, aria-invalid is false on both inputs and no error row is shown -- the abandoned invalid draft does not reappear {OBSERVED}
+[STATE] APPLY_VALID is enabled and ERR_ROWS = 0 -- a valid range typed after the round trip is not blocked by the earlier invalid state {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Apply stays disabled after Custom -> Last week -> Custom -> valid range (stale validity flag)
+Apply disabled while Last week is selected
+The invalid draft or its error row reappears on returning to Custom date
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:STALE · Technique:ST · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-047,Chip dates keep the picked calendar day in browsers west and east of UTC,Sales Rep > Customer Orders > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The browser timezone is set to a zone WEST of UTC (for example America/Los_Angeles) and then to a zone EAST of UTC (for example Europe/Helsinki); the case runs the Steps once per zone. If the browser lane cannot set a timezone, record SKIPPED with reason 'no timezone emulation on this lane' and stop -- do not pass on the machine's own zone. Viewport 1920, locale en-US. DAY_X is the 15th day of the previous calendar month relative to today (a past, non-boundary day).",rep=@td(SR_REP_PRIMARY.email),"--- BLOCK: zone west of UTC ---
+[VIEWPORT] 1920x1080
+[ACT] set the browser timezone to a zone west of UTC
+[KEY] record that zone's UTC offset on DAY_X (OFFSET_WEST)
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type DAY_X into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type DAY_X into the End date input
+[ACT] move focus out of the End date input
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record FILTER_ARG and the chip texts (CHIPS_WEST)
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Last week'
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record FILTER_ARG and the chip texts (PRESET_WEST)
+--- BLOCK: zone east of UTC ---
+[ACT] set the browser timezone to a zone east of UTC
+[KEY] record that zone's UTC offset on DAY_X (OFFSET_EAST)
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[ACT] type DAY_X into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type DAY_X into the End date input
+[ACT] move focus out of the End date input
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record FILTER_ARG and the chip texts (CHIPS_EAST)
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Last week'
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record FILTER_ARG and the chip texts (PRESET_EAST)","[REL] in each zone the Start and End chips both read the DAY_X text exactly as typed -- never the day before (west) or the day after (east) {SPEC}
+[REL] in each zone FILTER_ARG lower bound = start of local DAY_X and upper bound = end of local DAY_X converted to UTC with that zone's offset on DAY_X; the span is exactly one local day {SPEC}
+[REL] in each zone the dates encoded in the 'Last week' FILTER_ARG, converted back to local days, equal the two dates shown in PRESET_WEST / PRESET_EAST -- chips and query describe the same days {SPEC}
+[REL] CHIPS_EAST both read the DAY_X text and the east-zone FILTER_ARG span = 24 hours minus 1 ms starting at local midnight of DAY_X (a UTC+3 browser was observed correct on this build) {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Chip day differs from the typed day in one of the zones
+FILTER_ARG bounds fall on the UTC calendar day instead of the local day
+Last week chips and request bounds disagree by a day
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the browser timezone to the lane default and the viewport to 1920x1080.,VCST-6001 · Archetype:BOUNDARY · Technique:EG · Probe:VC-PLATFORM-005 · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-048,"Below 640px the date range is one combined field labelled Date range, above it two split fields, and resizing keeps the draft",Sales Rep > Customer Orders > Storefront,High,BL-UI-006,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Locale en-US. No filter applied. The breakpoint under test is 640px: below it the date range is ONE combined field, from it upwards TWO split fields. The layout is chosen in JavaScript, so a resize re-mounts the control. COMMIT_START and COMMIT_END are a valid ordered pair of dates typed and committed (focus moved out) before the resizes.",rep=@td(SR_REP_PRIMARY.email),"[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[VIEWPORT] 375
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[KEY] record the visible label of the date control, the count of date text fields, the count of calendar-trigger buttons, and aria-haspopup on the fields and on the button (COMBINED_375)
+[PROBE:TOUCH] the Created date control
+[VIEWPORT] 639
+[KEY] record the same observations (COMBINED_639)
+[VIEWPORT] 640
+[KEY] record the same observations (SPLIT_640)
+[VIEWPORT] 1920x1080
+[ACT] type COMMIT_START into the Start date input
+[ACT] move focus out of the Start date input
+[ACT] type COMMIT_END into the End date input
+[ACT] move focus out of the End date input
+[VIEWPORT] 639
+[KEY] record the value shown in the combined field (DRAFT_AFTER_639)
+[VIEWPORT] 640
+[KEY] record the values shown in the Start date and End date inputs (DRAFT_AFTER_640)","[DOM] at 375 and at 639 the control is ONE text field whose visible label is 'Date range' and which has one 'Open calendar' button; at 640 and above it is TWO fields (Start date, End date) {SPEC}
+[DOM] in the combined layout aria-haspopup=""dialog"" is on the single 'Open calendar' button and not on the text field; in the split layout it is on both inputs {OBSERVED}
+[TOUCH] belowAA == 0 for the date control and its calendar button at 375 {BL}
+[REL] DRAFT_AFTER_639 shows COMMIT_START and COMMIT_END, and DRAFT_AFTER_640 shows the same two values -- a committed draft survives crossing the breakpoint in both directions {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Two stacked unlabelled fields below 640px
+The label 'Date range' missing in the combined layout
+The committed range is lost when the viewport crosses 640px
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the viewport to 1920x1080.,VCST-6001 · Archetype:RENDER · Technique:BVA · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-049,The customer-scoped orders route uses the same range picker and filters only that customer orders,Sales Rep > Customer Orders > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+SR_REP_PRIMARY serves @td(ORG_TECHFLOW.platform_id). This customer has orders on at least two distinct local days and at least one served order of a DIFFERENT customer exists on one of those days, so a filter that ignored the customer scope would be visible (live-discover). TARGET_DAY is a local day on which @td(ORG_TECHFLOW.platform_id) has at least one order. Viewport 1920.","rep=@td(SR_REP_PRIMARY.email), org=@td(ORG_TECHFLOW.platform_id)","[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/my-customers/@td(ORG_TECHFLOW.platform_id)/orders
+[WAIT] the customer-scoped orders grid has rendered
+[KEY] record the unfiltered totalCount (SCOPED_TOTAL) and the customer scoping argument of the salesRepCustomerOrders request (SCOPE_ARG)
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[KEY] record every role=group name in the drawer, the count of date range pickers, and whether any element with the old class sales-rep-orders-filters__date exists (GROUPS, PICKER_COUNT, OLD_CLASSES)
+[ACT] set the Start date to TARGET_DAY (typed or from the calendar)
+[ACT] set the End date to TARGET_DAY (typed or from the calendar)
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record the rendered order numbers (ROWS), the new request's createddate argument and customer scoping argument (FILTER_ARG, SCOPE_ARG_AFTER), and the chips","[DOM] GROUPS contains exactly one group named 'Date range' and PICKER_COUNT = 1, and OLD_CLASSES is empty -- this route renders the same single picker as the cross-customer route {SPEC}
+[REL] every order in ROWS belongs to @td(ORG_TECHFLOW.platform_id) and has local creation day TARGET_DAY, and ROWS equals the live-discovered set of this customer's orders on that day {SPEC}
+[REL] SCOPE_ARG_AFTER equals SCOPE_ARG -- applying a date range does not widen or drop the customer scope {SPEC}
+[STATE] the chips read 'Start: <TARGET_DAY>' and 'End: <TARGET_DAY>' in the input format {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Two separate date pickers (previous layout) on the customer-scoped route
+Rows from another customer appear after the range is applied
+The customer scope argument disappears from the request after Apply
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:PARITY · Technique:EP · Behavior:sr.customer-orders.date-range,Draft
+SR-CO-050,Under a non-English culture the Date range label and Remove filter names are translated and chips use that locale input format,Sales Rep > Customer Orders > Storefront,Medium,BL-SR-013,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The store secondary language is DISCOVERED at run time from the language switcher, never hardcoded. If the store offers only one language, record SKIPPED with reason 'single-language store' and stop. The chosen language MUST differ from English, otherwise raw-key and untranslated strings are indistinguishable from correct ones. Viewport 1920.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[ACT] open the language switcher
+[KEY] record every offered language; if only one is offered record SKIPPED with reason 'single-language store' and stop
+[ACT] select a language other than English
+[WAIT] the page reloads under the selected locale
+[ACT] open the Filters drawer
+[ACT] select the Created date preset 'Custom date' if it is not already selected
+[KEY] record the accessible name of the date group (GROUP_NAME) and of both calendar buttons (BTN_NAMES), and the date format the inputs display (INPUT_FORMAT_SAMPLE, from a calendar-picked date)
+[ACT] pick a start day from the Start date calendar
+[ACT] pick an end day from the End date calendar
+[ACT] click Apply
+[WAIT] the grid re-renders
+[KEY] record every chip's text (CHIPS) and every chip close button's accessible name (CLOSE_NAMES), and the inputs' text after reopening the drawer (INPUTS_AFTER)","[DOM] GROUP_NAME, BTN_NAMES and CLOSE_NAMES do not match the raw-key shapes ^sales_rep\. or ^ui_kit\. and none of them equals its English wording ('Date range', 'Open calendar', 'Remove filter') -- the new keys are translated in this locale {BL}
+[REL] each date chip's date text equals the corresponding value in INPUTS_AFTER in this locale's input format, not the English MM/DD/YYYY {SPEC}
+[STATE] CLOSE_NAMES are pairwise distinct and each one contains its chip's own text -- a close button identifies the filter it removes in every locale {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A raw key such as ui_kit.accessibility.open_calendar_for is spoken or shown
+Chip date in US format while the inputs use the locale format
+Two chip close buttons share a name
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:FALLBACK · Technique:EP · Behavior:sr.customer-orders.filter-chips,Draft
+SR-CO-051,"The date range can be set, applied and cleared by keyboard alone with focus returning to the trigger",Sales Rep > Customer Orders > Storefront,Medium,BL-A11Y-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1920 (split layout). No filter applied. Keyboard only: NO pointer clicks after the page has loaded. The calendar is teleported out of the drawer's DOM, so focus order and focus return are the risk. KB_START and KB_END are two day cells chosen with the arrow keys (any valid ordered pair).",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/company/customer-orders
+[WAIT] the orders grid has rendered
+[KEY] press Tab until the 'Filters' button has focus, then press Enter
+[WAIT] the Filters drawer has opened
+[KEY] press Tab to move through the drawer's controls, recording the ordered list of focused elements from the Created date control onward (TAB_ORDER)
+[KEY] with focus on the Start date calendar button press Enter
+[WAIT] the calendar grid is visible and focused
+[KEY] press ArrowRight twice and Enter to select KB_START
+[KEY] press Escape if the calendar is still open and record the focused element (FOCUS_AFTER_START)
+[KEY] move focus to the End date calendar button, press Enter, use the arrow keys to move to a later day and press Enter to select KB_END
+[KEY] press Escape if the calendar is still open and record the focused element (FOCUS_AFTER_END)
+[KEY] press Tab until the Apply button has focus and press Enter
+[WAIT] the grid re-renders filtered
+[KEY] record the chips in the chip row (CHIPS)
+[KEY] press Tab until the 'Filters' button has focus, then press Enter
+[WAIT] the Filters drawer has opened
+[KEY] press Tab until the Start date calendar button has focus, then press Enter
+[WAIT] the calendar grid is visible and focused
+[KEY] press Tab until the calendar footer 'Clear' button has focus, then press Enter
+[WAIT] the Start date input is empty
+[KEY] record the count of NEW salesRepCustomerOrders requests since that Enter (REQ_AFTER_FOOTER_CLEAR), the End date input text (END_AFTER_FOOTER_CLEAR) and the chips (CHIPS_AFTER_FOOTER_CLEAR)
+[KEY] press Escape to close the calendar
+[KEY] press Tab until the 'Reset filters' control has focus, then press Enter
+[WAIT] the grid re-renders unfiltered
+[KEY] record the chips (CHIPS_AFTER_RESET), the count of NEW requests since that Enter (REQ_AFTER_RESET), the filter argument of that request (FILTER_ARG_RESET) and the focused element's tag name and accessible name (FOCUS_AFTER_RESET)","[STATE] FOCUS_AFTER_START is the Start date calendar button and FOCUS_AFTER_END is the End date calendar button -- closing a calendar returns focus to the control that opened it, never to the document body {SPEC}
+[STATE] TAB_ORDER reaches the Start date input, the Start date calendar button, the End date input and the End date calendar button, Start before End, and none is skipped {HYPOTHESIS}
+[STATE] the date range is set, applied and disclosed (two chips in CHIPS) using the keyboard alone, with no pointer action {SPEC}
+[DOM] at every step exactly one element shows a visible focus indicator {BL}
+[REL] REQ_AFTER_FOOTER_CLEAR = 0, END_AFTER_FOOTER_CLEAR still equals the KB_END text and CHIPS_AFTER_FOOTER_CLEAR equals CHIPS -- the footer Clear, activated by keyboard, empties only the open field and applies nothing until Apply {OBSERVED}
+[STATE] CHIPS_AFTER_RESET is empty, REQ_AFTER_RESET = 1 and FILTER_ARG_RESET carries no createddate term -- the applied range is cleared by keyboard alone {OBSERVED}
+[STATE] FOCUS_AFTER_RESET is a defined element whose tag is neither BODY nor HTML -- clearing the filter by keyboard must not drop focus to the document root {BL} BL-A11Y-001
+[STATE] the focus target after Reset is the Filters button or the orders grid region (which one is a product decision) {HYPOTHESIS}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Focus drops to the document body after the calendar closes
+The End date control cannot be reached with Tab
+Enter on a focused day cell does not select it
+Focus lands on <body> after Reset filters or a chip's Remove filter button is activated by keyboard (BL-A11Y-001)
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-6001 · Archetype:RENDER · Technique:EG · Behavior:sr.customer-orders.date-range,Draft

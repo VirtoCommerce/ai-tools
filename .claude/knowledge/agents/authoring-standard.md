@@ -120,9 +120,11 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    alone does not count. For each statement:
    - it matched an entry → `confirm`;
    - it contradicted an entry → `dispute`;
-   - the base held nothing → `capture`, with `--deployment <env>`.
+   - the base held nothing → `capture`.
    
-   Never capture a second copy of something the base already holds.
+   Door, fields, anchor forms and where each value comes from:
+   [`../execution/kb-capture-contract.md`](../execution/kb-capture-contract.md). MCP first, as for
+   the read step. Never capture a second copy of something the base already holds.
    **The write step also covers what the run noticed on the side**, not only what its verdicts
    state: a case that PASSes can still show something new about the platform. The bar is one
    question — *would the next run otherwise have to find this out again?*
@@ -166,8 +168,9 @@ Write step (close-out):
 
 ```
 N. **Bank what the run established** — for each platform behaviour your output states: matched ⇒
-   `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in your output.
+   `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
+   `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
+   `.claude/knowledge/execution/kb-capture-contract.md`. Public base. List the ids in your output.
 ```
 
 The dispatch-brief line lives in [`agent-dispatch.md`](../../templates/agent-dispatch.md)

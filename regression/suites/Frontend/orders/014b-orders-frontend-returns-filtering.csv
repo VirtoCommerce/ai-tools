@@ -597,7 +597,7 @@ Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover
 [ACT] click 'Filters' button
 [WAIT] popover visible
 [ASSERT] verify preset = 'Custom date' and both calendar-icon buttons present
-[ACT] click the first aria-label='Open calendar' button (adjacent to Start date input)
+[ACT] click the first calendar-trigger button whose aria-label STARTS WITH 'Open calendar' (adjacent to Start date input, matched by prefix)
 [WAIT] calendar popup visible (dual-month grid with reka-ui structure)
 [ASSERT] verify calendar popup shows two month grids side by side
 [ASSERT] verify a 'Previous month' navigation button is present (aria-label='Previous month')
@@ -661,7 +661,7 @@ Buyer logged in as {{USER_EMAIL}}; account has at least 1 order; Filters popover
 [WAIT] orders list rendered
 [ACT] click 'Filters' button
 [WAIT] popover visible
-[ACT] click the first aria-label='Open calendar' button
+[ACT] click the first calendar-trigger button whose aria-label STARTS WITH 'Open calendar' (match by prefix -- the name may carry a field suffix such as ': Start date')
 [WAIT] calendar popup visible
 [ASSERT] verify calendar grid cells have role='gridcell' with role='button' children (keyboard navigable)
 [KEY] press ArrowRight to move focus to next day cell
@@ -705,7 +705,7 @@ password={{USER_PASSWORD}}","[NAV] navigate to {{FRONT_URL}}/account/orders
 [WAIT] orders list rendered
 [ACT] click Filters button
 [WAIT] date filter popover visible
-[ACT] click the aria-label='Open calendar' button next to Start date input
+[ACT] click the calendar-trigger button next to Start date input whose aria-label STARTS WITH 'Open calendar' (match by prefix -- the name may carry a field suffix such as ': Start date')
 [WAIT] calendar popup opens — calendar grid cells visible
 [ASSERT] calendar popup is visible before pressing Escape
 [KEY] press Escape

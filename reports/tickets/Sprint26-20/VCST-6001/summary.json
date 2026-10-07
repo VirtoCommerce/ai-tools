@@ -1,0 +1,349 @@
+{
+  "ticket": "VCST-6001",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": {
+      "priority": "P2",
+      "layer": "storefront",
+      "domains": 1,
+      "chain_shape": "refines",
+      "surface": "obvious",
+      "reach": "exceeds diff — ui-kit primitives VcInput/VcDatePicker/VcDateRangePicker shared (storefront /account/orders affected)"
+    },
+    "escalated_reason": "Story default FULL; no PR linked in Jira at 1a (reach unestablished), then PR #2519 diff confirmed reach > diff"
+  },
+  "layer": "storefront",
+  "shape_class": {
+    "value": "none",
+    "sources": [
+      "diff under client-app/ui-kit/** (additive props) but the subject is the sales-rep filter page; fails closed"
+    ]
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "unmapped_surfaces": [
+      "customer-orders Filters drawer Created-date section",
+      "active-filter chip row",
+      "/company/my-customers/:org/orders route",
+      "shared kit consumers /account/orders + Storybook"
+    ],
+    "docs_map": {
+      "outcome": "DEFERRED",
+      "reason": "non-blocking; operator-visible proposals instead of an inline write: add the Filters-drawer Created-date section, chip row and /company/my-customers/:org/orders route to sales-rep.md §3 — all verified live this run"
+    },
+    "mind_map_findings": [
+      {
+        "kind": "MISSING_NODE",
+        "proposed": "sr.customer-orders.range-validity",
+        "evidence": "SR-CO-043/044/046"
+      },
+      {
+        "kind": "MISSING_NODE",
+        "proposed": "sr.customer-orders.chip-a11y-name",
+        "evidence": "SR-CO-037, A10"
+      },
+      {
+        "kind": "DRIFT",
+        "node": "sr.customer-orders.filter-chips",
+        "note": "preset × chip removal leaves the drawer stale (SR-CO-034, pre-existing)"
+      }
+    ]
+  },
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-06",
+  "environment": "vcptcore-qa (TEST_ENV=vcptcore) + vcptcore-qa-storybook",
+  "build": {
+    "theme_declared": "2.59.0-pr-2519-1d9b-1d9bc6dc",
+    "theme_deployed": "2.59.0-pr-2519-1d9b-1d9bc6dc",
+    "deployed_source": "live bundle + footer",
+    "pr": "VirtoCommerce/vc-frontend#2519 @1d9bc6dc",
+    "deploy_pr": "vc-deploy-dev#6834",
+    "control_env": "vcptcore-qa1 2.59.0-pr-2540-710a-710ab0fa (no #2519)"
+  },
+  "timing": {
+    "started_at": "2026-10-06T14:05:00Z",
+    "test_window_start": "2026-10-06T14:37:00Z",
+    "time_to_first_test_minutes": 32,
+    "reachability_minutes": 2,
+    "agent_dispatches": 13
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "4 On QA",
+      "confirmed": false,
+      "actor": "qa-lead",
+      "at_time": "2026-10-06T14:13:51Z"
+    },
+    {
+      "hop": "closing",
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "8 Finish test",
+      "confirmed": true,
+      "actor": "qa-lead (operator-confirmed)",
+      "at_time": "2026-10-06T15:32:46Z"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x)",
+    "qa-frontend-expert (4a)",
+    "ui-ux-expert (4v)",
+    "test-management-specialist (A)",
+    "qa-lead-orchestrator (3-cases verifier x2)",
+    "regression-orchestrator (4c)",
+    "qa-testing-expert (A/B control)",
+    "qa-testing-expert (F1/F2 re-check)"
+  ],
+  "epic": null,
+  "ac_analysis": {
+    "atomic_conditions": 30,
+    "story_acs": 6,
+    "passed_acs": 6,
+    "drift": [
+      "AC3 — ticket premise (clearable today) false; decision recorded in tracker comment 111504"
+    ],
+    "dod": "none declared"
+  },
+  "total_cases": 13,
+  "passed": 11,
+  "failed": 1,
+  "blocked": 1,
+  "new_cases_authored": 13,
+  "regression": {
+    "c1": {
+      "ran": true,
+      "run_id": "REG-2026-10-06-1457",
+      "suites": [
+        "097",
+        "014b"
+      ],
+      "ids": [
+        "SR-CO-039",
+        "SR-CO-040",
+        "SR-CO-041",
+        "SR-CO-042",
+        "SR-CO-043",
+        "SR-CO-044",
+        "SR-CO-045",
+        "SR-CO-046",
+        "SR-CO-047",
+        "SR-CO-048",
+        "SR-CO-049",
+        "SR-CO-050",
+        "SR-CO-051",
+        "SR-CO-032",
+        "ORD-074",
+        "ORD-078",
+        "ORD-080"
+      ],
+      "pass": 13,
+      "fail": 3,
+      "blocked": 1,
+      "wall_clock_minutes": 14,
+      "promote": "skipped — delegated (--no-promote)"
+    },
+    "feature_release_gate": "not-assessed",
+    "c2": "removed 2026-09-10 — no cross-suite sweep"
+  },
+  "regression_triage": {
+    "SR-CO-032": "RE-BASE resolved: date-chip part now zero-padded = AC5 correct → stale expected value, update after merge; status-chip failure = VCST-6175 (fix not deployed on vcptcore-qa)",
+    "SR-CO-047": "BLOCKED — UTC− emulation unavailable (browser_run_code hook-blocked); UTC+3 half covered",
+    "SR-CO-051": "FAIL — pre-existing focus defects (A/B control): focus to input after calendar close (Low), focus to body after Reset/chip removal (Medium draft)",
+    "ORD-074": "test defect — stale dual-month expectation → /qa-review-tests --fix"
+  },
+  "coverage_triage": {
+    "ran": true,
+    "dispositions": {
+      "REPAIR": [
+        "ORD-074",
+        "ORD-078",
+        "ORD-080"
+      ],
+      "RE-BASE": [
+        "SR-CO-032"
+      ],
+      "SUPERSEDED": [],
+      "CONFIRMED_count": 43
+    },
+    "applied": true,
+    "unscannable": [],
+    "unmatched_observables": [
+      "Invalid date range",
+      "M/D/YYYY",
+      "Close chip"
+    ]
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "title": "Stale preset after removing Start chip of an applied preset",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "reason": "operator chose not to file",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Stale-Preset-After-Chip-Removal.md"
+    },
+    {
+      "title": "Raw i18n key custom_date after in-session language switch",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "reason": "operator chose not to file",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Raw-I18n-Key-After-Language-Switch.md"
+    },
+    {
+      "title": "Horizontal overflow at 375 on drawer reopen",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "reason": "operator chose not to file",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Mobile-Drawer-Horizontal-Overflow.md"
+    },
+    {
+      "title": "Focus lost to body after chip removal / Reset filters",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "reason": "operator chose not to file",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-CustomerOrders-Focus-Lost-After-Chip-Remove-Reset.md"
+    },
+    {
+      "title": "Calendar footer Clear leaves calendar open",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "reason": "below severity floor",
+      "draft": "reports/bugs/open/low/BUG-SalesRep-CustomerOrders-Footer-Clear-Leaves-Calendar-Open.md",
+      "grading_note": "Low: Escape or click-outside closes it, Apply works on the next click, no wrong data"
+    },
+    {
+      "title": "Focus returns to input, not calendar button, after calendar close",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "below severity floor",
+      "draft": "reports/bugs/open/low/BUG-SalesRep-CustomerOrders-Calendar-Close-Focus-To-Input.md"
+    },
+    {
+      "title": "Dark-theme error text 4.34:1",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "below severity floor; VCST-5935 family",
+      "draft": "none — duplicate family of VCST-5935"
+    },
+    {
+      "title": "/account/orders chips unpadded + Close chip names",
+      "severity": "Low",
+      "provenance": "OUT-OF-SCOPE",
+      "reason": "PR follow-up",
+      "draft": "none — follow-up stated in the PR #2519 body"
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "report": "reports/exploratory/SBTM-VCST-6001-2026-10-06.md",
+    "minutes": 30,
+    "promoted": [
+      "SR-CO-044 (merged with plan row)",
+      "B7 → existing SR-CO-034"
+    ],
+    "declined": 4
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      ".vue + .stories.ts in PR #2519",
+      "layer storefront"
+    ],
+    "ran": true,
+    "report": "reports/tickets/Sprint26-20/VCST-6001/design-report.md",
+    "axes": {
+      "a11y": "PASS (picker); dark error contrast pre-existing",
+      "design_system": "PASS",
+      "vs_design": "SKIPPED — no Prototype link"
+    },
+    "invariant_failures": [
+      {
+        "id": "F1",
+        "rule": "BL-A11Y-003",
+        "observed": "dark-theme error text 4.34:1 (#de3131 on #0a090b), light 4.58:1",
+        "provenance": "PRE-EXISTING",
+        "severity": "Low",
+        "grading_note": "graded once at 5-triage. The 4v lane suggested Medium; that was a lane guess, not a grade. The control (no #2519) also fails at ~4.4:1, and PR #2519 changes no colour token. Duplicate family of VCST-5935, so no separate draft"
+      },
+      {
+        "id": "F2",
+        "rule": "BL-UI-004",
+        "observed": "4v saw the drawer top ~24px above the viewport at 375x800",
+        "provenance": "NOT REPRODUCED",
+        "severity": null,
+        "grading_note": "re-checked on the PR build with the control method (375x800 fresh/reopen/Custom date, 1024 fresh and resize-while-open): header 0–90, drawer top 260, Close and title visible in every case, identical to control. Dropped"
+      },
+      {
+        "id": "F3",
+        "rule": "BL-UI-004",
+        "observed": "horizontal overflow at 375 on drawer reopen",
+        "provenance": "PRE-EXISTING",
+        "severity": "Medium",
+        "grading_note": "control repro ab-5; draft medium/BUG-SalesRep-CustomerOrders-Mobile-Drawer-Horizontal-Overflow.md"
+      }
+    ]
+  },
+  "contract": {
+    "surface": "false",
+    "surface_source": [
+      "no GraphQL/xAPI files in PR #2519"
+    ],
+    "schema": {
+      "refreshed": false,
+      "note": "n/a"
+    }
+  },
+  "test_data": {
+    "data_surface": "false",
+    "fixtures": [
+      "SR_REP_PRIMARY",
+      "ORG_TECHFLOW"
+    ],
+    "live_discovered": "orders on Aug 16/17/18 2026 (AGENT-TEST-SRO-TZ-VCPTCORE-*)",
+    "td_validate": "exit 0",
+    "note": "ORG_USER buyer login refused on vcptcore-qa (/connect/token 400) — rep /account/orders used instead"
+  },
+  "business_rules_verified": [
+    "BL-SR-012",
+    "BL-SR-013 (violated, pre-existing)",
+    "BL-A11Y-001 (violated, pre-existing)",
+    "BL-A11Y-002",
+    "BL-A11Y-003 (dark, pre-existing)",
+    "BL-UI-003",
+    "BL-UI-004 (violated, pre-existing)",
+    "BL-UI-006"
+  ],
+  "appinsights": {
+    "ran": false,
+    "skipped_reason": "C1 orchestrator did not run the correlation; no 4xx/5xx or GraphQL errors[] observed in any captured filter request"
+  },
+  "tracker": {
+    "comment_posted": true,
+    "comment_id": "111505",
+    "pending_filing": [],
+    "docs_comment_id": "111505",
+    "docs_audiences": [
+      "shoppers (sales rep)",
+      "developers"
+    ],
+    "guides_amended": [
+      "reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-customer-guide.md",
+      "reports/ba/Sales-rep/sales-rep-customer-orders/vcst-5733-customer-orders-developer-guide.md"
+    ]
+  }
+}

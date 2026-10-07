@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
@@ -575,6 +576,9 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
   return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
 }
 
+/** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
+const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
 /**
  * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
  * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
@@ -590,13 +594,21 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   // recalibrates on; recorded unpaired, it is merely unpaired.
   const latest = asks.at(-1) ?? null;
   const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
-  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  // A HANDLE THE SESSION NO LONGER REMEMBERS (the sidecar keeps the last ASK_MEMORY asks, the queue
+  // is flushed) is still the agent's explicit pointer, and it is a timestamp, not prose: recorded as
+  // `after`, so the ask it names is closed instead of being reminded about (PR #400 review). One that
+  // is not an `at` at all is recorded without it, as before.
+  const pointer = target?.at ?? (handle && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
+  const written = await log({ kind: 'none', ...(pointer ? { after: pointer } : {}), ...context({ via, call, topic }) }, { env });
   if (written.disabled) return { state: 'disabled', why: written.why };
   if (!written.ok) return { state: 'unreachable', why: written.why };
   return {
     state: 'recorded',
-    ...(target ? { after: target.at, q: target.q } : {}),
-    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(pointer ? { after: pointer } : {}),
+    ...(target ? { q: target.q } : {}),
+    // Said as it happened: an unremembered ISO handle WAS recorded (PR #400 review, cycle 3).
+    ...(handle && !named && pointer ? { why: `recorded against handle ${handle.trim()}, which this session no longer remembers` } : {}),
+    ...(handle && !named && !pointer ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
     ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
   };
 }
@@ -886,7 +898,9 @@ async function openedThisSession({ env }) {
  * which names a directory on the writer's machine. The kind says what went wrong; the text that
  * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
  */
-async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
+async function refuseAtDoor(result, input, { env, via, call, topic, repair = {}, dryRun = false }) {
+  // A dry run sends nothing, the refusal line included: it is a payload check, not an attempt.
+  if (dryRun) return result;
   // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
   // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
@@ -934,28 +948,44 @@ export async function capture(input, opened, opts = {}) {
   return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
 }
 
-async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
-  const door = { env, via, call, topic, repair };
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, dryRun = false } = {}) {
+  // `dryRun` (VCST-6156): every check below runs -- the door, the corpus-aware anchor check, the
+  // dedup and the subject check -- and nothing is logged or queued. Until this existed the CLI parsed
+  // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
+  const door = { env, via, call, topic, repair, dryRun };
+  const note = (line) => (dryRun ? null : log(line, { env }));
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
-  if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
+  // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
+  // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
+  // logs kinds and shapes, never a rejected value.
+  if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
-  if (problems.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems }, input, door);
+  if (problems.length) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    await note({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) });
     return { state: cat.state, why: cat.why };
   }
-  const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
-  if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
+  const namespaces = namespaceRoots(cat.rows);
+  const late = anchorProblems(input.anchors, { namespaces });
+  if (late.length) {
+    return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, { rows: cat.rows, namespaces }), input, door);
+  }
 
   const scope = normalizeScope(input.scope);
-  if (!scope.length) return refuseAtDoor({ state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' }, input, door);
+  if (!scope.length) {
+    return refuseAtDoor(doorHints({
+      state: 'invalid',
+      why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)',
+      missing: ['scope'],
+    }, input, { namespaces }), input, door);
+  }
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
   const after = await precedingAsk({ env, input });
@@ -965,10 +995,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // Anchors + scope + CLAIM (VCST-6102): the same coordinate with a different subject is a new fact.
   const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope, subject: input.subject });
   if (dupe) {
-    await log({
+    await note({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
       why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
 
@@ -979,11 +1009,11 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   const holder = cat.rows.find((r) => r.id === id);
   if (holder) {
     const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
-    await log({
+    await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
       ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
   const entry = {
@@ -1052,6 +1082,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     retrievable(cat.rows),
     { exclude: [id, ...read, ...alsoHere.hits.map((n) => n.id)] },
   );
+
+  if (dryRun) {
+    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related };
+  }
 
   const written = await log({
     kind: 'capture',

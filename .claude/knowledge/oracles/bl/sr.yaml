@@ -227,6 +227,9 @@ rules:
       ref: A narrowing filter/search with zero matches → "nothing matches" state (with reset affordance), distinct from the no-data-at-all state.
     violation_signal: A zero-match filter shows the generic "no data" state; no way to clear the filter; a spinner/blank instead of an empty state.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1457
   - id: BL-SR-013
     title: Rep-facing status / money / rule vocabulary localizes by `cultureName`; raw enum/key never surfaces
     rule: Filter/sort rule labels (`localizedName`), order statuses (`statusDisplayValue`), and `formattedAmount` localize by `cultureName`. The storefront renders the localized label, never a raw enum value or an i18n key.
@@ -243,10 +246,11 @@ rules:
       kind: manual
       ref: Discovery queries return `localizedName` distinct from `name`; a rule chip / status / money value renders a human label, not `New`-style raw keys or `sales-rep.*` i18n paths.
     violation_signal: A raw enum/status key or unresolved i18n key shown in the UI; `formattedAmount` not localized.
-    status: ACTIVE
+    status: SUSPECT
     verified:
       date: 2026-10-05
       by: REG-2026-10-05-1613
+    suspect_reason: "[case] SR-CO-032 failed in REG-2026-10-06-1457"
   - id: BL-SR-014
     title: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access`
     rule: |-
