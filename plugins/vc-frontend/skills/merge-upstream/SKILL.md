@@ -23,6 +23,19 @@ adds `upstream-merges/README.md`: what the folder is, and that upstream merges l
 
 ## 1. Set up
 
+**First, name the repositories.** Run `git remote -v` in full — never cut it with `head` — and write
+down which `owner/repo` each remote is, which one this merge writes to (the PR's repository), and
+which one is only read. A clone may carry both: a redesign branch merging its own `origin/dev` can
+live in a fork clone that also has an `upstream` remote, and the same branch name can exist, with a
+PR, in both repositories.
+
+**Every `gh` command takes `--repo <owner/repo>`.** In a clone with an `upstream` remote, a bare `gh`
+resolves to *upstream*, not `origin` — `gh pr list --head <branch>` then finds upstream's PR for a
+same-named branch, and its checks, conflicts and comments look like the fork's. Check what a bare `gh`
+would hit with `gh repo view --json nameWithOwner`, and pass `--repo` anyway. Upstream PR links in the
+brief, the log and the PR body are written in full (`VirtoCommerce/vc-frontend#2501`): a bare `#2501`
+resolves against the repository it is read in.
+
 **Fork repository** (vc-frontend-next, a customer theme):
 
 - Work in a clone of the fork and add upstream there:
@@ -80,7 +93,8 @@ staged only after the brief is answered, never on the strength of the replay.
 Set `BASE=$(git merge-base HEAD MERGE_HEAD)` and `export LC_ALL=C` (`comm` needs the same collation as
 `sort`). For each conflicted file read the fork's change (`git diff $BASE HEAD -- <f>`), upstream's
 (`git diff $BASE MERGE_HEAD -- <f>`) and the upstream commits behind it
-(`git log --oneline $BASE..MERGE_HEAD -- <f>`); open the upstream PR to learn its intent.
+(`git log --oneline $BASE..MERGE_HEAD -- <f>`); open the upstream PR to learn its intent
+(`gh pr view <n> --repo <upstream owner/repo>`).
 
 List the files **both sides changed that merged cleanly**:
 `comm -12 <(git diff --name-only $BASE HEAD | sort) <(git diff --name-only $BASE MERGE_HEAD | sort)`,
@@ -222,6 +236,7 @@ help at all. Whoever clicks Merge reads the PR, not
 | Hand-merging `types.ts` or the lockfile | Regenerate |
 | Checking only the conflicted files | Also the files both sides changed, and `vc-frontend:port-upstream-to-fork` for code the fork stopped rendering |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
+| A bare `gh` in a clone with an `upstream` remote | `--repo <owner/repo>` on every `gh` command; it otherwise reads and writes upstream |
 | Squash- or rebase-merging an upstream merge | A merge commit; the PR body's first line says so |
 | Asking again what an earlier log already decided | Read `upstream-merges/` in step 2; cite the log |
 | Decisions only in the PR body or the chat | The session's log in `upstream-merges/`, committed with the merge |
