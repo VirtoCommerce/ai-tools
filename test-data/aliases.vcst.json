@@ -597,15 +597,15 @@
     "id": "8fdcf909-7984-4eee-ba82-cdc138729d49"
   },
   "COMPLETED_ORDER": {
-    "id": "51cc5eb9-23d4-47fe-b46d-36e03dc53b2f",
+    "id": "3714cb2e-fa33-4b43-8650-08ccd310e8cf",
     "number": "AGENT-TEST-ORD-COMPLETED"
   },
   "SHIPPED_ORDER": {
-    "id": "8b3eef55-aded-4589-b1fa-04fd06b02909",
+    "id": "855a96a0-57b9-4e5b-bacc-b5dc74bd1119",
     "number": "AGENT-TEST-ORD-SHIPPED"
   },
   "PROCESSING_ORDER": {
-    "id": "fa8f601d-a217-4caf-b761-32ae1898ee2f",
+    "id": "64a31ac0-067d-40b1-8075-2c28ea9770c2",
     "number": "AGENT-TEST-ORD-PROCESSING"
   },
   "QUOTE_WITH_ADMIN_RESPONSE": {
@@ -863,9 +863,9 @@
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
-    "memberId": "2f099807-2ca9-46fa-b5a7-abb9a1743625",
-    "securityAccountId": "44e6b97e-5a0a-4986-8a8a-d8ca764d433a",
-    "email": "AGENT-TEST-loyzero-20261001142214-da52@test-agent.com"
+    "memberId": "9e5d1f14-0081-4f8e-af09-dc059e96985a",
+    "securityAccountId": "8cca0e49-9452-4fb5-ae31-23ffafebc425",
+    "email": "AGENT-TEST-loyzero-20261005072002-e356@test-agent.com"
   },
   "REV_VAR_MATRIX": {
     "id": "08c33cfc9f664426a52fac8882da2df0",
@@ -1500,103 +1500,103 @@
     "seeded_at": "2026-09-14T10:22:42.746Z"
   },
   "SR_REP_DOCS": {
-    "id": "cf437af8-d620-4eaa-8880-f86f5b95ffac",
-    "user_id": "cd815be1-614c-4989-8ef3-9c3534afb3de"
+    "id": "46f953a3-9e70-4e55-92c2-60e109df5c8d",
+    "user_id": "bb72a16c-3ec6-47fb-88da-3660dfc9cfc3"
   },
   "SR_REP_DOCS_WRITER": {
-    "id": "a45d4b20-a08f-4a1c-8135-1b7ea7a462ee",
-    "user_id": "cae796a8-c3db-44ab-92da-b13cfafa2188"
+    "id": "799b3d03-4c7f-4fd1-b1b0-d4e510f2eb68",
+    "user_id": "73bc4cf6-e554-4bde-8cd2-9d9f7b00fc61"
   },
   "SR_DOC_PDF": {
-    "id": "cea47849-a2b5-4ff7-8453-047c5b0c12c1",
-    "file_id": "96c967724e2149cd977765b4b014a9d6",
-    "url": "/api/files/96c967724e2149cd977765b4b014a9d6"
+    "id": "f1f77622-3783-4991-b183-fb01f005fa8c",
+    "file_id": "ba8f1a35e6d244bb9ea415aeba958dd0",
+    "url": "/api/files/ba8f1a35e6d244bb9ea415aeba958dd0"
   },
   "SR_DOC_DOCX": {
-    "id": "14e165db-4c2f-4bf7-88cb-ad133c1fa396",
-    "file_id": "3dc26ee994c2480091fb010b85b5c145",
-    "url": "/api/files/3dc26ee994c2480091fb010b85b5c145"
+    "id": "d3c9061f-741a-4c44-88d8-e3afe1ab4bfe",
+    "file_id": "617294595626492d894643585317636e",
+    "url": "/api/files/617294595626492d894643585317636e"
   },
   "SR_DOC_XLSX": {
-    "id": "15f6d1c0-1bc1-4613-9119-44e9df50aec2",
-    "file_id": "9d2fc5a236ce4834885dd6fe662366e4",
-    "url": "/api/files/9d2fc5a236ce4834885dd6fe662366e4"
+    "id": "30e26dd0-a06e-490c-ab4a-0a791fd3480d",
+    "file_id": "1b068b7cb1e34ae799ca8df7210c45e0",
+    "url": "/api/files/1b068b7cb1e34ae799ca8df7210c45e0"
   },
   "SR_DOC_TXT": {
-    "id": "5ee01c57-f259-4fe8-b476-a265d847a438",
-    "file_id": "ff410f65d6f14e748657898c4ba4dda1",
-    "url": "/api/files/ff410f65d6f14e748657898c4ba4dda1"
+    "id": "a25ab823-a1f5-4847-b823-fc8870646086",
+    "file_id": "dae6dc22e16b4d34b53872f592e73ced",
+    "url": "/api/files/dae6dc22e16b4d34b53872f592e73ced"
   },
   "SR_DOC_PNG": {
-    "id": "b5cc872e-25a0-430a-8330-9cdb6c2b2552",
-    "file_id": "ced4c5c5494c492ca7605788ba7357b2",
-    "url": "/api/files/ced4c5c5494c492ca7605788ba7357b2"
+    "id": "ea82399f-302d-4659-ae0a-e28ddeec43e6",
+    "file_id": "d04e067b4f704572ae887d48217d3f1c",
+    "url": "/api/files/d04e067b4f704572ae887d48217d3f1c"
   },
   "SR_DOC_JPG": {
-    "id": "03e22068-3310-4892-a519-6fc2c191a42b",
-    "file_id": "9d01b76ccac841afa9386097cf8d46b4",
-    "url": "/api/files/9d01b76ccac841afa9386097cf8d46b4"
+    "id": "96d03204-37d0-4210-af77-4e45b0d93c28",
+    "file_id": "177b0b927d544c5a9b501b7a51f37639",
+    "url": "/api/files/177b0b927d544c5a9b501b7a51f37639"
   },
   "SR_DOC_UNKNOWN_EXT": {
-    "id": "4744f977-8876-4b30-bcd5-aeafc1ed1fd0",
-    "file_id": "9bb87f83c1b14e298aa536fa45b0d797",
-    "url": "/api/files/9bb87f83c1b14e298aa536fa45b0d797"
+    "id": "cacc7825-1507-43b4-bfc9-5524e13aa044",
+    "file_id": "7b49fa2f7db04a11acead01a6a00458c",
+    "url": "/api/files/7b49fa2f7db04a11acead01a6a00458c"
   },
   "SR_DOC_UNICODE": {
-    "id": "544a9dbd-86b1-42ef-81b0-18a5c3019eed",
-    "file_id": "430af30d8562452b998ef6126cacef2f",
-    "url": "/api/files/430af30d8562452b998ef6126cacef2f"
+    "id": "85aff3a7-f1ab-4d03-b8c0-a70b1b41eb9f",
+    "file_id": "2e13d15c00cd4857a2f44cd659d1bbc5",
+    "url": "/api/files/2e13d15c00cd4857a2f44cd659d1bbc5"
   },
   "SR_DOC_LARGE": {
-    "id": "ef8d2ea0-5a89-4552-ab44-4bd9f1c62aec",
-    "file_id": "3b12e6d8c86445848387df0656a78304",
-    "url": "/api/files/3b12e6d8c86445848387df0656a78304"
+    "id": "0d6b15f6-abe6-426a-8c9d-1eb8f7b6e3d3",
+    "file_id": "8aa77d64625447f997a7d6ea975eb2cf",
+    "url": "/api/files/8aa77d64625447f997a7d6ea975eb2cf"
   },
   "SR_DOC_FILLER_01": {
-    "id": "680ebd81-881d-4651-b989-d3506e937413",
-    "file_id": "a5c9100fe1d64573b8593453da051cee",
-    "url": "/api/files/a5c9100fe1d64573b8593453da051cee"
+    "id": "dc67a2fe-d503-4eb2-a3d3-f10c2b1d9fb6",
+    "file_id": "e6fe599e4b8b46c887e3f8fbfd59c085",
+    "url": "/api/files/e6fe599e4b8b46c887e3f8fbfd59c085"
   },
   "SR_DOC_FILLER_02": {
-    "id": "0e359e54-20c1-40b7-a56e-5f51ee317347",
-    "file_id": "c270abb072dc439d85a1be22fdfea411",
-    "url": "/api/files/c270abb072dc439d85a1be22fdfea411"
+    "id": "68e30bae-f221-42d0-865f-c86f4b2d76b2",
+    "file_id": "01fba76ffc604ded9c472a74c2eea4f5",
+    "url": "/api/files/01fba76ffc604ded9c472a74c2eea4f5"
   },
   "SR_DOC_FILLER_03": {
-    "id": "d737fee0-4ebe-4414-8fb3-26f697967ab6",
-    "file_id": "001e97d528c1482aabc96c60ecdec470",
-    "url": "/api/files/001e97d528c1482aabc96c60ecdec470"
+    "id": "6b400636-547e-4c2c-bec4-c6a8cf632627",
+    "file_id": "5bff6c25076c43679cdc32b24a1bd526",
+    "url": "/api/files/5bff6c25076c43679cdc32b24a1bd526"
   },
   "SR_DOC_FILLER_04": {
-    "id": "ee493abe-bdba-493a-aa2e-467a83e8ca83",
-    "file_id": "d0d112f532b64cf2b96d8a2a3093cc36",
-    "url": "/api/files/d0d112f532b64cf2b96d8a2a3093cc36"
+    "id": "8c96a8af-60cd-40e3-8991-8769da7e8fb8",
+    "file_id": "ced15b2912524f5596716c0ccb7384a6",
+    "url": "/api/files/ced15b2912524f5596716c0ccb7384a6"
   },
   "SR_DOC_FILLER_05": {
-    "id": "be067cfd-067b-4ba1-9ace-aca34e2933ae",
-    "file_id": "3390875b59074e77aec011c99f78ce53",
-    "url": "/api/files/3390875b59074e77aec011c99f78ce53"
+    "id": "32865f6a-54fd-494a-b3e1-ef815bff21ff",
+    "file_id": "73e20e2d07904fdabc8d701efd201505",
+    "url": "/api/files/73e20e2d07904fdabc8d701efd201505"
   },
   "SR_DOC_FILLER_06": {
-    "id": "4a289d9d-4890-4be1-9ddc-6a724e806d3f",
-    "file_id": "d4d7daea36fe4598ba993eef7e1600e5",
-    "url": "/api/files/d4d7daea36fe4598ba993eef7e1600e5"
+    "id": "6426f21c-f3fd-486d-8125-ebaced7a9194",
+    "file_id": "a3c36575392746738f157475a59f8ce0",
+    "url": "/api/files/a3c36575392746738f157475a59f8ce0"
   },
   "SR_DOC_FILLER_07": {
-    "id": "1f622aa3-618b-4acb-8826-0ae2d4e195bc",
-    "file_id": "9cf960b2b88346beb82866013fa63d6a",
-    "url": "/api/files/9cf960b2b88346beb82866013fa63d6a"
+    "id": "ca84d2ec-76f2-4240-b487-e79625fe507b",
+    "file_id": "6a32ca9fb66a4cab84e9ef64615880ab",
+    "url": "/api/files/6a32ca9fb66a4cab84e9ef64615880ab"
   },
   "SR_ROWCAP_ORDER_ACME_NEW": {
-    "id": "a7681963-5c71-4c5e-8099-2a4f4e06c83b",
+    "id": "13857e74-e1a7-480e-a91f-24767960c8e9",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-01"
   },
   "SR_ROWCAP_ORDER_ACME_CANCELLED": {
-    "id": "82c45d4a-e306-4593-9266-4956dd81c216",
+    "id": "8bf6c602-1b04-443c-be7e-a57b8febaabf",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-07"
   },
   "SR_ROWCAP_ORDER_TECH_COMPLETED": {
-    "id": "3c13de67-a784-42bb-a612-c3f14d5392ad",
+    "id": "53eacad2-18cf-44d4-9147-40a908fe5115",
     "number": "AGENT-TEST-SRO-ROWCAP-TECH-04"
   },
   "SR_I18N_SINGULAR_ORDER": {
@@ -2575,5 +2575,67 @@
   "MSN_LONG_CONTENT": {
     "id": "96d7534f-3be8-42ca-85a5-01dc9df1775f",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
+  },
+  "ORG_EXACTLY_11": {
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "cb9a7602-39b1-4eee-aec9-e3a34de6edc6",
+    "contactId": "1ec1f444-dd57-4751-90fe-3b12ad02148b",
+    "org_count": 11,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e",
+      "ca76a1e9-070d-424d-92f4-90ea7e365c7a"
+    ]
+  },
+  "MULTI_ORG_11": {
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "cb9a7602-39b1-4eee-aec9-e3a34de6edc6",
+    "contactId": "1ec1f444-dd57-4751-90fe-3b12ad02148b",
+    "org_count": 11,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e",
+      "ca76a1e9-070d-424d-92f4-90ea7e365c7a"
+    ]
+  },
+  "ORG_EXACTLY_10": {
+    "email": "agent-test-org-exactly-10-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "aa5bd842-80dd-430a-a2ec-c52ce2d8cf79",
+    "contactId": "9660d7b7-8082-4b17-9fe1-9bb927a12d16",
+    "org_count": 10,
+    "org_ids": [
+      "b1a5c85a-7abd-434a-9ff4-4bbcf0bc033f",
+      "1b86e4c1-1851-4794-a7e2-86c61d21f901",
+      "e82a0c96-0451-49cd-9991-c73d40718e3e",
+      "27f430a9-2ed4-40a2-9487-e81644e89c26",
+      "fd31f8bb-3504-4d06-82d1-8407126cd509",
+      "b57bd6b0-ec22-46ed-9eaf-633a41e5cd1a",
+      "e261d447-54d5-4ff8-95e8-4d48e6d0c478",
+      "036b27d1-8bd0-4b9e-8dea-6b4ab5f4be7a",
+      "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
+      "57559b0e-8919-4492-a49c-2d3d3e5fd88e"
+    ]
   }
 }
