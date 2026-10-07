@@ -1,7 +1,7 @@
 {
   ".claude/agents/ba-doc-writer.md": 35412,
   ".claude/agents/ba-story-writer.md": 25409,
-  ".claude/agents/ba-system-analyzer.md": 34733,
+  ".claude/agents/ba-system-analyzer.md": 34701,
   ".claude/agents/qa-lead-orchestrator.md": 29754,
   ".claude/agents/qa-testing-expert.md": 19270,
   ".claude/agents/regression-orchestrator.md": 28807,
