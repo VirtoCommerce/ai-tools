@@ -463,6 +463,7 @@ export function loopRecord(line) {
     return {
       at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
       ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
+      ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
     };
   }
   if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') {

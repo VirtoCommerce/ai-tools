@@ -724,10 +724,13 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
   // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
   // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
-  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
+  // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
+  // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
+  // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : verify ? { verify: true } : {};
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
@@ -1159,7 +1162,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
     };
     walk(row);
-    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show) and ${kind} it` : ' and has no active successor'}` };
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
@@ -1179,8 +1182,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
     return {
       state: 'invalid',
-      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ''}`
-        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ''}\`; then ${kind} it if its body says what you saw`,
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ' with verify'}`
+        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ' --verify'}\`; then ${kind} it if its body says what you saw`,
     };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };

@@ -82,8 +82,9 @@ export function pointersByAsk(records) {
     // a pick -- exactly what the confirm gate's advice to open an entry would trigger. Re-opening a
     // rejected list takes its handle (`--ask`). A list already picked from still takes a second pick:
     // "open A, not it; open B" must end with B.
+    // A `verify` open (made to read an entry before confirming or disputing it) is not a choice.
     const target = r.after ? String(r.after)
-      : (r.kind === 'show' && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
+      : (r.kind === 'show' && !r.verify && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
         && lastWord(pointed.get(String(latestAsk.at))).verdict !== 'none' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
@@ -102,15 +103,20 @@ export function pointersByAsk(records) {
     if (id) disputes.set(String(id).toUpperCase(), [...(disputes.get(String(id).toUpperCase()) ?? []), r.at]);
   }
   if (disputes.size) {
-    // Only a show that answered: a journal record of a failed show carries no id, a log line does, and
-    // hook and report must pick the same open.
-    const shows = [...pointed.values()].flat().filter((r) => r.kind === 'show' && r.state === 'answer' && r.id);
+    // Every OPEN of the entry, paired or not -- a show that answered, or an ask that printed its body --
+    // so the open a dispute follows is found even when it was a direct or `verify` show, or an answer:
+    // then no list loses a pick. Only a show that answered: a journal record of a failed show carries no
+    // id, a log line does, and hook and report must pick the same open.
+    const opens = [];
+    for (const r of sorted) {
+      if (r.kind === 'show' && r.state === 'answer' && r.id) opens.push({ id: String(r.id).toUpperCase(), at: r.at, rec: r });
+      else if (r.kind === 'ask' && Array.isArray(r.opened)) for (const o of r.opened) opens.push({ id: String(o).toUpperCase(), at: r.at, rec: null });
+    }
     const opened = new Set();
     for (const [id, ats] of disputes) {
       for (const d of ats) {
-        const before = shows.filter((r) => String(r.id).toUpperCase() === id && r.at < d)
-          .reduce((m, r) => (!m || r.at > m.at ? r : m), null);
-        if (before) opened.add(before);
+        const before = opens.filter((o) => o.id === id && o.at < d).reduce((m, o) => (!m || o.at > m.at ? o : m), null);
+        if (before?.rec) opened.add(before.rec);
       }
     }
     const isDisputed = (r) => opened.has(r);
