@@ -129,7 +129,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
    (Step 0.3); a new build posts a new comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
-   `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in
+   `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture`
+   (`.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in
    `summary.json.report.kb`, then re-run `npm run summary:validate`.
 8. **Chat.** The verdict line, the page link, the `verdict.md` path, the bug links. Nothing else.

@@ -306,11 +306,23 @@ function panelRefusals(p) {
       the base rejected as malformed &mdash; a missing field, an unusable anchor, no scope &mdash;
       ${esc(p.atDoorRetried)} of them retried and landed. Not a duplicate: nothing was re-discovered,
       the write itself was wrong.</p>
+    ${p.door?.attempts ? doorBlock(p.door) : ''}
     ${p.atDoor.length ? table(['what was written', 'why', 'problem kind', 'retried', 'session', 'when'], p.atDoor.map((r) => [
     `<span class="q">${esc(r.subject)}</span>`, esc(r.why), esc(r.problems.join(', ')),
-    r.retried ? 'yes' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
+    r.pairedBy === 'subject' ? 'yes' : r.pairedBy === 'ask' ? 'likely' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
   ])) : ''}
   </section>`;
+}
+
+/** The door's own numbers (VCST-6156): refused per attempt, first-attempt success, abandoned, by door and person. */
+function doorBlock(d) {
+  const split = (o) => Object.entries(o).sort((a, b) => b[1].attempts - a[1].attempts)
+    .map(([k, v]) => [esc(k), esc(v.attempts), esc(v.refused), esc(pct(v.refused / v.attempts))]);
+  return `<p class="metric"><strong>Door:</strong> ${esc(d.refused)} of ${esc(d.attempts)} capture attempt(s)
+      refused = ${esc(pct(d.rate))}; first-attempt success ${esc(pct(d.firstAttempt))};
+      ${d.abandoned ? `<strong class="bad">${esc(d.abandoned)} fact(s) abandoned</strong>` : '0 facts abandoned'}${d.pairedByAsk ? ` (${esc(d.pairedByAsk)} refusal(s) <em>likely</em> retried under a reworded subject: matched only by the ask they followed)` : ''}.</p>
+    ${table(['door', 'attempts', 'refused', 'rate'], split(d.byDoor))}
+    ${table(['who', 'attempts', 'refused', 'rate'], split(d.byWho))}`;
 }
 
 function panelReach(p) {
@@ -505,6 +517,12 @@ export function renderText(report) {
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
     + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
+  const d = p.refusals.door;
+  if (d?.attempts) {
+    const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
+    out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`);
+  }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:
   // a machine with no `Stop` hook registered has not measured a reach of zero, it has not measured.

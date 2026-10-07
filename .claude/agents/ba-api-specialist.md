@@ -162,7 +162,7 @@ Check for these issues:
 - Missing error case tests (4xx, 5xx)
 
 ### 5. BANK — close-out
-For each platform behaviour your output states: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in `kb_entries`.
+For each platform behaviour your output states: matched ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (anchor = the request, never a label: `.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in `kb_entries`.
 
 ---
 
