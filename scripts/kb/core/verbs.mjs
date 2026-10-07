@@ -1164,6 +1164,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
   // it, the list's handle included when a list showed it. Nothing is logged: nothing was written.
+  // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
+  // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
+  // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
   const journal = readLoop(env);
   if (!openedIds(journal).has(row.id.toUpperCase())) {
     const h = askThatShowed(journal, row.id);
