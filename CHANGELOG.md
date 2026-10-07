@@ -8,6 +8,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
+## `vc-frontend`: merging upstream vc-frontend into a theme fork — catalog `0.12.0`, `vc-frontend` `0.1.0` — 2026-10-07
+
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with one skill, `merge-upstream`. It brings
+upstream `VirtoCommerce/vc-frontend` — its `dev` or a release tag — into a fork such as vc-frontend-next or a
+customer's theme: the fork keeps its markup, styles and tokens, upstream's behavior is carried into them, every
+conflict is briefed to the user before it is resolved, and the PR lands as a merge commit so the next upstream
+merge starts from the right base.
+
+---
+
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
 
 **Added: the `vc-secrets` plugin** (`defaultEnabled: false`). An MCP entry calls the launcher instead of
