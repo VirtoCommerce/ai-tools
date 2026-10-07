@@ -21,7 +21,8 @@ import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from 
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus, readQueue, sessionId,
+  DISABLED_WHY, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  readQueue, sessionId,
 } from './queue.mjs';
 import { askThatShowed, openedIds } from './loop.mjs';
 import { cachedWho } from './who.mjs';
@@ -870,16 +871,19 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  */
 async function openedThisSession({ env }) {
   const { lines } = await readQueue({ env });
-  const out = [];
-  const seen = new Set();
+  // The journal first: it outlives the queue's flush at every `Stop`, so it is the only place an open
+  // from an earlier turn of the session still is (VCST-6191). The queue adds what the journal may have
+  // lost -- its append is best-effort.
+  const out = openedIds(readLoop(env));
+  const seen = new Set(out.map((id) => id.toUpperCase()));
   for (let i = lines.length - 1; i >= 0; i -= 1) {
     const l = lines[i];
     const ids = l.kind === 'ask' ? (l.opened ?? [])
       : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
         : [];
     for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id)) continue;
-      seen.add(id);
+      if (typeof id !== 'string' || seen.has(id.toUpperCase())) continue;
+      seen.add(id.toUpperCase());
       out.push(id);
     }
   }
@@ -1167,9 +1171,11 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
   // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
   // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
-  const journal = readLoop(env);
-  if (!openedIds(journal).has(row.id.toUpperCase())) {
-    const h = askThatShowed(journal, row.id);
+  // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
+  if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
+  const read = new Set((await openedThisSession({ env })).map((rid) => rid.toUpperCase()));
+  if (!read.has(row.id.toUpperCase())) {
+    const h = askThatShowed(readLoop(env), row.id);
     return {
       state: 'invalid',
       why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ''}`

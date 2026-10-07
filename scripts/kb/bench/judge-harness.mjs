@@ -234,6 +234,9 @@ function parseArgs(argv) {
     else throw new Error(`unknown argument ${k}`);
   }
   if (a.out) a.out = resolve(a.out);
+  // floor-1 renders hits with bodies and no `says:` line, and only `items` renders at all: a flag
+  // accepted and ignored there would make arm B silently identical to arm A.
+  if (a.noSays && (a.verb !== 'items' || a.decider === 'floor-1')) throw new Error('--no-says applies to `items` with the verdict ranker only');
   return a;
 }
 

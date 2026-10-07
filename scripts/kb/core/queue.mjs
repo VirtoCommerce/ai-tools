@@ -430,9 +430,9 @@ export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env),
  *
  * IDS, SINCE VCST-6191: an ask records the entries it showed (`shown`, an `ambiguous` list) and the
  * bodies it printed (`opened`), a `show` the entry it opened (`id`). `kb confirm` / `kb dispute` read
- * them to refuse an entry this session never opened (`loop.mjs` `openedIds`): on 2026-10-06, 7 of 20
- * unclosed lists were followed by a confirm of an entry the agent had seen only as a list excerpt.
- * The queue cannot answer that -- it is flushed at every `Stop`.
+ * them to refuse an entry this session never opened (`loop.mjs` `openedIds`): on 2026-10-06 agents
+ * confirmed entries they had seen only as a list excerpt (VCST-6191). The queue alone cannot answer
+ * that -- it is flushed at every `Stop` -- so the gate reads both.
  *
  * A WRITE is a line that queued something -- a `capture` / `confirm` / `dispute` carrying its
  * `payload` -- or a dedup refusal (the base already holds the fact). A confirm the base could not be
@@ -468,7 +468,9 @@ export function loopRecord(line) {
 async function noteLoop(env, line) {
   const rec = loopRecord(line);
   if (!rec) return;
-  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* a lost record costs a reminder, never the line */ }
+  // A lost record costs a reminder, never the line -- and no false confirm refusal while the queue
+  // still holds the `show`, because the gate reads the queue too (`verbs.mjs` `openedThisSession`).
+  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* see above */ }
 }
 /** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
 export function readLoop(env = process.env, session = sessionId(env)) {

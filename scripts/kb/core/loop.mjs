@@ -19,8 +19,8 @@
 //
 // STRICT FOR AN UNCLOSED LIST (VCST-6191). An `ambiguous` list is closed by a choice -- `kb_show` or
 // `kb_none` -- and by nothing else. A later confirm or capture used to close it too, which silenced the
-// reminder in exactly the case it exists for: on 2026-10-06, 13 of 20 unclosed lists were followed by a
-// write, the agent having worked from the list excerpt. `report-analyse.mjs` `resolveVerdicts` already
+// reminder in exactly the case it exists for: on 2026-10-06 (`kb:report`, lists panel) 17 of 38 lists
+// were left unclosed and 12 of those were written about anyway, from the list excerpt. `report-analyse.mjs` `resolveVerdicts` already
 // read such an ask as `unclosed`; hook and report now read it one way. A list closed by `kb_none` is a
 // miss again, and a later write closes it like any miss.
 
@@ -114,17 +114,24 @@ export function openLoops(journal, { reminded = [] } = {}) {
 }
 
 /**
- * The entries this session has OPENED -- read the body of -- from its journal: a `show` that answered,
- * and an ask that printed bodies (`opened`). An id seen only in an `ambiguous` list (`shown`) is not
- * opened. Upper-cased, as ids are compared everywhere. `kb confirm` / `kb dispute` refuse anything else
- * (VCST-6191): a confirmation raises the entry's trust for every later reader, so it rests on the
- * whole entry, not on the line a list printed about it.
+ * The entries this session has OPENED -- read the body of -- from its journal, newest first: a `show`
+ * that answered, and an ask that printed bodies (`opened`). An id seen only in an `ambiguous` list
+ * (`shown`) is not opened. `verbs.mjs` `openedThisSession` joins this with the queue; `kb confirm` /
+ * `kb dispute` refuse anything outside it (VCST-6191): a confirmation raises the entry's trust for every
+ * later reader, so it rests on the whole entry, not on the line a list printed about it.
  */
 export function openedIds(journal) {
-  const out = new Set();
-  for (const r of Array.isArray(journal) ? journal : []) {
-    if (r?.kind === 'show' && r.state === 'answer' && r.id) out.add(String(r.id).toUpperCase());
-    if (r?.kind === 'ask' && Array.isArray(r.opened)) for (const id of r.opened) out.add(String(id).toUpperCase());
+  const out = [];
+  const seen = new Set();
+  const list = Array.isArray(journal) ? journal : [];
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const r = list[i];
+    const ids = r?.kind === 'show' && r.state === 'answer' && r.id ? [r.id]
+      : r?.kind === 'ask' && Array.isArray(r.opened) ? r.opened : [];
+    for (const id of ids) {
+      const key = String(id).toUpperCase();
+      if (!seen.has(key)) { seen.add(key); out.push(String(id)); }
+    }
   }
   return out;
 }
@@ -163,7 +170,15 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
       : `- "${clip(l.q)}"`);
   }
   if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more`);
-  lines.push(`If you or a subagent established any of these live, kb_capture it now (contract: ${contract}). `
-    + 'If you did not establish it, say so in one line and finish. Each question is raised once.');
+  // A list is closed by a choice, never by a write (VCST-6191): asking the agent to capture it again
+  // would turn a list it already wrote about into a duplicate entry. The capture line is for misses.
+  if (loops.some((l) => l.why === 'unresolved')) {
+    lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
+  }
+  if (loops.some((l) => l.why !== 'unresolved')) {
+    lines.push(`If you or a subagent established a question with no answer live, kb_capture it now (contract: ${contract}). `
+      + 'If you did not establish it, say so in one line and finish.');
+  }
+  lines.push('Each question is raised once.');
   return lines.join('\n');
 }

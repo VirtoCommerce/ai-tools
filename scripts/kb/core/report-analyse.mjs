@@ -1220,7 +1220,8 @@ export function doors(lines) {
  * or a capture whose `after` names the ask -- the agent worked from the list's excerpt and wrote anyway,
  * the case the confirm gate exists for. "Any later write" was measured first and is no signal: on
  * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
- * 17 there, which no session-level number shows.
+ * 17 there, which no session-level number shows. (The ticket counted 20: it left a handle-less `show`
+ * unpaired, where `pointersByAsk` pairs it with the latest list.)
  */
 export function lists(lines) {
   const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
@@ -1228,7 +1229,8 @@ export function lists(lines) {
   for (const l of lines) {
     if (l.kind !== 'confirm' && l.kind !== 'dispute' && l.kind !== 'capture') continue;
     const s = l._session ?? '';
-    writes.set(s, [...(writes.get(s) ?? []), l]);
+    if (!writes.has(s)) writes.set(s, []);
+    writes.get(s).push(l);
   }
   const wroteAbout = (a) => {
     const shown = new Set((a.shown ?? []).map((id) => String(id).toUpperCase()));
