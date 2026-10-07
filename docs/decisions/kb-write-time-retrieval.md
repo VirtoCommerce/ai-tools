@@ -676,6 +676,10 @@ new: every real ask on base main from 2026-10-06 to `f11d658`, labelled like log
   sessions captured on the day they asked. It measures choosing among close entries, not coverage. Its labels'
   `partial` reading was ambiguous in the brief (one entry vs several together), and the adjudicator chose
   "several together".
+- **Held-out splits spent.** This A/B opened the wave2 and wave3 test splits and the new live1006 set
+  (`.test-openings.jsonl`) and publishes per-row outcomes above, so none of them is blind for the next
+  ranker gate: that gate needs fresh held-out rows (asks logged after 2026-10-07). logs300's test split
+  was not opened.
 - Not changed after the first run: rule, sets, ranker, base. The picker brief gained one line after batch 3
   of 9 (read the whole `kb show` output, no `head`/`grep`), for both arms alike.
 

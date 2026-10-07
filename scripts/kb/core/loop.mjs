@@ -87,6 +87,23 @@ export function pointersByAsk(records) {
         && lastWord(pointed.get(String(latestAsk.at))).verdict !== 'none' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
+  // OPENED TO DISPUTE IS NOT A PICK (VCST-6191 review). The confirm gate makes an agent open an entry
+  // before it may dispute it, and it opens it from the list it came from -- so without this, the list
+  // would read "answered by X" in the very pairs M6 learns from, right after the agent found X wrong.
+  // A show whose entry the session disputes LATER is read as `none` at that moment: the list held no
+  // answer the agent could stand on. Disputes come from a log line (`dispute` + `id`) or a journal
+  // `write` that names `disputed`; a failed dispute (a `state`, nothing written) does not count.
+  const disputes = new Map();
+  for (const r of sorted) {
+    const id = r.kind === 'dispute' && r.id && !r.state ? r.id : r.kind === 'write' && r.disputed ? r.disputed : null;
+    if (id) disputes.set(String(id).toUpperCase(), [...(disputes.get(String(id).toUpperCase()) ?? []), r.at]);
+  }
+  if (disputes.size) {
+    for (const [at, recs] of pointed) {
+      pointed.set(at, recs.map((r) => (r.kind === 'show' && r.id
+        && (disputes.get(String(r.id).toUpperCase()) ?? []).some((d) => d > r.at) ? { ...r, kind: 'none', disputed: true } : r)));
+    }
+  }
   return pointed;
 }
 

@@ -170,8 +170,7 @@ Write step (close-out):
 
 ```
 N. **Bank what the run established** — for each platform behaviour your output states: matched an
-   entry you opened ⇒ `mcp__kb__kb_confirm`, contradicted one ⇒ `kb_dispute` (a listed entry:
-   `kb_none` its list, then `kb_show` it), base held nothing ⇒ `kb_capture` (CLI:
+   entry you opened ⇒ `mcp__kb__kb_confirm`, contradicted one ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
    `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
    `.claude/knowledge/execution/kb-capture-contract.md`. Public base. List the ids in your output.
 ```

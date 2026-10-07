@@ -28,7 +28,7 @@ Close each list it returns by its ask handle: `kb_show` the entry you rely on, o
 On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
 observation) and before every capture.
 At close-out, for each platform behaviour you report: matched an entry you opened ⇒ `kb_confirm`,
-contradicted one ⇒ `kb_dispute` (a listed entry: `kb_none` its list, then `kb_show` it), nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
+contradicted one ⇒ `kb_dispute`, nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
 
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only
