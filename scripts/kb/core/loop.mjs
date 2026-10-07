@@ -78,12 +78,13 @@ export function pointersByAsk(records) {
   for (const r of sorted) {
     if (r.kind === 'ask') { latestAsk = r; continue; }
     if (r.kind !== 'show' && r.kind !== 'none') continue;
-    // ...and only while that list is still OPEN: a handle-less show after the agent closed it would
-    // otherwise rewrite its `kb_none` into a pick -- exactly what the confirm gate's advice to open an
-    // entry would trigger. Re-opening a closed list takes its handle (`--ask`), deliberately.
+    // ...and never after the agent said `kb_none` on it: a handle-less show would rewrite that none into
+    // a pick -- exactly what the confirm gate's advice to open an entry would trigger. Re-opening a
+    // rejected list takes its handle (`--ask`). A list already picked from still takes a second pick:
+    // "open A, not it; open B" must end with B.
     const target = r.after ? String(r.after)
       : (r.kind === 'show' && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
-        && lastWord(pointed.get(String(latestAsk.at))).verdict === 'open' ? String(latestAsk.at) : null);
+        && lastWord(pointed.get(String(latestAsk.at))).verdict !== 'none' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
   return pointed;

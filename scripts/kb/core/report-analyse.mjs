@@ -1255,9 +1255,17 @@ export function lists(lines) {
     }
     by.set(key, row);
   }
+  // THE CONFIRM GATE (VCST-6191): evidence refused because the session never opened the entry, and
+  // what followed -- the same session confirmed or disputed that id later (it opened it, as told), or
+  // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door.
+  const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
+  const landed = refused.filter((r) => (writes.get(r._session ?? '') ?? []).some((w) => w.kind !== 'capture'
+    && String(w.at) > String(r.at) && String(w.id ?? '').toUpperCase() === String(r.id ?? '').toUpperCase()));
+  const gate = { refused: refused.length, landed: landed.length, abandoned: refused.length - landed.length };
   const share = (r) => (r.asks ? r.unclosed / r.asks : null);
   return {
     ...total,
+    gate,
     unclosedShare: share(total),
     rows: [...by.values()].map((r) => ({ ...r, unclosedShare: share(r) }))
       .sort((a, b) => b.unclosed - a.unclosed || b.asks - a.asks || String(a.agent ?? '').localeCompare(String(b.agent ?? ''))),

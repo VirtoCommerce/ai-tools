@@ -426,6 +426,8 @@ function panelLists(p) {
       list's excerpt rather than from an entry.</p>
     <p class="metric"><strong>${esc(p.unclosed)}</strong> of <strong>${esc(p.asks)}</strong> list(s) unclosed
       (${esc(share(p))}); ${esc(p.show)} opened, ${esc(p.none)} closed by none, ${esc(p.wroteAfter)} written after unclosed.</p>
+    ${p.gate?.refused ? `<p class="metric">Confirm gate: <strong>${esc(p.gate.refused)}</strong> confirm/dispute refused as
+      not opened; ${esc(p.gate.landed)} later landed on the same entry, ${esc(p.gate.abandoned)} never did.</p>` : ''}
     ${body.length ? table(['agent', 'lists', 'opened', 'none', 'unclosed', 'unclosed share', 'wrote after'], body)
     : empty('No ambiguous ask in this window.')}
   </section>`;
@@ -565,6 +567,9 @@ export function renderText(report) {
       .map((r) => `${r.agent ?? 'unattributed'} ${r.unclosed}/${r.asks}`).join(', ');
     out.push(`  lists          ${p.lists.unclosed}/${p.lists.asks} unclosed = ${pct(p.lists.unclosedShare)}`
       + ` (${p.lists.show} opened, ${p.lists.none} none, ${p.lists.wroteAfter} written after unclosed)${worst ? `; ${worst}` : ''}`);
+  }
+  if (p.lists?.gate?.refused) {
+    out.push(`  confirm gate   ${p.lists.gate.refused} refused as not opened; ${p.lists.gate.landed} landed later, ${p.lists.gate.abandoned} abandoned`);
   }
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
