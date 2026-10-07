@@ -88,46 +88,8 @@ export function pointersByAsk(records) {
         && lastWord(pointed.get(String(latestAsk.at))).verdict !== 'none' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
-  // OPENED TO DISPUTE IS NOT A PICK (VCST-6191 review). The confirm gate makes an agent open an entry
-  // before it may dispute it, and it opens it from the list it came from -- so without this, the list
-  // would read "answered by X" in the very pairs M6 learns from, right after the agent found X wrong.
-  // The open a dispute was made AFTER -- the latest show of that entry before it, one per dispute -- is
-  // dropped from its ask's pointers; if no other pick is left, the ask reads `none` from that open. Only
-  // that one: an earlier pick of the same entry, hours before and for another question, still stands.
-  // Dropped rather than rewritten in place, so a real pick made before it (`show A`, `show B`,
-  // `dispute B`) still stands too. Disputes come from a log line (`dispute` + `id`) or a
-  // journal `write` that names `disputed`; a failed dispute (a `state`, nothing written) does not count.
-  const disputes = new Map();
-  for (const r of sorted) {
-    const id = r.kind === 'dispute' && r.id && !r.state ? r.id : r.kind === 'write' && r.disputed ? r.disputed : null;
-    if (id) disputes.set(String(id).toUpperCase(), [...(disputes.get(String(id).toUpperCase()) ?? []), r.at]);
-  }
-  if (disputes.size) {
-    // Every OPEN of the entry, paired or not -- a show that answered, or an ask that printed its body --
-    // so the open a dispute follows is found even when it was a direct or `verify` show, or an answer:
-    // then no list loses a pick. Only a show that answered: a journal record of a failed show carries no
-    // id, a log line does, and hook and report must pick the same open.
-    const opens = [];
-    for (const r of sorted) {
-      if (r.kind === 'show' && r.state === 'answer' && r.id) opens.push({ id: String(r.id).toUpperCase(), at: r.at, rec: r });
-      else if (r.kind === 'ask' && Array.isArray(r.opened)) for (const o of r.opened) opens.push({ id: String(o).toUpperCase(), at: r.at, rec: null });
-    }
-    const opened = new Set();
-    for (const [id, ats] of disputes) {
-      for (const d of ats) {
-        const before = opens.filter((o) => o.id === id && o.at < d).reduce((m, o) => (!m || o.at > m.at ? o : m), null);
-        if (before?.rec) opened.add(before.rec);
-      }
-    }
-    const isDisputed = (r) => opened.has(r);
-    for (const [at, recs] of pointed) {
-      const dropped = recs.filter(isDisputed);
-      if (!dropped.length) continue;
-      const kept = recs.filter((r) => !isDisputed(r));
-      if (lastWord(kept).verdict !== 'picked') kept.push({ at: dropped[0].at, kind: 'none', disputed: true });
-      pointed.set(at, kept);
-    }
-  }
+  // NO TIMING RULE FOR DISPUTES (VCST-6191): an open made only to read an entry before confirming or
+  // disputing it says so (`verify`) and never pairs, so a pick is what the agent chose, nothing inferred.
   return pointed;
 }
 

@@ -262,7 +262,7 @@ the doer's output artifact and where it lives.
 - **Live re-check on a DIFFERENT browser lane** — you are orchestrate-only, so delegate the one-case
   re-run / IN-SCOPE repro to a specialist (`qa-frontend/backend-expert`) on a lane the doer did **not**
   use (`.claude/rules/agents.md` browser assignments). Never re-use the doer's browser/session/state.
-- **KB:** `mcp__kb__kb_ask` "<coordinate> …" first; close each list by handle (`kb_show`/`kb_none`), then confirm/dispute/capture (`CLAUDE.md` §Product context).
+- **KB:** `mcp__kb__kb_ask` / `npm run kb -- ask`, close each list by handle (`kb_show`/`kb_none`), then confirm/dispute/capture (`CLAUDE.md` §Product context).
 
 **Verdict (end of reply):**
 ```

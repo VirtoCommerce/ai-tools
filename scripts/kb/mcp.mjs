@@ -349,7 +349,7 @@ async function callTool(name, args, ctx) {
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true || args?.verify === 'true' });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_none': {

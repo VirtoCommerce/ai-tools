@@ -466,10 +466,7 @@ export function loopRecord(line) {
       ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
     };
   }
-  if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') {
-    // A dispute names its entry: a pick of that entry is read as `none` (`loop.mjs` `pointersByAsk`).
-    return { at, kind: 'write', ...(line.kind === 'dispute' && line.id ? { disputed: String(line.id) } : {}) };
-  }
+  if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
   return null;
 }
 async function noteLoop(env, line) {

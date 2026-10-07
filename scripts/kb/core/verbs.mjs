@@ -1164,6 +1164,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     walk(row);
     return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
+  if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
+  if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
@@ -1178,16 +1180,16 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // show in one command could never satisfy the confirm in the next. The gate guards agents.
   const journal = hasSessionId(env) ? readLoop(env) : [];
   if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
-    const h = askThatShowed(journal, row.id);
+    // A confirm may take the list's handle -- the agent relies on the entry, which is a pick. A dispute
+    // never does: opening an entry to contradict it is not a choice from any list, so it is a `verify` open.
+    const h = kind === 'confirm' ? askThatShowed(journal, row.id) : null;
     await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
     return {
       state: 'invalid',
       why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ' with verify'}`
-        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ' --verify'}\`; then ${kind} it if its body says what you saw`,
+        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ' --verify'}\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
     };
   }
-  if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
-  if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
 
   const item = {
     method: input.method ?? 'observation',

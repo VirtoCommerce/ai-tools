@@ -1336,8 +1336,7 @@ export function resolveVerdicts(lines) {
   // classified one ask two ways (PR #400 review).
   const bySession = new Map();
   for (const l of lines) {
-    // `dispute` too: a pick of an entry the session then disputes is read as `none` (`pointersByAsk`).
-    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none' && l.kind !== 'dispute') continue;
+    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none') continue;
     const s = l._session ?? '';
     if (!bySession.has(s)) bySession.set(s, []);
     bySession.get(s).push(l);
