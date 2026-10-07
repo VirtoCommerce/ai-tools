@@ -2295,6 +2295,30 @@
       "customerApplicability": "reference"
     },
     {
+      "id": "066b",
+      "name": "SEO Debug SEO links (explain)",
+      "file": "regression/suites/Backend/seo/066b-seo-explain.csv",
+      "domain": "branding",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 9,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "seo",
+        "explain",
+        "debug-seo-links",
+        "candidates",
+        "broken-links"
+      ],
+      "requiresModules": [
+        "seo"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference"
+    },
+    {
       "id": "067",
       "name": "Whitelabeling Admin",
       "file": "regression/suites/Backend/whitelabeling/067-whitelabeling-admin.csv",
