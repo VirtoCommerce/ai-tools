@@ -129,8 +129,8 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    - then re-run `--teardown` on a throwaway pass to prove zero-residue symmetry (`verifyRemoved`),
      re-seed if the data is meant to persist for the run.
    - **BANK** what the live run established about the platform (not about your script): matched ⇒
-     `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture`
-     (`--deployment <env>`, nothing client-specific). List the ids in your report
+     `kb_confirm`, contradicted ⇒ `kb_dispute`, unrecorded ⇒ `kb_capture`
+     (`.claude/knowledge/execution/kb-capture-contract.md`, nothing client-specific). List the ids in your report
      (`knowledge/agents/authoring-standard.md` §5).
 7. **Delegate ONLY the browser part.** Hand off to `qa-backend-expert` / `qa-frontend-expert` the
    storefront/Admin-SPA rendering check or the full suite run against the seeded env — the only steps

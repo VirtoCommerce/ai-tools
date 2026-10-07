@@ -53,6 +53,7 @@ import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
+import { DEPLOYMENT_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
@@ -123,6 +124,8 @@ export const TOOLS = Object.freeze([
       + 'instead ("close entries, none certified to answer"): open the one most likely to state your fact with '
       + 'kb_show, passing the printed ask handle, and rely on it only if its BODY states the fact; if none could, '
       + 'call kb_none with the handle, then go find out and kb_capture. Being about the same page or feature is not an answer. '
+      + 'Every listed ask ENDS in one of the two -- a kb_show pick or a kb_none -- before you move on: an ask left with '
+      + 'neither is recorded as unresolved, nobody can tell whether the base helped, and the session is reminded of it at the end of your turn. '
       + 'Says plainly when the base was read and holds nothing (go find out, then kb_capture) and when it could '
       + 'NOT be read (conclude nothing; retry) — these are different answers and never look alike. '
       + 'Name the deployment you are working against, if you know it: the same behaviour differs between stands, '
@@ -185,8 +188,9 @@ export const TOOLS = Object.freeze([
         subject: str('One line, the fact itself, as a claim — not a topic.'),
         question: str('The question this entry answers, phrased as somebody would ask it.'),
         claim: str('The observation in prose: what you did, what happened, and what follows.'),
-        deployment: str('Where you observed it, e.g. vcst_qa, vcptcore_stable.'),
-        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one.' },
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
+        anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one. '
+          + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: str('How it was established. Default "observation".'),
         topic: TOPIC,
@@ -203,7 +207,7 @@ export const TOOLS = Object.freeze([
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed it.'),
+        deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
         topic: TOPIC,
       },
@@ -219,7 +223,7 @@ export const TOOLS = Object.freeze([
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
-        deployment: str('Where you observed the contradiction.'),
+        deployment: str(`Where you observed the contradiction: ${DEPLOYMENT_SOURCE}.`),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
         topic: TOPIC,
       },

@@ -181,6 +181,30 @@ export function findMarkerProblems(addressRows) {
   return errs;
 }
 
+/**
+ * Static guard for the address DESCRIPTION — the label the storefront's Select-address table and
+ * /company/info render (REG-2026-10-02-2022 CHK-035: every Description cell empty). CHK-035 tells
+ * addresses apart BY that column, so for org-level rows (the seeder's scope) it must be non-empty and
+ * unique within the org — two equal labels make "picked the right address" undecidable (SECOND RULE).
+ * Returns [] when every org row is labelled distinctly.
+ */
+export function findDescriptionProblems(addressRows) {
+  const errs = [];
+  const seen = new Map(); // org_id → Map(lowercased description → address_id)
+  for (const r of addressRows || []) {
+    if (!r.org_id || r.contact_id) continue;
+    const id = String(r.address_id ?? '').trim();
+    const d = String(r.description ?? '').trim();
+    if (!d) { errs.push(`${id} (${r.org_id}): empty description — CHK-035 reads the Description column`); continue; }
+    if (!seen.has(r.org_id)) seen.set(r.org_id, new Map());
+    const org = seen.get(r.org_id);
+    const k = d.toLowerCase();
+    if (org.has(k)) errs.push(`${id} (${r.org_id}): description "${d}" duplicates ${org.get(k)} in the same org`);
+    else org.set(k, id);
+  }
+  return errs;
+}
+
 /* ── Region code → display name ───────────────────────────────────────────────
  * The platform address model wants regionId = the subdivision CODE and regionName = the human
  * NAME; the `state` column in addresses.csv carries the CODE. Fixes the VCST-5304 D2 systematic
