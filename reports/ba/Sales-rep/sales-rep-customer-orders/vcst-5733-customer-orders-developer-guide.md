@@ -153,6 +153,41 @@ GraphQL errors arrive **inside a `200 OK`**, in `errors[]` — a 200 status alon
 success; check `errors[]` is empty before reading `data`. An authorization refusal on these two
 queries specifically does **not** raise an error — see the `null`/zero-row behaviour above.
 
+## Storefront: the created-date filter and the UI-kit naming props (VCST-6001)
+
+The rep's customer-orders filter (`client-app/modules/sales-rep/components/sales-rep-orders-filters.vue`)
+now renders the shared `VcDateRangePicker`. It uses `layout="split"` at 640px and above, and
+`"combined"` below 640px with `label="Date range"`. Range validity (date format, start ≤ end) is the
+picker's own, reported through `@update:valid`. The module's `invalid_range` locale key was removed.
+Only the date filter's UI changed; the query does not. Applying a range still sends local-day bounds in
+the `filter` argument, and a one-sided range omits the missing bound:
+
+```text
+filter: createddate:["2026-08-15T21:00:00.000Z" TO "2026-08-18T20:59:59.999Z"]   # 08/16–08/18 in UTC+3
+filter: createddate:["2026-07-31T21:00:00.000Z" TO]                                # Start only
+```
+
+Four optional, additive UI-kit props give controls a contextual accessible name. Without them, every
+component renders exactly as before.
+
+| Component | Prop | Fallback |
+|---|---|---|
+| `VcInput`, `VcDateInput` | `clearButtonAriaLabel` | "Clear" |
+| `VcDatePicker` | `clearButtonAriaLabel`, `calendarButtonAriaLabel` | "Clear" / "Open calendar" |
+| `VcDateRangePicker` (`split`) | builds both from each field's label | "Clear: {label}" / "Open calendar: {label}" |
+
+```vue
+<VcDatePicker v-model="date" label="Delivery date" clearable
+  calendar-button-aria-label="Open calendar: Delivery date"
+  clear-button-aria-label="Clear: Delivery date" />
+```
+
+**Selector impact for forks and tests:** a `split` range picker's calendar buttons are now named
+`Open calendar: Start date` and `Open calendar: End date`, on the storefront `/account/orders` filter too.
+An exact `[aria-label="Open calendar"]` selector no longer matches; use a prefix match
+(`[aria-label^="Open calendar"]`). The classes `.sales-rep-orders-filters__date` and
+`.sales-rep-orders-filters__separator` were removed.
+
 ## Conclusion
 
 `salesRepCustomerOrders` and `salesRepCustomerOrder` give a serving rep a membership-scoped,
