@@ -62,19 +62,53 @@ runtime by name, and a fork style or token that overrides what upstream changed.
       "fork": ["client-app/shared/layout/components/header/_internal/header-preferences-menu.vue"],
       "upstream": ["client-app/shared/layout/components/language-selector/language-selector.vue"],
       "note": "desktop language, currency and color-mode switching"
+    },
+    {
+      "fork": ["client-app/pages/demo-home/demo-home.vue"],
+      "upstream": ["client-app/pages/home.vue"],
+      "note": "the demo home replaces the page wholesale and has no login section"
+    },
+    {
+      "fork": ["client-app/shared/catalog/components/category/category-sort.vue"],
+      "upstream": [],
+      "note": "fork-only addition, replaces no upstream file"
     }
   ],
-  "ignored": [{ "upstream": "client-app/pages/home.vue", "reason": "demo-home replaces the page wholesale" }]
+  "ignored": [{ "upstream": "client-app/pages/<upstream-sample-page>.vue", "reason": "upstream's own sample page, never a storefront page; no fix to it can reach shoppers" }]
 }
 ```
 
 No map, or entries in sections D–E: read each fork component and its candidates side by side, and draft
-the entries — a fork component that only *uses* an upstream composable replaces nothing. An unrendered
-upstream file from section A maps to the fork component that took its place, or goes to `ignored` with
-a reason, or, when nothing took its place, is a **lost feature**. The drafted entries go in the brief;
-the map is committed with the port.
+the entries — a fork component that only *uses* an upstream composable replaces nothing. A fork-only
+file goes in `replacements` with `"upstream": []`. An unrendered upstream file from section A maps to
+the fork component that took its place, or, when nothing took its place, is a **lost feature** and stays
+unmapped. The drafted entries go in the brief; the map is committed with the port.
+
+**`ignored` — rarely, and only with a reason that stays true.** An ignored file disappears from every
+section of every later report, *including the merges where upstream changes it*. Nothing reminds anyone
+it was ignored. What goes wrong:
+
+- **A replaced page gets a new feature.** `home.vue` ignored because `demo-home` replaced it: upstream
+  then adds OTP sign-in to the home login section, and no report ever shows it. Mapped as a replacement
+  instead, the change appears in section C and is triaged against `demo-home`.
+- **A dropped feature gets a fix or comes back.** An ignored ship-to selector hides upstream's later
+  fixes and redesigns — exactly the moment someone should ask whether the fork wants it back. Left
+  unmapped, it shows in section A only in a merge where upstream touched it, so it costs nothing in quiet
+  ranges.
+- **The reason expires.** "The fork has no organizations" stops being true the day it gets them; the
+  ignore entry stays and keeps hiding the file.
+
+Before ignoring, both must hold: no upstream change to the file could ever need to reach the fork's
+users, and a replacement or an unmapped entry would only be noise. Upstream's own demo or sample pages,
+and tooling the fork's build never compiles, qualify. A file the fork *replaced*, *dropped* or *might
+bring back* does not. The reason must say why no future change matters, not only why the file is
+unrendered today; re-read the `ignored` list on every merge and delete entries whose reason no longer holds.
 
 ## 3. Triage each upstream commit
+
+Read the earlier logs in `upstream-merges/` first: an upstream file a log already triaged — a lost
+feature the user deferred, an n/a with its evidence — keeps that verdict unless the new commit changes
+what it rested on. Cite the log instead of asking again.
 
 For every commit in sections A, A2, B and C read `git show <sha> -- <upstream file>` and its PR, then decide one:
 
@@ -96,13 +130,19 @@ N upstream changes the merge did not deliver: X to port, Y n/a, Z already, W los
 - ✅ port: <the change> / ➖ n/a: <evidence> / ✔ already: <evidence>
 
 ### Map
-- + <new entry> / ignored: <file> — <reason>
+- + <new entry>
+- ignored (rare): <file> — <why no future upstream change to it can matter>
 
 ### ❓ Your call
 1. <lost feature: bring it back?>
 ```
 
 Nothing is ported before the user answers.
+
+The verdicts, the map changes and the user's answers go into the session's log
+(`upstream-merges/<YYYY-MM-DD>-<ref>.md`, sections "Ports" and "Lost features and deferrals" of
+`vc-frontend:merge-upstream`'s `log-template.md`). Called from `vc-frontend:merge-upstream`, that is the
+merge's log; run alone as an audit, start a log of its own from the same template.
 
 ## 5. Port and prove it
 
@@ -114,7 +154,8 @@ Nothing is ported before the user answers.
 - Smoke the page that renders the fork's component as `vc-frontend:merge-upstream` step 7 describes,
   in the state the change is about (signed in, a breakpoint, a screen reader name via the accessibility tree).
 - Commit the ports and the map together: `fix: port upstream <ticket> to <fork component>`, one commit
-  per ticket. Add each port to the PR's QA checklist (`vc-frontend:merge-upstream` step 8).
+  per ticket. Add each port to the PR's QA checklist (`vc-frontend:merge-upstream` step 8) and to the
+  log's Ports table, with the mutation its test was checked with.
 
 ## Common mistakes
 
@@ -124,4 +165,5 @@ Nothing is ported before the user answers.
 | Mapping by file name similarity | Map by what the component does; confirm by reading both |
 | Calling a change n/a because the markup differs | Check the fork's component for the same defect |
 | Porting a lost feature unasked | Brief it; restoring a feature is the user's decision |
+| `ignored` for a replaced or dropped file | A replacement entry (section C triages it), or leave it unmapped (section A shows it when upstream changes it) |
 | Relying on upstream's test for the port | A test on the fork's component, mutation-checked |

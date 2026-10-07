@@ -14,6 +14,13 @@ styles and tokens, and carries upstream's logic, props, events, i18n keys and fi
 The merge stops twice for the user: after the brief (step 3) and before the push (step 9). Nothing is
 merged into the fork's `dev` by this skill — the user merges the PR.
 
+Every merge leaves a log in the fork: `upstream-merges/<YYYY-MM-DD>-<ref>.md`, one file per session
+(`-2` for a second one that day), next to `fork-map.json`. The PR body is gone from view once merged and
+`rerere` keeps only *how* a conflict was resolved; the log keeps *why*, the user's decisions, what was
+deferred and what QA could not reach — and the next merge reads it before asking anything. Upstream never
+has the folder and each session writes a new file, so logs cannot conflict. The first logged merge also
+adds `upstream-merges/README.md`: what the folder is, and that upstream merges land as merge commits.
+
 ## 1. Set up
 
 **Fork repository** (vc-frontend-next, a customer theme):
@@ -31,13 +38,44 @@ merged into the fork's `dev` by this skill — the user merges the PR.
 **Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
 upstream. No remote, no new branch — check the branch out and `git merge --no-ff --no-commit origin/dev`.
 
-Either way, once per clone:
+Either way, **before the merge command**, in this clone:
 
-- `git config merge.conflictStyle zdiff3` — conflict markers show the base, so each side's intent is visible.
-- `git config rerere.enabled true` — git records each resolution and replays it when the same conflict comes
-  back. Seed it from earlier merges with git's `contrib/rerere-train.sh`. A replayed resolution is still reviewed.
+```bash
+git config merge.conflictStyle zdiff3   # markers show the base, so each side's intent is visible
+git config rerere.enabled true          # record each resolution, replay it when the same conflict returns
+git config rerere.autoUpdate false      # a replay is applied to the file but not staged: someone reviews it
+git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
+```
+
+Then **seed `rerere` from the fork's earlier upstream merges**. Its cache (`.git/rr-cache`) is local and
+never pushed, so a fresh clone, or one whose cache `gc` pruned, starts empty. `rerere-train.sh` re-merges
+each merge commit in a range and records how it was resolved. It needs a clean worktree, detaches HEAD
+while it runs and switches back at the end:
+
+```bash
+T=$(ls /usr/share/doc/git/contrib/rerere-train.sh /usr/share/git-core/contrib/rerere-train.sh \
+      "$(brew --prefix 2>/dev/null)/share/git-core/contrib/rerere-train.sh" 2>/dev/null | head -1)
+# From the merge base in the oldest log's "Range" line; with no logs yet, --since="1 year ago" HEAD
+sh "$T" ^<oldest logged merge base> HEAD
+```
+
+Seeding works only because earlier upstream merges landed as merge commits: a squashed one leaves nothing
+to re-merge (step 9). If `rerere-train.sh` is not installed (it ships with git's docs on Linux and
+Homebrew, not with Git for Windows), say so and go on; the logs still carry the decisions.
 
 ## 2. Map every conflict before touching one
+
+**Read the earlier logs first** (`upstream-merges/`, newest first): every "Decisions that carry forward"
+section, and the "Lost features and deferrals" of the latest few. A conflict an earlier decision already
+settles is resolved the same way and cited in the brief (`per upstream-merges/<file>`), not asked again —
+unless upstream changed the very thing the decision rests on, which the brief then says. A missing folder
+means this is the first logged merge.
+
+**Replayed resolutions first.** The merge prints `Resolved '<file>' using previous resolution.` for each
+conflict `rerere` replayed; `git diff --name-only --diff-filter=U` still lists those files, but without
+markers. Each one is a conflict like any other: map it below and put it in the brief as
+`✅ replayed by rerere — <what the replay did>`, checked against the fork's and upstream's diffs. It is
+staged only after the brief is answered, never on the strength of the replay.
 
 Set `BASE=$(git merge-base HEAD MERGE_HEAD)` and `export LC_ALL=C` (`comm` needs the same collation as
 `sort`). For each conflicted file read the fork's change (`git diff $BASE HEAD -- <f>`), upstream's
@@ -78,11 +116,18 @@ N conflicts: X obvious, Y need you.
 ```
 
 One heading per conflict; related files share one; the hardest is marked ❗. Clean-but-risky files from
-step 2 go in as ⚠️ items.
+step 2 go in as ⚠️ items. A resolution taken from an earlier log says so: `✅ <resolution> (per
+upstream-merges/<file>)`.
+
+Start the session's log from [log-template.md](log-template.md) as soon as the user answers: the
+conflicts, the decisions and who made them. Fill it in as the later steps produce results.
 
 ## 4. Resolve and verify the build
 
-- Apply the agreed resolutions, then check for leftovers: `git diff --check`.
+- Apply the agreed resolutions, then check for leftovers: `git diff --check`. `git add` each replayed
+  file only once its replay matches what the brief agreed. If it does not, run `git rerere forget <file>`
+  (the file is left as it is) and correct it: without the `forget`, `rerere` keeps the old resolution
+  and replays it again at the next merge.
 - Run `yarn install`, any regeneration from step 2, `yarn validate:types`, `yarn lint`,
   `yarn test:unit --run`, `yarn check-locales`, `yarn build-only`.
 - A failure the merge caused is fixed in the merge commit. A failure already present on both parents is
@@ -138,14 +183,34 @@ Where: <page or component>
 Not covered by the smoke: <what needs data, a role or a device the smoke did not have>
 ```
 
-## 9. Commit, push, PR — landed as a merge commit
+## 9. Log, commit, push, PR — landed as a merge commit
 
 - Commit: `chore: merge upstream vc-frontend <ref>` (or `chore: merge dev into <branch>`), each conflict
   and its resolution in the body. Push only after the user says so.
-- PR body: the brief from step 3 with the decisions filled in, the step 4–7 results, the step 8 checklist.
-- **An upstream merge lands as a merge commit.** A squash drops upstream as a parent, so the next merge
-  starts from the old merge base and replays every conflict. The fork needs *Allow merge commits* enabled
-  and no *Require linear history* on `dev`; if either is missing, say so in the PR rather than squash it.
+- Finish the log: every section of the template, filled from steps 3–8 and the port's brief. "Decisions
+  that carry forward" holds only rules a later merge must keep, each with its reason — a fork identifier
+  that is deliberately not upstream's, a fork value kept over an upstream fix, a feature left out on
+  purpose. One-off resolutions stay in the Conflicts table. Commit it last, before the push:
+  `docs: log upstream merge <ref>`. If the user corrects a decision during the PR, update the log in the
+  same branch.
+- PR body: the brief from step 3 with the decisions filled in, the step 4–7 results, the step 8 checklist,
+  and a link to the log.
+- **An upstream merge lands as a merge commit — never squash, never rebase.** Either one drops upstream
+  as a parent: `git merge-base` stays at the old base, so the next merge replays every upstream commit and
+  every conflict of this one — and `rerere-train.sh` cannot re-seed from a squash, so a new clone gets no
+help at all. Whoever clicks Merge reads the PR, not
+  this skill, so:
+  - The PR body opens with: `⚠️ Merge with "Create a merge commit" — not squash or rebase. Squashing drops
+    <ref> as a parent and the next upstream merge replays all of these conflicts.`
+  - Check the repository before opening the PR:
+    `gh api repos/<owner>/<repo> --jq '{allow_merge_commit, allow_squash_merge, allow_rebase_merge}'` and
+    `gh api repos/<owner>/<repo>/branches/<base>/protection --jq .required_linear_history.enabled`. Merge
+    commits must be allowed and linear history off; if not, say so in the PR and to the user rather than
+    squash. When squash is allowed too — the usual case — the warning line is what prevents it.
+  - After the user merges, confirm it: `git rev-list --parents -1 <merge sha on the base branch>` prints
+    two parents, and `git merge-base origin/dev <ref>` prints the upstream commit merged. If it was
+    squashed, say so at once: the fix is a fresh merge of `<ref>`, which `rerere` and the log make cheap
+    while they are fresh.
 
 ## Common mistakes
 
@@ -157,4 +222,6 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 | Hand-merging `types.ts` or the lockfile | Regenerate |
 | Checking only the conflicted files | Also the files both sides changed, and `vc-frontend:port-upstream-to-fork` for code the fork stopped rendering |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
-| Squash-merging an upstream merge | A merge commit |
+| Squash- or rebase-merging an upstream merge | A merge commit; the PR body's first line says so |
+| Asking again what an earlier log already decided | Read `upstream-merges/` in step 2; cite the log |
+| Decisions only in the PR body or the chat | The session's log in `upstream-merges/`, committed with the merge |
