@@ -60,21 +60,11 @@ git config rerere.autoUpdate false      # a replay is applied to the file but no
 git config gc.rerereResolved 365        # default 60 days; upstream merges are often further apart
 ```
 
-Then **seed `rerere` from the fork's earlier upstream merges**. Its cache (`.git/rr-cache`) is local and
-never pushed, so a fresh clone, or one whose cache `gc` pruned, starts empty. `rerere-train.sh` re-merges
-each merge commit in a range and records how it was resolved. It needs a clean worktree, detaches HEAD
-while it runs and switches back at the end:
-
-```bash
-T=$(ls /usr/share/doc/git/contrib/rerere-train.sh /usr/share/git-core/contrib/rerere-train.sh \
-      "$(brew --prefix 2>/dev/null)/share/git-core/contrib/rerere-train.sh" 2>/dev/null | head -1)
-# From the merge base in the oldest log's "Range" line; with no logs yet, --since="1 year ago" HEAD
-sh "$T" ^<oldest logged merge base> HEAD
-```
-
-Seeding works only because earlier upstream merges landed as merge commits: a squashed one leaves nothing
-to re-merge (step 9). If `rerere-train.sh` is not installed (it ships with git's docs on Linux and
-Homebrew, not with Git for Windows), say so and go on; the logs still carry the decisions.
+`rerere` is a safety net, not a resolver: it replays a resolution only for a conflict whose text on both
+sides is identical to one already resolved in this clone. Once a merge lands as a merge commit its
+conflicts do not come back, so a replay happens when a merge is redone — aborted and restarted, a trial
+merge followed by the real one, or a squashed PR merged again. Its cache (`.git/rr-cache`) is local and
+starts empty in a fresh clone; that is fine, the logs carry the decisions.
 
 ## 2. Map every conflict before touching one
 
@@ -211,9 +201,7 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
   and a link to the log.
 - **An upstream merge lands as a merge commit — never squash, never rebase.** Either one drops upstream
   as a parent: `git merge-base` stays at the old base, so the next merge replays every upstream commit and
-  every conflict of this one — and `rerere-train.sh` cannot re-seed from a squash, so a new clone gets no
-help at all. Whoever clicks Merge reads the PR, not
-  this skill, so:
+  every conflict of this one. Whoever clicks Merge reads the PR, not this skill, so:
   - The PR body opens with: `⚠️ Merge with "Create a merge commit" — not squash or rebase. Squashing drops
     <ref> as a parent and the next upstream merge replays all of these conflicts.`
   - Check the repository before opening the PR:
@@ -223,8 +211,8 @@ help at all. Whoever clicks Merge reads the PR, not
     squash. When squash is allowed too — the usual case — the warning line is what prevents it.
   - After the user merges, confirm it: `git rev-list --parents -1 <merge sha on the base branch>` prints
     two parents, and `git merge-base origin/dev <ref>` prints the upstream commit merged. If it was
-    squashed, say so at once: the fix is a fresh merge of `<ref>`, which `rerere` and the log make cheap
-    while they are fresh.
+    squashed, say so at once: the fix is a fresh merge of `<ref>`, which `rerere` (in this same clone)
+    and the log make cheap while they are fresh.
 
 ## Common mistakes
 
