@@ -622,3 +622,68 @@ rollback and would strand the evidence written since.
 **Afterwards.** Make the card mandatory at capture (Decision 8, step 3) as its own change; settle the
 seven contradictions that need a UI/HAR check (`migration/merge/contradictions-2026-10-05.json`);
 recalibrate from the logged `show` / `none` pairs (M6) once a few hundred have accumulated.
+
+## The `ambiguous` list without its `says:` excerpt (VCST-6191 Phase 1, 2026-10-07) -- PASS under the pre-declared rule, by a narrow margin on precision
+
+On 2026-10-06, 20 of 38 real `ambiguous` lists were never closed: the agent worked from the ~200-character
+`says:` excerpt and later confirmed entries it never opened. Arm B drops that line, so the list keeps the
+subject and `answers:` (what to open) but no fact. Same method as the sections above, one variable changed:
+base `vc-knowledge` main @ `f11d658` and its `ranker.json` (verdict-1), frozen for both arms; `judge-harness.mjs
+items` (A) and `items --no-says` (B, byte-identical to A minus the `says:` lines); fresh pickers that see only
+an items batch (~38 items, opaque codes) and the one-open contract, calling the real `kb show` (synthetic,
+isolated queue, nothing pushed). Each arm twice with Sonnet-class pickers, once with Haiku-class.
+Rule, fixed in the ticket before the run: B ships if, pooled over the Sonnet runs, resolved non-partial drops
+<= 2 points, picks precision drops <= 1 point, and controls stay >= 90%.
+
+Sets (rows / `ambiguous` items; non-partial targets, partial targets, controls): logs300 dev + calibration
+208 / 203 (125, 27, 56); wave2 41 / 41 (13, 9, 19); wave3 98 / 98 (28, 36, 34); **live1006** 60 / 57 (48, 11, 1),
+new: every real ask on base main from 2026-10-06 to `f11d658`, labelled like logs300 (two independent passes,
+48/60 agreed, 12 adjudicated; `rank-labelled-set.live1006.json`). Pooled 407 / 399 (214, 83, 110).
+
+| Sonnet, two runs pooled | A: with `says:` | **B: without** | B - A | rule |
+|---|---|---|---|---|
+| picks precision | 395/419 (94.3%) | 383/410 (93.4%) | **-0.86** | >= -1 -- pass |
+| controls end in `none` | 216/220 (98.2%) | 214/220 (97.3%) | -0.9 | B >= 90% -- pass |
+| targets resolved, non-partial | 358/428 (83.6%) | 355/428 (82.9%) | **-0.70** | >= -2 -- pass |
+| targets resolved, partial | 37/166 (22.3%) | 28/166 (16.9%) | -5.4 | -- |
+| right entry opened (all targets) | 436/578 (75.4%) | 416/578 (72.0%) | -3.5 | -- |
+| entries opened per ask | 0.67 | 0.64 | | -- |
+| `none` without opening | 33.1% | 35.8% | +2.8 | -- |
+| mean tokens per ask, opened body included | 754 | **591** | -22% | -- |
+
+| per set, B - A (points) | logs300 | wave2 | wave3 | live1006 |
+|---|---|---|---|---|
+| picks precision | -1.3 | -3.7 | +0.1 | 0.0 |
+| resolved, non-partial | -0.8 | 0.0 | -7.1 | +3.1 |
+
+- **B passes all three lines.** Precision is the tight one: -0.86 against a 1-point limit, while the two B
+  runs alone differ by 1.6 points (92.6% / 94.2%) and the two A runs by 0.1. The verdict is a pass, not a
+  measured equivalence.
+- **What B loses is the partial answer.** Without the excerpt the picker more often says `none` without
+  opening (+2.8 points), which costs partial targets (-5.4) and the right open (-3.5) more than full ones.
+  wave3, the prose questions, carries most of it (-7.1 on full targets, n = 28 per run).
+- Rows the arms disagree on: 38 targets, 2 controls (`says-ab-result.json` `disagreements`). Resolved in both
+  A runs and in neither B run: `L-211` and `L-225` (push audience builder, the same entry), `L-019`
+  (configurationItems on a REST order line), `L-036` (FixedRateTaxProvider), `W3-026` (redeeming with too few
+  points), `W3-096` (order number). The reverse: `L-198` (`PUT /api/inventory/plenty`), `N-002` (legacy
+  `sharedWithId`). Split one run to the other: 15 favour A, 11 favour B.
+- **Haiku-class, sensitivity only:** precision 74.5% / 73.6%, controls 59% / 67%, resolved non-partial
+  79.0% / 81.3% (A / B). A weaker picker relies on topical entries in both arms, which already fails the
+  M4 gate on its own; dropping `says:` does not make it worse. It also reported 29 opens it never made
+  (no matching `kb show` in its own log); those reliances are scored as `none`. Sonnet pickers: 0.
+- **live1006 is weak as a held-out set.** It has one control, and many targets are answered by entries the same
+  sessions captured on the day they asked. It measures choosing among close entries, not coverage. Its labels'
+  `partial` reading was ambiguous in the brief (one entry vs several together), and the adjudicator chose
+  "several together".
+- Not changed after the first run: rule, sets, ranker, base. The picker brief gained one line after batch 3
+  of 9 (read the whole `kb show` output, no `head`/`grep`), for both arms alike.
+
+Reproduce (`<b>` a checkout of `vc-knowledge` at `f11d658`; `$q` an isolated `KB_QUEUE_DIR`):
+
+    export KB_SYNTHETIC=1 KB_NO_SWEEP=1 KB_PUSH_CONFIRM=1 KB_QUEUE_DIR=$q
+    node scripts/kb/bench/judge-harness.mjs items --base <b> --ranker <b>/ranker.json [--no-says] \
+      --set scripts/kb/bench/rank-labelled-set.logs300.json --split dev,calibration --salt 6191-logs --out <dir>
+    # wave2 / wave3 / live1006: --split test --open-test, salts 6191-w2 / 6191-w3 / 6191-live
+    node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <picks.txt>
+
+Picks per item and run, the per-run metrics and the disagreement rows: `scripts/kb/bench/says-ab-result.json`.

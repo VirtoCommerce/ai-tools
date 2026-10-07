@@ -22,6 +22,7 @@
 //           what `main` runs, end to end: floor-1 hands the agent its hits WITH their bodies and calls it an
 //           answer, so every answered ask becomes an item the agent must accept or reject, exactly like an
 //           `ambiguous` one (scored the same way); a miss needs no agent.
+//   ... items --no-says   the `ambiguous` list without its `says:` excerpt (VCST-6191 arm B; bench only)
 //   node scripts/kb/bench/judge-harness.mjs bodies --base <dir> --out <dir> --picks <file>
 //   node scripts/kb/bench/judge-harness.mjs score --out <dir> --picks <file> [--confirm <file>]
 
@@ -106,7 +107,7 @@ async function itemsFloor1({ base, splits, out, set: setFile, openTest, salt }) 
   console.log(`${key.length} rows; ${blocks.length} answered items written (the agent judges each); misses ${key.filter((k) => k.verdict === 'none').length}`);
 }
 
-async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt }) {
+async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFile, openTest, salt, noSays }) {
   if (splits.includes('test') && !openTest) throw new Error('the test split is opened once, at the gate: pass --open-test');
   const set = JSON.parse(await readFile(setFile, 'utf8'));
   const ranker = JSON.parse(await readFile(rankerFile, 'utf8'));
@@ -129,7 +130,7 @@ async function itemsVerdict({ base, ranker: rankerFile, splits, out, set: setFil
       const headlines = await Promise.all(d.entries.map(async (c) => ({
         id: c.row.id, subject: c.row.subject, separating: c.separating, question: c.row.question, body: await bodyOf(reader, c.row),
       })));
-      lines = verdictLines({ verdict: 'ambiguous', headlines });
+      lines = verdictLines({ verdict: 'ambiguous', headlines }, { says: !noSays });
       blocks.push({ code, text: [`ITEM ${code}`, `QUESTION: ${row.q}`, ...lines].join('\n') });
     } else {
       // `answer` and `none` need no agent; their rendered size still counts toward tokens per ask.
@@ -227,6 +228,7 @@ function parseArgs(argv) {
   for (let i = 0; i < rest.length; i++) {
     const k = rest[i];
     if (k === '--open-test') a.openTest = true;
+    else if (k === '--no-says') a.noSays = true;
     else if (k === '--split') a.splits = rest[++i].split(',').map((s) => s.trim()).filter(Boolean);
     else if (['--base', '--ranker', '--out', '--picks', '--confirm', '--set', '--salt', '--decider'].includes(k)) a[k.slice(2)] = rest[++i];
     else throw new Error(`unknown argument ${k}`);
