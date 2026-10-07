@@ -116,7 +116,7 @@ export function subjectTakenMessage(row, { sameSubject = true } = {}) {
     + ` at other coordinates (${anchors}).\n`
     + `  ${row.subject}\n`
     + `Read it: kb show ${row.id}\n`
-    + `Same fact? confirm it:        kb confirm ${row.id} --deployment <env>\n`
+    + `Same fact? confirm it:        kb confirm ${row.id} --deployment <stand, e.g. vcst_qa -- not the TEST_ENV value>\n`
     + 'Different fact? reword the subject so it says what is different, and capture again.';
 }
 
@@ -126,6 +126,6 @@ export function refusalMessage(row) {
   return `${row.id} is already this fact — same subject, same anchors (${anchors}), same scope (${scope}).\n`
     + `  ${row.subject}\n`
     + `Read it: kb show ${row.id}\n`
-    + `If it agrees with what you saw, confirm it:  kb confirm ${row.id} --deployment <env>\n`
+    + `If it agrees with what you saw, confirm it:  kb confirm ${row.id} --deployment <stand, e.g. vcst_qa -- not the TEST_ENV value>\n`
     + `If it does not, dispute it:                  kb dispute ${row.id} --saw "<what you saw>"`;
 }

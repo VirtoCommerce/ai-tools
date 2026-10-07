@@ -23,16 +23,17 @@
  * SubagentStop, and the main thread's Stop does not raise -- and mark -- a still-working subagent's.
  *
  * NOTHING IS ORPHANED. The main thread also takes an open ask that NO transcript holds (a plain
- * terminal, an unreadable path) and one held only by subagents that look FINISHED: transcript idle for
- * `SUBAGENT_IDLE_MS` and not busy -- a subagent that finished, crashed, was stopped, or whose
- * SubagentStop arrived without a transcript path. One still inside a long tool call is busy, however
+ * terminal, an unreadable path) and one held only by subagents that look FINISHED: not busy, and either
+ * its last turn ENDED (its final message calls no tool) or its transcript idle for `SUBAGENT_IDLE_MS` --
+ * a subagent that finished, crashed, was stopped, or whose own SubagentStop raised nothing
+ * (`stop_hook_active`, no transcript path). An ended turn is not made to wait out the idle window. One still inside a long tool call is busy, however
  * quiet its transcript, and keeps its ask -- until that call's own timeout (30 min when it set none)
  * has passed, so a subagent killed mid-call is not deferred for long. Before, those were raised by nobody. A subagent's stop raises only what
  * its own transcript holds, and nothing when it cannot read it.
  *
  * IT WRITES ONLY ITS OWN FILE, append-only: the asks it raised go to `<session>.reminded.ndjson`, one
- * per line (`remindedPath`), so stops finishing together never erase each other's markers. Once a day
- * it deletes journals idle for `KEEP_DAYS`, and a reminded file only together with its journal.
+ * per line (`remindedPath`), so stops finishing together never erase each other's markers. Retention is
+ * the journal WRITER's (`queue.mjs` `pruneLoops`), so it runs wherever journals are written, hook or not.
  * Transcripts are read only when there is something open to attribute; a subagent found to hold an
  * ask is remembered in `<session>.owners.ndjson`, and later stops read only the tail of that one file.
  *
@@ -49,16 +50,14 @@
  *
  * Exits 0 whatever happens and prints NOTHING unless it is blocking.
  */
-import { appendFileSync, closeSync, fstatSync, openSync, readFileSync, readSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { appendFileSync, closeSync, fstatSync, openSync, readFileSync, readSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  hasSessionId, hookEnv, isSynthetic, kbDisabled, ownersPath, queueDir, readLoop, remindDisabled, remindedPath,
+  hasSessionId, hookEnv, isSynthetic, kbDisabled, ownersPath, pruneLoops, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
 import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
 import { BACKGROUND_DEFAULT_MS, carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
 
-const KEEP_DAYS = 14;
-const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBAGENT_IDLE_MS = 10 * 60 * 1000;
 const TAIL_BYTES = 512 * 1024;
 
@@ -102,24 +101,28 @@ function busyIn(text, age) {
   return open.length > 0 && age < Math.max(...open);
 }
 
-/** Delete journals idle for KEEP_DAYS, and a reminded file only once its journal is gone or idle too. */
-function prune(dir, now = Date.now()) {
-  const marker = join(dir, 'loop.pruned');
-  if (ageOf(marker, now) < DAY_MS) return;
-  try { writeFileSync(marker, ''); } catch { return; }
-  let names = [];
-  try { names = readdirSync(dir); } catch { return; }
-  const idle = (path) => ageOf(path, now) > KEEP_DAYS * DAY_MS;
-  for (const name of names) {
-    const path = join(dir, name);
-    if (name.endsWith('.loop.ndjson')) {
-      if (idle(path)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    } else if (name.endsWith('.reminded.ndjson') || name.endsWith('.owners.ndjson')) {
-      const journal = join(dir, `${name.replace(/\.(reminded|owners)\.ndjson$/, '')}.loop.ndjson`);
-      if (idle(path) && idle(journal)) { try { unlinkSync(path); } catch { /* raced or gone */ } }
-    }
+/**
+ * Did the agent of this transcript END its turn? Its last assistant/user record is an assistant
+ * message that calls no tool. Such a subagent is finished at once rather than after SUBAGENT_IDLE_MS:
+ * when its own SubagentStop raised nothing (`stop_hook_active`), the main thread's next Stop is the
+ * only one left, and the session may end before the idle window does (PR #400 review).
+ */
+function endedIn(text) {
+  if (text === null) return false;
+  const rows = text.split('\n');
+  for (let i = rows.length - 1; i >= 0; i -= 1) {
+    if (!rows[i].includes('"type":"assistant"') && !rows[i].includes('"type":"user"')) continue;
+    let rec;
+    try { rec = JSON.parse(rows[i]); } catch { continue; }
+    if (rec?.type !== 'assistant' && rec?.type !== 'user') continue;
+    const content = Array.isArray(rec.message?.content) ? rec.message.content : [];
+    return rec.type === 'assistant' && !content.some((c) => c?.type === 'tool_use');
   }
+  return false;
 }
+
+/** A subagent holder's state: age, busy, ended -- never computed for the stopping agent's own transcript. */
+const statusIn = (text, age) => ({ age, busy: busyIn(text, age), ended: endedIn(text) });
 
 /** The asks already raised: every line of the append-only record. */
 function raisedAts(path) {
@@ -127,18 +130,39 @@ function raisedAts(path) {
   return text === null ? [] : text.split('\n').map((l) => l.trim()).filter(Boolean);
 }
 
-/** A transcript read in full ONCE per stop: its text, its kb shell calls, its age and whether it is busy. */
-function transcriptOf(path, now) {
+/**
+ * A transcript read in full ONCE per stop: its text and its kb shell calls. `status` (age / busy /
+ * ended) only for a SUBAGENT holder: the stopping agent's own state is never read, so its multi-MB
+ * transcript is not JSON-parsed a second time on every stop (PR #400 review).
+ */
+function transcriptOf(path, now, { status = false } = {}) {
   const text = readText(path);
   if (text === null) return null;
-  const age = ageOf(path, now);
-  return { path, text, calls: kbShellCalls(text), busy: busyIn(text, age), age };
+  return { path, text, calls: kbShellCalls(text), ...(status ? statusIn(text, ageOf(path, now)) : {}) };
 }
 
 /** A known owner's state from its file's tail only -- no full read (PR #400 review). */
 function statusOf(path, now) {
-  const age = ageOf(path, now);
-  return { age, busy: busyIn(readTail(path), age) };
+  return statusIn(readTail(path), ageOf(path, now));
+}
+
+/**
+ * Does this transcript OWN this tool-use id? Only a top-level record whose own `message.content`
+ * carries `tool_use` with that id: the main transcript also quotes a subagent's ids (nested progress
+ * records, Agent results, pasted output), and a substring match claimed those asks (PR #400 review).
+ */
+function usesCall(text, call) {
+  for (let i = text.indexOf(call); i !== -1; i = text.indexOf(call, i + 1)) {
+    const start = text.lastIndexOf('\n', i) + 1;
+    const end = text.indexOf('\n', i) === -1 ? text.length : text.indexOf('\n', i);
+    const raw = text.slice(start, end);
+    i = end;
+    if (!raw.includes('"tool_use"')) continue;
+    let rec;
+    try { rec = JSON.parse(raw); } catch { continue; }
+    if ((Array.isArray(rec?.message?.content) ? rec.message.content : []).some((c) => c?.type === 'tool_use' && c.id === call)) return true;
+  }
+  return false;
 }
 
 /**
@@ -148,7 +172,7 @@ function statusOf(path, now) {
  */
 function holds(t, loop) {
   if (!t) return false;
-  if (loop.call) return t.text.includes(loop.call);
+  if (loop.call) return usesCall(t.text, loop.call);
   // The needle exactly as the push builds it (`cliKey`: quotes and escapes flattened).
   const key = cliKey({ via: 'cli', kind: 'ask', q: loop.q });
   const at = Date.parse(loop.at);
@@ -162,7 +186,7 @@ function subagentTranscripts(main, now) {
   const dir = join(main.replace(/\.jsonl$/, ''), 'subagents');
   let names = [];
   try { names = readdirSync(dir); } catch { return []; }
-  return names.filter((n) => n.endsWith('.jsonl')).map((n) => transcriptOf(join(dir, n), now)).filter(Boolean);
+  return names.filter((n) => n.endsWith('.jsonl')).map((n) => transcriptOf(join(dir, n), now, { status: true })).filter(Boolean);
 }
 
 /** ask `at` -> the subagent transcripts already found to hold it (`ownersPath`). */
@@ -189,8 +213,8 @@ function owned(loops, { sub, transcript, ownersFile, now = Date.now() }) {
   const rest = [];
   for (const l of loops) (holds(own, l) ? mine : rest).push(l);
   if (!rest.length) return mine;
-  // FINISHED = idle for SUBAGENT_IDLE_MS AND no tool call still open. A holder that is busy keeps it.
-  const finished = (s) => !s.busy && s.age > SUBAGENT_IDLE_MS;
+  // FINISHED = no tool call still open AND (its turn ended OR idle for SUBAGENT_IDLE_MS). Busy keeps it.
+  const finished = (s) => !s.busy && (s.ended || s.age > SUBAGENT_IDLE_MS);
   const owners = readOwners(ownersFile);
   const unknown = rest.filter((l) => !owners.has(l.at));
   const scanned = unknown.length ? subagentTranscripts(transcript, now) : [];
@@ -215,9 +239,9 @@ function main() {
   try { payload = JSON.parse(readFileSync(0, 'utf8')); } catch { /* no stdin, or not JSON */ }
   if (payload?.stop_hook_active) return;
   if (kbDisabled(process.env)) return;
-  // Pruned BEFORE the reminder's own off switches: the journal is written whenever the base is on,
-  // so a machine with KB_REMIND=0 or a synthetic run must still have its files cleaned.
-  prune(queueDir(process.env));
+  // The journal's writer prunes it (`noteLoop`); this is only a backstop for a session that wrote
+  // nothing since the last day's pass, and it runs before the reminder's own off switches.
+  pruneLoops(queueDir(process.env));
   if (remindDisabled(process.env) || isSynthetic(process.env)) return;
 
   // The journal is keyed like the queue (`hookEnv` -> `sessionId`); SubagentStop carries the PARENT's

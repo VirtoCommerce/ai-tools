@@ -16,6 +16,7 @@ import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
+import { DEPLOYMENT_SOURCE } from './contract.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
@@ -598,7 +599,8 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   // is flushed) is still the agent's explicit pointer, and it is a timestamp, not prose: recorded as
   // `after`, so the ask it names is closed instead of being reminded about (PR #400 review). One that
   // is not an `at` at all is recorded without it, as before.
-  const pointer = target?.at ?? (handle && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
+  // `ask` reaches here unvalidated from the MCP door, so a non-string handle is never `.trim()`med.
+  const pointer = target?.at ?? (typeof handle === 'string' && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
   const written = await log({ kind: 'none', ...(pointer ? { after: pointer } : {}), ...context({ via, call, topic }) }, { env });
   if (written.disabled) return { state: 'disabled', why: written.why };
   if (!written.ok) return { state: 'unreachable', why: written.why };
@@ -1159,7 +1161,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     walk(row);
     return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
   }
-  if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
+  if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment: ${DEPLOYMENT_SOURCE}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
 
   const item = {

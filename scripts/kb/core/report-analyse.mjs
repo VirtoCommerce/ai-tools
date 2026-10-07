@@ -701,11 +701,6 @@ export function unhelpful(lines, idx) {
     // ordering or windowing is involved: either the capture names a line in this set or it does not.
     const askAt = new Map();
     for (const e of events) if (e.kind === 'ask' && e.at) askAt.set(String(e.at), e);
-    // WHAT AN `ambiguous` ASK WAS ANSWERED WITH (VCST-6156). Under the verdict ranker almost every ask
-    // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
-    // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
-    // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
-    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : []);
 
     for (const cap of events) {
       if (cap.kind !== 'capture' || !cap.id) continue;
@@ -734,8 +729,9 @@ export function unhelpful(lines, idx) {
       }
 
       // The base said it held nothing and the agent went and found out. That is the loop working,
-      // and it belongs to `captureLoop`, not here.
-      const matched = matchedOf(ask);
+      // and it belongs to `captureLoop`, not here. An `ambiguous` ask is already resolved by
+      // `resolveVerdicts` (its pick, or a miss), so `state: 'answer'` is the whole test.
+      const matched = ask.state === 'answer' ? (ask.matched ?? []) : [];
       if (!matched.length) { afterMiss += 1; continue; }
 
       const pool = new Set();
@@ -1277,7 +1273,9 @@ export function resolveVerdicts(lines) {
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
     const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)));
-    return word.verdict === 'picked' && word.ids.length
+    // A pick is a pick with or without an id on its line -- the hook reads it closed, and so does the
+    // report (PR #400 review); with no id, `matched` is empty and `unhelpful` cannot judge it.
+    return word.verdict === 'picked'
       ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
       : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
   });
