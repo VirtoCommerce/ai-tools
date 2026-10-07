@@ -39,7 +39,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
 import {
-  paginationAudit, assertContractCoherent, findGuidLeaks, findMarkerProblems,
+  paginationAudit, assertContractCoherent, findGuidLeaks, findMarkerProblems, findDescriptionProblems,
   ADDRESSES_PER_PAGE, MIN_PAGES, TARGET_TOTAL, SEED_MARKER_PREFIX,
 } from './addresses-specs.mjs';
 import {
@@ -304,6 +304,15 @@ console.log('\n[7] Teardown seed markers (address_id → outerId)');
     const orgRows = addresses.filter((r) => r.org_id && !r.contact_id).length;
     ok(`${orgRows} org address row(s) mint a unique, in-length ${SEED_MARKER_PREFIX}: marker`);
   }
+}
+
+// 7b. Org address descriptions — non-empty and unique per org (CHK-035 tells addresses apart by the
+// Description column; the seeder writes `description` from this CSV column).
+console.log('\n[7b] Org address descriptions (non-empty, unique per org)');
+{
+  const errs = findDescriptionProblems(addresses);
+  for (const e of errs) fail(`address description: ${e}`);
+  if (!errs.length) ok(`${addresses.filter((r) => r.org_id && !r.contact_id).length} org address row(s) carry a non-empty description, unique within their org`);
 }
 
 // 8. Cross-org membership → @td() alias declaration (the overlay writeback contract).
