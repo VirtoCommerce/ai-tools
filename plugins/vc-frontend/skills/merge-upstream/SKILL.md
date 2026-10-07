@@ -1,7 +1,7 @@
 ---
 name: merge-upstream
 description: "Use when bringing upstream vc-frontend changes (its dev branch or a release tag) into a theme fork — vc-frontend-next or a customer's storefront theme — or when a long-lived redesign branch has to absorb its base branch and the merge conflicts."
-argument-hint: "[upstream ref: dev | <release tag>]"
+argument-hint: "[upstream ref: upstream/dev | <release tag> | origin/dev for a redesign branch]"
 ---
 
 # merge-upstream — bring vc-frontend into a theme fork
