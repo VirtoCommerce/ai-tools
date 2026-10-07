@@ -639,6 +639,10 @@ function latchLegacyMembership(where) {
   console.warn(`    ⚠ organization-memberships API not found (legacy Customer module) at ${where} — falling back to the contact.organizations membership model for this and subsequent users`);
 }
 
+/** True once this run has found the organization-memberships API missing (legacy Customer module):
+ * from then on searchMemberships() returns [] by design, so a caller must not count its rows. */
+export const isLegacyMembershipApi = () => _legacyMembershipApi;
+
 export async function searchMemberships(userId) {
   if (DRY_RUN && userId?.startsWith?.('dry-')) return [];
   if (_legacyMembershipApi) return [];
