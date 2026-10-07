@@ -40,8 +40,8 @@
   it first, so decisions aren't asked twice.
 - 🗺 **`fork-map.json`** (fork root) says which upstream files the fork's components replace. Use
   `ignored` rarely: it hides a file from every future report.
-- 🔁 **`git rerere`** replays earlier conflict resolutions. It's set up and seeded in step 1, and
-  every replay is still reviewed.
+- 🔁 **`git rerere`** is a safety net for a merge that has to be redone: it replays a resolution only
+  for the identical conflict, never stages it, and every replay is still reviewed in the brief.
 - 🧪 **`*.upstream.test.ts`** files guard upstream behavior inside the fork's markup. Keep them green.
 
 ## What it needs
