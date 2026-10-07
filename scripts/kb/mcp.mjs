@@ -202,6 +202,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_confirm',
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
@@ -218,6 +219,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_dispute',
     description: 'Record that an existing entry did NOT hold — what you observed instead, and where. Never deletes or retires '
       + 'anything: one contradiction against four confirmations is a flag for a human, not a deletion. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',

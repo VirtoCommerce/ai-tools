@@ -426,7 +426,13 @@ export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env),
  * server, the CLI, background subagents), so two of them interleaving lose one update -- and a lost
  * write would turn into a false reminder, a lost ask into a missed one. A small `appendFile` cannot
  * erase another process's line. Not a `.jsonl`, so the queue, the push and `kb-flush` never take it
- * for queue work. Local only: an ask's question, never a subject, claim or id.
+ * for queue work. Local only: an ask's question and entry ids, never a subject or claim.
+ *
+ * IDS, SINCE VCST-6191: an ask records the entries it showed (`shown`, an `ambiguous` list) and the
+ * bodies it printed (`opened`), a `show` the entry it opened (`id`). `kb confirm` / `kb dispute` read
+ * them to refuse an entry this session never opened (`loop.mjs` `openedIds`): on 2026-10-06, 7 of 20
+ * unclosed lists were followed by a confirm of an entry the agent had seen only as a list excerpt.
+ * The queue cannot answer that -- it is flushed at every `Stop`.
  *
  * A WRITE is a line that queued something -- a `capture` / `confirm` / `dispute` carrying its
  * `payload` -- or a dedup refusal (the base already holds the fact). A confirm the base could not be
@@ -446,10 +452,15 @@ export function loopRecord(line) {
     return {
       at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}), ...(line.call ? { call: String(line.call) } : {}),
       ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
+      ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
+      ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
     };
   }
   if (line.kind === 'show' || line.kind === 'none') {
-    return { at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}) };
+    return {
+      at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
+      ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
+    };
   }
   if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
   return null;

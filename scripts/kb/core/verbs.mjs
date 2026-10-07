@@ -21,8 +21,9 @@ import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from 
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+  log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus, readQueue, sessionId,
 } from './queue.mjs';
+import { askThatShowed, openedIds } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -1158,6 +1159,19 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     };
     walk(row);
     return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+  }
+  // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
+  // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
+  // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
+  // it, the list's handle included when a list showed it. Nothing is logged: nothing was written.
+  const journal = readLoop(env);
+  if (!openedIds(journal).has(row.id.toUpperCase())) {
+    const h = askThatShowed(journal, row.id);
+    return {
+      state: 'invalid',
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ''}`
+        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ''}\`; then ${kind} it if its body says what you saw`,
+    };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };

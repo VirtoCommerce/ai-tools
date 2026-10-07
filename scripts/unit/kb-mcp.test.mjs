@@ -221,6 +221,8 @@ test('kb_confirm queues evidence; kb_dispute without --saw is refused', async ()
   const q = scratch('confirm');
   try {
     const s = fixtureServer(q.dir);
+    // The confirm gate (VCST-6191): the entry is opened first, as the tool description says.
+    await call(s, 'kb_show', { id: 'KB-27B4CD10' });
     const ok = await call(s, 'kb_confirm', { id: 'KB-27B4CD10', deployment: 'vcst_qa' });
     assert.ok(!ok.result.isError);
     assert.match(callText(ok), /queued on KB-27B4CD10/);

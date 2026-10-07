@@ -10,10 +10,10 @@
 // public repository by the next sweep (PLAN §7.1a).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { RUN_MAX, metaPath, queuePath, readQueue } from '../kb/core/queue.mjs';
+import { RUN_MAX, loopPath, metaPath, queueDir, queuePath, readQueue } from '../kb/core/queue.mjs';
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
@@ -22,6 +22,15 @@ import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 const opened = () => ({ reader: localReader(FIXTURE), locator: FIXTURE, how: 'test', why: null });
+
+// The confirm gate (VCST-6191) wants an entry OPENED before it is confirmed or disputed. These tests
+// are about what a confirm writes, not about the gate, so the journal records the open directly --
+// a `show` would add a queue line the counts below do not expect.
+const opens = (env, ...ids) => {
+  mkdirSync(queueDir(env), { recursive: true });
+  for (const id of ids) appendFileSync(loopPath(env), `${JSON.stringify({ at: new Date().toISOString(), kind: 'show', state: 'answer', id })}
+`);
+};
 
 async function withQueue(fn, extraEnv = {}) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-fields-'));
@@ -669,6 +678,7 @@ test('a stand name is folded on SPELLING only — into the entry and the log ali
 test('a stand NAME is never mapped — `vcst` stays `vcst`, not `vcst_qa`', async () => {
   // The line `canonicalStand` must not cross: `vcst` onto `vcst_qa` needs a table nobody owns.
   await withQueue(async (env) => {
+    opens(env, EXISTING_ID);
     await confirm(EXISTING_ID, { deployment: 'vcst' }, opened(), { env, via: 'cli' });
     const [line] = await linesOf(env);
     assert.equal(line.deployment, 'vcst');
@@ -691,6 +701,7 @@ test('an evidence NOTE is bounded too - the one prose field every agent actually
   // reaches the ENTRY: a test of a private function would not notice a caller that stopped using it.
   await withQueue(async (env) => {
     const LONG = 'x'.repeat(NOTE_MAX * 2);
+    opens(env, EXISTING_ID);
     const r = await dispute(EXISTING_ID, { deployment: 'vcst_qa', saw: LONG }, opened(), { env, via: 'cli' });
     assert.equal(r.state, 'queued');
     assert.ok(r.item.note.length < LONG.length, 'it is bounded');
@@ -706,6 +717,7 @@ test('an evidence NOTE is bounded too - the one prose field every agent actually
   assert.ok(NOTE_MAX > 2_547, 'a bound that cuts the best writing in the corpus is the wrong bound');
   await withQueue(async (env) => {
     const real = 'y'.repeat(2_547);
+    opens(env, EXISTING_ID);
     const r = await dispute(EXISTING_ID, { deployment: 'vcst_qa', saw: real }, opened(), { env, via: 'cli' });
     assert.equal(r.item.note, real, 'the longest note the base actually holds is untouched');
   });

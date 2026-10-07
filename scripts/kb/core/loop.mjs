@@ -12,10 +12,17 @@
 // kb process of the session can erase another's line. A client that predates it writes nothing there,
 // so it can produce no reminder at all -- never a false one.
 //
-// LENIENT ON PURPOSE. An agent rephrases one need four or five times and then writes ONE entry, and
-// a write's `after` points at the last ask only -- so ANY write later in the session closes every
-// earlier miss. A reminder that fires on a need that was in fact written back would teach the agent
-// to ignore it; one that misses an occasional unrelated gap costs nothing.
+// LENIENT ON PURPOSE FOR A MISS. An agent rephrases one need four or five times and then writes ONE
+// entry, and a write's `after` points at the last ask only -- so ANY write later in the session closes
+// every earlier miss. A reminder that fires on a need that was in fact written back would teach the
+// agent to ignore it; one that misses an occasional unrelated gap costs nothing.
+//
+// STRICT FOR AN UNCLOSED LIST (VCST-6191). An `ambiguous` list is closed by a choice -- `kb_show` or
+// `kb_none` -- and by nothing else. A later confirm or capture used to close it too, which silenced the
+// reminder in exactly the case it exists for: on 2026-10-06, 13 of 20 unclosed lists were followed by a
+// write, the agent having worked from the list excerpt. `report-analyse.mjs` `resolveVerdicts` already
+// read such an ask as `unclosed`; hook and report now read it one way. A list closed by `kb_none` is a
+// miss again, and a later write closes it like any miss.
 
 import { CONTRACT } from './contract.mjs';
 
@@ -93,15 +100,43 @@ export function openLoops(journal, { reminded = [] } = {}) {
     if (a.state !== 'miss' && a.state !== 'ambiguous') continue;
     // This session already captured it and it is still queued: answered, not open.
     if (a.queued) continue;
-    if (lastWrite > a.at) continue;
     const word = lastWord(pointed.get(a.at));
     if (a.state === 'ambiguous' && word.verdict === 'picked') continue;
+    // An unclosed list stays open whatever was written after it; a miss is closed by any later write.
+    const unclosed = a.state === 'ambiguous' && word.verdict === 'open';
+    if (!unclosed && lastWrite > a.at) continue;
     out.push({
       at: a.at, q: String(a.q ?? ''), why: a.state === 'miss' || word.verdict === 'none' ? 'miss' : 'unresolved',
       ...(a.call ? { call: a.call } : {}),
     });
   }
   return out;
+}
+
+/**
+ * The entries this session has OPENED -- read the body of -- from its journal: a `show` that answered,
+ * and an ask that printed bodies (`opened`). An id seen only in an `ambiguous` list (`shown`) is not
+ * opened. Upper-cased, as ids are compared everywhere. `kb confirm` / `kb dispute` refuse anything else
+ * (VCST-6191): a confirmation raises the entry's trust for every later reader, so it rests on the
+ * whole entry, not on the line a list printed about it.
+ */
+export function openedIds(journal) {
+  const out = new Set();
+  for (const r of Array.isArray(journal) ? journal : []) {
+    if (r?.kind === 'show' && r.state === 'answer' && r.id) out.add(String(r.id).toUpperCase());
+    if (r?.kind === 'ask' && Array.isArray(r.opened)) for (const id of r.opened) out.add(String(id).toUpperCase());
+  }
+  return out;
+}
+
+/** The handle of the latest ask whose list showed `id`, or null: the `--ask` an open of it should carry. */
+export function askThatShowed(journal, id) {
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of Array.isArray(journal) ? journal : []) {
+    if (r?.kind === 'ask' && Array.isArray(r.shown) && r.shown.some((s) => String(s).toUpperCase() === want) && (!at || r.at > at)) at = r.at;
+  }
+  return at;
 }
 
 const Q_MAX = 110;
@@ -119,7 +154,9 @@ const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, 
  * that notice reads this line first.
  */
 export function reminderText(loops, { contract = CONTRACT } = {}) {
-  const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session got no answer from the knowledge base, and nothing was written back after them:`];
+  // An unclosed list is raised even after a write (VCST-6191), so the headline does not claim "nothing
+  // was written back" for it: that holds for the misses only.
+  const lines = [`kb reminder (not a failure): ${loops.length} question(s) this session left open in the knowledge base -- no answer and nothing written back, or a list never closed:`];
   for (const l of loops.slice(0, LISTED)) {
     lines.push(l.why === 'unresolved'
       ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
