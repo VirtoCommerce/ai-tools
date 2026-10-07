@@ -1257,11 +1257,19 @@ export function lists(lines) {
   }
   // THE CONFIRM GATE (VCST-6191): evidence refused because the session never opened the entry, and
   // what followed -- the same session confirmed or disputed that id later (it opened it, as told), or
-  // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door.
+  // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door: `refused`
+  // counts attempts, `landed` / `abandoned` count FACTS -- one per (session, entry) -- so an agent that
+  // retried three times and gave up is one abandoned confirmation, not three.
   const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
-  const landed = refused.filter((r) => (writes.get(r._session ?? '') ?? []).some((w) => w.kind !== 'capture'
+  const firstRefusal = new Map();
+  for (const r of refused) {
+    const key = `${r._session ?? ''}\0${String(r.id ?? '').toUpperCase()}`;
+    if (!firstRefusal.has(key) || String(r.at) < String(firstRefusal.get(key).at)) firstRefusal.set(key, r);
+  }
+  const facts = [...firstRefusal.values()];
+  const landed = facts.filter((r) => (writes.get(r._session ?? '') ?? []).some((w) => w.kind !== 'capture'
     && String(w.at) > String(r.at) && String(w.id ?? '').toUpperCase() === String(r.id ?? '').toUpperCase()));
-  const gate = { refused: refused.length, landed: landed.length, abandoned: refused.length - landed.length };
+  const gate = { refused: refused.length, facts: facts.length, landed: landed.length, abandoned: facts.length - landed.length };
   const share = (r) => (r.asks ? r.unclosed / r.asks : null);
   return {
     ...total,
