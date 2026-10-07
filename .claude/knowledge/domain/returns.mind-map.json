@@ -313,6 +313,9 @@
           "ref": "kb:KB-4E1FF232",
           "note": "delivery counted only through a shipment with a DeliveryDate"
         }
+      ],
+      "requires": [
+        "data.ret.store.returns-on"
       ]
     },
     {
@@ -333,6 +336,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-001, RET-GQL-008"
         }
+      ],
+      "requires": [
+        "data.ret.order.delivered-in-window"
       ]
     },
     {
@@ -354,6 +360,9 @@
           "ref": "kb:KB-4E1FF232",
           "note": "deliveredQuantity 0 without a delivery date"
         }
+      ],
+      "requires": [
+        "data.ret.order.partially-delivered"
       ]
     },
     {
@@ -370,6 +379,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-003"
         }
+      ],
+      "requires": [
+        "data.ret.order.split-delivery"
       ]
     },
     {
@@ -391,6 +403,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-004 (Draft), RET-GQL-031"
         }
+      ],
+      "requires": [
+        "data.ret.order.outside-window"
       ]
     },
     {
@@ -412,6 +427,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-005"
         }
+      ],
+      "requires": [
+        "data.ret.order.not-delivered"
       ]
     },
     {
@@ -433,6 +451,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-006, RET-GQL-032"
         }
+      ],
+      "requires": [
+        "data.ret.order.status-not-allowed"
       ]
     },
     {
@@ -454,6 +475,9 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-007"
         }
+      ],
+      "requires": [
+        "data.ret.order.cancelled-line"
       ]
     },
     {
@@ -497,7 +521,11 @@
           "note": "RET-GQL-028"
         }
       ],
-      "notes": "Feature-switch off branch: an order page offers no Return entry point (ORD-RET-002 covers the no-eligible-line case). Storefront module registers only when Return.ReturnEnabled is on (rev 2 §2b, source); the off rendering is G15."
+      "notes": "Feature-switch off branch: an order page offers no Return entry point (ORD-RET-002 covers the no-eligible-line case). Storefront module registers only when Return.ReturnEnabled is on (rev 2 §2b, source); the off rendering is G15.",
+      "requires": [
+        "data.ret.store.returns-off",
+        "data.ret.order.delivered-in-window"
+      ]
     },
     {
       "type": "branch",
@@ -550,6 +578,10 @@
           "ref": "VCST-5628",
           "note": "RET-GQL-015, RET-GQL-016, RET-GQL-044"
         }
+      ],
+      "requires": [
+        "data.ret.store.returns-on",
+        "data.ret.order.delivered-in-window"
       ]
     },
     {
@@ -768,6 +800,10 @@
           "ref": "VCST-5883",
           "note": "ORD-RET-006"
         }
+      ],
+      "requires": [
+        "data.ret.store.returns-on",
+        "data.ret.order.two-eligible-lines"
       ]
     },
     {
@@ -1069,6 +1105,9 @@
           "note": "colleague: order(id) resolves, returnableItems [], return(id) null",
           "date": "2026-10-06"
         }
+      ],
+      "requires": [
+        "data.ret.buyer.colleague"
       ]
     },
     {
@@ -1127,6 +1166,9 @@
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #14"
         }
+      ],
+      "requires": [
+        "data.ret.return.partially-approved"
       ]
     },
     {
@@ -1198,7 +1240,10 @@
           "note": "RET-ADM-002..004"
         }
       ],
-      "notes": "No un-authorize exists: a wrong decline is corrected only by a new return, a wrong approval has no path at all (test model 3x)."
+      "notes": "No un-authorize exists: a wrong decline is corrected only by a new return, a wrong approval has no path at all (test model 3x).",
+      "requires": [
+        "data.ret.store.returns-on"
+      ]
     },
     {
       "type": "branch",
@@ -1222,6 +1267,9 @@
           "note": "Approved observed",
           "date": "2026-10-01"
         }
+      ],
+      "requires": [
+        "data.ret.order.journey"
       ]
     },
     {
@@ -1244,6 +1292,9 @@
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #2"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-mixed"
       ]
     },
     {
@@ -1268,6 +1319,12 @@
           "ref": "VCST-5883",
           "note": "RET-AUTH-004, RET-ADM-003"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-partial"
+      ],
+      "produces": [
+        "data.ret.return.partially-approved"
       ]
     },
     {
@@ -1286,6 +1343,9 @@
           "ref": "VCST-5883",
           "note": "RET-AUTH-005, RET-ADM-004"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-reject"
       ]
     },
     {
@@ -1308,6 +1368,9 @@
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #5"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-single"
       ]
     },
     {
@@ -1369,6 +1432,9 @@
           "ref": "test-model:VCST-5883-2026-09-28 #24",
           "note": "3x reproduced 6 of 5 approved before the re-check"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-two-returns"
       ]
     },
     {
@@ -1416,7 +1482,11 @@
           "note": "RET-AUTH-016, RET-ADM-008 (Draft)"
         }
       ],
-      "notes": "Still UNVERIFIED for a non-admin account on 3.1004.0 — no such user is provisioned (domain map G9)."
+      "notes": "Still UNVERIFIED for a non-admin account on 3.1004.0 — no such user is provisioned (domain map G9).",
+      "requires": [
+        "data.ret.agent.no-authorize",
+        "data.ret.return.requested-mixed"
+      ]
     },
     {
       "type": "branch",
@@ -1469,6 +1539,9 @@
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #15"
         }
+      ],
+      "requires": [
+        "data.ret.return.admin-new"
       ]
     },
     {
@@ -1551,6 +1624,9 @@
           "class": "SPEC",
           "ref": "test-model:VCST-5883-2026-09-28 #24"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-dup-line"
       ]
     },
     {
@@ -1797,6 +1873,9 @@
           "ref": "VCST-5883",
           "note": "RET-AUTH-012, RET-AUTH-013"
         }
+      ],
+      "requires": [
+        "data.ret.return.requested-fr"
       ]
     },
     {
@@ -1943,6 +2022,10 @@
           "ref": "kb:KB-1F2EBF83",
           "note": "no POST; PUT without id upserts"
         }
+      ],
+      "requires": [
+        "data.ret.store.returns-on",
+        "data.ret.order.admin-disposable"
       ]
     },
     {
