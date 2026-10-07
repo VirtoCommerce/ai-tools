@@ -18,6 +18,14 @@ conflict is briefed to the user before it is resolved, every upstream change is 
 code, the built app is smoke-tested with `vite preview`, the PR carries a QA checklist, and it lands as a merge
 commit so the next upstream merge starts from the right base.
 
+**Added: `port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream
+change only to the file upstream changed; when the fork renders its own component there, the change merges
+cleanly and reaches nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own
+Vite config and compares Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass
+partials) to list upstream code the fork no longer renders, render sites it dropped, and changes to files a
+committed `fork-map.json` says the fork replaced. The skill briefs each upstream commit as port / already /
+n/a / lost feature, ports the approved ones with a mutation-checked test, and keeps the map current.
+
 ---
 
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02

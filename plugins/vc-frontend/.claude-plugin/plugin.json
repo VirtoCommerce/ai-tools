@@ -1,6 +1,6 @@
 {
   "name": "vc-frontend",
-  "description": "Working on a Virto Commerce frontend fork (vc-frontend-next or a customer's storefront theme). Skill: merge-upstream — brings upstream vc-frontend (dev or a release tag) into the fork, keeping the fork's look and upstream's behavior.",
+  "description": "Working on a Virto Commerce frontend fork (vc-frontend-next or a customer's storefront theme). Skills: merge-upstream — brings upstream vc-frontend (dev or a release tag) into the fork, keeping the fork's look and upstream's behavior; port-upstream-to-fork — finds upstream changes the merge did not deliver because the fork replaced or stopped rendering the code, and ports them.",
   "version": "0.1.0",
   "displayName": "Virto Commerce Frontend",
   "author": {

@@ -102,9 +102,9 @@ git show HEAD:"$f" | sed 's/^[[:space:]]*//' | sort -u > merged.txt
 comm -23 up.txt merged.txt        # each line printed needs a reason
 ```
 
-Then the case no line diff shows: **upstream fixed a component the fork no longer renders.** For each
-component upstream changed, find where the fork uses it (`git grep -n <ComponentName>`); if the fork
-renders its own replacement in that place, port the fix there too.
+Then the case no line diff shows: **upstream changed code the fork no longer renders**, or renders from
+fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit; its
+ports join this PR and its brief joins step 3's questions.
 
 ## 6. Tests
 
@@ -155,6 +155,6 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
 | Resolving before the brief is answered | Brief, wait, resolve |
 | Taking upstream's whole file to "get the fix" into a restyled component | Fork's markup + upstream's behavior |
 | Hand-merging `types.ts` or the lockfile | Regenerate |
-| Checking only the conflicted files | Also the files both sides changed, and the fork's replacements of components upstream fixed |
+| Checking only the conflicted files | Also the files both sides changed, and `vc-frontend:port-upstream-to-fork` for code the fork stopped rendering |
 | Trusting a passing upstream test without a mutation | Remove a ported line, watch it fail |
 | Squash-merging an upstream merge | A merge commit |
