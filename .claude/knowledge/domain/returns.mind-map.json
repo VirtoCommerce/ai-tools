@@ -4,7 +4,7 @@
   "domain_slug": "ret",
   "domain_map_rev": 2,
   "generated": "2026-10-06",
-  "amended": "2026-10-06",
+  "amended": "2026-10-07",
   "metadata": {
     "scope": "Both mechanisms on the Return entity: buyer self-service (VCST-5628), agent decisions and notifications (VCST-5883), legacy admin records. Orderless returns (VCST-5884) and the mandatory decline reason (VCST-5885) are out.",
     "built_from": "returns.md rev 1 (built), rev 2 (update 2026-10-06) (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs.",
@@ -1083,7 +1083,7 @@
         {
           "class": "DOC",
           "ref": "domain-map:ret@rev1 §3 D6",
-          "note": "the handler checks ownership only, no storeId"
+          "note": "ReturnFlowService.IsOwnedBy / GetOwnedReturnAsync check ownership only, no storeId"
         }
       ],
       "notes": "Domain map G4, still open at rev 2; the handler was not re-read at 3.1004.0 (D6)."
@@ -2220,7 +2220,7 @@
       "technique": "EP",
       "name": "Reason labels are per-culture admin text, falling back to the code",
       "maturity": "new",
-      "status": "UNVERIFIED",
+      "status": "CONFIRMED",
       "evidence": [
         {
           "class": "SPEC",
@@ -2237,9 +2237,16 @@
           "ref": "domain-map:ret@rev2 §3 D4",
           "note": "returnReasons(B2B-store): localizedName byte-identical to code; storefront has no reasons i18n",
           "date": "2026-10-06"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07 RET-GQL-035",
+          "note": "en-US Faulty on arrival, ru-RU Брак при получении; de-DE, fr-FR and no culture return the code",
+          "date": "2026-10-07"
         }
       ],
-      "notes": "Domain map rev 2 D4 saw localizedName equal to the code; RET-GQL-035 (promoted) asserts a per-culture label with cultureName set. The map does not say which culture its read used — re-read with cultureName en-US and ru-RU before trusting either. Answers rev 1 D4 only for the admin side."
+      "notes": "The code comes back when no cultureName is passed or the culture has no operator label (domain map rev 2 D4, corrected 2026-10-07). The storefront wizard translates only reasons that have a label for the shopper culture.",
+      "last_verified": "2026-10-07"
     },
     {
       "type": "branch",
