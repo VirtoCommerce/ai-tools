@@ -131,3 +131,476 @@ User logged in. Hoodie Base (File optional) product with File section in cart (f
 "CFG-PDP-017","""Create New Configuration"" Link — Visibility and Reset Behavior (VCST-3902)","Configurable Products > PDP Buttons","High","BL-CAT-006","ECL-7.1; VCST-3902","[PRE:SIGNIN_AS:USER_DEFAULT]
 [PRE:RESET_CART]
 Storefront accessible at {{FRONT_URL}}. @td(CFG_BIKE.name) PDP loaded. User authenticated. A configured item already in cart (lineItemId in URL — user is in edit-from-cart context).","front_url={{FRONT_URL}}, bike_url=@td(CFG_BIKE.url), user={{USER_EMAIL}}, password={{USER_PASSWORD}}","[NAV] Sign in at {{FRONT_URL}}; navigate to @td(CFG_BIKE.name) PDP; [ACT] Select Seat option; click Add to cart; [WAIT] Success — button changes to Update cart; lineItemId appears in URL; [ASSERT] Locate Create new configuration link in the price block area (below price; icon cube-transparent); [ASSERT] Verify link text reads Create new configuration (not old Create your own configuration); [ACT] Click Create new configuration link; [WAIT] Page updates; [ASSERT] Observe lineItemId removed from URL query params; [ASSERT] Observe configuration widget resets to default state (None selected); [ASSERT] Observe button text changes from Update cart back to Add to cart; [ASSERT] Observe CountInCart badge disappears (no lineItemId = no badge)","[DOM] Create new configuration link visible in price block when lineItemId is in URL (edit context); [DOM] Link has cube-transparent icon and text Create new configuration; [STATE] Clicking link removes lineItemId from URL query; [STATE] Configuration sections reset to default values (None selected); [STATE] Button reverts from Update cart (solid) to Add to cart (outline); [STATE] CountInCart badge hidden after lineItemId cleared; [DOM] Link NOT visible on fresh PDP load (no lineItemId in URL)","[CONSOLE] No JavaScript errors on link click; [NETWORK] fetchProductConfiguration fires after lineItemId cleared (fresh config fetch); [NETWORK] No unexpected cart mutations on link click","Link showing old text Create your own configuration; link visible on fresh PDP (no lineItemId); config not resetting after click; button still showing Update cart after reset; lineItemId still in URL after click; CountInCart badge persisting after reset","none","TC-CF-010 VCST-3902","Manual"
+CFG-CHK-001,[JOURNEY] Configuration checklist — every required row filled via its link unlocks Add to cart and the cart line matches the green rows,Configurable Products > PDP > Configuration checklist,Critical,BL-CAT-006,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Storefront at {{FRONT_URL}}, B2B store, signed in. Fixture @td(CFG_CHECKLIST_ALLTYPES.name) is active and published with its 8 sections (Layers, Text, Photo, Filling, Icing, Decoration, Message, and a long-named optional File section). Cart empty.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url), product_name=@td(CFG_CHECKLIST_ALLTYPES.name), text_value=@td(CFG_TEXT_INPUTS.customValue), file=@td(CFG_TEST_FILES.validPdf.path)","--- SCREEN: PDP load — read the checklist ---
+[NAV] Open {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)
+[WAIT] The Price and delivery block shows the ""Configuration checklist"" list (data-test-id configuration-checklist) below the Add to cart button; wait until the list and the section accordion are both rendered
+[ASSERT] List the checklist rows in order (data-test-id configuration-checklist-item): each row names one visible section, in the same order as the sections in the accordion
+[ASSERT] The Text row and the Photo row are red (required) and carry the links ""Fill it in"" and ""Upload a file""
+[ASSERT] Every red row has a link; every optional row (Icing, Decoration, Message, the long-named File section) carries ""Review""; rows for sections hidden by dependsOnSectionId are absent
+[ASSERT] While at least one row is red, the ""Add to cart"" button is disabled
+--- SCREEN: PDP — fill each required section through its link ---
+[ACT] Click the ""Fill it in"" link on the Text row
+[WAIT] The Text section expands and scrolls into view; the page URL is unchanged
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into the Text section input
+[ASSERT] The Text row turns done (green, ""(completed)"" for screen readers) and no longer shows a link
+[ACT] Click the ""Upload a file"" link on the Photo row
+[WAIT] Page settles (UI and network idle)
+[ACT] upload @td(CFG_TEST_FILES.validPdf.path) in the Photo section
+[WAIT] Upload finishes (file chip visible in the section)
+[ASSERT] The Photo row turns done
+[ACT] If the Filling row is red, click its ""Check it out"" link
+[WAIT] Page settles (UI and network idle)
+[ACT] Choose any option in the Filling section
+[ASSERT] The Filling row turns done and reads ""Filling — <chosen option name>""
+[WAIT] Up to 20 s for the ""Add to cart"" button to become enabled; note how long it took
+[ASSERT] With no red row left, the ""Add to cart"" button is enabled
+--- SCREEN: cart — the line carries what the green rows said ---
+[ACT] Click ""Add to cart""
+[WAIT] Page settles (UI and network idle)
+[NAV] Open the cart
+[ASSERT] The cart line for @td(CFG_CHECKLIST_ALLTYPES.name) lists, per configured component, the section name and chosen value shown by the green rows (Layers option, Text value, Photo file, Filling option)
+[ASSERT] No section that had a red or hidden row is listed with a value it never showed","[DOM] Rows are one per visible section, in accordion order, with Text and Photo red and each red row carrying exactly one of ""Fill it in"" / ""Upload a file"" / ""Check it out"" {SPEC} VCST-6027 AC-1, AC-2.1, AC-2.2
+[STATE] ""Add to cart"" is disabled while any row is red and enabled when none is red {BL} BL-CAT-006
+[STATE] Each link expands its section and moves the buyer to it without changing the URL {SPEC} VCST-6027 AC-2
+[DOM] Filling a section turns its row done and removes its link; a done Product row reads ""<section> — <option>"" {SPEC} VCST-6027 AC-1
+[DOM] Every optional row keeps its own ""Review"" link and never reads as a blocker {SPEC} VCST-6027 AC-3
+[DOM] The cart line lists, per component, the section name and chosen value shown by the green rows; every listed component is visible and none is missing or extra {BL} BL-CAT-006
+[STATE] The purchase button becomes enabled after the last red row turns green (no manual reload needed) {SPEC} VCST-6027 statement","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Mid-journey: Add to cart still disabled after the last red row turned green and 20 s have passed; a row stays red after a valid fill; a link lands on a different section or changes the URL; Photo/Text row green but the cart line lacks that value; Filling row missing after Layers has a value,Open the cart and remove the configured line created by this journey; leave the cart empty,VCST-6027 · Archetype:PARITY · Technique:FLOW · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-002,Configuration checklist — hidden dependent sections have no row and rows follow the configuration order,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_DEEP_CHAIN.name) is a 5-level dependency chain (sections A to E, each dependent on the previous). Nothing configured yet in this session.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_DEEP_CHAIN.url)","[NAV] Open {{FRONT_URL}}@td(CFG_DEEP_CHAIN.url)
+[WAIT] Checklist and section accordion rendered
+[ASSERT] Record the visible section titles in the accordion and the checklist row names in the same order
+[ASSERT] The checklist has no row for any section that is hidden in the accordion (the deep levels of the chain)
+[ACT] Choose a value in the deepest currently visible section that has a dependent section
+[WAIT] A new section appears in the accordion
+[ASSERT] The checklist gains exactly one new row for that section, placed after its parent and in the same position as the section in the accordion
+[ACT] Repeat the previous two steps until all five levels are visible
+[ASSERT] At every level the number of rows equals the number of visible accordion sections and the row order equals the accordion order","[DOM] No checklist row exists for a section hidden by dependsOnSectionId {SPEC} VCST-6027 AC-1 (rows follow what the buyer can configure)
+[DOM] Visible rows appear in the Admin-defined section order, the same order as the accordion {DOC} platform user guide: Manage Product Configurations (drag order = storefront order)
+[STATE] Each reveal adds exactly one row and no row is duplicated {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Row visible for a hidden level; row order differs from the accordion order; two rows for one section after a reveal; row count differs from accordion section count at any level,none,VCST-6027 · Archetype:FALLBACK · Technique:ST · Behavior:cat.cfg.pdp.conditional-reveal,Draft
+CFG-CHK-003,Configuration checklist — empty required Text section shows red name-required row with Fill it in,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TEXT_DRIVEN_COND.name): the root section ""Engraving Line 1"" is a REQUIRED Text section. Text empty.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[WAIT] Checklist rendered
+[ASSERT] Find the checklist row for the ""Engraving Line 1"" section (data-test-id configuration-checklist-item)
+[ASSERT] Read its label (configuration-checklist-label), its status styling (red / required) and its link text (configuration-checklist-link)
+[ASSERT] The ""Add to cart"" button state","[DOM] The row reads ""Engraving Line 1 — required"" {SPEC} VCST-6027 AC-2.1
+[DOM] The row's link reads ""Fill it in"", not ""Check it out"" and not ""Upload a file"" {SPEC} VCST-6027 AC-2.1
+[STATE] The row has the required (red) status, not optional or done {SPEC} VCST-6027 AC-2.1
+[STATE] ""Add to cart"" is disabled while the required Text is empty {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Text row shows 'Check it out'; row not marked required; Text row missing; Add to cart enabled with empty required Text,none,VCST-6027 · Archetype:PARITY · Technique:EP · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-004,Configuration checklist — empty required File section shows red name-required row with Upload a file,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_REQUIRED_FILE_CHILD.name): root Product section ""Service Plan"" (required) and the dependent section ""ID Proof"", a REQUIRED File section.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)","[NAV] Open {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
+[WAIT] Checklist rendered
+[ACT] If the ""Service Plan"" row is red, choose any Service Plan option so that the dependent ""ID Proof"" section becomes visible
+[ASSERT] Find the checklist row for ""ID Proof"": label, status styling and link text
+[ASSERT] The ""Add to cart"" button state","[DOM] The row reads ""ID Proof — required"" {SPEC} VCST-6027 AC-2.2
+[DOM] The row's link reads ""Upload a file"" {SPEC} VCST-6027 AC-2.2
+[STATE] The row has the required (red) status {SPEC} VCST-6027 AC-2.2
+[STATE] ""Add to cart"" is disabled while the required File section has no file {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",File row offers 'Check it out' or 'Fill it in'; no required marker for the File section; Add to cart enabled with no file,none,VCST-6027 · Archetype:PARITY · Technique:EP · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-005,Configuration checklist — a required Product section revealed by its parent shows Check it out until an option is chosen,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixtures: @td(CFG_REQ_CHILD_OPT_PARENT.name) (optional parent section that reveals a REQUIRED Product child ""Extra Type"") and @td(CFG_TWO_REQ_SIBLINGS.name) (optional parent revealing two REQUIRED Product siblings Size and Color).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_REQ_CHILD_OPT_PARENT.url), product2={{FRONT_URL}}@td(CFG_TWO_REQ_SIBLINGS.url)","--- SCREEN: one required child ---
+[NAV] Open {{FRONT_URL}}@td(CFG_REQ_CHILD_OPT_PARENT.url)
+[WAIT] Checklist rendered
+[ASSERT] The parent row is optional (parent is on None) and there is no ""Extra Type"" row; ""Add to cart"" is enabled
+[ACT] In the parent section choose a real (non-None) value
+[WAIT] The ""Extra Type"" section appears in the accordion
+[ASSERT] A new row ""Extra Type — required"" appears with the link ""Check it out""; no option of Extra Type is selected; ""Add to cart"" is disabled
+[ACT] Click ""Check it out"" on the ""Extra Type"" row
+[WAIT] Page settles (UI and network idle)
+[ACT] choose an Extra Type option
+[ASSERT] The row becomes done and reads ""Extra Type — <chosen option>""; ""Add to cart"" becomes enabled
+--- SCREEN: two required siblings ---
+[NAV] Open {{FRONT_URL}}@td(CFG_TWO_REQ_SIBLINGS.url)
+[ACT] In the parent section choose a value that reveals the dependent sections
+[ASSERT] Both the Size row and the Color row appear red with ""Check it out"" and neither has an option preselected","[DOM] A required Product section revealed by its parent shows ""<name> — required"" with the link ""Check it out"" until an option is chosen {SPEC} VCST-6027 AC-2.3
+[STATE] Revealing does not auto-select an option for the required child, so the row cannot be green on reveal {DOC} platform user guide: Manage Product Configurations (a required section must be selected by the buyer)
+[STATE] ""Add to cart"" is disabled from the moment the required child is revealed until it has a value {BL} BL-CAT-006
+[DOM] Both the ""Size"" row and the ""Color"" row are visible as separate red rows {SPEC} VCST-6027 AC-2.3
+[STATE] Number of selected options in the revealed required section = 0 at the moment it is revealed {DOC} platform user guide: Manage Product Configurations (required sections are not auto-selected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Required child revealed but its row is green with no value; 'Check it out' never shown; Add to cart enabled while a revealed required child is empty; only one of the two siblings listed,none,VCST-6027 · Archetype:FALLBACK · Technique:ST · Behavior:cat.cfg.pdp.conditional-reveal,Draft
+CFG-CHK-006,Configuration checklist — a required Product section with a default option is green on load with the default value,Configurable Products > PDP > Configuration checklist,Medium,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_WITH_DEFAULT.name): one required Product section whose default option is @td(CFG_WITH_DEFAULT.default_option_name).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_WITH_DEFAULT.url), default=@td(CFG_WITH_DEFAULT.default_option_name)","[NAV] Open {{FRONT_URL}}@td(CFG_WITH_DEFAULT.url)
+[WAIT] Checklist and accordion rendered; wait until the default option is shown selected
+[ASSERT] The accordion shows @td(CFG_WITH_DEFAULT.default_option_name) selected in the required section
+[ASSERT] Read the checklist row for that section: status, label, presence of a link
+[ASSERT] The ""Add to cart"" button becomes enabled","[DOM] The row is done (green) and reads ""<section> — @td(CFG_WITH_DEFAULT.default_option_name)"" {SPEC} VCST-6027 AC-1
+[DOM] The done row has no ""Check it out"" / ""Fill it in"" / ""Review"" link {SPEC} VCST-6027 AC-1
+[STATE] The row is not marked required while a default option is preselected {DOC} platform user guide: Manage Product Configurations (default option is preselected)
+[STATE] ""Add to cart"" is enabled once the page has settled {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Preselected default rendered as '— required' with 'Check it out'; green row without the option name; Add to cart disabled with a preselected default,none,VCST-6027 · Archetype:FALLBACK · Technique:EP · Behavior:cat.cfg.pdp.default-preselected,Draft
+CFG-CHK-007,Configuration checklist — Add to cart is enabled exactly when no row is red (required x optional decision table),Configurable Products > PDP > Configuration checklist,Critical,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TWO_REQ_SIBLINGS.name): optional parent (can be None) revealing two REQUIRED Product siblings Size and Color. Cart is not modified by this case.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TWO_REQ_SIBLINGS.url)","[NAV] Open {{FRONT_URL}}@td(CFG_TWO_REQ_SIBLINGS.url)
+[WAIT] Checklist and accordion rendered; let the page settle (the ""Add to cart"" state unchanged for 3 s)
+[ASSERT] Decision cell 1: parent on None, no required section visible. Count red rows and read the ""Add to cart"" state
+[ACT] Choose a real value in the parent section
+[WAIT] Page settles (3 s with no change)
+[ASSERT] Decision cell 2: Size and Color red, optional parent set. Count red rows and read the ""Add to cart"" state
+[ACT] Choose a Size option only
+[WAIT] Page settles
+[ASSERT] Decision cell 3: Size done, Color red. Count red rows and read the ""Add to cart"" state
+[ACT] Choose a Color option
+[WAIT] Page settles
+[ASSERT] Decision cell 4: all required done, optional parent set. Count red rows and read the ""Add to cart"" state
+[ACT] Set the parent back to None
+[WAIT] Page settles
+[ASSERT] Decision cell 5: required rows gone, optional parent unset. Count red rows and read the ""Add to cart"" state","[STATE] In every settled cell, ""Add to cart"" is enabled exactly when zero rows are red {BL} BL-CAT-006
+[STATE] Cells 1 and 5 (no red row, optional unset): button enabled {BL} BL-CAT-006
+[STATE] Cells 2 and 3 (at least one red row): button disabled {BL} BL-CAT-006
+[STATE] Cell 4 (all required done, optional set): button enabled; an optional row never disables the button {SPEC} VCST-6027 AC-3
+[DOM] Optional rows stay visible with ""Review"" and are never red {SPEC} VCST-6027 AC-3","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Button enabled while a red row exists; button disabled in a settled state with no red row; optional row styled as required,none,VCST-6027 · Archetype:PARITY · Technique:DT · Behavior:cat.cfg.required-gate,Draft
+CFG-CHK-008,Configuration checklist — during first paint and slow network the rows never contradict a disabled Add to cart,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (CFG-023). Browser can throttle the network (DevTools network conditions or the lane's equivalent). Case does not add to cart. Measurement method: in-page observer, never agent snapshots (round-trips of 1-2 s). Measured baseline for the PO: window of about 500-550 ms on every load (6/6, CFG-030 and CFG-023, un-throttled, single session).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)","[ACT] Register an init script (evaluate step, runs before page scripts) that installs a MutationObserver recording performance.now() at every change of: the ""Add to cart"" disabled state, the number of red (required) checklist rows, the number of checklist rows
+[WAIT] Page settles (UI and network idle)
+[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url) with no throttling (first paint)
+[WAIT] 20 s sampling window
+[ASSERT] From the in-page records: the total time in which at least one row is rendered, zero rows are red, the button is disabled
+[ACT] Set the network to a slow profile (Slow 4G or slower)
+[NAV] Hard-reload the page
+[WAIT] 20 s sampling window
+[ASSERT] Same check on the throttled-load records
+[NAV] Reload the page again (refresh)
+[WAIT] 20 s sampling window
+[ASSERT] Same check on the refresh records","[STATE] In no recorded interval is ""Add to cart"" disabled while the checklist shows rows and none of them is red {SPEC} VCST-6027 statement (the checklist explains why Add to cart is disabled)
+[STATE] A disabled button with a rendered, all-green checklist is a contradiction at first paint, on a slow network and after refresh {BL} BL-CAT-006
+[DOM] Once the page has settled the visible rows and the button state agree {SPEC} VCST-6027 statement
+[STATE] Duration of the in-page window (rows rendered, zero red rows, button disabled) = 0 ms on every load {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A sample with button disabled, rows rendered and zero red rows (all-green or optional-only list next to a disabled button); the window reopens after refresh or on slow network",Restore normal network conditions in the browser,VCST-6027 · Archetype:RACE · Technique:EG · Behavior:cat.cfg.required-gate.all-filled,Draft
+CFG-CHK-009,"Configuration checklist — each link expands a collapsed section, scrolls to it and focuses it without changing the URL",Configurable Products > PDP > Configuration checklist,High,BL-UI-003,ECL-15.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_FILE_DRIVEN_COND.name) (CFG-025): root File section ""Design Upload"" (required), then optional Product ""Finish Type"", then optional Text ""Notes"".","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url), file=@td(CFG_TEST_FILES.validPdf.path)","[NAV] Open {{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url)
+[WAIT] Checklist and accordion rendered; remember the page URL
+[ACT] Collapse the ""Design Upload"" section by clicking its header
+[ASSERT] The section body is hidden
+[ACT] Click the ""Upload a file"" link on the ""Design Upload"" row
+[WAIT] Smooth scroll finishes
+[ASSERT] The ""Design Upload"" section is expanded, inside the viewport, and keyboard focus is inside that section
+[ASSERT] The page URL is identical to the remembered URL (no hash added, no navigation)
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) so that ""Finish Type"" becomes visible
+[ACT] collapse ""Finish Type"" by clicking its header
+[ACT] Click the ""Review"" link on the ""Finish Type"" row
+[WAIT] Page settles (UI and network idle)
+[ASSERT] ""Finish Type"" expands, scrolls into view, receives focus; URL unchanged
+[ACT] Collapse ""Finish Type"" again
+[ACT] Click the ""Review"" link a second time
+[WAIT] Page settles (UI and network idle)
+[ASSERT] It re-opens (the link works every time, not only the first)","[STATE] Clicking a row link expands the target section even if the buyer collapsed it manually {SPEC} VCST-6027 AC-2.1 (link leads to the option)
+[STATE] The target section scrolls into view and takes keyboard focus {SPEC} VCST-6027 AC-2.1
+[STATE] The page URL does not change and gains no hash {OBSERVED} 3x SBTM-VCST-6027 (links are click handlers, not hash links)
+[STATE] The link works repeatedly after the section is collapsed again {SPEC} VCST-6027 AC-2
+[DOM] Only the targeted section is expanded and visible; sibling sections keep their own state {BL} BL-UI-003
+[STATE] The page URL after each link click equals the remembered URL {OBSERVED} 3x SBTM-VCST-6027","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Section stays collapsed after the click; wrong section scrolled; URL hash appears; focus remains on the link; second click does nothing,none,VCST-6027 · Archetype:RENDER · Technique:ST · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-010,Configuration checklist — links on an edited configured cart line do not trigger the unsaved-changes prompt,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Storefront at {{FRONT_URL}}, signed in as {{USER_EMAIL}}, cart empty. Fixture @td(CFG_TEXT_DRIVEN_COND.name): REQUIRED Text ""Engraving Line 1"" then optional Product ""Style Pack"". The configured cart line this case needs is created by the case itself (steps 2-4) and removed in Cleanup.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), user={{USER_EMAIL}}, text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1""
+[WAIT] ""Add to cart"" becomes enabled
+[ACT] Click ""Add to cart""
+[WAIT] The URL gains lineItemId (edit mode); the main button now reads ""Update cart""; remember the full URL
+[ASSERT] The checklist is prefilled from the line: the Engraving row is done
+[ACT] Clear the ""Engraving Line 1"" input (now dirty)
+[ASSERT] The Engraving row is red with ""Fill it in"" and the main button is disabled
+[ACT] Click the ""Fill it in"" link
+[WAIT] Section receives focus
+[ASSERT] No ""Save changes"" modal opened and the URL still equals the remembered URL (lineItemId kept)
+[ACT] Click the ""Create new configuration"" link (control case: this link leaves the edited line)
+[WAIT] Page settles (UI and network idle)
+[ASSERT] The ""Save changes"" modal opens because the form is dirty
+[ACT] Dismiss the modal without saving
+[NAV] Open the cart
+[ACT] Remove the configured line from the cart","[STATE] A checklist link never raises the unsaved-changes prompt while editing a configured cart line {OBSERVED} 3x SBTM-VCST-6027 (the guard exists: ""Create new configuration"" raises it)
+[STATE] The URL (including lineItemId) is unchanged after a link click {OBSERVED} 3x SBTM-VCST-6027
+[DOM] In edit mode the checklist is visible and prefilled from the saved line, and turns red when the value is cleared {SPEC} VCST-6027 AC-1
+[STATE] The main button reads ""Update cart"" and is disabled while a required row is red {BL} BL-CAT-006
+[STATE] The save-changes guard still fires for ""Create new configuration"" (links bypass it, navigation does not) {OBSERVED} 3x SBTM-VCST-6027","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Save changes modal opens on a checklist link; lineItemId dropped from the URL; checklist empty in edit mode; Update cart enabled while the Engraving row is red,Open the cart and delete the configured line created by this case; confirm the cart is empty,VCST-6027 · Archetype:LIFECYCLE · Technique:EG · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-011,Configuration checklist — done label rule per section type and required flag,Configurable Products > PDP > Configuration checklist,Medium,,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixtures: @td(CFG_TEXT_DRIVEN_COND.name) (REQUIRED Text ""Engraving Line 1""), @td(CFG_FILE_DRIVEN_COND.name) (REQUIRED File ""Design Upload"", optional Text ""Notes""), @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (required Product ""Base"", optional File ""Image"" revealed by ""Message"").","front={{FRONT_URL}}, text={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), file={{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url), product={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url), text_value=@td(CFG_TEXT_INPUTS.customValue), upload=@td(CFG_TEST_FILES.validPdf.path)","[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)
+[ASSERT] Cell Product / required: the ""Base"" row is done; read its full label
+[ACT] Choose values so that ""Image"" (optional File) is visible, upload @td(CFG_TEST_FILES.validPdf.path) in ""Image""
+[ASSERT] Cell File / optional: read the ""Image"" row label after the upload
+[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1""
+[ASSERT] Cell Text / required: read the ""Engraving Line 1"" row label
+[NAV] Open {{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url)
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) in ""Design Upload""
+[ASSERT] Cell File / required: read the ""Design Upload"" row label
+[ACT] Choose a ""Finish Type"" value so that the optional Text ""Notes"" is visible
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Notes""
+[ASSERT] Cell Text / optional: read the ""Notes"" row label","[FORMAT] Product rows read ""<section> — <option name>"" with an em dash {SPEC} VCST-6027 AC-1
+[FORMAT] A done required Text row shows the section name and the entered value (<section> - <value>) {SPEC} VCST-6027 AC-1
+[FORMAT] A done required File row shows the section name and the uploaded file name {SPEC} VCST-6027 AC-1
+[FORMAT] A done optional Text and optional File row show the section name and its value, same rule as required {SPEC} VCST-6027 AC-3.1
+[STATE] Every done row has the done status and no link regardless of type {SPEC} VCST-6027 AC-1","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Done Text or File row shows only the section name with no value; separator differs between types; done row keeps a link; optional done row stays in optional state,none,VCST-6027 · Archetype:PARITY · Technique:DT · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-012,Configuration checklist — optional Product row returns to optional when None is chosen,Configurable Products > PDP > Configuration checklist,Medium,,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TEXT_DRIVEN_COND.name): REQUIRED Text ""Engraving Line 1"" reveals the optional Product ""Style Pack"" (which has a None option).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1"" so that ""Style Pack"" appears
+[ASSERT] The ""Style Pack"" row is optional with ""Review""
+[ACT] In ""Style Pack"" choose a real (non-None) option
+[ASSERT] Read the ""Style Pack"" row
+[ACT] In ""Style Pack"" choose None
+[ASSERT] Read the ""Style Pack"" row and which radio is checked","[DOM] After a real option is chosen the row is done and reads ""Style Pack — <option name>"" {SPEC} VCST-6027 AC-3.1
+[DOM] After None is chosen the row returns to ""Style Pack — optional"" with the ""Review"" link {SPEC} VCST-6027 AC-3
+[STATE] The row never keeps the earlier option's name after None {BL} BL-CAT-006
+[STATE] ""Add to cart"" is enabled in both states (optional never gates) {SPEC} VCST-6027 AC-3","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Row stays green after None; row shows the stale option name; Review link missing after None; Add to cart disabled by an optional row,none,VCST-6027 · Archetype:LIFECYCLE · Technique:ST · Behavior:cat.cfg.pdp.none-option,Draft
+CFG-CHK-013,Configuration checklist — clearing a required Text value turns the row red and disables Add to cart again,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TEXT_DRIVEN_COND.name): REQUIRED Text ""Engraving Line 1"". Not modified in the cart.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1""
+[WAIT] The page settles (3 s with no change)
+[ASSERT] The Engraving row is done and ""Add to cart"" is enabled
+[ACT] Delete the whole text in the input
+[WAIT] The page settles
+[ASSERT] Read the Engraving row, its link, the dependent ""Style Pack"" row and the ""Add to cart"" button","[DOM] After clearing, the row is red again: ""Engraving Line 1 — required"" with ""Fill it in"" {SPEC} VCST-6027 AC-2.1
+[STATE] ""Add to cart"" is disabled again {BL} BL-CAT-006
+[DOM] The dependent ""Style Pack"" row disappears with its section {OBSERVED} 3x SBTM-VCST-6027
+[STATE] No row remains green for the cleared value {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Row stays green after clearing; button stays enabled after clearing; Style Pack row lingers,none,VCST-6027 · Archetype:LIFECYCLE · Technique:ST · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-014,Configuration checklist — whitespace-only text never counts as filled,Configurable Products > PDP > Configuration checklist,Medium,BL-CAT-006,ECL-7.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixtures: @td(CFG_TEXT_DRIVEN_COND.name) (REQUIRED Text ""Engraving Line 1"") and @td(CFG_FILE_DRIVEN_COND.name) (optional Text ""Notes"", reachable after ""Design Upload"" and ""Finish Type"" are set).","front={{FRONT_URL}}, req={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), opt={{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url), upload=@td(CFG_TEST_FILES.validPdf.path)","--- SCREEN: required Text ---
+[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type three spaces into ""Engraving Line 1""
+[WAIT] The page settles
+[ASSERT] Read the Engraving row and the ""Add to cart"" button
+--- SCREEN: optional Text ---
+[NAV] Open {{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url)
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) in ""Design Upload"", choose a ""Finish Type"" value so ""Notes"" is visible
+[ACT] Type three spaces into ""Notes""
+[WAIT] The page settles
+[ASSERT] Read the ""Notes"" row","[DOM] Whitespace in the required Text keeps the row red (""Engraving Line 1 — required"", ""Fill it in"") {HYPOTHESIS} blank is not a selection; ticket and BL-CAT-006 silent, PO to confirm
+[STATE] ""Add to cart"" stays disabled with whitespace-only required text {BL} BL-CAT-006
+[DOM] Whitespace in the optional Text does not turn its row done: it stays ""Notes — optional"" with ""Review"" {HYPOTHESIS} blank is not a value; PO to confirm (ticket silent)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Whitespace shows the row green; Add to cart enabled with whitespace in a required Text; optional Notes row done on whitespace,none,VCST-6027 · Archetype:BOUNDARY · Technique:BVA · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-015,Configuration checklist — Text over maxLength keeps the row red,Configurable Products > PDP > Configuration checklist,Medium,BL-CAT-006,ECL-7.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TEXT_DRIVEN_COND.name): REQUIRED Text ""Engraving Line 1"" with a maxLength configured in Admin (read it live from the input's maxlength attribute or the counter; do not assume a number).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ASSERT] Read maxLength N for ""Engraving Line 1"" (input maxlength attribute / ""0 / N"" counter)
+[ACT] Type exactly N characters (letters only)
+[ASSERT] Read the Engraving row and the ""Add to cart"" button
+[ACT] Clear the input
+[ACT] paste N+1 characters from the clipboard in one action
+[WAIT] The page settles
+[ASSERT] Read the input value length, any error message under the field, the Engraving row and the ""Add to cart"" button","[STATE] At exactly N characters the row is done and ""Add to cart"" is enabled {SPEC} VCST-6027 AC-1
+[STATE] A value above N is either truncated to N or rejected with a visible error; it is never accepted silently {BL} BL-CAT-006 (VC-CFG-001: the add is rejected above maxLength)
+[DOM] While an over-length error is shown the row is not green and ""Add to cart"" is disabled {BL} BL-CAT-006
+[STATE] The row and the button agree in every state read above {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Row green with a value longer than maxLength; error shown while the button is enabled; row green and the add is rejected by the server,none,VCST-6027 · Archetype:BOUNDARY · Technique:BVA · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-016,Configuration checklist — removing or failing a required file upload keeps the row red,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixtures: @td(CFG_REQUIRED_FILE_CHILD.name) (REQUIRED File ""ID Proof"") and @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (optional File ""Image"" revealed by ""Message""). A valid PDF is available at @td(CFG_TEST_FILES.validPdf.path); the rejected-type case uses a copy of it whose extension is outside the section's allowed list.","front={{FRONT_URL}}, req={{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url), opt={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url), upload=@td(CFG_TEST_FILES.validPdf.path)","--- SCREEN: required file ---
+[NAV] Open {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
+[ACT] If ""Service Plan"" is red, choose any option so ""ID Proof"" is visible
+[ACT] Fill every other required section that is red
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) in ""ID Proof""
+[ASSERT] The ""ID Proof"" row is done and ""Add to cart"" is enabled
+[ACT] Remove the uploaded file
+[WAIT] The page settles
+[ASSERT] Read the ""ID Proof"" row and the ""Add to cart"" button
+[ACT] Upload a file whose type is not allowed for the section
+[ASSERT] Read the upload error, the ""ID Proof"" row and the ""Add to cart"" button
+--- SCREEN: optional file ---
+[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)
+[ACT] Choose a real option in ""Creme""
+[ACT] Choose a real option in ""Message"" so the optional File ""Image"" is visible
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) in ""Image""
+[ACT] Remove the uploaded file from ""Image""
+[ASSERT] Read the ""Image"" row and which radio (None) is checked","[DOM] After the required file is removed the row is red again: ""ID Proof — required"" with ""Upload a file"" {BL} BL-CAT-006
+[STATE] ""Add to cart"" is disabled after removal {BL} BL-CAT-006
+[DOM] A rejected file type shows an error and leaves the row red and the button disabled {DOC} map cat.cfg.file.rejected-type (unlisted type rejected, Add to cart stays disabled)
+[DOM] After the optional file is removed its row returns to ""Image — optional"" with ""Review"" {OBSERVED} 3x SBTM-VCST-6027 charter 1a","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Row stays green after the file is removed; row green after a rejected upload; Add to cart enabled after removal; optional row stays done after Remove,none,VCST-6027 · Archetype:LIFECYCLE · Technique:ST · Behavior:cat.cfg.file.rejected-type,Draft
+CFG-CHK-017,Configuration checklist — a required child revealed and hidden by its parent adds and removes its red row and flips Add to cart,Configurable Products > PDP > Configuration checklist,Critical,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (CFG-023): required Product ""Base"" (root) -> optional ""Creme"" -> optional ""Message"" -> required Text ""Custom text required"" and optional File ""Image"" (both dependent on Message). Cart is not modified.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)
+[WAIT] Page settles; ""Base"" is done
+[ASSERT] Baseline: record the rows and the ""Add to cart"" state
+[ACT] In ""Creme"" choose a real option
+[ASSERT] A ""Message"" row appears
+[ACT] In ""Message"" choose a real option
+[WAIT] Page settles
+[ASSERT] Rows ""Custom text required — required"" (with ""Fill it in"") and the optional ""Image"" row appear; ""Add to cart"" is disabled
+[ACT] Click ""Fill it in"" on the just-revealed ""Custom text required"" row
+[WAIT] Page settles (UI and network idle)
+[ASSERT] The section expands and takes focus (the link of a freshly revealed row works)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue)
+[WAIT] Page settles
+[ASSERT] The row is done and ""Add to cart"" is enabled
+[ACT] Set ""Creme"" to None
+[WAIT] Page settles
+[ASSERT] Read the rows and ""Add to cart""","[DOM] Revealing ""Message"" adds the required ""Custom text required"" row and the optional ""Image"" row {SPEC} VCST-6027 AC-2
+[STATE] ""Add to cart"" is disabled as soon as the required child is revealed and enabled once it is filled {BL} BL-CAT-006
+[STATE] Link of a just-revealed row works {OBSERVED} 3x SBTM-VCST-6027 charter 1b
+[DOM] After ""Creme"" is set to None the rows for Message, Custom text required and Image are gone {OBSERVED} 3x SBTM-VCST-6027 charter 2
+[STATE] After the parent is cleared ""Add to cart"" is enabled again; a hidden required row never blocks purchase {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Required child row not added on reveal; button stays enabled with the new red row; hidden child rows linger after the parent is cleared; button stays disabled for a hidden required child,none,VCST-6027 · Archetype:PARITY · Technique:ST · Behavior:cat.cfg.pdp.conditional-reveal,Draft
+CFG-CHK-018,"Configuration checklist — optional sections are listed one row each with their own Review link, never grouped",Configurable Products > PDP > Configuration checklist,Medium,,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (CFG-023) with several optional sections (""Creme"", ""Message"" and, once Message has a value, ""Image"").","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)","[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)
+[ACT] Choose a real option in ""Creme""
+[ACT] Choose a real option in ""Message""
+[ASSERT] The optional ""Image"" row is visible and unset
+[ASSERT] Count the rows whose status is optional and count the ""Review"" links
+[ACT] Click the ""Review"" link of the ""Image"" row
+[WAIT] Page settles (UI and network idle)
+[ASSERT] The ""Image"" section is the one that expands and takes focus
+[ACT] Click the ""Review"" link of another optional row
+[WAIT] Page settles (UI and network idle)
+[ASSERT] That row's own section is the one that expands","[DOM] Each unset optional section has its own row ""<name> — optional"" {SPEC} VCST-6027 AC-3 (NOT grouped)
+[DOM] The number of ""Review"" links equals the number of optional rows {SPEC} VCST-6027 AC-3
+[DOM] No single row summarises several optional sections (for example ""3 optional options not set"") {SPEC} VCST-6027 AC-3 (the description overrides the stale mockup)
+[STATE] Each ""Review"" link opens its own section {SPEC} VCST-6027 AC-3","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",One grouped optional row; one Review link for several sections; a Review link opens a different section,none,VCST-6027 · Archetype:PARITY · Technique:EP · Behavior:cat.cfg.required-gate.optional-empty,Draft
+CFG-CHK-019,Configuration checklist — two sections with the same name keep separate rows and links,Configurable Products > PDP > Configuration checklist,Medium,,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_DUPLABEL.name): TWO sections share the display name ""Finish"" but have different option sets and prices.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_DUPLABEL.url)","[NAV] Open {{FRONT_URL}}@td(CFG_DUPLABEL.url)
+[WAIT] Checklist and accordion rendered
+[ASSERT] Count the rows labelled ""Finish"" and the ""Finish"" sections in the accordion
+[ACT] Choose an option in the first ""Finish"" section only
+[ASSERT] Which row changed state; the second row's state
+[ACT] Click the link of the second ""Finish"" row (if it has one)
+[WAIT] Page settles (UI and network idle)
+[ASSERT] Which accordion section expanded (the second one in accordion order)
+[ACT] Choose an option in the second ""Finish"" section
+[ASSERT] Both rows now show their own selected option name","[DOM] Two ""Finish"" rows are visible, one per section, although the names are identical {SPEC} VCST-6027 AC-1 (one row per option)
+[STATE] Filling one ""Finish"" section changes only its own row {SPEC} VCST-6027 AC-1
+[STATE] Each row's link expands its own section and not the same-named one {SPEC} VCST-6027 AC-2
+[DOM] Each done ""Finish"" row is visible and shows its own option name {SPEC} VCST-6027 AC-1
+[STATE] ""Add to cart"" reflects both sections independently {BL} BL-CAT-006
+[STATE] Number of ""Finish"" rows = number of ""Finish"" accordion sections = 2 {SPEC} VCST-6027 AC-1","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",One merged row for two sections; filling one flips both; link opens the wrong same-named section; both rows show the same option name,none,VCST-6027 · Archetype:PARITY · Technique:EG · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-020,Configuration checklist — labels longer than two lines are clamped inside the widget with the full text available,Configurable Products > PDP > Configuration checklist,Medium,BL-UI-004,ECL-8.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_CHECKLIST_ALLTYPES.name): ""Layers"" options are longer than 90 characters, and one optional File section has a 73-character name. Desktop viewport (at least 1280 px wide).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)","[NAV] Open {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url)
+[WAIT] Checklist rendered; Layers shows its auto-selected long option (select one in Layers if it is red)
+[ASSERT] For the Layers row and for the long-named optional File row read: the label element's rendered height vs two line heights, its scrollWidth vs clientWidth, the title attribute, and whether the row's link is still fully visible
+[ASSERT] Read the checklist container's scrollWidth vs clientWidth and the position of the Add to cart button relative to the checklist (checklist below)","[DOM] Each visible label is clamped to at most two lines {SPEC} VCST-6027 AC-1.1
+[DOM] The full label text stays visible through the title attribute (the whole text) {SPEC} VCST-6027 AC-1.1
+[STATE] The widget has no horizontal overflow and the row link stays visible {BL} BL-UI-004
+[DOM] The checklist renders below the ""Add to cart"" button {SPEC} VCST-6027 mockup
+[STATE] Rendered label height <= 2 x line-height for every row {SPEC} VCST-6027 AC-1.1","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Label wider than the widget or wrapping past two lines; text cut with no way to read it; horizontal scrollbar in the price block; link pushed out of the row,none,VCST-6027 · Archetype:BOUNDARY · Technique:BVA · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-021,"Configuration checklist — on mobile the checklist is shown, links scroll to sections and agree with the sticky Add to cart",Configurable Products > PDP > Configuration checklist,Medium,BL-UI-006,ECL-7.4,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}, browser viewport 375x812 (mobile). Fixture @td(CFG_TEXT_DRIVEN_COND.name).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)","[ACT] Resize the viewport to 375x812
+[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[WAIT] Page settles
+[ASSERT] The checklist is present (inside the ""Share & Actions"" widget below the configurator); read the sticky bottom purchase bar state
+[ASSERT] Measure the rendered size of the ""Fill it in"" link
+[ACT] Tap the ""Fill it in"" link
+[ASSERT] The Engraving section expands, scrolls into view and takes focus
+[ACT] Type a value into ""Engraving Line 1"" (@td(CFG_TEXT_INPUTS.customValue))
+[WAIT] Page settles
+[ASSERT] The row is done and the sticky ""Add to cart"" bar is enabled","[DOM] The checklist is visible on mobile with the same rows as desktop {SPEC} VCST-6027 AC-1
+[STATE] Tapping a link expands, scrolls to and focuses its section {SPEC} VCST-6027 AC-2
+[STATE] The sticky purchase button and the rows agree: disabled while red, enabled when none is red {BL} BL-CAT-006
+[DOM] Each visible link target measures at least 24 by 24 CSS px, or is spaced so that the 24 px circle does not overlap neighbours {BL} BL-UI-006 (WCAG 2.5.8 Target Size)
+[STATE] Link target width >= 24 and height >= 24 CSS px (or spacing exemption) {BL} BL-UI-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Checklist missing on mobile; tap on a link does nothing; sticky bar enabled while a row is red; link hit area smaller than 24 px with no spacing,Restore the viewport to 1920x1080,VCST-6027 · Archetype:RENDER · Technique:EP · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-022,Configuration checklist — status and links are accessible without colour,Configurable Products > PDP > Configuration checklist,Medium,BL-A11Y-001,ECL-15.1,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_FILE_DRIVEN_COND.name). Accessibility tree readable (browser_snapshot) and keyboard available.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url), upload=@td(CFG_TEST_FILES.validPdf.path)","[NAV] Open {{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url)
+[ASSERT] Take an accessibility snapshot of the checklist: the list name, each row's text and each link's accessible name and description
+[ACT] Using only the keyboard (Tab) move to the ""Upload a file"" link
+[ASSERT] The link shows a visible focus indicator
+[ACT] Press Enter
+[ASSERT] The target section expands and the focus indicator is visible on the focused element
+[ACT] Upload @td(CFG_TEST_FILES.validPdf.path) so the row becomes done
+[ASSERT] Read the done row's accessible text","[DOM] The list has an accessible name ""Configuration checklist"" {SPEC} VCST-6027 (aria-label on the list)
+[DOM] Status is conveyed by text, not colour alone: ""— required"", ""— optional"" and a ""(completed)"" label for done rows {BL} BL-A11Y-001
+[DOM] Each link's accessible description references its row label so the section is identifiable {OBSERVED} 3x SBTM-VCST-6027 (aria-describedby)
+[STATE] Links are reachable and operable by keyboard with a visible focus indicator {BL} BL-A11Y-002
+[STATE] After navigation the focused element has a visible focus indicator {BL} BL-A11Y-002","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Status shown by colour only; link accessible name is only 'Upload a file' with no way to know which section; no visible focus; link not reachable by Tab,none,VCST-6027 · Archetype:RENDER · Technique:EG · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-023,Configuration checklist — absent on a non-configurable product and price block unchanged,Configurable Products > PDP > Configuration checklist,Medium,BL-UI-003,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. A simple product (@td(PROD_DEFAULT.sku)) and a variations product (@td(PROD_CMP_VARIATIONS.name)) exist; neither is configurable.","front={{FRONT_URL}}, simple_sku=@td(PROD_DEFAULT.sku), variations={{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url)","[NAV] Search the storefront for @td(PROD_DEFAULT.sku)
+[ACT] Open the product from the results
+[WAIT] Price and delivery block rendered
+[ASSERT] Look for data-test-id configuration-checklist; read the block's children: price, stock, ""Add to cart""
+[NAV] Open {{FRONT_URL}}@td(PROD_CMP_VARIATIONS.url)
+[WAIT] Price and delivery block rendered
+[ASSERT] Look for data-test-id configuration-checklist; read the block's children and the vertical gap between them","[DOM] No checklist element, empty bordered box or ""Configuration checklist"" list exists on a non-configurable PDP {SPEC} VCST-6027 (checklist is shown when customizing)
+[DOM] No checklist element is present on a variations product {SPEC} VCST-6027
+[STATE] Price, stock and ""Add to cart"" are present and in their usual order, no extra spacing added {BL} BL-UI-003
+[STATE] ""Add to cart"" is enabled on both products {BL} BL-CAT-006
+[STATE] Number of elements with data-test-id configuration-checklist = 0 on both pages {SPEC} VCST-6027","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Empty checklist box on a simple product; checklist on a variations product; extra margin above the price block,none,VCST-6027 · Archetype:CONFIG · Technique:EP · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-024,Configuration checklist — strings are translated in a non-English locale,Configurable Products > PDP > Configuration checklist,Low,,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}, language switchable to German. Fixture @td(CFG_TEXT_DRIVEN_COND.name).","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Switch the storefront language to German (Deutsch)
+[WAIT] Page reloads in German
+[ASSERT] Read the checklist's accessible name, the red Engraving row text and its link, then the optional rows' text and link
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into the Engraving input
+[ASSERT] Read the done row's screen-reader suffix
+[ASSERT] Look for any visible text starting with ""shared.catalog"" or any English checklist string","[DOM] The list is named ""Konfigurations-Checkliste"" {OBSERVED} 3x SBTM-VCST-6027 (locales/de.json)
+[DOM] Rows read ""<name> — erforderlich"" / ""<name> — optional""; links read ""Ausfüllen"" and ""Überprüfen""; done suffix ""(abgeschlossen)"" {OBSERVED} 3x SBTM-VCST-6027 (locales/de.json)
+[DOM] No raw i18n key and no English checklist string is visible {SPEC} PR #2527 (13 locales)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Raw i18n key shown; English text in the German storefront; label with a literal {name} placeholder,Switch the storefront language back to English,VCST-6027 · Archetype:MONEY · Technique:EP · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-025,Configuration checklist — navigating between configurable products shows the new product sections only,Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixtures @td(CFG_TEXT_DRIVEN_COND.name) (A) and @td(CFG_FILE_DRIVEN_COND.name) (B), reachable by in-app navigation (search results or catalog listing links), not by typing the URL.","front={{FRONT_URL}}, a={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), b={{FRONT_URL}}@td(CFG_FILE_DRIVEN_COND.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1""
+[ACT] Expand another section by clicking its header
+[ACT] Search @td(CFG_FILE_DRIVEN_COND.name) in the header search (no URL typing)
+[ACT] Click the matching result (client-side navigation, no full reload)
+[WAIT] Checklist and accordion rendered for the new product
+[ASSERT] Row names, accordion sections and which section is expanded
+[ACT] Use the browser Back button to return to the first product
+[WAIT] Checklist rendered
+[ASSERT] Row names and states for the first product","[DOM] After the in-app hop the rows are exactly the second product's sections (""Design Upload"", ...), none of the first product's {SPEC} VCST-6027 AC-1 (rows = this product's options)
+[STATE] Collapse state and typed values are not carried over to the second product {BL} BL-CAT-006
+[DOM] After Back the first product shows its own initial state, not the second product's rows {SPEC} VCST-6027 AC-1
+[STATE] ""Add to cart"" matches the visible rows on each page {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",First product's rows shown on the second PDP; row from the previous product persists; collapse state carried over; button state from the previous product,none,VCST-6027 · Archetype:STALE · Technique:EG · Behavior:cat.cfg.pdp,Draft
+CFG-CHK-026,Configuration checklist — other product actions are consistent with the checklist while a section is required,Configurable Products > PDP > Configuration checklist,Low,BL-CAT-006,,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}, signed in as {{USER_EMAIL}}. Fixture @td(CFG_REQUIRED_FILE_CHILD.name) with the required ""ID Proof"" empty (red row). Case performs no write: no list item, no cart line is created.","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url), user={{USER_EMAIL}}","[NAV] Open {{FRONT_URL}}@td(CFG_REQUIRED_FILE_CHILD.url)
+[ACT] If ""Service Plan"" is red, choose any option so that ""ID Proof"" is visible
+[WAIT] Page settles
+[ASSERT] Read the red row and the ""Add to cart"" button
+[ASSERT] Read the enabled/disabled state of every other product action in the block (Add to list, Compare, Share, Print) without activating Add to list
+[ASSERT] Read the console for errors while hovering and focusing each of those actions","[STATE] ""Add to cart"" is disabled and a red row names the missing required section {BL} BL-CAT-006
+[STATE] The checklist is the only explanation for the disabled state: no second blocking message other than the section's own prompt {SPEC} VCST-6027 statement
+[STATE] No JS error while the other actions are hovered or focused {BL} BL-CAT-006
+[DOM] The other actions' states are recorded for the PO; the ticket says ""or any other btn"" without defining it {HYPOTHESIS} PO to define; not a pass/fail on the action states","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",JS error on hover or focus of another action; Add to cart enabled while ID Proof is red,none,VCST-6027 · Archetype:PARITY · Technique:EG · Behavior:cat.cfg.required-gate.one-missing,Draft
+CFG-CHK-027,Configuration checklist — once every row is green the purchase button enables within 2 seconds (new and edit mode),Configurable Products > PDP > Configuration checklist,High,BL-CAT-006,ECL-7.3,"[PRE:SIGNIN_AS:USER_DEFAULT]
+[PRE:RESET_CART]
+Storefront at {{FRONT_URL}}, signed in as {{USER_EMAIL}}, cart empty. Fixtures @td(CFG_WEDDING_CAKE_CONDITIONAL.name) (new mode) and @td(CFG_TEXT_DRIVEN_COND.name) (edit mode, line created in step 7 and removed in Cleanup).","front={{FRONT_URL}}, new={{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url), edit={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), user={{USER_EMAIL}}, text_value=@td(CFG_TEXT_INPUTS.customValue)","--- SCREEN: new mode ---
+[NAV] Open {{FRONT_URL}}@td(CFG_WEDDING_CAKE_CONDITIONAL.url)
+[ACT] Run an in-page evaluate step that installs a MutationObserver recording performance.now() for two events: the last red checklist row turns done, the ""Add to cart"" button loses its disabled attribute (timing is taken in the page, never from agent snapshots, whose round-trips take 1-2 s)
+[WAIT] Page settles (UI and network idle)
+[ACT] Choose a real option in ""Creme""
+[ACT] Choose a real option in ""Message"" so ""Custom text required"" appears
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Custom text required"" (the last red row)
+[WAIT] Up to 20 s for the button to become enabled
+[ASSERT] Read the two in-page timestamps and compute the delay (button enabled minus last red row done)
+[ACT] Make one more forward edit that keeps every required row done (choose another option in ""Creme"")
+[WAIT] Up to 20 s
+[ASSERT] Read the in-page timestamps again and compute the delay
+--- SCREEN: edit mode ---
+[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1""
+[ACT] Click ""Add to cart"" (creates the cart line, the URL gains lineItemId)
+[WAIT] Page settles (UI and network idle)
+[ACT] Clear the Engraving text
+[ACT] Install the in-page MutationObserver again (evaluate step)
+[ACT] Type @td(CFG_TEXT_INPUTS.customValue) into ""Engraving Line 1"" again
+[WAIT] Up to 20 s for ""Update cart"" to become enabled
+[ASSERT] Read the in-page timestamps and compute the delay between the row turning done and ""Update cart"" becoming enabled
+[NAV] Open the cart
+[ACT] Delete the configured line from the cart","[STATE] ""Add to cart"" is enabled once the last red row turns green, in new mode {SPEC} VCST-6027 statement; the 2 s bound is a QA tolerance {HYPOTHESIS - PO to ratify}
+[STATE] The same holds after a further forward edit: the button follows the last red row turning green {SPEC} VCST-6027 statement; 2 s tolerance {HYPOTHESIS - PO to ratify}
+[STATE] ""Update cart"" is enabled once the last red row turns green, in edit mode {SPEC} VCST-6027 statement; 2 s tolerance {HYPOTHESIS - PO to ratify}
+[STATE] In-page delay (button enabled minus last red row done) <= 2 s in new mode, after a further edit and in edit mode {HYPOTHESIS} QA tolerance, PO to ratify
+[STATE] The button never stays disabled while every row is done and optional {BL} BL-CAT-006","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",All rows green while the button stays disabled beyond the 2 s QA tolerance (button lags the rows by seconds); lag grows after repeated edits; edit-mode Update cart lags the rows,Open the cart and delete the configured line created by this case; confirm the cart is empty,VCST-6027 · Archetype:RACE · Technique:ST · Behavior:cat.cfg.required-gate.all-filled,Draft
+CFG-CHK-028,Configuration checklist — a whitespace-only required parent text does not reveal its dependent section,Configurable Products > PDP > Configuration checklist,Medium,BL-CAT-006,ECL-7.2,"[PRE:SIGNIN_AS:USER_DEFAULT]
+Storefront at {{FRONT_URL}}. Fixture @td(CFG_TEXT_DRIVEN_COND.name): REQUIRED Text ""Engraving Line 1"" is the parent of the optional Product ""Style Pack"".","front={{FRONT_URL}}, product={{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url), text_value=@td(CFG_TEXT_INPUTS.customValue)","[NAV] Open {{FRONT_URL}}@td(CFG_TEXT_DRIVEN_COND.url)
+[ASSERT] Baseline: no ""Style Pack"" section and no ""Style Pack"" row
+[ACT] Type three spaces into ""Engraving Line 1""
+[WAIT] Page settles
+[ASSERT] Read the Engraving row, the accordion sections, the checklist rows and ""Add to cart""
+[ACT] Replace the spaces with @td(CFG_TEXT_INPUTS.customValue)
+[ASSERT] ""Style Pack"" now appears in the accordion and in the checklist
+[ACT] Clear the input
+[ASSERT] ""Style Pack"" disappears from both again","[STATE] With only whitespace in the parent Text the dependent ""Style Pack"" section and row stay hidden {HYPOTHESIS} blank is not a selection; ticket and BL-CAT-006 silent, PO to confirm
+[DOM] The Engraving row stays red (""Engraving Line 1 — required"") and ""Add to cart"" stays disabled {BL} BL-CAT-006
+[DOM] A real value reveals ""Style Pack"" in both accordion and checklist {SPEC} VCST-6027 AC-2
+[STATE] Clearing the parent hides both again {SPEC} VCST-6027 AC-2","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql",Style Pack revealed by whitespace-only text; checklist row visible for a section the accordion does not show; row stays after the parent is cleared,none,VCST-6027 · Archetype:BOUNDARY · Technique:BVA · Behavior:cat.cfg.pdp.conditional-reveal,Draft

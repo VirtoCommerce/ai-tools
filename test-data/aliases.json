@@ -2887,8 +2887,8 @@
     "captured_at": "2026-05-06",
     "captured_via": "productConfiguration GraphQL on https://vcst-qa.govirto.com/graphql",
     "notes": "Wedding cake with conditional 5-section graph: Base (req root) → Creme (opt) → Message (opt) → [Custom text required (req Text, maxLen=50), Image (opt File)]. The richest CFG product in QA — exercises ALL 4 section types (Product/Text/File) AND conditional dependencies AND mixed-required semantics. Use for: (a) mixed-type selection toggle in single batch; (b) conditional cascade interaction with selectedForCheckout flag; (c) parent deselect → does it cascade-disable child configurationItems? (open contract question — PR #114 doesn't specify). Distinct from CFG_WEDDING_CAKE_CONDITIONAL (CFG-023, agent-test-prefixed seed) — YOC-85609878 is the persistent QA fixture.",
-    "_status": "weak-match-20260518",
-    "_status_note": "See CFG_WEDDING_CAKE_CONDITIONAL."
+    "_status": "gone-20261006",
+    "_status_note": "STALE — product YOC-85609878 no longer exists on vcst (2026-10-06: Platform API search/products + listentries by code and by name return nothing; GET /api/catalog/products/f4f27033-… returns empty; storefront slug 404s). Kept, not deleted: regression suite row CFG-GQL-032 (050i-graphql-configurations.csv, already Quarantined) still references it — re-point it at a seeded fixture (e.g. CFG_WEDDING_CAKE_CONDITIONAL / CFG-023 after reseed, or CFG_CHECKLIST_ALLTYPES for all-types coverage). Earlier note: see CFG_WEDDING_CAKE_CONDITIONAL."
   },
   "UPLOAD_FIXTURES": {
     "_inline": true,
@@ -8030,6 +8030,23 @@
     },
     "notes": "VCST-5735 /compare v2 — a configurable whose TWO configuration sections share one display label (\"Finish\"). The compare table keys configuration rows config:<label>, so a shared label is the only shape that can show one row overwriting the other; all 22 pre-existing configurable specs carry distinct section names, so the collision was unreachable however many configurables a case put side by side. The two sections carry DIFFERENT option sets and prices on purpose — identical content would make the rows indistinguishable even when the implementation is correct. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-033; drift-guarded by td:validate:cfg. NAVIGATE VIA {{FRONT_URL}}@td(CFG_DUPLABEL.url).",
     "_status": "authored-20260903"
+  },
+  "CFG_CHECKLIST_ALLTYPES": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-034"
+    },
+    "fields": {
+      "id": "product_id_guid",
+      "configurationId": "configuration_id",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "sections": "section_ids"
+    },
+    "notes": "VCST-6027 configurable PDP Price-and-delivery checklist fixture (CFG-034, a cake). 8 sections in order: LAY Layers (Product, REQUIRED root, NO default; BOTH options are long AGENT-TEST-CHK-Layers Top … products, 118 and 122 chars — option order is not controllable, so whichever is selected on load overflows the clamp) · TXT Text (Text, REQUIRED root, maxLength 50) · PHO Photo for the cake topper (File, REQUIRED root) · FIL Filling (Product, REQUIRED, dependsOn LAY; short options — the unclamped Done contrast) · ICE Icing / DEC Decoration (Product, optional) · MSG Message (Text, optional, presets + custom, maxLength 100) · ART a 73-char section name (File, optional). The only fixture with all three REQUIRED link variants (Text / File / Product) on one page and a label long enough to overflow the 2-line clamp — td:validate:cfg FAILS if a Layers label shrinks, a required type disappears, Filling options grow long or Layers gains a default. Section GUIDs resolve per env as @td(CFG_CHECKLIST_ALLTYPES.sections.<KEY>) (LAY/TXT/PHO/FIL/ICE/DEC/MSG/ART) from aliases.<env>.json. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-034. NAVIGATE VIA {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url).",
+    "_status": "seeded-20261006"
   },
   "ORG_LOY_A": {
     "_inline": true,

@@ -1,22 +1,44 @@
 {
- "runId": "REG-2026-10-05-1613",
+ "runId": "REG-2026-10-06-1857",
  "status": "completed",
- "startedAt": "2026-10-05T13:13:48.000Z",
- "windowStart": "2026-10-05T13:13:48.000Z",
- "selection": "007,050h",
- "env": "vcptcore",
+ "startedAt": "2026-10-06T16:57:38Z",
+ "windowStart": "2026-10-06T16:57:38Z",
+ "selection": "072,050i,072b,072e",
+ "env": "vcst (hybrid: FRONT_URL=http://localhost)",
  "scoped": true,
- "purpose": "/qa-test VCST-5707 round 2 4c C1 exact set. Delegated: --no-promote.",
+ "purpose": "/qa-test VCST-6027 4c C1 exact set. Delegated: --no-promote.",
  "suites": {
-  "007": {
+  "072": {
    "status": "done",
-   "browser": "playwright-chrome",
-   "lane": "browser"
+   "browser": "playwright-edge",
+   "lane": "browser",
+   "pass": 23,
+   "fail": 5,
+   "blocked": 0
   },
-  "050h": {
+  "072b": {
    "status": "done",
-   "lane": "fastpath"
+   "browser": "playwright-firefox",
+   "lane": "browser",
+   "pass": 1,
+   "fail": 0,
+   "blocked": 0
+  },
+  "072e": {
+   "status": "done",
+   "browser": "playwright-edge (retry; attempt 1 firefox BLOCKED)",
+   "lane": "browser",
+   "pass": 1,
+   "fail": 0,
+   "blocked": 0
+  },
+  "050i": {
+   "status": "done",
+   "lane": "fastpath",
+   "pass": 1,
+   "fail": 0,
+   "blocked": 0
   }
  },
- "finishedAt": "2026-10-05T13:30:32.620Z"
+ "finishedAt": "2026-10-06T17:31:26.269Z"
 }

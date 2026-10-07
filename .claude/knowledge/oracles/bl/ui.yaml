@@ -47,6 +47,9 @@ rules:
       ref: Record `getBoundingClientRect()` of a neighbor sibling (`rectSnapshotSnippet(selector)`). Trigger the state change. Re-record. Compare with `compareRectSnapshots(before, after)` — `topDelta` and `leftDelta` must be 0.
     violation_signal: Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-UI-004
     title: Content boundary
     rule: "Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (375 / 768 / 1024 / 1280 / 1920) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table)."
@@ -64,6 +67,9 @@ rules:
       ref: Inject stress content (80-char product title, 12-digit SKU, German-equivalent label, 4-digit quantity). At each viewport, run `LAYOUT_SNIPPETS.overflowAudit` — checks `document.documentElement.scrollWidth > window.innerWidth` (horizontal overflow) and for each suspect element `el.scrollHeight > el.clientHeight && getComputedStyle(el).overflowY === 'hidden'` (silent clipping).
     violation_signal: Page scrolls horizontally at 375 px. Product title is cut off mid-character with no `…`. Card stretches to fit the longest sibling's text, breaking grid alignment. Locale labels (German `Versandadresse`) overflow into adjacent column.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-UI-005
     title: Alignment in horizontal groups
     rule: "Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row."
@@ -101,8 +107,8 @@ rules:
     violation_signal: 32 × 32 close button on a modal. Quantity stepper buttons 28 × 28 with 4 px between. Two checkboxes stacked with 6 px gap. A tap that should hit one element hits a neighbor instead.
     status: ACTIVE
     verified:
-      date: 2026-10-01
-      by: REG-2026-10-01-1243
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-UI-007
     title: Admin editor chrome is keyboard-operable and exposes its state
     rule: "Every interactive control an admin surface introduces must be reachable by `Tab` in DOM order, activatable from the keyboard, and must expose the correct role and selected/expanded state to assistive technology plus a non-empty accessible name. A visible focus indicator is required on focus — a control may not remove the platform outline without replacing it. Keyboard focus must never be trapped: an embedded editor that consumes `Tab` for indentation must provide an escape binding so focus can leave it (WCAG 2.1.2 No Keyboard Trap, Level A). Embedded iframes carry a non-empty `title`. Text meets WCAG 2.2 AA contrast 4.5:1 (3:1 for large text); non-text affordances such as icons and focus indicators meet 3:1. **Scope:** this invariant judges the controls a surface itself adds or owns. Pre-existing platform form chrome that fails the same check is a platform-level finding — record it once against the platform, not against every module blade that renders it."

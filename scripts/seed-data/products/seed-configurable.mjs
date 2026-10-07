@@ -3,7 +3,7 @@
  * scripts/seed-data/seed-configurable.mjs
  *
  * SINGLE consolidated seeder for EVERY script-created configurable product in
- * test-data/products/configurable-products.csv (CFG-012..CFG-032 + CFG-FILE).
+ * test-data/products/configurable-products.csv (CFG-012..CFG-034 + CFG-FILE).
  * Replaces the four legacy per-family scripts that were ~90% duplicated:
  *   - seed-configurable-products.mjs        (base: 012–021,017,019,FILE)
  *   - seed-conditional-sections-extended.mjs (conditional cascades: 022–029)
@@ -27,8 +27,9 @@
  *     --dry-run                reads only, no writes
  *     --verbose                log every call
  *     --only CFG-013           seed/teardown a single CSV id
- *     --group base|conditional|default|bike   seed/teardown one family
+ *     --group base|conditional|default|bike|checklist   seed/teardown one family
  *     --teardown               remove seeded products (see teardown notes below)
+ *     --with-options           with --teardown --only: also remove that spec's option products
  *
  * Safety: ENV_RISK gate via seed-common.assertSafeTarget() (blocks production;
  *   override --allow-admin-writes-on-prod). Writes runtime GUIDs (product_id_guid
@@ -80,6 +81,8 @@ async function applyCategorySeo(categoryId, seo) {
   await api('PUT', '/api/catalog/categories', cat, { expectStatus: [200, 204] }).catch((e) => verbose(`seo update ${categoryId}: ${String(e.message).slice(0, 120)}`));
 }
 const GROUP = argv.includes('--group') ? argv[argv.indexOf('--group') + 1] : null;
+// --teardown --only <id> --with-options: also delete that spec's option products (zero-residue for one spec).
+const WITH_OPTIONS = argv.includes('--with-options');
 // Product content enrichment (images + descriptions), on by default — a bare seeded
 // product otherwise has no imagery/copy. Idempotent (skips products already populated).
 const NO_ASSETS = argv.includes('--no-assets');
@@ -101,6 +104,10 @@ const FAMILY = {
   conditional: { catalogGroup: 'cond',   childNaming: 'keyed', slugFromCode: false },
   default:     { catalogGroup: 'deffam', childNaming: 'keyed', slugFromCode: true },
   bike:        { catalogGroup: 'deffam', childNaming: 'bike',  slugFromCode: true },
+  // VCST-6027 (CFG-034): option products are named AGENT-TEST-CHK-<option> so the PDP shows the
+  // option name itself (the long-label clamp is the point); codes carry a truncated slug because a
+  // product code is length-limited while the long option name is not.
+  checklist:   { catalogGroup: 'main',   childNaming: 'chk',   slugFromCode: false },
 };
 
 // ── Catalog groups (original names preserved for idempotency) ─────────────────
@@ -208,6 +215,17 @@ async function findProductByCode(code, catalogId = null) {
     if (!entries.length || (page + 1) * PAGE >= total) break;
   }
   return null;
+}
+/** Every AGENT-TEST option product of one spec: code `<parentCode>-…` (paged, exact prefix match). */
+async function findOptionProducts(parentCode) {
+  const PAGE = 100, out = [];
+  for (let page = 0; page < 20; page++) {
+    const r = await api('POST', '/api/catalog/listentries', { keyword: parentCode, take: PAGE, skip: page * PAGE }, { expectStatus: [200, 201, 400, 404] });
+    const entries = r?.listEntries || r?.results || [];
+    for (const e of entries) if (e.type === 'product' && String(e.code || '').startsWith(`${parentCode}-`) && String(e.name || '').startsWith('AGENT-TEST')) out.push({ id: e.id, code: e.code });
+    if (!entries.length || (page + 1) * PAGE >= Number(r?.totalCount ?? 0)) break;
+  }
+  return [...new Map(out.map(o => [o.id, o])).values()];
 }
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function ensureProduct(catalogId, categoryId, body) {
@@ -340,6 +358,10 @@ function childIdentity(spec, section, opt, idx) {
     const slug = opt.name.replace(/[^A-Za-z0-9]+/g, '-').toUpperCase();
     return { code: `${spec.code}-OPT-${slug}`, name: `AGENT-TEST-${spec.csvId}-${opt.name}` };
   }
+  if (naming === 'chk') {
+    const slug = opt.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0, 20);
+    return { code: `${spec.code}-${section.key}${idx}-${slug}`, name: `AGENT-TEST-CHK-${opt.name}` };
+  }
   if (naming === 'bike') {
     const slug = opt.name.replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').toUpperCase().slice(0, 20);
     return { code: `${spec.code}-${section.key}${idx}-${slug}`, name: opt.name };
@@ -367,7 +389,10 @@ async function createOrUpdateConfiguration(productId, sections) {
     allowPredefinedOptions: (s.options?.length ?? 0) > 0,
     maxLength: s.maxLength ?? null,
     dependsOnSectionId: null, // wired in Pass 2
-    options: (s.options || []).map(o => ({ productId: o._productId, quantity: o.quantity ?? 1, text: null, isDefault: !!o.default })),
+    // Product options point at an option product; Text options are predefined `text` presets.
+    options: (s.options || []).map(o => (s.type === 'Product'
+      ? { productId: o._productId, quantity: o.quantity ?? 1, text: null, isDefault: !!o.default }
+      : { productId: null, quantity: 1, text: o.text ?? null, isDefault: !!o.default })),
   }));
 
   const existing = await api('POST', '/api/catalog/products/configurations/search', { productIds: [productId], take: 1 }, { expectStatus: [200, 400, 404] });
@@ -396,7 +421,7 @@ async function createOrUpdateConfiguration(productId, sections) {
       if (parentId && target.dependsOnSectionId !== parentId) { target.dependsOnSectionId = parentId; changed = true; }
       else if (!parentId) log(`⚠ ${spec.name}: dependsOn=${spec.dependsOn} unresolved`);
     }
-    for (const opt of (spec.options || [])) {
+    for (const opt of (spec.type === 'Product' ? (spec.options || []) : [])) {
       const to = (target.options || []).find(o => o.productId === opt._productId);
       if (!to) continue;
       if (!!to.isDefault !== !!opt.default) { to.isDefault = !!opt.default; changed = true; }
@@ -408,7 +433,20 @@ async function createOrUpdateConfiguration(productId, sections) {
 
   try { await api('PUT', `/api/catalog/products/configurations/${cfg.id}`, wired, { expectStatus: [200, 204] }); log(`✓ configuration wired via PUT`); }
   catch (e) { verbose(`PUT failed (${e.message.slice(0, 60)}), POST upsert`); await api('POST', '/api/catalog/products/configurations', wired, { expectStatus: [200, 201] }); log(`✓ configuration wired via POST upsert`); }
-  return await api('GET', `/api/catalog/products/configurations/${cfg.id}`, null, { expectStatus: [200] });
+  // The read right after the upsert can be STALE: on vcst 2026-10-06 GET-by-id returned the
+  // pre-wiring sections (dependsOnSectionId null) while /search already had them. Poll /search until
+  // every expected dependsOn is visible, so the reported shape and the alias write-back are the
+  // persisted ones, not a cached pre-image.
+  const wantDeps = sections.filter(s => s.dependsOn).map(s => [keyToId[s.key], keyToId[s.dependsOn]]);
+  let last = null;
+  for (let i = 0; i < 10; i++) {
+    const r = await api('POST', '/api/catalog/products/configurations/search', { productIds: [productId], take: 1 }, { expectStatus: [200] });
+    last = r?.results?.[0] || last;
+    if (last && wantDeps.every(([sid, pid]) => last.sections?.find(x => x.id === sid)?.dependsOnSectionId === pid)) return last;
+    await sleep(3000);
+  }
+  log(`⚠ configuration ${cfg.id}: dependsOn wiring not visible after 30s`);
+  return last;
 }
 
 // ── Per-spec seed ────────────────────────────────────────────────────────────
@@ -453,6 +491,14 @@ async function seedSpec(spec, ctx, ffcId) {
 
   // 3. configuration
   const cfg = await createOrUpdateConfiguration(parent.id, spec.sections);
+  // Read-back gate: a wrong body field is accepted with 200 and saved EMPTY + inactive
+  // (kb KB-CD451F5C), so a seed is only done when the persisted config matches the spec.
+  if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
+    const n = cfg?.sections?.length ?? 0;
+    if (n !== spec.sections.length || cfg?.isActive !== true) {
+      throw new Error(`configuration ${cfg?.id} read back sections=${n} (spec ${spec.sections.length}) isActive=${cfg?.isActive} — not seeded`);
+    }
+  }
 
   // 4. link parent into the virtual catalog UNDER its seed category (not the root)
   if (!DRY_RUN && !String(parent.id).startsWith('dry-')) {
@@ -520,7 +566,16 @@ async function main() {
     // configuration_id, and — for the default/conditional specs — section + default-option ids.
     // Business keys / names / slugs stay in the committed CSV (which carries NO GUIDs).
     const byKey = {};
-    for (const s of seeded) if (!s.error) byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections) };
+    for (const s of seeded) {
+      if (s.error) continue;
+      // section_ids: { <spec section key>: <section GUID> } — lands only on aliases that map a field
+      // to `section_ids` (e.g. CFG_CHECKLIST_ALLTYPES.sections.LAY); the CSV has no such column.
+      const spec = SPECS.find(x => x.csvId === s.csvId);
+      const section_ids = Object.fromEntries((spec?.sections || [])
+        .map((sec, i) => [sec.key, (s.sections || []).find(x => x.displayOrder === i + 1 && x.name === sec.name)?.id])
+        .filter(([, v]) => v));
+      byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections), section_ids };
+    }
     syncEnvAliases('products/configurable-products', byKey); // → aliases.{env}.json (all envs)
   }
 
@@ -561,9 +616,17 @@ async function teardown() {
       if (!p.name?.startsWith('AGENT-TEST')) { log(`⚠ skip ${spec.csvId}: "${p.name}" lacks AGENT-TEST prefix — not a seed product`); }
       else {
         await api('POST', '/api/catalog/listentries/delete', { objectIds: [p.id], objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ delete: ${e.message.slice(0, 120)}`));
-        log(`✗ deleted parent ${spec.csvId} (${p.id}) — child options + catalog preserved (partial teardown)`);
+        log(`✗ deleted parent ${spec.csvId} (${p.id}) — ${WITH_OPTIONS ? 'option products next' : 'child options + catalog preserved (partial teardown)'}`);
       }
     } else log(`– ${spec.csvId} not found`);
+    if (WITH_OPTIONS) {
+      // Opt-in: also remove THIS spec's option products — every product whose code is
+      // `<spec.code>-…` (catches options renamed out of the spec too) and whose name carries the
+      // AGENT-TEST prefix. Siblings of other specs and the catalog stay.
+      const kids = await findOptionProducts(spec.code);
+      if (kids.length && !DRY_RUN) await api('POST', '/api/catalog/listentries/delete', { objectIds: kids.map(k => k.id), objectType: 'CatalogProduct' }, { expectStatus: [200, 204, 404] }).catch(e => log(`⚠ delete options: ${e.message.slice(0, 120)}`));
+      log(`✗ ${DRY_RUN ? 'would delete' : 'deleted'} ${kids.length} option product(s) of ${spec.csvId}`);
+    }
   } else {
     // Delete the unified catalog + pricelist AND any legacy date-stamped ones from prior runs.
     const catalogs = [UNIFIED.catalog, ...Object.values(GROUPS).map(g => g.catalog)];
@@ -581,11 +644,14 @@ async function teardown() {
 
   const residual = await verifyRemoved(async () => {
     const out = [];
-    for (const spec of specs) { const p = await findProductByCode(spec.code); if (p?.id) out.push(p.id); }
+    for (const spec of specs) {
+      const p = await findProductByCode(spec.code); if (p?.id) out.push(p.id);
+      if (ONLY && WITH_OPTIONS) out.push(...(await findOptionProducts(spec.code)).map(k => k.id));
+    }
     return out;
   });
   console.log(residual === 0 ? `\n✅ Teardown verified — 0 parents remain` : `\n⚠ Teardown incomplete — ${residual} parent(s) still present`);
-  if (residual > 0 && !DRY_RUN && !ONLY) process.exit(1);
+  if (residual > 0 && !DRY_RUN && (!ONLY || WITH_OPTIONS)) process.exit(1);
 }
 
 (TEARDOWN ? teardown() : main()).catch(e => { console.error(`\n❌ ${e.message}`); if (process.argv.includes('--verbose')) console.error(e.stack); process.exit(1); });
