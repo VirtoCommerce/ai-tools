@@ -24,10 +24,11 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Observed behaviour:** before your first live check of each page path / GraphQL operation / endpoint
 in scope, ask the base yourself — `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
+Close each list it returns by its ask handle: `kb_show` the entry you rely on, or `kb_none`.
 On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
 observation) and before every capture.
-At close-out, for each platform behaviour you report: matched ⇒ `kb_confirm`, contradicted ⇒
-`kb_dispute`, nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
+At close-out, for each platform behaviour you report: matched an entry you opened ⇒ `kb_confirm`,
+contradicted one ⇒ `kb_dispute` (a listed entry: `kb_none` its list, then `kb_show` it), nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
 
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only

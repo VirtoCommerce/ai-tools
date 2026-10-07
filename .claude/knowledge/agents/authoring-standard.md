@@ -151,24 +151,27 @@ Read step — unscripted work (a ticket, an investigation, an exploratory charte
 
 ```
 N. **Ask the base for this run's coordinates** — for each page path / GraphQL operation / endpoint in
-   scope: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a
-   miss is not a blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
+   scope: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids;
+   close each list by its ask handle (`kb_show` the entry you rely on, or `kb_none`); a miss is not a
+   blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
 
 Read step — scripted suite execution, inside the per-case loop:
 
 ```
 N. **On a deviation, ask before you classify it** — a FAIL, BLOCKED, unexpected result or incidental
-   observation: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). A hit
-   that records this as known behaviour is cited in the result; a miss is not a blocker and does not
+   observation: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). Close the
+   list by its ask handle (`kb_show` / `kb_none`). A hit that records this as known behaviour is cited
+   in the result; a miss is not a blocker and does not
    stop the next deviation being asked. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
 
 Write step (close-out):
 
 ```
-N. **Bank what the run established** — for each platform behaviour your output states: matched ⇒
-   `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
+N. **Bank what the run established** — for each platform behaviour your output states: matched an
+   entry you opened ⇒ `mcp__kb__kb_confirm`, contradicted one ⇒ `kb_dispute` (a listed entry:
+   `kb_none` its list, then `kb_show` it), base held nothing ⇒ `kb_capture` (CLI:
    `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
    `.claude/knowledge/execution/kb-capture-contract.md`. Public base. List the ids in your output.
 ```
