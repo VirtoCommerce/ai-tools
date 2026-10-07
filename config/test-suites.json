@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-06",
-    "totalSuites": 152,
+    "generated": "2026-10-07",
+    "totalSuites": 153,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2293,6 +2293,31 @@
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference"
+    },
+    {
+      "id": "066b",
+      "name": "SEO Debug SEO links (explain)",
+      "file": "regression/suites/Backend/seo/066b-seo-explain.csv",
+      "domain": "branding",
+      "layer": "backend",
+      "concern": "admin",
+      "priority": "P1",
+      "testCount": 9,
+      "estimatedMinutes": 12,
+      "agent": "qa-backend-expert",
+      "tags": [
+        "seo",
+        "explain",
+        "debug-seo-links",
+        "candidates",
+        "broken-links"
+      ],
+      "requiresModules": [
+        "seo"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "clickDriven": true
     },
     {
       "id": "067",
