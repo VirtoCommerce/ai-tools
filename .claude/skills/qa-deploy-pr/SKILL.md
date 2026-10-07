@@ -21,7 +21,7 @@ skill **gathers all of them and repins them together, in one manifest update**, 
 ## Why a deterministic script (+ a thin agent layer)
 
 Resolution + the manifest math + the fork/PR mechanics are deterministic — they live in
-**`scripts/deploy/deploy-pr-artifact.ts`** (`npm run deploy:pr`). The agent's only job is to
+**`scripts/deploy/vc-deploy.ts pr`** (core in `scripts/deploy/pr/pr.ts` + `scripts/deploy/lib/`; `npm run deploy:pr`). The agent's only job is to
 pick the input (ticket vs explicit set), read the resolved table, and decide whether to
 `--apply`. The script reuses the repo's established building blocks: the PR→`vc3prerelease`
 artifact resolver from `qa-local-env/resolve-task.mjs`, the AzureBlob/`BlobName` merge contract

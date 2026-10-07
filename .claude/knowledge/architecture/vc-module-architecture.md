@@ -79,7 +79,7 @@ for the fix workflow when the sub-app has no real component-test harness.
 
 - **C# (module/platform):** add a NEW `[Fact]`/`[Theory]` in `VirtoCommerce.<Name>.Tests` (Moq for
   collaborators) asserting the expected behavior; confirm **red** with
-  `dotnet test tests/<TestProj> --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~VCST1234"`.
+  `dotnet test tests/<TestProj> --nologo -p:NuGetAudit=false --filter "FullyQualifiedName~<TestClass>.<TestMethod>"`.
   Test project name drifts (`.Tests` vs `.Test`); test stack is xunit.v3 + Moq, FluentAssertions 7.x
   only where already referenced (never add/bump packages). If the module has no test project,
   BAIL-back (`FIX_STATUS: FAILED`, reason: no test harness) rather than scaffolding a risky one.

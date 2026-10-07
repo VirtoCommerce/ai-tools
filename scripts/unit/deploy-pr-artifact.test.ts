@@ -1,4 +1,4 @@
-// Unit tests for scripts/deploy/deploy-pr-artifact.ts — the deterministic core behind /qa-deploy-pr.
+// Unit tests for scripts/deploy/lib/manifest.ts + pr/pr.ts — the deterministic core behind /qa-deploy-pr.
 // Focus: the pure manifest text-mutation functions (the "minimal-diff repin" logic the skill
 // promises) plus the PR-ref parser. Network/gh-CLI-dependent functions (ghJson, commitViaGh,
 // createPr, etc.) are intentionally NOT covered here — they need live GitHub state.
@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-const mod = await import("../deploy/deploy-pr-artifact.ts");
+const mod = { ...(await import("../deploy/lib/manifest.ts")), ...(await import("../deploy/pr/pr.ts")) };
 
 // ---- parsePrRef ---------------------------------------------------------------
 

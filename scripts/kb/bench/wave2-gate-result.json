@@ -1,0 +1,183 @@
+{
+ "about": "VCST-6122 gate re-run on the wave2 held-out set (2026-10-05): the frozen ranker (ranker.m4-gate.json) on vcst-6122-schema2 @ 52b3683, then a Sonnet-class subagent picking on each ambiguous verdict (items.txt only) and confirming on the opened body. Set: rank-labelled-set.wave2.json (22 targets, 9 partial; 19 controls; 2 contested kept out). Opened once (.test-openings.jsonl).",
+ "bodyChecked": {
+  "picksPrecision": [
+   8,
+   9
+  ],
+  "controlsAnsweredByBase": 0,
+  "controlsNone": [
+   19,
+   19
+  ],
+  "resolvedNonPartial": [
+   7,
+   13
+  ],
+  "resolvedPartial": [
+   1,
+   9
+  ],
+  "resolvedAll": [
+   8,
+   22
+  ],
+  "shownNonPartial": [
+   12,
+   13
+  ],
+  "paraphraseRecall10": [
+   0,
+   0
+  ],
+  "meanAskTokens": 379,
+  "baseAnswers": [
+   0,
+   0
+  ],
+  "wrong": [
+   {
+    "id": "W2-16",
+    "kind": "target",
+    "relied": "KB-75BD84BE",
+    "expect": [
+     "KB-C4346EB2"
+    ]
+   }
+  ]
+ },
+ "pickOnly": {
+  "picksPrecision": [
+   11,
+   15
+  ],
+  "controlsAnsweredByBase": 0,
+  "controlsNone": [
+   18,
+   19
+  ],
+  "resolvedNonPartial": [
+   9,
+   13
+  ],
+  "resolvedPartial": [
+   2,
+   9
+  ],
+  "resolvedAll": [
+   11,
+   22
+  ],
+  "shownNonPartial": [
+   12,
+   13
+  ],
+  "paraphraseRecall10": [
+   0,
+   0
+  ],
+  "meanAskTokens": 379,
+  "baseAnswers": [
+   0,
+   0
+  ],
+  "wrong": [
+   {
+    "id": "W2-07",
+    "kind": "target",
+    "relied": "KB-DB7B6317",
+    "expect": [
+     "KB-1205B62A"
+    ]
+   },
+   {
+    "id": "W2-16",
+    "kind": "target",
+    "relied": "KB-75BD84BE",
+    "expect": [
+     "KB-C4346EB2"
+    ]
+   },
+   {
+    "id": "W2-30",
+    "kind": "target",
+    "relied": "KB-3FCB032F",
+    "expect": [
+     "KB-6D5E2CD1"
+    ]
+   },
+   {
+    "id": "W2-19",
+    "kind": "control",
+    "relied": "KB-8C530141",
+    "expect": []
+   }
+  ]
+ },
+ "liveAgents": {
+  "about": "the six wave2 agents own closings (kb_show kept / kb_none) scored against the same labels",
+  "picksPrecision": [
+   14,
+   19
+  ],
+  "controlsNone": [
+   17,
+   19
+  ],
+  "resolvedNonPartial": [
+   10,
+   13
+  ],
+  "resolvedAll": [
+   14,
+   22
+  ],
+  "wrong": [
+   7,
+   29,
+   30,
+   31,
+   36
+  ]
+ },
+ "floor1": {
+  "about": "floor-1 (what main runs) on the same set and base, verdict-bench, base alone (no agent): it answers, and the agent can only rely on what it returns",
+  "answerPrecision": [
+   2,
+   13
+  ],
+  "controlsNone": [
+   13,
+   19
+  ],
+  "targetsAnswered": [
+   2,
+   22
+  ],
+  "rightEntryReturned": [
+   4,
+   22
+  ],
+  "targetsRecall10": [
+   16,
+   22
+  ],
+  "meanTokens": 444
+ },
+ "verdictBench": {
+  "about": "the M4 ranker on the same set, verdict-bench, base alone",
+  "ambiguousShare": [
+   41,
+   41
+  ],
+  "rightEntryShown": [
+   19,
+   22
+  ],
+  "targetsRecall10": [
+   20,
+   22
+  ],
+  "meanTokens": 376
+ }
+}

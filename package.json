@@ -241,6 +241,7 @@
     "kb:mcp": "node scripts/kb/mcp.mjs",
     "kb:report": "node scripts/kb/report.mjs",
     "kb:migrate-log": "node scripts/kb/migrate-log-layout.mjs",
+    "kb:migrate-schema2": "node scripts/kb/migrate-schema2.mjs",
     "layout:run": "npx tsx scripts/layout/layout-runner.ts --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:list": "npx tsx scripts/layout/layout-runner.ts --list --suite regression/suites/Frontend/cross-cutting/048c-layout-stability.csv",
     "layout:author": "node scripts/layout/author-reference-suite.mjs",
@@ -253,8 +254,9 @@
     "hotfix:release": "npx tsx scripts/hotfix/hotfix-release.ts",
     "hotfix:deliver": "npx tsx scripts/hotfix/hotfix-deliver.ts",
     "hotfix:deliver:dry": "npx tsx scripts/hotfix/hotfix-deliver.ts --dry-run",
-    "deploy:pr": "npx tsx scripts/deploy/deploy-pr-artifact.ts",
-    "deploy:pr:apply": "npx tsx scripts/deploy/deploy-pr-artifact.ts --apply",
+    "deploy:pr": "npx tsx scripts/deploy/vc-deploy.ts pr",
+    "deploy:pr:apply": "npx tsx scripts/deploy/vc-deploy.ts pr --apply",
+    "deploy:upgrade": "npx tsx scripts/deploy/vc-deploy.ts upgrade",
     "local:manifest": "node skills/qa-local-env/gen-manifest.mjs",
     "local:health": "node skills/qa-local-env/healthcheck.mjs",
     "seed:reviews": "node scripts/seed-data/products/seed-reviews.mjs",
@@ -330,7 +332,9 @@
     "seed:push-audience": "node scripts/seed-data/push-messages/seed-push-audience.mjs",
     "seed:push-audience:verify": "node scripts/seed-data/push-messages/seed-push-audience.mjs --verify-only",
     "seed:push-audience:teardown": "node scripts/seed-data/push-messages/seed-push-audience.mjs --teardown",
-    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs"
+    "td:validate:push-audience": "node scripts/seed-data/push-messages/validate-push-audience-data.mjs",
+    "kb:sync-base": "node scripts/kb/sync-base.mjs",
+    "kb:cards": "node scripts/kb/cards.mjs"
   },
   "repository": {
     "type": "git",

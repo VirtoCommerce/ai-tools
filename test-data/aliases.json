@@ -4079,7 +4079,8 @@
       "lastName": "last_name",
       "fullName": "full_name",
       "store": "store"
-    }
+    },
+    "password_env": "TEST_USER_PASSWORD"
   },
   "SR_OWNER_ACME": {
     "id": "",

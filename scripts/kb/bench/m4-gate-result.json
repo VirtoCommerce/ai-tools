@@ -1,0 +1,1678 @@
+{
+ "about": "VCST-6122 M4 gate, measured end to end 2026-10-01: the frozen ranker (ranker.m4-gate.json) on the migrated base (vcst-6122-schema2 @ f188eb8), then a Sonnet-class subagent picking on each ambiguous verdict and confirming on the opened body; Haiku-class reported, not gated. Test opened once (.test-openings.jsonl). Rows hold only labelled-set ids and KB ids.",
+ "devCalibration": {
+  "gate": {
+   "picksPrecision": [
+    42,
+    44
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    28,
+    29
+   ],
+   "resolvedNonPartial": [
+    41,
+    50
+   ],
+   "resolvedPartial": [
+    1,
+    9
+   ],
+   "resolvedAll": [
+    42,
+    59
+   ],
+   "shownNonPartial": [
+    48,
+    50
+   ],
+   "paraphraseRecall10": [
+    37,
+    38
+   ],
+   "meanAskTokens": 380,
+   "baseAnswers": [
+    1,
+    1
+   ],
+   "wave1": [
+    {
+     "id": "W-L1",
+     "shown": true,
+     "relied": null,
+     "right": false
+    },
+    {
+     "id": "W-L6",
+     "shown": true,
+     "relied": null,
+     "right": false
+    },
+    {
+     "id": "W-P1",
+     "shown": false,
+     "relied": null,
+     "right": false
+    },
+    {
+     "id": "W-P3",
+     "shown": true,
+     "relied": "KB-BAEBCDA7",
+     "right": true
+    },
+    {
+     "id": "W-P6",
+     "shown": false,
+     "relied": "KB-535FF3AC",
+     "right": false
+    }
+   ],
+   "wrong": [
+    {
+     "id": "W-P6",
+     "kind": "target",
+     "relied": "KB-535FF3AC",
+     "expect": [
+      "KB-50EBEEE9"
+     ]
+    },
+    {
+     "id": "W-L8",
+     "kind": "control",
+     "relied": "KB-8C530141",
+     "expect": []
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    48,
+    51
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    27,
+    29
+   ],
+   "resolvedNonPartial": [
+    44,
+    50
+   ],
+   "resolvedPartial": [
+    4,
+    9
+   ],
+   "resolvedAll": [
+    48,
+    59
+   ],
+   "shownNonPartial": [
+    48,
+    50
+   ],
+   "paraphraseRecall10": [
+    37,
+    38
+   ],
+   "meanAskTokens": 380,
+   "baseAnswers": [
+    1,
+    1
+   ],
+   "wave1": [
+    {
+     "id": "W-L1",
+     "shown": true,
+     "relied": "KB-734A0813",
+     "right": true
+    },
+    {
+     "id": "W-L6",
+     "shown": true,
+     "relied": null,
+     "right": false
+    },
+    {
+     "id": "W-P1",
+     "shown": false,
+     "relied": null,
+     "right": false
+    },
+    {
+     "id": "W-P3",
+     "shown": true,
+     "relied": "KB-BAEBCDA7",
+     "right": true
+    },
+    {
+     "id": "W-P6",
+     "shown": false,
+     "relied": "KB-535FF3AC",
+     "right": false
+    }
+   ],
+   "wrong": [
+    {
+     "id": "W-P6",
+     "kind": "target",
+     "relied": "KB-535FF3AC",
+     "expect": [
+      "KB-50EBEEE9"
+     ]
+    },
+    {
+     "id": "W-L8",
+     "kind": "control",
+     "relied": "KB-8C530141",
+     "expect": []
+    },
+    {
+     "id": "N-gift-untick",
+     "kind": "control",
+     "relied": "KB-C4346EB2",
+     "expect": []
+    }
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "T-gift-long",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C4346EB2",
+     "KB-75BD84BE",
+     "KB-C1024558"
+    ],
+    "pick": "KB-C4346EB2",
+    "confirmed": "no"
+   },
+   {
+    "id": "T-gift-short",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C4346EB2",
+     "KB-75BD84BE",
+     "KB-C1024558"
+    ],
+    "pick": "KB-C4346EB2",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-cart-short",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-94C2ADCC",
+     "KB-7F535D52"
+    ],
+    "pick": "KB-50EBEEE9",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-cart-long",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-94C2ADCC",
+     "KB-1F264839"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "T-ship-tax",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8793DFE7",
+     "KB-1B18B821",
+     "KB-5F7C8FC4"
+    ],
+    "pick": "KB-8793DFE7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-captured",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1AC55A1D",
+     "KB-EF3CB7FB",
+     "KB-DB7B6317"
+    ],
+    "pick": "KB-1AC55A1D",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-mobile-size",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6B0E2FF7",
+     "KB-F78ED1CC",
+     "KB-98A231B6"
+    ],
+    "pick": "KB-6B0E2FF7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-coupon-input",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1F264839",
+     "KB-938D7C06",
+     "KB-94C2ADCC"
+    ],
+    "pick": "KB-938D7C06",
+    "confirmed": "no"
+   },
+   {
+    "id": "W-S2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1EA7184C",
+     "KB-3BFF73A3",
+     "KB-916CDCA1"
+    ],
+    "pick": "KB-916CDCA1",
+    "confirmed": "no"
+   },
+   {
+    "id": "W-S4",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C7E16C35",
+     "KB-50EBEEE9",
+     "KB-CF3FAD18"
+    ],
+    "pick": "KB-C7E16C35",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-S12",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EDDBBE75",
+     "KB-29037452",
+     "KB-CF3FAD18"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-L1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-B4490B0B",
+     "KB-9139A1A3",
+     "KB-734A0813"
+    ],
+    "pick": "KB-734A0813",
+    "confirmed": "no"
+   },
+   {
+    "id": "W-L3",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-78638393",
+     "KB-50EBEEE9",
+     "KB-94C2ADCC"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-L4",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-3FCB032F",
+     "KB-6D5E2CD1",
+     "KB-1834ABE5"
+    ],
+    "pick": "KB-6D5E2CD1",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-L5",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-938D7C06",
+     "KB-A3CE7FBA",
+     "KB-8264632C"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-L6",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-F9D75EA0",
+     "KB-02238DE5",
+     "KB-D080C209"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-P1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C1024558",
+     "KB-18991381",
+     "KB-35F20D97"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-P3",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-BAEBCDA7",
+     "KB-D8FDFA6F",
+     "KB-DA14E8B7"
+    ],
+    "pick": "KB-BAEBCDA7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-P6",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-0DD47BD1",
+     "KB-535FF3AC",
+     "KB-78638393"
+    ],
+    "pick": "KB-535FF3AC",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-C2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-7F535D52",
+     "KB-94C2ADCC",
+     "KB-50EBEEE9"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-C4",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-A272971F",
+     "KB-50EBEEE9",
+     "KB-94C2ADCC"
+    ],
+    "pick": "KB-A272971F",
+    "confirmed": "no"
+   },
+   {
+    "id": "P-0B27E984-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-4D26A022",
+     "KB-C4346EB2",
+     "KB-CFBD95B7"
+    ],
+    "pick": "KB-C4346EB2",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-0B27E984-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C4346EB2",
+     "KB-996BDF08",
+     "KB-C55BBF2E"
+    ],
+    "pick": "KB-C4346EB2",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-44B7B71E-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C7E16C35",
+     "KB-535FF3AC",
+     "KB-78638393"
+    ],
+    "pick": "KB-C7E16C35",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-44B7B71E-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-535FF3AC",
+     "KB-C7E16C35",
+     "KB-35F25BEE"
+    ],
+    "pick": "KB-C7E16C35",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-50EBEEE9-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-535FF3AC",
+     "KB-358A70CB"
+    ],
+    "pick": "KB-50EBEEE9",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-50EBEEE9-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-0DD47BD1",
+     "KB-F1542157"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "P-8793DFE7-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8793DFE7",
+     "KB-4C5627CE",
+     "KB-D080C209"
+    ],
+    "pick": "KB-8793DFE7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-8793DFE7-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8793DFE7",
+     "KB-5F7C8FC4",
+     "KB-D60012DB"
+    ],
+    "pick": "KB-8793DFE7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-1AC55A1D-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1AC55A1D",
+     "KB-7F535D52",
+     "KB-78638393"
+    ],
+    "pick": "KB-1AC55A1D",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-1AC55A1D-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1AC55A1D",
+     "KB-2E057301",
+     "KB-F320B037"
+    ],
+    "pick": "KB-1AC55A1D",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6B0E2FF7-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6B0E2FF7",
+     "KB-057A596A",
+     "KB-A38254C8"
+    ],
+    "pick": "KB-6B0E2FF7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6B0E2FF7-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6B0E2FF7",
+     "KB-F3B1E987",
+     "KB-4C2EF958"
+    ],
+    "pick": "KB-6B0E2FF7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-938D7C06-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-938D7C06",
+     "KB-C1024558",
+     "KB-AD1FA66B"
+    ],
+    "pick": "KB-938D7C06",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-938D7C06-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-938D7C06",
+     "KB-C1024558",
+     "KB-35F20D97"
+    ],
+    "pick": "KB-938D7C06",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-A0B3940F-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-916CDCA1",
+     "KB-3BFF73A3",
+     "KB-1EA7184C"
+    ],
+    "pick": "KB-916CDCA1",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-A0B3940F-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-3BFF73A3",
+     "KB-F31BD5B8",
+     "KB-916CDCA1"
+    ],
+    "pick": "KB-F31BD5B8",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-29037452-1",
+    "verdict": "answer",
+    "shown": [
+     "KB-29037452"
+    ],
+    "pick": null,
+    "confirmed": null
+   },
+   {
+    "id": "P-29037452-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-29037452",
+     "KB-D842824E",
+     "KB-EDDBBE75"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "P-734A0813-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-734A0813",
+     "KB-B142F52E",
+     "KB-9139A1A3"
+    ],
+    "pick": "KB-734A0813",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-734A0813-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-734A0813",
+     "KB-EF478346",
+     "KB-E4DE692A"
+    ],
+    "pick": "KB-734A0813",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-A4EB3766-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-AD1FA66B",
+     "KB-A4EB3766",
+     "KB-7A9D4927"
+    ],
+    "pick": "KB-A4EB3766",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-A4EB3766-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-A4EB3766",
+     "KB-E9939511",
+     "KB-50EBEEE9"
+    ],
+    "pick": "KB-A4EB3766",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6D5E2CD1-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-ADFD93AB",
+     "KB-16363E17",
+     "KB-02238DE5"
+    ],
+    "pick": "KB-ADFD93AB",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6D5E2CD1-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-3FCB032F",
+     "KB-6D5E2CD1",
+     "KB-1834ABE5"
+    ],
+    "pick": "KB-3FCB032F",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-8264632C-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8264632C",
+     "KB-C1024558",
+     "KB-E7790BF6"
+    ],
+    "pick": "KB-8264632C",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-8264632C-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8264632C",
+     "KB-938D7C06",
+     "KB-35F20D97"
+    ],
+    "pick": "KB-8264632C",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-5ADBFB34-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-ED3A631C",
+     "KB-996BDF08",
+     "KB-5ADBFB34"
+    ],
+    "pick": "KB-5ADBFB34",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-5ADBFB34-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-5ADBFB34",
+     "KB-9E7315D1",
+     "KB-AD1FA66B"
+    ],
+    "pick": "KB-5ADBFB34",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-02238DE5-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-02238DE5",
+     "KB-D8FDFA6F",
+     "KB-06409954"
+    ],
+    "pick": "KB-02238DE5",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-02238DE5-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-02238DE5",
+     "KB-ED01C2A4",
+     "KB-B769C7B1"
+    ],
+    "pick": "KB-02238DE5",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-D080C209-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-D080C209",
+     "KB-EA467E9B",
+     "KB-97170665"
+    ],
+    "pick": "KB-D080C209",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-D080C209-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-D080C209",
+     "KB-EA467E9B",
+     "KB-0E177E02"
+    ],
+    "pick": "KB-D080C209",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-BAEBCDA7-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-BAEBCDA7",
+     "KB-DA14E8B7",
+     "KB-4A8606CA"
+    ],
+    "pick": "KB-BAEBCDA7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-BAEBCDA7-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DA14E8B7",
+     "KB-BBBC4225",
+     "KB-BAEBCDA7"
+    ],
+    "pick": "KB-BAEBCDA7",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-4D082C89-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-D8FDFA6F",
+     "KB-B5B57F41",
+     "KB-27B4CD10"
+    ],
+    "pick": "KB-D8FDFA6F",
+    "confirmed": "no"
+   },
+   {
+    "id": "P-4D082C89-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DA14E8B7",
+     "KB-972CF223",
+     "KB-BAEBCDA7"
+    ],
+    "pick": "KB-972CF223",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-66089074-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DEBE1CED",
+     "KB-4B47D094",
+     "KB-A1B35892"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "P-66089074-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EF478346",
+     "KB-9139A1A3",
+     "KB-B4490B0B"
+    ],
+    "pick": "KB-B4490B0B",
+    "confirmed": "yes"
+   },
+   {
+    "id": "C-orders-page",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6A20B0AF",
+     "KB-1144B33E",
+     "KB-133FD544"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-skyflow-init",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-94C2ADCC",
+     "KB-78638393",
+     "KB-1F264839"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-smoke-path",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-94C2ADCC",
+     "KB-7F535D52",
+     "KB-C7E16C35"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-bopis-pickup",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-6AA0D7FB",
+     "KB-7F535D52"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-price-sort-short",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-D9B90536",
+     "KB-515D41EC",
+     "KB-25388E6C"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S3",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-48A46F77",
+     "KB-DAD0D552",
+     "KB-6FAB2EBA"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S6",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-78638393",
+     "KB-9B9FAF0F",
+     "KB-67D0AB31"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S9",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8C530141",
+     "KB-191B1B4C",
+     "KB-48A46F77"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S13",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-041DF407",
+     "KB-7AB0B13E",
+     "KB-A38254C8"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S14",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6E63AFF4",
+     "KB-F3A9F204",
+     "KB-4C5627CE"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S15",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-7837F100",
+     "KB-4F298EB0",
+     "KB-71011C1F"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-L2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-50EBEEE9",
+     "KB-C7E16C35",
+     "KB-94C2ADCC"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-L8",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8C530141",
+     "KB-25388E6C",
+     "KB-48A46F77"
+    ],
+    "pick": "KB-8C530141",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-P5",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EDDBBE75",
+     "KB-29037452",
+     "KB-CF3FAD18"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-C1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-94C2ADCC",
+     "KB-7F535D52",
+     "KB-F78ED1CC"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-C3",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-737F80EE",
+     "KB-19826CC0",
+     "KB-1447353E"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-C5",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1447353E",
+     "KB-19826CC0",
+     "KB-4A8606CA"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-BCA7468D",
+     "KB-FB8014EB",
+     "KB-EF3CB7FB"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-A1B35892",
+     "KB-CC195687",
+     "KB-2D446A42"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X4",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-417AC3F2",
+     "KB-D9B90536",
+     "KB-306353A9"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X5",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-17555498",
+     "KB-9B9FAF0F",
+     "KB-66D78761"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X6",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6AA0D7FB",
+     "KB-53D776C2",
+     "KB-358A70CB"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-gift-untick",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-C4346EB2",
+     "KB-A4EB3766",
+     "KB-75BD84BE"
+    ],
+    "pick": "KB-C4346EB2",
+    "confirmed": "no"
+   },
+   {
+    "id": "N-capture-flow",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-1AC55A1D",
+     "KB-0DD47BD1",
+     "KB-78638393"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-tier-price",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-191B1B4C",
+     "KB-F97CFAF6",
+     "KB-16363E17"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-signin-captcha",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8646A9CB",
+     "KB-0407F36E",
+     "KB-7A4C260E"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-roster-export",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-02238DE5",
+     "KB-6AFE7618",
+     "KB-B769C7B1"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-points-filter",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-29037452",
+     "KB-EDDBBE75",
+     "KB-CF3FAD18"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-saved-later-signout",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EF478346",
+     "KB-A272971F",
+     "KB-7564A9BF"
+    ],
+    "pick": "none",
+    "confirmed": null
+   }
+  ]
+ },
+ "test": {
+  "gate": {
+   "picksPrecision": [
+    18,
+    19
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    9,
+    9
+   ],
+   "resolvedNonPartial": [
+    17,
+    22
+   ],
+   "resolvedPartial": [
+    1,
+    2
+   ],
+   "resolvedAll": [
+    18,
+    24
+   ],
+   "shownNonPartial": [
+    19,
+    22
+   ],
+   "paraphraseRecall10": [
+    15,
+    16
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wave1": [],
+   "wrong": [
+    {
+     "id": "P-4B889114-1",
+     "kind": "target",
+     "relied": "KB-27B4CD10",
+     "expect": [
+      "KB-4B889114"
+     ]
+    }
+   ]
+  },
+  "pickOnly": {
+   "picksPrecision": [
+    19,
+    21
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    9,
+    9
+   ],
+   "resolvedNonPartial": [
+    18,
+    22
+   ],
+   "resolvedPartial": [
+    1,
+    2
+   ],
+   "resolvedAll": [
+    19,
+    24
+   ],
+   "shownNonPartial": [
+    19,
+    22
+   ],
+   "paraphraseRecall10": [
+    15,
+    16
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wave1": [],
+   "wrong": [
+    {
+     "id": "P-4B889114-1",
+     "kind": "target",
+     "relied": "KB-27B4CD10",
+     "expect": [
+      "KB-4B889114"
+     ]
+    },
+    {
+     "id": "P-97170665-2",
+     "kind": "target",
+     "relied": "KB-27B4CD10",
+     "expect": [
+      "KB-97170665"
+     ]
+    }
+   ]
+  },
+  "verdicts": [
+   {
+    "id": "T-config-price",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-4B47D094",
+     "KB-A1B35892",
+     "KB-94C2ADCC"
+    ],
+    "pick": "KB-4B47D094",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-active-plain",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-4B889114",
+     "KB-27B4CD10",
+     "KB-AA1147AA"
+    ],
+    "pick": "KB-27B4CD10",
+    "confirmed": "yes"
+   },
+   {
+    "id": "T-active-route",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-27B4CD10",
+     "KB-4B889114",
+     "KB-D8FDFA6F"
+    ],
+    "pick": "KB-27B4CD10",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-S1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-7837F100",
+     "KB-316B2DDB",
+     "KB-67D0AB31"
+    ],
+    "pick": "KB-7837F100",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-S10",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-02238DE5",
+     "KB-4B889114",
+     "KB-82111688"
+    ],
+    "pick": "KB-4B889114",
+    "confirmed": "no"
+   },
+   {
+    "id": "W-S11",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8646A9CB",
+     "KB-0407F36E",
+     "KB-132A40B3"
+    ],
+    "pick": "KB-8646A9CB",
+    "confirmed": "yes"
+   },
+   {
+    "id": "W-L7",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DB7B6317",
+     "KB-4C5627CE",
+     "KB-1AC55A1D"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-P4",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EF478346",
+     "KB-7564A9BF",
+     "KB-35F20D97"
+    ],
+    "pick": "KB-EF478346",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-4B47D094-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-CD451F5C",
+     "KB-4B47D094",
+     "KB-ADFD93AB"
+    ],
+    "pick": "KB-4B47D094",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-4B47D094-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-AB35BCDC",
+     "KB-4B47D094",
+     "KB-6FAB2EBA"
+    ],
+    "pick": "KB-4B47D094",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-27B4CD10-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-27B4CD10",
+     "KB-D8FDFA6F",
+     "KB-4B889114"
+    ],
+    "pick": "KB-27B4CD10",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-27B4CD10-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-97170665",
+     "KB-27B4CD10",
+     "KB-90B0D8F5"
+    ],
+    "pick": "KB-97170665",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-4B889114-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-27B4CD10",
+     "KB-D8FDFA6F",
+     "KB-82111688"
+    ],
+    "pick": "KB-27B4CD10",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-4B889114-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-0B6067F8",
+     "KB-02238DE5",
+     "KB-A5F9BBED"
+    ],
+    "pick": "KB-0B6067F8",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-7837F100-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-7837F100",
+     "KB-110E0652",
+     "KB-306353A9"
+    ],
+    "pick": "KB-7837F100",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-7837F100-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-133FD544",
+     "KB-5D688448",
+     "KB-67D0AB31"
+    ],
+    "pick": "KB-7837F100",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-97170665-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DA14E8B7",
+     "KB-97170665",
+     "KB-132A40B3"
+    ],
+    "pick": "KB-97170665",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-97170665-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-97170665",
+     "KB-F7449926",
+     "KB-A5F9BBED"
+    ],
+    "pick": "KB-27B4CD10",
+    "confirmed": "no"
+   },
+   {
+    "id": "P-8646A9CB-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8646A9CB",
+     "KB-06FE6C8D",
+     "KB-35F20D97"
+    ],
+    "pick": "KB-8646A9CB",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-8646A9CB-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-8646A9CB",
+     "KB-0407F36E",
+     "KB-132A40B3"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "P-DB7B6317-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-574C8604",
+     "KB-6D5E2CD1",
+     "KB-358A70CB"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "P-DB7B6317-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-DB7B6317",
+     "KB-4E45A8BA",
+     "KB-4C5627CE"
+    ],
+    "pick": "KB-DB7B6317",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6C3FA2B7-1",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EF478346",
+     "KB-7564A9BF",
+     "KB-C1024558"
+    ],
+    "pick": "KB-EF478346",
+    "confirmed": "yes"
+   },
+   {
+    "id": "P-6C3FA2B7-2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-EF478346",
+     "KB-D4A064A5",
+     "KB-C55BBF2E"
+    ],
+    "pick": "KB-EF478346",
+    "confirmed": "yes"
+   },
+   {
+    "id": "C-cart-payments",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-535FF3AC",
+     "KB-C7E16C35",
+     "KB-1144B33E"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-order-by-number",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-67D0AB31",
+     "KB-16AEF0C2",
+     "KB-CC9A98D3"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "C-price-sort-long",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6D5E2CD1",
+     "KB-1C28E89D",
+     "KB-1834ABE5"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S5",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-F9D75EA0",
+     "KB-1205B62A",
+     "KB-D080C209"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-S7",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-6D5E2CD1",
+     "KB-C55BBF2E",
+     "KB-4B47D094"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-P2",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-2EDC661F",
+     "KB-EF478346",
+     "KB-EF925925"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "W-X3",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-94C2ADCC",
+     "KB-1F264839",
+     "KB-7F535D52"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-coupon-length",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-938D7C06",
+     "KB-8264632C",
+     "KB-35F20D97"
+    ],
+    "pick": "none",
+    "confirmed": null
+   },
+   {
+    "id": "N-split-ship",
+    "verdict": "ambiguous",
+    "shown": [
+     "KB-CC9A98D3",
+     "KB-AB35BCDC",
+     "KB-EF925925"
+    ],
+    "pick": "none",
+    "confirmed": null
+   }
+  ],
+  "haikuPickOnly": {
+   "picksPrecision": [
+    14,
+    17
+   ],
+   "controlsAnsweredByBase": 0,
+   "controlsNone": [
+    8,
+    9
+   ],
+   "resolvedNonPartial": [
+    13,
+    22
+   ],
+   "resolvedPartial": [
+    1,
+    2
+   ],
+   "resolvedAll": [
+    14,
+    24
+   ],
+   "shownNonPartial": [
+    19,
+    22
+   ],
+   "paraphraseRecall10": [
+    15,
+    16
+   ],
+   "meanAskTokens": 387,
+   "baseAnswers": [
+    0,
+    0
+   ],
+   "wave1": [],
+   "wrong": [
+    {
+     "id": "P-27B4CD10-1",
+     "kind": "target",
+     "relied": "KB-4B889114",
+     "expect": [
+      "KB-27B4CD10"
+     ]
+    },
+    {
+     "id": "P-27B4CD10-2",
+     "kind": "target",
+     "relied": "KB-90B0D8F5",
+     "expect": [
+      "KB-27B4CD10",
+      "KB-97170665"
+     ]
+    },
+    {
+     "id": "C-cart-payments",
+     "kind": "control",
+     "relied": "KB-535FF3AC",
+     "expect": []
+    }
+   ]
+  }
+ }
+}

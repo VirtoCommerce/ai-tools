@@ -40,7 +40,7 @@ function mentionsSingleSegment(questionLower, path) {
  * that can never contribute, and a long list starts deleting real terms ("state", "order",
  * "show" are all domain nouns in this product).
  */
-const STOP = new Set([
+export const STOP = new Set([
   'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am',
   'do', 'does', 'did', 'doing', 'done', 'have', 'has', 'had',
   'i', 'we', 'you', 'it', 'its', 'this', 'that', 'these', 'those', 'their', 'there',

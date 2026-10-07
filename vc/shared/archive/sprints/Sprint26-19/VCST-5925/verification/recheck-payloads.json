@@ -1,0 +1,2503 @@
+[
+  {
+    "label": "POST org X",
+    "at": "2026-10-06T00:59:11.140Z",
+    "request": {
+      "method": "POST",
+      "url": "{BACK_URL}/api/members",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "memberType": "Organization",
+        "name": "AGENT-TEST-6152-ORG-1791248348570",
+        "status": "Active"
+      }
+    },
+    "response": {
+      "body": {
+        "description": null,
+        "businessCategory": null,
+        "ownerId": null,
+        "parentId": null,
+        "roles": [],
+        "objectType": "VirtoCommerce.CustomerModule.Core.Model.Organization",
+        "name": "AGENT-TEST-6152-ORG-1791248348570",
+        "memberType": "Organization",
+        "outerId": null,
+        "status": "Active",
+        "addresses": [],
+        "phones": [],
+        "emails": [],
+        "notes": [],
+        "groups": [],
+        "iconUrl": null,
+        "relevanceScore": null,
+        "dynamicProperties": [],
+        "useDynamicPropertyAccessor": false,
+        "dynamicPropertyAccessor": {
+          "array": null,
+          "array1": null,
+          "boleto_options": null,
+          "Country": null,
+          "CustomerModule_Organization_Boolean_0_0_0": null,
+          "CustomerModule_Organization_DateTime_0_0_0": null,
+          "CustomerModule_Organization_Decimal_0_0_0": null,
+          "CustomerModule_Organization_Decimal_1_0_0": [],
+          "CustomerModule_Organization_Html_0_0_0": null,
+          "CustomerModule_Organization_Html_0_1_0": {
+            "values": {}
+          },
+          "CustomerModule_Organization_Image_0_0_0": null,
+          "CustomerModule_Organization_Integer_0_0_0": null,
+          "CustomerModule_Organization_Integer_1_0_0": [],
+          "CustomerModule_Organization_LongText_0_0_0": null,
+          "CustomerModule_Organization_LongText_0_1_0": {
+            "values": {}
+          },
+          "CustomerModule_Organization_ShortText_0_0_0": null,
+          "CustomerModule_Organization_ShortText_0_0_1": null,
+          "CustomerModule_Organization_ShortText_0_1_1": null,
+          "CustomerModule_Organization_ShortText_1_0_0": [],
+          "CustomerModule_Organization_ShortText_1_0_1": null,
+          "CustomerModule_Organization_ShortText_1_1_0": null,
+          "CustomerModule_Organization_ShortText_1_1_1": null,
+          "CustomerNumber": null,
+          "Dynamic array": null,
+          "GroupCodes": [],
+          "onboarding": null,
+          "RainCustomerId": null,
+          "show_hidden_supplier": null
+        },
+        "seoObjectType": "Organization",
+        "seoInfos": [],
+        "createdDate": "2026-10-06T00:59:10.412186Z",
+        "modifiedDate": "2026-10-06T00:59:10.412186Z",
+        "createdBy": "admin",
+        "modifiedBy": "admin",
+        "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+      }
+    }
+  },
+  {
+    "label": "POST reader contact",
+    "at": "2026-10-06T00:59:11.721Z",
+    "request": {
+      "method": "POST",
+      "url": "{BACK_URL}/api/members",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "memberType": "Contact",
+        "firstName": "AGENT-TEST-5925",
+        "lastName": "Reader1791248348570",
+        "fullName": "AGENT-TEST-5925 Reader 1791248348570",
+        "name": "AGENT-TEST-5925 Reader 1791248348570",
+        "emails": [
+          "agent-test-5925-reader-1791248348570@example.com"
+        ],
+        "organizations": [
+          "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        ],
+        "status": "Approved"
+      }
+    },
+    "response": {
+      "body": {
+        "salutation": null,
+        "fullName": "AGENT-TEST-5925 Reader 1791248348570",
+        "firstName": "AGENT-TEST-5925",
+        "middleName": null,
+        "lastName": "Reader1791248348570",
+        "birthDate": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "timeZone": null,
+        "organizations": [
+          "96f109a7-9010-4691-b6a1-bef25cca3d04"
+        ],
+        "associatedOrganizations": [],
+        "defaultOrganizationId": null,
+        "currentOrganizationId": null,
+        "taxPayerId": null,
+        "preferredDelivery": null,
+        "preferredCommunication": null,
+        "defaultShippingAddressId": null,
+        "defaultBillingAddressId": null,
+        "photoUrl": null,
+        "isAnonymized": false,
+        "about": null,
+        "objectType": "VirtoCommerce.CustomerModule.Core.Model.Contact",
+        "securityAccounts": [],
+        "name": "AGENT-TEST-5925 Reader 1791248348570",
+        "memberType": "Contact",
+        "outerId": null,
+        "status": "Approved",
+        "addresses": [],
+        "phones": [],
+        "emails": [
+          "agent-test-5925-reader-1791248348570@example.com"
+        ],
+        "notes": [],
+        "groups": [],
+        "iconUrl": null,
+        "relevanceScore": null,
+        "dynamicProperties": [],
+        "useDynamicPropertyAccessor": false,
+        "dynamicPropertyAccessor": {
+          "allergies": null,
+          "bankaccount": [],
+          "birth_date": null,
+          "CustomerModule_Contact_Boolean_0_0_0": null,
+          "CustomerModule_Contact_DateTime_0_0_0": null,
+          "CustomerModule_Contact_Decimal_0_0_0": null,
+          "CustomerModule_Contact_Decimal_1_0_0": [],
+          "CustomerModule_Contact_Html_0_0_0": null,
+          "CustomerModule_Contact_Image_0_0_0": null,
+          "CustomerModule_Contact_Integer_0_0_0": null,
+          "CustomerModule_Contact_Integer_1_0_0": [],
+          "CustomerModule_Contact_LongText_0_0_0": null,
+          "CustomerModule_Contact_ShortText_0_0_0": null,
+          "CustomerModule_Contact_ShortText_0_0_1": null,
+          "CustomerModule_Contact_ShortText_1_0_0": [],
+          "CustomerModule_Contact_ShortText_1_0_1": null,
+          "Default shipping address": null,
+          "Dirk": [],
+          "Haarfarbe": null,
+          "LoyaltyTier": null,
+          "Married": null,
+          "occupation": null,
+          "Sex": null
+        },
+        "seoObjectType": "Contact",
+        "seoInfos": [],
+        "createdDate": "2026-10-06T00:59:10.7194593Z",
+        "modifiedDate": "2026-10-06T00:59:10.7194593Z",
+        "createdBy": "admin",
+        "modifiedBy": "admin",
+        "id": "51a00294-3ad8-4b46-8269-8f2b2cab746a"
+      }
+    }
+  },
+  {
+    "label": "POST reader user",
+    "at": "2026-10-06T00:59:12.758Z",
+    "request": {
+      "method": "POST",
+      "url": "{BACK_URL}/api/platform/security/users/create",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "userName": "agent-test-5925-reader-1791248348570@example.com",
+        "email": "agent-test-5925-reader-1791248348570@example.com",
+        "password": "[REDACTED]",
+        "memberId": "51a00294-3ad8-4b46-8269-8f2b2cab746a",
+        "storeId": "B2B-store",
+        "userType": "Customer",
+        "isAdministrator": false,
+        "emailConfirmed": true,
+        "status": "Approved"
+      }
+    },
+    "response": {
+      "body": {
+        "succeeded": true,
+        "errors": []
+      }
+    }
+  },
+  {
+    "label": "PUT sales-rep assign X",
+    "at": "2026-10-06T00:59:14.583Z",
+    "request": {
+      "method": "PUT",
+      "url": "{BACK_URL}/api/sales-rep",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          },
+          {
+            "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "organizationName": "AGENT-TEST-6152-ORG-1791248348570"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    },
+    "response": {
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          },
+          {
+            "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "organizationName": "AGENT-TEST-6152-ORG-1791248348570",
+            "membershipId": "a1dcad10-e960-42dd-9518-417e93b3648c"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    }
+  },
+  {
+    "label": "old rep token me after assign PUT",
+    "at": "2026-10-06T00:59:14.771Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ me { userName } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "me": {
+            "userName": "agent-test-sr-primary@example.com"
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "salesRepCustomers",
+    "at": "2026-10-06T00:59:15.541Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ salesRepCustomers(first:50){ totalCount items{ organizationId organizationName } } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "salesRepCustomers": {
+            "totalCount": 6,
+            "items": [
+              {
+                "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+                "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+              },
+              {
+                "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+              },
+              {
+                "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+                "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+              },
+              {
+                "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+                "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+              },
+              {
+                "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                "organizationName": "AGENT-TEST-6152-ORG-1791248348570"
+              },
+              {
+                "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+                "organizationName": "AGENT-TEST-Org-RepOnly-Primary"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 createWishlist [X,B,A]",
+    "at": "2026-10-06T00:59:16.139Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "storeId": "B2B-store",
+          "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+          "listName": "AGENT-TEST-5925-recheck-run1-1791248348570",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "105c2c4e-23be-4258-8691-568a0ff190be"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "createWishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 owner wishlist after share",
+    "at": "2026-10-06T00:59:16.986Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader sharedWishlist granted",
+    "at": "2026-10-06T00:59:17.961Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "e1528db5-5cab-4575-9e35-1f9273806394"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "sharedWishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "name": "AGENT-TEST-5925-recheck-run1-1791248348570",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": null,
+              "scope": "Customer",
+              "access": "Read",
+              "isOwner": false,
+              "targets": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader wishlist(listId) granted",
+    "at": "2026-10-06T00:59:18.183Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 21
+              }
+            ],
+            "path": [
+              "wishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "wishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader wishlists granted",
+    "at": "2026-10-06T00:59:18.376Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($s:String!){ wishlists(storeId:$s,first:100){ totalCount items{ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } } }",
+      "variables": {
+        "s": "B2B-store"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlists": {
+            "totalCount": 0,
+            "items": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "PUT sales-rep unassign X",
+    "at": "2026-10-06T00:59:19.747Z",
+    "request": {
+      "method": "PUT",
+      "url": "{BACK_URL}/api/sales-rep",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    },
+    "response": {
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    }
+  },
+  {
+    "label": "old rep token me after unassign PUT",
+    "at": "2026-10-06T00:59:19.942Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ me { userName } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "me": {
+            "userName": "Anonymous"
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "salesRepCustomers",
+    "at": "2026-10-06T00:59:20.661Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ salesRepCustomers(first:50){ totalCount items{ organizationId organizationName } } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "salesRepCustomers": {
+            "totalCount": 5,
+            "items": [
+              {
+                "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+                "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+              },
+              {
+                "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+              },
+              {
+                "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+                "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+              },
+              {
+                "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+                "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+              },
+              {
+                "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+                "organizationName": "AGENT-TEST-Org-RepOnly-Primary"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 changeWishlist add X back (still target)",
+    "at": "2026-10-06T00:59:20.888Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "89052429-7766-4d90-b476-0e3948a4fae4",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 40
+              }
+            ],
+            "path": [
+              "changeWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "changeWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 owner wishlist after add-while-target",
+    "at": "2026-10-06T00:59:21.111Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 changeWishlist remove X",
+    "at": "2026-10-06T00:59:21.925Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "89052429-7766-4d90-b476-0e3948a4fae4",
+          "scope": "Customer",
+          "removeSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "changeWishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 owner wishlist after remove X",
+    "at": "2026-10-06T00:59:22.131Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader sharedWishlist after X removed",
+    "at": "2026-10-06T00:59:22.350Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "e1528db5-5cab-4575-9e35-1f9273806394"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "sharedWishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "name": "AGENT-TEST-5925-recheck-run1-1791248348570",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": null,
+              "scope": "Customer",
+              "access": "Read",
+              "isOwner": false,
+              "targets": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 changeWishlist add X back (not target)",
+    "at": "2026-10-06T00:59:22.538Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "89052429-7766-4d90-b476-0e3948a4fae4",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 40
+              }
+            ],
+            "path": [
+              "changeWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "changeWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 owner wishlist after add-after-removal",
+    "at": "2026-10-06T00:59:22.719Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 changeWishlist remove B",
+    "at": "2026-10-06T00:59:22.951Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "89052429-7766-4d90-b476-0e3948a4fae4",
+          "scope": "Customer",
+          "removeSharedWithIds": [
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "changeWishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader sharedWishlist revoked (next call)",
+    "at": "2026-10-06T00:59:23.157Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "e1528db5-5cab-4575-9e35-1f9273806394"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 20
+              }
+            ],
+            "path": [
+              "sharedWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "sharedWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader wishlist(listId) revoked",
+    "at": "2026-10-06T00:59:23.360Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 21
+              }
+            ],
+            "path": [
+              "wishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "wishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 reader wishlists revoked",
+    "at": "2026-10-06T00:59:23.576Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($s:String!){ wishlists(storeId:$s,first:100){ totalCount items{ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } } }",
+      "variables": {
+        "s": "B2B-store"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlists": {
+            "totalCount": 0,
+            "items": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run1 owner wishlist after remove B",
+    "at": "2026-10-06T00:59:23.758Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "89052429-7766-4d90-b476-0e3948a4fae4"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "89052429-7766-4d90-b476-0e3948a4fae4",
+            "sharingSetting": {
+              "id": "e1528db5-5cab-4575-9e35-1f9273806394",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "PUT sales-rep assign X",
+    "at": "2026-10-06T00:59:24.713Z",
+    "request": {
+      "method": "PUT",
+      "url": "{BACK_URL}/api/sales-rep",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          },
+          {
+            "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "organizationName": "AGENT-TEST-6152-ORG-1791248348570"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    },
+    "response": {
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          },
+          {
+            "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "organizationName": "AGENT-TEST-6152-ORG-1791248348570",
+            "membershipId": "15c855df-b2b4-43a0-90f2-fa1282dfdbac"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    }
+  },
+  {
+    "label": "old rep token me after assign PUT",
+    "at": "2026-10-06T00:59:24.899Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ me { userName } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "me": {
+            "userName": "agent-test-sr-primary@example.com"
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "salesRepCustomers",
+    "at": "2026-10-06T00:59:25.685Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ salesRepCustomers(first:50){ totalCount items{ organizationId organizationName } } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "salesRepCustomers": {
+            "totalCount": 6,
+            "items": [
+              {
+                "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+                "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+              },
+              {
+                "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+              },
+              {
+                "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+                "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+              },
+              {
+                "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+                "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+              },
+              {
+                "organizationId": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                "organizationName": "AGENT-TEST-6152-ORG-1791248348570"
+              },
+              {
+                "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+                "organizationName": "AGENT-TEST-Org-RepOnly-Primary"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 createWishlist [X,B,A]",
+    "at": "2026-10-06T00:59:25.986Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputCreateWishlistType!){ createWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "storeId": "B2B-store",
+          "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+          "listName": "AGENT-TEST-5925-recheck-run2-1791248348570",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+            "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "105c2c4e-23be-4258-8691-568a0ff190be"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "createWishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 owner wishlist after share",
+    "at": "2026-10-06T00:59:26.254Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader sharedWishlist granted",
+    "at": "2026-10-06T00:59:26.485Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "8d80629e-4956-434e-a996-677108cc4fec"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "sharedWishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "name": "AGENT-TEST-5925-recheck-run2-1791248348570",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": null,
+              "scope": "Customer",
+              "access": "Read",
+              "isOwner": false,
+              "targets": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader wishlist(listId) granted",
+    "at": "2026-10-06T00:59:26.664Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 21
+              }
+            ],
+            "path": [
+              "wishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "wishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader wishlists granted",
+    "at": "2026-10-06T00:59:26.848Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($s:String!){ wishlists(storeId:$s,first:100){ totalCount items{ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } } }",
+      "variables": {
+        "s": "B2B-store"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlists": {
+            "totalCount": 0,
+            "items": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "PUT sales-rep unassign X",
+    "at": "2026-10-06T00:59:27.845Z",
+    "request": {
+      "method": "PUT",
+      "url": "{BACK_URL}/api/sales-rep",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    },
+    "response": {
+      "body": {
+        "userId": "96a5c3a7-a462-4055-9158-0f4d48c1b594",
+        "userName": "agent-test-sr-primary@example.com",
+        "salutation": null,
+        "firstName": "Priya",
+        "middleName": null,
+        "lastName": "Rao",
+        "fullName": "Priya Rao",
+        "birthDate": null,
+        "timeZone": null,
+        "defaultLanguage": null,
+        "currencyCode": null,
+        "about": null,
+        "photoUrl": null,
+        "status": "Approved",
+        "emails": [
+          "agent-test-sr-primary@example.com"
+        ],
+        "phones": [],
+        "addresses": [],
+        "storeId": "B2B-store",
+        "password": "[REDACTED]",
+        "isLocked": false,
+        "hasGlobalSalesRepRole": true,
+        "roleId": "f18edee1e788476cb0fed2ec534d024e",
+        "roleName": "Sales Representative",
+        "organizations": [
+          {
+            "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+            "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310",
+            "membershipId": "ed78ccf4-5d20-42d0-8cde-9d560da97bd3"
+          },
+          {
+            "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+            "organizationName": "AGENT-TEST-Org-TechFlow-20260310",
+            "membershipId": "4aa2f9b1-dab9-46ab-b634-0496add3082f"
+          },
+          {
+            "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+            "organizationName": "AGENT-TEST-Org-BuildRight-20260310",
+            "membershipId": "1929b4da-7535-45c1-8ea4-afa50e42b401"
+          },
+          {
+            "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+            "organizationName": "AGENT-TEST-Org-AcmeWest-20260310",
+            "membershipId": "dd3127db-a4c3-49b5-8097-a187c45d2eb7"
+          },
+          {
+            "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+            "organizationName": "AGENT-TEST-Org-RepOnly-Primary",
+            "membershipId": "eae7a492-5916-48ab-98bb-714075cad3ab"
+          }
+        ],
+        "id": "6bf9b1d0-6d34-4ada-858c-bc3fb5e785b4"
+      }
+    }
+  },
+  {
+    "label": "old rep token me after unassign PUT",
+    "at": "2026-10-06T00:59:28.039Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ me { userName } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "me": {
+            "userName": "Anonymous"
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "salesRepCustomers",
+    "at": "2026-10-06T00:59:28.654Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "{ salesRepCustomers(first:50){ totalCount items{ organizationId organizationName } } }",
+      "variables": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "salesRepCustomers": {
+            "totalCount": 5,
+            "items": [
+              {
+                "organizationId": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+                "organizationName": "AGENT-TEST-Org-BuildRight-20260310"
+              },
+              {
+                "organizationId": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                "organizationName": "AGENT-TEST-Org-TechFlow-20260310"
+              },
+              {
+                "organizationId": "cd3e2237-bce2-4a3a-b9ac-c58d665ab576",
+                "organizationName": "AGENT-TEST-Org-AcmeWest-20260310"
+              },
+              {
+                "organizationId": "105c2c4e-23be-4258-8691-568a0ff190be",
+                "organizationName": "AGENT-TEST-Org-AcmeCorp-20260310"
+              },
+              {
+                "organizationId": "40ac896b-cb80-49db-b71d-1ff23e2b9352",
+                "organizationName": "AGENT-TEST-Org-RepOnly-Primary"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 changeWishlist add X back (still target)",
+    "at": "2026-10-06T00:59:28.880Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "af3232dd-cbe1-4783-b725-9aea547785a1",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 40
+              }
+            ],
+            "path": [
+              "changeWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "changeWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 owner wishlist after add-while-target",
+    "at": "2026-10-06T00:59:29.060Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                },
+                {
+                  "id": "f7f3594b-21ae-4803-aced-b1e8e9631caa",
+                  "name": "AGENT-TEST-6152-ORG-1791248348570"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 changeWishlist remove X",
+    "at": "2026-10-06T00:59:29.323Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "af3232dd-cbe1-4783-b725-9aea547785a1",
+          "scope": "Customer",
+          "removeSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "changeWishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 owner wishlist after remove X",
+    "at": "2026-10-06T00:59:29.532Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader sharedWishlist after X removed",
+    "at": "2026-10-06T00:59:29.723Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "8d80629e-4956-434e-a996-677108cc4fec"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "sharedWishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "name": "AGENT-TEST-5925-recheck-run2-1791248348570",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": null,
+              "scope": "Customer",
+              "access": "Read",
+              "isOwner": false,
+              "targets": []
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 changeWishlist add X back (not target)",
+    "at": "2026-10-06T00:59:29.903Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "af3232dd-cbe1-4783-b725-9aea547785a1",
+          "scope": "Customer",
+          "addSharedWithIds": [
+            "f7f3594b-21ae-4803-aced-b1e8e9631caa"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 40
+              }
+            ],
+            "path": [
+              "changeWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "changeWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 owner wishlist after add-after-removal",
+    "at": "2026-10-06T00:59:30.108Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                },
+                {
+                  "id": "96f109a7-9010-4691-b6a1-bef25cca3d04",
+                  "name": "AGENT-TEST-Org-TechFlow-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 changeWishlist remove B",
+    "at": "2026-10-06T00:59:30.341Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputChangeWishlistType!){ changeWishlist(command:$c){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "c": {
+          "listId": "af3232dd-cbe1-4783-b725-9aea547785a1",
+          "scope": "Customer",
+          "removeSharedWithIds": [
+            "96f109a7-9010-4691-b6a1-bef25cca3d04"
+          ]
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "changeWishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader sharedWishlist revoked (next call)",
+    "at": "2026-10-06T00:59:30.550Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($k:String!){ sharedWishlist(sharingKey:$k){ id name sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "k": "8d80629e-4956-434e-a996-677108cc4fec"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 20
+              }
+            ],
+            "path": [
+              "sharedWishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "sharedWishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader wishlist(listId) revoked",
+    "at": "2026-10-06T00:59:30.753Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "errors": [
+          {
+            "message": "Access denied.",
+            "locations": [
+              {
+                "line": 1,
+                "column": 21
+              }
+            ],
+            "path": [
+              "wishlist"
+            ],
+            "extensions": {
+              "code": "Forbidden",
+              "codes": [
+                "Forbidden"
+              ]
+            }
+          }
+        ],
+        "data": {
+          "wishlist": null
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 reader wishlists revoked",
+    "at": "2026-10-06T00:59:30.934Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($s:String!){ wishlists(storeId:$s,first:100){ totalCount items{ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } } }",
+      "variables": {
+        "s": "B2B-store"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlists": {
+            "totalCount": 0,
+            "items": []
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "run2 owner wishlist after remove B",
+    "at": "2026-10-06T00:59:31.119Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($id:String!){ wishlist(listId:$id){ id sharingSetting{ id sharedWithId scope access isOwner targets{ id name } } } }",
+      "variables": {
+        "id": "af3232dd-cbe1-4783-b725-9aea547785a1"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlist": {
+            "id": "af3232dd-cbe1-4783-b725-9aea547785a1",
+            "sharingSetting": {
+              "id": "8d80629e-4956-434e-a996-677108cc4fec",
+              "sharedWithId": "105c2c4e-23be-4258-8691-568a0ff190be",
+              "scope": "Customer",
+              "access": "Write",
+              "isOwner": true,
+              "targets": [
+                {
+                  "id": "105c2c4e-23be-4258-8691-568a0ff190be",
+                  "name": "AGENT-TEST-Org-AcmeCorp-20260310"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  {
+    "label": "cleanup removeWishlist",
+    "at": "2026-10-06T00:59:31.754Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+      "variables": {
+        "c": {
+          "listId": "89052429-7766-4d90-b476-0e3948a4fae4"
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "removeWishlist": true
+        }
+      }
+    }
+  },
+  {
+    "label": "cleanup removeWishlist",
+    "at": "2026-10-06T00:59:31.938Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "mutation($c:InputRemoveWishlistType!){ removeWishlist(command:$c) }",
+      "variables": {
+        "c": {
+          "listId": "af3232dd-cbe1-4783-b725-9aea547785a1"
+        }
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "removeWishlist": true
+        }
+      }
+    }
+  },
+  {
+    "label": "cleanup delete user",
+    "at": "2026-10-06T00:59:33.259Z",
+    "request": {
+      "method": "DELETE",
+      "url": "{BACK_URL}/api/platform/security/users?names=agent-test-5925-reader-1791248348570%40example.com",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      }
+    },
+    "response": {
+      "body": {
+        "succeeded": true,
+        "errors": []
+      }
+    }
+  },
+  {
+    "label": "cleanup delete contact",
+    "at": "2026-10-06T00:59:33.509Z",
+    "request": {
+      "method": "DELETE",
+      "url": "{BACK_URL}/api/members?ids=51a00294-3ad8-4b46-8269-8f2b2cab746a",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      }
+    },
+    "response": {
+      "body": null
+    }
+  },
+  {
+    "label": "cleanup delete org X",
+    "at": "2026-10-06T00:59:33.787Z",
+    "request": {
+      "method": "DELETE",
+      "url": "{BACK_URL}/api/members?ids=f7f3594b-21ae-4803-aced-b1e8e9631caa",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      }
+    },
+    "response": {
+      "body": null
+    }
+  },
+  {
+    "label": "cleanup verify rep wishlists",
+    "at": "2026-10-06T00:59:35.149Z",
+    "request": {
+      "url": "{BACK_URL}/graphql",
+      "headers": {
+        "Authorization": "Bearer [REDACTED]"
+      },
+      "query": "query($s:String!){ wishlists(storeId:$s,first:200){ items{ id name } } }",
+      "variables": {
+        "s": "B2B-store"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "data": {
+          "wishlists": {
+            "items": [
+              {
+                "id": "3e18c958-b847-4891-97ac-8fb6132876b8",
+                "name": "AGENT-TEST-5850-S8-589zzu"
+              },
+              {
+                "id": "c4e1b2a2-edcc-4b39-9e60-cca7e5b7fc7a",
+                "name": "AGENT-TEST-5850-1"
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+]
