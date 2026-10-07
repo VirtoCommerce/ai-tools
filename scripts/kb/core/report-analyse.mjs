@@ -1212,6 +1212,52 @@ export function doors(lines) {
     .sort((a, b) => a.via.localeCompare(b.via));
 }
 
+/**
+ * HOW EACH AGENT CLOSED ITS `ambiguous` LISTS (VCST-6191): opened one (`show`), said none fitted
+ * (`none`), or left it -- `unclosed`. Read from `resolveVerdicts`' `closedBy`, the one rule the
+ * reminder shares, so this panel and the miss queue never disagree about an ask. `wroteAfter` counts
+ * the unclosed lists the session later wrote ABOUT: a confirm or dispute of an entry the list showed,
+ * or a capture whose `after` names the ask -- the agent worked from the list's excerpt and wrote anyway,
+ * the case the confirm gate exists for. "Any later write" was measured first and is no signal: on
+ * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
+ * 17 there, which no session-level number shows.
+ */
+export function lists(lines) {
+  const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
+  const writes = new Map();
+  for (const l of lines) {
+    if (l.kind !== 'confirm' && l.kind !== 'dispute' && l.kind !== 'capture') continue;
+    const s = l._session ?? '';
+    writes.set(s, [...(writes.get(s) ?? []), l]);
+  }
+  const wroteAbout = (a) => {
+    const shown = new Set((a.shown ?? []).map((id) => String(id).toUpperCase()));
+    return (writes.get(a._session ?? '') ?? []).some((w) => String(w.at) > String(a.at)
+      && (w.kind === 'capture' ? String(w.after ?? '') === String(a.at) : shown.has(String(w.id ?? '').toUpperCase())));
+  };
+  const by = new Map();
+  const total = { asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+  for (const a of asks) {
+    const agent = typeof a.agent === 'string' && a.agent ? a.agent : null;
+    const key = agent ?? '';
+    const row = by.get(key) ?? { agent, asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+    const wrote = a.closedBy === 'unclosed' && wroteAbout(a);
+    for (const r of [row, total]) {
+      r.asks += 1;
+      r[a.closedBy] += 1;
+      if (wrote) r.wroteAfter += 1;
+    }
+    by.set(key, row);
+  }
+  const share = (r) => (r.asks ? r.unclosed / r.asks : null);
+  return {
+    ...total,
+    unclosedShare: share(total),
+    rows: [...by.values()].map((r) => ({ ...r, unclosedShare: share(r) }))
+      .sort((a, b) => b.unclosed - a.unclosed || b.asks - a.asks || String(a.agent ?? '').localeCompare(String(b.agent ?? ''))),
+  };
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -1318,6 +1364,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     reach: reach(real, { since: windowStart(meta) }),
     topics: topics(real),
     doors: doors(real),
+    lists: lists(real),
   };
   return {
     meta: {
