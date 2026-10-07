@@ -13,8 +13,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 **Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with one skill, `merge-upstream`. It brings
 upstream `VirtoCommerce/vc-frontend` — its `dev` or a release tag — into a fork such as vc-frontend-next or a
 customer's theme: the fork keeps its markup, styles and tokens, upstream's behavior is carried into them, every
-conflict is briefed to the user before it is resolved, and the PR lands as a merge commit so the next upstream
-merge starts from the right base.
+conflict is briefed to the user before it is resolved, every upstream change is traced into the result
+(including fixes to components the fork replaced), upstream's tests are mutation-checked against the ported
+code, the built app is smoke-tested with `vite preview`, the PR carries a QA checklist, and it lands as a merge
+commit so the next upstream merge starts from the right base.
 
 ---
 
