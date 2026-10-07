@@ -26,8 +26,8 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 in scope, ask the base yourself — `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
 On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
 observation) and before every capture.
-At close-out, for each platform behaviour you report: matched ⇒ `kb confirm`, contradicted ⇒
-`kb dispute`, nothing held ⇒ `kb capture` (`--deployment {TEST_ENV}`). List the entry ids in your output.
+At close-out, for each platform behaviour you report: matched ⇒ `kb_confirm`, contradicted ⇒
+`kb_dispute`, nothing held ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`). List the entry ids in your output.
 
 **Evidence policy:** Follow `skills/qa-evidence/evidence-capture-policy.md`
 - Screenshots: failures + final state of critical flows only
