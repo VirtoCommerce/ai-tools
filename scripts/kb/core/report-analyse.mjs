@@ -23,6 +23,7 @@ import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  'confirm-invalid', 'dispute-invalid',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -1220,14 +1221,17 @@ export function doors(lines) {
  * or a capture whose `after` names the ask -- the agent worked from the list's excerpt and wrote anyway,
  * the case the confirm gate exists for. "Any later write" was measured first and is no signal: on
  * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
- * 17 there, which no session-level number shows. (The ticket counted 20: it left a handle-less `show`
- * unpaired, where `pointersByAsk` pairs it with the latest list.)
+ * 17 there, which no session-level number shows. (The ticket counted 20 unclosed by its own reading;
+ * this panel and the reminder read an ask one way, `pointersByAsk` + `lastWord`.)
  */
 export function lists(lines) {
   const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
   const writes = new Map();
   for (const l of lines) {
     if (l.kind !== 'confirm' && l.kind !== 'dispute' && l.kind !== 'capture') continue;
+    // Only a write that queued: a line logged with a `state` (unreachable, no base) wrote nothing,
+    // and a capture without an id never reached the base -- `loopRecord` excludes both the same way.
+    if (l.state || (l.kind === 'capture' && !l.id)) continue;
     const s = l._session ?? '';
     if (!writes.has(s)) writes.set(s, []);
     writes.get(s).push(l);

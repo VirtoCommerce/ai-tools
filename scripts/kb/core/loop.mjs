@@ -68,10 +68,22 @@ export function pointersByAsk(records) {
     .sort((a, b) => a.at.localeCompare(b.at));
   const pointed = new Map();
   let latestAsk = null;
+  // A handle-less show is a pick from the latest list only when that list SHOWED its entry (VCST-6191):
+  // an entry opened from an answer, a capture hint or another list is not a choice from this one.
+  // Applied only when both sides name the ids; a journal record from before they were journalled keeps
+  // the old reading. Log lines always named them: re-read this way, 2026-10-06 is unchanged (17 of 38
+  // lists unclosed in the lists panel).
+  const fromList = (ask, show) => !Array.isArray(ask.shown) || !show.id
+    || ask.shown.some((s) => String(s).toUpperCase() === String(show.id).toUpperCase());
   for (const r of sorted) {
     if (r.kind === 'ask') { latestAsk = r; continue; }
     if (r.kind !== 'show' && r.kind !== 'none') continue;
-    const target = r.after ? String(r.after) : (r.kind === 'show' && latestAsk?.state === 'ambiguous' ? String(latestAsk.at) : null);
+    // ...and only while that list is still OPEN: a handle-less show after the agent closed it would
+    // otherwise rewrite its `kb_none` into a pick -- exactly what the confirm gate's advice to open an
+    // entry would trigger. Re-opening a closed list takes its handle (`--ask`), deliberately.
+    const target = r.after ? String(r.after)
+      : (r.kind === 'show' && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
+        && lastWord(pointed.get(String(latestAsk.at))).verdict === 'open' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
   return pointed;
@@ -136,12 +148,19 @@ export function openedIds(journal) {
   return out;
 }
 
-/** The handle of the latest ask whose list showed `id`, or null: the `--ask` an open of it should carry. */
+/**
+ * The handle of the latest STILL OPEN ask whose list showed `id`, or null: the `--ask` an open of it
+ * should carry. A list the agent already closed is not offered: `kb_show --ask` on it would turn the
+ * agent's `kb_none` into a pick it never made, in the very pairs M6 recalibrates on (VCST-6191 review).
+ */
 export function askThatShowed(journal, id) {
   const want = String(id).toUpperCase();
+  const pointed = pointersByAsk(journal);
   let at = null;
   for (const r of Array.isArray(journal) ? journal : []) {
-    if (r?.kind === 'ask' && Array.isArray(r.shown) && r.shown.some((s) => String(s).toUpperCase() === want) && (!at || r.at > at)) at = r.at;
+    if (r?.kind !== 'ask' || !Array.isArray(r.shown) || !r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict !== 'open') continue;
+    if (!at || r.at > at) at = r.at;
   }
   return at;
 }

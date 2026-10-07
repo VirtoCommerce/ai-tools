@@ -625,8 +625,9 @@ recalibrate from the logged `show` / `none` pairs (M6) once a few hundred have a
 
 ## The `ambiguous` list without its `says:` excerpt (VCST-6191 Phase 1, 2026-10-07) -- PASS under the pre-declared rule, by a narrow margin on precision
 
-On 2026-10-06, 20 of 38 real `ambiguous` lists were never closed: the agent worked from the ~200-character
-`says:` excerpt and later confirmed entries it never opened. Arm B drops that line, so the list keeps the
+On 2026-10-06, about half of the 38 real `ambiguous` lists were never closed (20 by the ticket's count, 17
+by the `kb:report` lists panel added with this change, which pairs picks to lists the way the reminder does):
+the agent worked from the ~200-character `says:` excerpt and later confirmed entries it never opened. Arm B drops that line, so the list keeps the
 subject and `answers:` (what to open) but no fact. Same method as the sections above, one variable changed:
 base `vc-knowledge` main @ `f11d658` and its `ranker.json` (verdict-1), frozen for both arms; `judge-harness.mjs
 items` (A) and `items --no-says` (B, byte-identical to A minus the `says:` lines); fresh pickers that see only

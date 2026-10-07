@@ -21,7 +21,7 @@ import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from 
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  DISABLED_WHY, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
   readQueue, sessionId,
 } from './queue.mjs';
 import { askThatShowed, openedIds } from './loop.mjs';
@@ -871,11 +871,10 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  */
 async function openedThisSession({ env }) {
   const { lines } = await readQueue({ env });
-  // The journal first: it outlives the queue's flush at every `Stop`, so it is the only place an open
-  // from an earlier turn of the session still is (VCST-6191). The queue adds what the journal may have
-  // lost -- its append is best-effort.
-  const out = openedIds(readLoop(env));
-  const seen = new Set(out.map((id) => id.toUpperCase()));
+  // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`).
+  const out = [];
+  const seen = new Set();
   for (let i = lines.length - 1; i >= 0; i -= 1) {
     const l = lines[i];
     const ids = l.kind === 'ask' ? (l.opened ?? [])
@@ -888,6 +887,16 @@ async function openedThisSession({ env }) {
     }
   }
   return out;
+}
+
+/**
+ * Every entry the session has opened, upper-cased: its journal, which outlives the queue's flush at
+ * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
+ * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
+ */
+async function openedEver({ env }) {
+  const ids = [...openedIds(readLoop(env)), ...(await openedThisSession({ env }))];
+  return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
 /**
@@ -1173,9 +1182,12 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
   // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
   if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
-  const read = new Set((await openedThisSession({ env })).map((rid) => rid.toUpperCase()));
-  if (!read.has(row.id.toUpperCase())) {
+  // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
+  // show in one command could never satisfy the confirm in the next. The gate guards agents.
+  if (hasSessionId(env) && !(await openedEver({ env })).has(row.id.toUpperCase())) {
     const h = askThatShowed(readLoop(env), row.id);
+    // Logged, ids only, so kb:report can count who hits the gate and whether the confirm followed.
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
     return {
       state: 'invalid',
       why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ''}`

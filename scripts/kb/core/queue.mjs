@@ -36,6 +36,9 @@ export const LOGGED = Object.freeze([
   // anchor, no scope — as opposed to `capture-refused`, a well-formed capture deduplicated against
   // an entry the base already holds. Unlogged until 2026-09-23 (PLAN §23.11); see `refuseAtDoor`.
   'capture-invalid',
+  // `confirm-invalid` / `dispute-invalid`: evidence refused because this session never opened the
+  // entry (VCST-6191). Id and a reason code only, never prose.
+  'confirm-invalid', 'dispute-invalid',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -469,7 +472,7 @@ async function noteLoop(env, line) {
   const rec = loopRecord(line);
   if (!rec) return;
   // A lost record costs a reminder, never the line -- and no false confirm refusal while the queue
-  // still holds the `show`, because the gate reads the queue too (`verbs.mjs` `openedThisSession`).
+  // still holds the `show`, because the gate reads the queue too (`verbs.mjs` `openedEver`).
   try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* see above */ }
 }
 /** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
