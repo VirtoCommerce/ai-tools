@@ -47,6 +47,10 @@ resolves against the repository it is read in.
 - `git merge-base origin/dev <ref>` must print a commit. If it prints nothing, the fork was copied without
   history: stop and report that — this skill does not cover it.
 - `git switch -c chore/merge-upstream-<ref> origin/dev && git merge --no-ff --no-commit <ref>`
+- If `chore/merge-upstream-<ref>` already exists, look before reusing the name. It is a leftover when
+  `git log origin/dev..<branch>` prints nothing and `git ls-remote origin refs/heads/<branch>` finds no
+  remote copy: recreate it with `git switch -C chore/merge-upstream-<ref> origin/dev` and say so. Commits
+  on it, or a remote copy, mean an unfinished merge: stop and ask whether to resume it or start over.
 
 **Redesign branch absorbing its own base** (same repository): the branch is the fork, `origin/dev` is
 upstream. No remote, no new branch — check the branch out and `git merge --no-ff --no-commit origin/dev`.
