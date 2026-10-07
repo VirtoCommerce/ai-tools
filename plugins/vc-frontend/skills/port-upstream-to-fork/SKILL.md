@@ -110,7 +110,9 @@ Read the earlier logs in `upstream-merges/` first: an upstream file a log alread
 feature the user deferred, an n/a with its evidence — keeps that verdict unless the new commit changes
 what it rested on. Cite the log instead of asking again.
 
-For every commit in sections A, A2, B and C read `git show <sha> -- <upstream file>` and its PR, then decide one:
+For every commit in sections A, A2, B and C read `git show <sha> -- <upstream file>` and its PR
+(`gh pr view <n> --repo <upstream owner/repo>` — a bare `gh` picks whichever repository the clone's
+remotes point it at), then decide one:
 
 | Verdict | When | Evidence the brief must carry |
 |---|---|---|
