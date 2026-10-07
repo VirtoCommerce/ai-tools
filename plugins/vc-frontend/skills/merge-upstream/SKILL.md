@@ -199,6 +199,13 @@ Not covered by the smoke: <what needs data, a role or a device the smoke did not
   same branch.
 - PR body: the brief from step 3 with the decisions filled in, the step 4–7 results, the step 8 checklist,
   and a link to the log.
+- **The branch may already have a PR** — always, for a redesign branch absorbing its base. Find it
+  (`gh pr list --repo <owner/repo> --head <branch> --state open`) and add the merge's section to its body
+  instead of opening a second PR: read the body first, append under a `## Merge of <ref>` heading, and
+  write it back whole with `gh api -X PATCH repos/<owner>/<repo>/pulls/<n> -F body=@<file>`, keeping
+  everything already there (CI fills fields such as an artifact URL into it). Say in the chat that the
+  existing PR was updated, with its link. The step ends when the PR — new or existing — shows the QA
+  checklist.
 - **An upstream merge lands as a merge commit — never squash, never rebase.** Either one drops upstream
   as a parent: `git merge-base` stays at the old base, so the next merge replays every upstream commit and
   every conflict of this one. Whoever clicks Merge reads the PR, not this skill, so:
