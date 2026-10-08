@@ -11,8 +11,9 @@ styles and tokens, and carries upstream's logic, props, events, i18n keys and fi
 
 *Fork* = the side receiving the changes. *Upstream* = `VirtoCommerce/vc-frontend`.
 
-The merge stops twice for the user: after the brief (step 3) and before the push (step 9). Nothing is
-merged into the fork's `dev` by this skill — the user merges the PR.
+The merge stops for the user up to three times: after the brief (step 3), after the port brief when
+`port-upstream-to-fork` finds something (step 5), and before the push (step 9). Nothing is merged into
+the fork's `dev` by this skill — the user merges the PR.
 
 Every merge leaves a log in the fork: `upstream-merges/<YYYY-MM-DD>-<ref>.md`, one file per session
 (`-2` for a second one that day), next to `fork-map.json`. The PR body is gone from view once merged and
@@ -142,6 +143,9 @@ conflicts, the decisions and who made them. Fill it in as the later steps produc
   reported, not fixed: re-run the failing check against each parent's version of the file to tell which.
 - Format only the files you resolved. `prettier --write` on a file the fork had left unformatted rewrites
   it whole — leave those as they were.
+- Commit the merge locally once the checks are done — steps 5 and 6 read it as `HEAD^1`/`HEAD^2`:
+  `chore: merge upstream vc-frontend <ref>` (or `chore: merge dev into <branch>`), each conflict and its
+  resolution in the body. Nothing is pushed yet.
 
 ## 5. Trace every upstream change into the result
 
@@ -156,8 +160,8 @@ comm -23 up.txt merged.txt        # each line printed needs a reason
 ```
 
 Then the case no line diff shows: **upstream changed code the fork no longer renders**, or renders from
-fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit; its
-ports join this PR and its brief joins step 3's questions.
+fewer places. **REQUIRED SUB-SKILL:** run `vc-frontend:port-upstream-to-fork` on the merge commit. Its
+brief is the second pause; its ports are committed on this branch and join this PR.
 
 ## 6. Tests
 
@@ -191,10 +195,9 @@ Where: <page or component>
 Not covered by the smoke: <what needs data, a role or a device the smoke did not have>
 ```
 
-## 9. Log, commit, push, PR — landed as a merge commit
+## 9. Log, push, PR — landed as a merge commit
 
-- Commit: `chore: merge upstream vc-frontend <ref>` (or `chore: merge dev into <branch>`), each conflict
-  and its resolution in the body. Push only after the user says so.
+- The merge commit (step 4) and the ports (step 5) are already committed. Push only after the user says so.
 - Finish the log: every section of the template, filled from steps 3–8 and the port's brief. "Decisions
   that carry forward" holds only rules a later merge must keep, each with its reason — a fork identifier
   that is deliberately not upstream's, a fork value kept over an upstream fix, a feature left out on
