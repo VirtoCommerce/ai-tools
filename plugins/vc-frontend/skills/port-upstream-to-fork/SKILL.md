@@ -6,8 +6,6 @@ argument-hint: "[--from <ref>] --to <upstream ref>"
 
 # port-upstream-to-fork — carry upstream changes into the fork's own components
 
-**Start by telling the user, as your first line:** `⚠️ This skill can make mistakes — review every change before merging.` Skip it when `vc-frontend:merge-upstream` already said it in this session.
-
 A merge delivers an upstream change only to the file upstream changed. When the fork renders its own
 component in that place — `header-preferences-menu.vue` instead of `language-selector.vue` — the change
 merges cleanly and reaches nobody. This skill finds those changes, briefs them, ports the approved ones
