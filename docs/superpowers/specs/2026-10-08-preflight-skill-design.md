@@ -1,0 +1,233 @@
+# Pre-flight as one skill over one fact core — design
+
+Date: 2026-10-08 · Branch: `claude/preflight-step-040aa0` · Status: design, awaiting review
+
+## 1. Problem
+
+The environment/build pre-flight — env health, `declared` vs `deployed` build, release-ledger Δ,
+duplicate-run check, doc/kb grounding — is restated in eight `.claude/` commands. A shared source
+exists (`.claude/templates/agent-dispatch.md` §Pre-Flight Checklist / §Build Verification /
+§Duplicate Detection Guard / §Context7 Pre-Flight), but commands **paraphrase** it instead of citing
+it, and the copies have drifted:
+
+| Drift | Where |
+|---|---|
+| Reads only `declared` from `vc-deploy-dev`, no `deployed` probe — the thing `preflight.md` calls ground truth | `qa-smoke`, `qa-test-lifecycle`, `qa-exploratory` (whose own item 3a then cites "the `deployed` probe from item 2", which does not exist) |
+| Grounding order differs: Context7-first vs VirtoOZ vs `kb_ask` | `agent-dispatch.md`, `qa-test-lifecycle`, `qa-smoke` vs `ba-analyze`, `qa-domain-map` vs `qa-test-fast` |
+| Release-ledger Δ present in some, absent in others | `qa-test`, `qa-regression`, `qa-exploratory` only |
+| Duplicate-check semantics differ (2 h window vs same build) | `qa-test` vs `qa-test-fast` |
+| Suite module gating driven by a hand-set `MODULES_ENABLED` (default "all" ⇒ gates nothing) | `ci/lib/suite-manifest.ts` — a transcribed constant (`.claude/rules/test-data.md` GOLDEN RULE) |
+| No baseline for "what changed since the last regression run"; `reports/deploy-state-cache.json` is one hand-written snapshot from 2026-08-06 | `qa-regression` |
+
+**Goal: stop the drift.** One implementation of the facts, one statement of each policy, and
+commands that consume a result instead of restating a procedure. Shrinking command bodies
+(BUDGET-004) is a welcome side effect, not the goal.
+
+## 2. Decisions taken
+
+| # | Decision | Rejected alternative |
+|---|---|---|
+| D1 | The single copy lives in `.claude/`; the `vc-fix` plugin keeps its own Step 0s untouched | plugin-hosted (one copy for both surfaces); byte-mirrored in both |
+| D2 | Skill **+ script**: deterministic facts and policy are code, the LLM half is `SKILL.md` | prose-only skill (that is what `agent-dispatch.md` already was); script-only |
+| D3 | **One fact core, two consumers**: change-scoped (ticket) and build-scoped (regression). Shared facts, separate policies | one script with a `kind → policy` table growing per-kind branches |
+| D4 | `storefrontVisible` is in the core from day one | defer |
+| D5 | MCP availability is part of pre-flight, with per-consumer minimum requirements held as data | `qa-env-check`'s "all three Playwright servers required for everyone" |
+| D6 | One skill with two entry points (change-scoped / build-scoped CLI) | regression calling code without the skill |
+| D7 | **CI regression (`ci/run-regression.ts`, `ci/`) is out of scope.** Nothing under `ci/` is modified; shared `ci/lib/*` is only imported | a headless path |
+
+## 3. Architecture
+
+```
+/qa-preflight  (SKILL.md — the LLM half: MCP level 3, kb → VirtoOZ → Context7, interpretation)
+   ├─ step 1, change-scoped ─► npm run preflight -- --for <…>          (scripts/preflight/cli.ts)
+   └─ step 1, build-scoped  ─► npm run regression:plan -- <sel> --preflight  (scripts/regression/preflight.ts)
+                                         both ─► scripts/lib/env-facts.ts  (fact core, no policy)
+```
+
+Split rule: **anything deterministic is code; anything that needs a session (MCP tools, docs,
+asking the user) is the skill.** A command cannot paraphrase a JSON result.
+
+## 4. Fact core — `scripts/lib/env-facts.ts`
+
+`getEnvFacts({ env, components?, storefront? })` — an importable, read-only function. **No policy:**
+it never says OK/WARN/BLOCK; consumers decide.
+
+| Fact | Source (existing code reused) | Rule |
+|---|---|---|
+| `config.missing[]` | the layered `.env` loader (`config.js`) | distinguishes "probe failed" from "`BACK_URL` unset" |
+| `health` | `platformHealthy()` — `scripts/deploy/lib/live.ts` | `UP` / `DOWN` |
+| `declared` | `fetchFile()` — `scripts/deploy/lib/github.ts`, `vc-deploy-dev` branch per `TEST_ENV` | unavailable ⇒ `UNKNOWN` |
+| `deployed` | `getAdminToken()` + `liveModules()` — `live.ts` | failed probe ⇒ `UNKNOWN`, **never** a fallback to `declared` |
+| `storefrontVisible` | the `InitializeApplication` replay in `scripts/maintenance/probe-store-capabilities.mjs` (extract to a reusable function) | anonymous; "installed but the storefront cannot see it" |
+| `drift[]` | `declared` vs `deployed` per module | deploy in flight / failed / partial |
+| `ledger` | `.claude/knowledge/domain/release-ledger.md` §1 table, §2 rows, frontmatter `stale_after_days`; `cmpSemver()` from `refresh-release-ledger.mjs` | `releasedNotDeployed[]`, `breaking[]` (for `components`), `stale` |
+| `observedAt` | clock | lets a consumer compare snapshots |
+
+Guarantees: read-only; no secret in the output (the token lives inside the call); every source can
+independently be `UNKNOWN` without failing the others. Module identity: platform ids
+(`VirtoCommerce.Cart`) ↔ ledger repos (`vc-module-cart`) ↔ manifest `requiresModules` slugs are
+mapped through an **existing** mapping (`REPO_PROFILES` / `module-suite-map.md` /
+`resolveSuiteSource` in `ci/lib/affected-suites.ts`) — never a new hand-written table.
+
+Not in the core: tickets, sprints, duplicates, suites, kb, docs, MCP.
+
+## 5. Change-scoped pre-flight
+
+**Consumers:** `/qa-test` (1b items 1, 2, 2-release, 3, 4), `/qa-test-fast` (Step 0),
+`/qa-exploratory`, `/qa-test-lifecycle`, `/qa-domain-map`, `/ba-analyze`.
+
+**CLI** — `npm run preflight -- --for <ticket|exploratory|lifecycle|domain-map|ba> [--ticket KEY]
+[--components A,B] [--domain slug] [--expect module@version] [--json]`. Exit `0` OK/WARN only,
+`2` any BLOCK, `3` the script could not run. Adds to the core:
+
+- `sprint` — `reports/tickets/Sprint-current` else the latest `SprintXX-XX` (`--for ticket` only);
+- `duplicate` — the prior run, its verdict **and its build**, so each consumer can apply its own
+  "same window" or "same build" rule from one fact;
+- `expect` — is the PR's artifact deployed (today a prose sentence in `qa-test`);
+- `mcp[]` — levels 1–2 (§7);
+- `checks[]` — `{id, status: OK|WARN|BLOCK|UNKNOWN, why}` from the change-scoped policy, which
+  lives **once, in code**:
+
+| `--for` | health DOWN | duplicate: window · where | `expect` not deployed |
+|---|---|---|---|
+| `ticket` | WARN → ask | 2 h · `reports/tickets/*/<KEY>/summary.json` | BLOCK-on-deploy → offer `/qa-deploy-pr` (ask) |
+| `exploratory` | WARN | 24 h · `reports/exploratory/SBTM-*`, same domain | — |
+| `lifecycle` | WARN | 24 h · `reports/test-lifecycle/TLC-*`, same scope | — |
+| `domain-map`, `ba` | WARN | — | — |
+
+`ledger.breaking` in a component under test is reported as a fact; what it means is the
+consumer's (e.g. `/qa-test` forces FULL — its rule, not pre-flight's).
+
+No report file of its own (`.claude/rules/reports.md` §1): the consumer embeds the JSON as a
+`preflight` block in its `summary.json` or report header.
+
+## 6. Build-scoped pre-flight (regression)
+
+**Consumers:** `/qa-regression`, `/qa-smoke`. **Home:** `scripts/regression/preflight.ts`, invoked
+as `npm run regression:plan -- <selection> --preflight`; its gating result removes suites from the
+plan. Imports `ci/lib/manifest-preflight.ts`, `ci/lib/suite-manifest.ts` — modifies nothing in `ci/`.
+
+| # | Check | Source | Status |
+|---|---|---|---|
+| 1 | env alive | core `health` | DOWN ⇒ BLOCK |
+| 2 | every suite has a CSV and an executor | `preflightManifest()` (existing) | BLOCK, all problems at once |
+| 3 | no active run | `regression:reap` classification | ACTIVE ⇒ BLOCK · STALLED ⇒ BLOCK naming `regression:reap:apply` (never applies it itself) |
+| 4 | **module gating derived, not configured** | `requiresModules` × `deployed`; plus `storefrontVisible` for `layer: frontend` suites | missing ⇒ suite removed from the schedule as `NOT_DEPLOYED` (BLOCKED-on-deploy, never FAIL). `deployed: UNKNOWN` ⇒ no gating, WARN (fail-open). `MODULES_ENABLED`, when set, still applies (existing behaviour) and is recorded |
+| 5 | **what moved since the baseline** | `deployed` now vs `reports/regression/baseline.<env>.json` | `changedSince[]` → the suites requiring them are named "false-failure risk" in the report header. No baseline ⇒ `baseline: UNKNOWN`, no Δ, not an error |
+| 6 | ⚠ BREAKING in the selected suites' components | core `ledger` | WARN, false-failure risk (replaces `qa-regression` Step 0.4 prose) |
+| 7 | drift on the selected suites' modules | core `drift` | WARN; one question to the user |
+| 8 | smoke gate integrity | `npm run suites:gates` | `smoke` only; unmapped cases ⇒ verdict provisional |
+| 9 | browser lanes | `mcp[]` levels 1–2 (§7) | pool = live lanes; WARN with the projected duration when fewer than 3 |
+
+**The baseline is written at close, not at pre-flight.** `regression:close` writes
+`reports/regression/baseline.<env>.json` (`deployed` snapshot + `runId`) **only for a completed
+run** — a run that died mid-way must not become the next run's baseline. It replaces
+`reports/deploy-state-cache.json`.
+
+Output: `reports/regression/<RUN_ID>/preflight.json` + the report header.
+
+## 7. MCP availability
+
+**Three levels, two executors:**
+
+| Level | Question | Checked by |
+|---|---|---|
+| 1 CONFIGURED | present in `.mcp.json` | CLI (user/claude.ai-level servers are invisible to it) |
+| 2 READY | no `/^<.*>$/` placeholder, env reference resolves, `@playwright/mcp` pinned (not `@latest`), firefox config carries the occlusion flag | CLI (rules already in `qa-env-check` §4 and `.claude/rules/agents.md`) |
+| 3 CONNECTED | the tools are callable in **this** session | skill only: `ToolSearch select:` + one cheap read probe per required server |
+
+**Requirement classes:** `REQ` — absent ⇒ BLOCK · `REQ↘` — required with a named fallback ⇒
+WARN naming it · `OPT` — enables a lane; absent ⇒ that lane `SKIPPED`, **never PASS**.
+
+**Normative source: `.claude/skills/qa-preflight/mcp-requirements.json`** (consumer → server →
+class + fallback + condition). Read by both CLIs (levels 1–2) and by the skill (which servers to
+probe at level 3). The table below is the agreed initial content, illustrative only once the file
+exists:
+
+| Server | Fallback | ticket | ticket FAST | exploratory | lifecycle | domain-map | ba | regression | smoke |
+|---|---|---|---|---|---|---|---|---|---|
+| tracker (Atlassian; ADO via `ado.mjs`) | REST `JIRA_API_TOKEN` → user pastes | REQ↘ | REQ↘ | OPT¹ | — | — | OPT¹ | — | — |
+| github | `gh` / `GIT_TOKEN` REST | REQ↘ | REQ↘ | — | REQ↘ | REQ↘ | REQ↘ | — | — |
+| kb | `npm run kb -- ask` | REQ↘ | REQ↘ | REQ↘ | REQ↘ | REQ↘ | REQ↘ | OPT | REQ↘ |
+| VirtoOZ | Context7 | REQ↘ | REQ↘ | REQ↘ | REQ↘ | REQ² | REQ² | — | OPT |
+| Playwright lanes | next lane in chain | ≥1 REQ, 3 wanted³ | 1 REQ | 1 REQ (charter lane) | ≥1 when Regression phase runs | 1 (firefox) REQ↘ | OPT | ≥1 REQ, pool = live³ | 1 REQ (chrome) |
+| Chrome DevTools | — | OPT (`visual_surface`) | OPT (`--visual`) | — | — | — | — | — | — |
+| Azure / App Insights | `APPINSIGHTS_*` keys | OPT | OPT | — | — | — | — | OPT | OPT |
+
+¹ `ticket` / `docs ticket` mode only. ² Neither VirtoOZ nor Context7 ⇒ BLOCK: these commands exist
+to ground in the published guides. ³ Fewer than 3 is not an error — the run serialises; it is a WARN
+with a projected duration *before* start.
+
+Tracker absent on a ticket run: the run proceeds on a pasted ticket, and the status hop and the
+closing comment are recorded as explicit `SKIPPED` in `summary.json`.
+
+Output block: `mcp: [{server, level: CONFIGURED|READY|CONNECTED|ABSENT, via: "mcp"|"fallback:<name>",
+class, status}]` — the consumer records **through what** it actually worked.
+
+The skill never edits `.mcp.json` and never restarts a server; for a missing server it says in one
+line what to add and that a restart is required.
+
+## 8. The skill — `.claude/skills/qa-preflight/`
+
+`SKILL.md` (born under BUDGET-004's 19,000 chars) + `mcp-requirements.json`. Numbered steps:
+
+1. Run the CLI for the consumer's scope (change-scoped or build-scoped).
+2. MCP level 3 for the consumer's `REQ`/`REQ↘` servers: `ToolSearch select:` + one read probe; fill
+   `mcp[].level`/`via`.
+3. **Ground in the order `CLAUDE.md` fixes** — `mcp__kb__kb_ask` with the coordinate in the question
+   (page path, GraphQL operation, endpoint) → VirtoOZ via `/vc-docs` → Context7 only as a fallback.
+   Record hit ids; a miss never blocks (`.claude/knowledge/agents/authoring-standard.md` §5).
+4. Interpret: `UNKNOWN` is never upgraded to a value · a BLOCK is one question to the user · a WARN
+   is named in one line · consumer-specific meanings (e.g. BREAKING ⇒ FULL) are handed back as facts.
+5. Return one compact block to the consumer: facts + `mcp[]` + kb/doc hit ids.
+
+Deliberately **not** in the skill: the axes 2b–2g, the 2-map prior-art read, ticket classification
+and routing — all `/qa-test` mechanics.
+
+## 9. Migration
+
+### Phase 1 — core + change-scoped (PR 1)
+
+| File | Change |
+|---|---|
+| new | `scripts/lib/env-facts.ts`, `scripts/preflight/cli.ts`, `npm run preflight`, `.claude/skills/qa-preflight/{SKILL.md,mcp-requirements.json}` |
+| `commands/qa-test.md` + `skills/qa-test/preflight.md` | 1b items 1, 2, 2-release, 3, 4 → cite the skill; axes and 2-map stay. One header line in `preflight.md`: env/build pre-flight is `/qa-preflight`, this file is 1a–1b orchestration (filename kept — ~10 inbound links). **Also fix:** the 2b–2g table has 5 rows under a "six axes" heading and says "all five"/"other three"; 2g derives *after* wave A while 2-map *in* wave A consumes it (2g needs only `1a`'s slug + one frontmatter read, so it moves before wave A); wave-A list omits 2-map and names only 2b/2c/2e/2f; duplicated "and the order is the point"; transcribed "63 `/qa-checklist` domains" |
+| `commands/qa-test-fast.md` | Step 0 item 2 and the `kb_ask` of item 5 → skill; prior artifacts, domain slug stay |
+| `commands/qa-exploratory.md` | Step 0 items 1, 2, 3, the Δ of 3a, 4 → skill; 5/5a stay |
+| `commands/qa-test-lifecycle.md` | Pre-Flight 1–3 → skill; 4 (`schema:refresh`) stays |
+| `commands/qa-domain-map.md` | Step 1 versions, docs, kb → skill; prior art, suites, schema stay |
+| `commands/ba-analyze.md` | Step 0 items 1 (VirtoOZ) and 3 (MCP availability) → skill; fix the two items both numbered "3." |
+| `templates/agent-dispatch.md` | §Pre-Flight Checklist, §Build Verification, §Duplicate Detection Guard, §Context7 Pre-Flight → one pointer to the skill (removes the "Context7 first" that contradicts `CLAUDE.md`) |
+| `/vc-fix:qa-env-check endpoints` calls in `.claude/` commands | replaced by core `health`; the full `qa-env-check` stays for onboarding |
+
+### Phase 2 — build-scoped (PR 2)
+
+- `scripts/regression/preflight.ts` + `--preflight` on `regression:plan`.
+- `regression:close` writes `baseline.<env>.json` for completed runs only.
+- `commands/qa-regression.md` Step 0 and `commands/qa-smoke.md` Step 0 → skill (build-scoped entry);
+  smoke's Context7 item becomes the kb → VirtoOZ order.
+- Delete `reports/deploy-state-cache.json` and its references.
+
+## 10. Out of scope
+
+The `vc-fix` plugin entirely (`qa-bug`, `qa-verify-fix`, `qa-fix`, `qa-monitoring`, its
+`qa-env-check`, its own `agent-dispatch.md` copy) · CI regression and everything under `ci/` · the
+axes 2b–2g · per-case `test-execution-preflight.md`.
+
+## 11. Verification
+
+- `npm run context:check` — paths, `§` anchors, BUDGET-004. `qa-test`, `qa-regression` and
+  `qa-test-lifecycle` are in `.prompt-size-baseline.json` and may only shrink; the migration shrinks
+  them, so refresh with `npm run context:check:baseline`.
+- **Temporary** unit tests on the derivations — drift, ledger Δ, module-id mapping, `UNKNOWN` never
+  replaced by `declared`, change-scoped policy, module gating, baseline Δ — run, then **deleted
+  before commit** (`CLAUDE.md` NO CODE ⇒ NO UNIT TEST; nothing new is committed under `scripts/unit/`).
+- Live on `vcst`: `npm run preflight -- --for ticket --ticket <recent key>`; phase 2 adds
+  `npm run regression:plan -- smoke --preflight`.
+
+## 12. Open items for the implementation plan
+
+- Which existing mapping owns module-id ↔ repo ↔ `requiresModules` slug (§4) — pick one, do not add one.
+- Whether `probe-store-capabilities.mjs` keeps its CLI as a thin wrapper over the extracted function.
+- `mcp-requirements.json` schema: a JSON Schema beside it, validated by `context:check` or a small
+  gate — decide in the plan (it is data, so no unit test either way).
