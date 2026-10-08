@@ -2515,7 +2515,7 @@
     {
       "id": "072f",
       "name": "Configurable Products UI — Configurable Products > Promotions",
-      "file": "regression\\suites\\Frontend\\configurable-products\\072f-configurable-products-promotions.csv",
+      "file": "regression/suites/Frontend/configurable-products/072f-configurable-products-promotions.csv",
       "domain": "catalog-search",
       "layer": "frontend",
       "concern": "functional",
