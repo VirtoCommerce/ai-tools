@@ -1618,106 +1618,106 @@
   },
   "SC_MULTI": {
     "_inline": true,
-    "component_id": "4a99cb8ee6a343808e3ef56e19717070",
+    "component_id": "414aacb042414ae3ab24a09d5d8863e8",
     "name": "AGENT-TEST-SC-Multi-Trio"
   },
   "SC_SINGLE": {
     "_inline": true,
-    "component_id": "dc7e0762763e47f5b3c58a0b68d9e210",
+    "component_id": "ab96b80eca7d41baab124360d949b036",
     "name": "AGENT-TEST-SC-Single"
   },
   "SC_UNUSED": {
     "_inline": true,
-    "component_id": "f44f8f56876842879549769a6c0558bf",
+    "component_id": "2bba682bbab442c482e41307aae78caa",
     "name": "AGENT-TEST-SC-Unused-Deletable"
   },
   "SC_USED": {
     "_inline": true,
-    "component_id": "ed1688094c1d405096a0f73427447ac5",
+    "component_id": "8648747e984e411f841e4aad509ceca4",
     "name": "AGENT-TEST-SC-Used-Undeletable"
   },
   "PB_SC_MASTER": {
     "_inline": true,
-    "group_id": "53b829d2-502e-42ef-9b92-60aab5048eff",
+    "group_id": "d0273741-91cd-47b6-8235-98f7c51427d7",
     "permalink": "/agent-test-sc-master"
   },
   "PB_SC_CONSUMER_A": {
     "_inline": true,
-    "group_id": "d946ed13-4c11-480d-9250-3c1393a289c8",
+    "group_id": "314b039b-f72c-48f6-b744-8bd1e316e418",
     "permalink": "/agent-test-sc-consumer-a"
   },
   "PB_SC_CONSUMER_B": {
     "_inline": true,
-    "group_id": "b177440a-1aa0-44ea-9f1f-91f4139b609f",
+    "group_id": "134368b0-ee8a-4248-bec4-122c3f59d6d4",
     "permalink": "/agent-test-sc-consumer-b"
   },
   "PB_SC_CONSUMER_DRAFT": {
     "_inline": true,
-    "group_id": "bf643663-93b1-4736-8374-c66dbb5d5182",
+    "group_id": "e7b607a3-97af-4f2a-84bf-77be895a68c8",
     "permalink": "/agent-test-sc-consumer-draft"
   },
   "PB_SC_DELETE_HOLDER": {
     "_inline": true,
-    "group_id": "7d88e789-fefe-4d1c-bbac-644fbb0305fe",
+    "group_id": "e0e1a247-736e-4bf5-bf51-76f86714568f",
     "permalink": "/agent-test-sc-delete-holder"
   },
   "PB_SC_CONTROL": {
     "_inline": true,
-    "group_id": "f39f5f30-48f9-41e5-8609-82688ca2ca1a",
+    "group_id": "afafde56-a0f3-40f1-a862-fe6f2b2523a6",
     "permalink": "/agent-test-sc-control"
   },
   "SC_PERM_ALL": {
     "_inline": true,
-    "platform_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
-    "user_id": "c473ef91-8b91-4548-93e8-cc08a152defd",
+    "platform_id": "45cf4e44-91b2-4770-8fcb-25122bb5b385",
+    "user_id": "45cf4e44-91b2-4770-8fcb-25122bb5b385",
     "role_id": "AGENT-TEST-PB-SC-sc-all",
     "email": "AGENT-TEST-sc-all@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_READ": {
     "_inline": true,
-    "platform_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
-    "user_id": "60c559da-dc41-46ce-aaf2-776f5e296324",
+    "platform_id": "f1e552c4-698d-4589-b151-b87475a6b33b",
+    "user_id": "f1e552c4-698d-4589-b151-b87475a6b33b",
     "role_id": "AGENT-TEST-PB-SC-sc-read",
     "email": "AGENT-TEST-sc-read@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOCREATE": {
     "_inline": true,
-    "platform_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
-    "user_id": "9fb29885-1fb8-45ea-8f7a-9ec02df4af42",
+    "platform_id": "a820aaab-d508-4459-bffc-9a3324066d8c",
+    "user_id": "a820aaab-d508-4459-bffc-9a3324066d8c",
     "role_id": "AGENT-TEST-PB-SC-sc-nocreate",
     "email": "AGENT-TEST-sc-nocreate@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOUPDATE": {
     "_inline": true,
-    "platform_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
-    "user_id": "a2698807-36ab-467e-a998-f930ee94d8c0",
+    "platform_id": "2bd1db7c-98f8-403c-8ccd-f5cf8eccd1cc",
+    "user_id": "2bd1db7c-98f8-403c-8ccd-f5cf8eccd1cc",
     "role_id": "AGENT-TEST-PB-SC-sc-noupdate",
     "email": "AGENT-TEST-sc-noupdate@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NODELETE": {
     "_inline": true,
-    "platform_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
-    "user_id": "05bc16f0-1e39-49d4-8682-dd00fadc73b6",
+    "platform_id": "a995aebe-8002-4c21-bc6b-3757d409b9ae",
+    "user_id": "a995aebe-8002-4c21-bc6b-3757d409b9ae",
     "role_id": "AGENT-TEST-PB-SC-sc-nodelete",
     "email": "AGENT-TEST-sc-nodelete@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOREAD": {
     "_inline": true,
-    "platform_id": "19124d92-533a-4577-929a-89c10dda81b8",
-    "user_id": "19124d92-533a-4577-929a-89c10dda81b8",
+    "platform_id": "9aa4385d-1cfe-4876-bda1-f5d7cc2c2267",
+    "user_id": "9aa4385d-1cfe-4876-bda1-f5d7cc2c2267",
     "role_id": "AGENT-TEST-PB-SC-sc-noread",
     "email": "AGENT-TEST-sc-noread@test.virtocommerce.com",
     "store_id": "B2B-store"
   },
   "SC_PERM_NOSTORE": {
     "_inline": true,
-    "platform_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
-    "user_id": "7b6b5c24-2f38-41c0-a060-59f0d383f46d",
+    "platform_id": "3249fc65-4e0b-4380-8a62-45c4671406a8",
+    "user_id": "3249fc65-4e0b-4380-8a62-45c4671406a8",
     "role_id": "AGENT-TEST-PB-SC-sc-nostore",
     "email": "AGENT-TEST-sc-nostore@test.virtocommerce.com",
     "store_id": "Electronics"
@@ -2651,5 +2651,131 @@
       "1fa442b6-47fa-4ddc-a783-ecedbee911d0",
       "57559b0e-8919-4492-a49c-2d3d3e5fd88e"
     ]
+  },
+  "SR_TASK_FUTURE_YANKEE": {
+    "id": "7a86b0e2-f192-4042-b1e4-d04d28c5cb1e",
+    "due_date": "2026-10-09T11:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_MIKE": {
+    "id": "671371c1-c426-41f0-b473-4f17e0a27870",
+    "due_date": "2026-10-07T09:00:00.000Z"
+  },
+  "SR_TASK_DONE_ECHO": {
+    "id": "9df365e0-8392-4891-86b1-5ef71764563a",
+    "due_date": "2026-09-29T16:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_ROMEO": {
+    "id": "6fcac728-113e-484e-a138-4466b7d79118",
+    "due_date": "2026-10-15T09:00:00.000Z"
+  },
+  "SR_TASK_TODAY_SIERRA": {
+    "id": "1bd35582-2635-40ae-b08f-b0edce128977",
+    "due_date": "2026-10-08T12:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_OSCAR": {
+    "id": "6c870e91-dfde-4122-8c8b-0eb62dc625bf",
+    "due_date": "2026-10-22T13:00:00.000Z"
+  },
+  "SR_TASK_OVERDUE_ZULU": {
+    "id": "a43b7d61-be61-4424-a08a-d577c8a0cd28",
+    "due_date": "2026-10-03T10:00:00.000Z"
+  },
+  "SR_TASK_DONE_FOXTROT": {
+    "id": "37e67211-7648-420a-8b1e-c570c23c96af",
+    "due_date": "2026-10-13T10:00:00.000Z"
+  },
+  "SR_TASK_TODAY_DELTA": {
+    "id": "8d173c9a-cd0c-4433-9803-1c34c8526f82",
+    "due_date": "2026-10-08T20:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_CHARLIE": {
+    "id": "86d2495c-f3cb-448f-831f-6a118fb37291",
+    "due_date": "2026-10-15T17:00:00.000Z"
+  },
+  "SR_TASK_DONE_NOVEMBER": {
+    "id": "41ae1d67-3f69-430f-8657-9ee1d47f3b3e",
+    "due_date": "2026-10-06T12:00:00.000Z"
+  },
+  "SR_TASK_TODAY_ALPHA": {
+    "id": "d076a8be-995b-4797-8109-6756cb21f232",
+    "due_date": "2026-10-08T07:00:00.000Z"
+  },
+  "SR_TASK_FUTURE_BRAVO": {
+    "id": "f84fef4c-ad83-4c91-bdc9-c9397e2fcd48",
+    "due_date": "2026-10-11T15:00:00.000Z"
+  },
+  "SR_TASK_DONE_TANGO": {
+    "id": "d83454b1-9578-4138-8432-e6826a824007",
+    "due_date": "2026-10-08T15:00:00.000Z"
+  },
+  "SR_TASK_GROUPS": {
+    "open_overdue": "2",
+    "open_today": "5",
+    "open_future": "7",
+    "completed": "4",
+    "total": "22",
+    "seeded_at": "2026-10-08T08:51:55.791Z",
+    "decays_at_utc": "2026-10-08T22:00:00.000Z",
+    "owner_rep_email": "agent-test-sr-primary@example.com",
+    "canceled": "3",
+    "dateless": "1",
+    "chip_upcoming": "12",
+    "chip_overdue": "2",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "browser_tz": "Europe/Budapest"
+  },
+  "SR_TASK_EDGE_QUEBEC": {
+    "id": "b888f961-899d-4f87-b0b8-3f2b79e8c5e5",
+    "due_date": "2026-10-09T03:30:00.000Z"
+  },
+  "SR_TASK_CANCELED_LIMA": {
+    "id": "6f987344-b62d-4656-b72b-6160b1b00c4a",
+    "due_date": "2026-10-08T10:00:00.000Z"
+  },
+  "SR_TASK_EDGE_UNIFORM": {
+    "id": "417d617d-46b4-4ee7-be52-46a1c099a119",
+    "due_date": "2026-12-07T10:00:00.000Z"
+  },
+  "SR_TASK_NODATE_INDIA": {
+    "id": "b2d1f0a1-40f3-407b-8d6a-5461db35797b",
+    "due_date": ""
+  },
+  "SR_TASK_CANCELED_KILO": {
+    "id": "2c6e9df9-8650-4963-8775-10b70b1c7548",
+    "due_date": "2026-10-05T11:00:00.000Z"
+  },
+  "SR_TASK_EDGE_GOLF": {
+    "id": "1e70ff1a-d604-4849-8e5f-d512dcd34f16",
+    "due_date": "2026-10-07T22:00:00.000Z"
+  },
+  "SR_TASK_CANCELED_HOTEL": {
+    "id": "dfee6502-2f6b-460a-830e-d220b74d895e",
+    "due_date": "2026-10-10T14:00:00.000Z"
+  },
+  "SR_TASK_EDGE_PAPA": {
+    "id": "b62e59b1-56eb-4a19-bb1f-4bd72cebe432",
+    "due_date": "2026-10-08T21:30:00.000Z"
+  },
+  "SR_TASK_GROUPS_NY": {
+    "open_overdue": "3",
+    "open_today": "5",
+    "open_future": "6",
+    "completed": "4",
+    "canceled": "3",
+    "dateless": "1",
+    "total": "22",
+    "chip_upcoming": "11",
+    "chip_overdue": "3",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
+    "seeded_at": "2026-10-08T08:51:55.791Z",
+    "decays_at_utc": "2026-10-09T04:00:00.000Z"
   }
 }
