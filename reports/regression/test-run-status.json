@@ -1,28 +1,25 @@
 {
- "runId": "REG-2026-10-08-1137",
- "status": "in_progress",
- "startedAt": "2026-10-08T09:37:53.313Z",
- "windowStart": "2026-10-08T09:37:53.313Z",
- "selection": "106,097",
+ "runId": "REG-2026-10-08-1151",
+ "status": "completed",
+ "startedAt": "2026-10-08T09:51:40.270Z",
+ "windowStart": "2026-10-08T09:51:40.270Z",
+ "selection": "106",
  "env": "vcst",
  "scoped": true,
- "purpose": "VCST-6077 round 2 C1 re-run (after env-credential BLOCKED run REG-2026-10-08-1119); --no-promote; FRONT_URL=http://localhost",
+ "purpose": "VCST-6077 round 2 C1 supplement: SR-TK-023 only; --no-promote",
  "suites": {
   "106": {
-   "status": "running",
+   "status": "done",
    "lane": "browser",
    "browser": "playwright-edge",
    "laneId": 3,
-   "startedAt": "2026-10-08T09:37:53.313Z",
-   "attempts": 1
-  },
-  "097": {
-   "status": "running",
-   "lane": "browser",
-   "browser": "playwright-firefox",
-   "laneId": 2,
-   "startedAt": "2026-10-08T09:37:53.313Z",
-   "attempts": 1
+   "startedAt": "2026-10-08T09:51:40.270Z",
+   "attempts": 1,
+   "pass": 1,
+   "fail": 0,
+   "blocked": 0,
+   "finishedAt": "2026-10-08T09:52:50.831Z"
   }
- }
+ },
+ "finishedAt": "2026-10-08T09:52:50.831Z"
 }
