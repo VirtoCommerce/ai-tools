@@ -443,6 +443,13 @@ export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env),
  */
 export const loopPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.loop.ndjson`);
 const WROTE = new Set(['capture', 'confirm', 'dispute']);
+/**
+ * A write that QUEUED something: a capture / confirm / dispute with no `state` (a failure carries one),
+ * and for a capture its minted id. Read the same way on a queue line (which also carries `payload`) and
+ * on a published log line (which does not) -- the one rule `loopRecord` and `report-analyse.mjs`
+ * `lists()` share, so hook and report cannot disagree about what was written (PR #407 review).
+ */
+export const queuedWrite = (line) => WROTE.has(line?.kind) && !line.state && (line.kind !== 'capture' || Boolean(line.id));
 export function loopRecord(line) {
   const at = String(line.at ?? '');
   if (!at) return null;
@@ -464,9 +471,10 @@ export function loopRecord(line) {
       at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
       ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
       ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
+      ...(line.kind === 'show' && line.unpaired ? { unpaired: true } : {}),
     };
   }
-  if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };
   return null;
 }
 async function noteLoop(env, line) {

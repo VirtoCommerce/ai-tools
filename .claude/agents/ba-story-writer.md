@@ -104,7 +104,7 @@ So that [measurable business benefit or user outcome].
 
 Write **3–8 criteria** per story. Use strict Given/When/Then format.
 
-**KB:** `mcp__kb__kb_ask` / `npm run kb -- ask`, close each list by handle (`kb_show`/`kb_none`), then confirm/dispute/capture (`CLAUDE.md` §Product context).
+**KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
 ```
 ✅ AC-1: [Happy path — the primary success scenario]
 Given [the user is in a specific state or context]

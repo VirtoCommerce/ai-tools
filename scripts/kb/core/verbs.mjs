@@ -24,7 +24,7 @@ import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
   readQueue, sessionId,
 } from './queue.mjs';
-import { askThatShowed, openedIds } from './loop.mjs';
+import { lastWord, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -730,7 +730,11 @@ export async function show(id, opened, { env = process.env, via = null, call = n
   // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
   // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
   // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
-  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : verify ? { verify: true } : {};
+  // WITHOUT EITHER, THE PAIRING IS RESOLVED HERE, at the write, as `none()` resolves its target: the
+  // latest list of this session that showed the entry and was not closed by `kb_none` -- logged as an
+  // explicit `after`, or `unpaired` when there is none. Hook and report then read the line, not a rule.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() }
+    : verify ? { verify: true } : pairShow(id, env);
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
@@ -759,6 +763,22 @@ export async function show(id, opened, { env = process.env, via = null, call = n
   }
   await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+/** The write-time pairing of a handle-less, non-`verify` show (see `show`): `{ after }`, `{ unpaired }`, or `{}` with no session. */
+function pairShow(id, env) {
+  if (!hasSessionId(env)) return {};
+  const journal = readLoop(env);
+  const pointed = pointersByAsk(journal);
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of journal) {
+    if (r.kind !== 'ask' || r.state !== 'ambiguous' || !Array.isArray(r.shown)) continue;
+    if (!r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict === 'none') continue;
+    if (!at || r.at > at) at = r.at;
+  }
+  return at ? { after: at } : { unpaired: true };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -1180,14 +1200,14 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // show in one command could never satisfy the confirm in the next. The gate guards agents.
   const journal = hasSessionId(env) ? readLoop(env) : [];
   if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
-    // A confirm may take the list's handle -- the agent relies on the entry, which is a pick. A dispute
-    // never does: opening an entry to contradict it is not a choice from any list, so it is a `verify` open.
-    const h = kind === 'confirm' ? askThatShowed(journal, row.id) : null;
+    // ALWAYS a `verify` open: the gate cannot know which list, if any, the entry answers, and a handle it
+    // guessed would record a pick on the wrong question (PR #407 review). Closing a list is the agent's
+    // own choice, and the Stop reminder names each one still open with its handle.
     await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
     return {
       state: 'invalid',
-      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id}${h ? ` with ask ${h}` : ' with verify'}`
-        + `, or \`npm run kb -- show ${row.id}${h ? ` --ask ${h}` : ' --verify'}\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id} with verify`
+        + `, or \`npm run kb -- show ${row.id} --verify\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
     };
   }
 

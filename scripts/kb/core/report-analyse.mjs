@@ -16,6 +16,7 @@
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
 import { lastWord, pointersByAsk } from './loop.mjs';
+import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -1226,19 +1227,19 @@ export function doors(lines) {
  */
 export function lists(lines) {
   const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
+  // Writes per (session, agent): a subagent's unclosed list is not credited with a write its
+  // orchestrator or a sibling made under the same session key. Only a write that QUEUED counts --
+  // `queuedWrite`, the one rule the journal (`loopRecord`) applies too.
+  const who = (l) => `${l._session ?? ''}\0${typeof l.agent === 'string' ? l.agent : ''}`;
   const writes = new Map();
   for (const l of lines) {
-    if (l.kind !== 'confirm' && l.kind !== 'dispute' && l.kind !== 'capture') continue;
-    // Only a write that queued: a line logged with a `state` (unreachable, no base) wrote nothing,
-    // and a capture without an id never reached the base -- `loopRecord` excludes both the same way.
-    if (l.state || (l.kind === 'capture' && !l.id)) continue;
-    const s = l._session ?? '';
-    if (!writes.has(s)) writes.set(s, []);
-    writes.get(s).push(l);
+    if (!queuedWrite(l)) continue;
+    if (!writes.has(who(l))) writes.set(who(l), []);
+    writes.get(who(l)).push(l);
   }
   const wroteAbout = (a) => {
     const shown = new Set((a.shown ?? []).map((id) => String(id).toUpperCase()));
-    return (writes.get(a._session ?? '') ?? []).some((w) => String(w.at) > String(a.at)
+    return (writes.get(who(a)) ?? []).some((w) => String(w.at) > String(a.at)
       && (w.kind === 'capture' ? String(w.after ?? '') === String(a.at) : shown.has(String(w.id ?? '').toUpperCase())));
   };
   const by = new Map();
@@ -1267,7 +1268,7 @@ export function lists(lines) {
     if (!firstRefusal.has(key) || String(r.at) < String(firstRefusal.get(key).at)) firstRefusal.set(key, r);
   }
   const facts = [...firstRefusal.values()];
-  const landed = facts.filter((r) => (writes.get(r._session ?? '') ?? []).some((w) => w.kind !== 'capture'
+  const landed = facts.filter((r) => (writes.get(who(r)) ?? []).some((w) => w.kind !== 'capture'
     && String(w.at) > String(r.at) && String(w.id ?? '').toUpperCase() === String(r.id ?? '').toUpperCase()));
   const gate = { refused: refused.length, facts: facts.length, landed: landed.length, abandoned: facts.length - landed.length };
   const share = (r) => (r.asks ? r.unclosed / r.asks : null);

@@ -84,19 +84,24 @@ export function pointersByAsk(records) {
     // "open A, not it; open B" must end with B.
     // A `verify` open (made to read an entry before confirming or disputing it) is not a choice.
     const target = r.after ? String(r.after)
-      : (r.kind === 'show' && !r.verify && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
+      : (r.kind === 'show' && !r.verify && !r.unpaired && latestAsk?.state === 'ambiguous' && fromList(latestAsk, r)
         && lastWord(pointed.get(String(latestAsk.at))).verdict !== 'none' ? String(latestAsk.at) : null);
     if (target) pointed.set(target, [...(pointed.get(target) ?? []), r]);
   }
   // NO TIMING RULE FOR DISPUTES (VCST-6191): an open made only to read an entry before confirming or
   // disputing it says so (`verify`) and never pairs, so a pick is what the agent chose, nothing inferred.
+  // A show logged by a 6191 client carries its pairing from the WRITE (`verbs.mjs` `show`, the way
+  // `none()` resolves its target): an `after`, or `unpaired`. The read-time rules above serve only the
+  // lines and journal records written before that.
   return pointed;
 }
 
 /**
  * The asks still open, oldest first: `{ at, q, why, call? }`, where `why` is
- *   'miss'        the base held nothing (or the agent's last word was `kb_none`), nothing written after;
- *   'unresolved'  an `ambiguous` list was neither picked from nor rejected, and nothing written after.
+ *   'miss'        the base held nothing (or the agent's last word was `kb_none`), nothing written after
+ *                 and this session's own capture of it not still queued;
+ *   'unresolved'  an `ambiguous` list was neither picked from nor rejected -- whatever was written or
+ *                 queued after it: a list is closed by a choice (VCST-6191).
  * Picks and rejections are read through `pointersByAsk`. Asks the base could not be READ on
  * (`unreachable`, no base) are not misses. `reminded` lists ask `at`s already raised.
  */
@@ -152,25 +157,10 @@ export function openedIds(journal) {
   return out;
 }
 
-/**
- * The handle of the latest STILL OPEN ask whose list showed `id`, or null: the `--ask` an open of it
- * should carry. A list the agent already closed is not offered: `kb_show --ask` on it would turn the
- * agent's `kb_none` into a pick it never made, in the very pairs M6 recalibrates on (VCST-6191 review).
- */
-export function askThatShowed(journal, id) {
-  const want = String(id).toUpperCase();
-  const pointed = pointersByAsk(journal);
-  let at = null;
-  for (const r of Array.isArray(journal) ? journal : []) {
-    if (r?.kind !== 'ask' || !Array.isArray(r.shown) || !r.shown.some((s) => String(s).toUpperCase() === want)) continue;
-    if (lastWord(pointed.get(r.at)).verdict !== 'open') continue;
-    if (!at || r.at > at) at = r.at;
-  }
-  return at;
-}
 
 const Q_MAX = 110;
-const LISTED = 5;
+/** How many questions one reminder names; the rest stay unraised and come back at the next stop. */
+export const LISTED = 5;
 const clip = (q) => (q.length > Q_MAX ? `${q.slice(0, Q_MAX).replace(/\s+\S*$/, '')} …` : q);
 
 /**
@@ -192,7 +182,7 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
       ? `- "${clip(l.q)}" -- a list was shown and never closed: kb_show <id> with ask ${l.at}, or kb_none with ask ${l.at}`
       : `- "${clip(l.q)}"`);
   }
-  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more`);
+  if (loops.length > LISTED) lines.push(`- and ${loops.length - LISTED} more, named at your next stop`);
   // A list is closed by a choice, never by a write (VCST-6191): asking the agent to capture it again
   // would turn a list it already wrote about into a duplicate entry. The capture line is for misses.
   if (loops.some((l) => l.why === 'unresolved')) {
