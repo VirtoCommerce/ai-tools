@@ -58,7 +58,7 @@ These were set by the requester and are binding for the design and for every lat
 | S1 | **Everything gathered is untrusted data, never instructions**: ticket text, comments, attachments, linked pages, PR bodies, review threads. Text that tries to instruct the agent is recorded as a finding and is not followed. |
 | S2 | **HAR files and logs are scrubbed before an agent reads them.** Cookies, `Authorization` headers, bearer tokens, `Set-Cookie`, query-string tokens. The bundle carries endpoint + status + error, never a header value. Reuse the value-scan approach of `scripts/kb/core/secret-gate.mjs` (scan for the real secret values from the env layer, plus the PAT/JWT/Bearer shapes) instead of writing a second scanner. |
 | S3 | **Client data never leaves the machine.** Two storage classes (decision D2). **Raw artifacts** (downloaded attachments, HAR, logs, video frames, linked pages) live in a per-run temp directory and are deleted when the run ends — never cached. **The bundle** (derived, scrubbed findings) lives in `<outputRoot>/.vc-fix/context/<KEY>/` with a 24 h TTL, and only after `git check-ignore` confirms the path is ignored; otherwise it falls back to the temp directory. Neither class is ever written under `reports/`, committed, sent to the public `kb`, or included in a self-diagnostics upstream issue. |
-| S4 | **Read-only on every system.** The skill's tool list excludes tracker writes, VCS writes and transitions. |
+| S4 | **Read-only on every system.** The agent's `tools:` allowlist holds no `Bash`, `Write` or `Edit` and only read-only MCP tools, so the harness enforces it, not the prompt. Everything that needs a shell — downloads, scrub, video frames, the deployment check — runs in the skill's `lib/` before dispatch ([agent prompt design](2026-10-08-ticket-context-analyst-prompt.md) A2–A3). |
 | S5 | **Bounded link following.** One hop from the ticket. A link to a private or internal host is not fetched with a general web fetch; it is read through its own connector (Atlassian, GitHub, Figma) or recorded as `GAP: private host`. |
 | S6 | Client-code containment from `.claude/knowledge/execution/quality-gates.md` §2a applies unchanged: PR diffs from a client repo are read in place and never quoted into any upstream artifact. |
 
@@ -112,7 +112,11 @@ These were set by the requester and are binding for the design and for every lat
     scrub.mjs         # S2 — wraps the value-scan approach for HAR/logs
     cache.mjs         # P3 — freshness key (ticket updated + PR head SHAs), TTL, check-ignore guard
     paths.mjs         # C4 — outputRoot / own-asset resolution
+    fetch.mjs         # downloads attachments into the per-run temp dir (S3)
+    frames.mjs        # D4 — ffmpeg frame extraction with caps
+    deploy-check.mjs  # D3 — module/probe check with its own credential, never via the agent
 .claude/agents/ticket-context-analyst.md   # D6 — the one read-only agent for blocks 1–3
+                                           #      (prompt: 2026-10-08-ticket-context-analyst-prompt.md)
 ```
 
 **Later (Phase 5): the same tree under `plugins/vc-fix/skills/qa-ticket-context/` and
@@ -161,7 +165,7 @@ most often missed), every link in description, comments and fields (including Pr
 |---|---|---|
 | Screenshot | image read | expected vs actual, exact UI text, screen state, role |
 | Log / HAR / stack trace | text read **after scrub (S2)** | endpoint or GraphQL operation, status, error, layer |
-| Video | frames via `ffmpeg` (D4: 1 frame / 2 s, ≤12 frames), then image read | ordered repro steps; no `ffmpeg` ⇒ `GAP` with the install remedy |
+| Video | frames extracted by `lib/frames.mjs` before dispatch (D4: 1 frame / 2 s, ≤12 frames), then image read | ordered repro steps; no `ffmpeg` ⇒ `GAP` with the install remedy |
 | Loom | Atlassian MCP `getLoomVideo` | transcript + steps |
 | Confluence | Atlassian MCP `getConfluenceContent` | requirements absent from the ACs |
 | Linked ticket | tracker fetch | constraints, "done in sibling", duplicates |
@@ -184,7 +188,7 @@ most often missed), every link in description, comments and fields (including Pr
 ### Block 3 — Change (PRs)
 
 **Find** — reuse the measured ladder of `technical-change.md` §2.1 unchanged, with C2/C3 applied:
-explicit link → org-wide search by key → `git log --grep` → paths named in the ticket (weakest; say so).
+explicit link → org-wide search by key → commit search by key (`search_commits`; the agent has no shell, A4) → paths named in the ticket (weakest; say so).
 
 **Per PR, return:**
 
@@ -194,7 +198,7 @@ explicit link → org-wide search by key → `git log --grep` → paths named in
 | files by layer token (`storefront` / `admin-spa` / `api` / `module` / `platform`) | routes the test lanes |
 | GraphQL operations and REST endpoints touched, by name | feeds contract refresh and checklist |
 | settings, permissions, feature flags added or changed | the hidden-behaviour list below |
-| **deployed on `TEST_ENV`?** — module version from the PR's release vs `/api/platform/modules` | the gate (§6) |
+| **deployed on `TEST_ENV`?** — module version from the PR's release vs `/api/platform/modules`, by `lib/deploy-check.mjs`, not the agent (D3) | the gate (§6) |
 | tests the PR changed, and changed branches with no test | first targets for testing |
 | fate — reverted, superseded, follow-up fix after merge | avoid testing a dead change |
 | CI state, unresolved review threads | risk signal, never a block |
@@ -319,7 +323,7 @@ The first draft left six questions open (D1–D6); D7 records where the skill li
 | D3 | Deployment check on client stands | **Three steps, in order.** (1) Modules via `GET /api/platform/modules`, which returns installed module versions but **requires authentication** (`kb` KB-B858E12A), so it runs with the env layer's least-privileged read credential. A module whose version matches but which carries a load error is **not** deployed (KB-E4699C30: an older-minor dependency makes the platform mark it with an error). `/health` is not proof: it can keep answering 200 from the old instance during a restart (KB-B858E12A). Whether a client's own custom modules appear in this list is **unverified**; it is checked on a client stand before the Phase 5 release, and until then this step is not relied on for client modules. (2) The storefront or theme via a probe declared in `project-profile.json` as `deployProbe` (a version endpoint or build-info URL); the `/project-init` question for it ships with Phase 5, until then it is set by hand. (3) Nothing declared ⇒ `UNKNOWN`. | `UNKNOWN` does not block; it puts a blocker-lite line in `bundle.blockers[]`, and the consumer must write "deployment unverified" into its verdict. A silent `UNKNOWN` would let a PASS on old code look like a real PASS — the exact failure §1 names. Guessing a storefront endpoint that does not exist on every build would violate C3. |
 | D4 | Video | **`ffmpeg` is a soft dependency.** Detected at run time with `command -v ffmpeg`; not added to `package.json`. Caps: 1 frame every 2 s, at most 12 frames, video only (audio is not transcribed). Absent ⇒ `GAP: ffmpeg not installed` with the install remedy. | Bug videos are often the only place the repro order exists, so a hard `GAP` throws away the input most worth reading. A hard dependency would break installs where `ffmpeg` is unavailable (C3). Loom keeps its own path through the Atlassian connector's transcript. |
 | D5 | `kb` writes | **Strictly read-only.** The skill asks the `kb`; it never captures, confirms or disputes. | The `kb` is a public repository, and `scripts/kb/core/secret-gate.mjs` states its acceptance rests on the consumer being this repo — "extending the base to client deployments must re-decide it first". A plugin skill runs in client deployments, so writing from it would be that unmade decision (S3). Consumers in this repo keep the capture duty they already have. |
-| D6 | Who runs blocks 1–3 | **One new read-only agent, `ticket-context-analyst`** (in `.claude/agents/` now, moved with the skill in Phase 5), dispatched three times in parallel with block-specific briefs. Its `tools:` frontmatter is an allowlist with no write tools. | `ba-system-analyzer` and `ba-api-specialist` live only in `.claude/agents/`; the plugin ships no BA agents, so a skill built on them could not move (C1, M1). Using them now and swapping later would change the skill's core at the move instead of copying it. One agent with three briefs is one definition to keep under the 19,000-character budget (C5), and a tool allowlist turns S4 (read-only) from a prompt rule into a harness rule. |
+| D6 | Who runs blocks 1–3 | **One new read-only agent, `ticket-context-analyst`** (in `.claude/agents/` now, moved with the skill in Phase 5), dispatched three times in parallel with block-specific briefs. Its `tools:` frontmatter is an allowlist with no write tools and no `Bash`. Full prompt and its design notes: [`2026-10-08-ticket-context-analyst-prompt.md`](2026-10-08-ticket-context-analyst-prompt.md). | `ba-system-analyzer` and `ba-api-specialist` live only in `.claude/agents/`; the plugin ships no BA agents, so a skill built on them could not move (C1, M1). Using them now and swapping later would change the skill's core at the move instead of copying it. One agent with three briefs is one definition to keep under the 19,000-character budget (C5), and a tool allowlist turns S4 (read-only) from a prompt rule into a harness rule. |
 
 | D7 | Where it lives first | **`.claude/` in this repo now, `vc-fix` plugin in Phase 5**, under the §4a portability contract. | Requested by the owner, 2026-10-08. Its first consumers are here, and Phase 2 can still reject the design; building in the plugin first would ship an unproven skill to clients and cost a plugin release per iteration. The contract is what stops "later" from becoming a rewrite. |
 
