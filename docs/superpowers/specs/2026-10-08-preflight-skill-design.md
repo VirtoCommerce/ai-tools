@@ -1,6 +1,6 @@
 # Pre-flight as one skill over one fact core — design
 
-Date: 2026-10-08 · Branch: `claude/preflight-step-040aa0` · Status: design, awaiting review
+Date: 2026-10-08 · Ticket: [VCST-6225](https://virtocommerce.atlassian.net/browse/VCST-6225) (blocks VCST-6223) · Branch: `claude/preflight-step-040aa0` · Status: design, awaiting review
 
 ## 1. Problem
 
@@ -347,3 +347,24 @@ axes 2b–2g · per-case `test-execution-preflight.md`.
 - Whether `probe-store-capabilities.mjs` keeps its CLI as a thin wrapper over the extracted function.
 - `mcp-requirements.json` schema: a JSON Schema beside it, validated by `context:check` or a small
   gate — decide in the plan (it is data, so no unit test either way).
+
+## 13. Dependency — `/ticket-context` (VCST-6223, design in ai-tools PR #413)
+
+Two designs written the same day each invented a deployment check. In Jira, VCST-6225 **blocks**
+VCST-6223, but the real dependency is partial — one block of five:
+
+| `/ticket-context` | Duplicates | Dependency |
+|---|---|---|
+| D3 `lib/deploy-check.mjs` — PR's module version vs `/api/platform/modules`, own credential | core `deployed` + change-scoped `expect` | **Yes.** It calls `getEnvFacts()` instead of a second probe |
+| `chain_deployed`, the `NOT DEPLOYED` blocker | the same facts; `UNKNOWN` is never upgraded | yes |
+| "Prior runs on the same ticket" (Known ground) | `duplicate`, loosely — context there, a duplicate check here | no; may stay as is |
+| Ticket / Materials / Known ground / Gaps | — | none; can proceed in parallel now |
+
+So **phase 1's fact core lands first**, and the implementation plan orders it as its first task, so
+the `Change` block can build on it as early as possible. Nothing else in VCST-6223 waits.
+
+**Unresolved tension — D1 vs `/ticket-context` Phase 5.** This design keeps pre-flight in `.claude/`
+only (D1). `/ticket-context` plans to move to the `vc-fix` plugin (its Phase 5), and a plugin cannot
+reference the repo root's `scripts/lib/`. When that move happens, either the core is copied into the
+plugin deliberately (as `knowledge/` already is) or D1 is revisited and the core moves to the plugin.
+Not blocking: Phase 5 is triggered only when a client deployment needs it. Decide then, in both specs.
