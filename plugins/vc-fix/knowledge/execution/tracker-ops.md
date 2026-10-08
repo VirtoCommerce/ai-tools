@@ -33,7 +33,12 @@ deliver one conclusion — and left them to reconcile which version is current.
    (`commentId`) of the old one. The plugin's hooks enforce this by age and session: editing a ledger
    comment older than 12 h (`TRACKER_ROUND_HOURS`), or one another session posted, is blocked as a
    probable new round. **Exception:** an autonomous `/qa-test --iterate` loop is one round by design and amends with
-   `--same-round "<reason>"`.
+   `--same-round "<reason>"` — **but only its own round deltas.** A comment that already holds a
+   **published verdict** (a full `QA Complete` report — e.g. an earlier run without `--iterate`) is that
+   round's record and is never edited with a later build's result: post the new round as a new comment.
+   The plugin's hooks check age and session only, not whether a comment is a verdict — this one is on
+   the caller (measured 2026-10-08, VCST-6077: a round-1 FAIL report with inline screenshots was
+   overwritten by round 2's PASS).
 
 **Why this is mechanical and not a judgment call.** The failure mode is that every individual
 comment is defensible while the aggregate is spam, so judgment-in-the-moment cannot catch it — the

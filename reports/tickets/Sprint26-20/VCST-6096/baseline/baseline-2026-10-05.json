@@ -1,6 +1,0 @@
-{"ticket":"VCST-6096","capturedAt":"2026-10-05T08:05Z","env":"vcst-qa-storefront","build":{"theme":"vc-theme-b2b-vue-2.59.0-pr-2524-3069-30691594 (branch pin vcst-qa)"},
-"result":"RED - reproduced",
-"steps":["Open storefront (built-in browser, narrow pane, mobile header)","Toggle search bar","Click .barcode-scanner (camera access blocked by browser pane)","Inspect dialog buttons"],
-"observed":{"browseButton":{"class":"vc-button--loading vc-button--disabled barcode-scanner-modal__action-browse","ariaLabel":null,"ariaBusy":null,"disabled":true,"innerText":"","contentVisibility":"hidden"},
-"accessibilityTree":["button \"common.labels.close\"","button (unnamed)","button (unnamed)","button \"Cancel\""]},
-"notes":"Barcode scan entry point is visible behind the search-bar toggle at narrow width (2026-10-02 run at 1920px did not find it). Side observation: dialog close button is announced as raw i18n key 'common.labels.close'."}

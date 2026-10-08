@@ -42,7 +42,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from "
 import { resolve, join } from "node:path";
 import { wikiMarkupRefusal } from "../lib/jira-body-format.mjs";
 import { markdownToAdf } from "./markdown-to-adf.mjs";
-import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend } from "./round-guard.mjs";
+import { decide, roundHours, sessionRunId, effectiveEntry, ledgerAfterAmend, isVerdictBody, commentKind } from "./round-guard.mjs";
 
 // config.js loads the layered .env files — and process.exit(1)s when the repo's CORE
 // vars (ADMIN_PASSWORD, USER_PASSWORD, …) are missing. Only a real Jira call needs that
@@ -270,15 +270,20 @@ const thisRun = runId(a);
 // posted it), or one whose entry has no posted_at, takes its age from Jira itself. Skipped on
 // --dry-run, which must stay offline.
 const recorded = ledger[a.ticket];
-const needsRemote = a.mode === "amend" && !a.dryRun &&
-  !(recorded && String(recorded.comment_id) === String(a.id) && recorded.posted_at);
+const tracked = recorded && String(recorded.comment_id) === String(a.id);
+// --same-round can fold a new build into this comment, so whether it holds a PUBLISHED VERDICT must
+// be known: from the ledger's `kind` when this checkout posted it, else from Jira's own body.
+const needsKind = a.mode === "amend" && a.sameRound && !(tracked && recorded.kind);
+const needsRemote = a.mode === "amend" && !a.dryRun && (!(tracked && recorded.posted_at) || needsKind);
 const remote = needsRemote ? await jira("GET", `/rest/api/3/issue/${a.ticket}/comment/${a.id}`) : null;
 const existing = a.mode === "amend" ? effectiveEntry(recorded, a.id, remote) : recorded;
+const existingIsVerdict = (tracked && recorded.kind === "verdict") || isVerdictBody(remote?.body);
+if (needsKind && a.dryRun) console.log(`\n  [dry-run] offline: the ledger does not say whether comment ${a.id} is a published verdict — the live run checks Jira's body`);
 
 // One decision for BOTH directions (round-guard.mjs) — the unguarded --amend is what let
 // VCST-5883's round 2 vanish into round 1's comment.
 const hours = roundHours();
-const verdict = decide({ mode: a.mode, entry: existing, commentId: a.id, run: thisRun, artifact: a.artifact, hours, forceNew: a.forceNew, sameRound: a.sameRound });
+const verdict = decide({ mode: a.mode, entry: existing, commentId: a.id, run: thisRun, artifact: a.artifact, hours, forceNew: a.forceNew, sameRound: a.sameRound, existingIsVerdict });
 const artifactArg = a.artifact ? `--artifact "${a.artifact.trim()}"` : `--artifact "<build under test>"`;
 const REFUSAL = {
   SAME_ROUND: `GOLDEN RULE (tracker-ops.md §0): ${a.ticket} already has a comment for this build.\n\n` +
@@ -290,6 +295,11 @@ const REFUSAL = {
     `    Same build (a correction)? Amend it:\n      npm run tracker:comment -- --ticket ${a.ticket} --amend ${existing?.comment_id} --artifact "<build under test>" --body-file <path>\n\n` +
     `    NEW build (a retest — rule 5)? Name it, and the post is allowed as a new round:\n      … ${artifactArg}\n\n` +
     `    Otherwise a separate comment needs the operator to ask:  … --force-new "<reason>"`,
+  VERDICT_OVERWRITE: `PUBLISHED VERDICT (tracker-ops.md §0 rule 5): comment ${a.id} is a full "QA Complete" report for build "${existing?.artifact ?? "<not recorded in this checkout>"}", and this amend is for "${a.artifact?.trim() ?? "<no --artifact>"}" — not a proven same build.\n` +
+    `    A same-build correction passes when both builds are named and equal:  … --amend ${a.id} --artifact "<that build>"\n` +
+    `    --same-round folds an --iterate loop's own round DELTAS; it never replaces a verdict someone may have acted on —\n` +
+    `    that comment is its round's record (and an edit notifies nobody).\n\n` +
+    `    Post the new round as a NEW comment (no override needed — a new build is a new round):\n      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>`,
   NEW_ROUND_AMEND: `NEW ROUND (tracker-ops.md §0 rule 5): comment ${a.id} records build "${existing?.artifact}", you tested "${a.artifact?.trim()}".\n` +
     `    An amend notifies nobody — the developer and PO would never learn this retest happened.\n\n` +
     `    Post a new comment for the new round:\n      npm run tracker:comment -- --ticket ${a.ticket} ${artifactArg} --body-file <path>`,
@@ -381,7 +391,7 @@ if (a.mode === "amend") {
   if (a.dryRun) { console.log(`\n  [dry-run] PUT (api v${API}) comment ${a.id} on ${a.ticket} (${body.length} chars)\n`); process.exit(0); }
   await jira("PUT", `/rest/api/${API}/issue/${a.ticket}/comment/${a.id}`, { body: wireBody });
   // Amending an OLDER comment must not erase the current round's entry (round-guard.mjs ledgerAfterAmend).
-  ledger[a.ticket] = ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound });
+  ledger[a.ticket] = ledgerAfterAmend(recorded, existing, { id: a.id, run: thisRun, artifact: a.artifact, sameRound: a.sameRound, kind: commentKind(body) });
   writeLedger(ledger);
   console.log(`\n  ✓ amended comment ${a.id} on ${a.ticket} (api v${API}) — an edit notifies NOBODY; a new build is a new comment (--artifact)`);
   await reportRender(a.id);
@@ -393,7 +403,7 @@ if (a.mode === "amend") {
 if (a.dryRun) { console.log(`\n  [dry-run] POST (api v${API}) comment on ${a.ticket} (${body.length} chars)${a.forceNew ? ` — force-new: ${a.forceNew}` : ""}\n`); process.exit(0); }
 const created = await jira("POST", `/rest/api/${API}/issue/${a.ticket}/comment`, { body: wireBody });
 ledger[a.ticket] = {
-  comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(),
+  comment_id: String(created.id), run_id: thisRun, posted_at: new Date().toISOString(), kind: commentKind(body),
   ...(a.artifact ? { artifact: a.artifact.trim() } : {}),
   ...(a.forceNew ? { force_new_reason: a.forceNew } : {}),
 };

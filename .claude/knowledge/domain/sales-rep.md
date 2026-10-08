@@ -13,7 +13,7 @@ rationale: |
   called that out, and this domain inherits the same discipline: breadth first.
 generated: 2026-09-18
 rev: 3
-amended: 2026-09-29
+amended: 2026-10-08
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -315,6 +315,7 @@ reachable at store level; only General is (§6 **D15**). Where they *are* editab
 | **`/company/documents`** | `sales-rep:access` **AND** `sales-rep-documents:read` (`§10 A6`: `checkPermissions` is a variadic AND) | **`CONFIRMED` live 2026-09-18 — G2 CLOSED.** Sidebar entry **"Document library"** renders for `agent-test-sr-docs@` and navigates here; **absent** for a plain rep. **The route was not guessed — it was read off a rendered link** |
 | **`/company/calendar`** | rep-gated; the exact guard was **not** read at source | **`CONFIRMED` live 2026-09-24 (`SalesRep 3.1009.0`)** — the **Calendar** page (§3i). Read off the rendered sidebar link's `href`, not guessed |
 | `/company/dashboard` as a **non-rep** | client-side redirect | `CONFIRMED` (rev 2) → `/account/dashboard`, silent, no 403 |
+| **`/company/tasks`** — *PR #2536 prerelease only, NOT deployed* | rep-gated (a non-rep org maintainer is redirected to `/account/dashboard`) | **`CONFIRMED` live 2026-10-07/08 on `2.59.0-pr-2536-c2de…` / `2.60.0-pr-2536-4407-440724bf` (localhost) — VCST-6077, §10 A10.** Replaces `/company/calendar` (→ 404 on that build) **only once the PR ships**; the row above stays true for the deployed env |
 
 `b2b-organizations.md` rev 2 §3 independently records that the rep routes are the only ones clearing
 inherited `requiresOrganization`, and lists `/company/sales-reps` as inheriting both — consistent with
@@ -892,6 +893,14 @@ product did in response, which is why §3c/§3i can state tile arithmetic exactl
 - §6 **+D22** (widening confirmation vs API) — `CONFIRMED` live on both layers.
 - **D9 corroborated, verdict unchanged:** a second rep (`SR_REP_EXCLUSIVE_TECHFLOW`) read a list shared to TechFlow purely as a TechFlow MEMBER — the rep-as-member structure is what the sharing access check keys on (active org ∈ targets).
 - Not written (hypothesis / not verified live): which org "My organization" binds to for a multi-org rep; member of two targeted orgs; revoke of a no-longer-served org.
+
+### A10 (2026-10-08) — VCST-6077 write-back (5-docs-map, no re-enumeration; `/qa-test --iterate`, 2 rounds)
+
+**Every fact here was observed on an UNMERGED PR prerelease** (vc-frontend #2536, local container → vcst-qa backend, `SalesRep 3.1012.0`). It describes the build that will replace §3i, not the deployed one — §3i, the `/company/calendar` row and G15 are **left unchanged** because they are still true where deployed.
+- §3a **+1 route**: `/company/tasks` (H1/nav/breadcrumb "Tasks"; `/company/calendar` → 404, no redirect) — `CONFIRMED` live.
+- Surfaces on that route, `CONFIRMED` live (the run's `unmapped_surfaces`): scope chips **Today · All · Upcoming · Overdue · Completed** with badge = list length, plus a **date chip with ×** (× → Today / unchanged / Today by context); a single **row-action column** — *Mark as complete* (circle-check) / *Reopen* (rotate-ccw), none on canceled rows; **title button opens Edit task**; `?filter=<scope>` deep link, unknown token → Today and the URL cleaned; two empty states (day/Today share one message, All has its own); **stacked mobile cards** at 375 with the action on its own line; canceled tasks have no action and no calendar dot, dateless tasks appear only in All.
+- Measured, round 2: the status column is 160 px; the Due dates rail is 280 px (17.5rem) — the ticket text says 272, the ticket mockup 300 (spec conflict, PO question, not a verdict).
+- Not written (prerelease or unverified): G15 resolution (the nav/widget rendered for a 0-task rep on the PR build, but G15's absence observation was on the deployed build), task ops being issued on `/graphql`, TaskManagement admin REST cancel/dateless — carried in `summary.json.domain_map.amendments_proposed`.
 
 ---
 

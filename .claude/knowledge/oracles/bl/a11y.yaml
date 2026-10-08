@@ -30,6 +30,9 @@ rules:
     violation_signal: An element skipped by Tab; `outline:none` with no visible replacement; Tab exits an open modal to page content behind it; focus remains trapped, or does not return to the trigger, after close.
     status: SUSPECT
     suspect_reason: "[case] SR-CO-051 failed in REG-2026-10-06-1457"
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-A11Y-002
     title: Accessible naming and label association
     rule: Every interactive control MUST expose a non-empty, contextual accessible name to assistive technology (WCAG 4.1.2), distinct from a generic element-type label. Every visible field label MUST be programmatically associated with its input via `<label for>`/`aria-labelledby`/`aria-label` (WCAG 1.3.1). Every informative image's `alt` describes its content/purpose; a purely decorative image carries `alt=""` (WCAG 1.1.1).
