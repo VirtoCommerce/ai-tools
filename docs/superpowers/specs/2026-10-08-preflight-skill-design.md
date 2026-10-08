@@ -34,11 +34,12 @@ commands that consume a result instead of restating a procedure. Shrinking comma
 | D5 | MCP availability is part of pre-flight, with per-consumer minimum requirements held as data | `qa-env-check`'s "all three Playwright servers required for everyone" |
 | D6 | One skill with two entry points (change-scoped / build-scoped CLI) | regression calling code without the skill |
 | D7 | **CI regression (`ci/run-regression.ts`, `ci/`) is out of scope.** Nothing under `ci/` is modified; shared `ci/lib/*` is only imported | a headless path |
+| D8 | The skill is named **`preflight`** (no `qa-` prefix, like `kb-report` / `prompt-review`): `/ba-analyze` consumes it too, so it is not QA-only. No name collision in `.claude/` or `plugins/` | `qa-preflight` |
 
 ## 3. Architecture
 
 ```
-/qa-preflight  (SKILL.md — the LLM half: MCP level 3, kb → VirtoOZ → Context7, interpretation)
+/preflight  (SKILL.md — the LLM half: MCP level 3, kb → VirtoOZ → Context7, interpretation)
    ├─ step 1, change-scoped ─► npm run preflight -- --for <…>          (scripts/preflight/cli.ts)
    └─ step 1, build-scoped  ─► npm run regression:plan -- <sel> --preflight  (scripts/regression/preflight.ts)
                                          both ─► scripts/lib/env-facts.ts  (fact core, no policy)
@@ -139,7 +140,7 @@ Output: `reports/regression/<RUN_ID>/preflight.json` + the report header.
 **Requirement classes:** `REQ` — absent ⇒ BLOCK · `REQ↘` — required with a named fallback ⇒
 WARN naming it · `OPT` — enables a lane; absent ⇒ that lane `SKIPPED`, **never PASS**.
 
-**Normative source: `.claude/skills/qa-preflight/mcp-requirements.json`** (consumer → server →
+**Normative source: `.claude/skills/preflight/mcp-requirements.json`** (consumer → server →
 class + fallback + condition). Read by both CLIs (levels 1–2) and by the skill (which servers to
 probe at level 3). The table below is the agreed initial content, illustrative only once the file
 exists:
@@ -167,7 +168,7 @@ class, status}]` — the consumer records **through what** it actually worked.
 The skill never edits `.mcp.json` and never restarts a server; for a missing server it says in one
 line what to add and that a restart is required.
 
-## 8. The skill — `.claude/skills/qa-preflight/`
+## 8. The skill — `.claude/skills/preflight/`
 
 `SKILL.md` (born under BUDGET-004's 19,000 chars) + `mcp-requirements.json`. Numbered steps:
 
@@ -190,8 +191,9 @@ and routing — all `/qa-test` mechanics.
 
 | File | Change |
 |---|---|
-| new | `scripts/lib/env-facts.ts`, `scripts/preflight/cli.ts`, `npm run preflight`, `.claude/skills/qa-preflight/{SKILL.md,mcp-requirements.json}` |
-| `commands/qa-test.md` + `skills/qa-test/preflight.md` | 1b items 1, 2, 2-release, 3, 4 → cite the skill; axes and 2-map stay. One header line in `preflight.md`: env/build pre-flight is `/qa-preflight`, this file is 1a–1b orchestration (filename kept — ~10 inbound links). **Also fix:** the 2b–2g table has 5 rows under a "six axes" heading and says "all five"/"other three"; 2g derives *after* wave A while 2-map *in* wave A consumes it (2g needs only `1a`'s slug + one frontmatter read, so it moves before wave A); wave-A list omits 2-map and names only 2b/2c/2e/2f; duplicated "and the order is the point"; transcribed "63 `/qa-checklist` domains" |
+| new | `scripts/lib/env-facts.ts`, `scripts/preflight/cli.ts`, `npm run preflight`, `.claude/skills/preflight/{SKILL.md,mcp-requirements.json}` |
+| `skills/README.md` | add `preflight/` to the flat layout listing, among the root-level untagged skills |
+| `commands/qa-test.md` + `skills/qa-test/preflight.md` | 1b items 1, 2, 2-release, 3, 4 → cite the skill; axes and 2-map stay. One header line in `preflight.md`: env/build pre-flight is `/preflight`, this file is 1a–1b orchestration (filename kept — ~10 inbound links). **Also fix:** the 2b–2g table has 5 rows under a "six axes" heading and says "all five"/"other three"; 2g derives *after* wave A while 2-map *in* wave A consumes it (2g needs only `1a`'s slug + one frontmatter read, so it moves before wave A); wave-A list omits 2-map and names only 2b/2c/2e/2f; duplicated "and the order is the point"; transcribed "63 `/qa-checklist` domains" |
 | `commands/qa-test-fast.md` | Step 0 item 2 and the `kb_ask` of item 5 → skill; prior artifacts, domain slug stay |
 | `commands/qa-exploratory.md` | Step 0 items 1, 2, 3, the Δ of 3a, 4 → skill; 5/5a stay |
 | `commands/qa-test-lifecycle.md` | Pre-Flight 1–3 → skill; 4 (`schema:refresh`) stays |
