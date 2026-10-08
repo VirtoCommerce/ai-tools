@@ -8,11 +8,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { promisify } from 'node:util';
 import { whoPath } from '../kb/core/who.mjs';
+import { loopPath, queueDir } from '../kb/core/queue.mjs';
 
 const run = promisify(execFile);
 const REPO = join(import.meta.dirname, '..', '..');
@@ -41,6 +42,16 @@ async function kb(args, { env = {} } = {}) {
     return { code: err.code ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
   }
 }
+
+// The confirm gate (VCST-6191) wants an entry OPENED before it is confirmed or disputed. These tests
+// are about what a confirm writes, not about the gate, so the journal records the open directly --
+// a `show` would add a queue line the counts below do not expect.
+const opens = (cliEnv, ...ids) => {
+  const env = { ...cliEnv, CLAUDE_CODE_HOST_SESSION_ID: 'clitest0' };
+  mkdirSync(queueDir(env), { recursive: true });
+  for (const id of ids) appendFileSync(loopPath(env), `${JSON.stringify({ at: new Date().toISOString(), kind: 'show', state: 'answer', id })}
+`);
+};
 
 async function withQueue(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-cli-'));
@@ -152,6 +163,7 @@ test('EVERY operation appends exactly one queue line, the refusal included', () 
     ['confirm', 'KB-55C8E448', '--base', FIXTURE, '--deployment', 'vcptcore_stable'],
     ['dispute', 'KB-06664A3A', '--base', FIXTURE, '--deployment', 'virtostart', '--saw', 'monotonic here'],
   ];
+  opens(env, 'KB-55C8E448', 'KB-06664A3A');
   for (const op of ops) noTrap(await kb(op, { env }));
   // `stat` is deliberately not logged, so it must not change the count.
   noTrap(await kb(['stat', '--base', FIXTURE], { env }));
@@ -175,6 +187,7 @@ test('the queued capture is visible to stat as a pending change', () => withQueu
 }));
 
 test('nothing is sent: the CLI says so, and the trap proves it', () => withQueue(async (env) => {
+  opens(env, 'KB-55C8E448');
   const r = await kb(['confirm', 'KB-55C8E448', '--base', FIXTURE, '--deployment', 'qa'], { env });
   noTrap(r);
   assert.equal(r.code, 0);

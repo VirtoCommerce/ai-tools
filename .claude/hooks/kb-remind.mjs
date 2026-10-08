@@ -11,8 +11,9 @@
  *
  * WHAT IT DOES. Reads this session's loop journal (`<session>.loop.ndjson`, append-only, see
  * `core/queue.mjs` `loopPath`) and, when `core/loop.mjs` `openLoops` finds a miss or an unclosed
- * `ambiguous` list with nothing written after it, returns `{"decision":"block","reason":…}`: the agent
- * takes ONE more step to capture what it found, or to say in a line that it did not find it out.
+ * `ambiguous` list (whatever was written after it -- a list is closed by a choice, VCST-6191), returns
+ * `{"decision":"block","reason":…}`: the agent takes ONE more step -- closes the list with `kb_show` /
+ * `kb_none`, captures what it found out, or says in a line that it did not find it out.
  *
  * EACH AGENT IS ASKED ABOUT ITS OWN MISSES. Registered on `Stop` (the main thread) AND `SubagentStop`.
  * Claude Code writes the main thread to `transcript_path` and every subagent to its own
@@ -54,7 +55,7 @@ import { join } from 'node:path';
 import {
   hasSessionId, hookEnv, isSynthetic, kbDisabled, ownersPath, queueDir, readLoop, remindDisabled, remindedPath,
 } from '../../scripts/kb/core/queue.mjs';
-import { openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
+import { LISTED, openLoops, reminderText } from '../../scripts/kb/core/loop.mjs';
 import { BACKGROUND_DEFAULT_MS, carries, cliKey, kbShellCalls } from '../../scripts/kb/core/caller.mjs';
 
 const KEEP_DAYS = 14;
@@ -238,7 +239,9 @@ function main() {
   });
   if (!loops.length) return;
 
-  try { appendFileSync(path, `${loops.map((l) => l.at).join('\n')}\n`, 'utf8'); } catch { return; }
+  // Only the questions the reminder NAMES are marked raised: the rest come back at the next stop, each
+  // with its handle, rather than being marked raised without one (PR #407 review).
+  try { appendFileSync(path, `${loops.slice(0, LISTED).map((l) => l.at).join('\n')}\n`, 'utf8'); } catch { return; }
   process.stdout.write(JSON.stringify({ decision: 'block', reason: reminderText(loops) }));
 }
 

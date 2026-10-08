@@ -408,6 +408,33 @@ function panelDoors(rows = []) {
   </section>`;
 }
 
+function panelLists(p) {
+  if (!p) return '';
+  const share = (r) => (r.unclosedShare === null ? '—' : `${Math.round(100 * r.unclosedShare)}%`);
+  const body = p.rows.map((r) => [
+    r.agent ? `<code>${esc(r.agent)}</code>` : '<span class="muted">unattributed</span>',
+    esc(r.asks), esc(r.show), esc(r.none),
+    r.unclosed ? `<strong class="bad">${esc(r.unclosed)}</strong>` : esc(r.unclosed),
+    esc(share(r)), esc(r.wroteAfter),
+  ]);
+  return `<section id="lists">
+    <h2>10 &middot; Lists &mdash; who closes what the base could not certify</h2>
+    <p class="lede">An <code>ambiguous</code> ask hands the agent a short list; it is closed by opening one
+      entry (<code>kb_show</code>) or by saying none fits (<code>kb_none</code>). An unclosed list is a miss
+      in every panel above. <em>wrote after</em> counts unclosed lists the session later wrote about &mdash; a
+      confirm or dispute of an entry the list showed, or a capture pointing at the ask &mdash; without
+      closing the list. Since the confirm gate the entry itself was opened before a confirm or dispute;
+      what is missing is the choice that tells the base which question it answered.</p>
+    <p class="metric"><strong>${esc(p.unclosed)}</strong> of <strong>${esc(p.asks)}</strong> list(s) unclosed
+      (${esc(share(p))}); ${esc(p.show)} opened, ${esc(p.none)} closed by none, ${esc(p.wroteAfter)} written about without closing the list.</p>
+    ${p.gate?.refused ? `<p class="metric">Confirm gate: <strong>${esc(p.gate.refused)}</strong> confirm/dispute refused as
+      not opened, over ${esc(p.gate.facts)} entr(ies) a session tried to confirm or dispute; ${esc(p.gate.landed)}
+      later landed on the same entry, ${esc(p.gate.abandoned)} never did.</p>` : ''}
+    ${body.length ? table(['agent', 'lists', 'opened', 'none', 'unclosed', 'unclosed share', 'wrote after'], body)
+    : empty('No ambiguous ask in this window.')}
+  </section>`;
+}
+
 const CSS = `
 :root{--fg:#1c1c1c;--dim:#6a6a6a;--line:#e0ddd8;--bg:#fbfaf8;--card:#fff;--bad:#a4262c;--accent:#2f5d50}
 *{box-sizing:border-box}
@@ -482,6 +509,7 @@ ${panelRefusals(p.refusals)}
 ${panelReach(p.reach)}
 ${panelTopics(p.topics)}
 ${panelDoors(p.doors)}
+${panelLists(p.lists)}
 <footer>Read from the base's <code>log/</code> over the network, analysed locally, rendered here.
 Nothing was written to the base and nothing was written into the repository tree.</footer>
 </main></body></html>`;
@@ -536,6 +564,16 @@ export function renderText(report) {
     + `${p.topics.untopiced ? `, ${p.topics.untopiced} line(s) carry none` : ''}`
     + `${p.topics.rows.length ? `; top "${p.topics.rows[0].topic}" (${p.topics.rows[0].lines})` : ''}`);
   out.push(`  doors          ${(p.doors ?? []).map((d) => `${d.via} ${d.calls} (${d.unattributed} unattributed)`).join(', ') || 'no agent call'}`);
+  if (p.lists?.asks) {
+    const worst = p.lists.rows.filter((r) => r.unclosed).slice(0, 3)
+      .map((r) => `${r.agent ?? 'unattributed'} ${r.unclosed}/${r.asks}`).join(', ');
+    out.push(`  lists          ${p.lists.unclosed}/${p.lists.asks} unclosed = ${pct(p.lists.unclosedShare)}`
+      + ` (${p.lists.show} opened, ${p.lists.none} none, ${p.lists.wroteAfter} written about unclosed)${worst ? `; ${worst}` : ''}`);
+  }
+  if (p.lists?.gate?.refused) {
+    out.push(`  confirm gate   ${p.lists.gate.refused} refused as not opened over ${p.lists.gate.facts} entr(ies); `
+      + `${p.lists.gate.landed} landed later, ${p.lists.gate.abandoned} abandoned`);
+  }
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
   if (report.verdict) {
