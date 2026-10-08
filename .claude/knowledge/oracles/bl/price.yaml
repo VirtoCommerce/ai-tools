@@ -25,6 +25,9 @@ rules:
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).

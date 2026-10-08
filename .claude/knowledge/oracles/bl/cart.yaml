@@ -27,6 +27,9 @@ rules:
       ref: "PDP: for a product not yet in cart, enter a quantity above available stock → assert the inline range message, Increase disabled, and cart item count unchanged (no line committed). Cart page: for an existing line, enter a quantity above available stock into the line's quantity input and submit → assert the persisted quantity equals the entered value (not capped), line total = qty × unit price, cart subtotal reflects it, an inline validation message renders, and \"Place order\" stays disabled; reload the page → assert the same out-of-range quantity, total, and message persist."
     violation_signal: On either surface, the quantity is silently capped to available stock with no error/message; OR the out-of-range quantity is accepted with no validation signal and "Place order" becomes enabled; OR the PDP path lets an over-limit line commit; OR an order is placed for more units than in inventory.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-CART-002
     title: Out-of-stock mid-session
     rule: If a product's stock reaches 0 after the user has added it to cart but before checkout completes, the system must prevent the order from being placed. The cart should show an error state for the affected item.
@@ -193,6 +196,9 @@ rules:
       ref: Obtain cart with configurable lineItem, all sections selected; record `lineItem.listPrice` as `price_all_selected`. Call `changeCartConfigurationItemSelected` to deselect one section → assert `lineItem.listPrice < price_all_selected`. Assert `cart.subTotal.amount` decreases by the same delta and `cart.taxTotal.amount` recalculates proportionally. Call `changeCartItemSelected` (lineItem-level) on an unrelated simple lineItem → assert its own `listPrice` is unchanged (asymmetry verification).
     violation_signal: "`lineItem.listPrice` remains equal to `price_all_selected` after deselecting a placement; cart subtotal does not change; tax total does not update; pricing frozen at pre-toggle value."
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-CART-011
     title: Unmatched section key in batch selection is a silent no-op
     rule: When `selectCartConfigurationItems` or `unSelectCartConfigurationItems` receives a `configurationSections[]` list where one or more keys do not match any `ConfigurationItem` on the target lineItem, those unmatched keys MUST be silently skipped. The mutation MUST still process all matched keys, MUST return HTTP 200, and MUST return `errors[]` as empty. Unmatched keys leave no trace in the response.
@@ -227,6 +233,9 @@ rules:
       ref: Build a cart with two configurable lineItems (L1 and L2), each with at least one config item. Call `unSelectAllCartConfigurationItems` with `lineItemId = L1.id`. Assert all config items on L1 have `selectedForCheckout = false`. Assert all config items on L2 retain their original state and `L2.listPrice` is unchanged.
     violation_signal: Config items on L2 are toggled when only L1's `lineItemId` was specified; `listPrice` of L2 changes after a mutation scoped to L1.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-CART-013
     title: No-change short-circuit on configuration-item selection mutations
     rule: When a configuration-item selection mutation is called but the resulting `selectedForCheckout` state for every affected configuration item is identical to the pre-mutation state, `UpdateConfiguredLineItemPrice` MUST NOT be executed. The cart aggregate detects the no-change condition before invoking the reprice path and short-circuits. Applies to idempotent re-sends, to `selectAll` when all already selected, and to `unSelectAll` when all already unselected.

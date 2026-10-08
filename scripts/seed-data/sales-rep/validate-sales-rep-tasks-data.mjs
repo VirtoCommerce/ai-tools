@@ -23,15 +23,19 @@
  *  [9] The decay warning is present in the alias `_notes` (the group sizes expire at UTC midnight;
  *      a suite that asserts them without re-seeding asserts the wrong number, silently).
  * [10] No password / credential literal anywhere in the spec module or these aliases.
+ * [11] VCST-6077: every count field of SR_TASK_GROUPS (canceled, dateless, chip_*, all_minus_tabs,
+ *      today_scope_*) equals `countExpectations()` derived from the spec rows; SR_TASK_GROUPS_NY's counts
+ *      are runtime-only (EMPTY here — they depend on the persisted instants); canceled / dateless /
+ *      boundary aliases state their variant (`canceled`, `due_local`, `due_zone`) exactly as the spec.
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  TASK_SPECS, TASK_MARK, TASK_TYPES, TASK_PRIORITIES, GROUPS_ALIAS, OWNED_ALIASES, GUID_RE,
-  GROUP_NAMES, SHARED_DAY_OFFSET, EMPTY_DAY_OFFSETS,
-  taskName, groupSizes, divergenceProblems, dueDate, sortOrders, expectedTotal,
+  TASK_SPECS, TASK_MARK, TASK_TYPES, TASK_PRIORITIES, GROUPS_ALIAS, GROUPS_NY_ALIAS, OWNED_ALIASES, GUID_RE,
+  GROUP_NAMES, SHARED_DAY_OFFSET, EMPTY_DAY_OFFSETS, BROWSER_ZONE, NEGATIVE_OFFSET_ZONE,
+  taskName, groupSizes, divergenceProblems, dueDate, sortOrders, expectedTotal, countExpectations,
 } from './sales-rep-tasks-specs.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -65,7 +69,7 @@ for (const s of TASK_SPECS) {
   if ('dueDate' in s || 'due' in s) {
     fail(`${s.key}: carries a LITERAL due date. Due dates must stay relative (dueOffsetDays/dueHourUtc) — a literal is correct on the day it was written and silently wrong every day after`);
   }
-  if (!Number.isInteger(s.dueOffsetDays)) fail(`${s.key}: dueOffsetDays must be an integer relative day offset`);
+  if (s.dueOffsetDays !== null && !Number.isInteger(s.dueOffsetDays)) fail(`${s.key}: dueOffsetDays must be an integer relative day offset, or null for the DATELESS variant`);
   if (typeof s.completed !== 'boolean') fail(`${s.key}: completed must be a boolean in the SPEC (the API's read-back is tri-state null|false|true, but the declaration is not)`);
 }
 
@@ -98,9 +102,11 @@ for (const s of TASK_SPECS) {
     name: taskName(s),
     type: s.type,
     priority: s.priority,
-    due_offset_days: String(s.dueOffsetDays),
+    due_offset_days: s.dueOffsetDays == null ? '' : String(s.dueOffsetDays),
     completed: String(s.completed),
   };
+  if (s.canceled) expected.canceled = 'true';
+  if (s.dueLocal) { expected.due_local = s.dueLocal; expected.due_zone = s.zone || BROWSER_ZONE; }
   for (const [field, want] of Object.entries(expected)) {
     if (entry[field] !== want) fail(`alias ${s.alias}.${field} = "${entry[field]}" but the spec says "${want}"`);
   }
@@ -117,13 +123,10 @@ for (const s of TASK_SPECS) {
 // [8] the group-size expectations must equal the DERIVED sizes ---------------
 const groups = aliases[GROUPS_ALIAS];
 if (groups) {
-  const expectedCounts = {
-    open_overdue: String(sizes.overdue),
-    open_today: String(sizes.today),
-    open_future: String(sizes.future),
-    completed: String(sizes.completed),
-    total: String(expectedTotal()),
-  };
+  const expectedCounts = Object.fromEntries(
+    Object.entries(countExpectations(TASK_SPECS, REF, 'UTC')).map(([k, v]) => [k, String(v)]),
+  );
+  if (expectedCounts.total !== String(expectedTotal())) fail(`countExpectations total ${expectedCounts.total} != expectedTotal ${expectedTotal()}`);
   for (const [field, want] of Object.entries(expectedCounts)) {
     if (groups[field] !== want) {
       fail(`alias ${GROUPS_ALIAS}.${field} = "${groups[field]}" but the spec rows derive "${want}" — a case reading @td(${GROUPS_ALIAS}.${field}) would assert a count the seeder never creates`);
@@ -135,7 +138,7 @@ if (groups) {
   if (groups.empty_day_offsets !== EMPTY_DAY_OFFSETS.join(',')) {
     fail(`alias ${GROUPS_ALIAS}.empty_day_offsets = "${groups.empty_day_offsets}" but the spec says "${EMPTY_DAY_OFFSETS.join(',')}"`);
   }
-  for (const runtime of ['seeded_at', 'decays_at_utc', 'owner_rep_email']) {
+  for (const runtime of ['seeded_at', 'decays_at_utc', 'owner_rep_email', 'browser_tz']) {
     if (groups[runtime] !== '') {
       fail(`alias ${GROUPS_ALIAS}.${runtime} must be "" in the committed base (got "${groups[runtime]}") — it is per-env/per-run and belongs in aliases.<env>.json`);
     }
@@ -143,6 +146,18 @@ if (groups) {
   // [9] the decay warning must survive an edit of the notes.
   if (!/decay|midnight|re-seed/i.test(String(groups._notes || ''))) {
     fail(`alias ${GROUPS_ALIAS}._notes lost the DECAY warning — these counts expire at the next UTC midnight and a suite that asserts them without re-seeding asserts the wrong number, silently`);
+  }
+}
+
+// [11] the NY view: counts depend on the persisted instants, so they are runtime-only.
+const groupsNy = aliases[GROUPS_NY_ALIAS];
+if (groupsNy) {
+  if (groupsNy.time_zone !== NEGATIVE_OFFSET_ZONE) {
+    fail(`alias ${GROUPS_NY_ALIAS}.time_zone = "${groupsNy.time_zone}" but the spec's NEGATIVE_OFFSET_ZONE is "${NEGATIVE_OFFSET_ZONE}"`);
+  }
+  for (const field of [...Object.keys(countExpectations(TASK_SPECS, REF, 'UTC')), 'seeded_at', 'decays_at_utc']) {
+    if (!(field in groupsNy)) fail(`alias ${GROUPS_NY_ALIAS} lacks field "${field}" — a NY-zone case could not read it`);
+    else if (groupsNy[field] !== '') fail(`alias ${GROUPS_NY_ALIAS}.${field} must be "" in the committed base (got "${groupsNy[field]}") — it is derived from the persisted instants at seed time`);
   }
 }
 
