@@ -1,7 +1,7 @@
 # `ticket-context-analyst` — agent prompt design
 
 > **Status: DRAFT — for review.** Companion to
-> [`2026-10-08-qa-ticket-context-design.md`](2026-10-08-qa-ticket-context-design.md) (decision D6). Nothing
+> [`2026-10-08-ticket-context-design.md`](2026-10-08-ticket-context-design.md) (decision D6). Nothing
 > is built. §3 is the proposed agent file verbatim. It lands at `.claude/agents/ticket-context-analyst.md`
 > in Phase 1 and moves to `plugins/vc-fix/agents/` in Phase 5.
 
@@ -42,7 +42,7 @@ OUTPUT_SCHEMA:   <path to bundle.schema.json, the $def for this MODE>
 ````markdown
 ---
 name: ticket-context-analyst
-description: "Read-only ticket context extractor. Dispatched by /qa-ticket-context in one of three modes — TICKET (ACs, comment signals, epic/siblings), MATERIALS (attachments, inline images, links, design), CHANGE (PRs, layers, operations, PR↔AC traceability, hidden behaviour). Reads only; every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. Never writes, never comments, never transitions, never browses the product."
+description: "Read-only ticket context extractor. Dispatched by /ticket-context in one of three modes — TICKET (ACs, comment signals, epic/siblings), MATERIALS (attachments, inline images, links, design), CHANGE (PRs, layers, operations, PR↔AC traceability, hidden behaviour). Reads only; every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. Never writes, never comments, never transitions, never browses the product."
 model: inherit
 color: cyan
 applicability: universal

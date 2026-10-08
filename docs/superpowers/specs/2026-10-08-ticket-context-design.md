@@ -1,4 +1,4 @@
-# `/qa-ticket-context` — one ticket-context skill for every agent that reads a ticket
+# `/ticket-context` — one ticket-context skill for every agent that reads a ticket
 
 > **Status: DRAFT — for review.** Nothing here is built yet. §11 records proposed decisions (D1–D7) on the
 > questions the first draft left open plus where the skill lives first; each can be overturned in review. Comment on the PR; do not edit
@@ -36,7 +36,7 @@ Four gaps have no rule anywhere:
 
 ## 2. Goal and non-goals
 
-**Goal.** One skill, `/qa-ticket-context <KEY>`, produces one **context bundle** for one ticket. Every consumer
+**Goal.** One skill, `/ticket-context <KEY>`, produces one **context bundle** for one ticket. Every consumer
 reads that bundle instead of fetching the ticket itself. Every input is accounted for: each one ends as a
 finding with its source, or as a `GAP` with a reason.
 
@@ -99,7 +99,7 @@ These were set by the requester and are binding for the design and for every lat
 **Now (Phases 1–3): this repo, project-scoped.**
 
 ```
-.claude/skills/qa-ticket-context/
+.claude/skills/ticket-context/
   SKILL.md            # contract, the five blocks, the gate, the four requirements (≤19k, BUDGET-004)
   ticket.md           # block 1 — fields, ACs, comments, epic/siblings
   materials.md        # block 2 — attachments, inline images, links, per-type handling
@@ -119,7 +119,7 @@ These were set by the requester and are binding for the design and for every lat
                                            #      (prompt: 2026-10-08-ticket-context-analyst-prompt.md)
 ```
 
-**Later (Phase 5): the same tree under `plugins/vc-fix/skills/qa-ticket-context/` and
+**Later (Phase 5): the same tree under `plugins/vc-fix/skills/ticket-context/` and
 `plugins/vc-fix/agents/`**, and the `.claude/` copies are deleted in the same commit — one home at a
 time, never two (the `.claude/` developer-agent duplicates forked once and were removed on 2026-09-25,
 `.claude/rules/agents.md` §Developers Team).
@@ -130,18 +130,18 @@ Every rule here is checked in review of the Phase 1 PR, because nothing after th
 
 | # | Rule | Why it matters for the move |
 |---|---|---|
-| M1 | **The skill directory is self-contained.** Its prompts and `lib/` may reference only files inside `qa-ticket-context/` and the agent file. A knowledge file it needs is copied into the skill directory, not cited from `.claude/knowledge/`. | The plugin cannot reach `.claude/` (`plugins/CLAUDE.md`). A citation into `.claude/` is a dangling path after the move. |
+| M1 | **The skill directory is self-contained.** Its prompts and `lib/` may reference only files inside `ticket-context/` and the agent file. A knowledge file it needs is copied into the skill directory, not cited from `.claude/knowledge/`. | The plugin cannot reach `.claude/` (`plugins/CLAUDE.md`). A citation into `.claude/` is a dangling path after the move. |
 | M2 | **Repo tooling is called through a capability check, never assumed.** `npm run domain:check`, `bl:extract`, `regression:select`, `tc:scope`, `kb` exist in this repo, not in a client's project. Block 4 runs each only if present and otherwise records `GAP: not available in this install`. | Block 4 is the part that differs most between this repo and a client install. A hard call would fail the gate on every client run. |
 | M3 | **Consumers outside `.claude/` do not call it yet.** `vc-fix` commands (`qa-bug`, `qa-fix`, `qa-verify-fix`, `qa-investigate`) keep their own fetch until Phase 5. | A plugin command referencing a `.claude/` skill breaks the plugin's self-containment for every client. |
 | M4 | **Only `lib/*.mjs` with `node:` built-ins and the deps `plugins/vc-fix/package.json` already ships.** | A new dependency is a plugin release item, not something found during the move. |
-| M5 | **Name stays `qa-ticket-context`.** Consumers here call it as `/qa-ticket-context`; after the move they call `vc-fix:qa-ticket-context` — a one-line change per consumer, listed in §8. | — |
+| M5 | **Name stays `ticket-context`.** Consumers here call it as `/ticket-context`; after the move they call `vc-fix:ticket-context` — a one-line change per consumer, listed in §8. | — |
 | M6 | **Tracker, host and org come from `project-profile.json`** (C2) even in this repo, where the defaults apply. | A Jira-only or `VirtoCommerce`-only shortcut taken "for now" is exactly what breaks on a client. |
 
 ## 5. The five blocks
 
 ```
               ┌─ 1 Ticket ────┐
- /qa-ticket-context ─┼─ 2 Materials ─┼─► join ─► 4 Known ground (inline scripts) ─► 5 Gaps ─► gate ─► bundle
+ /ticket-context ─┼─ 2 Materials ─┼─► join ─► 4 Known ground (inline scripts) ─► 5 Gaps ─► gate ─► bundle
               └─ 3 Change ────┘
 ```
 
@@ -276,10 +276,10 @@ The schema is the contract; the sketch is illustrative.
 
 | Consumer | Today | Phases 1–4 (skill in `.claude/`) | Phase 5 (skill in plugin) |
 |---|---|---|---|
-| `/qa-test-fast` Stage 1 Wave 1 + Join 1 | its own A/B/C dispatches | calls `/qa-ticket-context`; keeps Wave 2+ | `vc-fix:qa-ticket-context` |
-| `/qa-test` FULL 1a fetch rules, 1c, 1d | prose in `preflight.md` / `context-wave.md` | 1a routing stays; fetch + 1c become the skill call; 1d reads the bundle | `vc-fix:qa-ticket-context` |
+| `/qa-test-fast` Stage 1 Wave 1 + Join 1 | its own A/B/C dispatches | calls `/ticket-context`; keeps Wave 2+ | `vc-fix:ticket-context` |
+| `/qa-test` FULL 1a fetch rules, 1c, 1d | prose in `preflight.md` / `context-wave.md` | 1a routing stays; fetch + 1c become the skill call; 1d reads the bundle | `vc-fix:ticket-context` |
 | `/qa-test-model` | `--context <file>` | unchanged — the bundle is the file | unchanged |
-| `ba-analyze`, `qa-test-plan`, `qa-test-lifecycle`, `qa-hotfix` | own fetch | read the bundle where they work per ticket | `vc-fix:qa-ticket-context` |
+| `ba-analyze`, `qa-test-plan`, `qa-test-lifecycle`, `qa-hotfix` | own fetch | read the bundle where they work per ticket | `vc-fix:ticket-context` |
 | `vc-fix:qa-bug`, `qa-fix`, `qa-verify-fix`, `qa-investigate` | own fetch | **unchanged** (M3) | read the bundle |
 
 Each migrated file **cites** the skill and deletes its restated rules, so the rules live once.
@@ -294,7 +294,7 @@ Each migrated file **cites** the skill and deletes its restated rules, so the ru
 5. **Phase 4 — delete the restated rules** from `preflight.md` and both `context-wave.md` files.
 6. **Phase 5 — move to `vc-fix`.** Trigger: Phase 2 passed **and** a client deployment needs it (the
    first `vc-fix` command that would consume it). Steps: copy the tree (§4) into the plugin, delete the
-   `.claude/` copies in the same commit, switch §8 consumers to `vc-fix:qa-ticket-context`, migrate the
+   `.claude/` copies in the same commit, switch §8 consumers to `vc-fix:ticket-context`, migrate the
    plugin's own commands, add the `deployProbe` question to `/project-init` (D3), bump `vc-fix` minor and
    tag per `docs/release-process.md`. Before tagging, run it once on a client stand to settle the open
    fact in D3.
@@ -318,7 +318,7 @@ The first draft left six questions open (D1–D6); D7 records where the skill li
 
 | # | Question | Decision | Why |
 |---|---|---|---|
-| D1 | Name | **`qa-ticket-context`** (`/qa-ticket-context` now, `vc-fix:qa-ticket-context` after Phase 5) | `qa-context` reads as a sibling of `npm run context:check`, which lints prompt size and has nothing to do with tickets. The longer name says what the skill gathers context *for*. |
+| D1 | Name | **`ticket-context`** (`/ticket-context` now, `vc-fix:ticket-context` after Phase 5) | Owner's choice (2026-10-08). `ticket-context` says what the skill gathers context *for*, and avoids `qa-context`, which reads as a sibling of `npm run context:check` (prompt-size lint). No `qa-` prefix, on purpose: its consumers are not only QA (`/qa-fix`, BA and planning commands read it too), the same reason `vc-self-check` is not qa-prefixed. |
 | D2 | Cache location | **Split by data class.** Bundle: `<outputRoot>/.vc-fix/context/<KEY>/`, 24 h TTL (in this repo `.vc-fix/` is already gitignored), written only if `git check-ignore` confirms the path is ignored (else temp dir). Raw artifacts: per-run temp directory, deleted at run end, never cached. | Speed (P3) needs the bundle to survive between runs on the same ticket; security (S3) does not allow raw client attachments, HARs or frames to sit on disk. The bundle is derived and scrubbed, so it carries far less. `.vc-fix/` is already the plugin's gitignored local-state root (self-diagnostics uses it), and `project-init`'s `lib/gitignore.mjs` already adds ignore entries in client projects — reuse it rather than trusting that the client's `.gitignore` covers the path. |
 | D3 | Deployment check on client stands | **Three steps, in order.** (1) Modules via `GET /api/platform/modules`, which returns installed module versions but **requires authentication** (`kb` KB-B858E12A), so it runs with the env layer's least-privileged read credential. A module whose version matches but which carries a load error is **not** deployed (KB-E4699C30: an older-minor dependency makes the platform mark it with an error). `/health` is not proof: it can keep answering 200 from the old instance during a restart (KB-B858E12A). Whether a client's own custom modules appear in this list is **unverified**; it is checked on a client stand before the Phase 5 release, and until then this step is not relied on for client modules. (2) The storefront or theme via a probe declared in `project-profile.json` as `deployProbe` (a version endpoint or build-info URL); the `/project-init` question for it ships with Phase 5, until then it is set by hand. (3) Nothing declared ⇒ `UNKNOWN`. | `UNKNOWN` does not block; it puts a blocker-lite line in `bundle.blockers[]`, and the consumer must write "deployment unverified" into its verdict. A silent `UNKNOWN` would let a PASS on old code look like a real PASS — the exact failure §1 names. Guessing a storefront endpoint that does not exist on every build would violate C3. |
 | D4 | Video | **`ffmpeg` is a soft dependency.** Detected at run time with `command -v ffmpeg`; not added to `package.json`. Caps: 1 frame every 2 s, at most 12 frames, video only (audio is not transcribed). Absent ⇒ `GAP: ffmpeg not installed` with the install remedy. | Bug videos are often the only place the repro order exists, so a hard `GAP` throws away the input most worth reading. A hard dependency would break installs where `ffmpeg` is unavailable (C3). Loom keeps its own path through the Atlassian connector's transcript. |
