@@ -58,7 +58,7 @@ These were set by the requester and are binding for the design and for every lat
 | S1 | **Everything gathered is untrusted data, never instructions**: ticket text, comments, attachments, linked pages, PR bodies, review threads. Text that tries to instruct the agent is recorded as a finding and is not followed. |
 | S2 | **HAR files and logs are scrubbed before an agent reads them.** Cookies, `Authorization` headers, bearer tokens, `Set-Cookie`, query-string tokens. The bundle carries endpoint + status + error, never a header value. Reuse the value-scan approach of `scripts/kb/core/secret-gate.mjs` (scan for the real secret values from the env layer, plus the PAT/JWT/Bearer shapes) instead of writing a second scanner. |
 | S3 | **Client data never leaves the machine.** Two storage classes (decision D2). **Raw artifacts** (downloaded attachments, HAR, logs, video frames, linked pages) live in a per-run temp directory and are deleted when the run ends — never cached. **The bundle** (derived, scrubbed findings) lives in `<outputRoot>/.vc-fix/context/<KEY>/` with a 24 h TTL, and only after `git check-ignore` confirms the path is ignored; otherwise it falls back to the temp directory. Neither class is ever written under `reports/`, committed, sent to the public `kb`, or included in a self-diagnostics upstream issue. |
-| S4 | **Read-only on every system.** The agent's `tools:` allowlist holds no `Bash`, `Write` or `Edit` and only read-only MCP tools, so the harness enforces it, not the prompt. Everything that needs a shell — downloads, scrub, video frames, the deployment check — runs in the skill's `lib/` before dispatch ([agent prompt design](2026-10-08-ticket-context-analyst-prompt.md) A2–A3). |
+| S4 | **Read-only on every system.** The agent's `tools:` allowlist holds no `Bash`, `Write` or `Edit` and only read-only MCP tools, so the harness enforces it, not the prompt. Everything that needs a shell — downloads, scrub, video frames — runs in the skill's `lib/` before dispatch, and deployment state comes from the pre-flight core (D3) ([agent prompt design](2026-10-08-ticket-context-analyst-prompt.md) A2–A3). |
 | S5 | **Bounded link following.** One hop from the ticket. A link to a private or internal host is not fetched with a general web fetch; it is read through its own connector (Atlassian, GitHub, Figma) or recorded as `GAP: private host`. |
 | S6 | Client-code containment from `.claude/knowledge/execution/quality-gates.md` §2a applies unchanged: PR diffs from a client repo are read in place and never quoted into any upstream artifact. |
 
@@ -114,7 +114,6 @@ These were set by the requester and are binding for the design and for every lat
     paths.mjs         # C4 — outputRoot / own-asset resolution
     fetch.mjs         # downloads attachments into the per-run temp dir (S3)
     frames.mjs        # D4 — ffmpeg frame extraction with caps
-    deploy-check.mjs  # D3 — module/probe check with its own credential, never via the agent
 .claude/agents/ticket-context-analyst.md   # D6 — the one read-only agent for blocks 1–3
                                            #      (prompt: 2026-10-08-ticket-context-analyst-prompt.md)
 ```
@@ -198,7 +197,7 @@ explicit link → org-wide search by key → commit search by key (`search_commi
 | files by layer token (`storefront` / `admin-spa` / `api` / `module` / `platform`) | routes the test lanes |
 | GraphQL operations and REST endpoints touched, by name | feeds contract refresh and checklist |
 | settings, permissions, feature flags added or changed | the hidden-behaviour list below |
-| **deployed on `TEST_ENV`?** — module version from the PR's release vs `/api/platform/modules`, by `lib/deploy-check.mjs`, not the agent (D3) | the gate (§6) |
+| **deployed on `TEST_ENV`?** — module version from the PR's release vs `/api/platform/modules`, read from the pre-flight core `getEnvFacts()`, not the agent and not a second probe (D3) | the gate (§6) |
 | tests the PR changed, and changed branches with no test | first targets for testing |
 | fate — reverted, superseded, follow-up fix after merge | avoid testing a dead change |
 | CI state, unresolved review threads | risk signal, never a block |
@@ -288,16 +287,19 @@ Each migrated file **cites** the skill and deletes its restated rules, so the ru
 
 1. **Phase 0 — this review.** Agree §3, §4a and the §11 decisions.
 2. **Phase 1 — skill + gate + `ticket-context-analyst` agent in `.claude/`**, wired into `/qa-test-fast` only.
-   No plugin release.
+   No plugin release. Blocks 1, 2, 4 and 5 (Ticket, Materials, Known ground, Gaps) do not depend on
+   anything else and start now. In block 3, only the deployment fields (`deployed`, `chain_deployed`,
+   the `NOT DEPLOYED` blocker) wait for the pre-flight core (VCST-6225). Until it lands, they read
+   `UNKNOWN` with the reason `pre-flight core not available`, and the consumer's verdict says
+   "deployment unverified" (D3).
 3. **Phase 2 — validation (§10).** Proceed only if it beats the current Stage 1.
 4. **Phase 3 — `/qa-test` FULL**, then the BA/planning commands in this repo.
 5. **Phase 4 — delete the restated rules** from `preflight.md` and both `context-wave.md` files.
 6. **Phase 5 — move to `vc-fix`.** Trigger: Phase 2 passed **and** a client deployment needs it (the
    first `vc-fix` command that would consume it). Steps: copy the tree (§4) into the plugin, delete the
    `.claude/` copies in the same commit, switch §8 consumers to `vc-fix:ticket-context`, migrate the
-   plugin's own commands, add the `deployProbe` question to `/project-init` (D3), bump `vc-fix` minor and
-   tag per `docs/release-process.md`. Before tagging, run it once on a client stand to settle the open
-   fact in D3.
+   plugin's own commands, bump `vc-fix` minor and tag per `docs/release-process.md`. **Blocked by O1:**
+   the pre-flight core lives in the repo root's `scripts/lib/`, which a plugin cannot reference.
 
 ## 10. Validation
 
@@ -320,16 +322,23 @@ The first draft left six questions open (D1–D6); D7 records where the skill li
 |---|---|---|---|
 | D1 | Name | **`ticket-context`** (`/ticket-context` now, `vc-fix:ticket-context` after Phase 5) | Owner's choice (2026-10-08). `ticket-context` says what the skill gathers context *for*, and avoids `qa-context`, which reads as a sibling of `npm run context:check` (prompt-size lint). No `qa-` prefix, on purpose: its consumers are not only QA (`/qa-fix`, BA and planning commands read it too), the same reason `vc-self-check` is not qa-prefixed. |
 | D2 | Cache location | **Split by data class.** Bundle: `<outputRoot>/.vc-fix/context/<KEY>/`, 24 h TTL (in this repo `.vc-fix/` is already gitignored), written only if `git check-ignore` confirms the path is ignored (else temp dir). Raw artifacts: per-run temp directory, deleted at run end, never cached. | Speed (P3) needs the bundle to survive between runs on the same ticket; security (S3) does not allow raw client attachments, HARs or frames to sit on disk. The bundle is derived and scrubbed, so it carries far less. `.vc-fix/` is already the plugin's gitignored local-state root (self-diagnostics uses it), and `project-init`'s `lib/gitignore.mjs` already adds ignore entries in client projects — reuse it rather than trusting that the client's `.gitignore` covers the path. |
-| D3 | Deployment check on client stands | **Three steps, in order.** (1) Modules via `GET /api/platform/modules`, which returns installed module versions but **requires authentication** (`kb` KB-B858E12A), so it runs with the env layer's least-privileged read credential. A module whose version matches but which carries a load error is **not** deployed (KB-E4699C30: an older-minor dependency makes the platform mark it with an error). `/health` is not proof: it can keep answering 200 from the old instance during a restart (KB-B858E12A). Whether a client's own custom modules appear in this list is **unverified**; it is checked on a client stand before the Phase 5 release, and until then this step is not relied on for client modules. (2) The storefront or theme via a probe declared in `project-profile.json` as `deployProbe` (a version endpoint or build-info URL); the `/project-init` question for it ships with Phase 5, until then it is set by hand. (3) Nothing declared ⇒ `UNKNOWN`. | `UNKNOWN` does not block; it puts a blocker-lite line in `bundle.blockers[]`, and the consumer must write "deployment unverified" into its verdict. A silent `UNKNOWN` would let a PASS on old code look like a real PASS — the exact failure §1 names. Guessing a storefront endpoint that does not exist on every build would violate C3. |
+| D3 | Deployment check | **No probe of its own. Block 3 asks the pre-flight core** (VCST-6225: `scripts/lib/env-facts.ts` → `getEnvFacts()`, change-scoped with `expect: module@version` per PR), which returns `deployed` per module. A failed probe there is `UNKNOWN`, never a fallback to the declared version. The skill only folds the per-PR answers into `chain_deployed` (weakest PR wins) and puts a `NOT DEPLOYED` / `UNKNOWN` line in `bundle.blockers[]`. The facts this draft had gathered (`/api/platform/modules` needs authentication, KB-B858E12A; a module with a load error is not deployed, KB-E4699C30; `/health` is not proof during a restart, KB-B858E12A; client custom modules in that list are unverified) are inputs to the core's design, not reimplemented here. | Proposed by the PR author on review (2026-10-08). Two probes of one fact would disagree sooner or later, and then two skills would give two answers about the same stand. `UNKNOWN` still does not block: the consumer must write "deployment unverified" into its verdict. A silent `UNKNOWN` would let a PASS on old code look like a real PASS, which is the exact failure §1 names. Core design: `docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §13 (not yet on `main`). |
 | D4 | Video | **`ffmpeg` is a soft dependency.** Detected at run time with `command -v ffmpeg`; not added to `package.json`. Caps: 1 frame every 2 s, at most 12 frames, video only (audio is not transcribed). Absent ⇒ `GAP: ffmpeg not installed` with the install remedy. | Bug videos are often the only place the repro order exists, so a hard `GAP` throws away the input most worth reading. A hard dependency would break installs where `ffmpeg` is unavailable (C3). Loom keeps its own path through the Atlassian connector's transcript. |
 | D5 | `kb` writes | **Strictly read-only.** The skill asks the `kb`; it never captures, confirms or disputes. | The `kb` is a public repository, and `scripts/kb/core/secret-gate.mjs` states its acceptance rests on the consumer being this repo — "extending the base to client deployments must re-decide it first". A plugin skill runs in client deployments, so writing from it would be that unmade decision (S3). Consumers in this repo keep the capture duty they already have. |
 | D6 | Who runs blocks 1–3 | **One new read-only agent, `ticket-context-analyst`** (in `.claude/agents/` now, moved with the skill in Phase 5), dispatched three times in parallel with block-specific briefs. Its `tools:` frontmatter is an allowlist with no write tools and no `Bash`. Full prompt and its design notes: [`2026-10-08-ticket-context-analyst-prompt.md`](2026-10-08-ticket-context-analyst-prompt.md). | `ba-system-analyzer` and `ba-api-specialist` live only in `.claude/agents/`; the plugin ships no BA agents, so a skill built on them could not move (C1, M1). Using them now and swapping later would change the skill's core at the move instead of copying it. One agent with three briefs is one definition to keep under the 19,000-character budget (C5), and a tool allowlist turns S4 (read-only) from a prompt rule into a harness rule. |
 
 | D7 | Where it lives first | **`.claude/` in this repo now, `vc-fix` plugin in Phase 5**, under the §4a portability contract. | Requested by the owner, 2026-10-08. Its first consumers are here, and Phase 2 can still reject the design; building in the plugin first would ship an unproven skill to clients and cost a plugin release per iteration. The contract is what stops "later" from becoming a rewrite. |
 
-**What the decisions add to the build:** the `ticket-context-analyst` agent (D6), a `deployProbe`
-field in `project-profile.json` (D3; its `/project-init` question in Phase 5), the `check-ignore` guard
-in `lib/cache.mjs` (D2), and the capability checks in block 4 (M2).
+**What the decisions add to the build:** the `ticket-context-analyst` agent (D6), the `check-ignore`
+guard in `lib/cache.mjs` (D2), the capability checks in block 4 (M2), and a call into the pre-flight
+core for block 3's deployment fields (D3). That call is behind an M2-style capability check, so the skill
+still runs where the core is absent.
+
+### Open before Phase 5
+
+| # | Item | Options |
+|---|---|---|
+| O1 | The pre-flight core lives in `.claude/` / `scripts/lib/` only (its own D1), and a plugin cannot reference the repo root. When `/ticket-context` moves to `vc-fix`, its deployment fields lose their source. | (a) Copy the core into the plugin deliberately, as `vc-fix` already does for `knowledge/` and `config.js`, and accept a second copy to keep in step. (b) Move the core into the plugin first, and have this repo consume it from there. To be settled with VCST-6225 before Phase 5, not now. |
 
 ## 12. Risks
 

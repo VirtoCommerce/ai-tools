@@ -11,7 +11,7 @@
 |---|---|---|
 | A1 | **One agent, three modes** (`TICKET`, `MATERIALS`, `CHANGE`). The skill dispatches it three times in one message, one mode each. | One definition to keep under BUDGET-004. Three parallel dispatches keep the speed of today's Stage 1 (P1). |
 | A2 | **No `Bash`, `Write`, `Edit` or `NotebookEdit` in its tool allowlist.** Reading goes through `Read`/`Grep`/`Glob` and read-only MCP tools. | `Bash` can write, push and delete, so an agent holding it is read-only only by promise. With an allowlist, S4 is enforced by the harness and does not depend on the prompt being obeyed. |
-| A3 | **Everything that needs a shell runs in the skill's `lib/` before the dispatch**: downloading attachments, HAR/log scrubbing (S2), `ffmpeg` frames (D4), the deployment check (D3), and the cache (P3). The agent receives **paths to already-scrubbed files**. | Deterministic work belongs in scripts. It also keeps two things away from the agent: raw HARs, which hold secrets, and the platform credential the deployment check needs. |
+| A3 | **Everything that needs a shell runs in the skill's `lib/` before the dispatch**: downloading attachments, HAR/log scrubbing (S2), `ffmpeg` frames (D4), and the cache (P3). Deployment state comes from the pre-flight core (design D3). The agent receives **paths to already-scrubbed files**. | Deterministic work belongs in scripts. It also keeps two things away from the agent: raw HARs, which hold secrets, and the platform credential that deployment facts need. |
 | A4 | **The PR ladder uses GitHub MCP, not `gh`.** Rung 3 (`git log --grep`) becomes `search_commits` by ticket key. | A2 removes `Bash`. MCP also works in cloud sessions, where `gh` is absent (C3). |
 | A5 | **Classified as a Mechanic** (`authoring-standard.md` §5.2), so it has no `kb` step. | The agent reports what the *sources say*: ticket, attachments, diff. It never states how the platform behaves. The `kb` read is block 4, which the skill runs inline (D5). If a reviewer judges an output field to be a behaviour claim, the class becomes Judge and a read step is added. |
 | A6 | **The output is one JSON object, and nothing else.** | P2: compact structs. The skill validates the result with `check-bundle.mjs` and does not have to parse prose. |
@@ -158,8 +158,8 @@ tool list, else `GAP: connector-unavailable`; mockup via `Read`):
 4. **PR ↔ AC traceability.** This needs the TICKET output. If the brief does not include it, return
    `ac_to_diff: null` and the skill joins it later. Otherwise return both directions:
    `AC-n → file:line | NOT FOUND` and `diff change → AC-n | UNDECLARED`.
-5. **You do not check deployment.** The skill's `lib/` does that with its own credential. Leave
-   `deployed` out.
+5. **You do not check deployment.** The skill gets it from the pre-flight core, which uses its own
+   credential. Leave `deployed` out.
 
 ## 4. Provenance
 
