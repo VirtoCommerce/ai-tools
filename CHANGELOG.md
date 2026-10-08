@@ -8,24 +8,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Semver 
 
 ---
 
-## `vc-frontend`: merging upstream vc-frontend into a theme fork — catalog `0.12.0`, `vc-frontend` `0.1.0` — 2026-10-07
+## `vc-frontend`: merging upstream vc-frontend into a theme fork — catalog `0.12.0`, `vc-frontend` `0.1.0` — 2026-10-08
 
-**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with one skill, `merge-upstream`. It brings
-upstream `VirtoCommerce/vc-frontend` — its `dev` or a release tag — into a fork such as vc-frontend-next or a
-customer's theme: the fork keeps its markup, styles and tokens, upstream's behavior is carried into them, every
-conflict is briefed to the user before it is resolved, every upstream change is traced into the result
-(including fixes to components the fork replaced), upstream's tests are mutation-checked against the ported
-code, the built app is smoke-tested with `vite preview`, the PR carries a QA checklist, and it lands as a merge
-commit so the next upstream merge starts from the right base.
+**Added: the `vc-frontend` plugin** (`defaultEnabled: false`) with two skills, for teams that keep a fork of the
+storefront theme (vc-frontend-next, customer themes). Its description and README say the skills can make mistakes
+and every change needs human review.
 
-**Added: `port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream
-change only to the file upstream changed; when the fork renders its own component there, the change merges
-cleanly and reaches nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own
-Vite config and compares Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass
-partials) to list upstream code the fork no longer renders, render sites it dropped, and changes to files a
-committed `fork-map.json` says the fork replaced. The skill briefs each upstream commit as port / already /
-n/a / lost feature, ports the approved ones with a mutation-checked test, and keeps the map current.
-
+- **`merge-upstream`** brings upstream `VirtoCommerce/vc-frontend` (its `dev` or a release tag) into the fork, or a
+  redesign branch's own base into it. The fork keeps its markup, styles and tokens; upstream's behavior is carried
+  into them. Every conflict is briefed before it is resolved; every upstream line is traced into the result; the
+  ported code is covered by mutation-checked tests; the built app is smoke-tested with `vite preview`. The PR gets a
+  QA checklist — an existing PR for the branch is updated rather than duplicated — and lands as a merge commit: the
+  skill checks the repository settings, puts the warning at the top of the PR and confirms two parents after the
+  merge. Each merge leaves a log in the fork's `upstream-merges/`, which the next merge reads before asking anything.
+  Every `gh` call names its repository, because a bare `gh` in a clone with an `upstream` remote resolves to
+  upstream. `git rerere` is on as a safety net for a merge that has to be redone; a leftover empty merge branch is
+  recreated, one with work on it is left for the user to decide.
+- **`port-upstream-to-fork`**, which `merge-upstream` calls after the merge. A merge delivers an upstream change only
+  to the file upstream changed; when the fork renders its own component there, the change merges cleanly and reaches
+  nobody. `fork-drift.mjs` builds the fork and upstream commits with the repository's own Vite config and compares
+  Rollup's module graphs (name-level imports through barrels, tree-shaking, Sass partials) to list upstream code the
+  fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
+  replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
+  with a mutation-checked test, and keeps the map current.
 ---
 
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02
