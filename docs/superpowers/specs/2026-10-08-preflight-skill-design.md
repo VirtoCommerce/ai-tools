@@ -91,7 +91,7 @@ Not in the core: tickets, sprints, duplicates, suites, kb, docs, MCP.
 
 | `--for` | health DOWN | duplicate: window · where | `expect` not deployed |
 |---|---|---|---|
-| `ticket` | WARN → ask | 2 h · `reports/tickets/*/<KEY>/summary.json` | BLOCK-on-deploy → offer `/qa-deploy-pr` (ask) |
+| `ticket` | BLOCK (a question arises only from a BLOCK — §8a) | 2 h · `reports/tickets/*/<KEY>/summary.json` | BLOCK-on-deploy → offer `/qa-deploy-pr` (ask) |
 | `exploratory` | WARN | 24 h · `reports/exploratory/SBTM-*`, same domain | — |
 | `lifecycle` | WARN | 24 h · `reports/test-lifecycle/TLC-*`, same scope | — |
 | `domain-map`, `ba` | WARN | — | — |
@@ -184,6 +184,55 @@ line what to add and that a restart is required.
 
 Deliberately **not** in the skill: the axes 2b–2g, the 2-map prior-art read, ticket classification
 and routing — all `/qa-test` mechanics.
+
+## 8a. Output form — one form for every consumer
+
+Today there is none: `qa-env-check` prints sectioned tables + `READY`/`NOT READY`, `/project-init`
+a bordered readiness table, and `agent-dispatch.md` + eight commands one sentence ("warn user with
+specific failure, ask whether to proceed") re-worded each time. **The output form drifts exactly as
+the checks did, and is fixed the same way: the CLI renders it from `checks[]`; Claude does not
+compose it.**
+
+**Clean — one line:**
+
+```
+Preflight · vcst · VCST-1234 · Platform 3.1057.0 · Theme 2.55.0 · READY (14 checks OK)
+```
+
+**Problems — header, verdict, non-OK rows only:**
+
+```
+Preflight · vcst · ticket VCST-1234 · 2026-10-08 14:02
+Build: Platform 3.1057.0 (deployed) · Theme 2.55.0 · drift: none · ledger: fresh
+
+NOT READY — 1 blocker · 2 warnings · 11 checks OK
+
+| # | Status  | Check     | Found                                                      | Do                                   |
+|---|---------|-----------|------------------------------------------------------------|--------------------------------------|
+| 1 | BLOCK   | expect    | vc-module-cart 3.1006.0-pr-812 not deployed (has 3.1005.0) | /qa-deploy-pr VCST-1234, or wait     |
+| 2 | WARN    | duplicate | tested 47 min ago, same build, verdict FAIL                | re-run overwrites reports/tickets/…  |
+| 3 | UNKNOWN | deployed  | /api/platform/modules → 401                                | check ADMIN_PASSWORD in .env.local   |
+```
+
+Rules:
+
+1. **Quiet when clean, loud when not.** OK rows collapse into a count.
+2. **Verdict vocabulary is `qa-env-check`'s:** `READY` / `NOT READY`. Never `BLOCKED` — that is a
+   test-run verdict, not an environment one.
+3. **Every non-OK row has a `Do`** — a concrete command or setting, never "investigate". It comes
+   from code: each `check id` carries an action template, so one problem gets one piece of advice in
+   every consumer.
+4. **`UNKNOWN` is its own status and never renders as OK** — "never fall back to `declared`",
+   applied to display.
+5. **`Found` states values** (versions, minutes, HTTP codes), not adjectives. No secret ever.
+6. **JSON goes to `summary.json`, this text goes to chat.** The text is never stored, so it can change
+   without breaking a reader.
+7. **At most one question, and only when there is a BLOCK.** A WARN never asks. (Hence `ticket` +
+   health DOWN is a BLOCK in §5, not "WARN → ask": a question has one origin.)
+
+The CLI prints this by default and raw data with `--json`. The skill (§8 step 5) shows the CLI block
+**verbatim** and appends, in the same columns, only the rows the CLI cannot see: MCP level 3
+(`mcp:kb · WARN · not connected · working via npm run kb -- ask`) and grounding misses.
 
 ## 9. Migration
 
