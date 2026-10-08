@@ -1,12 +1,12 @@
 {
-  "_fixture": "COMPLETED_ORDER — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5482). Owner resolved at seed time from {{USER_EMAIL}}. No runtime GUIDs here — the created order id is written to aliases.<env>.json. status/shipment status are re-stamped from orders-specs.mjs at seed time.",
+  "_fixture": "COMPLETED_ORDER — Swagger-shaped create body for POST /api/order/customerOrders (VCST-5482). Owner resolved at seed time from {{USER_EMAIL}}. No runtime GUIDs here — the created order id is written to aliases.<env>.json. status/shipment status are re-stamped from orders-specs.mjs at seed time. Line quantities DIFFER (1 and 2) so ORD-003 can tell a reorder that keeps each quantity from one that resets to 1; products are chosen at seed time so each quantity is within the product min/max order quantity.",
   "number": "AGENT-TEST-ORD-COMPLETED",
   "storeId": "{{STORE_ID}}",
   "currency": "USD",
   "status": "Completed",
   "customerName": "AGENT-TEST Buyer",
-  "total": 249.98,
-  "subTotal": 249.98,
+  "total": 374.97,
+  "subTotal": 374.97,
   "shippingTotal": 0,
   "shippingTotalWithTax": 0,
   "taxTotal": 0,
@@ -26,7 +26,7 @@
       "productId": "agent-test-ord-prod-2",
       "catalogId": "agent-test-ord",
       "name": "AGENT-TEST Completed Item 2",
-      "quantity": 1,
+      "quantity": 2,
       "price": 124.99,
       "productType": "Physical",
       "currency": "USD"
@@ -68,7 +68,20 @@
       "status": "Delivered",
       "number": "AGENT-TEST-ORD-COMPLETED-S1",
       "trackingNumber": "AGENT-TEST-TRK-COMPLETED",
-      "items": []
+      "items": [],
+      "deliveryAddress": {
+        "addressType": "Shipping",
+        "firstName": "AGENT-TEST",
+        "lastName": "Buyer",
+        "line1": "1 Test Way",
+        "city": "New York",
+        "regionName": "New York",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "postalCode": "10001",
+        "phone": "+1-206-555-0100",
+        "email": "{{USER_EMAIL}}"
+      }
     }
   ],
   "inPayments": [
@@ -76,7 +89,7 @@
       "gatewayCode": "DefaultManualPaymentMethod",
       "currency": "USD",
       "customerName": "AGENT-TEST Buyer",
-      "sum": 249.98,
+      "sum": 374.97,
       "status": "Paid",
       "paymentStatus": "Paid",
       "number": "AGENT-TEST-ORD-COMPLETED-P1"

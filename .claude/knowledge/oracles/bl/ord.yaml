@@ -27,7 +27,8 @@ rules:
       kind: manual
       ref: In Admin → Order → attempt to skip states (e.g., capture without authorization) → should fail or button should be absent. Verify API rejects invalid state transitions.
     violation_signal: Payment captured without prior authorization; shipment marked "Send" while still "New"; state skipped without error.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] ORD-074 failed in REG-2026-10-06-1457"
   - id: BL-ORD-002
     title: Cancellation restores inventory conditionally
     rule: |-

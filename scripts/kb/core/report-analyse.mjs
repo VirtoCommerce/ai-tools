@@ -15,6 +15,8 @@
 // relocated into the report, and it is the reason `unreachable` asks get their own panel row rather
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
+import { lastWord, pointersByAsk } from './loop.mjs';
+import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -22,6 +24,7 @@ import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  'confirm-invalid', 'dispute-invalid',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -485,6 +488,100 @@ export function evidence(lines, idx) {
 // ── Panel 5 — refused captures ─────────────────────────────────────────────────────────────────
 
 /**
+ * WHICH LATER CAPTURE SETTLED EACH DOOR REFUSAL (VCST-6156). Returns, per `capture-invalid` line,
+ * `null` (never settled: the fact was lost) or how it was paired:
+ *
+ *   'subject'  a LATER landed or dedup-refused capture in the same session with the same subject.
+ *              Exact. One outcome settles every earlier unsettled refusal with its subject, because
+ *              three refusals of one payload followed by a fix are one intent, not three -- the
+ *              shape the log actually shows (one call sent the same payload three times in 30 s).
+ *   'ask'      a LATER outcome that settled nothing by subject, following the same ask (`after`).
+ *              A HEURISTIC, and kept apart for that reason: one ask can be followed by two different
+ *              facts, so a refused-and-abandoned fact and a different fact that landed share `after`.
+ *              Each such outcome settles at most one refusal chain, earliest first.
+ *
+ * An outcome BEFORE the refusal never settles it. A dedup-refused retry (`capture-refused`) does:
+ * the base already holds the fact, so it is not lost.
+ */
+export function pairRetries(lines) {
+  const byTime = (a, b) => String(a.at ?? '').localeCompare(String(b.at ?? ''));
+  // Per SESSION, so each outcome scans its own session's refusals, not the window's (PR #400 review).
+  const refusedBy = new Map();
+  for (const l of lines.filter((x) => x.kind === 'capture-invalid').sort(byTime)) {
+    refusedBy.set(l._session, [...(refusedBy.get(l._session) ?? []), l]);
+  }
+  // The same outcomes `doorStats` counts: a push-time dedup refusal is the queued capture again, and
+  // letting it settle a refusal put it in `closing` but not in the outcomes -- `firstAttempt` could go
+  // negative (PR #400 review, cycle 3).
+  const outcomes = lines.filter((l) => (l.kind === 'capture' && l.id) || (l.kind === 'capture-refused' && l.when !== 'push')).sort(byTime);
+  const pairing = new Map();
+  const closing = new Set();
+  // Trimmed: the door logs a refused subject trimmed, a landed capture as typed (PR #400 review).
+  const subj = (l) => String(l.subject ?? '').trim();
+  const open = (o) => (refusedBy.get(o._session) ?? []).filter((r) => !pairing.has(r) && String(r.at ?? '') < String(o.at ?? ''));
+  for (const o of outcomes) {
+    for (const r of open(o).filter((x) => subj(x) === subj(o))) { pairing.set(r, 'subject'); closing.add(o); }
+  }
+  for (const o of outcomes) {
+    if (closing.has(o) || !o.after) continue;
+    const first = open(o).find((x) => x.after === o.after);
+    if (!first) continue;
+    // The chain is the SAME subject after the SAME ask: a same-subject refusal that followed another
+    // ask is a different attempt and is not settled by this outcome (PR #400 review).
+    for (const r of open(o).filter((x) => x.after === o.after && subj(x) === subj(first))) pairing.set(r, 'ask');
+    closing.add(o);
+  }
+  return { pairing, closing };
+}
+
+/**
+ * THE DOOR'S OWN NUMBERS (VCST-6156): how many capture attempts the door turned away, split by door
+ * and by person, and how many of those were never settled. An ATTEMPT is a landed capture, a
+ * refusal at the door, or a dedup refusal -- the three things a capture call can end in.
+ *
+ * `firstAttempt` is the share of capture INTENTS that landed without a door refusal. An intent is an
+ * outcome (landed or dedup-refused), or an unsettled refusal chain (one session, one subject); an
+ * outcome that settled a refusal is an intent that needed a retry. `rate` is the plain
+ * refused-per-attempt share, the number the acceptance line reads. `pairedByAsk` counts refusals
+ * settled only by the `after` heuristic -- likely, not certain, retries.
+ */
+export function doorStats(lines, atDoor, closing = new Set()) {
+  // A dedup refusal at PUSH time (`when: 'push'`) is the SAME call as the `capture` that queued it, not
+  // a second attempt: counting it double-counted the call and added a `?` door (PR #400 review).
+  const attempts = lines.filter((l) => (l.kind === 'capture' && l.id) || l.kind === 'capture-invalid'
+    || (l.kind === 'capture-refused' && l.when !== 'push'));
+  const split = (key) => {
+    const out = {};
+    for (const l of attempts) {
+      const k = l[key] ? String(l[key]) : '?';
+      out[k] ??= { attempts: 0, refused: 0 };
+      out[k].attempts += 1;
+      if (l.kind === 'capture-invalid') out[k].refused += 1;
+    }
+    return out;
+  };
+  // `abandoned` is STRICT -- only a same-subject retry counts as one -- because that is the retry the
+  // contract asks for and the only one the log pairs exactly. `firstAttempt` counts an ask-paired
+  // chain as settled instead, so one outcome is never counted both as a retry and as a lost intent.
+  const outcomes = attempts.length - atDoor.length;
+  // Keyed on the TRIMMED subject, as `pairRetries` pairs them (PR #400 review).
+  const fact = (r) => `${r.session} ${r.subject.trim()}`;
+  const lostIntents = new Set(atDoor.filter((r) => !r.pairedBy).map(fact)).size;
+  const intents = outcomes + lostIntents;
+  return {
+    attempts: attempts.length,
+    refused: atDoor.length,
+    rate: attempts.length ? atDoor.length / attempts.length : null,
+    // LOST FACTS, not refusals: one payload refused three times and never settled is one lost fact.
+    abandoned: new Set(atDoor.filter((r) => r.pairedBy !== 'subject').map(fact)).size,
+    pairedByAsk: atDoor.filter((r) => r.pairedBy === 'ask').length,
+    firstAttempt: intents ? (outcomes - closing.size) / intents : null,
+    byDoor: split('via'),
+    byWho: split('who'),
+  };
+}
+
+/**
  * Each refusal is a RANKING MISS THAT DID NOT BECOME A DUPLICATE (PLAN §8 panel 5). A rising count
  * is not a problem — it is §2's guard working, and simultaneously a direct measure of how often
  * `ask` fails to find something the base already holds.
@@ -494,18 +591,23 @@ export function refusals(lines, idx) {
   const byTarget = new Map();
   // TURNED AWAY AT THE DOOR (`capture-invalid`) — a different failure from a duplicate, counted
   // apart: nothing the base holds was re-discovered, the WRITE was malformed. `retried` says whether
-  // the same session later got a capture with that subject through, which separates "the door's
-  // message worked" from "the agent gave up and the fact was lost".
-  const landed = new Set(lines.filter((l) => l.kind === 'capture' && l.id)
-    .map((l) => `${l._session} ${String(l.subject ?? '')}`));
+  // a later same-subject capture in the same session settled it (`pairRetries`), which separates
+  // "the door's message worked" from "the agent gave up and the fact was lost".
+  const { pairing, closing } = pairRetries(lines);
   const atDoor = lines.filter((l) => l.kind === 'capture-invalid').map((l) => ({
     subject: String(l.subject ?? ''),
     why: String(l.why ?? ''),
     problems: Array.isArray(l.problems) ? l.problems.map(String) : [],
-    retried: landed.has(`${l._session} ${String(l.subject ?? '')}`),
+    // `retried` is kept in the report JSON (a consumer contract, pinned by kb-report.test.mjs); it is
+    // DERIVED from `pairedBy`, never computed separately: an exact, same-subject retry.
+    retried: pairing.get(l) === 'subject',
+    pairedBy: pairing.get(l) ?? null,
+    via: l.via ? String(l.via) : '?',
+    who: l.who ? String(l.who) : '?',
     session: l._session,
     at: String(l.at ?? ''),
   })).sort((a, b) => b.at.localeCompare(a.at));
+  const door = doorStats(lines, atDoor, closing);
   for (const l of lines) {
     if (l.kind !== 'capture-refused') continue;
     const target = String(l.dupeOf ?? '');
@@ -525,7 +627,8 @@ export function refusals(lines, idx) {
     rows,
     total: rows.length,
     atDoor,
-    atDoorRetried: atDoor.filter((r) => r.retried).length,
+    atDoorRetried: atDoor.filter((r) => r.pairedBy === 'subject').length,
+    door,
     repeatTargets: [...byTarget.entries()].filter(([, n]) => n > 1)
       .map(([id, n]) => ({ id, subject: idx.subjectOf(id), count: n }))
       .sort((a, b) => b.count - a.count),
@@ -573,7 +676,8 @@ export function refusals(lines, idx) {
  *      queued but not yet pushed, or pushed after the index snapshot — is UNDECIDABLE, and is
  *      reported as such rather than counted either way. Counting it as unhelpful would make the
  *      rate a function of push timing.
- *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's.
+ *   4. AN ASK WITH NO `matched` IS NOT UNHELPFUL. That is a miss, and it is panel 1's. An `ambiguous`
+ *      ask arrives here already resolved by `resolveVerdicts` (its pick, or a miss).
  *
  * The rate is over DECIDABLE pairs — not over all asks. An ask nobody captured against is not
  * evidence either way, and putting it in the denominator would let the rate fall simply because the
@@ -599,6 +703,11 @@ export function unhelpful(lines, idx) {
     // ordering or windowing is involved: either the capture names a line in this set or it does not.
     const askAt = new Map();
     for (const e of events) if (e.kind === 'ask' && e.at) askAt.set(String(e.at), e);
+    // WHAT AN `ambiguous` ASK WAS ANSWERED WITH (VCST-6156). Under the verdict ranker almost every ask
+    // is `ambiguous` and the agent's `kb_show <id> --ask <handle>` is the answer; reading only
+    // `state: "answer"` left every such ask out, so the panel could not see a bad pick at all.
+    // The agent's LAST word counts (`lastWord`): a pick it then withdrew with `kb_none` is not an answer.
+    const matchedOf = (ask) => (ask.state === 'answer' ? (ask.matched ?? []) : []);
 
     for (const cap of events) {
       if (cap.kind !== 'capture' || !cap.id) continue;
@@ -628,13 +737,14 @@ export function unhelpful(lines, idx) {
 
       // The base said it held nothing and the agent went and found out. That is the loop working,
       // and it belongs to `captureLoop`, not here.
-      if (ask.state !== 'answer' || !(ask.matched ?? []).length) { afterMiss += 1; continue; }
+      const matched = matchedOf(ask);
+      if (!matched.length) { afterMiss += 1; continue; }
 
       const pool = new Set();
-      for (const id of ask.matched ?? []) for (const a of idx.anchorsOf(id)) pool.add(a);
+      for (const id of matched) for (const a of idx.anchorsOf(id)) pool.add(a);
       // An ask whose OWN matched rows are not in the index cannot be judged either — the pool
       // would be empty for a reason that has nothing to do with the ranker.
-      const matchedKnown = (ask.matched ?? []).filter((id) => idx.has(id)).length;
+      const matchedKnown = matched.filter((id) => idx.has(id)).length;
 
       const capAnchors = idx.anchorsOf(cap.id);
       if (!idx.has(cap.id) || capAnchors.size === 0 || matchedKnown === 0) {
@@ -643,7 +753,7 @@ export function unhelpful(lines, idx) {
           verdict: 'undecidable',
           session,
           question: String(ask.q ?? ''),
-          matched: (ask.matched ?? []).map(String),
+          matched: matched.map(String),
           captureId: String(cap.id),
           captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
           captureAnchors: [...capAnchors],
@@ -660,8 +770,8 @@ export function unhelpful(lines, idx) {
         verdict: overlap.length ? 'helpful' : 'unhelpful',
         session,
         question: String(ask.q ?? ''),
-        matched: (ask.matched ?? []).map(String),
-        matchedSubjects: (ask.matched ?? []).map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
+        matched: matched.map(String),
+        matchedSubjects: matched.map((id) => ({ id: String(id), subject: idx.subjectOf(id) })),
         captureId: String(cap.id),
         captureSubject: String(cap.subject ?? idx.subjectOf(cap.id)),
         captureAnchors: [...capAnchors],
@@ -1104,6 +1214,73 @@ export function doors(lines) {
     .sort((a, b) => a.via.localeCompare(b.via));
 }
 
+/**
+ * HOW EACH AGENT CLOSED ITS `ambiguous` LISTS (VCST-6191): opened one (`show`), said none fitted
+ * (`none`), or left it -- `unclosed`. Read from `resolveVerdicts`' `closedBy`, the one rule the
+ * reminder shares, so this panel and the miss queue never disagree about an ask. `wroteAfter` counts
+ * the unclosed lists the session later wrote ABOUT: a confirm or dispute of an entry the list showed,
+ * or a capture whose `after` names the ask -- written about without closing the list (before the confirm
+ * gate, from the list's excerpt alone; since it, the entry was opened but the choice was never made). "Any later write" was measured first and is no signal: on
+ * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
+ * 17 there, which no session-level number shows. (The ticket counted 20 unclosed by its own reading;
+ * this panel and the reminder read an ask one way, `pointersByAsk` + `lastWord`.)
+ */
+export function lists(lines) {
+  const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
+  // Writes per (session, agent): a subagent's unclosed list is not credited with a write its
+  // orchestrator or a sibling made under the same session key. Only a write that QUEUED counts --
+  // `queuedWrite`, the one rule the journal (`loopRecord`) applies too.
+  const who = (l) => `${l._session ?? ''}\0${typeof l.agent === 'string' ? l.agent : ''}`;
+  const writes = new Map();
+  for (const l of lines) {
+    if (!queuedWrite(l)) continue;
+    if (!writes.has(who(l))) writes.set(who(l), []);
+    writes.get(who(l)).push(l);
+  }
+  const wroteAbout = (a) => {
+    const shown = new Set((a.shown ?? []).map((id) => String(id).toUpperCase()));
+    return (writes.get(who(a)) ?? []).some((w) => String(w.at) > String(a.at)
+      && (w.kind === 'capture' ? String(w.after ?? '') === String(a.at) : shown.has(String(w.id ?? '').toUpperCase())));
+  };
+  const by = new Map();
+  const total = { asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+  for (const a of asks) {
+    const agent = typeof a.agent === 'string' && a.agent ? a.agent : null;
+    const key = agent ?? '';
+    const row = by.get(key) ?? { agent, asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+    const wrote = a.closedBy === 'unclosed' && wroteAbout(a);
+    for (const r of [row, total]) {
+      r.asks += 1;
+      r[a.closedBy] += 1;
+      if (wrote) r.wroteAfter += 1;
+    }
+    by.set(key, row);
+  }
+  // THE CONFIRM GATE (VCST-6191): evidence refused because the session never opened the entry, and
+  // what followed -- the same session confirmed or disputed that id later (it opened it, as told), or
+  // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door: `refused`
+  // counts attempts, `landed` / `abandoned` count FACTS -- one per (session, entry) -- so an agent that
+  // retried three times and gave up is one abandoned confirmation, not three.
+  const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
+  const firstRefusal = new Map();
+  for (const r of refused) {
+    const key = `${r._session ?? ''}\0${String(r.id ?? '').toUpperCase()}`;
+    if (!firstRefusal.has(key) || String(r.at) < String(firstRefusal.get(key).at)) firstRefusal.set(key, r);
+  }
+  const facts = [...firstRefusal.values()];
+  const landed = facts.filter((r) => (writes.get(who(r)) ?? []).some((w) => w.kind !== 'capture'
+    && String(w.at) > String(r.at) && String(w.id ?? '').toUpperCase() === String(r.id ?? '').toUpperCase()));
+  const gate = { refused: refused.length, facts: facts.length, landed: landed.length, abandoned: facts.length - landed.length };
+  const share = (r) => (r.asks ? r.unclosed / r.asks : null);
+  return {
+    ...total,
+    gate,
+    unclosedShare: share(total),
+    rows: [...by.values()].map((r) => ({ ...r, unclosedShare: share(r) }))
+      .sort((a, b) => b.unclosed - a.unclosed || b.asks - a.asks || String(a.agent ?? '').localeCompare(String(b.agent ?? ''))),
+  };
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -1153,21 +1330,25 @@ export function windowStart(meta = {}) {
  * base certified nothing and nobody relied on anything.
  */
 export function resolveVerdicts(lines) {
-  const key = (l, at) => `${l._session}\0${String(at)}`;
-  const none = new Set();
-  const shown = new Map();
+  // ONE RULE with the reminder (`core/loop.mjs`): `pointersByAsk` decides which show / none speaks to
+  // which ask (a handle-less show included), and `lastWord` decides what the ask ENDED as -- the
+  // agent's last word, so a pick it then withdrew with `kb_none` is a miss and a none it then
+  // overrode with a pick is an answer. Before, "any none wins" here and "last word wins" in the hook
+  // classified one ask two ways (PR #400 review).
+  const bySession = new Map();
   for (const l of lines) {
-    if (!l.after) continue;
-    if (l.kind === 'none') none.add(key(l, l.after));
-    else if (l.kind === 'show' && l.id && l.state === 'answer') shown.set(key(l, l.after), String(l.id));
+    if (l.kind !== 'ask' && l.kind !== 'show' && l.kind !== 'none') continue;
+    const s = l._session ?? '';
+    if (!bySession.has(s)) bySession.set(s, []);
+    bySession.get(s).push(l);
   }
+  const pointers = new Map([...bySession].map(([s, ls]) => [s, pointersByAsk(ls)]));
   return lines.map((l) => {
     if (l.kind !== 'ask' || l.state !== 'ambiguous') return l;
-    const k = key(l, l.at);
-    const relied = !none.has(k) ? shown.get(k) : null;
-    return relied
-      ? { ...l, state: 'answer', matched: [relied], closedBy: 'show' }
-      : { ...l, state: 'miss', matched: [], closedBy: none.has(k) ? 'none' : 'unclosed' };
+    const word = lastWord(pointers.get(l._session ?? '')?.get(String(l.at)));
+    return word.verdict === 'picked' && word.ids.length
+      ? { ...l, state: 'answer', matched: word.ids, closedBy: 'show' }
+      : { ...l, state: 'miss', matched: [], closedBy: word.verdict === 'none' ? 'none' : 'unclosed' };
   });
 }
 
@@ -1206,6 +1387,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     reach: reach(real, { since: windowStart(meta) }),
     topics: topics(real),
     doors: doors(real),
+    lists: lists(real),
   };
   return {
     meta: {

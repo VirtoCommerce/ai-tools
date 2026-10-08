@@ -11,6 +11,7 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
+import { CONTRACT, DEPLOYMENT_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
 import { idList } from './index-load.mjs';
 
@@ -131,9 +132,12 @@ export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open
  * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
  * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
  *
+ * `says: false` drops the body excerpt from the `ambiguous` list -- a bench-only switch for VCST-6191,
+ * which measures whether the agent chooses as well from subject + question alone.
+ *
  * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */
-export function verdictLines(v, { prefix = 'kb ask' } = {}) {
+export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
   if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
   if (v.verdict === 'ambiguous') {
     return [
@@ -141,7 +145,7 @@ export function verdictLines(v, { prefix = 'kb ask' } = {}) {
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.question ? [`      answers: ${h.question}`] : []),
-        ...(h.body ? [`      says: ${excerpt(h.body)}`] : []),
+        ...(says && h.body ? [`      says: ${excerpt(h.body)}`] : []),
       ]),
     ];
   }
@@ -184,10 +188,35 @@ export function captureLines(r, opts = {}) {
   return lines;
 }
 
-function captureBody(r, { prefix = 'kb capture' } = {}) {
-  if (r.state === 'invalid') {
-    return [`${prefix}: ${r.why}`, ...(r.problems ?? []).map((p) => `  ${p.coordinate} — ${p.kind}: ${p.why}`)];
+/**
+ * The write contract in six lines, printed under a CLI refusal: the CLI door has no input schema, so
+ * this is the only place a shell caller sees the contract before it retries (VCST-6156). The MCP door
+ * gets the same facts from its tool schema and is not handed the card.
+ */
+export const CONTRACT_CARD = [
+  `  the capture contract (in full: ${CONTRACT}):`,
+  '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
+  '               never a button label, field name or menu path -- those go in --claim',
+  `    --deployment  ${DEPLOYMENT_SOURCE}`,
+  `    --scope    ${SCOPE_SOURCE}`,
+  '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
+];
+
+function invalidCaptureLines(r, { prefix, card }) {
+  const lines = [`${prefix}: ${r.why}`];
+  for (const p of r.problems ?? []) {
+    lines.push(`  ${p.coordinate} — ${p.kind}: ${p.why}`);
+    if (p.fix) lines.push(`    fix: ${p.fix}`);
   }
+  for (const [field, source] of Object.entries(r.missing ?? {})) lines.push(`  ${field}: ${source}`);
+  if (r.suggest?.length) lines.push(`  your own text names: ${r.suggest.join(', ')} -- anchor there if the behaviour lives there`);
+  if (card) lines.push('', ...CONTRACT_CARD);
+  else if (r.contract) lines.push(`  contract: ${r.contract}`);
+  return lines;
+}
+
+function captureBody(r, { prefix = 'kb capture', card = false } = {}) {
+  if (r.state === 'invalid') return invalidCaptureLines(r, { prefix, card });
   if (r.state === 'refused') {
     // A refusal is not a failure -- it is the design working. The ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation.
@@ -196,6 +225,17 @@ function captureBody(r, { prefix = 'kb capture' } = {}) {
       ? 'REFUSED — an entry already has this subject, so this capture would take its id.'
       : 'REFUSED — the base already holds this fact.';
     return [`${prefix}: ${head}`, '', `  ${r.message.split('\n').join('\n  ')}`];
+  }
+  if (r.state === 'dry-run') {
+    // What a real capture would print, minus the queue: the id it would take and the three hints --
+    // they are the reason to dry-run a payload at all (PR #400 review).
+    return [
+      `${prefix}: dry run -- would queue ${r.id} — ${r.entry?.subject ?? ''}`,
+      `  ${r.why}`,
+      ...readLines(r.read),
+      ...neighbourLines(r.alsoHere),
+      ...relatedLines(r.related),
+    ];
   }
   if (r.state !== 'queued') {
     const lines = [`${prefix}: ${HEADLINE[r.state] ?? r.state}`];

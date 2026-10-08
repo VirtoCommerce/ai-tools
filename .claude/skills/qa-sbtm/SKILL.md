@@ -58,7 +58,7 @@ Provides the structured methodology framework for exploratory testing sessions. 
    - Assess coverage: what percentage of the charter was covered
    - Identify follow-up actions: bugs to file, questions to answer, risks to escalate
    - Update the coverage tracking matrix (area x session)
-   - **Bank every Observation that is platform behaviour**: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture` (`--deployment <env>`, nothing client-specific) — an exploratory session is where the base gets most of its new entries ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5)
+   - **Bank every Observation that is platform behaviour**: matched ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, unrecorded ⇒ `kb_capture` (anchor = the route or request, never a label; contract: `.claude/knowledge/execution/kb-capture-contract.md`; nothing client-specific) — an exploratory session is where the base gets most of its new entries ([`authoring-standard.md`](../../knowledge/agents/authoring-standard.md) §5)
 
 5. **Learning loops — Continuous improvement:**
    - Bug found → update risk register (see `/qa-risk`)
