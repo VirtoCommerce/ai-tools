@@ -477,7 +477,18 @@ export function evidence(lines, idx) {
     || b.disputes - a.disputes
     || b.confirms - a.confirms
     || a.id.localeCompare(b.id));
+  // THE DISPUTE QUEUE (VCST-6179), from the index as it stands -- not from the window: a dispute
+  // filed last month and still open is exactly what the queue is for. Active rows only.
+  const live = [...idx.byId.values()].filter((r) => String(r.status ?? 'active') === 'active');
+  const queue = {
+    openEntries: live.filter((r) => r.disputed > 0).length,
+    openDisputes: live.reduce((n, r) => n + (Number(r.disputed) || 0), 0),
+    resolvedEntries: live.filter((r) => r.resolved > 0).length,
+    resolvedDisputes: live.reduce((n, r) => n + (Number(r.resolved) || 0), 0),
+    active: live.length,
+  };
   return {
+    queue,
     rows: all,
     contested: all.filter((r) => r.disputes > 0 && r.confirms > 0),
     confirms: all.reduce((n, r) => n + r.confirms, 0),

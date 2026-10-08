@@ -39,12 +39,12 @@ test('trust counts the supporting evidence and disputed counts the contradicting
 test('a contradicting item is NOT counted as a confirmation', () => {
   // The direction matters: over-counting trust makes a disputed entry look attested, which is the
   // one way a trust label can mislead an agent into asserting something the base doubts.
-  assert.deepEqual(countEvidence([{ contradicts: true }]), { trust: 0, disputed: 1 });
+  assert.deepEqual(countEvidence([{ contradicts: true }]), { trust: 0, disputed: 1, resolved: 0 });
 });
 
 test('no evidence is zero and not a crash', () => {
-  assert.deepEqual(countEvidence(), { trust: 0, disputed: 0 });
-  assert.deepEqual(countEvidence(null), { trust: 0, disputed: 0 });
+  assert.deepEqual(countEvidence(), { trust: 0, disputed: 0, resolved: 0 });
+  assert.deepEqual(countEvidence(null), { trust: 0, disputed: 0, resolved: 0 });
 });
 
 // ─── the row ──────────────────────────────────────────────────────────────────────────────────

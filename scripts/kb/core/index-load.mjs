@@ -34,7 +34,8 @@ const REQUIRED_ROW_FIELDS = ['id', 'path', 'subject'];
  * @property {string[]} questions    the retrieval card's questions (schema 2); empty on a schema-1 row
  * @property {string[]} concepts     vocabulary concept ids (schema 2); empty on a schema-1 row
  * @property {number} trust          confirmations, computed at write time from evidence[]
- * @property {number} disputed
+ * @property {number} disputed       OPEN disputes; a judge-resolved one is counted in `resolved`
+ * @property {number} resolved       disputes a judge resolved (VCST-6179); 0 when the row has no key
  * @property {string} index          which declared index this row came from
  */
 
@@ -116,6 +117,7 @@ export function normalizeRow(raw, { index = 'index.json' } = {}) {
     concepts: idList(raw.concepts),
     trust: Number.isFinite(raw.trust) ? raw.trust : 0,
     disputed: Number.isFinite(raw.disputed) ? raw.disputed : 0,
+    resolved: Number.isFinite(raw.resolved) ? raw.resolved : 0,
     index,
   };
 }

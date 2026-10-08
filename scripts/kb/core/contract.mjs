@@ -15,4 +15,10 @@ export const DEPLOYMENT_SOURCE = 'the stand you observed it on, spelled as the b
   + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); with no such line yet, the first label of the BACK_URL '
   + 'host with `-` as `_` (vcst-qa.govirto.com -> vcst_qa); never the bare TEST_ENV value (`vcst` is not `vcst_qa`)';
 
-export const SCOPE_SOURCE = `at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;
+/** What `conditions` holds (VCST-6179) -- said by every write that takes one. */
+export const CONDITIONS_SOURCE = 'Optional, and expected on a dispute: what the stand was running and how it was set up, as '
+  + '`key=value; key=value` -- the build (platform=3.1007.27, theme=2.59.0-pr-2476, module:VirtoCommerce.XCart=3.1037.0-pr-141) '
+  + 'and any setting, store, role or feature flag the behaviour may depend on (setting:Loyalty.LoyaltyBalanceCalculationMode=Organization, '
+  + 'role=Organization maintainer). Only what you actually read; never a credential';
+
+export const SCOPE_SOURCE =`at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;

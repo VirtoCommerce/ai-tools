@@ -70,11 +70,13 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
+                        [--conditions "platform=<v>; setting:<Name>=<v>"]
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
-  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--topic "<...>"]
+  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" --conditions "<k=v; k=v>" [--topic "<...>"]
+                        conditions: the build and settings the behaviour may depend on (contract: ${CONTRACT})
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
@@ -260,7 +262,7 @@ async function main(argv) {
   if (verb === 'capture') {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
-      deployment: args.flags.deployment, method: args.flags.method,
+      deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
     }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
     if (json) out(JSON.stringify(r, null, 2));
@@ -277,6 +279,7 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
+      conditions: args.flags.conditions,
     }, opened, { via: VIA, topic: args.flags.topic });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
