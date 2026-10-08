@@ -58,7 +58,7 @@ it never says OK/WARN/BLOCK; consumers decide.
 | `config.missing[]` | the layered `.env` loader (`config.js`) | distinguishes "probe failed" from "`BACK_URL` unset" |
 | `health` | `platformHealthy()` — `scripts/deploy/lib/live.ts` | `UP` / `DOWN` |
 | `declared` | `fetchFile()` — `scripts/deploy/lib/github.ts`, `vc-deploy-dev` branch per `TEST_ENV` | unavailable ⇒ `UNKNOWN` |
-| `deployed` | `getAdminToken()` + `liveModules()` — `live.ts` | failed probe ⇒ `UNKNOWN`, **never** a fallback to `declared` |
+| `deployed` | `probeAdminToken()` + `probeLiveModules()` — `live.ts` (status-carrying variants of `getAdminToken`/`liveModules`) | failed probe ⇒ `UNKNOWN` with the HTTP status, **never** a fallback to `declared`. **`deployed.platform` is always `UNKNOWN: no-live-source`** — the modules API has no Platform entry and `/api/platform/version` is 404 (`scripts/hotfix/hotfix-deliver.ts`) |
 | `storefrontVisible` | the `InitializeApplication` replay in `scripts/maintenance/probe-store-capabilities.mjs` (extract to a reusable function) | anonymous; "installed but the storefront cannot see it" |
 | `drift[]` | `declared` vs `deployed` per module | deploy in flight / failed / partial |
 | `ledger` | `.claude/knowledge/domain/release-ledger.md` §1 table, §2 rows, frontmatter `stale_after_days`; `cmpSemver()` from `refresh-release-ledger.mjs` | `releasedNotDeployed[]`, `breaking[]` (for `components`), `stale` |
@@ -77,9 +77,10 @@ Not in the core: tickets, sprints, duplicates, suites, kb, docs, MCP.
 **Consumers:** `/qa-test` (1b items 1, 2, 2-release, 3, 4), `/qa-test-fast` (Step 0),
 `/qa-exploratory`, `/qa-test-lifecycle`, `/qa-domain-map`, `/ba-analyze`.
 
-**CLI** — `npm run preflight -- --for <ticket|exploratory|lifecycle|domain-map|ba> [--ticket KEY]
-[--components A,B] [--domain slug] [--expect module@version] [--json]`. Exit `0` OK/WARN only,
-`2` any BLOCK, `3` the script could not run. Adds to the core:
+**CLI** — `npm run preflight -- --for <ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY]
+[--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--json]`. Exit `0`
+OK/WARN only, `1` usage error, `2` any BLOCK, `3` the script could not run. `ticket-fast` shares
+`ticket`'s policy and differs only in its MCP requirements (§7). Adds to the core:
 
 - `sprint` — `reports/tickets/Sprint-current` else the latest `SprintXX-XX` (`--for ticket` only);
 - `duplicate` — the prior run, its verdict **and its build**, so each consumer can apply its own
@@ -205,7 +206,7 @@ Preflight · vcst · VCST-1234 · Platform 3.1057.0 · Theme 2.55.0 · READY (14
 
 ```
 Preflight · vcst · ticket VCST-1234 · 2026-10-08 14:02
-Build: Platform 3.1057.0 (deployed) · Theme 2.55.0 · drift: none · ledger: fresh
+Build: Platform 3.1057.0 (declared) · Theme 2.55.0 · drift: none · ledger: fresh
 
 NOT READY — 1 blocker · 2 warnings · 11 checks OK
 
@@ -313,7 +314,7 @@ action}}`. The agreed starting set (normative once it is in code):
 | `commands/qa-test-lifecycle.md` | Pre-Flight 1–3 → skill; 4 (`schema:refresh`) stays |
 | `commands/qa-domain-map.md` | Step 1 versions, docs, kb → skill; prior art, suites, schema stay |
 | `commands/ba-analyze.md` | Step 0 items 1 (VirtoOZ) and 3 (MCP availability) → skill; fix the two items both numbered "3." |
-| `templates/agent-dispatch.md` | §Pre-Flight Checklist, §Build Verification, §Duplicate Detection Guard, §Context7 Pre-Flight → one pointer to the skill (removes the "Context7 first" that contradicts `CLAUDE.md`) |
+| `templates/agent-dispatch.md` | §Pre-Flight Checklist and §Context7 Pre-Flight → a pointer to the skill (removes the "Context7 first" that contradicts `CLAUDE.md`); §Duplicate Detection Guard loses the rows the skill now owns. **§Build Verification keeps its doctrine** (precedence of the four sources, the disagreement table — eleven files cite it); only its two procedural subsections become a pointer |
 | `/vc-fix:qa-env-check endpoints` calls in `.claude/` commands | replaced by core `health`; the full `qa-env-check` stays for onboarding |
 
 ### Phase 2 — build-scoped (PR 2)
@@ -341,12 +342,19 @@ axes 2b–2g · per-case `test-execution-preflight.md`.
 - Live on `vcst`: `npm run preflight -- --for ticket --ticket <recent key>`; phase 2 adds
   `npm run regression:plan -- smoke --preflight`.
 
-## 12. Open items for the implementation plan
+## 12. Decisions taken in the phase-1 plan
 
-- Which existing mapping owns module-id ↔ repo ↔ `requiresModules` slug (§4) — pick one, do not add one.
-- Whether `probe-store-capabilities.mjs` keeps its CLI as a thin wrapper over the extracted function.
-- `mcp-requirements.json` schema: a JSON Schema beside it, validated by `context:check` or a small
-  gate — decide in the plan (it is data, so no unit test either way).
+Plan: `docs/superpowers/plans/2026-10-08-preflight-phase-1.md`.
+
+- **Module id ↔ repo:** the `projectUrl` that `/api/platform/modules` already returns, via
+  `repoFromProjectUrl()`; `moduleIdToRepoGuess()` only when it is absent, flagged `repoGuessed`.
+  Both are imported from `plugins/vc-fix/skills/qa-fix-routing/module-registry.ts` — no new table.
+  The `requiresModules` slug mapping is phase 2's (`resolveSuiteSource()` already owns it).
+- **`probe-store-capabilities.mjs`** stays a CLI, as a thin wrapper over `scripts/lib/storefront-caps.mjs`.
+- **`mcp-requirements.json`** is validated by its loader, failing loud on a malformed file. No schema
+  file and no new gate.
+- **CORE required vars** move out of `config.js` into `scripts/lib/env-core.js`, which both read —
+  the core cannot import `config.js`, which prints and exits on a missing variable.
 
 ## 13. Dependency — `/ticket-context` (VCST-6223, design in ai-tools PR #413)
 
