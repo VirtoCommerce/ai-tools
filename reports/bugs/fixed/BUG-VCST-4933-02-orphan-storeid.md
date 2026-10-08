@@ -1,5 +1,7 @@
 # Shared Component create accepts a non-existent storeId, producing an unreachable orphan
 
+## Status: FIXED · **Tracker:** VCST-6010
+
 - **Severity:** Medium
 - **Provenance:** IN-SCOPE (VCST-4933, Page Builder — Shared Components)
 - **Environment:** vcptcore-qa · `VirtoCommerce.PageBuilderModule 3.1025.0-pr-159-7361` (PR #159) · store `B2B-store`
@@ -65,3 +67,9 @@ not assumed.
 
 Reproduction script `track4.mjs` from the run's scratchpad; the created orphan was torn down at the end
 of the run. Run record: `reports/tickets/Sprint26-19/VCST-4933/findings.md` §C F2.
+
+## Resolution
+- **Fixed in:** vc-module-pagebuilder PR #170 (unmerged), head `236e647`. Build `VirtoCommerce.PageBuilderModule 3.1033.0-pr-170-236e`. Create now checks the store via `IStoreService` after the store-scope 403 and before saving; an unknown store returns 400 `Store '<id>' does not exist.`
+- **Tracker:** VCST-6010 (Testing → Tested 2026-10-08, comment 111667)
+- **Verified:** 2026-10-08, `/qa-verify-fix` (via `/qa-test VCST-6010`) on vcst-qa, Platform 3.1076.0. STR 3/3, 8/8 judged checks pass, verdict VERIFIED WITH NOTES. Evidence: `reports/tickets/Sprint26-20/VCST-6010/evidence.html`
+- **Notes:** a case-variant store id (`b2b-store`) is accepted and stored as sent but stays reachable from `B2B-store`; orphans created before the fix are not cleaned up.
