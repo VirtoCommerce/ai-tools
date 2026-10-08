@@ -16,6 +16,7 @@
 // than being folded into misses, and the reason a cache-rendered report carries a banner.
 
 import { lastWord, pointersByAsk } from './loop.mjs';
+import { queuedWrite } from './queue.mjs';
 import { canonicalStand } from './canonical.mjs';
 import { MIN_COVERAGE, MIN_WORDS } from './rank.mjs';
 import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach.mjs';
@@ -23,6 +24,7 @@ import { isLegacyProcessKey, lineTouches, lineWork, sessionKeyOf } from './reach
 /** Log kinds this analysis knows about. Anything else is counted and otherwise ignored. */
 export const KNOWN_KINDS = Object.freeze([
   'ask', 'show', 'capture', 'capture-refused', 'capture-invalid', 'confirm', 'dispute', 'flush', 'reindex', 'redacted',
+  'confirm-invalid', 'dispute-invalid',
 ]);
 
 // ── the numbers §15 is judged by, DECLARED HERE AND NOT PASSED IN ──────────────────────────────
@@ -1212,6 +1214,73 @@ export function doors(lines) {
     .sort((a, b) => a.via.localeCompare(b.via));
 }
 
+/**
+ * HOW EACH AGENT CLOSED ITS `ambiguous` LISTS (VCST-6191): opened one (`show`), said none fitted
+ * (`none`), or left it -- `unclosed`. Read from `resolveVerdicts`' `closedBy`, the one rule the
+ * reminder shares, so this panel and the miss queue never disagree about an ask. `wroteAfter` counts
+ * the unclosed lists the session later wrote ABOUT: a confirm or dispute of an entry the list showed,
+ * or a capture whose `after` names the ask -- written about without closing the list (before the confirm
+ * gate, from the list's excerpt alone; since it, the entry was opened but the choice was never made). "Any later write" was measured first and is no signal: on
+ * 2026-10-06 it held for 17 of 17 unclosed lists, because sessions are long. One agent left 9 of the
+ * 17 there, which no session-level number shows. (The ticket counted 20 unclosed by its own reading;
+ * this panel and the reminder read an ask one way, `pointersByAsk` + `lastWord`.)
+ */
+export function lists(lines) {
+  const asks = lines.filter((l) => l.kind === 'ask' && l.verdict === 'ambiguous' && l.closedBy);
+  // Writes per (session, agent): a subagent's unclosed list is not credited with a write its
+  // orchestrator or a sibling made under the same session key. Only a write that QUEUED counts --
+  // `queuedWrite`, the one rule the journal (`loopRecord`) applies too.
+  const who = (l) => `${l._session ?? ''}\0${typeof l.agent === 'string' ? l.agent : ''}`;
+  const writes = new Map();
+  for (const l of lines) {
+    if (!queuedWrite(l)) continue;
+    if (!writes.has(who(l))) writes.set(who(l), []);
+    writes.get(who(l)).push(l);
+  }
+  const wroteAbout = (a) => {
+    const shown = new Set((a.shown ?? []).map((id) => String(id).toUpperCase()));
+    return (writes.get(who(a)) ?? []).some((w) => String(w.at) > String(a.at)
+      && (w.kind === 'capture' ? String(w.after ?? '') === String(a.at) : shown.has(String(w.id ?? '').toUpperCase())));
+  };
+  const by = new Map();
+  const total = { asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+  for (const a of asks) {
+    const agent = typeof a.agent === 'string' && a.agent ? a.agent : null;
+    const key = agent ?? '';
+    const row = by.get(key) ?? { agent, asks: 0, show: 0, none: 0, unclosed: 0, wroteAfter: 0 };
+    const wrote = a.closedBy === 'unclosed' && wroteAbout(a);
+    for (const r of [row, total]) {
+      r.asks += 1;
+      r[a.closedBy] += 1;
+      if (wrote) r.wroteAfter += 1;
+    }
+    by.set(key, row);
+  }
+  // THE CONFIRM GATE (VCST-6191): evidence refused because the session never opened the entry, and
+  // what followed -- the same session confirmed or disputed that id later (it opened it, as told), or
+  // it never did (the fact was dropped). doorStats' pairing, applied to the evidence door: `refused`
+  // counts attempts, `landed` / `abandoned` count FACTS -- one per (session, entry) -- so an agent that
+  // retried three times and gave up is one abandoned confirmation, not three.
+  const refused = lines.filter((l) => l.kind === 'confirm-invalid' || l.kind === 'dispute-invalid');
+  const firstRefusal = new Map();
+  for (const r of refused) {
+    const key = `${r._session ?? ''}\0${String(r.id ?? '').toUpperCase()}`;
+    if (!firstRefusal.has(key) || String(r.at) < String(firstRefusal.get(key).at)) firstRefusal.set(key, r);
+  }
+  const facts = [...firstRefusal.values()];
+  const landed = facts.filter((r) => (writes.get(who(r)) ?? []).some((w) => w.kind !== 'capture'
+    && String(w.at) > String(r.at) && String(w.id ?? '').toUpperCase() === String(r.id ?? '').toUpperCase()));
+  const gate = { refused: refused.length, facts: facts.length, landed: landed.length, abandoned: facts.length - landed.length };
+  const share = (r) => (r.asks ? r.unclosed / r.asks : null);
+  return {
+    ...total,
+    gate,
+    unclosedShare: share(total),
+    rows: [...by.values()].map((r) => ({ ...r, unclosedShare: share(r) }))
+      .sort((a, b) => b.unclosed - a.unclosed || b.asks - a.asks || String(a.agent ?? '').localeCompare(String(b.agent ?? ''))),
+  };
+}
+
 /** Asks per day — the header's one-line shape of activity. */
 export function activity(lines) {
   const byDay = new Map();
@@ -1318,6 +1387,7 @@ export function analyse({ lines = [], rows = [], meta = {} } = {}) {
     reach: reach(real, { since: windowStart(meta) }),
     topics: topics(real),
     doors: doors(real),
+    lists: lists(real),
   };
   return {
     meta: {

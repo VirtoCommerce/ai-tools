@@ -132,9 +132,12 @@ export const AMBIGUOUS_CONTRACT = 'close entries, none certified to answer. Open
  * body, the concept that tells it apart -- for the agent to open one of; `none` names the question's own
  * concepts that nothing in the base is filed under, so "nothing recorded" reads as a coverage gap.
  *
+ * `says: false` drops the body excerpt from the `ambiguous` list -- a bench-only switch for VCST-6191,
+ * which measures whether the agent chooses as well from subject + question alone.
+ *
  * @param {{verdict:string, hit?:object, headlines?:Array<{id,subject,separating,question,body}>, concepts?:string[]}} v
  */
-export function verdictLines(v, { prefix = 'kb ask' } = {}) {
+export function verdictLines(v, { prefix = 'kb ask', says = true } = {}) {
   if (v.verdict === 'answer') return [`${prefix}: ${HEADLINE.answer}`, ...hitLines(v.hit)];
   if (v.verdict === 'ambiguous') {
     return [
@@ -142,7 +145,7 @@ export function verdictLines(v, { prefix = 'kb ask' } = {}) {
       ...v.headlines.flatMap((h) => [
         `  ${h.id}  ${h.subject}${h.separating ? `  [${h.separating}]` : ''}`,
         ...(h.question ? [`      answers: ${h.question}`] : []),
-        ...(h.body ? [`      says: ${excerpt(h.body)}`] : []),
+        ...(says && h.body ? [`      says: ${excerpt(h.body)}`] : []),
       ]),
     ];
   }

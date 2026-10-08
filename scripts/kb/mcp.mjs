@@ -147,12 +147,14 @@ export const TOOLS = Object.freeze([
     name: 'kb_show',
     description: 'Read one knowledge-base entry in full by its id (KB-XXXXXXXX), including its evidence trail and status. '
       + 'Use after kb_ask when a hit is worth reading whole, or when a report, ticket or test case cites an id. '
-      + 'Opening one of the headlines kb_ask listed is your pick: pass its ask handle so the pick is recorded against that question.',
+      + 'Opening one of the headlines kb_ask listed is your pick: pass its ask handle so the pick is recorded against that question. '
+      + 'Opening an entry only to read it before kb_confirm / kb_dispute: pass verify, so it is not recorded as a pick.',
     inputSchema: {
       type: 'object',
       properties: {
         id: str('The entry id, e.g. KB-27B4CD10.'),
         ask: str('The ask handle kb_ask printed ("ask handle: …"), when you are opening one of its headlines.'),
+        verify: { type: 'boolean', description: 'true when you open the entry only to read it before confirming or disputing it -- not a pick from any list.' },
         topic: TOPIC,
       },
       required: ['id'],
@@ -176,7 +178,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_capture',
     description: 'Record a NEW observation about platform behaviour that you verified yourself on a live deployment, '
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
-      + 'Refused if an entry already states the same subject at the same anchors and scope — confirm that one instead; '
+      + 'Refused if an entry already states the same subject at the same anchors and scope — open it (kb_show) and confirm that one instead; '
       + 'a different fact at the same coordinates is recorded as its own entry. '
       + 'Names back the entries YOU OPENED earlier in this session and asks whether what you just wrote '
       + 'disagrees with any of them — if it does, kb_dispute that entry rather than leaving the base '
@@ -202,6 +204,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_confirm',
     description: 'Record that you saw an existing entry hold true on a deployment — its confirmation count is what a later '
       + 'reader weighs the claim by. Use when kb_ask returned an entry and you then observed the same thing yourself. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
@@ -218,6 +221,7 @@ export const TOOLS = Object.freeze([
     name: 'kb_dispute',
     description: 'Record that an existing entry did NOT hold — what you observed instead, and where. Never deletes or retires '
       + 'anything: one contradiction against four confirmations is a flag for a human, not a deletion. '
+      + 'Open the entry with kb_show first: one this session only saw in a list is refused. '
       + PUBLISHED,
     inputSchema: {
       type: 'object',
@@ -345,7 +349,7 @@ async function callTool(name, args, ctx) {
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true || args?.verify === 'true' });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_none': {
