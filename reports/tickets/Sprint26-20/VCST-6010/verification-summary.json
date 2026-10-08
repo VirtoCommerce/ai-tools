@@ -1,0 +1,61 @@
+{
+  "ticket": "VCST-6010",
+  "flow": "verify-fix",
+  "ticket_type": "Bug",
+  "path": null,
+  "invoked_as": "/qa-test VCST-6010 -> 1a route Bug x Ready for test (fix-ready) -> /vc-fix:qa-verify-fix inline",
+  "verdict": "VERIFIED_WITH_NOTES",
+  "date": "2026-10-08",
+  "environment": "vcst-qa (TEST_ENV=vcst)",
+  "build": {
+    "platform": "3.1076.0",
+    "theme": "n/a (backend-only fix)",
+    "relevant_modules": {
+      "VirtoCommerce.PageBuilderModule": "3.1033.0-pr-170-236e",
+      "VirtoCommerce.Store": "3.1009.0"
+    },
+    "pr_build": "3.1033.0-pr-170-236e",
+    "deployed_check": "GET /api/platform/modules 2026-10-08T07:40:20Z -> exact match, validationErrors 0",
+    "declared_check": "vc-deploy-dev@vcst-qa backend/packages.json -> VirtoCommerce.PageBuilderModule_3.1033.0-pr-170-236e.zip (deploy PR #6858 merged 2026-10-08T07:30:59Z)"
+  },
+  "fix_pr": { "repo": "VirtoCommerce/vc-module-pagebuilder", "number": 170, "head": "236e647d0f9afaa4302e319fa586496168adf825", "state": "OPEN" },
+  "agent_used": "qa-backend-expert",
+  "str_result": "3/3",
+  "baseline_reproduction": "from-qa-bug: reporter capture, vcptcore-qa, PageBuilderModule 3.1025.0-pr-159-7361, 2026-09-17 (Jira attachment 84363) -> baseline/RED-reporter-vcptcore-qa-2026-09-17.json",
+  "checklist_total": 9,
+  "checklist_passed": 8,
+  "checklist_failed": 0,
+  "checklist_observed": 1,
+  "checklist": [
+    { "id": 1, "check": "STR x3: create with NO-SUCH-STORE-XYZ -> 400 \"Store 'NO-SUCH-STORE-XYZ' does not exist.\"", "result": "PASS" },
+    { "id": 2, "check": "Nothing persisted: fake-store search 0; B2B-store 7 -> 7", "result": "PASS" },
+    { "id": 3, "check": "Store id variants: padded 400, GUID 400, lowercase 'b2b-store' 201 (stored as sent, reachable)", "result": "OBSERVED" },
+    { "id": 4, "check": "Admin create in B2B-store 201, GET 200, search, DELETE 204", "result": "PASS" },
+    { "id": 5, "check": "Empty storeId -> 400 required-field message", "result": "PASS" },
+    { "id": 6, "check": "PUT moving storeId -> 400 cannot be moved", "result": "PASS" },
+    { "id": 7, "check": "Out-of-scope user -> 403 before store lookup (no existence leak)", "result": "PASS" },
+    { "id": 8, "check": "SC_PERM_ALL 201 in own store; SC_PERM_NOCREATE 403", "result": "PASS" },
+    { "id": 9, "check": "Admin Shared Components grid B2B-store 1-7 of 7 == API", "result": "PASS" }
+  ],
+  "regression_issues": [],
+  "side_effects": [
+    "Minor/not a defect: case-variant storeId 'b2b-store' accepted (201) and stored non-canonically; reachable from B2B-store via lookup/search/authZ (all case-insensitive)."
+  ],
+  "known_scope_limits": ["Orphans created before the fix are not cleaned up (stated in the PR)."],
+  "bugs_filed": [],
+  "bugs_not_filed": [],
+  "business_rules_verified": [],
+  "business_rules_note": "No BL-* domain file exists for Page Builder; oracle = ticket Expected + PR source + live (NEW behaviour, VirtoOZ has no Shared Components page).",
+  "kb": { "captured": ["KB-54E50A50", "KB-3F58D8D5"], "asks_resolved_none": 1 },
+  "status_transitions": [
+    { "at": "step-3", "from": "Ready for test", "to": "Testing", "transition": "On QA", "confirmed_by_operator": true },
+    { "at": "step-6", "from": "Testing", "to": "Tested", "transition": "Finish test", "confirmed_by_operator": true, "note": "stopped at Tested: PR #170 unmerged; /qa-test terminal state is TESTED" }
+  ],
+  "tracker_transition": { "role": "tested", "state": "Tested" },
+  "tracker": { "comment_id": "111667", "round_artifact": "PageBuilderModule 3.1033.0-pr-170-236e", "previous_round_comment_id": "111492" },
+  "teardown": { "created": 4, "deleted": 4, "ids": ["e0eaf752b40f4c0b8f4cce57139aa4e3", "bbea768e91c8497aa17a4e5168492191", "17920ac0a39e4ff0b75752722ec43d50", "f2d9753f37bb4ffda9f2ea0117effde2"] },
+  "timing": { "test_window_start": "2026-10-08T07:50Z", "agent_duration_minutes": 3.7 },
+  "evidence": "reports/tickets/Sprint26-20/VCST-6010/evidence.html",
+  "evidence_artifact": null,
+  "artifacts": "reports/tickets/Sprint26-20/VCST-6010/"
+}

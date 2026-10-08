@@ -1,10 +1,10 @@
 {
  "key": "VCST-6009",
  "pass": 1,
- "lastRun": "2026-10-06T12:58Z",
+ "lastRun": "2026-10-07T13:30Z",
  "claimedAt": "2026-10-06T12:58Z",
  "runningBuild": {
-  "PageBuilderModule": "3.1029.0 (GithubReleases)",
+  "PageBuilderModule": "3.1032.0 (GithubReleases)",
   "Platform": "3.1076.0"
  },
  "prUnderTest": {
@@ -14,7 +14,7 @@
   "state": "open"
  },
  "deployPr": null,
- "deployBlockedReason": "PageBuilder 3.1033.0 requires newer deps than vcst-qa: {\"Store\": \"3.1009.0 vs 3.1007.0\", \"Content\": \"3.1006.0 vs 3.1004.0\", \"Customer\": \"3.1028.0 vs 3.1026.0\", \"Search\": \"3.1010.0 vs 3.1008.0\", \"Assets\": \"3.1010.0 vs 3.1009.0\", \"Core\": \"3.1012.0 vs 3.1011.0\"}; same-module pin conflict with VCST-6010 PR #170",
+ "deployBlockedReason": "needs a pin decision: deps now OK, but VCST-6010 deploy PR vc-deploy-dev#6858 pins PageBuilder pr-170; pr-167 would replace it. Also 1-new-deploy-PR-per-run cap.",
  "baseline": "NOT CAPTURED - repro needs two content saves (writes); read-only ETag check BLOCKED (admin signed out); cites reporter comment 109847",
  "jiraCommentId": "111493",
  "jiraCommentAuthor": "Elena Mutykova",
@@ -22,6 +22,9 @@
   "Step 0.2 /qa-env-check skill - direct endpoint probes in built-in browser instead (VM has no route to vcst-qa)",
   "Step 2A Phase A live repro - write-only repro; cited ticket's own reproduction",
   "Step 3-7 - deploy gate NOT DEPLOYED (Pass 1)",
-  "Live module-version fetch - BLOCKED: built-in browser signed out of vcst-qa.govirto.com"
- ]
+  "Live module-version fetch - BLOCKED: built-in browser signed out of vcst-qa.govirto.com",
+  "2026-10-07 live module fetch - BLOCKED: built-in browser signed out of vcst-qa.govirto.com (401)",
+  "2026-10-07 Jira comment edit - Jira connector timed out"
+ ],
+ "dependencyCheck": "2026-10-07: all module.manifest deps satisfied on vcst-qa"
 }

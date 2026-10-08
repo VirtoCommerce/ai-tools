@@ -1,0 +1,1291 @@
+{
+  "meta": {
+    "ticket": "VCST-6010",
+    "env": "vcst",
+    "backHost": "vcst-qa.govirto.com",
+    "build": "VirtoCommerce.PageBuilderModule 3.1033.0-pr-170-236e / Platform 3.1076.0",
+    "runTag": "muz8dtkm"
+  },
+  "summary": {
+    "i2_before": 7,
+    "i1": [
+      {
+        "create": 400,
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist.",
+        "searchStatus": 200,
+        "total": 0
+      },
+      {
+        "create": 400,
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist.",
+        "searchStatus": 200,
+        "total": 0
+      },
+      {
+        "create": 400,
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist.",
+        "searchStatus": 200,
+        "total": 0
+      }
+    ],
+    "i2_after": 7,
+    "i2_fake": 0,
+    "i3": {
+      "PADDED": {
+        "storeIdSent": " B2B-store ",
+        "status": 400,
+        "body": "Store ' B2B-store ' does not exist."
+      },
+      "CASE": {
+        "storeIdSent": "b2b-store",
+        "status": 201,
+        "body": {
+          "storeId": "b2b-store",
+          "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:41.3151282Z",
+          "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+        },
+        "persistedStoreId": "b2b-store",
+        "get": {
+          "status": 200,
+          "storeId": "b2b-store"
+        },
+        "inB2BSearch": true,
+        "inOwnStoreIdSearch": {
+          "status": 200,
+          "found": true
+        }
+      },
+      "GUID": {
+        "storeIdSent": "b1ee1e9a-f982-4e00-8ea6-1f9131b815f4",
+        "status": 400,
+        "body": "Store 'b1ee1e9a-f982-4e00-8ea6-1f9131b815f4' does not exist."
+      }
+    },
+    "i4": {
+      "create": 201,
+      "id": "bbea768e91c8497aa17a4e5168492191",
+      "storeId": "B2B-store",
+      "get": 200,
+      "inSearch": true,
+      "searchTotal": 9,
+      "del": 204,
+      "getAfterDelete": 404
+    },
+    "i6": {
+      "status": 400,
+      "body": "A Shared Component cannot be moved to another store.",
+      "storeIdAfter": "B2B-store"
+    },
+    "error": "PAGEBUILDER_SC_USER_PASSWORD unset",
+    "teardown": [
+      {
+        "id": "e0eaf752b40f4c0b8f4cce57139aa4e3",
+        "by": "admin",
+        "storeId": "b2b-store",
+        "item": "I3-CASE",
+        "delete": 204,
+        "getAfter": 404
+      },
+      {
+        "id": "bbea768e91c8497aa17a4e5168492191",
+        "by": "admin",
+        "storeId": "B2B-store",
+        "item": "I4",
+        "deleted": true,
+        "delete": 204
+      }
+    ],
+    "finalB2B": 7,
+    "finalAgentResidue": []
+  },
+  "exchanges": [
+    {
+      "label": "I2-before-B2B-search",
+      "at": "2026-10-08T07:44:39.511Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "take": 50
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 7,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "I1-run1-create-fake",
+      "at": "2026-10-08T07:44:39.971Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "name": "AGENT-TEST-VCST6010-STR1-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist."
+      }
+    },
+    {
+      "label": "I1-run1-search-fake",
+      "at": "2026-10-08T07:44:40.171Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "take": 10
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 0,
+          "results": []
+        }
+      }
+    },
+    {
+      "label": "I1-run2-create-fake",
+      "at": "2026-10-08T07:44:40.462Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "name": "AGENT-TEST-VCST6010-STR2-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist."
+      }
+    },
+    {
+      "label": "I1-run2-search-fake",
+      "at": "2026-10-08T07:44:40.623Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "take": 10
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 0,
+          "results": []
+        }
+      }
+    },
+    {
+      "label": "I1-run3-create-fake",
+      "at": "2026-10-08T07:44:40.788Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "name": "AGENT-TEST-VCST6010-STR3-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "Store 'NO-SUCH-STORE-XYZ' does not exist."
+      }
+    },
+    {
+      "label": "I1-run3-search-fake",
+      "at": "2026-10-08T07:44:40.981Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "take": 10
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 0,
+          "results": []
+        }
+      }
+    },
+    {
+      "label": "I2-after-B2B-search",
+      "at": "2026-10-08T07:44:41.256Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "take": 50
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 7,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "I2-after-fake-search",
+      "at": "2026-10-08T07:44:41.410Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "NO-SUCH-STORE-XYZ",
+          "take": 10
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 0,
+          "results": []
+        }
+      }
+    },
+    {
+      "label": "I5-create-empty-storeId",
+      "at": "2026-10-08T07:44:41.548Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "",
+          "name": "AGENT-TEST-VCST6010-EMPTY-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "StoreId, Name, and Content are required."
+      }
+    },
+    {
+      "label": "I3-create-PADDED",
+      "at": "2026-10-08T07:44:41.755Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": " B2B-store ",
+          "name": "AGENT-TEST-VCST6010-I3PADDED-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "Store ' B2B-store ' does not exist."
+      }
+    },
+    {
+      "label": "I3-create-CASE",
+      "at": "2026-10-08T07:44:42.486Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "b2b-store",
+          "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "storeId": "b2b-store",
+          "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:41.3151282Z",
+          "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+        }
+      }
+    },
+    {
+      "label": "I3-CASE-get",
+      "at": "2026-10-08T07:44:42.652Z",
+      "request": {
+        "method": "GET",
+        "url": "/api/page-builder-shared-components/e0eaf752b40f4c0b8f4cce57139aa4e3",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "storeId": "b2b-store",
+          "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:41.3151282Z",
+          "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+        }
+      }
+    },
+    {
+      "label": "I3-CASE-search-B2B",
+      "at": "2026-10-08T07:44:42.825Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "take": 100
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 8,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "b2b-store",
+              "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-10-08T07:44:41.3151282Z",
+              "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "I3-CASE-search-sent-storeId",
+      "at": "2026-10-08T07:44:42.959Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "b2b-store",
+          "take": 100
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 8,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "b2b-store",
+              "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-10-08T07:44:41.3151282Z",
+              "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "I3-create-GUID",
+      "at": "2026-10-08T07:44:43.129Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "b1ee1e9a-f982-4e00-8ea6-1f9131b815f4",
+          "name": "AGENT-TEST-VCST6010-I3GUID-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "Store 'b1ee1e9a-f982-4e00-8ea6-1f9131b815f4' does not exist."
+      }
+    },
+    {
+      "label": "I4-create-B2B",
+      "at": "2026-10-08T07:44:43.902Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "name": "AGENT-TEST-VCST6010-POS-muz8dtkm",
+          "content": {
+            "settings": {},
+            "content": [
+              {
+                "id": "text01",
+                "type": "text"
+              }
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 201,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "storeId": "B2B-store",
+          "name": "AGENT-TEST-VCST6010-POS-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:42.7079131Z",
+          "modifiedDate": "2026-10-08T07:44:42.7079131Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "bbea768e91c8497aa17a4e5168492191"
+        }
+      }
+    },
+    {
+      "label": "I4-get",
+      "at": "2026-10-08T07:44:44.075Z",
+      "request": {
+        "method": "GET",
+        "url": "/api/page-builder-shared-components/bbea768e91c8497aa17a4e5168492191",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "storeId": "B2B-store",
+          "name": "AGENT-TEST-VCST6010-POS-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:42.7079131Z",
+          "modifiedDate": "2026-10-08T07:44:42.7079131Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "bbea768e91c8497aa17a4e5168492191"
+        }
+      }
+    },
+    {
+      "label": "I4-search-B2B",
+      "at": "2026-10-08T07:44:44.217Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "take": 100
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 9,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "b2b-store",
+              "name": "AGENT-TEST-VCST6010-I3CASE-muz8dtkm",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-10-08T07:44:41.3151282Z",
+              "modifiedDate": "2026-10-08T07:44:41.3151282Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e0eaf752b40f4c0b8f4cce57139aa4e3"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-VCST6010-POS-muz8dtkm",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-10-08T07:44:42.7079131Z",
+              "modifiedDate": "2026-10-08T07:44:42.7079131Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "bbea768e91c8497aa17a4e5168492191"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "label": "I6-put-move-store",
+      "at": "2026-10-08T07:44:44.358Z",
+      "request": {
+        "method": "PUT",
+        "url": "/api/page-builder-shared-components/bbea768e91c8497aa17a4e5168492191",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "Electronics",
+          "name": "AGENT-TEST-VCST6010-POS-muz8dtkm"
+        }
+      },
+      "response": {
+        "status": 400,
+        "contentType": "text/plain; charset=utf-8",
+        "body": "A Shared Component cannot be moved to another store."
+      }
+    },
+    {
+      "label": "I6-get-after",
+      "at": "2026-10-08T07:44:44.526Z",
+      "request": {
+        "method": "GET",
+        "url": "/api/page-builder-shared-components/bbea768e91c8497aa17a4e5168492191",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "storeId": "B2B-store",
+          "name": "AGENT-TEST-VCST6010-POS-muz8dtkm",
+          "usageCount": 0,
+          "usagePages": [],
+          "createdDate": "2026-10-08T07:44:42.7079131Z",
+          "modifiedDate": "2026-10-08T07:44:42.7079131Z",
+          "createdBy": "admin",
+          "modifiedBy": "admin",
+          "id": "bbea768e91c8497aa17a4e5168492191"
+        }
+      }
+    },
+    {
+      "label": "I4-delete",
+      "at": "2026-10-08T07:44:44.911Z",
+      "request": {
+        "method": "DELETE",
+        "url": "/api/page-builder-shared-components/bbea768e91c8497aa17a4e5168492191",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": ""
+      }
+    },
+    {
+      "label": "I4-get-after-delete",
+      "at": "2026-10-08T07:44:45.065Z",
+      "request": {
+        "method": "GET",
+        "url": "/api/page-builder-shared-components/bbea768e91c8497aa17a4e5168492191",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "contentType": null,
+        "body": ""
+      }
+    },
+    {
+      "label": "TEARDOWN-I3-CASE",
+      "at": "2026-10-08T07:44:45.219Z",
+      "request": {
+        "method": "DELETE",
+        "url": "/api/page-builder-shared-components/e0eaf752b40f4c0b8f4cce57139aa4e3",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 204,
+        "contentType": null,
+        "body": ""
+      }
+    },
+    {
+      "label": "TEARDOWN-I3-CASE-get",
+      "at": "2026-10-08T07:44:45.359Z",
+      "request": {
+        "method": "GET",
+        "url": "/api/page-builder-shared-components/e0eaf752b40f4c0b8f4cce57139aa4e3",
+        "headers": {
+          "Authorization": "Bearer <redacted>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "contentType": null,
+        "body": ""
+      }
+    },
+    {
+      "label": "FINAL-B2B-search",
+      "at": "2026-10-08T07:44:45.497Z",
+      "request": {
+        "method": "POST",
+        "url": "/api/page-builder-shared-components/search",
+        "headers": {
+          "Authorization": "Bearer <redacted>",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "storeId": "B2B-store",
+          "take": 50
+        }
+      },
+      "response": {
+        "status": 200,
+        "contentType": "application/json; charset=utf-8",
+        "body": {
+          "totalCount": 7,
+          "results": [
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Multi-Trio",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:24.7323724Z",
+              "modifiedDate": "2026-09-21T14:23:24.7323724Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "4a99cb8ee6a343808e3ef56e19717070"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Single",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.2194832Z",
+              "modifiedDate": "2026-09-21T14:23:25.2194832Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "dc7e0762763e47f5b3c58a0b68d9e210"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Unused-Deletable",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.4618503Z",
+              "modifiedDate": "2026-09-21T14:23:25.4618503Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "f44f8f56876842879549769a6c0558bf"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "AGENT-TEST-SC-Used-Undeletable",
+              "usageCount": 1,
+              "usagePages": [],
+              "createdDate": "2026-09-21T14:23:25.6742279Z",
+              "modifiedDate": "2026-09-21T14:23:25.6742279Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "ed1688094c1d405096a0f73427447ac5"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "empty text block",
+              "usageCount": 0,
+              "usagePages": [],
+              "createdDate": "2026-08-24T01:31:25.6486829Z",
+              "modifiedDate": "2026-08-24T01:31:25.6486829Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "5ef77afee8604c8e90d938e5436fb4de"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only 1 element - login",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:07.2794917Z",
+              "modifiedDate": "2026-08-24T00:38:07.2794917Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "e59d6e9ce22a419ea4edeb737806fc77"
+            },
+            {
+              "storeId": "B2B-store",
+              "name": "only one element - Image",
+              "usageCount": 3,
+              "usagePages": [],
+              "createdDate": "2026-08-24T00:38:33.7718652Z",
+              "modifiedDate": "2026-08-24T00:48:34.3521863Z",
+              "createdBy": "admin",
+              "modifiedBy": "admin",
+              "id": "17a9de254a584e9f9e65e97e71dfed2b"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

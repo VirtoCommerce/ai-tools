@@ -106,7 +106,8 @@ rules:
       kind: manual
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
     violation_signal: Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-087 failed in REG-2026-10-08-0812"
   - id: BL-PRICE-007
     title: Organization-specific (contract) pricing
     rule: When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.

@@ -83,6 +83,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
 - **Agents:** qa-frontend-expert, qa-backend-expert, ui-ux-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-087 failed in REG-2026-10-08-0812
 
 ### BL-PRICE-007: Organization-specific (contract) pricing `[P0-revenue]`
 - **Rule:** When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.
@@ -636,6 +637,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Agents:** qa-frontend-expert, qa-backend-expert
 - **Docs:** storefront/user-guide/docs/account/overview.md (published) — corporate accounts shop on behalf of a company using company-associated addresses; users can switch organizations
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-078, BSM-092 failed in REG-2026-10-08-0812
 
 ### BL-B2B-002: Organization-specific pricing overrides store default `[P0-revenue]`
 - **Rule:** When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → "Unavailable." If the org price list doesn't cover a product, the store default applies as fallback.
@@ -680,6 +682,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/white-labeling/settings.md (published) — white labeling can be enabled/disabled per store in store settings (General)
 - **Docs:** platform/deployment-on-cloud/docs/store-branding.md (published) — white labeling must be enabled in the store before custom branding applies
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-060, BSM-061 failed in REG-2026-10-08-0812
 
 ### BL-B2B-007: Per-org JWT permission set is org-scoped; pageContext must match it `[P0-revenue]`
 - **Rule:** A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)
@@ -864,6 +867,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** vc-docs platform/user-guide/docs/catalog/import-products-to-catalog.md — to make products visible on the storefront, the catalog must be linked to the store's catalog
 - **Source:** kb KB-2D446A42 (single observation) — a store exposes a physical catalog's products through its virtual catalog
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-111 failed in REG-2026-10-08-0812
 
 ### BL-CAT-006: Configurable product requires all sections filled `[P0-revenue]`
 - **Rule:** A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.
@@ -937,6 +941,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — default buyability price policy rejects zero-price products; allowing them needs a code override
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-087, BSM-111 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-002: Catalog change → search lag → cart price mismatch window `[P0-revenue]`
 - **Rule:** After a product price or availability is changed in Admin, there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, the storefront may show stale prices. However, the cart/checkout must always use the server-side (current) price — not the cached search index price.
@@ -977,6 +982,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/feature-flags.md (published) — public store settings via xAPI control feature activation at runtime
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-010, BSM-061, BSM-077, BSM-078, BSM-086, BSM-092, BSM-100 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-007: Admin entity deletion → cascade cleanup `[P1-data]`
 - **Rule:** When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database.
@@ -984,6 +990,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** Orphaned products in search after catalog deletion; orphaned prices referencing deleted products; member accounts deleted with org; API returns references to deleted entities.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-085, BSM-086 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-008: Organization switch → full context swap `[P0-revenue]`
 - **Rule:** When a B2B user switches organization, ALL of the following must swap atomically: (1) cart — new org's cart loads, (2) addresses — new org's address book, (3) pricing — new org's price list, (4) lists/wish lists — new org's lists, (5) white labeling — new org's theme (if WL enabled), (6) quotes — new org's quotes. Partial swap (e.g., cart changes but prices don't) is a critical bug.
@@ -1016,6 +1023,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Violation signal:** White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
 - **Agents:** qa-backend-expert, qa-frontend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-044, BSM-045, BSM-046, BSM-047, BSM-054, BSM-058, BSM-060, BSM-062, BSM-073, BSM-083, BSM-106 failed in REG-2026-10-08-0812
 
 ### BL-CROSS-012: Admin entity deletion never creates $0 products `[P0-revenue]`
 - **Rule:** No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
@@ -1025,6 +1033,7 @@ These invariants span multiple modules and are where the most expensive producti
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md (published) — zero-price products are not buyable by default; enabling requires overriding the price policy
 - **Docs:** platform/developer-guide/docs/Tutorials-and-How-tos/How-tos/customizing-cart-validation-policies.md — default price policy: products with zero price are not buyable; allowing them requires overriding CatalogProductIsBuyableSpecification/ProductIsBuyableSpecification (CheckPricePolicy returns true), a backend customization, not a theme flag
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] BSM-085 failed in REG-2026-10-08-0812
 
 ---
 
@@ -1224,6 +1233,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Violation signal:** Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
 - **Agents:** qa-backend-expert, qa-testing-expert
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] BSM-082 failed in REG-2026-10-08-0812
 
 ### BL-NOTIF-003: Notification failure does not block order `[P0-revenue]`
 - **Rule:** If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
@@ -2368,18 +2378,18 @@ ticket or a docs page disputes (`status`).
 
 | Domain | ID Range | Total | P0 | P1 | P2 | DECLARED | SUSPECT |
 |--------|----------|-------|----|----|----|----------|---------|
-| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 1 |
+| Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 1 |
-| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
-| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 0 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
+| Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 5 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
-| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 2 |
+| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
@@ -2396,4 +2406,4 @@ ticket or a docs page disputes (`status`).
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **23** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **33** |
