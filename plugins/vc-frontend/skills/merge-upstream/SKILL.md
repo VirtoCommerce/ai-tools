@@ -103,7 +103,7 @@ just fixed, and a conflicted file's clean hunks can pair one side's API with the
 | The same feature built on both sides | Upstream's API — prop names, i18n keys, component split — with the fork's visual deltas reapplied. Keeping the fork's API re-conflicts on every later merge. |
 | A variable or token renamed on both sides | Upstream's names, the fork's values. |
 | Generated: `yarn.lock`, `**/api/graphql/types.ts`, `client-app/core-api/contract/` | Never hand-merged. `yarn install` rewrites the lockfile; GraphQL types follow the backend, so take upstream's and regenerate (`yarn generate:graphql-types`) if a backend is reachable; the contract comes from `yarn build:core-types`. |
-| Versions | Root `package.json`: the fork's app version. `client-app/core-api/package.json`: the higher one. |
+| Versions and package name | Root `package.json`: the fork's `name` and app version — the fork releases its own versions, and its build archives are named after `name`. `client-app/core-api/package.json`: the higher one. |
 | Docs | Both sides' content, corrected against the merged code. |
 | Upstream's test for a component the fork refactored | Keep upstream's assertions; change only its mocks/setup to the fork's dependencies. |
 
