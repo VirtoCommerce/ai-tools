@@ -180,7 +180,9 @@ line what to add and that a restart is required.
    Record hit ids; a miss never blocks (`.claude/knowledge/agents/authoring-standard.md` §5).
 4. Interpret: `UNKNOWN` is never upgraded to a value · a BLOCK is one question to the user · a WARN
    is named in one line · consumer-specific meanings (e.g. BREAKING ⇒ FULL) are handed back as facts.
-5. Return one compact block to the consumer: facts + `mcp[]` + kb/doc hit ids.
+5. Show the output (§8a). On a non-OK row, offer remediation and run the loop (§8b) — never fix
+   without the user choosing to.
+6. Return one compact block to the consumer: facts + `mcp[]` + kb/doc hit ids + `remediations[]`.
 
 Deliberately **not** in the skill: the axes 2b–2g, the 2-map prior-art read, ticket classification
 and routing — all `/qa-test` mechanics.
@@ -207,11 +209,11 @@ Build: Platform 3.1057.0 (deployed) · Theme 2.55.0 · drift: none · ledger: fr
 
 NOT READY — 1 blocker · 2 warnings · 11 checks OK
 
-| # | Status  | Check     | Found                                                      | Do                                   |
-|---|---------|-----------|------------------------------------------------------------|--------------------------------------|
-| 1 | BLOCK   | expect    | vc-module-cart 3.1006.0-pr-812 not deployed (has 3.1005.0) | /qa-deploy-pr VCST-1234, or wait     |
-| 2 | WARN    | duplicate | tested 47 min ago, same build, verdict FAIL                | re-run overwrites reports/tickets/…  |
-| 3 | UNKNOWN | deployed  | /api/platform/modules → 401                                | check ADMIN_PASSWORD in .env.local   |
+| # | Status  | Check     | Found                                                      | Who          | Do                                  |
+|---|---------|-----------|------------------------------------------------------------|--------------|-------------------------------------|
+| 1 | BLOCK   | expect    | vc-module-cart 3.1006.0-pr-812 not deployed (has 3.1005.0) | me, with OK  | /qa-deploy-pr VCST-1234, or wait    |
+| 2 | WARN    | duplicate | tested 47 min ago, same build, verdict FAIL                | you          | re-run overwrites reports/tickets/… |
+| 3 | UNKNOWN | deployed  | /api/platform/modules → 401                                | you          | ADMIN_PASSWORD in .env.local        |
 ```
 
 Rules:
@@ -219,9 +221,9 @@ Rules:
 1. **Quiet when clean, loud when not.** OK rows collapse into a count.
 2. **Verdict vocabulary is `qa-env-check`'s:** `READY` / `NOT READY`. Never `BLOCKED` — that is a
    test-run verdict, not an environment one.
-3. **Every non-OK row has a `Do`** — a concrete command or setting, never "investigate". It comes
-   from code: each `check id` carries an action template, so one problem gets one piece of advice in
-   every consumer.
+3. **Every non-OK row has a `Who` and a `Do`** — who can act (§8b) and a concrete command or
+   setting, never "investigate". Both come from code: each `check id` carries its remedy, so one
+   problem gets one piece of advice in every consumer.
 4. **`UNKNOWN` is its own status and never renders as OK** — "never fall back to `declared`",
    applied to display.
 5. **`Found` states values** (versions, minutes, HTTP codes), not adjectives. No secret ever.
@@ -233,6 +235,69 @@ Rules:
 The CLI prints this by default and raw data with `--json`. The skill (§8 step 5) shows the CLI block
 **verbatim** and appends, in the same columns, only the rows the CLI cannot see: MCP level 3
 (`mcp:kb · WARN · not connected · working via npm run kb -- ask`) and grounding misses.
+
+## 8b. Remediation — diagnose, fix, re-check
+
+A user handed a blocker table asks Claude to "fix it" or "find out why". So each non-OK row needs two
+things the table alone does not give: **who** can fix it, and **how to find the cause first**.
+
+**Pre-flight itself stays read-only.** Remediation is a separate step the user opts into. A
+pre-flight that repaired things on the fly would give a different answer for an unchanged
+environment, and its output would stop being evidence.
+
+**Actors.** The line between `me` and `you` is drawn by the safety rules, not by convenience.
+
+| Actor | When | Examples |
+|---|---|---|
+| `me` | read-only, or local and reversible | wait for an in-flight deploy and re-check · create the sprint folder |
+| `me, with OK` | outward-facing, a shared environment, or a tracked file | `/qa-deploy-pr` (deploys to a shared env) · `regression:reap:apply` · `releases:refresh` (rewrites a tracked file) · a manifest edit |
+| `you` | secrets, OAuth, a session restart, a decision | a password in `.env.local` · authorising an MCP server · restarting after an `.mcp.json` edit · "re-run the duplicate or not" |
+
+Claude never types or substitutes a password or token and never falls back to a different token
+when one fails; for a credential problem it hands over paste-ready text (which variable, which file,
+where the value comes from). It cannot start an OAuth flow.
+
+**Diagnosis.** Each check carries a read-only recipe that turns a symptom into a cause, because
+different causes have different fixes. Example — `deployed → 401`: which variable resolves and from
+which `.env` layer (never printing the value) → what `/connect/token` answers → "password unset" vs
+"password rejected".
+
+**Loop.**
+
+```
+table → "I can fix #2 myself; #1 needs your OK (deploys the PR to vcst); #3 only you can do: paste … into .env.local"
+      → one question: [fix what you can] [find the cause first] [proceed as is] [stop]
+      → diagnose / fix
+      → RE-RUN the whole pre-flight (seconds) → new table
+      → at most 2 rounds, then hand over with a summary
+```
+
+The whole pre-flight is re-run, not just the failed check: one fix can move another (a PR redeploy
+changes `drift`), and a partial re-run could leave a stale verdict looking fresh. The two-round cap
+mirrors G5 in `.claude/knowledge/execution/quality-gates.md`: an environment that is not fixed in two
+rounds is infrastructure, not configuration, and goes to a human.
+
+**Record.** `summary.json.preflight.remediations[]` — `{check, found, diagnosis, action, actor,
+approvedBy, result}`. An environment repaired during a run changes the conditions the verdict was
+reached under; a reader of the report must be able to see that.
+
+**Catalog — data in code, next to the policy.** Per `check id`: `{diagnose[], remedy: {actor,
+action}}`. The agreed starting set (normative once it is in code):
+
+| Check | Diagnose (`me`) | Remedy | Actor |
+|---|---|---|---|
+| `config.missing` | which `.env` layer lacks the variable | secret → `.env.local` · URL → `.env.<env>` | `you` · `me, with OK` |
+| `health` DOWN | `/health` detail, deploy Action status in `vc-deploy-dev` | wait and re-check · switch `TEST_ENV` | `me` · `you` |
+| `deployed` UNKNOWN | 401: unset vs rejected · 5xx: environment | credentials · wait | `you` · `me` |
+| `declared` UNKNOWN | `gh auth status` | `gh auth login` | `you` |
+| `drift` | `gh run list` on the env branch: in flight vs failed | wait · re-run the deploy | `me` · `me, with OK` |
+| `expect` | is the PR artifact built, is it in `packages.json` | `/qa-deploy-pr` | `me, with OK` |
+| `ledger` stale | — | `npm run releases:refresh` + commit | `me, with OK` |
+| `duplicate` | the prior run's verdict and build | re-run (overwrites) · commit the prior first | `you` |
+| active run | `regression:reap` | wait · `regression:reap:apply` when STALLED | `me` · `me, with OK` |
+| `mcp` not connected | `ToolSearch` | restart the session · the fallback already works | `you` |
+| `mcp` needs OAuth | — | authorise in `/mcp` or the claude.ai connector settings | `you` |
+| lanes < 3 | which lanes are alive | proceed serially | `you` (decision) |
 
 ## 9. Migration
 
