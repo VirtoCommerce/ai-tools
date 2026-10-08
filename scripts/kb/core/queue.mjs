@@ -36,6 +36,9 @@ export const LOGGED = Object.freeze([
   // anchor, no scope — as opposed to `capture-refused`, a well-formed capture deduplicated against
   // an entry the base already holds. Unlogged until 2026-09-23 (PLAN §23.11); see `refuseAtDoor`.
   'capture-invalid',
+  // `confirm-invalid` / `dispute-invalid`: evidence refused because this session never opened the
+  // entry (VCST-6191). Id and a reason code only, never prose.
+  'confirm-invalid', 'dispute-invalid',
   // `session` is the DENOMINATOR, and it is the one kind written about a session that may never
   // have touched the base at all. Every other line here is evidence that the base was used, so a
   // log made only of them can count uses and can never count opportunities: a session that ran for
@@ -426,7 +429,13 @@ export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env),
  * server, the CLI, background subagents), so two of them interleaving lose one update -- and a lost
  * write would turn into a false reminder, a lost ask into a missed one. A small `appendFile` cannot
  * erase another process's line. Not a `.jsonl`, so the queue, the push and `kb-flush` never take it
- * for queue work. Local only: an ask's question, never a subject, claim or id.
+ * for queue work. Local only: an ask's question and entry ids, never a subject or claim.
+ *
+ * IDS, SINCE VCST-6191: an ask records the entries it showed (`shown`, an `ambiguous` list) and the
+ * bodies it printed (`opened`), a `show` the entry it opened (`id`). `kb confirm` / `kb dispute` read
+ * them to refuse an entry this session never opened (`loop.mjs` `openedIds`): on 2026-10-06 agents
+ * confirmed entries they had seen only as a list excerpt (VCST-6191). The queue alone cannot answer
+ * that -- it is flushed at every `Stop` -- so the gate reads both.
  *
  * A WRITE is a line that queued something -- a `capture` / `confirm` / `dispute` carrying its
  * `payload` -- or a dedup refusal (the base already holds the fact). A confirm the base could not be
@@ -434,6 +443,13 @@ export const ownersPath = (env, session = sessionId(env)) => join(queueDir(env),
  */
 export const loopPath = (env, session = sessionId(env)) => join(queueDir(env), `${session}.loop.ndjson`);
 const WROTE = new Set(['capture', 'confirm', 'dispute']);
+/**
+ * A write that QUEUED something: a capture / confirm / dispute with no `state` (a failure carries one),
+ * and for a capture its minted id. Read the same way on a queue line (which also carries `payload`) and
+ * on a published log line (which does not) -- the one rule `loopRecord` and `report-analyse.mjs`
+ * `lists()` share, so hook and report cannot disagree about what was written (PR #407 review).
+ */
+export const queuedWrite = (line) => WROTE.has(line?.kind) && !line.state && (line.kind !== 'capture' || Boolean(line.id));
 export function loopRecord(line) {
   const at = String(line.at ?? '');
   if (!at) return null;
@@ -446,18 +462,27 @@ export function loopRecord(line) {
     return {
       at, kind: 'ask', q: String(line.q ?? ''), ...(line.state ? { state: String(line.state) } : {}), ...(line.call ? { call: String(line.call) } : {}),
       ...(Array.isArray(line.queued) && line.queued.length ? { queued: true } : {}),
+      ...(Array.isArray(line.shown) && line.shown.length ? { shown: line.shown.map(String) } : {}),
+      ...(Array.isArray(line.opened) && line.opened.length ? { opened: line.opened.map(String) } : {}),
     };
   }
   if (line.kind === 'show' || line.kind === 'none') {
-    return { at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}) };
+    return {
+      at, kind: line.kind, ...(line.after ? { after: String(line.after) } : {}), ...(line.state ? { state: String(line.state) } : {}),
+      ...(line.kind === 'show' && line.state === 'answer' && line.id ? { id: String(line.id) } : {}),
+      ...(line.kind === 'show' && line.verify ? { verify: true } : {}),
+      ...(line.kind === 'show' && line.unpaired ? { unpaired: true } : {}),
+    };
   }
-  if ((WROTE.has(line.kind) && line.payload) || line.kind === 'capture-refused') return { at, kind: 'write' };
+  if (queuedWrite(line) || line.kind === 'capture-refused') return { at, kind: 'write' };
   return null;
 }
 async function noteLoop(env, line) {
   const rec = loopRecord(line);
   if (!rec) return;
-  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* a lost record costs a reminder, never the line */ }
+  // A lost record costs a reminder, never the line -- and no false confirm refusal while the queue
+  // still holds the `show`, because the gate reads the queue too (`verbs.mjs` `openedEver`).
+  try { await appendFile(loopPath(env), `${JSON.stringify(rec)}\n`, 'utf8'); } catch { /* see above */ }
 }
 /** The journal, oldest first; a torn line is skipped. Synchronous: the Stop hook's whole budget is milliseconds. */
 export function readLoop(env = process.env, session = sessionId(env)) {
