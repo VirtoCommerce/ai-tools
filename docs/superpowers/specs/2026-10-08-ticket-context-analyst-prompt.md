@@ -16,7 +16,7 @@
 | A5 | **Classified as a Mechanic** (`authoring-standard.md` §5.2), so it has no `kb` step. | The agent reports what the *sources say*: ticket, attachments, diff. It never states how the platform behaves. The `kb` read is block 4, which the skill runs inline (D5). If a reviewer judges an output field to be a behaviour claim, the class becomes Judge and a read step is added. |
 | A6 | **The output is one JSON object, and nothing else.** | P2: compact structs. The skill validates the result with `check-bundle.mjs` and does not have to parse prose. |
 | A7 | **Self-contained.** It cites no `.claude/` file and no team `shared-instructions.md`. | M1: a citation into `.claude/` becomes a dangling path after the move. This departs from `authoring-standard.md` §2 ("an agent's first lines point at its team's shared-instructions"). It is deliberate, and it is flagged for review in §4. |
-| A8 | **`model: sonnet`.** | Reading and extraction across three parallel runs. The BA agents doing Stage 1 today are on `sonnet` as well. |
+| A8 | **`model: inherit`** — the agent runs on whatever model the session that dispatches it runs on; no model is pinned. | The model is the operator's choice, not the prompt's: a client picks it by cost and availability, and a pinned alias would silently override that in every client install (C1). A caller that wants a cheaper run for one dispatch passes `model` on the dispatch itself. This is the first agent in the repo not pinned to `opus` or `sonnet`. Phase 2 measures quality and cost on the default (§10) before anyone pins it. |
 
 ## 2. Brief contract (what the skill passes in)
 
@@ -43,7 +43,7 @@ OUTPUT_SCHEMA:   <path to bundle.schema.json, the $def for this MODE>
 ---
 name: ticket-context-analyst
 description: "Read-only ticket context extractor. Dispatched by /qa-ticket-context in one of three modes — TICKET (ACs, comment signals, epic/siblings), MATERIALS (attachments, inline images, links, design), CHANGE (PRs, layers, operations, PR↔AC traceability, hidden behaviour). Reads only; every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. Never writes, never comments, never transitions, never browses the product."
-model: sonnet
+model: inherit
 color: cyan
 applicability: universal
 applicability_rationale: "Extracting what a tracker ticket, its attachments and its PRs say is independent of any one deployment; tracker, host and org come from the brief."
