@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-06",
-    "totalSuites": 152,
+    "generated": "2026-10-08",
+    "totalSuites": 153,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2415,8 +2415,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 85,
-      "estimatedMinutes": 27,
+      "testCount": 44,
+      "estimatedMinutes": 14,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
@@ -2507,6 +2507,27 @@
         "pdp",
         "widget",
         "conditional-sections",
+        "sprint"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "072f",
+      "name": "Configurable Products UI — Configurable Products > Promotions",
+      "file": "regression\\suites\\Frontend\\configurable-products\\072f-configurable-products-promotions.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 41,
+      "estimatedMinutes": 13,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "storefront",
+        "pdp",
+        "widget",
         "sprint"
       ],
       "customerApplicability": "reference",
