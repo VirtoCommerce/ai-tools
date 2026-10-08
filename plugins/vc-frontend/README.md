@@ -18,6 +18,8 @@
 /reload-plugins
 ```
 
+It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-frontend@ai-tools`.
+
 ## Which skill, when
 
 | You want to… | Run |
@@ -30,13 +32,13 @@
 ## What happens in a merge
 
 1. **It maps every conflict.** Nothing is changed yet.
-2. **⏸ You answer a brief.** One block per conflict, with a recommendation. Only the real decisions are questions.
+2. **[PAUSE] You answer a brief.** One block per conflict, with a recommendation. Only the real decisions are questions.
 3. It resolves them, then runs types, lint, tests, locales and the build.
 4. **It checks nothing upstream got lost**, line by line, and in components the fork replaced.
 5. It writes tests for ported code nothing covered, and proves each one fails when the port is removed.
-6. **⏸ A second brief, if needed:** fixes to port into the fork's own components.
+6. **[PAUSE] A second brief, if needed:** fixes to port into the fork's own components.
 7. It smoke-tests the built app against a backend you name.
-8. **⏸ You say when to push.** It opens the PR with a QA checklist.
+8. **[PAUSE] You say when to push.** It opens the PR — or updates the branch's existing one — with a QA checklist.
 
 ## The rules that matter
 
@@ -44,8 +46,8 @@
   next upstream merge replay every conflict again.
 - 📓 **Every merge leaves a log** in the fork: `upstream-merges/<date>-<ref>.md`. The next merge reads
   it first, so decisions aren't asked twice.
-- 🗺 **`fork-map.json`** (fork root) says which upstream files the fork's components replace. Use
-  `ignored` rarely: it hides a file from every future report.
+- 🗺 **`fork-map.json`** (fork root) says which upstream files the fork's components replace. The skill
+  proposes updates to it at every merge. Use `ignored` rarely: it hides a file from every future report.
 - 🔁 **`git rerere`** is a safety net for a merge that has to be redone: it replays a resolution only
   for the identical conflict, never stages it, and every replay is still reviewed in the brief.
 - 🧪 **`*.upstream.test.ts`** files guard upstream behavior inside the fork's markup. Keep them green.
