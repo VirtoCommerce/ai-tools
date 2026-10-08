@@ -47,6 +47,9 @@ rules:
       ref: Record `getBoundingClientRect()` of a neighbor sibling (`rectSnapshotSnippet(selector)`). Trigger the state change. Re-record. Compare with `compareRectSnapshots(before, after)` — `topDelta` and `leftDelta` must be 0.
     violation_signal: Neighbor moves on hover. Form below a field jumps when validation error inserts. Cart-icon badge change shifts navbar items. Skeleton dimensions ≠ resolved content → snap on load.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-UI-004
     title: Content boundary
     rule: "Text and child elements MUST stay inside their container at every supported viewport. Long content must wrap, truncate with ellipsis, or scroll — never overflow silently and never be clipped by `overflow: hidden` without an explicit ellipsis indicator. Horizontal scrolling on the document at any tested viewport (375 / 768 / 1024 / 1280 / 1920) is a bug unless the scrolling element is itself an intentional horizontal scroller (e.g., a data table)."
@@ -106,7 +109,7 @@ rules:
     status: SUSPECT
     verified:
       date: 2026-10-06
-      by: REG-2026-10-06-1457
+      by: REG-2026-10-06-1857
     suspect_reason: "[case] SR-CO-048 failed in REG-2026-10-07-1421"
   - id: BL-UI-007
     title: Admin editor chrome is keyboard-operable and exposes its state

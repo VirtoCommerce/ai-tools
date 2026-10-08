@@ -2576,6 +2576,20 @@
     "id": "96d7534f-3be8-42ca-85a5-01dc9df1775f",
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
+  "CFG_CHECKLIST_ALLTYPES": {
+    "id": "f459a4ae-e366-4b25-851c-c5bb82932168",
+    "configurationId": "314a2735-ef19-4b3e-8bc6-445825565fbe",
+    "sections": {
+      "LAY": "c6b1427d-9d1b-4a95-a2a3-5789dac547ed",
+      "TXT": "09dc259a-af1d-4162-a313-b1daed57b49c",
+      "PHO": "f4e459a1-c12f-48fe-9ffc-203473a36866",
+      "FIL": "8c5a4031-410d-415f-995e-2e8393c8ec90",
+      "ICE": "a2b7bb93-3b52-4702-bf95-b1544cfae349",
+      "DEC": "d48e38a9-3699-4ae5-9f9c-fadd84e477df",
+      "MSG": "b25f40c1-efa3-4d96-bb20-44ed03a877a7",
+      "ART": "89b0a598-fe3b-45f8-9ad3-ef7ac6fc24d5"
+    }
+  },
   "ORG_EXACTLY_11": {
     "email": "agent-test-org-exactly-11-20260811@test-agent.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
