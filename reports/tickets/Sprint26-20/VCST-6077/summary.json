@@ -1,0 +1,446 @@
+{
+  "ticket": "VCST-6077",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": "full",
+    "narrow_story_tokens": {
+      "priority": "P2",
+      "layer": "storefront",
+      "domains": 2,
+      "chain_shape": "adds links — scope chips (Today/All/date chip), row action, title→Edit, route rename",
+      "surface": "obvious once deployed (/company/tasks)",
+      "reach": "exceeds diff — SalesRepRuleChips (dashboard/documents/my-customers), layout-surface rail 24→22rem (customer profile), ui-kit VcCalendar tokens (customer-orders date picker)"
+    },
+    "escalated_reason": "Story default FULL; reach > diff and chain_shape adds links — FAST not eligible (ticket-routing.md §5b)"
+  },
+  "layer": "storefront",
+  "shape_class": {
+    "value": "feature",
+    "ui_kit": false,
+    "sources": [
+      "PR #2536 touches client-app/ui-kit/components/molecules/calendar/vc-calendar.vue (+15/-3, 2 additive tokens) but the subject is the sales-rep Tasks page — the change is not the design system; class fails closed (§5c)"
+    ],
+    "technical_change": false,
+    "technical_change_sources": [
+      "route renamed + new UI (scope chips, row actions) = user-facing contract change (§5d)"
+    ]
+  },
+  "domain_map": {
+    "state": "PRESENT",
+    "path": ".claude/knowledge/domain/sales-rep.md",
+    "rev": 3,
+    "mind_map": ".claude/knowledge/domain/sales-rep.mind-map.json",
+    "all_layer_confirmed_at": "1e-confirmed",
+    "unmapped_surfaces": [
+      "/company/tasks scope chips + date chip (×)",
+      "row-action column (Mark as complete / Reopen)",
+      "Edit task via title button",
+      "?filter= deep link (unknown token → Today)",
+      "empty-state pair (day vs All)",
+      "mobile card layout at lg",
+      "canceled + dateless task rendering"
+    ],
+    "amendments_proposed": [
+      "§3i Calendar → Tasks (route /company/tasks, H1/nav/breadcrumb 'Tasks', header New task only, chip row [date ×] Today · All · Upcoming · Overdue · Completed, /company/calendar → 404 no redirect, dashboard link 'All tasks')",
+      "G15 refuted: Tasks nav + dashboard widget render with 0 tasks",
+      "task ops issued on /graphql (not /graphql/sales-rep) from the storefront",
+      "TaskManagement admin REST can cancel (POST /api/task-management/finish?completed=false) and create dateless tasks"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-07",
+  "environment": "localhost (vc-frontend PR #2536 container) → vcst-qa backend; data TEST_ENV=vcst; pre-change baseline = vcst-qa storefront (theme 2.59.0)",
+  "build": {
+    "theme_declared": "vcst-qa branch: 2.59.0-alpha.2548 (does NOT contain the change)",
+    "theme_deployed": "2.59.0-pr-2536-c2de-c2de2cd2 (localhost; footer + bundle markers)",
+    "deployed_source": "live bundle markers (mark_complete, clear_day_aria, SalesRepTasks route) + footer",
+    "pr": "VirtoCommerce/vc-frontend#2536 (open; re-opened from #2514, reverted by #2535)",
+    "deploy_pr": "vc-deploy-dev#6681 (open, unmerged — pins pr-2536 for vcst-qa)",
+    "backend_modules": {
+      "VirtoCommerce.SalesRep": "3.1012.0",
+      "VirtoCommerce.TaskManagement": "3.1005.0",
+      "VirtoCommerce.Customer": "3.1029.0",
+      "VirtoCommerce.Xapi": "3.1026.0"
+    },
+    "releasedThrough": "release-ledger: Sales Rep 3.1006.0 / Frontend 2.56.0 — deployed builds are pre-release; no ⚠ BREAKING recorded for sales-rep/frontend"
+  },
+  "timing": {
+    "started_at": "2026-10-07T11:05:00Z",
+    "test_window_start": "2026-10-07T11:59:56Z",
+    "test_window_end": "2026-10-07T13:14:10Z",
+    "time_to_first_test_minutes": 55,
+    "first_evidence_minutes": 74,
+    "reachability_minutes": 1.5,
+    "discovery_minutes": 28,
+    "c1_wall_clock_minutes": 52,
+    "agent_dispatches": 13
+  },
+  "status_transitions": [
+    {
+      "hop": "opening",
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "4 On QA",
+      "confirmed": false,
+      "actor": "qa-lead"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "test-data-engineer (3a)",
+    "qa-testing-expert (3x /qa-exploratory ticket)",
+    "qa-frontend-expert (4a)",
+    "ui-ux-expert (4v)",
+    "test-management-specialist (A: 2a + authoring, + 1 fix round)",
+    "qa-lead-orchestrator (3-cases verifier: REJECT → APPROVE)",
+    "regression-orchestrator (4c C1)",
+    "general-purpose (5-triage)",
+    "general-purpose (5-file)"
+  ],
+  "epic": {
+    "key": "VCST-5142",
+    "summary": "Sales Rep Hub",
+    "seams": [
+      "VCST-5317 dashboard layout/rail",
+      "VCST-6001 customer-orders date picker (VcCalendar)",
+      "VCST-5732 Tasks feature"
+    ]
+  },
+  "ac_analysis": {
+    "atomic_conditions": 35,
+    "story_acs": 16,
+    "gap_acs": 19,
+    "with_evidence": 35,
+    "fully_evidenced": 34,
+    "ac_coverage_pct": 97.1,
+    "satisfied_live": 30,
+    "drift_confirmed_live": [
+      "A11 rail 280px vs ticket 272px (AC text)"
+    ],
+    "advisory_design_drift": [
+      "A3 chip variant mixed tonal/outline vs mockup outlined",
+      "A14 completed title link colour vs mockup grey",
+      "M4 header 'N tasks' vs mockup 'N of M'"
+    ],
+    "static_suspicion_cleared": [
+      "A5 'right-aligned' — Actions is the rightmost column; mockup matches the build"
+    ],
+    "partial": [
+      "A29 contrast — coffee-dark PASS, red-dark INCONCLUSIVE (server-side preset)"
+    ],
+    "po_questions": [
+      "All ≠ Upcoming+Overdue+Completed (dateless + canceled)",
+      "Q1 canceled-only day has no marker/text",
+      "Q3 canceled-due-today counted in Today",
+      "Q2 mobile rail pick does not scroll to the list",
+      "0-task rep: status tabs not rendered"
+    ],
+    "dod": "none declared",
+    "dod_pct": null,
+    "verdict_drivers": [
+      "AC (ticket text) 'side column 384 → 272 px' confirmed DRIFT live: Due dates rail measures 280px (17.5rem) — 3x, 4a, 4v, C1 SR-TK-019",
+      "BL-UI-005 violated IN-SCOPE (F-3): new row action wraps to 2 lines in es/ru and the icon detaches from its label — Low"
+    ],
+    "bl_violated": [
+      "BL-UI-005 — F-3 (IN-SCOPE, es/ru)"
+    ]
+  },
+  "total_cases": 44,
+  "passed": 28,
+  "failed": 7,
+  "blocked": 8,
+  "new_cases_authored": 29,
+  "regression": {
+    "c1": {
+      "ran": true,
+      "run_id": "REG-2026-10-07-1421",
+      "suites": [
+        "106",
+        "089",
+        "091",
+        "093",
+        "097"
+      ],
+      "ids_count": 44,
+      "pass": 28,
+      "fail": 7,
+      "blocked": 8,
+      "skipped": 1,
+      "pass_rate_executed": 80,
+      "pass_rate_planned": 63.6,
+      "wall_clock_minutes": 52,
+      "promotion": "suppressed (--no-promote); 29 SR-TK cases stay Draft",
+      "feature_gate": "GO (compute-metrics --gate feature --blocked-triaged 8 --p0-bugs 0 --p1-bugs 0)"
+    },
+    "c2": null,
+    "release_sweep": "not-assessed — /qa-test runs no release-scoped sweep",
+    "scope_exclusions": [
+      "SR-CO-047 (typed input, grid never rendered)",
+      "SR-CO-050 (ui_kit locale keys unchanged)"
+    ],
+    "feature_release_gate": "NO-GO (verdict FAIL); change-scoped release sweep not-assessed"
+  },
+  "regression_triage": {
+    "report": "reports/regression/REG-2026-10-07-1421/triage-report.md",
+    "confirmed_bugs": [
+      "SR-TK-022 = F-1 (PRE-EXISTING)",
+      "SR-TK-024 = F-2 (PRE-EXISTING) → VCST-6203"
+    ],
+    "test_case_fixes_applied": [
+      "SR-TK-011 TEST_STEPS_DEFECT (step order)",
+      "SR-TK-023 ASSERTION_DEFECT (+ wrong BL-SR-012 citation removed)",
+      "SR-CO-048 ASSERTION_DEFECT (WCAG 2.5.8 spacing exception)",
+      "SR-CO-039 TEST_DATA_DEFECT (password var aligned to siblings; not re-run)"
+    ],
+    "recommended_not_applied": [
+      "SR-TK-012/021 split (tooling-unrunnable parts)",
+      "SR-CO-038 retire → Deprecated (no spec for picker bounds) — human call",
+      "SR-HD-011 seed a top-seller rule",
+      "SR-HD-061 re-seed carts with a not-selected line",
+      "SR-TK-022 add weekday-header-fits assertion"
+    ],
+    "design_drift": [
+      "SR-TK-019 (advisory; KNOWN design question)"
+    ],
+    "known_issue": [
+      "SR-CO-051 → VCST-6198"
+    ],
+    "dismissed": [
+      "SR-TK-018 ENV (no timezoneId)",
+      "SR-FE-046/047 ENV (only 'All' rule; gate held)"
+    ],
+    "oracle_notes": [
+      "C1 bl:fresh set BL-SR-012, BL-UI-005, BL-UI-006 SUSPECT — triage found none supported by its failing case (recommend /qa-review-bl revert); BL-UI-004 'verified by REG-2026-10-07-1421' is questionable (F-1 overflow observed in the same run); BL-A11Y-001 wording (modal focus return) vs in-page re-render focus loss needs an owner decision"
+    ]
+  },
+  "coverage_triage": {
+    "ran": true,
+    "scan": "tc:scope --domain sales-rep --module sales-rep + 13 observables + 3 changed-files (MSYS_NO_PATHCONV=1)",
+    "hits": 35,
+    "dispositions": {
+      "CONFIRMED_count": 33,
+      "REPAIR": [
+        "SR-FE-046",
+        "SR-FE-047"
+      ],
+      "RE-BASE": [],
+      "SUPERSEDED": []
+    },
+    "applied": true,
+    "unscannable": [],
+    "unmatched_observables": [
+      "/company/calendar",
+      "Full calendar",
+      "Add task",
+      "sales-rep-rule-chips__tab",
+      "sales-rep-rule-chips__label",
+      "sales-rep-rule-chips__count",
+      "Tasks & due dates",
+      "Upcoming",
+      "Overdue",
+      "24rem"
+    ],
+    "added_by_reach_review": [
+      "SR-HD-011",
+      "SR-HD-051",
+      "SR-CP-005",
+      "SR-CP-022"
+    ],
+    "record": "reports/tickets/Sprint26-20/VCST-6077/testing-checklist.md §F"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6203",
+      "finding": "F-2 focus drops to document root after row action / Edit Save / Delete",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "relationship": "standalone + relates (BL-A11Y on feature ticket)",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-Tasks-Focus-Lost-After-Task-Action.md"
+    },
+    {
+      "key": "VCST-6204",
+      "finding": "A-2 dashboard overdue notice 3.06:1 in coffee-dark",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING",
+      "relationship": "standalone + relates (BL-A11Y on feature ticket)",
+      "draft": "reports/bugs/open/medium/BUG-SalesRep-Dashboard-Overdue-Tasks-Link-Contrast-Dark.md"
+    },
+    {
+      "key": "VCST-6198",
+      "finding": "SR-CO-051 Reset filters drops focus to body (customer orders)",
+      "severity": null,
+      "provenance": "PRE-EXISTING",
+      "relationship": "relates (link only) — no new ticket"
+    },
+    {
+      "key": "VCST-5993",
+      "finding": "F-6 Notes textarea has no accessible name (vc-textarea)",
+      "severity": null,
+      "provenance": "PRE-EXISTING",
+      "relationship": "relates (link only) — no new ticket"
+    }
+  ],
+  "bugs_not_filed": [
+    {
+      "title": "F-3 es/ru row-action label wraps, icon detaches (BL-UI-005)",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "reason": "below severity floor",
+      "draft": "reports/tickets/Sprint26-20/VCST-6077/ evidence package F-3"
+    },
+    {
+      "title": "F-4 ru status chips truncated with ellipsis (chip icon added by PR)",
+      "severity": "Low",
+      "provenance": "IN-SCOPE",
+      "reason": "below severity floor",
+      "draft": "reports/tickets/Sprint26-20/VCST-6077/ evidence package F-4"
+    },
+    {
+      "title": "F-1 pt VcCalendar weekday headers overlap (weekdayFormat short)",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "below severity floor",
+      "draft": "reports/bugs/open/low/BUG-vc-calendar-pt-weekday-headers-overlap.md"
+    },
+    {
+      "title": "F-5 Sales Rep hub pages keep <title> 'Virto Commerce' (WCAG 2.4.2)",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "below severity floor",
+      "draft": "reports/tickets/Sprint26-20/VCST-6077/ evidence package F-5"
+    },
+    {
+      "title": "Customer-orders calendar close returns focus to the input, not the trigger",
+      "severity": "Low",
+      "provenance": "PRE-EXISTING",
+      "reason": "below severity floor",
+      "draft": "reports/bugs/open/low/BUG-SalesRep-CustomerOrders-Calendar-Close-Focus-To-Input.md"
+    },
+    {
+      "title": "A-1 Coffee primary orange 2.11:1 (theme-wide)",
+      "severity": "High",
+      "provenance": "PRE-EXISTING",
+      "reason": "duplicate of VCST-4665 (Cancelled, won't-fix) — reopening is a human call",
+      "draft": null
+    }
+  ],
+  "discovery": {
+    "ran": true,
+    "report": "reports/exploratory/SBTM-VCST-6077-2026-10-07.md",
+    "box_minutes": 45,
+    "minutes": 28,
+    "sources_covered": "5/5",
+    "promoted": [
+      "#27 focus after row action → SR-TK-024",
+      "#28 canceled edit → SR-TK-025",
+      "#29 dateless edit → SR-TK-026",
+      "#30 canceled-only day → SR-TK-027",
+      "#31 Today vs canceled → SR-TK-028",
+      "#32 Delete → SR-TK-029"
+    ],
+    "declined": 2,
+    "model_amendments": [
+      "canceled not All-only (in Today/day view)",
+      "create→undo is Delete in Edit task (VCST-5732 said ABSENT)",
+      "dateless has Upcoming chip + action"
+    ]
+  },
+  "visual": {
+    "surface": "true",
+    "surface_source": [
+      ".vue ×15 + ui-kit vc-calendar.vue in PR #2536",
+      "layer storefront"
+    ],
+    "ran": true,
+    "report": "reports/tickets/Sprint26-20/VCST-6077/design-report.md",
+    "lane": "ui-ux-expert on playwright-edge (role-gated target, --secrets)",
+    "axes": {
+      "a11y": "WARN — 1 axe violation in all states: theme primary orange 2.11:1 (A-1, pre-existing)",
+      "design_system": "PASS",
+      "vs_design": "SKIPPED — ticket links Figma only; no Claude Design project, no .design-source copy"
+    },
+    "invariant_failures": [],
+    "a11y_findings": [
+      "A-1 orange 2.11:1 (pre-existing, VCST-4665)",
+      "A-2 dashboard overdue notice 3.06:1 coffee-dark (VCST-6204)"
+    ],
+    "advisory": [
+      "A3 chip variant DRIFT",
+      "A11 rail 280 vs 272px — advisory vs the MOCKUP, but a verdict DRIVER as an AC (ticket text) — see ac_analysis.verdict_drivers",
+      "A14 completed-title colour DRIFT",
+      "week start Sunday vs mockup Monday UNSPEC",
+      "canceled chip UNSPEC"
+    ],
+    "inconclusive": [
+      "red-dark preset (server-side white-labeling setting)"
+    ],
+    "not_concluded": [
+      "screen-reader output",
+      "WCAG 2.2 additions axe does not cover",
+      "non-gated presets"
+    ]
+  },
+  "contract": {
+    "surface": "true",
+    "surface_source": [
+      "salesRepTaskCountsQuery.graphql + api/graphql/types.ts in PR #2536 (client aliases currentDay/all; backend unchanged)"
+    ],
+    "schema": {
+      "refreshed": true,
+      "rev": "graphql-schema.md @ 2026-10-07",
+      "fixtures": "86/86 pass (graphql:fixtures:validate:refresh)"
+    }
+  },
+  "test_data": {
+    "data_surface": "true",
+    "data_surface_source": [
+      "no SR_TASK_* writeback on vcst (never seeded there)",
+      "rep had 0 tasks (1r)",
+      "divergence needed: canceled + dateless tasks to make All vs U+O+C falsifiable"
+    ],
+    "seeder": "TEST_ENV=vcst npm run seed:sales-rep-tasks (22 tasks, local-midnight decay 2026-10-07T22:00Z)",
+    "fixtures": [
+      "SR_REP_PRIMARY",
+      "SR_REP_NOCUSTOMERS",
+      "SR_TASK_* (24 aliases)",
+      "SR_TASK_GROUPS",
+      "SR_TASK_GROUPS_NY"
+    ],
+    "td_validate": "exit 0",
+    "notes": [
+      "SR_REP_PASSWORD unset on this machine",
+      "role registry declares TEST_USER_PASSWORD for SALES_REP* but they sign in with SALES_REP_PASSWORD (td:reconcile)",
+      "td:reconcile exit 1 — 11 problems, none in this fixture"
+    ]
+  },
+  "business_rules_verified": [
+    "BL-SR-009",
+    "BL-SR-011",
+    "BL-SR-013 (keys translated; dates stay English storefront-wide)",
+    "BL-SR-030 (analogue — double-click = 1 mutation)",
+    "BL-SR-032",
+    "BL-UI-001",
+    "BL-UI-004 (Tasks page; pt weekday overflow is pre-existing)",
+    "BL-A11Y-002 (row action name label-first)"
+  ],
+  "appinsights": {
+    "ran": false,
+    "skipped_reason": "Azure CLI refresh token expired (AADSTS700082), no APPINSIGHTS_API_KEY_*, workspace not visible to the Azure MCP identity; storefront telemetry would not cover the local container anyway — run az login and re-query backend-*.kql for 11:57:56Z–13:16:10Z"
+  },
+  "release": {
+    "refusal": "verdict-not-pass",
+    "layer": "storefront",
+    "audience": null,
+    "breaking": false
+  },
+  "tracker": {
+    "comment_posted": false,
+    "comment_id": "111584"
+  }
+}

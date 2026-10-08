@@ -1,31 +1,28 @@
 {
- "runId": "REG-2026-10-06-1457",
- "status": "completed",
- "startedAt": "2026-10-06T14:57:31.844Z",
- "windowStart": "2026-10-06T14:57:31.844Z",
- "selection": "097,014b",
- "env": "vcptcore",
+ "runId": "REG-2026-10-08-1137",
+ "status": "in_progress",
+ "startedAt": "2026-10-08T09:37:53.313Z",
+ "windowStart": "2026-10-08T09:37:53.313Z",
+ "selection": "106,097",
+ "env": "vcst",
  "scoped": true,
- "purpose": "/qa-test VCST-6001 4c C1 exact set (--ids 17). Delegated: --no-promote.",
+ "purpose": "VCST-6077 round 2 C1 re-run (after env-credential BLOCKED run REG-2026-10-08-1119); --no-promote; FRONT_URL=http://localhost",
  "suites": {
-  "097": {
-   "status": "done",
-   "lane": "browser",
-   "browser": "playwright-chrome",
-   "cases": 14,
-   "pass": 11,
-   "fail": 2,
-   "blocked": 1
-  },
-  "014b": {
-   "status": "done",
+  "106": {
+   "status": "running",
    "lane": "browser",
    "browser": "playwright-edge",
-   "cases": 3,
-   "pass": 2,
-   "fail": 1,
-   "blocked": 0
+   "laneId": 3,
+   "startedAt": "2026-10-08T09:37:53.313Z",
+   "attempts": 1
+  },
+  "097": {
+   "status": "running",
+   "lane": "browser",
+   "browser": "playwright-firefox",
+   "laneId": 2,
+   "startedAt": "2026-10-08T09:37:53.313Z",
+   "attempts": 1
   }
- },
- "finishedAt": "2026-10-06T15:11:36.635Z"
+ }
 }
