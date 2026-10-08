@@ -21,8 +21,10 @@ import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from 
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+  DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  readQueue, sessionId,
 } from './queue.mjs';
+import { lastWord, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -722,10 +724,17 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
   // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
   // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
-  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
+  // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
+  // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
+  // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
+  // WITHOUT EITHER, THE PAIRING IS RESOLVED HERE, at the write, as `none()` resolves its target: the
+  // latest list of this session that showed the entry and was not closed by `kb_none` -- logged as an
+  // explicit `after`, or `unpaired` when there is none. Hook and report then read the line, not a rule.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() }
+    : verify ? { verify: true } : pairShow(id, env);
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
@@ -754,6 +763,22 @@ export async function show(id, opened, { env = process.env, via = null, call = n
   }
   await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+/** The write-time pairing of a handle-less, non-`verify` show (see `show`): `{ after }`, `{ unpaired }`, or `{}` with no session. */
+function pairShow(id, env) {
+  if (!hasSessionId(env)) return {};
+  const journal = readLoop(env);
+  const pointed = pointersByAsk(journal);
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of journal) {
+    if (r.kind !== 'ask' || r.state !== 'ambiguous' || !Array.isArray(r.shown)) continue;
+    if (!r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict === 'none') continue;
+    if (!at || r.at > at) at = r.at;
+  }
+  return at ? { after: at } : { unpaired: true };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -868,21 +893,21 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  * a contradiction is likelier with what was read a minute ago than with what was read at the start.
  */
 async function openedThisSession({ env }) {
+  // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`). One walk for
+  // both stores -- queue lines and journal records share the shape it reads (`loop.mjs` `openedIds`).
   const { lines } = await readQueue({ env });
-  const out = [];
-  const seen = new Set();
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const l = lines[i];
-    const ids = l.kind === 'ask' ? (l.opened ?? [])
-      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
-        : [];
-    for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
-    }
-  }
-  return out;
+  return openedIds(lines);
+}
+
+/**
+ * Every entry the session has opened, upper-cased: its journal, which outlives the queue's flush at
+ * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
+ * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
+ */
+async function openedEver({ env, journal = readLoop(env) }) {
+  const ids = [...openedIds(journal), ...(await openedThisSession({ env }))];
+  return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
 /**
@@ -1157,10 +1182,34 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
     };
     walk(row);
-    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
+  // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
+  // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
+  // it, the list's handle included when a list showed it. The refusal is logged as `<kind>-invalid`
+  // (id + reason code, never prose) so kb:report can count the gate; no evidence is written.
+  // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
+  // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
+  // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
+  // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
+  if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
+  // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
+  // show in one command could never satisfy the confirm in the next. The gate guards agents.
+  const journal = hasSessionId(env) ? readLoop(env) : [];
+  if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
+    // ALWAYS a `verify` open: the gate cannot know which list, if any, the entry answers, and a handle it
+    // guessed would record a pick on the wrong question (PR #407 review). Closing a list is the agent's
+    // own choice, and the Stop reminder names each one still open with its handle.
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
+    return {
+      state: 'invalid',
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id} with verify`
+        + `, or \`npm run kb -- show ${row.id} --verify\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
+    };
+  }
 
   const item = {
     method: input.method ?? 'observation',

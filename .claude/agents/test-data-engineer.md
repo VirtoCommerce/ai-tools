@@ -121,6 +121,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    `.mjs` seeder). **Before it, ASK** the base about each Platform-API endpoint the seeder calls:
    `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<endpoint> <question>"`) — what an endpoint was *seen*
    doing (a default it applies, a field it ignores) is what a seeder otherwise re-learns by failing.
+   Then close each list by its handle (`kb_show`/`kb_none`).
    Then confirm the outcome deterministically:
    - runtime GUIDs landed in `test-data/aliases.<env>.json` (not in any committed CSV);
    - `TEST_ENV=<env> npm run td:validate` + `td:validate:<domain>` still green post-seed;

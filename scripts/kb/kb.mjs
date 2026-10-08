@@ -41,7 +41,7 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } 
 const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
   + 'and restart the session: a shell variable does not reach the MCP server.';
 
-const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
 function minutes(ms) { return Math.round(ms / 60_000); }
@@ -65,7 +65,7 @@ const USAGE = `kb — the knowledge base (PLAN v1)
 
   npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
                                  [--base <dir>] [--top 3] [--json]
-  npm run kb -- show KB-XXXXXXXX [--ask <handle>] [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- show KB-XXXXXXXX [--ask <handle> | --verify] [--topic "<...>"] [--base <dir>] [--json]
   npm run kb -- none [--ask <handle>] [--topic "<...>"]     none of the listed entries answers
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
@@ -239,7 +239,9 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened, { via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null });
+    const r = await show(id, opened, {
+      via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+    });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
