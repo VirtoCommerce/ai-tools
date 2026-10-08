@@ -7,6 +7,7 @@
 **Relates:** VCST-6077 (found during) · VCST-5732 (original Tasks feature) · BL-A11Y-001 · WCAG 2.4.3 Focus Order. File as a **standalone** ticket, not a Sub-task (`.claude/skills/qa-test/triage.md` §7a).
 **Labels when filed:** `found-by-agent` + `found-in-testing`
 **Tracker:** [VCST-6203](https://virtocommerce.atlassian.net/browse/VCST-6203) (filed 2026-10-07, Medium, Relates VCST-6077; auto-fix labels withheld)
+**Superseded by:** [VCST-6220](https://virtocommerce.atlassian.net/browse/VCST-6220), the combined Sales Rep a11y bug (2026-10-08). VCST-6203 is linked as its duplicate.
 
 ## Environment
 | | NEW (under test) | BASELINE (control) |

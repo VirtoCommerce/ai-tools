@@ -7,6 +7,7 @@
 **Relates:** VCST-6077 (found during) · BL-A11Y-003 · WCAG 1.4.3 Contrast (Minimum). Standalone ticket, not a Sub-task.
 **Labels when filed:** `found-by-agent` + `found-in-testing`
 **Tracker:** [VCST-6204](https://virtocommerce.atlassian.net/browse/VCST-6204) (filed 2026-10-07, Medium, Relates VCST-6077; auto-fix labels withheld)
+**Superseded by:** [VCST-6220](https://virtocommerce.atlassian.net/browse/VCST-6220), the combined Sales Rep a11y bug (2026-10-08). VCST-6204 is linked as its duplicate.
 
 **Env:** vcst-qa backend · storefront theme 2.59.0 (deployed) and 2.59.0-pr-2536-c2de-c2de2cd2 (vc-frontend PR #2536, local build) · Coffee preset, dark mode · Edge 1920 and 1440 · sales rep `@td(SR_REP_PRIMARY.email)`
 
