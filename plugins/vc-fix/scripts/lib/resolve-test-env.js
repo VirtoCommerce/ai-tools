@@ -1,6 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { parse } from 'dotenv';
 
+/** Valid TEST_ENV names: lowercase letters, digits and underscores, so `KEY${envSuffix(env)}` is a valid variable name. */
+export const TEST_ENV_PATTERN = /^[a-z0-9_]+$/;
+
+/** The suffix that marks a key as one env's own, `_<ENV>` (vcst_qa → `_VCST_QA`), which every loader promotes over `.env.local`. */
+export function envSuffix(testEnv) {
+  return `_${testEnv.toUpperCase()}`;
+}
+
 /**
  * Resolve the active TEST_ENV. Precedence (highest first):
  *   1. process.env.TEST_ENV         — explicit shell / CI override (e.g. `$env:TEST_ENV='vcptcore'`)
@@ -47,7 +55,7 @@ export function resolveTestEnv(fallback = 'vcst') {
 function exposeEnvSecrets(testEnv) {
   const file = `.env.playwright.${testEnv}`;
   if (!existsSync(file)) return;
-  const suffix = `_${testEnv.toUpperCase()}`;
+  const suffix = envSuffix(testEnv);
   for (const [key, value] of Object.entries(parse(readFileSync(file)))) {
     if (value && process.env[key + suffix] === undefined) process.env[key + suffix] = value;
   }
@@ -67,7 +75,7 @@ function warnOnce(testEnv) {
   if (!existsSync('.env.local')) return;
   const own = parse(readFileSync(envFile));
   const local = parse(readFileSync('.env.local'));
-  const suffix = `_${testEnv.toUpperCase()}`;
+  const suffix = envSuffix(testEnv);
   for (const key of ENV_OWNED) {
     // A `KEY_<ENV>` anywhere is promoted over .env.local, so the override never takes effect.
     const pinned = own[key + suffix] || local[key + suffix] || process.env[key + suffix];

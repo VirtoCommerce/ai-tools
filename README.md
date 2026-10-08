@@ -100,7 +100,8 @@ Every script works against **one environment**, chosen by name (`TEST_ENV`), and
 | `.env.defaults` | yes | Constants shared by every env (sandbox cards, Builder.io) |
 | `.env.<env>` | yes | That env's URLs, store, `ENV_RISK` and **which accounts the tests use** (`USER_EMAIL`, `ORG_USER_EMAIL`, …). Shared by the whole team. |
 | `.env.local` | no | Your API tokens and machine-wide settings. **Applied to every env.** |
-| `.env.playwright.<env>` | no | That env's passwords. The scripts read it for the active env; the Playwright MCP servers read it through `--secrets`. |
+| `.env.playwright.<env>` | no | That env's passwords. The scripts read it for the active env; the Playwright MCP servers read it through `--secrets`, directly or merged into `.env.playwright.all`. |
+| `.env.playwright.all` | no | Built by `npm run secrets:playwright`: every env's passwords, renamed `KEY_<ENV>`, in one `--secrets` file for all envs. Never edited by hand. |
 
 How the final value is decided:
 
@@ -111,7 +112,7 @@ How the final value is decided:
 **Choosing the environment.** Env names are `[a-z0-9_]+` (`vcptcore_dev`, not `vcptcore-dev`); a name without a `.env.<env>` file prints a warning. The first of these that is set wins:
 
 1. `TEST_ENV` in your shell. PowerShell: `$env:TEST_ENV='vcptcore_dev'` (stays set in that terminal). Bash: `TEST_ENV=vcptcore_dev npm run env:check`.
-2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default, for every session in this checkout. Sessions in the VS Code chat panel don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it. A `claude` CLI session does inherit the `TEST_ENV` of the terminal that started it, and that beats the file — so two sessions can run against two envs in parallel (`$env:TEST_ENV='vcst'; claude` in one terminal, `$env:TEST_ENV='vcptcore_dev'; claude` in another). The deploy scripts (`npm run deploy:*`, `/qa-deploy-pr`) skip this file: they read only the shell's `TEST_ENV` or their `--env=` flag.
+2. `.env.test-env` (gitignored, one line: `TEST_ENV=vcptcore_dev`) — your default, for every session in this checkout. Sessions in the VS Code chat panel don't inherit a variable you set in a terminal, so this file, or telling Claude the env, is how they get it. A `claude` CLI session does inherit the `TEST_ENV` of the terminal that started it, and that beats the file — so two sessions can run against two envs in parallel (`$env:TEST_ENV='vcst'; claude` in one terminal, `$env:TEST_ENV='vcptcore_dev'; claude` in another). `/qa-deploy-pr` (`npm run deploy:pr`) reads this file too, and its `--env=` flag picks another env; `/qa-env-upgrade` always needs `--env=`.
 3. `vcst`.
 
 Check the result with `npm run env:check`; it prints each variable as SET (with its length) or EMPTY, never a secret's value. Variable *names* are the same in every env, only values differ. In code: `import { env } from './config.js'` (ES modules — always `.js`). To add an env, start from [`templates/.env.{env}.example`](templates/.env.{env}.example).
@@ -149,6 +150,7 @@ Copy [`templates/.mcp.json.example`](templates/.mcp.json.example) to `.mcp.json`
 > **Keep `@playwright/mcp` pinned** at the template's version. The lane configs in `config/` are written for it, and `@latest` swaps the binary that reads them.
 > **WebKit is not supported on Windows** — use Chromium, Firefox, or Edge. **Restart the IDE after any `.mcp.json` change.**
 > **Browser logins:** the Playwright servers can only type a password through `--secrets`. The template passes `--secrets .env.playwright.local`; point it at the env's own `.env.playwright.<env>` instead, the file the scripts read. The servers read that file once, at start. To pick it per session, write the path as `.env.playwright.${TEST_ENV:-<default env>}`: Claude Code fills in the `TEST_ENV` of the shell that started `claude`, so two CLI sessions started with different `TEST_ENV` values use different envs' passwords. The env's file must exist, or that session's browser servers don't start.
+> **Every env without a restart:** `npm run secrets:playwright` merges each `.env.playwright.<env>` into `.env.playwright.all`, renaming every key `KEY_<ENV>` (`ORG_USER_PASSWORD_VCST_QA`). Point all Playwright servers' `--secrets` at it once; a run on any env then types its own suffix, so switching env, or testing two envs in parallel, needs no restart. After changing a password, re-run the script and restart the servers.
 
 #### 3. Verify
 
