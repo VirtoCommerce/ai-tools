@@ -25,7 +25,7 @@
     {
       "name": "vc-frontend",
       "source": "./plugins/vc-frontend",
-      "description": "Working on a Virto Commerce frontend fork (vc-frontend-next or a customer's storefront theme): merge-upstream brings upstream vc-frontend into the fork, keeping the fork's look and upstream's behavior; port-upstream-to-fork finds upstream changes the merge did not deliver — to code the fork replaced or stopped rendering — and ports them. 2 skills."
+      "description": "Working on a Virto Commerce frontend fork (vc-frontend-next or a customer's storefront theme): merge-upstream brings upstream vc-frontend into the fork, keeping the fork's look and upstream's behavior; port-upstream-to-fork finds upstream changes the merge did not deliver — to code the fork replaced or stopped rendering — and ports them. Can make mistakes: every change needs human review before merging. 2 skills."
     }
   ]
 }

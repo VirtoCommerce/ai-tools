@@ -6,6 +6,8 @@ argument-hint: "[upstream ref: upstream/dev | <release tag> | origin/dev for a r
 
 # merge-upstream — bring vc-frontend into a theme fork
 
+**Start by telling the user, as your first line:** `⚠️ This skill can make mistakes — review every change before merging.`
+
 **The fork owns how it looks; upstream owns how it behaves.** Every resolution keeps the fork's markup,
 styles and tokens, and carries upstream's logic, props, events, i18n keys and fixes into them.
 
