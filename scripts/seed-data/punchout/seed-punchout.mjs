@@ -42,8 +42,14 @@ const failures = [];
 const fail = (m) => { failures.push(m); log(`✗ ${m}`); };
 const ok = (m) => log(`✓ ${m}`);
 
+/**
+ * True when VirtoCommerce.Punchout answers. An env without the module 404s the route (null body) —
+ * that is a deployment shape, not an error, so the caller skips with exit 0. Any OTHER status
+ * (401/403/5xx) throws: a broken env must not masquerade as "module absent".
+ */
 async function moduleInstalled() {
-  try { await api('GET', `${MAPPINGS}/new`, null, { expectStatus: [200] }); return true; } catch (e) { verbose(e.message); return false; }
+  const r = await api('GET', `${MAPPINGS}/new`, null, { expectStatus: [200, 404] });
+  return !!(r && typeof r === 'object' && 'externalId' in r);
 }
 
 const searchMappings = (criteria) => api('POST', `${MAPPINGS}/search`, { take: 50, ...criteria }, { expectStatus: [200] });
@@ -91,6 +97,9 @@ async function registerMapping(spec) {
   const orgs = contact.organizations || [];
   if (spec.minOrganizations && orgs.length < spec.minOrganizations) {
     fail(`${spec.alias}: persona contact is in ${orgs.length} org(s), needs ≥${spec.minOrganizations}`);
+  }
+  if (spec.maxOrganizations && orgs.length > spec.maxOrganizations) {
+    fail(`${spec.alias}: persona contact is in ${orgs.length} org(s), must be ≤${spec.maxOrganizations} (single-org side of the pair)`);
   }
   if (user.passwordExpired) fail(`${spec.alias}: persona account is passwordExpired`);
   if (!notLocked(user)) fail(`${spec.alias}: persona account is locked until ${user.lockoutEnd}`);
@@ -270,7 +279,12 @@ async function teardown() {
 async function main() {
   assertSafeTarget();
   await auth();
-  if (!(await moduleInstalled())) { console.error(`VirtoCommerce.Punchout is not installed on ${TEST_ENV} (GET ${MAPPINGS}/new failed) — nothing to seed.`); process.exit(1); }
+  if (!(await moduleInstalled())) {
+    // Not an error: the module ships only where it is deployed (vcptcore_qa1 today). Nothing is
+    // written, so every PUNCHOUT_* alias keeps resolving to "" here — a clear miss, never qa1's ids.
+    log(`· VirtoCommerce.Punchout is not installed on ${TEST_ENV} (GET ${MAPPINGS}/new → 404) — punchout fixtures skipped.`);
+    return;
+  }
   if (TEARDOWN) { await teardown(); return; }
 
   const writeback = {};

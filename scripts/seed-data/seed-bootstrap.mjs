@@ -64,6 +64,9 @@ const TEARDOWN_STEPS = [
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', args: ['--teardown'] },
+  // VCST-5886 punchout: the OWNED mapping AGENT-TEST-PO-200 + two AGENT-TEST back-office roles/accounts.
+  // Before company-users, whose MULTI_ORG persona the mapping points at. Skips (exit 0) where the module is absent.
+  { name: 'punchout', script: 'punchout/seed-punchout.mjs', args: ['--teardown'] },
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', args: ['--teardown'] },
   // VCST-5024 org-mode loyalty. TEARDOWN-ONLY here, and deliberately so: the forward seeder places a
   // REAL, non-reversible order to fund LOY_PERSONAL_NOORG (a balance cannot be set on this platform),
@@ -173,6 +176,10 @@ const STEPS = [
   // Restricted back-office (Manager) RBAC account for CMS-123/124 — read-only Page Builder, no
   // builder:update. Independent of the catalog/user graph (own role + account); optional.
   { name: 'rbac', script: 'platform/seed-backoffice-rbac.mjs', required: false, priority: 135 },
+  // VCST-5886 punchout cXML fixtures — after company-users (100): the mappings point at the USER_EMAIL /
+  // MULTI_ORG personas. Optional: VirtoCommerce.Punchout is deployed on vcptcore_qa1 only; elsewhere the
+  // seeder prints one skip line and exits 0. Registers (never creates) the /qa-test-owned AGENT-TEST-PO-100.
+  { name: 'punchout', script: 'punchout/seed-punchout.mjs', required: false, priority: 137 },
   // Reconcile the canonical qa-* PageBuilder pages (status + permalink) so the 059/060 published-page
   // cases resolve. Reconcile-only (no content authoring); reports conflicts. Optional.
   { name: 'cms-pages', script: 'cms/seed-pagebuilder-pages.mjs', required: false, priority: 136 },

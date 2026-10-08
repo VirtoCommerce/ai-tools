@@ -526,5 +526,81 @@
   "PUSH_AUDIENCE_EMPLOYEE": {
     "id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf",
     "platform_id": "8c28ba10-3c72-4456-8c60-7c1eba0d1abf"
+  },
+  "PUNCHOUT_CONFIG_0": {
+    "storeId": "B2B-store",
+    "storeExists": true,
+    "senderDomain": "NetworkId",
+    "senderDomainCheck": true,
+    "allowedReturnUrl": "https://punchoutcommerce.com/*",
+    "returnUrlCheck": true,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+  },
+  "PUNCHOUT_CONFIG_1": {
+    "storeId": "New-super",
+    "storeExists": true,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:02:00",
+    "sessionLifetime": "00:10:00",
+    "tokenLifetimeMinutes": 2,
+    "sessionLifetimeMinutes": 10,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+  },
+  "PUNCHOUT_CONFIG_2": {
+    "storeId": "AGENT-TEST-no-such-store",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+  },
+  "PUNCHOUT_CONFIG_3": {
+    "storeId": "",
+    "storeExists": false,
+    "senderDomain": "",
+    "senderDomainCheck": false,
+    "allowedReturnUrl": "",
+    "returnUrlCheck": false,
+    "tokenLifetime": "00:15:00",
+    "sessionLifetime": "04:00:00",
+    "tokenLifetimeMinutes": 15,
+    "sessionLifetimeMinutes": 240,
+    "source": "vc-deploy-dev#6693 infra/environments.yml (Punchout__Configurations__0..3), deployed 2026-10-01"
+  },
+  "PUNCHOUT_MAPPING_DEFAULT": {
+    "id": "01d406dc-8568-4b08-9263-96ee8ec34416",
+    "userId": "8955c03c-190f-4c2e-8cd3-d85cb1780f56",
+    "memberId": "28df4ed6-67ed-455a-8fbf-65d1958f69cc",
+    "currentOrganizationId": "7c901bc8-e83b-4953-a77c-bbf7d3512d78",
+    "otherOrganizationId": "",
+    "organizationCount": 1
+  },
+  "PUNCHOUT_MAPPING_MULTI_ORG": {
+    "id": "4e47cebb-17fa-465d-9626-982803bb3618",
+    "userId": "1fbedcd6-ccd1-4479-8f9a-6cff894ccf2f",
+    "memberId": "e4a80a20-85a1-4fb3-aad7-e136ea30abd5",
+    "currentOrganizationId": "a0a835c4-ec97-4467-914d-9fbfa7500349",
+    "otherOrganizationId": "91b24624-6b94-4c29-8969-d87d64f7a45c",
+    "organizationCount": 2
+  },
+  "BACKOFFICE_PUNCHOUT_READ": {
+    "user_id": "170e26ee-5854-4b8b-8a88-fab75a6dd1fa",
+    "role_id": "AGENT-TEST-Punchout-Reader"
+  },
+  "BACKOFFICE_NO_PUNCHOUT": {
+    "user_id": "31171794-f3db-4f5d-91d5-6d243754e02a",
+    "role_id": "AGENT-TEST-Punchout-None"
   }
 }

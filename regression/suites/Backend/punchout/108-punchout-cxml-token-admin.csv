@@ -1,0 +1,533 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PNCH-001,"PRE-FLIGHT — Punchout module installed, configuration 0 answers a setup, mapping registered (suite BLOCKED, not FAIL, when missing)",Punchout > Pre-flight,High,,,"ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite BLOCKED, never FAIL):
+(1) Module VirtoCommerce.Punchout installed: GET {{BACK_URL}}/api/platform/modules lists it with isInstalled=true.
+(2) Test data seeded: npm run seed:punchout resolved @td(PUNCHOUT_MAPPING_DEFAULT.id) and the four PUNCHOUT_CONFIG_0..3 sharedSecret tokens to non-empty values.
+(3) Punchout.Enabled is on and the store has a URL on the configuration-0 store: a valid setup below answers a StartPage rather than cXML 500.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP modules]
+GET {{BACK_URL}}/api/platform/modules
+[REST-EXEC modules]
+[REST-OP setup]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC setup]","[DATA label=modules] body.[?id=VirtoCommerce.Punchout].isInstalled = true {SPEC}
+[ERRORS label=setup] HTTP 200 {SPEC}
+[DATA label=setup] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=setup] body matches /<StartPage><URL>[^<]+\/punchout\/[A-Za-z0-9_-]{43}<\/URL>/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"module missing from /api/platform/modules, cXML Status 500 on a valid setup, empty @td value, HTTP 404 on /api/punchout/cxml",none — the setup issued here leaves one unredeemed token that expires on its own,VCST-5886 · Archetype:CONFIG · Technique:EG,Draft
+PNCH-002,Punchout setup — StartPage is the store URL plus a 43-character per-request token,Punchout > cXML setup,High,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active; Punchout.Enabled on and a URL set on the configuration-0 store,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), store0=@td(PUNCHOUT_CONFIG_0.storeId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP store]
+GET {{BACK_URL}}/api/stores/{{store0}}
+[REST-EXEC store]
+[REST-OP s1]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC s1]
+[REST-OP s2]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC s2]","[ERRORS label=s1] HTTP 200 {SPEC}
+[DATA label=s1] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=s1] body matches /<StartPage><URL>https?:\/\/[^<\/]+(:\d+)?\/punchout\/[A-Za-z0-9_-]{43}<\/URL>/ {SPEC}
+[DATA label=s2] body matches /<StartPage><URL>https?:\/\/[^<\/]+(:\d+)?\/punchout\/[A-Za-z0-9_-]{43}<\/URL>/ {SPEC}
+[REL] host of the s1 StartPage URL == host of the store's secureUrl, or of its url when secureUrl is empty {SPEC}
+[REL] the 43-character token of s1 != the token of s2 {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage without a host, token shorter or longer than 43 characters, identical tokens, cXML Status other than 200",none — both tokens expire unredeemed,VCST-5886 · Archetype:BOUNDARY · Technique:EP,Draft
+PNCH-003,"Punchout setup — not-XML, truncated, empty and external-entity bodies answer cXML 400 with no stack trace",Punchout > cXML setup,High,BL-AUTH-017,,{{BACK_URL}} reachable; the request is anonymous (no Authorization header) and sends Content-Type text/xml,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[REST-OP bad_text]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: this is not xml
+[REST-EXEC bad_text]
+[REST-OP bad_trunc]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0""?><cXML payloadID=""p"" timestamp=""t""><Header><From>
+[REST-EXEC bad_trunc]
+[REST-OP bad_empty]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+[REST-EXEC bad_empty]
+[REST-OP bad_xxe]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0""?><!DOCTYPE cXML [<!ENTITY xxe SYSTEM ""file:///etc/hostname"">]><cXML payloadID=""p"" timestamp=""t""><Request><ProfileRequest>&xxe;</ProfileRequest></Request></cXML>
+[REST-EXEC bad_xxe]","[ERRORS label=bad_text] HTTP 200 {SPEC}
+[DATA label=bad_text] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=bad_trunc] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=bad_empty] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=bad_xxe] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=bad_text] body matches /not a well-formed cXML document/ {SPEC}
+[DATA label=bad_xxe] body matches /not a well-formed cXML document/ {SPEC}
+[DATA label=bad_text] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}
+[DATA label=bad_xxe] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 500 on any body, StackTrace or System. in the body, the entity value echoed in the response, response slower than 5s",none,VCST-5886 · Archetype:SILENT · Technique:EP,Draft
+PNCH-004,Punchout setup — a missing Request answers 400 and a ProfileRequest answers 450,Punchout > cXML setup,Medium,,,{{BACK_URL}} reachable; the request is anonymous (no Authorization header); configuration 0 is deployed (its sharedSecret resolves),"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[REST-OP no_request]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <cXML payloadID=""p"" timestamp=""t""><Header/></cXML>
+[REST-EXEC no_request]
+[REST-OP profile]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><ProfileRequest/></Request></cXML>
+[REST-EXEC profile]","[DATA label=no_request] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=profile] body matches /Status[^>]*code=""450""/ {SPEC}
+[DATA label=profile] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage in either response, HTTP 500, cXML Status 200",none,VCST-5886 · Archetype:LIFECYCLE · Technique:DT,Draft
+PNCH-005,Punchout setup — a wrong or missing SharedSecret answers 401 and starts no session,Punchout > cXML setup,Critical,,,{{BACK_URL}} reachable; the request is anonymous (no Authorization header); sender domain and return URL are valid for configuration 0 so only the secret differs,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[REST-OP wrong]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>agent-test-wrong-secret</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC wrong]
+[REST-OP absent]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC absent]","[DATA label=wrong] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=absent] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=wrong] body matches /^(?![\s\S]*StartPage)/ {SPEC}
+[DATA label=absent] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage in either response, cXML Status 200 for the request with no secret, HTTP 500",none,VCST-5886 · Archetype:SCOPE · Technique:DT,Draft
+PNCH-006,Punchout setup — sender domain mismatch or absence answers 401 on configuration 0; the check ignores case,Punchout > cXML setup,High,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[REST-OP duns]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""DUNS""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC duns]
+[REST-OP nodomain]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC nodomain]
+[REST-OP lower]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""networkid""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC lower]","[DATA label=duns] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=nodomain] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=lower] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=lower] body matches /<StartPage><URL>/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"cXML Status 200 for DUNS, cXML Status 200 for a missing domain, cXML Status 401 for the lower-case domain",none — the lower-case setup leaves one unredeemed token that expires on its own,VCST-5886 · Archetype:CONFIG · Technique:DT,Draft
+PNCH-007,"Punchout setup — a foreign, missing, look-alike or sample-host return URL answers 400 on configuration 0",Punchout > cXML setup,Critical,,,"Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active. DV-002-OK: the foreign, look-alike and sample hosts are deliberate attacker-side negative-test inputs, not environment URLs","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId)","[REST-OP foreign]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>https://evil.example.com/return</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC foreign]
+[REST-OP missing]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC missing]
+[REST-OP lookalike]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>https://punchoutcommerce.com.evil.net/x</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC lookalike]
+[REST-OP sample]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>https://punchoutcommerce123.com/tools/cxml-punchout-return</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC sample]
+[REST-OP allowed]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC allowed]","[DATA label=foreign] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=missing] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=lookalike] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=sample] body matches /Status[^>]*code=""400""/ {SPEC}
+[DATA label=allowed] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=lookalike] body matches /^(?![\s\S]*StartPage)/ {SPEC}
+[DATA label=sample] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage in any of the four refusals, cXML Status 200 for punchoutcommerce.com.evil.net, cXML Status 400 for the allowed URL",none,VCST-5886 · Archetype:SCOPE · Technique:BVA,Draft
+PNCH-008,Punchout setup — an unmapped identity and an inactive mapping answer 401,Punchout > cXML setup,Critical,,,"Mapping alias PUNCHOUT_MAPPING_DEFAULT resolved (its userId and memberId are reused by one own AGENT-TEST- mapping created in the case); if the platform refuses a second mapping for the same account the case is BLOCKED, not FAIL","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP unmapped]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-UNMAPPED</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC unmapped]
+[REST-OP inact]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-INACT"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":false}
+[REST-EXEC inact]
+[REST-CAPTURE inact.body.id → INACT_ID]
+[REST-OP inactive]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-INACT</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC inactive]
+[REST-OP activate]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{INACT_ID}}"",""externalId"":""AGENT-TEST-PO-INACT"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC activate]
+[REST-OP active]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-INACT</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC active]","[DATA label=unmapped] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=inactive] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=active] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=inactive] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage for the unmapped or the inactive identity, cXML Status 401 for the re-activated mapping, HTTP 500 on mapping create","[REST-OP cleanup_map]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{INACT_ID}}
+[REST-EXEC cleanup_map]",VCST-5886 · Archetype:LIFECYCLE · Technique:DT,Draft
+PNCH-009,Punchout setup — a store with Punchout Enabled off answers cXML 500 for a mapped identity,Punchout > cXML setup,High,,,"Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active. Uses the configuration-1 store, never the configuration-0 store the storefront suite signs in on. Store settings are written through the Admin SPA store Settings > Punchout, or PUT /api/stores/{id} with the full store read first and replaced verbatim; read the value back before the setup (a POST /api/platform/settings write does not bust the cache)","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret1=@td(PUNCHOUT_CONFIG_1.sharedSecret), store1=@td(PUNCHOUT_CONFIG_1.storeId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP store_before]
+GET {{BACK_URL}}/api/stores/{{store1}}
+[REST-EXEC store_before]
+[SETUP] turn 'Punchout Enabled' off on the store {{store1}} (store Settings > Punchout) and read the setting back
+[REST-OP off]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret1}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC off]
+[SETUP] turn 'Punchout Enabled' back on and read the setting back
+[REST-OP on]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret1}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC on]","[DATA label=off] body matches /Status[^>]*code=""500""/ {SPEC}
+[DATA label=off] body matches /^(?![\s\S]*StartPage)/ {SPEC}
+[DATA label=on] body matches /Status[^>]*code=""200""/ {SPEC}
+[REL] the store's settings after the restore == the settings captured in store_before {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"cXML Status 200 or a StartPage while the setting is off, cXML Status 500 after it was restored, store settings differ from store_before",restore Punchout Enabled on the store {{store1}} to the value captured in store_before and read it back,VCST-5886 · Archetype:CONFIG · Technique:DT,Draft
+PNCH-010,Punchout setup — a store with neither Url nor SecureUrl answers cXML 500 for a mapped identity,Punchout > cXML setup,Medium,,,"Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active. The configuration-1 store only (never the configuration-0 store). Read the whole store first and replace it verbatim on restore — PUT /api/stores replaces the entire store, so a partial body deletes settings (2026-08-27 outage)","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret1=@td(PUNCHOUT_CONFIG_1.sharedSecret), store1=@td(PUNCHOUT_CONFIG_1.storeId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP store_before]
+GET {{BACK_URL}}/api/stores/{{store1}}
+[REST-EXEC store_before]
+[SETUP] PUT the captured store with url and secureUrl emptied and every other field unchanged
+[REST-OP nourl]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret1}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC nourl]
+[SETUP] PUT the captured store back verbatim","[DATA label=nourl] body matches /Status[^>]*code=""500""/ {SPEC}
+[DATA label=nourl] body matches /^(?![\s\S]*StartPage)/ {SPEC}
+[REL] the store read after the restore == store_before, field for field {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage without a host, cXML Status 200, store differs from store_before after the restore",PUT the store captured in store_before back verbatim and read it again,VCST-5886 · Archetype:BOUNDARY · Technique:DT,Draft
+PNCH-011,Punchout setup — configuration 1 skips the domain and return-URL checks,Punchout > cXML setup,High,,,DV-002-OK: the foreign return URL is a deliberate negative-test input. Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active; Punchout.Enabled on and a URL set on the configuration-1 store,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret1=@td(PUNCHOUT_CONFIG_1.sharedSecret)","[REST-OP cfg1]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""DUNS""><Identity>{{ident}}</Identity><SharedSecret>{{secret1}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>https://evil.example.com/return</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg1]
+[REST-OP cfg1_none]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret1}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg1_none]
+[REST-OP cfg0_same]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""DUNS""><Identity>{{ident}}</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>https://evil.example.com/return</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg0_same]","[DATA label=cfg1] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=cfg1] body matches /<StartPage><URL>[^<]+\/punchout\/[A-Za-z0-9_-]{43}<\/URL>/ {SPEC}
+[DATA label=cfg1_none] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=cfg0_same] body matches /Status[^>]*code=""401""/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"cXML Status 401 or 400 for configuration 1, cXML Status 200 for the same request on configuration 0 (the control)",none — the issued tokens expire unredeemed,VCST-5886 · Archetype:CONFIG · Technique:DT,Draft
+PNCH-012,Punchout setup — a configuration naming a missing store or no StoreId answers cXML 500 with no stack trace,Punchout > cXML setup,Medium,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret2=@td(PUNCHOUT_CONFIG_2.sharedSecret), secret3=@td(PUNCHOUT_CONFIG_3.sharedSecret)","[REST-OP cfg2]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret2}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg2]
+[REST-OP cfg3]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret3}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg3]
+[REST-OP cfg3_unmapped]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>AGENT-TEST-PO-UNMAPPED</Identity><SharedSecret>{{secret3}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC cfg3_unmapped]","[DATA label=cfg2] body matches /Status[^>]*code=""500""/ {SPEC}
+[DATA label=cfg3] body matches /Status[^>]*code=""500""/ {SPEC}
+[DATA label=cfg3_unmapped] body matches /Status[^>]*code=""500""/ {SPEC}
+[DATA label=cfg2] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}
+[DATA label=cfg3] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}
+[DATA label=cfg2] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage for configuration 2 or 3, HTTP 500, cXML Status 401 for configuration 3 with an unmapped identity (the check order moved)",none,VCST-5886 · Archetype:SILENT · Technique:DT,Draft
+PNCH-013,"Punchout token — a start link redeems exactly once, also under two parallel redemptions",Punchout > cXML setup,Critical,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active; a fresh setup is minted for each token inside the case,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), store0=@td(PUNCHOUT_CONFIG_0.storeId)","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a configuration-0 PunchOutSetupRequest for {{ident}}; [CAPTURE] the 43-character tail of the StartPage URL → TOKEN_A
+[HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded) grant_type=punchout&session_token={{TOKEN_A}}&storeId={{store0}}
+[HTTP] repeat the identical request
+[SETUP] mint a second setup; [CAPTURE] the token tail → TOKEN_B
+[HTTP] send two identical redeem requests for TOKEN_B at the same instant (Promise.all)","[STATUS] first redeem of TOKEN_A == 200 and the body carries an access_token {SPEC}
+[STATUS] second redeem of TOKEN_A == 400 and error == invalid_grant {SPEC}
+[COUNT] exactly 1 of the 2 parallel redeems of TOKEN_B returns 200 {SPEC}
+[COUNT] exactly 1 of the 2 parallel redeems of TOKEN_B returns 400 {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 on the replay, two HTTP 200 in the parallel pair, HTTP 500 on /connect/token",none — redeemed tokens are terminal,VCST-5886 · Archetype:REPLAY · Technique:ST,Draft
+PNCH-014,"Punchout token — the access token carries no refresh token, lives as long as the session and is a customer token",Punchout > cXML setup,High,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), store0=@td(PUNCHOUT_CONFIG_0.storeId), sessionMinutes=@td(PUNCHOUT_CONFIG_0.sessionLifetimeMinutes)","[SETUP] POST a configuration-0 setup for {{ident}}; [CAPTURE] the token tail → TOKEN
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{TOKEN}}&storeId={{store0}}; [CAPTURE] expires_in → EXPIRES_IN
+[CAPTURE] decode the access_token payload (base64url of the middle segment)","[STATUS] 200 {SPEC}
+[BODY] refresh_token is absent {SPEC}
+[BODY] expires_in <= {{sessionMinutes}} x 60 and expires_in >= {{sessionMinutes}} x 60 - 120 {SPEC}
+[BODY] access_token payload claim channelId == punchout {SPEC}
+[BODY] access_token payload claim role == __customer {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"refresh_token present, expires_in equal to the platform default instead of the session lifetime, channelId or role claim missing",none,VCST-5886 · Archetype:BOUNDARY · Technique:EP,Draft
+PNCH-015,Punchout token — on configuration 1 a start link is dead after the 2-minute token lifetime,Punchout > cXML setup,High,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active. Takes about 3 minutes of wall-clock (waits past {{tokenMinutes}} minutes),"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret1=@td(PUNCHOUT_CONFIG_1.sharedSecret), store1=@td(PUNCHOUT_CONFIG_1.storeId), tokenMinutes=@td(PUNCHOUT_CONFIG_1.tokenLifetimeMinutes)","[SETUP] POST a configuration-1 setup for {{ident}}; [CAPTURE] the token tail → TOKEN_EARLY
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{TOKEN_EARLY}}&storeId={{store1}}
+[SETUP] POST a second configuration-1 setup; [CAPTURE] the token tail → TOKEN_LATE
+[WAIT] {{tokenMinutes}} minutes plus 10 seconds
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{TOKEN_LATE}}&storeId={{store1}}","[STATUS] redeem of TOKEN_EARLY (inside the lifetime) == 200 {SPEC}
+[STATUS] redeem of TOKEN_LATE (after the lifetime) == 400 and error == invalid_grant {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 for TOKEN_LATE, HTTP 400 for TOKEN_EARLY, HTTP 500 on /connect/token",none,VCST-5886 · Archetype:BOUNDARY · Technique:BVA,Draft
+PNCH-016,Punchout token — a token issued before its mapping was deactivated or deleted no longer redeems,Punchout > cXML setup,High,,,Own AGENT-TEST- mapping created in the case on the userId and memberId of PUNCHOUT_MAPPING_DEFAULT (BLOCKED if the platform refuses a second mapping per account). Already-started sessions are NOT revoked by design — this case redeems only tokens that were never redeemed,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId), store0=@td(PUNCHOUT_CONFIG_0.storeId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP rev]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-REV"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC rev]
+[REST-CAPTURE rev.body.id → REV_ID]
+[SETUP] POST a configuration-0 setup for AGENT-TEST-PO-REV; [CAPTURE] the token tail → T1
+[REST-OP deact]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{REV_ID}}"",""externalId"":""AGENT-TEST-PO-REV"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":false}
+[REST-EXEC deact]
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{T1}}&storeId={{store0}}
+[REST-OP react]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{REV_ID}}"",""externalId"":""AGENT-TEST-PO-REV"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC react]
+[SETUP] POST a second setup for AGENT-TEST-PO-REV; [CAPTURE] the token tail → T2
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{T2}}&storeId={{store0}}
+[SETUP] POST a third setup for AGENT-TEST-PO-REV; [CAPTURE] the token tail → T3
+[REST-OP del]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{REV_ID}}
+[REST-EXEC del]
+[HTTP] POST {{BACK_URL}}/connect/token grant_type=punchout&session_token={{T3}}&storeId={{store0}}","[STATUS] redeem of T1 after deactivation == 400 and error == invalid_grant {SPEC}
+[STATUS] redeem of T2 minted after re-activation == 200 {SPEC}
+[STATUS] redeem of T3 after the mapping was deleted == 400 and error == invalid_grant {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 for T1 or T3, HTTP 400 for T2 (the control), HTTP 500 on /connect/token",delete the mapping AGENT-TEST-PO-REV if the case aborted before the delete step,VCST-5886 · Archetype:LIFECYCLE · Technique:ST,Draft
+PNCH-017,"Punchout mapping REST — userId and memberId are required and the account must belong to the contact (no admin, no foreign account)",Punchout > cXML setup,Critical,,,Mapping alias PUNCHOUT_MAPPING_DEFAULT resolved. Every identity created or attempted here is AGENT-TEST-PO-VAL-* and is removed in Cleanup,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId), other=@td(PUNCHOUT_MAPPING_MULTI_ORG.userId), admin={{ADMIN}}","[AUTH role=ADMIN_DEFAULT]
+[REST-OP admin_user]
+GET {{BACK_URL}}/api/platform/security/users/{{admin}}
+[REST-EXEC admin_user]
+[REST-CAPTURE admin_user.body.id → ADMIN_USER_ID]
+[REST-OP no_user]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-VAL-1"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC no_user]
+[REST-OP no_member]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-VAL-2"",""userId"":""{{mapUser}}"",""isActive"":true}
+[REST-EXEC no_member]
+[REST-OP as_admin]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-VAL-3"",""userId"":""{{ADMIN_USER_ID}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC as_admin]
+[REST-OP foreign]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-VAL-4"",""userId"":""{{other}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC foreign]
+[REST-OP valid]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-VAL-5"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC valid]
+[REST-CAPTURE valid.body.id → VALID_ID]
+[REST-OP switch_admin]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{VALID_ID}}"",""externalId"":""AGENT-TEST-PO-VAL-5"",""userId"":""{{ADMIN_USER_ID}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC switch_admin]
+[REST-OP search_val]
+POST {{BACK_URL}}/api/punchout-user-mappings/search
+Content-Type: application/json
+Body: {""keyword"":""AGENT-TEST-PO-VAL"",""take"":50}
+[REST-EXEC search_val]","[DATA label=no_user] status = 400 {SPEC}
+[DATA label=no_member] status = 400 {SPEC}
+[DATA label=as_admin] status = 400 {SPEC}
+[DATA label=foreign] status = 400 {SPEC}
+[DATA label=switch_admin] status = 400 {SPEC}
+[ERRORS label=valid] HTTP 200 {SPEC}
+[DATA label=search_val] body.results.length = 1 {SPEC}
+[DATA label=search_val] body.results.0.externalId = AGENT-TEST-PO-VAL-5 {SPEC}
+[DATA label=search_val] body.results.0.userId = {{mapUser}} {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 for the administrator or the foreign account, a refused identity found by the search, HTTP 500, the valid control refused","[REST-OP cleanup_map]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{VALID_ID}}
+[REST-EXEC cleanup_map]",VCST-5886 · Archetype:SCOPE · Technique:EG · Probe:VC-B2B-003,Draft
+PNCH-018,Punchout mapping REST — a duplicate ExternalId is refused on create and on re-key and leaves one mapping,Punchout > cXML setup,High,,,"Two own AGENT-TEST-PO-DUP-* mappings are created in the case on the userId and memberId of PUNCHOUT_MAPPING_DEFAULT (BLOCKED if the platform refuses a second mapping per account). The message text is English-only until translations ship — assert the status and the stored count, never the sentence","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP dup_a]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-DUP-A"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC dup_a]
+[REST-CAPTURE dup_a.body.id → DUP_A_ID]
+[REST-OP dup_b]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-DUP-B"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC dup_b]
+[REST-CAPTURE dup_b.body.id → DUP_B_ID]
+[REST-OP dup_post]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-DUP-A"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC dup_post]
+[REST-CAPTURE dup_post.body.id → DUP_POST_ID]
+[REST-OP dup_put]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{DUP_B_ID}}"",""externalId"":""AGENT-TEST-PO-DUP-A"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC dup_put]
+[REST-OP search_dup]
+POST {{BACK_URL}}/api/punchout-user-mappings/search
+Content-Type: application/json
+Body: {""keyword"":""AGENT-TEST-PO-DUP"",""take"":50}
+[REST-EXEC search_dup]","[DATA label=dup_post] status = 400 {SPEC}
+[DATA label=dup_put] status = 400 {SPEC}
+[DATA label=search_dup] body.results.length = 2 {SPEC}
+[DATA label=search_dup] body.results[?externalId=AGENT-TEST-PO-DUP-A].length = 1 {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 or 500 on the duplicate POST or PUT, two mappings stored under AGENT-TEST-PO-DUP-A, SQL text in the response","[REST-OP cleanup_a]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{DUP_A_ID}}
+[REST-EXEC cleanup_a]
+[REST-OP cleanup_b]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{DUP_B_ID}}
+[REST-EXEC cleanup_b]",VCST-5886 · Archetype:SCOPE · Technique:DT,Draft
+PNCH-019,Punchout mapping REST — re-keying moves the access to the new identity and deleting ends it,Punchout > cXML setup,High,,,Own AGENT-TEST-PO-RK1 mapping created in the case on the userId and memberId of PUNCHOUT_MAPPING_DEFAULT (BLOCKED if the platform refuses a second mapping per account),"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP rk]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-RK1"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC rk]
+[REST-CAPTURE rk.body.id → RK_ID]
+[REST-OP before]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-RK1</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC before]
+[REST-OP rekey]
+PUT {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""id"":""{{RK_ID}}"",""externalId"":""AGENT-TEST-PO-RK2"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC rekey]
+[REST-OP old]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-RK1</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC old]
+[REST-OP new]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-RK2</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC new]
+[REST-OP del]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{RK_ID}}
+[REST-EXEC del]
+[REST-OP deleted]
+POST {{BACK_URL}}/api/punchout/cxml
+Content-Type: text/xml
+Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential domain=""{{domain0}}""><Identity>AGENT-TEST-PO-RK2</Identity><SharedSecret>{{secret0}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie><BrowserFormPost><URL>{{retUrl}}</URL></BrowserFormPost></PunchOutSetupRequest></Request></cXML>
+[REST-EXEC deleted]","[DATA label=before] body matches /Status[^>]*code=""200""/ {SPEC}
+[ERRORS label=rekey] HTTP 200 {SPEC}
+[DATA label=old] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=new] body matches /Status[^>]*code=""200""/ {SPEC}
+[DATA label=deleted] body matches /Status[^>]*code=""401""/ {SPEC}
+[DATA label=deleted] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"cXML Status 200 for the old identity after the re-key, cXML Status 200 after the delete, HTTP 500 on the PUT",delete the mapping {{RK_ID}} if the case aborted before the delete step,VCST-5886 · Archetype:LIFECYCLE · Technique:ST,Draft
+PNCH-020,"Punchout mapping REST — punchout:read can search but not write, and a user with no punchout permission cannot even search",Punchout > cXML setup,Critical,BL-AUTH-005,,"Roles AGENT-TEST-Punchout-Reader (customer:access, customer:read, punchout:read) and AGENT-TEST-Punchout-None (customer:access, customer:read) seeded by npm run seed:punchout. One own AGENT-TEST-PO-RBAC mapping is created by the administrator in the case","viewer=@td(BACKOFFICE_PUNCHOUT_READ.email), viewerPassword={{DEFAULT_TEST_PASSWORD}}, noperm=@td(BACKOFFICE_NO_PUNCHOUT.email), nopermPassword={{DEFAULT_TEST_PASSWORD}}, mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId)","[AUTH role=ADMIN_DEFAULT]
+[REST-OP rbac]
+POST {{BACK_URL}}/api/punchout-user-mappings
+Content-Type: application/json
+Body: {""externalId"":""AGENT-TEST-PO-RBAC"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[REST-EXEC rbac]
+[REST-CAPTURE rbac.body.id → RBAC_ID]
+[AUTH] password grant for {{viewer}} against {{BACK_URL}}/connect/token (grant_type=password, username={{viewer}}, password={{viewerPassword}}); keep the access_token as VIEWER_TOKEN
+[HTTP] POST /api/punchout-user-mappings/search as VIEWER_TOKEN, body {""keyword"":""AGENT-TEST-PO-RBAC"",""take"":10}
+[HTTP] POST /api/punchout-user-mappings as VIEWER_TOKEN, body {""externalId"":""AGENT-TEST-PO-RBAC-W"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":true}
+[HTTP] PUT /api/punchout-user-mappings as VIEWER_TOKEN, body {""id"":""{{RBAC_ID}}"",""externalId"":""AGENT-TEST-PO-RBAC"",""userId"":""{{mapUser}}"",""memberId"":""{{mapMember}}"",""isActive"":false}
+[HTTP] DELETE /api/punchout-user-mappings?ids={{RBAC_ID}} as VIEWER_TOKEN
+[AUTH] password grant for {{noperm}} as above; keep the access_token as NONE_TOKEN
+[HTTP] POST /api/punchout-user-mappings/search as NONE_TOKEN, body {""keyword"":""AGENT-TEST-PO-RBAC"",""take"":10}
+[AUTH] ADMIN_DEFAULT token again
+[HTTP] POST /api/punchout-user-mappings/search body {""keyword"":""AGENT-TEST-PO-RBAC"",""take"":10}","[STATUS] viewer search == 200 and the result contains AGENT-TEST-PO-RBAC {SPEC}
+[STATUS] viewer create == 403 {SPEC}
+[STATUS] viewer update == 403 {SPEC}
+[STATUS] viewer delete == 403 {SPEC}
+[STATUS] no-permission user search == 403 {SPEC}
+[REL] the mapping read by the administrator at the end has the same externalId and isActive=true as at creation {BL}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"HTTP 200 for a viewer write, HTTP 200 for the no-permission search, HTTP 401 for the viewer search, mapping changed or missing after the refused writes","[REST-OP cleanup_map]
+DELETE {{BACK_URL}}/api/punchout-user-mappings?ids={{RBAC_ID}}
+[REST-EXEC cleanup_map]",VCST-5886 · Archetype:SCOPE · Technique:DT · Probe:VC-B2B-002,Draft
+PNCH-021,"Punchout admin — the user widget is hidden on a new contact, shows the identity on a mapped one and 'Not linked' on an unmapped one",Punchout > Admin user mapping,High,,,"[PRE:SIGNIN_AS:ADMIN]
+The contact of {{USER2_EMAIL}} has no punchout mapping; the contact of {{USER_EMAIL}} has the mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId)","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapped={{USER_EMAIL}}, unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[NAV] {{BACK_URL}}/admin
+[BLADE] open 'Companies & contacts' and the contacts list
+[ACT] click the toolbar command that adds a new contact
+[WAIT] the new-contact blade opens
+[READ] widget list of the new-contact blade
+[BLADE] close the blade without saving
+[GRID] search the contacts list for {{mapped}} and open the contact
+[WAIT] contact blade loaded with its widgets
+[READ] widget 'Punchout user' on the mapped contact
+[BLADE] close the blade
+[GRID] search the contacts list for {{unmapped}} and open the contact
+[WAIT] contact blade loaded with its widgets
+[READ] widget 'Punchout user' on the unmapped contact","[WIDGET] widget 'Punchout user' is not present on the new unsaved contact {SPEC}
+[WIDGET] widget 'Punchout user' on the mapped contact shows the text {{ident}} {SPEC}
+[WIDGET] widget 'Punchout user' on the unmapped contact shows 'Not linked' {SPEC}
+[REL] the identity shown on the mapped contact == the externalId returned by POST /api/punchout-user-mappings/search for that contact's memberId {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","widget present on the new contact, 'Not linked' on the mapped contact, identity text different from the stored externalId, console error on blade open",none — no record is created,VCST-5886 · Archetype:LIFECYCLE · Technique:DT,Draft
+PNCH-022,"Punchout admin — the mapping blade has Active and External identity, blocks an empty identity and keeps the mapping after reopen",Punchout > Admin user mapping,High,,,"[PRE:SIGNIN_AS:ADMIN]
+The contact of {{USER2_EMAIL}} has a security account and no punchout mapping. One AGENT-TEST-PO-UI mapping is created here and removed in Cleanup","unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[NAV] {{BACK_URL}}/admin
+[GRID] open the contact of {{unmapped}} from 'Companies & contacts'
+[WIDGET] click widget 'Punchout user'
+[WAIT] the mapping blade opens
+[READ] fields of the blade
+[ACT] leave 'External identity' empty
+[READ] state of the Save command
+[ACT] fill 'External identity': AGENT-TEST-PO-UI-1
+[ACT] tick 'Active'
+[SAVE] click Save
+[WAIT] save completes
+[BLADE] close the mapping blade and the contact blade
+[GRID] open the contact of {{unmapped}} again
+[WAIT] contact blade loaded
+[READ] widget 'Punchout user' text
+[WIDGET] click widget 'Punchout user'
+[READ] values of the reopened mapping blade","[FORM] the blade has the fields 'Active' and 'External identity' {SPEC}
+[FORM] Save is disabled while 'External identity' is empty {SPEC}
+[FORM] Save is enabled once 'External identity' is filled {SPEC}
+[WIDGET] widget 'Punchout user' shows AGENT-TEST-PO-UI-1 after the contact is reopened {SPEC}
+[FORM] reopened blade: 'External identity' == AGENT-TEST-PO-UI-1 and 'Active' is ticked {SPEC}
+[REL] the stored mapping read by POST /api/punchout-user-mappings/search has externalId == the value typed into the blade {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Save enabled with an empty identity, mapping missing after reopen, 'Not linked' after a successful save, toast with an error",delete the mapping AGENT-TEST-PO-UI-1 (DELETE /api/punchout-user-mappings?ids=<id read from the search>),VCST-5886 · Archetype:LIFECYCLE · Technique:DT,Draft
+PNCH-023,Punchout admin — saving an identity already used by another contact shows an error and stores nothing,Punchout > Admin user mapping,High,,,"[PRE:SIGNIN_AS:ADMIN]
+The contact of {{USER2_EMAIL}} has no punchout mapping; the identity @td(PUNCHOUT_MAPPING_DEFAULT.externalId) belongs to another contact","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[NAV] {{BACK_URL}}/admin
+[GRID] open the contact of {{unmapped}} from 'Companies & contacts'
+[WIDGET] click widget 'Punchout user'
+[ACT] fill 'External identity': {{ident}}
+[ACT] tick 'Active'
+[SAVE] click Save
+[WAIT] the request settles
+[READ] the blade state after Save
+[BLADE] close the mapping blade
+[READ] widget 'Punchout user' on the contact","[BLADE] an error bar is shown in the mapping blade {SPEC}
+[BLADE] the blade stays open and Save is still available for a corrected identity {SPEC}
+[WIDGET] widget 'Punchout user' on the contact still shows 'Not linked' {SPEC}
+[COUNT] POST /api/punchout-user-mappings/search for {{ident}} returns exactly 1 mapping {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","success toast, widget shows the duplicate identity, two stored mappings for the identity, no visible error",none — nothing is stored,VCST-5886 · Archetype:SCOPE · Technique:DT,Draft
+PNCH-024,"Punchout admin — deleting a mapping asks for confirmation naming the identity, then the widget shows 'Not linked' and setups answer 401",Punchout > Admin user mapping,Medium,,,"[PRE:SIGNIN_AS:ADMIN]
+An own mapping AGENT-TEST-PO-DEL-1 is created for the contact of {{USER2_EMAIL}} by REST in the case (userId and memberId of that contact)","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), mapUser=@td(PUNCHOUT_MAPPING_DEFAULT.userId), mapMember=@td(PUNCHOUT_MAPPING_DEFAULT.memberId), unmapped={{USER2_EMAIL}}, admin={{ADMIN}}","[SETUP] POST /api/punchout-user-mappings for the contact of {{USER2_EMAIL}} with externalId AGENT-TEST-PO-DEL-1, active; [CAPTURE] the id → DEL_ID
+[NAV] {{BACK_URL}}/admin
+[GRID] open the contact of {{unmapped}} from 'Companies & contacts'
+[WIDGET] click widget 'Punchout user'
+[ACT] click the Delete command of the mapping blade
+[WAIT] the confirmation dialog opens
+[READ] the text of the confirmation dialog
+[ACT] confirm the deletion
+[WAIT] the blade closes
+[READ] widget 'Punchout user' on the contact
+[HTTP] POST {{BACK_URL}}/api/punchout/cxml for a configuration-0 setup with identity AGENT-TEST-PO-DEL-1","[BLADE] the confirmation dialog text contains AGENT-TEST-PO-DEL-1 {SPEC}
+[WIDGET] widget 'Punchout user' shows 'Not linked' after the deletion {SPEC}
+[STATUS] cXML Status code of the setup for AGENT-TEST-PO-DEL-1 == 401 {SPEC}
+[COUNT] POST /api/punchout-user-mappings/search for AGENT-TEST-PO-DEL-1 returns 0 mappings {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","confirmation without the identity, widget still showing the identity, cXML Status 200 for the deleted identity, console error",delete the mapping {{DEL_ID}} if the UI delete did not remove it,VCST-5886 · Archetype:LIFECYCLE · Technique:ST,Draft
+PNCH-025,Punchout admin — a punchout:read user sees the mapping read-only and a user with no punchout permission does not see the widget,Punchout > Admin user mapping,Critical,"BL-AUTH-005, BL-AUTH-014",,"Sign in to the Admin SPA as @td(BACKOFFICE_PUNCHOUT_READ.email) for the first part and as @td(BACKOFFICE_NO_PUNCHOUT.email) for the second (password {{DEFAULT_TEST_PASSWORD}}); both are non-administrator Manager accounts seeded by npm run seed:punchout
+[PRE:CLEAR_SESSION]","ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), viewer=@td(BACKOFFICE_PUNCHOUT_READ.email), noperm=@td(BACKOFFICE_NO_PUNCHOUT.email), mapped={{USER_EMAIL}}","--- SCREEN: punchout:read user ---
+[NAV] {{BACK_URL}}/admin
+[ACT] sign in as {{viewer}}
+[PRE:VERIFY_AUTH]
+[GRID] open the contact of {{mapped}} from 'Companies & contacts'
+[READ] widget 'Punchout user' text
+[WIDGET] click widget 'Punchout user'
+[WAIT] the mapping blade opens
+[READ] fields, Save and Delete of the mapping blade
+--- SCREEN: user with no punchout permission ---
+[ACT] sign out of the Admin SPA
+[ACT] sign in as {{noperm}}
+[PRE:VERIFY_AUTH]
+[GRID] open the contact of {{mapped}} from 'Companies & contacts'
+[WAIT] contact blade loaded with its widgets
+[READ] widget list of the contact blade","[WIDGET] widget 'Punchout user' is shown to the punchout:read user with the text {{ident}} {SPEC}
+[FORM] in the mapping blade of the punchout:read user 'External identity' and 'Active' are not editable {SPEC}
+[FORM] in the mapping blade of the punchout:read user Save and Delete are disabled or absent {SPEC}
+[WIDGET] widget 'Punchout user' is not present for the user with no punchout permission {SPEC}
+[BLADE] the contact blade of the user with no punchout permission opens and shows its other widgets {SPEC}","[CONSOLE] no TypeError or JS error during the blade interaction
+[NETWORK] no 4xx/5xx on the Admin API calls this blade issues","Save or Delete enabled for the read-only user, widget present for the no-permission user, contact blade fails to open for the no-permission user",sign out of the Admin SPA,VCST-5886 · Archetype:SCOPE · Technique:DT · Probe:VC-B2B-002,Draft

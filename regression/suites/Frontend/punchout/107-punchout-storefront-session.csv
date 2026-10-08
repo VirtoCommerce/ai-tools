@@ -1,0 +1,149 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+PNCF-001,[JOURNEY] Punchout — ERP setup to a signed-in buyer adding to the organization's default cart,Punchout > Storefront session > [JOURNEY],Critical,"BL-AUTH-015, BL-B2B-001, BL-CART-005",,"[PRE:CLEAR_SESSION]
+The mapped buyer {{USER_EMAIL}} belongs to exactly one organization and that organization has an existing default cart (its id is read by REST/GraphQL in the first step). Punchout.Enabled is on for the store.
+Desktop viewport 1920x1080.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, orgId=@td(PUNCHOUT_MAPPING_DEFAULT.currentOrganizationId), sku={{TEST_SKU}}","--- SCREEN: ERP setup ---
+[AUTH] password grant for {{buyer}}; [HTTP] query the organization's default cart id; [CAPTURE] it → DEFAULT_CART_ID; discard the token
+[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[ASSERT] the response carries cXML Status 200 and a StartPage URL ending in /punchout/<43-character token>
+--- SCREEN: start page landing (fresh context) ---
+[NAV] {{START_URL}}
+[WAIT] the storefront leaves /punchout/ and loads the signed-in home page
+[ASSERT] the account menu in the top header shows the buyer, not 'Sign in'
+[ASSERT] the label 'Punchout mode' is in the desktop top header next to the account menu
+[ASSERT] the current organization shown in the header
+--- SCREEN: catalog ---
+[NAV] {{frontUrl}}/search?q={{sku}}
+[WAIT] product list loaded
+[ACT] click 'Add to cart' on the product with SKU {{sku}}
+[WAIT] the cart notification appears
+--- SCREEN: cart ---
+[NAV] {{frontUrl}}/cart
+[WAIT] cart page loaded
+[ASSERT] cart line for SKU {{sku}} with quantity 1
+[HTTP] read the cart that holds the line through the storefront GraphQL endpoint using the page's own session; [CAPTURE] its id → PUNCHOUT_CART_ID
+[HTTP] read me.contact.organizations and the current organization id","[STATE] signed in as the user with email {{buyer}} {SPEC}
+[DOM] the label 'Punchout mode' is present in the desktop top header {SPEC}
+[DER] the current organization id == {{orgId}} {BL}
+[REL] PUNCHOUT_CART_ID == DEFAULT_CART_ID {BL}
+[DOM] the cart row containing the text '{{sku}}' shows quantity 1 {SPEC}
+[COUNT] me.contact.organizations has exactly 1 entry {SPEC}","[API] errors[] is empty in every GraphQL mutation this flow issues
+[CONSOLE] no TypeError or JS error on any page in the flow
+[NETWORK] no 4xx/5xx on /graphql","redirect to /403 or the home page signed out, label missing, organization empty, a new cart id, console error on /punchout/, 4xx/5xx on /connect/token",remove the line for SKU {{sku}} from the cart; sign out through the account menu popup,VCST-5886 · Archetype:SILENT · Technique:FLOW,Draft
+PNCF-002,Punchout storefront — a used or invalid start link opens the Access denied page and signs nobody in,Punchout > Storefront session,Critical,,,"[PRE:CLEAR_SESSION]
+Punchout.Enabled is on for the store. Two browser contexts are used: context A redeems the link, context B (fresh) reopens it.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+--- SCREEN: context A redeems the link ---
+[NAV] {{START_URL}}
+[WAIT] signed-in home page loaded
+[ASSERT] the account menu shows the buyer
+--- SCREEN: context B reopens the used link ---
+[NAV] {{START_URL}}
+[WAIT] the page settles
+[ASSERT] URL, page heading and account-menu state in context B
+--- SCREEN: context B opens a made-up link ---
+[NAV] {{frontUrl}}/punchout/agent-test-not-a-token
+[WAIT] the page settles
+[ASSERT] URL, page heading and account-menu state in context B","[NAV] context B URL after the used link is /403 {SPEC}
+[DOM] context B shows the 'Access denied' page after the used link {SPEC}
+[STATE] context B is not signed in after the used link (the account menu offers 'Sign in') {SPEC}
+[NAV] context B URL after the made-up link is /403 {SPEC}
+[STATE] context B is not signed in after the made-up link {SPEC}
+[STATE] context A is still signed in as the buyer after context B's attempts {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","signed in at context B, redirect to the home page instead of /403, blank page, 5xx on /connect/token",sign out of context A through the account menu popup; close both contexts,VCST-5886 · Archetype:REPLAY · Technique:ST,Draft
+PNCF-003,Punchout storefront — a start link opened while another user is signed in switches to the mapped buyer with nothing carried over,Punchout > Storefront session,High,BL-B2B-001,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:USER2]
+[PRE:RESET_CART]
+Other user {{USER2_EMAIL}} is signed in by password and holds one marker line (SKU {{TEST_SKU}}) in their cart; the mapped buyer {{USER_EMAIL}} has a cart that does not carry that line id.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, otherUser={{USER2_EMAIL}}, sku={{TEST_SKU}}","[NAV] {{frontUrl}}/search?q={{sku}}
+[ACT] click 'Add to cart' on the product with SKU {{sku}}
+[WAIT] the cart notification appears
+[HTTP] read the cart line ids of the signed-in user; [CAPTURE] them → OTHER_LINE_IDS
+[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}} in the same browser context
+[WAIT] signed-in home page loaded
+[ASSERT] the account menu shows the buyer
+[NAV] {{frontUrl}}/cart
+[WAIT] cart page loaded
+[HTTP] read me.id, me.contact.organizations and the cart line ids with the page's own session; [CAPTURE] the line ids → PUNCHOUT_LINE_IDS","[STATE] the signed-in user's email == {{buyer}} {SPEC}
+[DOM] the label 'Punchout mode' is present in the desktop top header {SPEC}
+[REL] PUNCHOUT_LINE_IDS shares no id with OTHER_LINE_IDS {BL}
+[COUNT] me.contact.organizations has exactly 1 entry {SPEC}
+[DER] the current organization id == @td(PUNCHOUT_MAPPING_DEFAULT.currentOrganizationId) {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","the account menu still shows {{USER2_EMAIL}}, the marker line present in the punchout cart, the other user's organization shown, /403 page",sign out; remove the marker line from {{USER2_EMAIL}}'s cart,VCST-5886 · Archetype:SCOPE · Technique:PW · Probe:VC-CART-001,Draft
+PNCF-004,Punchout storefront — a multi-organization buyer sees only the current organization and no organization switcher,Punchout > Storefront session,High,"BL-AUTH-015, BL-B2B-001",,"[PRE:CLEAR_SESSION]
+The contact {{MULTI_ORG_USER_EMAIL}} belongs to at least two organizations; mapping @td(PUNCHOUT_MAPPING_MULTI_ORG.externalId) is active. Known gap, NOT asserted here: selecting an organization through the API is VCST-6222.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, multiIdent=@td(PUNCHOUT_MAPPING_MULTI_ORG.externalId), multiBuyer={{MULTI_ORG_USER_EMAIL}}, multiOrg=@td(PUNCHOUT_MAPPING_MULTI_ORG.currentOrganizationId)","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{multiIdent}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}}
+[WAIT] signed-in home page loaded
+[ASSERT] the account menu shows the buyer {{multiBuyer}}
+[ACT] click the user name in the top header
+[WAIT] the account popup is visible
+[ASSERT] organization controls in the account menu and the header
+[HTTP] read me.contact.organizations and the current organization id with the page's own session","[STATE] signed in as the user with email {{multiBuyer}} {SPEC}
+[COUNT] me.contact.organizations has exactly 1 entry {SPEC}
+[DER] that entry's id == {{multiOrg}} {BL}
+[DOM] the top header and the account popup contain no element labelled 'Organization' that opens a list of organizations {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","more than one organization listed, an organization switcher visible, empty organization list, /403 page",sign out through the account menu popup,VCST-5886 · Archetype:SCOPE · Technique:PW,Draft
+PNCF-005,Punchout storefront — on configuration 1 the buyer is signed out when the 10-minute session ends,Punchout > Storefront session,High,,,"[PRE:CLEAR_SESSION]
+Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active. Takes about {{sessionMinutes}} minutes plus one: run it outside the batch (the machine runner caps waits at 300 s).","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, secret1=@td(PUNCHOUT_CONFIG_1.sharedSecret), sessionMinutes=@td(PUNCHOUT_CONFIG_1.sessionLifetimeMinutes)","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a configuration-1 PunchOutSetupRequest for Identity={{ident}}, SharedSecret={{secret1}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}}
+[WAIT] signed-in home page loaded
+[ASSERT] the account menu shows the buyer and the label 'Punchout mode' is present
+[WAIT] {{sessionMinutes}} minutes plus 60 seconds with the tab visible
+[ASSERT] account-menu state, label and URL
+[NAV] {{frontUrl}}/cart
+[WAIT] the page settles
+[ASSERT] the page reached","[STATE] after the session lifetime the buyer is signed out {SPEC}
+[NETWORK] a POST to /revoke/token was issued by the storefront at the end of the session {SPEC}
+[DOM] the label 'Punchout mode' is no longer present {SPEC}
+[NAV] a protected page (/cart) after the sign-out does not show the buyer's cart {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","account menu still shows the buyer past the lifetime, no /revoke/token call, label still present, console error",none — the session ended; close the context,VCST-5886 · Archetype:LIFECYCLE · Technique:ST,Draft
+PNCF-006,Punchout storefront — after signing out of punchout mode a password sign-in has no label and keeps the cart,Punchout > Storefront session,Medium,BL-CART-008,,"[PRE:CLEAR_SESSION]
+Mapped buyer {{USER_EMAIL}} has a known password {{USER_PASSWORD}}; Punchout.Enabled is on.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, buyerPassword={{USER_PASSWORD}}, sku={{TEST_SKU}}","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}}
+[WAIT] signed-in home page loaded
+[NAV] {{frontUrl}}/search?q={{sku}}
+[ACT] click 'Add to cart' on the product with SKU {{sku}}
+[WAIT] the cart notification appears
+[HTTP] read the cart line ids; [CAPTURE] them → LINES_BEFORE
+[ACT] click the user name in the top header
+[WAIT] the account popup is visible
+[ACT] click 'Logout' in the account popup
+[WAIT] signed-out state
+[NAV] {{frontUrl}}/sign-in
+[ACT] fill 'Email': {{buyer}}
+[ACT] fill 'Password': {{buyerPassword}}
+[ACT] click 'Sign in'
+[WAIT] signed-in home page loaded
+[HTTP] read the cart line ids; [CAPTURE] them → LINES_AFTER
+[ASSERT] the desktop top header","[DOM] the label 'Punchout mode' is not present after the password sign-in {SPEC}
+[REL] LINES_AFTER == LINES_BEFORE {BL}
+[STATE] signed in as the user with email {{buyer}} {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","label still shown after the password sign-in, the cart empty after sign-in, sign-in refused",remove the line for SKU {{sku}} from the cart; sign out through the account menu popup,VCST-5886 · Archetype:STALE · Technique:ST · Probe:VC-AUTH-001,Draft
+PNCF-007,Punchout storefront — with Punchout Enabled off the /punchout/ route does not exist on a fresh context,Punchout > Storefront session,High,BL-STORE-001,,"[PRE:CLEAR_SESSION]
+Changes the store-wide setting Punchout.Enabled of the configuration-0 store — the store the other punchout suites sign in on — so it runs alone (exclusiveGroup store-setting:Punchout.Enabled). Write it through the Admin SPA store Settings > Punchout (Save), never PUT /api/stores with a partial body; wait for the public setting to read back before opening the storefront, and use a fresh browser context for every read.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}, store0=@td(PUNCHOUT_CONFIG_0.storeId), admin={{ADMIN}}","[NAV] {{frontUrl}}/punchout/agent-test-not-a-token in a fresh context (setting ON — control)
+[WAIT] the page settles
+[ASSERT] URL and page heading
+[SETUP] turn 'Punchout Enabled' off on the store {{store0}} (store Settings > Punchout, Save) and read the setting back
+[NAV] {{frontUrl}}/punchout/agent-test-not-a-token in a second fresh context (setting OFF)
+[WAIT] the page settles
+[ASSERT] URL and page heading
+[NAV] {{frontUrl}}/agent-test-unknown-path in the same fresh context (setting OFF)
+[WAIT] the page settles
+[ASSERT] URL and page heading
+[SETUP] turn 'Punchout Enabled' back on and read the setting back","[NAV] with the setting on, /punchout/<made-up token> ends on /403 (the route exists and refuses the token) {SPEC}
+[NAV] with the setting off, /punchout/<made-up token> does not end on /403 {SPEC}
+[REL] the page shown for /punchout/<made-up token> with the setting off == the page shown for /agent-test-unknown-path in the same state (the storefront not-found page) {SPEC}
+[REL] the page shown with the setting off != the page shown with it on {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","/403 with the setting off, a not-found page with the setting on, the setting not restored, console error",set 'Punchout Enabled' on the store {{store0}} back to its value before the case and read it back,VCST-5886 · Archetype:CONFIG · Technique:EP,Draft
+PNCF-008,Punchout storefront — the 'Punchout mode' label is translated in every theme locale and never shows a raw key,Punchout > Storefront session,Medium,,,"[PRE:CLEAR_SESSION]
+Punchout.Enabled is on. The mapped buyer {{USER_EMAIL}} is signed in through a fresh start link; the language switcher lists every theme locale.","secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), buyer={{USER_EMAIL}}, frontUrl={{FRONT_URL}}, backUrl={{BACK_URL}}","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a cXML 1.2.041 PunchOutSetupRequest: Sender Credential domain={{domain0}}, Identity={{ident}}, SharedSecret={{secret0}}, BrowserFormPost URL={{retUrl}}; [CAPTURE] the StartPage URL → START_URL
+[NAV] {{START_URL}}
+[WAIT] signed-in home page loaded
+[ACT] click the language switcher in the top header
+[WAIT] the language list is visible
+[READ] the list of languages shown; [CAPTURE] it → LOCALES
+[ACT] for each language in LOCALES, select it in the language switcher
+[WAIT] the page reloads in that language
+[READ] the text of the label in the desktop top header; [CAPTURE] the texts → LABELS_BY_LOCALE
+[ASSERT] the label text per language","[COUNT] LABELS_BY_LOCALE has one non-empty text per language in LOCALES {SPEC}
+[FORMAT] no label text matches /^[a-z]+(\.[a-zA-Z_]+)+$/ (a raw dotted i18n key) {SPEC}
+[REL] for every language other than English the label text != the English label text 'Punchout mode' {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","empty label in one language, a dotted key shown, the English text under a non-English language, console warning about a missing i18n key",switch the storefront language back to English; sign out through the account menu popup,VCST-5886 · Archetype:PARITY · Technique:EP,Draft

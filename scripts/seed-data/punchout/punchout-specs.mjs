@@ -18,7 +18,8 @@
  *     `PUNCHOUT_SHARED_SECRET_<n>_<TEST_ENV>`.
  *
  *  2. MAPPINGS — punchout user mappings (`/api/punchout-user-mappings`).
- *     - DEFAULT  `AGENT-TEST-PO-100` → the {{USER_EMAIL}} persona. CREATED BY /qa-test 1r, deleted at
+ *     - DEFAULT  `AGENT-TEST-PO-100` → the {{USER_EMAIL}} persona (contact in exactly ONE org — the
+ *       single-org side of the org-resolution pair; MULTI_ORG is the other side). CREATED BY /qa-test 1r, deleted at
  *       run close-out. This seeder only REGISTERS it (writes its ids) and must NEVER create, change or
  *       delete it — see PROTECTED_EXTERNAL_IDS / teardownMappingTargets().
  *     - MULTI_ORG `AGENT-TEST-PO-200` → the {{MULTI_ORG_USER_EMAIL}} persona (contact in two orgs).
@@ -119,7 +120,7 @@ export function hhmmssToMinutes(s) {
 
 export const MAPPING_SPECS = [
   { alias: 'PUNCHOUT_MAPPING_DEFAULT', externalId: 'AGENT-TEST-PO-100', personaEmailVar: 'USER_EMAIL',
-    owned: false, ownerNote: 'created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it' },
+    owned: false, maxOrganizations: 1, ownerNote: 'created by /qa-test VCST-5886 step 1r; deleted at run close-out — this seeder only registers it' },
   { alias: 'PUNCHOUT_MAPPING_MULTI_ORG', externalId: 'AGENT-TEST-PO-200', personaEmailVar: 'MULTI_ORG_USER_EMAIL',
     owned: true, minOrganizations: 2, ownerNote: 'seed-punchout.mjs find-or-create; teardown deletes it by id' },
 ];
