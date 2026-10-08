@@ -13,6 +13,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
+import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
@@ -45,7 +46,7 @@ export function trustOf(evidence = []) {
   const supporting = evidence.filter((e) => !e.contradicts);
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
-  const { trust: confirmations, disputed } = countEvidence(evidence);
+  const { trust: confirmations, disputed, resolved } = countEvidence(evidence);
   // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
   //
   // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
@@ -95,7 +96,7 @@ export function trustOf(evidence = []) {
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
+  return { label, confirmations, disputed, resolved, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -110,7 +111,7 @@ export function trustOf(evidence = []) {
 export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
   return {
     id: hit.row.id,
@@ -124,11 +125,14 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
     provenance: evidence.map((e) => ({
       method: e.method ?? 'observation',
       deployment: e.deployment ?? null,
+      conditions: e.conditions ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
       who: e.who ?? null,
       contradicts: Boolean(e.contradicts),
       note: e.note ?? null,
+      resolved: e.resolved ?? null,
+      resolution: e.resolution ?? null,
     })),
     indexTrust: hit.row.trust,
     indexDrift: !unavailable && hit.row.trust !== trust.confirmations
@@ -958,11 +962,13 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
+  // `--conditions "page=/cart"` is rewritten at its first value, not its start (VCST-6179).
+  if (input.conditions !== undefined) out.conditions = repairConditions(input.conditions, env);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = fields.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f]) || out.conditions !== input.conditions
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
@@ -985,6 +991,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
@@ -1055,6 +1063,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     evidence: [{
       method: input.method ?? 'observation',
       deployment: standName(input.deployment),
+      ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -1186,6 +1195,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
@@ -1214,6 +1225,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
+    ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a

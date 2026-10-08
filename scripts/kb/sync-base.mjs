@@ -2,14 +2,15 @@
 // `npm run kb:sync-base -- --base <checkout> [--remote origin] [--main main] [--dry-run]` (VCST-6122).
 //
 // Merges base `main` into the checked-out base branch when `main` only APPENDED evidence to entries
-// the branch also holds (core/sync-base.mjs says why plain `git merge` is not enough). Steps:
+// the branch also holds, or closed a dispute in place (`kb:disputes resolve`, VCST-6179)
+// (core/sync-base.mjs says why plain `git merge` is not enough). Steps:
 //   1. refuse on a dirty tree or a merge already in progress; fetch <remote>;
 //   2. classify everything main changed since the merge base: entries modified (must be
 //      evidence-only), entries added (taken as written), entries deleted (refused), other files;
 //   3. --dry-run stops here and prints the plan;
 //   4. `git merge --no-commit --no-ff <remote>/<main>`, then write every main-modified entry as the
-//      branch version + main's new evidence (+ hand-off to successors), re-flag duplicate sessions,
-//      rebuild index.json, stage the result;
+//      branch version + main's new evidence (+ hand-off to successors) + main's dispute resolutions,
+//      re-flag duplicate sessions, rebuild index.json, stage the result;
 //   5. refuse to leave a half-merge: a merge that did not start is reported, not written over; any
 //      other unmerged path, or any failure after the merge started, aborts the merge.
 // It NEVER commits or pushes: the base is public, so the staged merge is reviewed and committed by a
@@ -79,6 +80,7 @@ function main() {
   }
   for (const id of r.extended) console.log(`  + evidence ${id}`);
   for (const h of r.handedOff) console.log(`  handed off ${h}`);
+  for (const d of r.resolvedOn ?? []) console.log(`  resolved on main ${d}`);
   if (a.dryRun) { console.log('dry run: nothing merged'); return 0; }
 
   const merged = tryGit('merge', '--no-commit', '--no-ff', target);

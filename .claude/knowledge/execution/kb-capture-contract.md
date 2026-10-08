@@ -41,6 +41,7 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `scope` | ≥ 1 `axis=value` | `surface=<value>` from `SURFACES` in [`scripts/kb/core/index-load.mjs`](../../../scripts/kb/core/index-load.mjs); an item without `=` is dropped silently, so `surface storefront` ends in a refusal |
 | `deployment` | the stand you observed it on | **the stand's name as the base already spells it** — the `on <stand>` of an evidence line that `kb_ask` / `kb_show` printed for that stand (`vcst_qa`, `vcptcore_stable`). **Never the bare `TEST_ENV` value:** `vcst` is not `vcst_qa`, and the base never maps one onto the other (`stand()` in `verbs.mjs`, header). No hit on that stand ⇒ the first label of the `BACK_URL` host with `-` as `_` (`vcst-qa.govirto.com` → `vcst_qa`) |
 | `method` | how you established it | optional; `observation` (the default) is the only value the tool description admits — see §Open decision |
+| `conditions` | what the stand was running and how it was set up | optional on `capture` / `confirm`, **expected on `dispute`** — §Conditions |
 
 `confirm` and `dispute` need the entry `id` and `deployment` (`dispute` also `saw`). A superseded id
 is refused with the ids of its successors — confirm or dispute the one you actually observed. An entry
@@ -91,6 +92,26 @@ from; and any coordinate your own subject / question / claim already names. Fix 
 same-subject retry is the only one `kb:report` pairs with its refusal exactly; a reworded one is
 matched only heuristically, by the ask both followed, and still counts as abandoned in the strict
 number.
+
+## Conditions
+
+`conditions` is `key=value` pairs (`;`-separated in the CLI, one per item in the MCP list) naming
+what the behaviour may depend on: the build (`platform`, `theme`, `module:<Id>`), and any
+`setting:<Name>`, `store`, `role` or `state:<what>` that decides it. Only values you read on the
+stand — the **deployed** build (`GET /api/platform/modules`, `npm run store:caps -- --settings`;
+[`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) §Build Verification), never the
+git-declared one — and never a credential, a name or an email (the base is public). A malformed pair is
+refused, never truncated: a cut value is a wrong condition. Why it exists: two observations of one
+behaviour on one stand disagree most often because the build or a setting differed, and until this
+field nothing recorded either (VCST-6179; `scripts/kb/core/conditions.mjs`, header).
+
+## Resolved disputes
+
+A dispute flags an entry; only `/kb-judge` closes one, after a live investigation, through a reviewed
+PR on the base. The resolution is written ON the contradicting evidence item (`resolved` = one of
+`RESOLUTIONS` in [`scripts/kb/core/index-build.mjs`](../../../scripts/kb/core/index-build.mjs),
+`resolvedAt`, `resolvedBy`, `resolvedIn`, `resolution`). A resolved dispute stays on the entry and
+is printed with its verdict, but it no longer marks the entry DISPUTED. No agent tool writes it.
 
 ## At the end of a turn
 

@@ -27,9 +27,32 @@ export function countEvidence(evidence = []) {
   // (`duplicateSession`, merge-entries.mjs) is kept for provenance and not counted: one agent seeing
   // one fact once, filed twice, is one observation, not a corroboration.
   const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
-  const disputed = items.filter((e) => e?.contradicts).length;
-  return { trust: items.length - disputed, disputed };
+  const contradicting = items.filter((e) => e?.contradicts);
+  // `disputed` counts the OPEN disputes only. A dispute a judge resolved stays on the entry -- it is
+  // the history of the claim -- but it no longer flags it: before this, an entry a human had already
+  // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
+  const resolved = contradicting.filter(isResolved).length;
+  return { trust: items.length - contradicting.length, disputed: contradicting.length - resolved, resolved };
 }
+
+/**
+ * How a judge closed a dispute (VCST-6179, `/kb-judge`). Written ON the contradicting evidence item,
+ * never as an item of its own: a client from before this field still reads the dispute as open
+ * (stale, never wrong), where a separate item would be counted by it as one more confirmation.
+ *
+ *   claim-amended        the dispute was right; the entry's claim was corrected
+ *   version-scoped       both sides were right on different builds; the entry names the build range
+ *   conditions-scoped    both sides were right under different settings; the entry names the condition
+ *   split                the entry held two facts; each now lives in its own entry
+ *   dispute-wrong        the entry holds; the dispute misread what it saw
+ *
+ * A value outside this list resolves nothing -- a typo must not close a dispute silently.
+ */
+export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong']);
+export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
+
+/** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution']);
 
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();
@@ -42,7 +65,7 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  * anything. A diff nobody can read is a diff nobody reviews.
  */
 export function buildRow(data, path) {
-  const { trust, disputed } = countEvidence(data.evidence);
+  const { trust, disputed, resolved } = countEvidence(data.evidence);
   // The card and the retirement pointer are written only when the entry has them. A key on every
   // row would change every row the first time a client from this change pushed, and a client from
   // before it would take the key off again on its next push -- the same row flapping between two
@@ -64,6 +87,8 @@ export function buildRow(data, path) {
     ...(supersededBy.length ? { supersededBy } : {}),
     trust,
     disputed,
+    // Only when there is one, for the reason the card keys above are optional.
+    ...(resolved ? { resolved } : {}),
   };
 }
 

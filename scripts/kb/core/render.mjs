@@ -13,7 +13,23 @@
 import { MSYS_REMEDY } from './anchors.mjs';
 import { CONTRACT, DEPLOYMENT_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
+import { isResolved } from './index-build.mjs';
 import { idList } from './index-load.mjs';
+
+/**
+ * One evidence item as a line: who, where, under what conditions, when -- and, for a dispute a judge
+ * closed, how it was closed (VCST-6179). A resolved dispute is still printed: it is the history of
+ * the claim, and the resolution says why it no longer flags the entry.
+ */
+function evidenceLine(e) {
+  // A `resolved` outside RESOLUTIONS closes nothing, and says so rather than reading as closed.
+  const verdict = !e.contradicts || !e.resolved ? ''
+    : isResolved(e) ? ` [resolved: ${e.resolved}${e.resolution ? ` — ${e.resolution}` : ''}]`
+      : ` [unknown resolution "${e.resolved}" — still open]`;
+  return `  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
+    + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${e.method ? ` (${e.method})` : ''}`
+    + `${e.note ? ` — ${e.note}` : ''}${verdict}`;
+}
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
 export function hitLines(hit) {
@@ -21,6 +37,7 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
+    + `${hit.trust.resolved ? `, ${hit.trust.resolved} dispute(s) resolved` : ''}`
     // SESSIONS, NOT "INDEPENDENT PARTIES". `by` holds a session key and never held a person, so the
     // old wording promised independence of JUDGEMENT and delivered independence of RUN. Measured the
     // day it was noticed: all 125 commits in the base are one author, so every "5 independent
@@ -46,10 +63,7 @@ export function hitLines(hit) {
   lines.push(`  matched on: ${matched || '—'}   (score ${hit.score})`);
   if (hit.indexDrift) lines.push(`  ! ${hit.indexDrift}`);
   if (hit.unavailable) { lines.push(`  ! ${hit.unavailable}`); return lines; }
-  for (const p of hit.provenance) {
-    lines.push(`  ${p.contradicts ? 'contradicted' : 'seen'} by ${p.by ?? '?'} on ${p.deployment ?? '?'}`
-      + ` at ${p.at ?? '?'} (${p.method})${p.note ? ` — ${p.note}` : ''}`);
-  }
+  for (const p of hit.provenance) lines.push(evidenceLine(p));
   lines.push('');
   for (const line of String(hit.body ?? '').split('\n')) lines.push(`  | ${line}`);
   return lines;
@@ -163,7 +177,8 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   }
   const lines = [
     `${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
-      + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}   status: ${r.entry.status}`,
+      + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}`
+      + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}   status: ${r.entry.status}`,
     `${r.entry.subject}`,
     `question: ${r.entry.question ?? '—'}`,
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
@@ -172,10 +187,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
   const next = idList(r.entry.supersededBy);
   if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
-  for (const e of r.entry.evidence ?? []) {
-    lines.push(`  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'} at ${e.at ?? '?'}`
-      + `${e.note ? ` — ${e.note}` : ''}`);
-  }
+  for (const e of r.entry.evidence ?? []) lines.push(evidenceLine({ ...e, method: null }));
   lines.push('');
   lines.push(r.body);
   return lines;
