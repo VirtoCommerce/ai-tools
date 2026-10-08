@@ -63,8 +63,10 @@ Rules for the live part:
   would land on the OLD body before the PR corrects it (pilot 2026-10-08). An observation of any
   OTHER entry goes through the normal door with `conditions`.
 - **When the operator holds publication**, every kb command of the run — the judge's and each
-  specialist's — carries `KB_QUEUE_DIR=<a run-private dir>` and `KB_PUSH_CONFIRM=1`. A shell variable
-  alone does not hold the shared queue: the MCP server and the `Stop` hook flush it with their own env.
+  specialist's — goes through the **CLI** with `KB_QUEUE_DIR=<a run-private dir>` and
+  `KB_PUSH_CONFIRM=1` (`npm run kb -- ask "<q>"`, not `mcp__kb__kb_ask`), and the specialists' briefs say
+  so. The MCP server's env is fixed when the session starts, so an MCP call writes to the shared queue,
+  which the MCP server and the `Stop` hook flush with their own env.
 - **A stand that cannot be written to is a gap, not a workaround.** If a write the experiment needs is
   refused (permissions, a store setting that blocks the flow), record what was observed read-only and
   name the missing write for the operator.
@@ -95,4 +97,6 @@ does concern.
 
 To split an entry: write a `split` plan and apply it with `npm run kb:migrate-schema2 -- --stamp …`
 then `--apply` on the base checkout (its header has the plan shape). Each child then carries the
-parent's whole evidence; resolve each dispute on each child as above.
+parent's whole evidence; resolve each dispute on each child as above. Split **before** recording the
+investigation's `observe` items, and record each on the child it concerns — an item written on the
+parent first is copied to every child.

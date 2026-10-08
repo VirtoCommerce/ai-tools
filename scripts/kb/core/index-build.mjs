@@ -51,6 +51,9 @@ export function countEvidence(evidence = []) {
 export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'conditions-scoped', 'split', 'dispute-wrong']);
 export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
 
+/** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution']);
+
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();
 

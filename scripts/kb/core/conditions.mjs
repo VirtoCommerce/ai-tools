@@ -16,6 +16,8 @@
 // `theme=2.59.0-pr-2476`), and a wrong condition is worse than none -- it is what a judge scopes an
 // entry by.
 
+import { undoMsysRewrite } from './anchors.mjs';
+
 export const CONDITIONS_MAX = 600;
 const KEY = /^[A-Za-z][\w.:@/-]{0,79}$/;
 const VALUE_MAX = 160;
@@ -46,6 +48,20 @@ export function normalizeConditions(raw) {
   const value = pairs.join('; ');
   if (value.length > CONDITIONS_MAX) return { value: null, problem: `over ${CONDITIONS_MAX} characters -- name the conditions that decide the behaviour, not the whole stand` };
   return { value, problem: null };
+}
+
+/**
+ * Undo Git Bash's rewrite of a CLI `--conditions` argument. MSYS rewrites an argument shaped
+ * `name=/value` -- `page=/cart` arrives as `page=C:/Program Files/Git/cart` -- and the result is a
+ * well-formed pair, so `normalizeConditions` would accept a WRONG condition. Only the value of the
+ * FIRST pair can have been rewritten (MSYS looks at one `=` per argument); a list from MCP never
+ * passed through a shell and is returned untouched.
+ */
+export function repairConditions(raw, env = process.env) {
+  if (typeof raw !== 'string') return raw;
+  const eq = raw.indexOf('=');
+  if (eq < 1) return raw;
+  return `${raw.slice(0, eq + 1)}${undoMsysRewrite(raw.slice(eq + 1), env, { wholeArgument: true })}`;
 }
 
 /** The canonical string back to `{key: value}`, for comparing two observations. */

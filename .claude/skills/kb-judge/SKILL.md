@@ -96,7 +96,17 @@ see [`investigation.md`](investigation.md) §4.
 git -C <base> switch -c judge/<cluster-slug>-<yyyymmdd>
 ```
 
-1. **Record the investigation's observations of each disputed entry**, one per stand and build:
+**One judge branch open at a time.** A merged judge PR that edits an entry's body makes
+`kb:sync-base` refuse every other branch (it only carries appended evidence and resolutions), so a
+second branch opened alongside the first must be brought up to date by hand.
+
+**Run every `kb:disputes` write inside this Claude Code session.** Outside one there is no session key:
+`observe` and `resolve` refuse, because the party check would have nothing to compare.
+
+1. **Record the investigation's observations of each disputed entry**, one per stand and build —
+   **after** any split in item 2, on the child the observation concerns: a split copies every item of
+   the parent to every child, an observation included, and it would count as a confirmation of the
+   sibling it never looked at:
 
    ```bash
    npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" \
@@ -115,13 +125,18 @@ git -C <base> switch -c judge/<cluster-slug>-<yyyymmdd>
 
    It writes the verdict onto that evidence item, rebuilds `index.json`, and **refuses** a session that
    wrote evidence on the entry at or before that dispute — a party never judges its own case. Evidence
-   your own investigation added after the dispute does not disqualify you.
+   your own investigation added after the dispute does not disqualify you. A party is a session, not a
+   person: when the dispute carries your own `who` it says so, and the PR must too. Both `observe` and
+   `resolve` run the push's secret gate over what they write and refuse on a hit.
 4. After body edits, `npm run kb -- reindex --base <base>`, then `git -C <base> diff` — every change
    must be one a verdict explains.
 
 ## Step 7 — Open the PR, never merge it
 
-Push the branch and open a PR against `main` of `VirtoCommerce/vc-knowledge`. The PR description is
+**Not before every client reads resolutions:** the ai-tools change that introduced `kb:disputes`
+merged and pulled by the team — an older client counts a resolved dispute as open. Then bring the
+branch up to date (`npm run kb:sync-base -- --base <base>`, review, commit; it carries main's appended
+evidence and resolutions), push it and open a PR against `main` of `VirtoCommerce/vc-knowledge`. The PR description is
 the judgement, in English, readable without this session:
 
 - per entry: the clauses, which held, which did not;

@@ -7,13 +7,17 @@
 // branch SUPERSEDED lands on a retired file nobody counts, and a merge survivor collects the same
 // session twice. The safe case is narrow and checkable: `main` only APPENDED evidence. Then the branch
 // version of each entry wins, `main`'s new items are appended, and items for a superseded entry are
-// handed to its successor(s) -- tagged exactly as merge-entries / migrate-schema2 tag them.
+// handed to its successor(s) -- tagged exactly as merge-entries / migrate-schema2 tag them. The one
+// in-place edit also accepted is a judge closing a dispute (`RESOLUTION_FIELDS`, VCST-6179): it is
+// carried onto every branch copy of that item. A judge PR that edits an entry's BODY is still a
+// changed body, so a branch syncs after it only by hand -- one judge branch at a time.
 // Anything else (a changed body, subject, anchor or status on `main`; a deleted entry) is refused and
 // named, because only a person can say which side is right.
 //
 // Pure: takes file texts, returns writes and problems. Git lives in scripts/kb/sync-base.mjs.
 
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
+import { RESOLUTION_FIELDS } from './index-build.mjs';
 
 /** One evidence item's identity: the same observation appended on two sides is one item. */
 export const evidenceKey = (e) => `${e?.at ?? ''}|${e?.by ?? ''}|${e?.note ?? ''}|${e?.contradicts ? 1 : 0}`;
@@ -22,19 +26,32 @@ const ids = (v) => (!v ? [] : typeof v === 'string' ? [v] : v.map((x) => (typeof
 const withoutEvidence = (data) => JSON.stringify({ ...data, evidence: undefined });
 const lf = (t) => String(t).replace(/\r\n/g, '\n');
 
+const resolutionOf = (e) => Object.fromEntries(RESOLUTION_FIELDS.filter((f) => e?.[f] !== undefined).map((f) => [f, e[f]]));
+const sameResolution = (a, b) => JSON.stringify(resolutionOf(a)) === JSON.stringify(resolutionOf(b));
+
 /**
- * What `main` did to one entry since the merge base: `{ fresh: [items] }` when it only appended
- * evidence, or `{ problem }` when it changed anything else.
+ * What `main` did to one entry since the merge base: `{ fresh: [items], resolutions: [items] }` when
+ * it only appended evidence and/or closed disputes, or `{ problem }` when it changed anything else.
+ *
+ * A JUDGE'S RESOLUTION IS THE ONE IN-PLACE EDIT an evidence item gets (VCST-6179): `kb:disputes
+ * resolve` writes `RESOLUTION_FIELDS` onto the contradicting item. `evidenceKey` does not see them, so
+ * before this they passed as "nothing changed" and the branch version -- the dispute still open --
+ * was written over git's merge: the verdict vanished on the branch and the branch's later merge
+ * reverted it on main. They are returned here and carried onto the branch's copy of the item.
  */
 export function evidenceOnlyChange(id, baseText, mainText) {
   const b = parseEntry(lf(baseText), id);
   const m = parseEntry(lf(mainText), id);
   if (b.body.trim() !== m.body.trim()) return { problem: `${id}: main changed the body` };
   if (withoutEvidence(b.data) !== withoutEvidence(m.data)) return { problem: `${id}: main changed a field other than evidence` };
-  const before = (b.data.evidence ?? []).map(evidenceKey);
-  const after = (m.data.evidence ?? []).map(evidenceKey);
+  const baseItems = b.data.evidence ?? [];
+  const mainItems = m.data.evidence ?? [];
+  const before = baseItems.map(evidenceKey);
+  const after = mainItems.map(evidenceKey);
   if (before.some((k, i) => after[i] !== k)) return { problem: `${id}: main removed or reordered evidence` };
-  return { fresh: (m.data.evidence ?? []).slice(before.length) };
+  const resolutions = mainItems.slice(0, before.length)
+    .filter((e, i) => Object.keys(resolutionOf(e)).length && !sameResolution(e, baseItems[i]));
+  return { fresh: mainItems.slice(before.length), resolutions };
 }
 
 /**
@@ -55,7 +72,7 @@ export function flagDuplicateSessions(evidence = []) {
  * @param {{changed: Map<string,{base:string, main:string}>, branch: Map<string,string>}} input
  *   changed: entry path -> its text at the merge base and on main, for every entry main MODIFIED;
  *   branch:  entry path -> the branch's text, for every entry on the branch.
- * @returns {{writes: Map<string,string>, problems: string[], extended: string[], handedOff: string[]}}
+ * @returns {{writes: Map<string,string>, problems: string[], extended: string[], handedOff: string[], resolvedOn?: string[]}}
  */
 export function syncEvidence({ changed, branch }) {
   const problems = [];
@@ -83,7 +100,7 @@ export function syncEvidence({ changed, branch }) {
     const r = evidenceOnlyChange(id, base, main);
     if (r.problem) { problems.push(r.problem); continue; }
     if (!load(path)) { problems.push(`${id}: main changed it but the branch does not have it`); continue; }
-    plan.push({ path, id, fresh: r.fresh });
+    plan.push({ path, id, fresh: r.fresh, resolutions: r.resolutions });
   }
   if (problems.length) return { writes: new Map(), problems, extended: [], handedOff: [] };
 
@@ -114,6 +131,36 @@ export function syncEvidence({ changed, branch }) {
     for (const t of targets) append(`entries/${t}.md`, p.fresh.map((x) => (isMerge ? { ...x, mergedFrom: p.id } : { ...x, splitFrom: p.id })));
     handedOff.push(`${p.id} -> ${targets.join(', ')} (${isMerge ? 'merge' : 'split'})`);
   }
+  // Disputes main CLOSED in place (VCST-6179): the verdict goes onto every branch copy of the item --
+  // the entry's own and, when the branch retired the entry, its successors' (a split or merge copies
+  // the item with its `at|by|note` intact). A copy the branch closed DIFFERENTLY is two judges
+  // disagreeing, which only a person settles.
+  const resolvedOn = [];
+  for (const p of plan) {
+    if (!p.resolutions.length) continue;
+    const me = load(p.path).data;
+    const holders = [p.path, ...(me.status === 'superseded'
+      ? [...new Set(ids(me.supersededBy).flatMap((t) => activeSuccessors(t, p.id)))].map((t) => `entries/${t}.md`) : [])];
+    for (const item of p.resolutions) {
+      const key = evidenceKey(item);
+      let found = 0;
+      for (const h of holders) {
+        const e = load(h);
+        e.data.evidence = (e.data.evidence ?? []).map((x) => {
+          if (!x.contradicts || evidenceKey(x) !== key) return x;
+          found += 1;
+          if (sameResolution(x, item)) return x;
+          if (Object.keys(resolutionOf(x)).length) {
+            problems.push(`${p.id}: main resolved the dispute at ${item.at} as ${item.resolved}, the branch's copy in ${h} says ${x.resolved}`);
+            return x;
+          }
+          return { ...x, ...resolutionOf(item) };
+        });
+      }
+      if (!found) problems.push(`${p.id}: main resolved the dispute at ${item.at}, but the branch holds no copy of it`);
+      else resolvedOn.push(`${p.id}@${item.at}`);
+    }
+  }
   if (problems.length) return { writes: new Map(), problems, extended: [], handedOff: [] };
 
   const writes = new Map();
@@ -123,5 +170,5 @@ export function syncEvidence({ changed, branch }) {
     parseEntry(text, path); // must round-trip
     if (lf(branch.get(path)) !== text) writes.set(path, text);
   }
-  return { writes, problems, extended, handedOff };
+  return { writes, problems, extended, handedOff, resolvedOn };
 }

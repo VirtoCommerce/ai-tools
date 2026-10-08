@@ -21,8 +21,10 @@ import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
 import { buildIndex, buildRow, RESOLUTIONS } from './core/index-build.mjs';
 import { appendObservation, applyResolution, clusters, disputeState, dossier, exposure, hints, priority } from './core/disputes.mjs';
 import { canonicalStand } from './core/canonical.mjs';
-import { normalizeConditions } from './core/conditions.mjs';
-import { queueDir, sessionId } from './core/queue.mjs';
+import { normalizeConditions, repairConditions } from './core/conditions.mjs';
+import { undoMsysRewrite } from './core/anchors.mjs';
+import { queueDir, hasSessionId, sessionId } from './core/queue.mjs';
+import { loadSecrets, scanText } from './core/secret-gate.mjs';
 import { cachedWho } from './core/who.mjs';
 
 const USAGE = `usage: npm run kb:disputes -- list --base <checkout> [--json]
@@ -62,8 +64,28 @@ function readLogs(base) {
     .split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean));
 }
 
+/**
+ * THE SECRET GATE, which this path would otherwise skip. A door write reaches the base through the
+ * queue, and `push` scans every queued line; `observe` and `resolve` write the checkout directly, so
+ * the only barrier left would be a reviewer reading a public PR. Kinds only, never the matched text.
+ */
+function gated(values) {
+  const secrets = loadSecrets(process.env);
+  if (!secrets.count) console.error('warning: the secret gate loaded no values -- no env file was readable; token shapes and hosts are still checked');
+  const hits = scanText(values.filter((v) => v != null).map(String), secrets.values, secrets.hosts);
+  return hits.length ? `refused: the secret gate matched ${[...new Set(hits)].join(', ')}; nothing was written` : null;
+}
+
+/** Git Bash rewrites an argument that starts with "/" (`--note "/cart ..."`); undo it, as the door does. */
+const unshell = (v) => (typeof v === 'string' ? undoMsysRewrite(v, process.env, { wholeArgument: true }) : v);
+
+/** A real session key or none: outside Claude Code each process mints its own, which would make every run "independent". */
+const judgeSession = () => (hasSessionId(process.env) ? sessionId(process.env) : null);
+
 function main() {
   const a = parseArgs(process.argv.slice(2));
+  for (const f of ['note', 'why', 'in']) a.flags[f] = unshell(a.flags[f]);
+  a.flags.conditions = repairConditions(a.flags.conditions, process.env);
   const entries = readEntries(a.flags.base);
   const byId = new Map(entries.map((e) => [String(e.data.id).toUpperCase(), e]));
 
@@ -82,9 +104,11 @@ function main() {
     if (cond.problem) { console.error(`refused: --conditions ${cond.problem}`); return 1; }
     const r = appendObservation(entry.data, {
       deployment: canonicalStand(String(a.flags.deployment ?? '')), conditions: cond.value, note: a.flags.note,
-      session: sessionId(process.env), who: cachedWho({ dir: queueDir(process.env), env: process.env }),
+      session: judgeSession(), who: cachedWho({ dir: queueDir(process.env), env: process.env }),
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
+    const blocked = gated([r.item.deployment, r.item.conditions, r.item.note]);
+    if (blocked) { console.error(blocked); return 1; }
     const row = write(entry, r.data);
     console.log(`observed on ${a.id} at ${r.item.at} (${r.item.deployment}); ${row.trust} confirmation(s), ${row.disputed} open dispute(s). Nothing was committed.`);
     return 0;
@@ -94,9 +118,15 @@ function main() {
     const entry = byId.get(a.id);
     if (!entry) throw new Error(`${a.id} is not in ${a.flags.base}`);
     const r = applyResolution(entry.data, {
-      at: a.flags.at, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session: sessionId(process.env),
+      at: a.flags.at, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session: judgeSession(),
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
+    const blocked = gated([a.flags.why, a.flags.in]);
+    if (blocked) { console.error(blocked); return 1; }
+    // A session is not a person (applyResolution, header): say so when the operator is the same one.
+    const me = cachedWho({ dir: queueDir(process.env), env: process.env });
+    const filedBy = (entry.data.evidence ?? []).filter((e) => e.contradicts && String(e.at) === String(a.flags.at)).map((e) => e.who).filter(Boolean);
+    if (me && filedBy.includes(me)) console.error(`note: this dispute was filed by the same operator (${me}) in another session -- say so in the PR`);
     const row = write(entry, r.data);
     console.log(`resolved the dispute at ${a.flags.at} on ${a.id} as ${a.flags.verdict}; ${row.disputed} open, ${row.resolved ?? 0} resolved`);
     console.log('index.json rebuilt. Review with `git diff`, commit on the cluster branch, open the PR. Nothing was committed.');

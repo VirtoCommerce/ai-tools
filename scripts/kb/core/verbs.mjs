@@ -13,7 +13,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
-import { normalizeConditions } from './conditions.mjs';
+import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
@@ -962,11 +962,13 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
+  // `--conditions "page=/cart"` is rewritten at its first value, not its start (VCST-6179).
+  if (input.conditions !== undefined) out.conditions = repairConditions(input.conditions, env);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = fields.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f]) || out.conditions !== input.conditions
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }

@@ -12,6 +12,7 @@
 
 import { isResolved, RESOLUTIONS } from './index-build.mjs';
 import { parseConditions } from './conditions.mjs';
+import { NOTE_MAX } from './verbs.mjs';
 
 const lower = (s) => String(s ?? '').trim().toLowerCase();
 const anchorOf = (a) => lower(typeof a === 'string' ? a : a?.coordinate);
@@ -146,7 +147,7 @@ export function dossier(entry, { exp = null, state = null } = {}) {
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => `${k}=${v}`).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
     const res = e.contradicts ? (isResolved(e) ? `${e.resolved}` : e.resolved ? `INVALID ${e.resolved}` : 'open') : '';
-    lines.push(`| ${i + 1} | ${side} | ${e.deployment ?? '?'} | ${cond} | ${builds} | ${e.at ?? '?'} | ${e.by ?? '?'} | ${res} |`);
+    lines.push(`| ${i + 1} | ${side} | ${e.deployment ?? '?'} | ${cond} | ${builds} | ${e.at ?? '?'} | ${e.by ?? '?'}${e.who ? ` (${e.who})` : ''} | ${res} |`);
   });
   const noted = items.map((e, i) => [i + 1, e]).filter(([, e]) => e.note);
   if (noted.length) {
@@ -174,6 +175,8 @@ export function appendObservation(data, { deployment, conditions, note, session,
   if (!String(deployment ?? '').trim()) return { problem: '--deployment is required' };
   if (!conditions) return { problem: '--conditions is required: an investigation records what the stand ran' };
   if (!String(note ?? '').trim()) return { problem: '--note is required: what was observed, under these conditions' };
+  // Refused, not cut as the door cuts it: a judge writes this once, by hand, and can shorten it.
+  if (String(note).trim().length > NOTE_MAX) return { problem: `--note is over ${NOTE_MAX} characters; the argument belongs in the PR` };
   if (!session) return { problem: 'no session key: run inside a Claude Code session' };
   const item = {
     method: 'observation',
@@ -190,6 +193,16 @@ export function appendObservation(data, { deployment, conditions, note, session,
 export const RESOLUTION_MAX = 600;
 
 /**
+ * `a` at or before `b`, by TIME. A string comparison of two ISO stamps is wrong when only one carries
+ * milliseconds (`…:00Z` sorts after `…:00.000Z`), and legacy items were written both ways.
+ */
+const atOrBefore = (a, b) => {
+  const x = Date.parse(String(a ?? ''));
+  const y = Date.parse(String(b ?? ''));
+  return Number.isFinite(x) && Number.isFinite(y) ? x <= y : String(a ?? '') <= String(b ?? '');
+};
+
+/**
  * Close one dispute on an entry: write how it was resolved ON the contradicting item, in place.
  * Returns `{data}` or `{problem}`.
  *
@@ -197,6 +210,11 @@ export const RESOLUTION_MAX = 600;
  * dispute -- it wrote any evidence on this entry at or before the dispute being resolved -- cannot
  * resolve it. Evidence the judging session wrote AFTER the dispute is its own investigation and does
  * not disqualify it.
+ *
+ * A party is a SESSION, which is what `by` holds -- not a person: one operator in the desktop app and
+ * in the CLI holds two keys. `session` must be a real session key (`hasSessionId`); outside Claude
+ * Code every process mints its own key, so every run would be "independent" of everyone, and the
+ * caller passes null instead. The dossier prints `who` beside `by` so a reviewer sees the person.
  */
 export function applyResolution(data, { at, verdict, why, ref, session, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
@@ -209,12 +227,12 @@ export function applyResolution(data, { at, verdict, why, ref, session, now = ne
   // Every open item with this `at` is the SAME dispute: a schema-2 split or a merge can carry one
   // dispute into an entry twice (KB-59E4B5FC held two copies), and closing only the first left the
   // entry DISPUTED with no way to name the second.
-  const matching = items.filter((e) => e.contradicts && String(e.at) === String(at));
+  const matching = items.filter((e) => e.contradicts && e.at != null && String(e.at) === String(at));
   if (!matching.length) return { problem: `no dispute at ${at} on ${data.id}; the dossier lists each item's \`at\`` };
   const targets = new Set(matching.filter((e) => !isResolved(e)));
   if (!targets.size) return { problem: `the dispute at ${at} is already resolved (${matching[0].resolved})` };
   const by = `session:${session}`;
-  const party = items.some((e) => e.by === by && String(e.at ?? '') <= String(at));
+  const party = items.some((e) => e.by === by && atOrBefore(e.at, at));
   if (party) return { problem: `${by} wrote evidence on ${data.id} at or before this dispute: a party to a dispute never judges it` };
   const evidence = items.map((e) => (!targets.has(e) ? e : {
     ...e,
