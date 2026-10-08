@@ -3,8 +3,8 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-06",
-    "totalSuites": 152,
+    "generated": "2026-10-08",
+    "totalSuites": 154,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
       "purchase-flow",
@@ -2415,8 +2415,8 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 57,
-      "estimatedMinutes": 27,
+      "testCount": 44,
+      "estimatedMinutes": 14,
       "agent": "qa-frontend-expert",
       "tags": [
         "configurable-products",
@@ -2507,6 +2507,27 @@
         "pdp",
         "widget",
         "conditional-sections",
+        "sprint"
+      ],
+      "customerApplicability": "reference",
+      "clickDriven": true
+    },
+    {
+      "id": "072f",
+      "name": "Configurable Products UI — Configurable Products > Promotions",
+      "file": "regression/suites/Frontend/configurable-products/072f-configurable-products-promotions.csv",
+      "domain": "catalog-search",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 41,
+      "estimatedMinutes": 13,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "configurable-products",
+        "storefront",
+        "pdp",
+        "widget",
         "sprint"
       ],
       "customerApplicability": "reference",
@@ -3707,6 +3728,32 @@
       "customerApplicability": "reference",
       "notes": "VCST-5748. REST half of OTP email sign-in (storefront half: 104). OTP-019 and OTP-020 each lock their OWN disposable account (OTP_LOCKOUT_USER_1 / _2): re-arm with `npm run seed:otp-signin:rearm` (seed + live verify) before each run. OTP-022 flips the store-wide OtpSignIn.Enabled setting, shared with 104 OTP-007 — exclusiveGroup keeps the two suites from running at the same time. OTP-018, OTP-025 and OTP-028 encode the SPEC expectation the current build does not meet (code reuse, notification sender/subject, code sent to a blocked account) and are expected to FAIL until fixed.",
       "exclusiveGroup": "store-setting:OtpSignIn.Enabled",
+      "clickDriven": true
+    },
+    {
+      "id": "106",
+      "name": "Sales Rep — Tasks (storefront)",
+      "file": "regression/suites/Frontend/sales-rep/106-sales-rep-tasks-storefront.csv",
+      "domain": "sales-rep",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 29,
+      "estimatedMinutes": 45,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "sales-rep",
+        "tasks",
+        "storefront",
+        "calendar",
+        "feature-gated"
+      ],
+      "requiresModules": [
+        "sales-rep",
+        "task-management"
+      ],
+      "customerApplicability": "reference",
+      "notes": "VCST-6077 (vc-frontend PR #2536). Tasks page redesign: scope chips, date chip, row actions, calendar rail. Every row re-seeds the wall-clock-relative task fixture first (`TEST_ENV=vcst npm run seed:sales-rep-tasks`, decays at local midnight); SR-TK-018 seeds with BROWSER_TZ=America/New_York and sets the browser timezone. Mutating rows restore their task in Cleanup; SR-TK-026 leaves SR_TASK_NODATE_INDIA dated until the next seed. SR-TK-024 asserts the CORRECT focus behaviour and is expected to FAIL on the current build (focus drops to the document root). SR-TK-007, 026, 027 and 028 record observed behaviour pending product-owner answers (All vs U+O+C; canceled-only day; canceled due today in Today). Cases stay Draft until a run promotes them.",
       "clickDriven": true
     }
   ],

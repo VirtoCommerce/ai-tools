@@ -19,7 +19,8 @@ rules:
       kind: manual
       ref: Org A has items in cart → switch to Org B → cart is empty (or shows Org B's cart). Org A's addresses not visible under Org B. Switch back → Org A's cart restored.
     violation_signal: Org A's cart items visible under Org B; addresses from wrong org shown; prices from wrong org applied.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-078, BSM-092 failed in REG-2026-10-08-0812"
   - id: BL-B2B-002
     title: Organization-specific pricing overrides store default
     rule: "When an organization has an assigned price list, those prices override the store's default price list for all members of that organization. The priority chain is: organization price list → store default price list → \"Unavailable.\" If the org price list doesn't cover a product, the store default applies as fallback."
@@ -94,7 +95,8 @@ rules:
       kind: manual
       ref: See BL-WL-002 (per-field merge) and BL-WL-003 (store master switch + record-level gating).
     violation_signal: Master switch OFF but WL still applied; whole-object override instead of per-field merge; an enabled org's branding suppressed merely by a disabled/absent store *record* (confusing the record flag with the master switch).
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-060, BSM-061 failed in REG-2026-10-08-0812"
   - id: BL-B2B-007
     title: Per-org JWT permission set is org-scoped; pageContext must match it
     rule: A JWT issued for org X MUST carry only the `permission[]` derived from `OrganizationMembership.Roles` for (userId, orgX); permissions from any other org MUST NOT appear. `pageContext.user.permissions` (the `me`/GetPageContext projection) MUST equal the active-org JWT `permission[]`. (VCST-5028.)

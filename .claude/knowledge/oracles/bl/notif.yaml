@@ -36,7 +36,8 @@ rules:
       kind: manual
       ref: Place order → compare email content against Admin order detail → all values match. Check for unresolved tokens or placeholder text. Verify currency symbol matches order currency.
     violation_signal: Email shows wrong order total; unresolved template tokens; prices in wrong currency; missing items in email; order number mismatch.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-082 failed in REG-2026-10-08-0812"
   - id: BL-NOTIF-003
     title: Notification failure does not block order
     rule: If the email/notification service fails during order placement, the order must still be created successfully. Notification sending is asynchronous — it must never block or roll back the order transaction. The customer should see the order confirmation page, and the email will be retried in the background.
