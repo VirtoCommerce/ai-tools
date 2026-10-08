@@ -2363,6 +2363,26 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 
 ---
 
+## Domain 28: Returns (BL-RET)
+
+> **Declared 2026-10-06, deliberately EMPTY — no invariant has cleared the evidence bar yet.** The
+> section exists so `.claude/knowledge/domain/returns.md` and `returns.mind-map.json` have a slug to
+> resolve against (`domain:check` DOMAIN-005 until now). The Return module carries two mechanisms on
+> one entity: the legacy admin-created return record, and the buyer self-service request (VCST-5628)
+> that an agent decides per line (VCST-5883). The published guides describe only the first. Returns are
+> judged today only by delegation to general oracles — `BL-AUTH-*` (who may read or decide a return),
+> `BL-B2B-*` (organization scoping) and `BL-NOTIF-*` (exactly-once sends, by analogy only: those are
+> order-email invariants).
+>
+> Candidates surfaced but **not** promoted (each needs a `/qa-review-oracles` three-axis pass): a
+> decision has no reverse path (no un-authorize); a return is decided only through the authorize call,
+> never by setting a status; Draft, Cancelled and Rejected hold no returnable quantity while a decided
+> line holds its approved quantity; every status change sends exactly one email and one push. Surfaces,
+> evidence and the open gaps: `.claude/knowledge/domain/returns.md` §3 and §5; behaviours:
+> `returns.mind-map.json`.
+
+---
+
 ## Invariant Coverage Summary
 
 Generated from `bl/*.yaml` by `npm run bl:render`. P0 rolls up `[P0-revenue]` + `[P0-security]`; P1 rolls up
@@ -2399,4 +2419,5 @@ ticket or a docs page disputes (`status`).
 | Agentic Commerce / UCP | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
+| Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | **Total** | | **223** | **60** | **125** | **38** | **114** | **26** |
