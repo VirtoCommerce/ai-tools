@@ -4,6 +4,12 @@
 
 > The fork owns how it looks. Upstream owns how it behaves.
 
+> [!WARNING]
+> **The skills can make mistakes.** They resolve conflicts, port code and write tests on their own
+> judgement, and a passing build or test run does not prove the result is right. Every change they make —
+> the merge, each port, the map, the log — has to be reviewed by a person before it is merged. The person
+> who merges the PR owns the result.
+
 ## Install
 
 ```
