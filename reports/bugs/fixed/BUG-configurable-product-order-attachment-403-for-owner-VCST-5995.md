@@ -1,6 +1,6 @@
 # Configurable-product attachment: buyer gets 403 on their own file once the cart becomes an order `[P1]`
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Tracker:** VCST-5995 (Bug, High, To do) — found during `/qa-test` on VCST-5924, blocks its requirement 3
 **Env:** vcptcore-qa1 · storefront `2.58.0-pr-2485-ee6efd90` · XCart 3.1033.0 · XOrder 3.1011.0 · Orders 3.1014.0 · FileExperienceApi 3.1004.0
@@ -134,3 +134,9 @@ its **own** `QuoteAuthorizationRequirementFactory` for its own scope (`QuoteModu
 - **Component / module:** XOrder — configuration-item file ownership + the `product-configuration` file authorization requirement factory
 - **RCA anchor:** `src/VirtoCommerce.XOrder.Data/Services/CustomerOrderAggregateRepository.cs:130` (`file.SetOwner(configurationItem)`), gated by `vc-module-x-cart/src/VirtoCommerce.XCart.Data/Authorization/ConfigurationItemFileAuthorizationRequirementFactory.cs:13` → `CanAccessCartAuthorizationHandler`
 - **Routing confidence:** MEDIUM — layer and RCA are source-confirmed and a *single-repo* fix is available in `vc-module-x-order` (the dependency direction allows it, the reverse does not); MEDIUM rather than HIGH because a maintainer may instead choose to make scope→requirement resolution owner-aware in `vc-module-file-experience-api`, which would move the fix to a third repo.
+
+## Resolution
+- **Verified:** 2026-10-08, `/qa-verify-fix` on vcst-qa — VERIFIED WITH NOTES, ticket moved to Tested (not Done: that is a human release decision).
+- **Fix builds (open PRs, pre-release):** FileExperienceApi `3.1007.0-pr-25-ff70` · XCart `3.1040.0-pr-149-9fe0` · XOrder `3.1015.0-pr-55-4471` · Quote `3.1004.0-pr-159-7628`.
+- **Method:** the original flow 3 consecutive times, one file id end to end; owner reads 200 after the order, bytes hash-match; other buyers and anonymous 403, admin 200. Re-checked by a second script. Baseline RED is the cited 2026-09-23 vcptcore-qa1 reproduction (live RED today blocked: vcptcore buyer logins fail).
+- **Not covered:** the second, frontend defect (full-page navigation to /403) and the owner's read on pre-upgrade orders. Evidence: `reports/tickets/Sprint26-20/VCST-5995/`.

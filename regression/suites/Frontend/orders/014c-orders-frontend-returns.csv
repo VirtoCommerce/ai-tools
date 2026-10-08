@@ -363,3 +363,369 @@ ENVIRONMENT REQUIRED BY THIS SUITE (a miss makes the suite - or the named case -
 [DOM] the decline reason label reads ""Motif du refus"" {OBSERVED}
 [DOM] the requested and approved column headers are French {SPEC}
 [DOM] reason names that the Return reasons dictionary does not translate render as the bare code - not asserted as translated (configuration, not a defect) {OBSERVED}",[CONSOLE] no missing-translation warnings,English status or label on the French page; a raw i18n key,Switch the storefront language back to English,VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01) | Behavior:ret.buyer.read,Automated
+RET-ORG-016,"[JOURNEY] Organization holder reviews a colleague's return end to end: grant, submit, tab, list, read-only details, decision and organization copy",Orders Frontend — Returns > Organization returns (step 3),Critical,BL-B2B-007,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_MEMBERSHIP]
+SETUP (API, run by the tester BEFORE any UI step; nothing is created through the UI): (1) the GRANT: as {{ADMIN}} PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId) with {""id"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""@td(ORG_RET_VIEWER_ROLE.id)"", ""roleName"": ""@td(ORG_RET_VIEWER_ROLE.name)""}], ""status"": ""Approved"", ""isLocked"": false} and read it back with GET (idempotent: it writes the role the fixture already holds); (2) as {{ADMIN}} FIRST read GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values and RECORD the values of Return.NotifyOrganizationEmail and Return.SendNotifications as ORIG_NOTIFY_ORG and ORIG_SEND (a dotted key cannot be captured by the runner grammar, so the tester reads and records them; the store settings API ignores null, so a setting stored as null is recorded as its EFFECTIVE value: NotifyOrganizationEmail false, SendNotifications true), THEN POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values {""Return.NotifyOrganizationEmail"": true}, THEN POST {{BACK_URL}}/api/platform-cache/reset (the copy leg: {HYPOTHESIS} until the PO ratifies AC-4; this case turns a SHARED setting ON for its whole run and Cleanup writes back the RECORDED value, so it runs ALONE: no other lane or suite may submit returns meanwhile, it runs AFTER the ""exactly one email"" notification cases of the returns notifications suite (they are only true while the setting is OFF) and never beside them, and together with the other organization-copy cases of that suite in one serial window); (3) xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_J and RET_J. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. The buyer and the holder belong to ONE organization whose email differs from the buyer's order address (so the copy is distinguishable). ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position.",holder=@td(ORG_RET_HOLDER_MEMBERSHIP.email); password=@td(ORG_RET_HOLDER_MEMBERSHIP.password); buyer=@td(ORG_RET_BUYER.email); org_name=@td(ORG_RET_VIEWER_ORG.name); org_email=@td(ORG_RET_VIEWER_ORG.email),"--- SCREEN: Returns page, own list ---
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the tabs show ""My returns"" and a tab named {{org_name}}
+--- SCREEN: Returns page, organization tab ---
+[ACT] click the tab named {{org_name}}
+[WAIT] the organization list loads
+[ASSERT] the row of RMA_J is listed with the buyer's name in the ""Buyer name"" column
+--- SCREEN: Return details, read-only ---
+[ACT] click the row of RMA_J
+[WAIT] the return details page loads
+[ASSERT] the details show ""Requested by"" with the buyer's name and offer no Cancel or Edit control
+--- LAYER: back office decision ---
+[API] as {{ADMIN}} POST {{BACK_URL}}/api/return/RET_J/authorize with every line approved in full
+[WAIT] 25 seconds for the notification jobs
+--- SCREEN: Return details after the decision ---
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ASSERT] the row of RMA_J reads the status Approved
+--- LAYER: notification journal ---
+[API] as {{ADMIN}} POST {{BACK_URL}}/api/notifications/journal with {""objectIds"": [""RET_J""], ""objectType"": ""Return"", ""take"": 50}
+[ASSERT] the journal rows are counted per recipient address","[DOM] the Returns page shows the tabs ""My returns"" and a tab named {{org_name}}; ""My returns"" is the one open on arrival {SPEC} (VCST-5884 AC-1, AC-2: a tab named after the organization beside the own list)
+[DOM] the organization list contains the row of RMA_J and its ""Buyer name"" cell is the buyer's name, not the holder's {SPEC} (VCST-5884 AC-3: the organization's returns, everyone's, with the buyer named)
+[DOM] the details of RMA_J show ""Requested by"" with the buyer's name {SPEC} (VCST-5884 AC-3)
+[STATE] no Cancel or Edit control is offered on the colleague's return {SPEC} (VCST-5884 AC-3: read-only)
+[STATE] after the decision the status of RMA_J in the organization list is Approved {SPEC} (VCST-5883: the status vocabulary of the decision)
+[REL] the journal holds ONE Approved email to the buyer's address and ONE to {{org_email}}, and ONE Registered email to each {HYPOTHESIS} (AC-4 unratified, ticket comment 110487; real when the PO ratifies the organization copy; 3x observed one and one)
+[CONSOLE] no JS error on the Returns page, the organization tab or the details page {BL} (BL-UI-004: no JS errors on the surface under test)",[API] organizationReturns as the holder lists RMA_J; [API] the notification journal of RET_J carries the buyer and the organization copy; [NETWORK] no 4xx/5xx on /graphql during the journey,"the holder holds the permission and the page shows no organization tab (mid-journey: the tab is missing after the first load); the tab shows but the colleague's return is missing from its list; the details offer Cancel or Edit on a colleague's return; the status stays Requested after the decision (stale list); the organization mailbox receives nothing, or twice, for what the buyer was told","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": <ORIG_NOTIFY_ORG as recorded>}
+[REST POST /api/platform-cache/reset]
+Restore the value RECORDED in SETUP (ORIG_NOTIFY_ORG and ORIG_SEND), written explicitly: the store API ignores null, so a setting that was stored null is restored to its EFFECTIVE value (NotifyOrganizationEmail false, SendNotifications true); then read GET .../values and confirm. Never leave it ON.
+The approved return keeps one unit of line A held for good (no un-authorize); re-seed with npm run seed:returns:org -- --fresh when line A (40 ordered) runs low. The role grant is the fixture's own and is left as found.",VCST-5884 · Archetype:SCOPE · Technique:FLOW,Draft
+RET-ORG-017,"Returns page — a member without the permission sees only the own list, and ?scope=organization silently falls back to it",Orders Frontend — Returns > Organization returns (step 3),Critical,BL-B2B-007,,"[PRE:SIGNIN_AS:ORG_RET_BUYER]
+The viewer ORG_RET_BUYER is an organization EMPLOYEE (a NON-holder: read me.permissions as a precondition, it carries no xapi:my_organization:return:view). SETUP (API): a colleague's return exists in the organization so the organization is not empty: xAPI createReturn as buyer @td(ORG_RET_HOLDER_MEMBERSHIP.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_HOLDER_MEMBERSHIP.email), password @td(ORG_RET_HOLDER_MEMBERSHIP.password)) on order @td(ORG_RET_HOLDER_MEMBERSHIP.orderId) line @td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_C. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",viewer=@td(ORG_RET_BUYER.email); password=@td(ORG_RET_BUYER.password); col_order=@td(ORG_RET_HOLDER_MEMBERSHIP.orderId),"[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the tabs are read
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the page loads
+[ASSERT] the list shown and the tabs are read","[DOM] /account/returns offers no tab named after an organization; ""My returns"" is the only list {SPEC} (VCST-5884 AC-1: the tab needs the specific permission)
+[STATE] /account/returns?scope=organization shows the OWN returns list, no organization tab, no error page and no message {OBSERVED} (3x: a silent fallback; the URL keeps ?scope)
+[REL] the rows at ?scope=organization equal the rows at /account/returns {SPEC} (VCST-5884 AC-1: a non-holder reads nothing of the organization)
+[DOM] RMA_C (the colleague's return) is in neither list {SPEC} (VCST-5884 AC-1)
+[CONSOLE] no console error and no failed /graphql request on either page {BL} (BL-UI-004)",[API] organizationReturns as this buyer is refused with the same Forbidden for any organization id; [NETWORK] the deep link sends no organizationReturns request or a refused one that the page does not paint,the employee is offered an organization tab; the deep link lands on an error page or an empty organization list instead of the own returns; the colleague's return RMA_C is listed,cancel every return this case created as its owner (xAPI cancelReturn on RMA_C); a cancelled return holds no unit,VCST-5884 · Archetype:SCOPE · Technique:DT,Draft
+RET-ORG-018,"Returns page — a contact in two organizations, permission in one: the tab follows the organization switcher and each list holds only that organization's returns",Orders Frontend — Returns > Organization returns (step 3),High,BL-B2B-007,ECL-14.3,"[PRE:SIGNIN_AS:ORG_RET_MULTI_ORG]
+ORG_RET_MULTI_ORG is a contact in TWO organizations: X (@td(ORG_RET_HOME_ORG.name), ordinary member, no permission) and Y (@td(ORG_RET_VIEWER_ORG.name), membership role holding the view permission). SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_Y (a colleague's return in Y); xAPI createReturn as buyer @td(ORG_RET_MULTI_ORG.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_MULTI_ORG.email), password @td(ORG_RET_MULTI_ORG.password)) on order @td(ORG_RET_MULTI_ORG.orderId) line @td(ORG_RET_MULTI_ORG.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_OWN (the contact's OWN return, raised on its order for organization X). ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position.",account=@td(ORG_RET_MULTI_ORG.email); password=@td(ORG_RET_MULTI_ORG.password); org_x=@td(ORG_RET_HOME_ORG.name); org_y=@td(ORG_RET_VIEWER_ORG.name),"[PRE:SWITCH_ORG:ORG_RET_HOME_ORG]
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the tabs with organization X active are read
+[ACT] switch the active organization to {{org_y}} with the organization switcher
+[WAIT] the page reloads
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the tabs with organization Y active are read
+[ACT] click the tab named {{org_y}}
+[WAIT] the organization list loads
+[ASSERT] the rows of the organization list are read
+[ACT] click the tab ""My returns""
+[WAIT] the own list loads
+[ASSERT] the rows of the own list are read","[STATE] with organization X active there is no organization tab {BL} (BL-B2B-007: the token carries the permissions of the ACTIVE organization)
+[STATE] with organization Y active a tab named {{org_y}} is shown {BL} (BL-B2B-007)
+[DOM] the organization list holds RMA_Y and holds no return of organization X (RMA_OWN is not in it) {SPEC} (VCST-5884 AC-3: the active organization's returns only)
+[DOM] RMA_OWN, raised for organization X, is listed under ""My returns"" whichever organization is active {SPEC} (VCST-5884 AC-3: the contact's own returns stay in their own list)
+[REL] the tab label follows the organization switcher: it names Y with Y active and is absent with X active {HYPOTHESIS} (tab gate from the token versus server gate from the queried organization may differ; real when the PO says which one decides; ECL-14.3)",[API] organizationReturns for organization X is refused and for Y is answered with the same account,the organization tab shows organization X's returns while Y is selected; the contact's own return for the other organization is missing from both lists; the tab stays after switching to the organization where the permission is not held,cancel every return this case created as its owner (xAPI cancelReturn on RMA_Y and RMA_OWN); a cancelled return holds no unit,VCST-5884 · Archetype:SCOPE · Technique:PW,Draft
+RET-ORG-019,Organization tab — a draft cancelled before submit is not listed and its details link opens nothing for the holder,Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+HELD, read before running: the SPEC and DOC expectation is kept and the build is known to break it (3x and lane A observed: a draft cancelled before submit is listed on the organization tab as Cancelled and opens read-only with the buyer's comment and reasons). A red result is the finding; it is NOT inverted to the build and stays Draft until the PO answers ""is a draft cancelled before submit an organization record"". SETUP (API, run by the tester before the UI steps): as buyer @td(ORG_RET_BUYER.email) (token as in the other cases) xAPI createReturn on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with a customerComment AGENT-TEST VCST-5884 never sent and a reasonComment, DO NOT submit, then cancelReturn; record RMA_D and RET_D. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password); buyer=@td(ORG_RET_BUYER.email),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ASSERT] RMA_D is looked for in the list
+[ACT] type RMA_D into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the result of the search is read
+[NAV] {{FRONT_URL}}/account/returns/RET_D
+[WAIT] the page loads
+[ASSERT] what the page shows is read","[DOM] RMA_D is not in the organization list and the keyword search for it finds no row {DOC} (PR #28 ""drafts are never listed""; module guide: an abandoned draft is not an organization record; HELD: the build lists it as Cancelled)
+[STATE] /account/returns/RET_D shows the holder a not-found or access-denied state and no comment, reason or quantity of the buyer's {DOC} (PR #28 ""drafts are never listed""; HELD: the build opens it read-only)
+[CONSOLE] no JS error on either page {BL} (BL-UI-004)",[API] organizationReturns as the holder does not list RMA_D and return(RET_D) is null; the buyer still reads RMA_D as its owner,RMA_D is listed (an abandoned draft leaks into the organization history); the details page renders the buyer's comment AGENT-TEST VCST-5884 never sent or the line reason,none -- the draft is already Cancelled and holds no unit,VCST-5884 · Archetype:SCOPE · Technique:ST · Behavior:ret.state.cancelled,Draft
+RET-ORG-020,"Organization tab filters — the status list offers no Draft, and switching back to My returns drops a buyer-name sort",Orders Frontend — Returns > Organization returns (step 3),Medium,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+SETUP (API): the buyer holds a LIVE Draft: xAPI createReturn (WITHOUT submitReturn) as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884; record the RMA and the return id as RMA_LIVE. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. The status list the filter offers is read, not typed: on vcst it offered Approved, Cancelled, Completed, New and Processing and no Requested, Rejected or PartiallyApproved; that difference from the workflow is UNVERIFIED as a defect (likely the environment's status dictionary) and is NOT asserted here. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] open the status filter
+[WAIT] the status options are shown
+[ASSERT] the status options are read
+[ACT] click the ""Buyer name"" column header to sort
+[WAIT] the list re-renders
+[ACT] click the tab ""My returns""
+[WAIT] the own list loads
+[ASSERT] the address bar and the order of the own list are read","[DOM] the status filter of the organization tab offers no ""Draft"" option {DOC} (PR #28: no drafts; the server always excludes them)
+[DOM] RMA_LIVE (the buyer's live Draft) is not in the organization list {DOC} (PR #28 ""drafts are never listed"")
+[STATE] after switching to ""My returns"" the address bar carries no buyer-name sort and the own list is not sorted by a column it does not have {HYPOTHESIS} (the tab switch rewrites the URL state in one step per the PR; real when the PO states the tab-switch rule)
+[CONSOLE] no JS error while the filter opens or the tab switches {BL} (BL-UI-004)",[API] organizationReturns statuses [Draft] returns nothing,a Draft option is offered and can never match; the live Draft is listed; the own list shows a stale sort key from the organization tab,cancel every return this case created as its owner (xAPI cancelReturn on RMA_LIVE); a cancelled return holds no unit,VCST-5884 · Archetype:BOUNDARY · Technique:EP,Draft
+RET-ORG-021,"Organization tab list — Buyer name column, keyword by buyer name, filters, sort and paging survive a reload and a shared link",Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_A and BUYER_NAME (read it from the organization list in step 3 rather than typing it); xAPI createReturn as buyer @td(ORG_RET_HOLDER_MEMBERSHIP.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_HOLDER_MEMBERSHIP.email), password @td(ORG_RET_HOLDER_MEMBERSHIP.password)) on order @td(ORG_RET_HOLDER_MEMBERSHIP.orderId) line @td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_B. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. The page size is READ from the list, never typed; the page-boundary legs (page one full, page two, a page past the end) are computed from the total the list shows. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password); other_org_rma=@td(ORG_RET_OTHER_ORG_RETURN.number),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ASSERT] the column headers and the rows of RMA_A and RMA_B are read
+[ACT] type BUYER_NAME into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the rows and the address bar are read
+[ACT] clear the keyword box
+[WAIT] the list refreshes
+[ACT] type RMA_A into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the rows are read
+[ACT] type {{other_org_rma}} into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the rows are read
+[ACT] clear the keyword box
+[WAIT] the list refreshes
+[ACT] click the ""Buyer name"" column header
+[WAIT] the list re-renders
+[ASSERT] the order of the rows is read
+[ACT] go to the second page of the list
+[WAIT] the second page loads
+[ASSERT] the rows of the second page are compared with the first page
+[NAV] {{FRONT_URL}}/account/returns?scope=organization&page=9999
+[WAIT] the page loads
+[ASSERT] what the page shows is read
+[ACT] reload the page on the second page of the list
+[WAIT] the page reloads
+[ASSERT] the tab the filters the sort and the page are read","[DOM] the list columns are RMA, Date, Buyer name, Status and Qty and the row of RMA_A shows its buyer's name {SPEC} (VCST-5884 AC-3: the buyer is named; the column labels are {OBSERVED} surface text)
+[STATE] the keyword BUYER_NAME lists RMA_A and every listed row carries that buyer name {DOC} (PR #28: the keyword also matches the buyer name)
+[DOM] the keyword RMA_A lists the row of RMA_A and no other buyer's row {DOC} (PR #28 Behaviour)
+[DOM] the keyword {{other_org_rma}} (a return of ANOTHER organization) finds no row {SPEC} (VCST-5884 AC-3: never another organization's row)
+[REL] the rows are ordered by the buyer name ascending after the first click and descending after the second {OBSERVED} (3x: the sort is sent as customerName; a baseline, not a certified rule)
+[REL] no RMA of the first page is repeated on the second page and the second page holds only rows of this organization {SPEC} (VCST-5884 AC-3: paging stays inside the organization)
+[STATE] page=9999 shows an empty page or the last page, no error screen and no row of another organization {HYPOTHESIS} (the behaviour past the end is unstated; real when the PO or the platform list convention states it)
+[STATE] after a reload the same tab, filters, sort and page are open and the address bar carries them {SPEC} (VCST-5883: URL state of the own list, shared by the organization tab)
+[CONSOLE] no JS error and no 4xx/5xx on /graphql during the case {BL} (BL-UI-004)","[API] the same keyword, sort and page sent through organizationReturns return the same rows",the buyer-name search finds nothing; a sort or page change shows a return of another organization on the next page; a reload or a shared link opens a different view than the one left; page past the end crashes,cancel every return this case created as its owner (xAPI cancelReturn on RMA_A and RMA_B); a cancelled return holds no unit,VCST-5884 · Archetype:PARITY · Technique:BVA,Draft
+RET-ORG-022,"Colleague's return details — Requested by is shown, no Cancel or Edit is offered, the row opens details and the viewer's own return stays actionable",Orders Frontend — Returns > Organization returns (step 3),High,BL-B2B-007,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_MEMBERSHIP]
+SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_C (the colleague's return); xAPI createReturn as buyer @td(ORG_RET_HOLDER_MEMBERSHIP.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_HOLDER_MEMBERSHIP.email), password @td(ORG_RET_HOLDER_MEMBERSHIP.password)) on order @td(ORG_RET_HOLDER_MEMBERSHIP.orderId) line @td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_OWN (the holder's OWN return in the same organization; ORG_RET_HOLDER_MEMBERSHIP has its own order). The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position.",holder=@td(ORG_RET_HOLDER_MEMBERSHIP.email); password=@td(ORG_RET_HOLDER_MEMBERSHIP.password); buyer=@td(ORG_RET_BUYER.email),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] click the row of RMA_C
+[WAIT] the return details page loads
+[ASSERT] the details of the colleague's return are read
+[ACT] click the ""Returns"" breadcrumb
+[WAIT] the page loads
+[ASSERT] the tab that opens is read
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] click the row of RMA_OWN
+[WAIT] the return details page loads
+[ASSERT] the details of the holder's own return are read","[DOM] the details of RMA_C show a ""Requested by"" row naming the buyer {SPEC} (VCST-5884 AC-3)
+[STATE] the details of RMA_C offer no Cancel and no Edit control, and the row opens the details and not the editor {SPEC} (VCST-5884 AC-3: read-only)
+[STATE] the details of RMA_OWN, listed in the same organization list, still offer the Cancel action the owner always had {SPEC} (VCST-5883: the owner's own return stays actionable)
+[DOM] the ""Returns"" breadcrumb from a colleague's return opens the organization tab {HYPOTHESIS} (the breadcrumb should return to where the reader came from; real when the PO states it; 3x observed it opens ""My returns"" and drops ?scope=organization)
+[CONSOLE] no JS error on the details pages {BL} (BL-UI-004)",[API] return(RMA_C) as the holder shows availableActions all unavailable,"a read-only page offers Cancel or Edit on a colleague's return; the holder's own return in the list loses its actions (treated as a colleague's); the ""Requested by"" row is blank",cancel every return this case created as its owner (xAPI cancelReturn on RMA_C and RMA_OWN); a cancelled return holds no unit,VCST-5884 · Archetype:SILENT · Technique:EP,Draft
+RET-ORG-023,Colleague's return attachments — the holder opens the photos and cannot delete them; a draft's files stay private,Orders Frontend — Returns > Organization returns (step 3),Medium,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+MANUAL. The case needs the File Experience API scope return-attachments (platform configuration FileUpload:Scopes), which the vcst stand does not declare (POST /api/files/return-attachments answers INVALID_SCOPE, kb KB-84773559): until a stand declares it, no attachment can be uploaded and the case cannot run. Would make it real: the scope on a stand. SETUP (API) then: the buyer uploads one image with its own token to POST {{BACK_URL}}/api/files/return-attachments and submits a return with attachmentUrls on @td(ORG_RET_BUYER.orderId); a second return is created as a Draft with a file. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password); buyer=@td(ORG_RET_BUYER.email),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] click the row of the buyer's submitted return
+[WAIT] the return details page loads
+[ACT] click the first attachment link
+[WAIT] the file opens
+[ASSERT] the attachment area is read for any delete control","[DOM] each attachment of the colleague's return opens for the holder {DOC} (PR #28 Notes: a colleague may read the attachments of a return of the organization)
+[STATE] no delete control is offered for a colleague's attachment, and a direct delete request by the holder is refused {DOC} (PR #28 Notes: delete stays with the owner and the back office)
+[STATE] the files of a DRAFT return are not reachable by the holder {DOC} (PR #28 Notes: drafts stay private)",[API] the file endpoint answers the holder for a submitted return and refuses it for a draft,the holder can delete a colleague's evidence photos; the holder opens a draft's file; an attachment link of a colleague's return does not open,cancel the per-run returns as their owner,VCST-5884 · Archetype:SCOPE · Technique:EP,Manual
+RET-ORG-024,Colleague's legacy return — an admin-created return without customer is presented with a Requested by row and no Cancel or Edit action,Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+HELD and MANUAL: the fixture cannot resolve, so the case leaves the executable set. FIXTURE-GAP: the API cannot create a return without a customer or a store, and the organizations that carry such a legacy return on vcst are SHARED, non-AGENT-TEST organizations, so no holder can exist there; no alias is invented (RETURNS_LEGACY_STORELESS does not resolve). It becomes executable when a legacy return (customerId empty, organization backfilled) exists in an AGENT-TEST organization. The PO has not stated what name a legacy return should show in the Buyer name cell, so that content is NOT asserted: what is asserted is the AC-3 read-only presentation that holds for any colleague's return. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ASSERT] a row with an empty ""Buyer name"" is looked for
+[ACT] click that row
+[WAIT] the return details page loads
+[ASSERT] the ""Requested by"" row and the action area are read","[DOM] the details of a legacy return show a ""Requested by"" row, as the details of any colleague's return do {SPEC} (VCST-5884 AC-3: a colleague's return is shown with who requested it; the name it carries when no customer exists is an open PO question and is not asserted)
+[STATE] the details of a legacy return offer no Cancel and no Edit action, not even a disabled one with an ""unavailable"" tooltip {SPEC} (VCST-5884 AC-3: read-only, no action is offered to a colleague; return.vue:175 skips the colleague rendering when customerId is empty, the mechanism this row targets)
+[CONSOLE] no JS error on a return with no customer {BL} (BL-UI-004)",[API] the legacy return is in organizationReturns only when its organization was backfilled and its store matches,"the details of a legacy return render a disabled Cancel with an unavailable tooltip, which looks broken to the maintainer; the ""Requested by"" row is missing on a legacy return",none -- read-only,VCST-5884 · Archetype:FALLBACK · Technique:EP,Manual
+RET-ORG-025,"Organization tab after a permission is revoked — the tab stays until the next sign-in, the server refuses at once, and the page stays usable",Orders Frontend — Returns > Organization returns (step 3),High,BL-B2B-005,ECL-4.3,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_SUBMIT]
+Execution lane B corrects the plan: the SERVER re-reads roles on every call and ignores the token claim, while the storefront TAB is driven by the token. So the TAB stays until the next sign-in, the server refuses at once, and a grant given mid-session shows its tab only after a fresh sign-in; this case asserts the TAB side. ORG_RET_HOLDER_SUBMIT is used (a dedicated holder whose membership role is ORG_RET_VIEW_SUBMIT_ROLE) so the shared holders stay untouched. SETUP (API) at the points the steps name: as {{ADMIN}} PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_SUBMIT.membershipId) with {""id"": ""@td(ORG_RET_HOLDER_SUBMIT.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_SUBMIT.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [], ""status"": ""Approved"", ""isLocked"": false} (REVOKE) and the same body with ""roles"": [{""roleId"": ""@td(ORG_RET_VIEW_SUBMIT_ROLE.id)"", ""roleName"": ""@td(ORG_RET_VIEW_SUBMIT_ROLE.name)""}] (RESTORE). A colleague's return exists: xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_C. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position. Do not run beside the GraphQL case that signs in the view-and-submit holder to attempt mutations.",holder=@td(ORG_RET_HOLDER_SUBMIT.email); password=@td(ORG_RET_HOLDER_SUBMIT.password); org_name=@td(ORG_RET_VIEWER_ORG.name),"[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the tab named {{org_name}} is present
+[API] REVOKE the role of the holder's membership as {{ADMIN}}
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the page reloads
+[ASSERT] the tabs are read
+[ACT] click the tab named {{org_name}}
+[WAIT] the page responds
+[ASSERT] what the organization tab shows is read
+[ACT] click the tab ""My returns""
+[WAIT] the own list loads
+[ASSERT] the own list is read
+[ACT] sign out
+[WAIT] the sign-in page loads
+[ACT] sign in again as the holder
+[WAIT] the account loads
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the page loads
+[ASSERT] the tabs after the fresh sign-in are read
+[API] RESTORE the role of the holder's membership as {{ADMIN}}
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the page reloads
+[ASSERT] the tabs with the old session are read
+[ACT] sign out
+[WAIT] the sign-in page loads
+[ACT] sign in again as the holder
+[WAIT] the account loads
+[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the page loads
+[ASSERT] the tabs after the second fresh sign-in are read","[STATE] after the revoke and a reload the tab named {{org_name}} is still shown {BL} (BL-B2B-005: the token carries the permissions until the next sign-in; the PR itself lists the stale tab as a known limitation)
+[STATE] clicking that tab after the revoke shows an access-denied or empty state and the page stays usable: no blank page, no crash {BL} (BL-B2B-005: the server refuses at once from live roles)
+[STATE] ""My returns"" still lists the holder's own returns and works after the refusal {SPEC} (VCST-5883: the own list is independent of the grant)
+[STATE] after a fresh sign-in the tab named {{org_name}} is gone {BL} (BL-B2B-005, ECL-4.3: permissions are recalculated at sign-in)
+[STATE] after the grant is restored the OLD session still shows no tab and a fresh sign-in shows it again {BL} (BL-B2B-005: a grant is applied to the token only at the next sign-in; the TAB side only, the server side answers at once)
+[CONSOLE] no JS error on the access-denied state {BL} (BL-UI-004)",[API] the same token is refused on the next organizationReturns call after the revoke and answered after the restore,after the revoke the maintainer lands on a blank or broken page; the tab never disappears even after signing in again; the restored grant shows no tab after a fresh sign-in,"[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_HOLDER_SUBMIT.membershipId)]
+{""id"": ""@td(ORG_RET_HOLDER_SUBMIT.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_SUBMIT.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""@td(ORG_RET_VIEW_SUBMIT_ROLE.id)"", ""roleName"": ""@td(ORG_RET_VIEW_SUBMIT_ROLE.name)""}], ""status"": ""Approved"", ""isLocked"": false}
+cancel every return this case created as its owner (xAPI cancelReturn on RMA_C); a cancelled return holds no unit",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-026,"My returns after the list refactor — search, filters, sort, paging, URL state and the 'Purchase order reference' label",Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_BUYER]
+The buyer's OWN list after the list refactor (returns.vue and useReturns.ts rewritten, about +189/-117). Existing coverage of the same page: ORD-RET-008, ORD-RET-009 (this case asserts the controls they do not reach: URL state and the label). SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_A. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",buyer=@td(ORG_RET_BUYER.email); password=@td(ORG_RET_BUYER.password),"[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the own list loads
+[ACT] type RMA_A into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the rows and the address bar are read
+[ACT] open the status filter
+[WAIT] the status options are shown
+[ACT] choose one status
+[WAIT] the list refreshes
+[ASSERT] the rows and the address bar are read
+[ACT] click the ""Date"" column header
+[WAIT] the list re-renders
+[ASSERT] the order of the rows is read
+[ACT] copy the address from the address bar
+[WAIT] the address is copied
+[NAV] the copied address in a new tab
+[WAIT] the page loads
+[ASSERT] the view that opens is read
+[ACT] click the row of RMA_A
+[WAIT] the return details page loads
+[ASSERT] the label of the purchase order reference field is read","[DOM] the own list shows no ""Buyer name"" column and no organization tab for this non-holder {SPEC} (VCST-5883: the own list is unchanged for the owner)
+[STATE] the keyword, the status filter and the sort each narrow or reorder the rows and each is written into the address bar {SPEC} (VCST-5883: URL state of the own list)
+[REL] a pasted copy of the address opens the same keyword, filter, sort and page {SPEC} (VCST-5883: deep links)
+[DOM] the details page labels the field ""Purchase order reference"" {SPEC} (VCST-5883: the label the owner already saw; the exact string is {OBSERVED} surface text)
+[CONSOLE] no JS error on the own list or the details page {BL} (BL-UI-004)",[API] returns(storeId) answers the same rows the page shows,the buyer's own list loses a filter or a deep link that worked before this release; the label of the purchase order reference changed; an organization-only column leaks into the own list,cancel every return this case created as its owner (xAPI cancelReturn on RMA_A); a cancelled return holds no unit,VCST-5884 · Archetype:PARITY · Technique:EP,Draft
+RET-ORG-027,"Organization table at 375, 768 and 1920 px — no mid-word breaks, a long organization name truncated, keyboard-operable tabs",Orders Frontend — Returns > Organization returns (step 3),Medium,"BL-UI-004, BL-A11Y-003",,"[PRE:SIGNIN_AS:ORG_RET_LONG_NAME_BUYER]
+The viewer IS the holder with the 32-character unbroken buyer name (a holder reads the organization's returns, its own included) in the 60-character-named organization. SETUP (API): xAPI createReturn as buyer @td(ORG_RET_LONG_NAME_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_LONG_NAME_BUYER.email), password @td(ORG_RET_LONG_NAME_BUYER.password)) on order @td(ORG_RET_LONG_NAME_BUYER.orderId) line @td(ORG_RET_LONG_NAME_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_L (at least one submitted return per run). Contrast (BL-A11Y-003) binds only the gated themes (Coffee, Red; VC-UI-001): record which theme vcst serves and, when it is an ungated theme, report the contrast leg as SKIPPED, not PASS. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_LONG_NAME_BUYER.email); password=@td(ORG_RET_LONG_NAME_BUYER.password); long_org=@td(ORG_RET_LONG_NAME_ORG.name); long_buyer=@td(ORG_RET_LONG_NAME_BUYER.name),"[NAV] {{FRONT_URL}}/account/returns?scope=organization with the window at 1920 px
+[WAIT] the organization list loads
+[ASSERT] the Buyer name cell of RMA_L and the tab label are measured
+[ACT] resize the window to 600 px
+[WAIT] the layout settles
+[ASSERT] the Buyer name cell and the page scroll width are measured
+[ACT] resize the window to 768 px
+[WAIT] the layout settles
+[ASSERT] the date and status cells of every row are read for mid-word breaks
+[ACT] press Tab through the tab strip
+[WAIT] focus moves
+[ASSERT] the focus order and the focus ring are read","[OVERFLOW] the 32-character unbroken buyer name stays inside its cell at 1920 px and at 600 px and does not paint over the next column {BL} (BL-UI-004, VC-UI-006: an unbroken value overlays the next column)
+[OVERFLOW] the page has no horizontal scroll at 375, 600, 768 and 1920 px: scrollWidth does not exceed clientWidth {BL} (BL-UI-004)
+[STATE] dates and statuses are not broken in the middle of a word at 768 to 799 px {BL} (BL-UI-004; the prior round saw it on the older head 3f1b9c6, re-derived on 2.60.0)
+[STATE] the tab label for the 60-character organization name is truncated or wrapped inside the tab strip and does not push the tabs out of the page {BL} (BL-UI-004)
+[STATE] every tab is reachable with Tab in the visual order and shows a visible focus ring {BL} (BL-A11Y-001)
+[REL] the contrast of the tab label, the status badges and the Buyer name at 375 px is at least 4.5 to 1 on the gated themes (Coffee, Red) {BL} (BL-A11Y-003; VCST-6107 is in this build, the prior head measured 2.52 to 1 on mobile labels)",[CONSOLE] no JS errors while the window is resized,an unbroken buyer name is painted over the next column; dates or statuses break mid-word at 768 px; a long organization name pushes the tabs out of the page; a tab cannot be reached by keyboard,cancel every return this case created as its owner (xAPI cancelReturn on RMA_L); a cancelled return holds no unit,VCST-5884 · Archetype:RENDER · Technique:EP,Draft
+RET-ORG-028,"Organization tab after the organization is renamed — the tab shows the new name, the rows and returns raised afterwards keep the old one",Orders Frontend — Returns > Organization returns (step 3),Medium,,,"[PRE:SIGNIN_AS:ORG_RET_LONG_NAME_BUYER]
+{HYPOTHESIS} Records what is observed after a rename (3x and lane B: the tab shows the NEW name; existing rows AND a return created after the rename keep the OLD name, REST agrees); it is NOT certified as right: the PO has not said whether a rename should reach returns. The organization renamed is ORG_RET_LONG_NAME_ORG, not ORG_RET_ORGROLE_ORG as the plan had it: ORGROLE_ORG carries an ORGANIZATION-LEVEL role, and a rename through PUT /api/organizations with the fields this grammar can send (id, memberType, name, emails) could drop that role and break its fixture; LONG_NAME_ORG has a membership role only and a single member, the holder ORG_RET_LONG_NAME_BUYER. SETUP (API): xAPI createReturn as buyer @td(ORG_RET_LONG_NAME_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_LONG_NAME_BUYER.email), password @td(ORG_RET_LONG_NAME_BUYER.password)) on order @td(ORG_RET_LONG_NAME_BUYER.orderId) line @td(ORG_RET_LONG_NAME_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_BEFORE; then as {{ADMIN}} PUT {{BACK_URL}}/api/organizations with {""id"": ""@td(ORG_RET_LONG_NAME_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""AGENT-TEST-Org-RetLongName-RENAMED"", ""emails"": [""@td(ORG_RET_LONG_NAME_ORG.email)""]} (first live run confirms nothing else is dropped); then xAPI createReturn as buyer @td(ORG_RET_LONG_NAME_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_LONG_NAME_BUYER.email), password @td(ORG_RET_LONG_NAME_BUYER.password)) on order @td(ORG_RET_LONG_NAME_BUYER.orderId) line @td(ORG_RET_LONG_NAME_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_AFTER. The holder signs in afresh after the rename so the token carries the new name. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias. SHARED FIXTURES: suites that use these personas run SERIALLY with the cases of the GraphQL returns suite and the returns notifications suite that write memberships, lock accounts, rename organizations or turn the organization copy ON, never beside them; identify rows by the RMA numbers THIS case created, never by a total or a position.",holder=@td(ORG_RET_LONG_NAME_BUYER.email); password=@td(ORG_RET_LONG_NAME_BUYER.password); old_name=@td(ORG_RET_LONG_NAME_ORG.name),"[NAV] {{FRONT_URL}}/account/returns
+[WAIT] the returns list loads
+[ASSERT] the organization tab label is read
+[ACT] click the organization tab
+[WAIT] the organization list loads
+[ASSERT] the rows of RMA_BEFORE and RMA_AFTER are read
+[ACT] click the row of RMA_AFTER
+[WAIT] the return details page loads
+[ASSERT] the organization name shown for the return is read","[DOM] the organization tab label shows the NEW name AGENT-TEST-Org-RetLongName-RENAMED {HYPOTHESIS} (the tab label follows the token's organization; 3x and lane B observed the new name; real when the PO states the rename rule)
+[STATE] the return RMA_BEFORE keeps the organization name {{old_name}} {HYPOTHESIS} (a return keeps the organization name copied from its order; by design per PR #28; the PO question; 3x observed)
+[DOM] the return RMA_AFTER, created after the rename, also keeps {{old_name}} {HYPOTHESIS} (it copies the order's snapshot; whether that is wanted is the PO question; 3x and lane B observed)",[API] POST /api/return/search for the organization shows the same organizationName for both returns; the Admin Organization column reads the same field,"the tab label keeps the old name after a fresh sign-in; a return shows a name other than the one the PO rules (the old snapshot where the PO wants the current name, or the reverse); the rename was not restored","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/organizations]
+{""id"": ""@td(ORG_RET_LONG_NAME_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""@td(ORG_RET_LONG_NAME_ORG.name)"", ""emails"": [""@td(ORG_RET_LONG_NAME_ORG.email)""]}
+cancel every return this case created as its owner (xAPI cancelReturn on RMA_BEFORE and RMA_AFTER); a cancelled return holds no unit",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-029,Returns page — organization tab — two tabs on the same entity; sign-out or sign-in in one,Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+UIP-TABS. Two browser tabs of ONE browser profile are open on the organization tab of the same holder; in the second tab the holder signs out. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[NAV] {{FRONT_URL}}/account/returns?scope=organization in the first tab
+[WAIT] the organization list loads
+[ACT] open a second tab on {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the second tab loads
+[ACT] sign out in the second tab
+[WAIT] the sign-in page loads in the second tab
+[ACT] switch to the first tab
+[WAIT] the first tab is in front
+[ACT] go to the second page of the list
+[WAIT] the first tab responds
+[ASSERT] what the first tab shows is read
+[ACT] reload the first tab
+[WAIT] the first tab reloads
+[ASSERT] what the first tab shows after the reload is read","[STATE] the first tab does not keep acting as the signed-in holder: its next request ends in the sign-in page or a clear session message, not in a silent failure or another account's data {HYPOTHESIS} (a session ended in another tab must be visible in the first; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] after the reload no row of the organization is shown to the signed-out profile {HYPOTHESIS} (no organization data to a signed-out session; no document states it for this surface, real when the PO or the platform error convention states it)
+[CONSOLE] no unhandled 401 or TypeError is logged and the page is not blank {HYPOTHESIS} (an unhandled 401 is a defect on any account page; no document states it for this surface, real when the PO or the platform error convention states it)","[NETWORK] the request sent after the sign-out is answered 401 or redirected, never 200 with data",the first tab shows organization rows after the sign-out; the page goes blank or spins forever; a 401 is swallowed without a message,none -- signed out,VCST-5884 · Archetype:RACE · Technique:EG,Draft
+RET-ORG-030,"Returns page — organization tab — a dependency is blocked, slow, 500, or returns malformed JSON",Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+UIP-NET. The request of the organization list (the GraphQL operation organizationReturns) is blocked, then slowed, then answered with HTTP 500, then answered with malformed JSON, through the browser developer tools (request blocking, throttling and a local override). The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[ACT] block the request of the operation organizationReturns in the developer tools
+[WAIT] the block is active
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the page settles
+[ASSERT] what the page shows is read
+[ACT] click the tab ""My returns""
+[WAIT] the own list loads
+[ASSERT] the own list is read
+[ACT] replace the block by a slow network profile
+[WAIT] the profile is active
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the page settles
+[ASSERT] the loading state is read
+[ACT] override the response of organizationReturns with HTTP 500
+[WAIT] the override is active
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the page settles
+[ASSERT] what the page shows is read
+[ACT] override the response with malformed JSON
+[WAIT] the override is active
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the page settles
+[ASSERT] what the page shows is read","[STATE] with the request blocked, 500 or malformed the organization tab shows a scoped error or empty state and the rest of the page (the tabs, the own list) stays usable {HYPOTHESIS} (a failing dependency must not take down the whole page; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] ""My returns"" lists the own returns while the organization request fails {HYPOTHESIS} (the own list has its own request; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] the slow profile shows a loading state that ends: no spinner for more than 5 seconds after the response arrives {HYPOTHESIS} (a loading state must end; no document states it for this surface, real when the PO or the platform error convention states it)
+[REL] the number of organizationReturns requests per navigation is at most 2 (the request and one retry), never a loop {HYPOTHESIS} (a failing request must not loop; no document states it for this surface, real when the PO or the platform error convention states it)
+[NEG] no unhandled exception is logged in the console for any of the four failure modes {HYPOTHESIS} (a failing dependency must not throw out of the page; no document states it for this surface, real when the PO or the platform error convention states it)",[NETWORK] the number of organizationReturns requests per navigation is read,a failed organization request blanks the whole Returns page; an infinite spinner; the own list is lost together with the organization tab; a request loop,"remove every request block, override and throttling profile from the developer tools",VCST-5884 · Archetype:FALLBACK · Technique:EG,Draft
+RET-ORG-031,"Returns page — organization tab — zoom 200–400%, reduced motion, dark mode, print",Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+UIP-VIEW. The organization tab is viewed at 200 and 400 percent zoom, with reduced motion, with a dark colour scheme if the theme offers one (record which) and in the print preview. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_A so the list is not empty. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[NAV] {{FRONT_URL}}/account/returns?scope=organization at 100 percent zoom
+[WAIT] the organization list loads
+[ASSERT] the tabs the filter controls and the row links are listed
+[ACT] set the browser zoom to 200 percent
+[WAIT] the layout settles
+[ASSERT] every control listed at 100 percent is still visible and reachable
+[ACT] set the browser zoom to 400 percent
+[WAIT] the layout settles
+[ASSERT] every control is still reachable and the page scrolls vertically only
+[ACT] emulate reduced motion in the developer tools
+[WAIT] the emulation is active
+[ASSERT] no animation runs on the tab switch
+[ACT] emulate a dark colour scheme
+[WAIT] the emulation is active
+[ASSERT] the tab labels and the status badges are readable
+[ACT] open the print preview
+[WAIT] the preview opens
+[ASSERT] the list content is printed without controls cut off","[DOM] at 200 and 400 percent zoom every tab, filter control and row link that exists at 100 percent is visible and reachable {BL} (BL-UI-004: no control clipped or unreachable)
+[OVERFLOW] at 400 percent the page scrolls vertically only, with no horizontal scroll {BL} (BL-UI-004)
+[STATE] with reduced motion requested no tab-switch animation plays {HYPOTHESIS} (prefers-reduced-motion is honoured; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] in the dark scheme (if the theme offers one) the tab label and the status badge text stay readable {HYPOTHESIS} (contrast holds in every colour scheme the theme ships; BL-A11Y-003 binds only the gated themes; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] the print preview contains the list rows and is not cut off at the page edge {HYPOTHESIS} (print is a supported view of an account list; no document states it for this surface, real when the PO or the platform error convention states it)",[CONSOLE] no JS errors while the view settings change,a control is clipped or unreachable at 200 or 400 percent zoom; horizontal scroll at 400 percent; text unreadable in the dark scheme; the print view is cut,"reset the zoom, the emulation and the print preview; cancel every return this case created as its owner (xAPI cancelReturn on RMA_A); a cancelled return holds no unit",VCST-5884 · Archetype:RENDER · Technique:EG,Draft
+RET-ORG-032,Returns page — organization tab — data state: empty · exactly one · many,Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+UIP-DATA (the state-stress data states of the organization tab): EMPTY, EXACTLY ONE, MANY. The empty state is read as the holder of ORG_RET_LONG_NAME_ORG (an AGENT-TEST organization whose only members are itself): when that organization already lists a return from an earlier run the EMPTY leg is BLOCKED, never FAIL, because the data state is not met. The one-row state is a keyword search for the RMA of a return created by SETUP; the many state is the viewer organization after SETUP (the list shows more than one page when earlier runs left returns, otherwise the leg reports the count it saw). SETUP (API): xAPI createReturn as buyer @td(ORG_RET_BUYER.email) (token: POST {{BACK_URL}}/connect/token, grant_type=password, scope=offline_access, storeId={{STORE_ID}}, username @td(ORG_RET_BUYER.email), password @td(ORG_RET_BUYER.password)) on order @td(ORG_RET_BUYER.orderId) line @td(ORG_RET_BUYER.lineAItemId) quantity 1 with reasonCode NoLongerNeeded and a reasonComment AGENT-TEST VCST-5884, then submitReturn; record the RMA and the return id as RMA_ONE. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password); empty_holder=@td(ORG_RET_LONG_NAME_BUYER.email); empty_password=@td(ORG_RET_LONG_NAME_BUYER.password),"[PRE:SIGNIN_AS:ORG_RET_LONG_NAME_BUYER]
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ASSERT] the empty state of the organization of this holder is read
+[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] type RMA_ONE into the keyword box
+[WAIT] the list refreshes
+[ASSERT] the single row is read
+[ACT] clear the keyword box
+[WAIT] the list refreshes
+[ASSERT] the paging control and the row count are read","[STATE] an organization without returns shows an explicit empty state, not a blank area or an endless spinner {HYPOTHESIS} (an empty state must exist (qa-design State-Stress Pass); no document states it for this surface, real when the PO or the platform error convention states it)
+[DOM] exactly one row renders as a complete row with every column filled and the paging control absent or disabled {HYPOTHESIS} (the grid must not break at N=1; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] with more than one page the paging control shows the next page and the page count matches the total {HYPOTHESIS} (paging reflects the total; no document states it for this surface, real when the PO or the platform error convention states it)
+[CONSOLE] no JS error in any of the three states {HYPOTHESIS} (no state may throw; no document states it for this surface, real when the PO or the platform error convention states it)",[API] organizationReturns totalCount matches the rows and pages the page shows,no empty state (blank area); the grid breaks with one row; the paging control is wrong for the total,cancel every return this case created as its owner (xAPI cancelReturn on RMA_ONE); a cancelled return holds no unit,VCST-5884 · Archetype:BOUNDARY · Technique:EG,Draft
+RET-ORG-033,"Returns page — organization tab — async paged list under an active filter, scrolled to the end",Orders Frontend — Returns > Organization returns (step 3),High,,,"[PRE:SIGNIN_AS:ORG_RET_HOLDER_GLOBAL]
+UIP-PAGE: the organization list under an ACTIVE status filter, paged to the end. The viewer organization accumulates Cancelled returns across runs (every case cancels what it creates), so the filter Cancelled normally yields more than one page; when it yields one page only the leg reports the count and is INCONCLUSIVE, not PASS. The holder is read from me.permissions as a PRECONDITION (it carries xapi:my_organization:return:view); only the permission-to-gate binding is asserted. ENVIRONMENT REQUIRED BY THIS CASE (a miss makes it BLOCKED, never FAIL): (1) Module VirtoCommerce.Return installed and a storefront build that serves /account/returns with the organization tab (theme 2.60.0 or later); (2) store {{STORE_ID}} Return module ON and Return.AttachmentsRequired at its default false; (3) the 3a ORG_RET_* fixtures are seeded (npm run seed:returns:org; check with npm run td:validate:returns-org): an @td that does not resolve makes the case BLOCKED, never an invented alias.",holder=@td(ORG_RET_HOLDER_GLOBAL.email); password=@td(ORG_RET_HOLDER_GLOBAL.password),"[NAV] {{FRONT_URL}}/account/returns?scope=organization
+[WAIT] the organization list loads
+[ACT] open the status filter
+[WAIT] the status options are shown
+[ACT] choose ""Cancelled""
+[WAIT] the list refreshes
+[ASSERT] the total and the first page are read
+[ACT] go to the next page of the list
+[WAIT] the next page loads
+[ASSERT] the page is compared with the previous page
+[ACT] repeat the next page until the control is disabled
+[WAIT] the last page loads
+[ASSERT] the last page and the control state are read","[REL] the RMAs of consecutive pages are all different and the rows of all pages together number the total shown {HYPOTHESIS} (paging converges without repeats or gaps; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] the next-page control is disabled on the last page and no further page request is sent {HYPOTHESIS} (paging ends; no request loop; no document states it for this surface, real when the PO or the platform error convention states it)
+[STATE] the status filter stays applied on every page: every row reads Cancelled {HYPOTHESIS} (a filter survives paging; no document states it for this surface, real when the PO or the platform error convention states it)
+[CONSOLE] no repeated identical request for the same page {HYPOTHESIS} (a request loop is a defect; no document states it for this surface, real when the PO or the platform error convention states it)",[NETWORK] the number of organizationReturns requests equals the number of pages visited plus the first load,the next-page control never disables; a page repeats the previous page; the filter is dropped after the first page; requests repeat in a loop,none -- read-only,VCST-5884 · Archetype:BOUNDARY · Technique:EG,Draft

@@ -1,25 +1,61 @@
 {
- "runId": "REG-2026-10-08-1151",
- "status": "completed",
- "startedAt": "2026-10-08T09:51:40.270Z",
- "windowStart": "2026-10-08T09:51:40.270Z",
- "selection": "106",
+ "runId": "REG-2026-10-08-1840",
+ "status": "in_progress",
+ "startedAt": "2026-10-08T16:39:43.090Z",
+ "windowStart": "2026-10-08T16:39:43.090Z",
+ "selection": "073a,073b,073,050o,014c",
  "env": "vcst",
  "scoped": true,
- "purpose": "VCST-6077 round 2 C1 supplement: SR-TK-023 only; --no-promote",
- "suites": {
-  "106": {
+ "purpose": "VCST-5884 C1 exact set (46 ids: 37 new Draft RET-ORG + 4 RE-BASE + 5 SEAM RET-AUTH); --no-promote; parallelism 1; order 073a,073b,073,050o,014c",
+ "suites": [
+  {
+   "id": "073a",
+   "name": "Returns - Authorize & Notifications",
+   "agent": "qa-backend-expert",
    "status": "done",
+   "lane": "fastpath",
+   "browser": "none",
+   "startedAt": "2026-10-08T16:41:44Z",
+   "total": 10,
+   "testCount": 10,
+   "pass": 0,
+   "fail": 4,
+   "blocked": 6,
+   "finishedAt": "2026-10-08T16:50:29Z"
+  },
+  {
+   "id": "073b",
+   "name": "Returns - Admin SPA Decisions",
+   "agent": "qa-backend-expert",
+   "status": "running",
+   "testCount": 4,
    "lane": "browser",
-   "browser": "playwright-edge",
-   "laneId": 3,
-   "startedAt": "2026-10-08T09:51:40.270Z",
-   "attempts": 1,
-   "pass": 1,
-   "fail": 0,
-   "blocked": 0,
-   "finishedAt": "2026-10-08T09:52:50.831Z"
+   "browser": "playwright-chrome",
+   "startedAt": "2026-10-08T16:50:29Z"
+  },
+  {
+   "id": "073",
+   "name": "Returns",
+   "agent": "qa-backend-expert",
+   "status": "pending",
+   "testCount": 2,
+   "lane": "browser",
+   "browser": "playwright-chrome"
+  },
+  {
+   "id": "050o",
+   "name": "GraphQL xAPI - Returns",
+   "agent": "qa-backend-expert",
+   "status": "pending",
+   "testCount": 14
+  },
+  {
+   "id": "014c",
+   "name": "Orders Frontend - Returns",
+   "agent": "qa-frontend-expert",
+   "status": "pending",
+   "testCount": 16
   }
- },
- "finishedAt": "2026-10-08T09:52:50.831Z"
+ ],
+ "outputDir": "reports/regression/REG-2026-10-08-1840"
 }

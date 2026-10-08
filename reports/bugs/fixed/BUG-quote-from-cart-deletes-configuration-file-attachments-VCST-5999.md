@@ -1,6 +1,6 @@
 # Quote from cart: the attachment the quote points at is **deleted by the conversion itself** `[P1]`
 
-## Status: CONFIRMED
+## Status: FIXED
 
 **Tracker:** VCST-5999 (Bug, High, Draft) — found during `/qa-test` on VCST-5924
 **Env (this run):** vcptcore-qa · `Quote 3.1003.0` · `XCart 3.1036.0` · `Xapi 3.1023.0` · `XOrder 3.1012.0` · `Orders 3.1016.0` · `FileExperienceApi 3.1004.0`
@@ -112,3 +112,9 @@ On the quote, the File configuration item's `name` is `null` and `QuoteConfigura
   chooses to clear the cart; the control run pins the deletion to `ClearAsync`. Caveat for the implementer, not for
   the routing: the *chosen remedy* (keep the file vs. re-own it to the quote) may pull in the same
   scope-factory decision as VCST-5995.
+
+## Resolution
+- **Verified:** 2026-10-08, `/qa-verify-fix` on vcst-qa — VERIFIED WITH NOTES, ticket moved to Tested (not Done: a human release decision).
+- **Fix build:** Quote `3.1004.0-pr-159-7628` (with XCart `3.1040.0-pr-149-9fe0`, FileExperienceApi `3.1007.0-pr-25-ff70`); all PRs open. **The PR link is inferred from the diff** (`UpdateConfigurationFiles(quote)` re-owns the files before `ClearAsync()`); no PR names VCST-5999.
+- **Method:** same-session control (`clearCart` alone still deletes the file, 3/3) against `createQuoteFromCart` (same url, owner 200 with matching bytes, other buyers and anonymous 403, admin 200, 3/3). Re-checked by a second script.
+- **Not covered:** a live RED today (vcptcore buyer logins fail), persistence beyond minutes. Evidence: `reports/tickets/Sprint26-20/VCST-5999/`.

@@ -1228,3 +1228,589 @@ GET {{BACK_URL}}/api/return/{{return}}
 [COUNT label=read_priced] body.lineItems.length = 2
 [ERRORS label=restore_price] HTTP 200
 [DATA label=read_restored] body.lineItems[?id={{lineA}}].price = {{LA_PRICE}}",,"the line disappears from the return after the PUT (a line object without its returnId is dropped - the full-body PUT must carry the returnId of the line, as the Admin SPA does); the price edit on a decided line is refused (400) or silently ignored (read_priced still shows the original); the price edit changes approvedQuantity or itemState (a price save rewrote a decision); the restore does not bring the original price back",none -- restore_price already returned the fixture to its captured price,VCST-5883 · Archetype:SILENT · Technique:ST | Promoted: VCST-5883 (2026-10-01) | Behavior:ret.agent.edit.decided-line-locked,Automated
+RET-ORG-035,"Organization copy ON — each of the five return emails is also sent once to the organization's address, push stays with the buyer",Returns — Authorize & Notifications > Organization copy (step 3),High,BL-NOTIF-001,,"Runner-native. No browser. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE in its own window, never beside another lane that submits returns, and restores the originals at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key (getByPath splits the path on every dot, so a capture of Return.NotifyOrganizationEmail is not expressible), so the originals are the DECLARED EFFECTIVE values in Test_Data (orig_notify_org=false, orig_send=true, as observed on vcst 2026-10-08) and the restore writes those variables back explicitly: the store settings API IGNORES value:null, so a setting stored as null can only be restored to its EFFECTIVE value written explicitly. If the effective original on another stand differs, change the two Test_Data values before running. ALONE: no other lane or suite may submit returns while the setting is ON, and the case runs AFTER the ""exactly one email"" seam rows RET-AUTH-009 and RET-AUTH-028..031 (they are only true while the setting is OFF), never beside them. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`; the first live run settles the field name. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The org-copy field names and the Hangfire delay are observed, not documented: a copy is searched for after a fixed wait. The case drives SIX returns of ORG_RET_BUYER (order lines A and B), all inside one ON window: R1 submit then Approved; R2 (two lines) submit then PartiallyApproved; R3 submit then Rejected; R4 submit then cancelled after submit; D5 a draft cancelled before submit. The decisions go through POST /api/return/{id}/authorize as the administrator. Each return is read from its OWN journal, so counts are per return, never totals. Approved and PartiallyApproved returns keep their units held for good (no un-authorize): the case permanently consumes two units of line A per run (40 ordered); re-seed with npm run seed:returns:org -- --fresh when they run low. The ON window is the whole case: other lanes must not submit returns while it runs. The Registered push is asserted only on R1 and needs the Push Messages module (else those two lines are BLOCKED).",orig_notify_org=false; orig_send=true; order=@td(ORG_RET_BUYER.orderId); la=@td(ORG_RET_BUYER.lineAItemId); lb=@td(ORG_RET_BUYER.lineBItemId); buyer_email=@td(ORG_RET_BUYER.email); org_email=@td(ORG_RET_VIEWER_ORG.email),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP on]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true}
+[REST-EXEC on]
+[REST-OP on_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC on_reset]
+[AUTH role=ORG_RET_BUYER]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP r1_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC r1_create]
+[GQL-CAPTURE r1_create.data.createReturn.id → R1_ID]
+[GQL-CAPTURE r1_create.data.createReturn.number → R1_NO]
+[GQL-OP r1_submit]
+mutation { submitReturn(command: { returnId: ""{{R1_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC r1_submit]
+[GQL-CAPTURE r1_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → R1_LA]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP r1_decide]
+POST {{BACK_URL}}/api/return/{{R1_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{R1_LA}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC r1_decide]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP r2_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }, { orderLineItemId: ""{{lb}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC r2_create]
+[GQL-CAPTURE r2_create.data.createReturn.id → R2_ID]
+[GQL-CAPTURE r2_create.data.createReturn.number → R2_NO]
+[GQL-OP r2_submit]
+mutation { submitReturn(command: { returnId: ""{{R2_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC r2_submit]
+[GQL-CAPTURE r2_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → R2_LA]
+[GQL-CAPTURE r2_submit.data.submitReturn.items[?orderLineItemId={{lb}}].id → R2_LB]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP r2_decide]
+POST {{BACK_URL}}/api/return/{{R2_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{R2_LA}}"", ""approvedQuantity"": 1}, {""lineItemId"": ""{{R2_LB}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC r2_decide]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP r3_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC r3_create]
+[GQL-CAPTURE r3_create.data.createReturn.id → R3_ID]
+[GQL-CAPTURE r3_create.data.createReturn.number → R3_NO]
+[GQL-OP r3_submit]
+mutation { submitReturn(command: { returnId: ""{{R3_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC r3_submit]
+[GQL-CAPTURE r3_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → R3_LA]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP r3_decide]
+POST {{BACK_URL}}/api/return/{{R3_ID}}/authorize
+Content-Type: application/json
+Body: {""rejectReason"": ""WrongItemDelivered"", ""items"": [{""lineItemId"": ""{{R3_LA}}"", ""approvedQuantity"": 0, ""rejectReason"": ""NoLongerNeeded""}]}
+[REST-EXEC r3_decide]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP r4_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC r4_create]
+[GQL-CAPTURE r4_create.data.createReturn.id → R4_ID]
+[GQL-CAPTURE r4_create.data.createReturn.number → R4_NO]
+[GQL-OP r4_submit]
+mutation { submitReturn(command: { returnId: ""{{R4_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC r4_submit]
+[GQL-CAPTURE r4_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → R4_LA]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP r4_cancel]
+mutation { cancelReturn(command: { returnId: ""{{R4_ID}}"" }) { id status } }
+[GQL-EXEC r4_cancel]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP d5_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884 draft"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC d5_create]
+[GQL-CAPTURE d5_create.data.createReturn.id → D5_ID]
+[GQL-OP d5_cancel]
+mutation { cancelReturn(command: { returnId: ""{{D5_ID}}"" }) { id status } }
+[GQL-EXEC d5_cancel]
+[WAIT seconds=25]
+[GQL-OP push_r1]
+query { pushMessages(first: 20, keyword: ""{{R1_NO}}"") { totalCount items { id shortMessage } } }
+[GQL-EXEC push_r1]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP j1]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{R1_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC j1]
+[REST-OP j2]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{R2_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC j2]
+[REST-OP j3]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{R3_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC j3]
+[REST-OP j4]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{R4_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC j4]
+[REST-OP j5]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{D5_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC j5]
+[REST-OP off]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST-EXEC off]
+[REST-OP off_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC off_reset]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=on] HTTP 204 {OBSERVED}
+[ERRORS label=on_reset] HTTP 204 {OBSERVED}
+[ERRORS label=r1_create] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r1_create] data.createReturn.status = Draft {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r1_submit] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r1_submit] data.submitReturn.status = Requested {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r1_decide] HTTP 200 {OBSERVED}
+[DATA label=r1_decide] body.status = Approved {SPEC} (VCST-5883)
+[ERRORS label=r2_create] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r2_create] data.createReturn.status = Draft {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r2_submit] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r2_submit] data.submitReturn.status = Requested {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r2_decide] HTTP 200 {OBSERVED}
+[DATA label=r2_decide] body.status = PartiallyApproved {SPEC} (VCST-5883)
+[ERRORS label=r3_create] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r3_create] data.createReturn.status = Draft {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r3_submit] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r3_submit] data.submitReturn.status = Requested {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r3_decide] HTTP 200 {OBSERVED}
+[DATA label=r3_decide] body.status = Rejected {SPEC} (VCST-5883)
+[ERRORS label=r4_create] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r4_create] data.createReturn.status = Draft {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r4_submit] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r4_submit] data.submitReturn.status = Requested {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=r4_cancel] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=r4_cancel] data.cancelReturn.status = Cancelled {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=d5_create] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=d5_create] data.createReturn.status = Draft {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=d5_cancel] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=push_r1] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=push_r1] data.pushMessages.items[*?shortMessage=Return {{R1_NO}} received].length = 1 {HYPOTHESIS} (AC-4: the organization copy is email only, the push stays with the buyer, once; DOC ret.agent.notify.silent)
+[COUNT label=push_r1] data.pushMessages.items[*?shortMessage=Return {{R1_NO}} approved].length = 1 {HYPOTHESIS} (AC-4: the organization copy is email only, the push stays with the buyer, once; DOC ret.agent.notify.silent)
+[ERRORS label=j1] HTTP 200 {OBSERVED}
+[COUNT label=j1] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j1] body.results[*?notificationType=ReturnApprovedEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j1] body.results[*?to={{buyer_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j1] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=j2] HTTP 200 {OBSERVED}
+[COUNT label=j2] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j2] body.results[*?notificationType=ReturnPartiallyApprovedEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j2] body.results[*?to={{buyer_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j2] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=j3] HTTP 200 {OBSERVED}
+[COUNT label=j3] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j3] body.results[*?notificationType=ReturnRejectedEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j3] body.results[*?to={{buyer_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j3] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=j4] HTTP 200 {OBSERVED}
+[COUNT label=j4] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j4] body.results[*?notificationType=ReturnCancelledEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j4] body.results[*?to={{buyer_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=j4] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=j5] HTTP 200 {OBSERVED}
+[DATA label=j5] body.totalCount = 0 {DOC} (ret.agent.notify.silent: a draft cancelled before submit is announced to nobody; IsAnnounced)
+[ERRORS label=off] HTTP 204 {OBSERVED}
+[ERRORS label=off_reset] HTTP 204 {OBSERVED}","[EVIDENCE] settings_before records the stored value of Return.NotifyOrganizationEmail (a dotted key cannot be addressed by the runner path grammar, so the judgment is by effect: the org copy rows); each return is read from its own journal, so a copy that follows the wrong organization or doubles is visible per return","a type is missing from the organization (fewer than two rows of a type, or no row to the organization address); a type reaches the organization twice; the draft cancelled before submit mails anyone; the buyer's own rows change in number when the setting is ON; the buyer inbox gains more than one push per status change","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:LIFECYCLE · Technique:DT · Behavior:ret.agent.notify,Draft
+RET-ORG-036,"Organization copy — off by default, off when return notifications are off, and the value read when the job runs",Returns — Authorize & Notifications > Organization copy (step 3),High,BL-NOTIF-001,,"Runner-native. No browser. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE in its own window, never beside another lane that submits returns, and restores the originals at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key (getByPath splits the path on every dot, so a capture of Return.NotifyOrganizationEmail is not expressible), so the originals are the DECLARED EFFECTIVE values in Test_Data (orig_notify_org=false, orig_send=true, as observed on vcst 2026-10-08) and the restore writes those variables back explicitly: the store settings API IGNORES value:null, so a setting stored as null can only be restored to its EFFECTIVE value written explicitly. If the effective original on another stand differs, change the two Test_Data values before running. ALONE: no other lane or suite may submit returns while the setting is ON, and the case runs AFTER the ""exactly one email"" seam rows RET-AUTH-009 and RET-AUTH-028..031 (they are only true while the setting is OFF), never beside them. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`; the first live run settles the field name. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The org-copy field names and the Hangfire delay are observed, not documented: a copy is searched for after a fixed wait. Three returns of ORG_RET_BUYER walk the setting matrix in one window: RA submitted and cancelled with the copy OFF; RB submitted and cancelled with the copy ON but Return.SendNotifications OFF; RC submitted with the copy OFF then cancelled AFTER the copy is switched ON. Both settings are written explicitly at the start and restored at the end (Return.NotifyOrganizationEmail false, Return.SendNotifications true: the stored defaults; settings_before records them as evidence). The ""stale value"" leg (a value changed between two status changes applies on the next one) is RC. Cancelling returns all units, so the case is quantity-neutral.",orig_notify_org=false; orig_send=true; order=@td(ORG_RET_BUYER.orderId); la=@td(ORG_RET_BUYER.lineAItemId); buyer_email=@td(ORG_RET_BUYER.email); org_email=@td(ORG_RET_VIEWER_ORG.email),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP s1]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":false,""Return.SendNotifications"":true}
+[REST-EXEC s1]
+[REST-OP s1_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC s1_reset]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP ra_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC ra_create]
+[GQL-CAPTURE ra_create.data.createReturn.id → RA_ID]
+[GQL-CAPTURE ra_create.data.createReturn.number → RA_NO]
+[GQL-OP ra_submit]
+mutation { submitReturn(command: { returnId: ""{{RA_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC ra_submit]
+[GQL-CAPTURE ra_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → RA_LA]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP rc_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC rc_create]
+[GQL-CAPTURE rc_create.data.createReturn.id → RC_ID]
+[GQL-CAPTURE rc_create.data.createReturn.number → RC_NO]
+[GQL-OP rc_submit]
+mutation { submitReturn(command: { returnId: ""{{RC_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC rc_submit]
+[GQL-CAPTURE rc_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → RC_LA]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP ra_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RA_ID}}"" }) { id status } }
+[GQL-EXEC ra_cancel]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP s2]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true,""Return.SendNotifications"":false}
+[REST-EXEC s2]
+[REST-OP s2_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC s2_reset]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP rb_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC rb_create]
+[GQL-CAPTURE rb_create.data.createReturn.id → RB_ID]
+[GQL-CAPTURE rb_create.data.createReturn.number → RB_NO]
+[GQL-OP rb_submit]
+mutation { submitReturn(command: { returnId: ""{{RB_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC rb_submit]
+[GQL-CAPTURE rb_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → RB_LA]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP rb_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RB_ID}}"" }) { id status } }
+[GQL-EXEC rb_cancel]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP s3]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true,""Return.SendNotifications"":true}
+[REST-EXEC s3]
+[REST-OP s3_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC s3_reset]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP rc_cancel]
+mutation { cancelReturn(command: { returnId: ""{{RC_ID}}"" }) { id status } }
+[GQL-EXEC rc_cancel]
+[WAIT seconds=25]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP ja]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RA_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC ja]
+[REST-OP jb]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RB_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jb]
+[REST-OP jc]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{RC_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jc]
+[REST-OP s4]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}, ""Return.SendNotifications"": {{orig_send}}}
+[REST-EXEC s4]
+[REST-OP s4_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC s4_reset]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=s1] HTTP 204 {OBSERVED}
+[ERRORS label=s1_reset] HTTP 204 {OBSERVED}
+[ERRORS label=ra_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=ra_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=ra_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=ra_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=rc_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=rc_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=rc_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=rc_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=ra_cancel] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=ra_cancel] data.cancelReturn.status = Cancelled {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=s2] HTTP 204 {OBSERVED}
+[ERRORS label=s2_reset] HTTP 204 {OBSERVED}
+[ERRORS label=rb_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=rb_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=rb_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=rb_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=rb_cancel] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=rb_cancel] data.cancelReturn.status = Cancelled {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=s3] HTTP 204 {OBSERVED}
+[ERRORS label=s3_reset] HTTP 204 {OBSERVED}
+[ERRORS label=rc_cancel] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=rc_cancel] data.cancelReturn.status = Cancelled {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=ja] HTTP 200 {OBSERVED}
+[COUNT label=ja] body.results[*?to={{buyer_email}}].length = 2 {SPEC} (VCST-5883: one Registered and one Cancelled email to the buyer)
+[COUNT label=ja] body.results[*?to={{org_email}}].length = 0 {HYPOTHESIS} (AC-4c: the copy is off by default; real when the PO ratifies AC-4)
+[ERRORS label=jb] HTTP 200 {OBSERVED}
+[DATA label=jb] body.totalCount = 0 {SPEC} (VCST-5883: Return.SendNotifications off sends no return email; RET-AUTH-015)
+[COUNT label=jb] body.results[*?to={{org_email}}].length = 0 {HYPOTHESIS} (AC-4c: no copy with notifications off)
+[ERRORS label=jc] HTTP 200 {OBSERVED}
+[COUNT label=jc] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (AC-4c, AC-4i: the setting was OFF when Registered was sent, so the buyer only)
+[COUNT label=jc] body.results[*?notificationType=ReturnCancelledEmailNotification].length = 2 {HYPOTHESIS} (AC-4i: the setting is read when the job RUNS, so the change applies on the NEXT status change)
+[COUNT label=jc] body.results[*?to={{org_email}}].length = 1 {HYPOTHESIS} (AC-4i: exactly one organization copy, for the cancel after the switch)
+[ERRORS label=s4] HTTP 204 {OBSERVED}
+[ERRORS label=s4_reset] HTTP 204 {OBSERVED}","[EVIDENCE] each return is read from its own journal, so the three settings states cannot contaminate each other; the cache reset follows every settings write","the organization gets a copy while the setting is OFF; the organization gets a copy while Return.SendNotifications is OFF; RC's Registered email also went to the organization (the new value applied to an older status change), or RC's Cancelled copy is missing (the old value stuck)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}, ""Return.SendNotifications"": {{orig_send}}}
+[REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:CONFIG · Technique:DT · Behavior:ret.agent.notify.email-off,Draft
+RET-ORG-037,Organization copy — no second email when the organization address equals the buyer's in any letter case or sits on the notification's CC or BCC,Returns — Authorize & Notifications > Organization copy (step 3),High,BL-NOTIF-001,,"Runner-native. No browser. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE in its own window, never beside another lane that submits returns, and restores the originals at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key (getByPath splits the path on every dot, so a capture of Return.NotifyOrganizationEmail is not expressible), so the originals are the DECLARED EFFECTIVE values in Test_Data (orig_notify_org=false, orig_send=true, as observed on vcst 2026-10-08) and the restore writes those variables back explicitly: the store settings API IGNORES value:null, so a setting stored as null can only be restored to its EFFECTIVE value written explicitly. If the effective original on another stand differs, change the two Test_Data values before running. ALONE: no other lane or suite may submit returns while the setting is ON, and the case runs AFTER the ""exactly one email"" seam rows RET-AUTH-009 and RET-AUTH-028..031 (they are only true while the setting is OFF), never beside them. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`; the first live run settles the field name. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The org-copy field names and the Hangfire delay are observed, not documented: a copy is searched for after a fixed wait. ORG_RET_SAME_ADDRESS_BUYER's organization (ORG_RET_SAME_ADDRESS_ORG) stores ONE address and it EQUALS the buyer's (order address, contact and account all carry it). Leg A: same letters. Leg B: the organization is written with the upper-cased local part (email_upper) through PUT /api/organizations (id, memberType, name, emails: the fields the seeder sets; the first live run confirms the PUT drops nothing else) and a second return is submitted. The organization address is restored in the same case and in Cleanup. The CC/BCC leg (the organization address also on the notification's CC or BCC: {HYPOTHESIS} that the code clears only the copy's lists) needs a scratch edit of a SHARED notification template and is DECLINED here: it is not run on a shared stand, and it goes to review as a unit-test proposal. Both returns are cancelled at the end with the setting already OFF, so the cancels send nothing to the organization.",orig_notify_org=false; orig_send=true; order=@td(ORG_RET_SAME_ADDRESS_BUYER.orderId); la=@td(ORG_RET_SAME_ADDRESS_BUYER.lineAItemId); org_id=@td(ORG_RET_SAME_ADDRESS_ORG.id); org_name=@td(ORG_RET_SAME_ADDRESS_ORG.name); org_email=@td(ORG_RET_SAME_ADDRESS_ORG.email); org_email_upper=@td(ORG_RET_SAME_ADDRESS_ORG.email_upper),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP on]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true}
+[REST-EXEC on]
+[REST-OP on_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC on_reset]
+[AUTH role=ORG_RET_SAME_ADDRESS_BUYER]
+[GQL-OP a_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC a_create]
+[GQL-CAPTURE a_create.data.createReturn.id → A_ID]
+[GQL-CAPTURE a_create.data.createReturn.number → A_NO]
+[GQL-OP a_submit]
+mutation { submitReturn(command: { returnId: ""{{A_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC a_submit]
+[GQL-CAPTURE a_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → A_LA]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP org_upper]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{org_id}}"", ""memberType"": ""Organization"", ""name"": ""{{org_name}}"", ""emails"": [""{{org_email_upper}}""]}
+[REST-EXEC org_upper]
+[REST-OP org_state]
+GET {{BACK_URL}}/api/organizations/{{org_id}}
+[REST-EXEC org_state]
+[AUTH role=ORG_RET_SAME_ADDRESS_BUYER]
+[GQL-OP b_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC b_create]
+[GQL-CAPTURE b_create.data.createReturn.id → B_ID]
+[GQL-CAPTURE b_create.data.createReturn.number → B_NO]
+[GQL-OP b_submit]
+mutation { submitReturn(command: { returnId: ""{{B_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC b_submit]
+[GQL-CAPTURE b_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → B_LA]
+[WAIT seconds=25]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP ja]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{A_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC ja]
+[REST-OP jb]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{B_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jb]
+[REST-OP org_restore]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""{{org_id}}"", ""memberType"": ""Organization"", ""name"": ""{{org_name}}"", ""emails"": [""{{org_email}}""]}
+[REST-EXEC org_restore]
+[REST-OP off]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST-EXEC off]
+[REST-OP off_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC off_reset]
+[AUTH role=ORG_RET_SAME_ADDRESS_BUYER]
+[GQL-OP cancel_a]
+mutation { cancelReturn(command: { returnId: ""{{A_ID}}"" }) { id status } }
+[GQL-EXEC cancel_a]
+[GQL-OP cancel_b]
+mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
+[GQL-EXEC cancel_b]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=on] HTTP 204 {OBSERVED}
+[ERRORS label=on_reset] HTTP 204 {OBSERVED}
+[ERRORS label=a_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=a_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=a_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=a_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=org_upper] HTTP 200 {OBSERVED}
+[ERRORS label=org_state] HTTP 200 {OBSERVED}
+[DATA label=org_state] body.emails.0 = {{org_email_upper}} {OBSERVED} (the organization now stores the mixed-case address before the observation)
+[ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=b_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=ja] HTTP 200 {OBSERVED}
+[COUNT label=ja] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (AC-4d: the organization address equals the buyer's, one email only)
+[ERRORS label=jb] HTTP 200 {OBSERVED}
+[COUNT label=jb] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (AC-4d: the same mailbox in another letter case is still one email; 3x observed)
+[ERRORS label=org_restore] HTTP 200 {OBSERVED}
+[ERRORS label=off] HTTP 204 {OBSERVED}
+[ERRORS label=off_reset] HTTP 204 {OBSERVED}
+[ERRORS label=cancel_a] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=cancel_b] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)",[EVIDENCE] org_state reads the organization back with the mixed-case address before the second return is submitted; each leg reads its own return's journal,"one person receives the same Registered email twice (the organization copy follows an equality test that is case-sensitive, or ignores the buyer's address); the organization address is left in mixed case","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/organizations]
+{""id"": ""@td(ORG_RET_SAME_ADDRESS_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""@td(ORG_RET_SAME_ADDRESS_ORG.name)"", ""emails"": [""@td(ORG_RET_SAME_ADDRESS_ORG.email)""]}
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:REPLAY · Technique:BVA,Draft
+RET-ORG-038,Organization copy — an organization without an address sends no copy and does not block the buyer's email; a buyer with no contact or order address falls back to the account address and the copy still goes,Returns — Authorize & Notifications > Organization copy (step 3),Medium,BL-NOTIF-003,,"Runner-native. No browser. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE in its own window, never beside another lane that submits returns, and restores the originals at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key (getByPath splits the path on every dot, so a capture of Return.NotifyOrganizationEmail is not expressible), so the originals are the DECLARED EFFECTIVE values in Test_Data (orig_notify_org=false, orig_send=true, as observed on vcst 2026-10-08) and the restore writes those variables back explicitly: the store settings API IGNORES value:null, so a setting stored as null can only be restored to its EFFECTIVE value written explicitly. If the effective original on another stand differs, change the two Test_Data values before running. ALONE: no other lane or suite may submit returns while the setting is ON, and the case runs AFTER the ""exactly one email"" seam rows RET-AUTH-009 and RET-AUTH-028..031 (they are only true while the setting is OFF), never beside them. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`; the first live run settles the field name. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The org-copy field names and the Hangfire delay are observed, not documented: a copy is searched for after a fixed wait. Two legs. (a) ORG_RET_NOEMAIL_ORG_BUYER belongs to ORG_RET_NOEMAIL_ORG, which has NO address from the seed (nothing to remove): the buyer's email must still go, the status change must succeed (submit returns Requested) and nothing goes to an organization. (b) ORG_RET_BUYER_NOEMAIL has no email on its contact or order addresses; the platform refuses an account without one, so the account keeps <login>@yopmail.com as the LAST rung of the fallback: the leg proves the fallback chain, NOT ""no email anywhere"" (FIXTURE-GAP for that shape; {HYPOTHESIS} until the PO states the intent). Both returns are cancelled at the end with the setting already OFF.",orig_notify_org=false; orig_send=true; n_order=@td(ORG_RET_NOEMAIL_ORG_BUYER.orderId); n_la=@td(ORG_RET_NOEMAIL_ORG_BUYER.lineAItemId); n_buyer_email=@td(ORG_RET_NOEMAIL_ORG_BUYER.email); m_order=@td(ORG_RET_BUYER_NOEMAIL.orderId); m_la=@td(ORG_RET_BUYER_NOEMAIL.lineAItemId); m_account_email=@td(ORG_RET_BUYER_NOEMAIL.account_email); viewer_org_email=@td(ORG_RET_VIEWER_ORG.email),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP on]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true}
+[REST-EXEC on]
+[REST-OP on_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC on_reset]
+[AUTH role=ORG_RET_NOEMAIL_ORG_BUYER]
+[GQL-OP n_create]
+mutation { createReturn(command: { orderId: ""{{n_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{n_la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC n_create]
+[GQL-CAPTURE n_create.data.createReturn.id → N_ID]
+[GQL-CAPTURE n_create.data.createReturn.number → N_NO]
+[GQL-OP n_submit]
+mutation { submitReturn(command: { returnId: ""{{N_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC n_submit]
+[GQL-CAPTURE n_submit.data.submitReturn.items[?orderLineItemId={{n_la}}].id → N_LA]
+[AUTH role=ORG_RET_BUYER_NOEMAIL]
+[GQL-OP m_create]
+mutation { createReturn(command: { orderId: ""{{m_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{m_la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC m_create]
+[GQL-CAPTURE m_create.data.createReturn.id → M_ID]
+[GQL-CAPTURE m_create.data.createReturn.number → M_NO]
+[GQL-OP m_submit]
+mutation { submitReturn(command: { returnId: ""{{M_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC m_submit]
+[GQL-CAPTURE m_submit.data.submitReturn.items[?orderLineItemId={{m_la}}].id → M_LA]
+[WAIT seconds=25]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP jn]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{N_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jn]
+[REST-OP jm]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{M_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jm]
+[REST-OP off]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST-EXEC off]
+[REST-OP off_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC off_reset]
+[AUTH role=ORG_RET_NOEMAIL_ORG_BUYER]
+[GQL-OP cancel_n]
+mutation { cancelReturn(command: { returnId: ""{{N_ID}}"" }) { id status } }
+[GQL-EXEC cancel_n]
+[AUTH role=ORG_RET_BUYER_NOEMAIL]
+[GQL-OP cancel_m]
+mutation { cancelReturn(command: { returnId: ""{{M_ID}}"" }) { id status } }
+[GQL-EXEC cancel_m]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=on] HTTP 204 {OBSERVED}
+[ERRORS label=on_reset] HTTP 204 {OBSERVED}
+[ERRORS label=n_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=n_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=n_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=n_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=m_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=m_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=m_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=m_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=jn] HTTP 200 {OBSERVED}
+[COUNT label=jn] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (BL-NOTIF-003 by analogy, AC-4f: an organization without an address sends no copy and blocks nothing; real when the PO states it)
+[COUNT label=jn] body.results[*?to={{n_buyer_email}}].length = 1 {HYPOTHESIS} (AC-4f: the buyer's own email still goes)
+[ERRORS label=jm] HTTP 200 {OBSERVED}
+[COUNT label=jm] body.results[*?to={{m_account_email}}].length = 1 {HYPOTHESIS} (AC-4g, PARTIAL: the platform keeps an account address, so this tests the fallback chain order address, contact, account; not ""no email anywhere"")
+[COUNT label=jm] body.results[*?to={{viewer_org_email}}].length = 1 {HYPOTHESIS} (AC-4g: the organization copy is still sent when the buyer's address came from the fallback; intent unstated, raised to the PO)
+[ERRORS label=off] HTTP 204 {OBSERVED}
+[ERRORS label=off_reset] HTTP 204 {OBSERVED}
+[ERRORS label=cancel_n] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=cancel_m] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)",[EVIDENCE] submit returning Requested in both legs proves the status change was not blocked by the missing address; each leg reads its own return's journal,"a return status change fails or loses the buyer's email because the organization has no address; the organization receives a message although it has no address (a wrong fallback); the buyer without a contact address gets no email, or the organization copy is lost","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:FALLBACK · Technique:EP,Draft
+RET-ORG-039,Organization copy — a status change after the buyer left the organization is still copied to the organization the return was raised for,Returns — Authorize & Notifications > Organization copy (step 3),Medium,,,"Runner-native. No browser. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE in its own window, never beside another lane that submits returns, and restores the originals at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key (getByPath splits the path on every dot, so a capture of Return.NotifyOrganizationEmail is not expressible), so the originals are the DECLARED EFFECTIVE values in Test_Data (orig_notify_org=false, orig_send=true, as observed on vcst 2026-10-08) and the restore writes those variables back explicitly: the store settings API IGNORES value:null, so a setting stored as null can only be restored to its EFFECTIVE value written explicitly. If the effective original on another stand differs, change the two Test_Data values before running. ALONE: no other lane or suite may submit returns while the setting is ON, and the case runs AFTER the ""exactly one email"" seam rows RET-AUTH-009 and RET-AUTH-028..031 (they are only true while the setting is OFF), never beside them. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`; the first live run settles the field name. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The org-copy field names and the Hangfire delay are observed, not documented: a copy is searched for after a fixed wait. {HYPOTHESIS} The expectation records what is observed (3x: the cancel of a departed buyer's return still copied the OLD organization) and is NOT certified as right: the PO has not said whether an organization keeps being mailed about a person who left it, or stops being told about a return it still lists. What would make it real: the PO's rule; if it is ""no copy for a departed buyer"", the two copy assertions flip. The buyer is ORG_RET_LEAVER (a non-holder with its own order). The membership is set to Deleted, then RESTORED in the same case and in Cleanup; the role id and name are read from the membership, never typed. Execution lane B observed that a buyer whose membership is Deleted gets a REFUSED token on a NEW sign-in: the cancel here reuses the token issued BEFORE the removal (one cached token per role per run); if the stand refuses that old token too, the cancel step is BLOCKED and the leg is run through the Admin status change instead. The REST bodies mirror seed-org-returns.mjs. Return.NotifyOrganizationEmail is written ON for the window and false at the end.",orig_notify_org=false; orig_send=true; order=@td(ORG_RET_LEAVER.orderId); la=@td(ORG_RET_LEAVER.lineAItemId); org_email=@td(ORG_RET_VIEWER_ORG.email),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP on]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true}
+[REST-EXEC on]
+[REST-OP on_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC on_reset]
+[AUTH role=ORG_RET_LEAVER]
+[GQL-OP l_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC l_create]
+[GQL-CAPTURE l_create.data.createReturn.id → L_ID]
+[GQL-CAPTURE l_create.data.createReturn.number → L_NO]
+[GQL-OP l_submit]
+mutation { submitReturn(command: { returnId: ""{{L_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC l_submit]
+[GQL-CAPTURE l_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → L_LA]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_role]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC get_role]
+[REST-CAPTURE get_role.body.roles.0.roleId → BASE_ROLE_ID]
+[REST-CAPTURE get_role.body.roles.0.roleName → BASE_ROLE_NAME]
+[REST-OP remove]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Deleted"", ""isLocked"": false}
+[REST-EXEC remove]
+[REST-OP state_removed]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC state_removed]
+[AUTH role=ORG_RET_LEAVER]
+[GQL-OP cancel_l]
+mutation { cancelReturn(command: { returnId: ""{{L_ID}}"" }) { id status } }
+[GQL-EXEC cancel_l]
+[WAIT seconds=25]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP jl]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{L_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC jl]
+[REST-OP restore]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC restore]
+[REST-OP state_restored]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC state_restored]
+[REST-OP off]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST-EXEC off]
+[REST-OP off_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC off_reset]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=on] HTTP 204 {OBSERVED}
+[ERRORS label=on_reset] HTTP 204 {OBSERVED}
+[ERRORS label=l_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=l_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=l_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=l_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=get_role] HTTP 200 {OBSERVED}
+[ERRORS label=state_removed] HTTP 200 {OBSERVED}
+[DATA label=state_removed] body.status = Deleted {OBSERVED} (the buyer really left before the cancel)
+[ERRORS label=cancel_l] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[DATA label=cancel_l] data.cancelReturn.status = Cancelled {OBSERVED} (3x: a departed buyer could still cancel with the token issued before the removal)
+[ERRORS label=jl] HTTP 200 {OBSERVED}
+[COUNT label=jl] body.results[*?notificationType=ReturnCancelledEmailNotification].length = 2 {HYPOTHESIS} (the copy follows the OrganizationId snapshot on the return, not the buyer's current membership; by design per PR #28; real when the PO states it; 3x observed)
+[COUNT label=jl] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (the old organization is still mailed after the buyer left: Registered and Cancelled)
+[ERRORS label=state_restored] HTTP 200 {OBSERVED}
+[DATA label=state_restored] body.status = Approved {OBSERVED}
+[ERRORS label=off] HTTP 204 {OBSERVED}
+[ERRORS label=off_reset] HTTP 204 {OBSERVED}","[EVIDENCE] state_removed reads the membership as Deleted before the cancel, so the copy that follows is the departed buyer's; the journal is read from the return itself","the old organization stops being copied after the buyer left (if the PO says the snapshot rules), or keeps being copied (if the PO says membership rules); the membership is not restored (a later case finds ORG_RET_LEAVER blocked); the setting is left ON","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)]
+{""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:STALE · Technique:ST,Draft

@@ -60,6 +60,8 @@ const TEARDOWN_STEPS = [
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
+  // VCST-5884 organization returns: its own orders/returns, AGENT-TEST accounts, orgs and two pinned roles.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
@@ -187,6 +189,9 @@ const STEPS = [
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
+  // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the
