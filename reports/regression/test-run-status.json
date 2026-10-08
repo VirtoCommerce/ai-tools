@@ -1,22 +1,31 @@
 {
- "runId": "REG-2026-10-05-1613",
+ "runId": "REG-2026-10-06-1457",
  "status": "completed",
- "startedAt": "2026-10-05T13:13:48.000Z",
- "windowStart": "2026-10-05T13:13:48.000Z",
- "selection": "007,050h",
+ "startedAt": "2026-10-06T14:57:31.844Z",
+ "windowStart": "2026-10-06T14:57:31.844Z",
+ "selection": "097,014b",
  "env": "vcptcore",
  "scoped": true,
- "purpose": "/qa-test VCST-5707 round 2 4c C1 exact set. Delegated: --no-promote.",
+ "purpose": "/qa-test VCST-6001 4c C1 exact set (--ids 17). Delegated: --no-promote.",
  "suites": {
-  "007": {
+  "097": {
    "status": "done",
+   "lane": "browser",
    "browser": "playwright-chrome",
-   "lane": "browser"
+   "cases": 14,
+   "pass": 11,
+   "fail": 2,
+   "blocked": 1
   },
-  "050h": {
+  "014b": {
    "status": "done",
-   "lane": "fastpath"
+   "lane": "browser",
+   "browser": "playwright-edge",
+   "cases": 3,
+   "pass": 2,
+   "fail": 1,
+   "blocked": 0
   }
  },
- "finishedAt": "2026-10-05T13:30:32.620Z"
+ "finishedAt": "2026-10-06T15:11:36.635Z"
 }

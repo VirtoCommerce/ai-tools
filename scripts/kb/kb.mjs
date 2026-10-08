@@ -23,6 +23,7 @@ import { pushConfirmRequired, queueDir } from './core/queue.mjs';
 import { resolveWho } from './core/who.mjs';
 import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
+import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
@@ -40,7 +41,7 @@ import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } 
 const HOLD_EVERYWHERE = 'To hold it everywhere, set KB_PUSH_CONFIRM=1 in the `env` of .claude/settings.local.json '
   + 'and restart the session: a shell variable does not reach the MCP server.';
 
-const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help']);
+const BOOLEAN_FLAGS = new Set(['dry-run', 'no-sweep', 'json', 'help', 'verify']);
 
 /** A pacing constant in whole minutes, for prose — derived, so the text cannot drift from the code. */
 function minutes(ms) { return Math.round(ms / 60_000); }
@@ -64,14 +65,16 @@ const USAGE = `kb — the knowledge base (PLAN v1)
 
   npm run kb -- ask "<question>" [--deployment <env>] [--topic "<what you're working on>"]
                                  [--base <dir>] [--top 3] [--json]
-  npm run kb -- show KB-XXXXXXXX [--ask <handle>] [--topic "<...>"] [--base <dir>] [--json]
+  npm run kb -- show KB-XXXXXXXX [--ask <handle> | --verify] [--topic "<...>"] [--base <dir>] [--json]
   npm run kb -- none [--ask <handle>] [--topic "<...>"]     none of the listed entries answers
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
-                        --claim "<the claim, in prose>" --deployment <env>
+                        --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
-                        [--topic "<...>"]
-  npm run kb -- confirm KB-XXXXXXXX --deployment <env> [--note "<what you saw>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <env> --saw "<what you saw instead>" [--topic "<...>"]
+                        [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
+                        an anchor is a route, endpoint or GraphQL op, never a label or menu path;
+                        contract: ${CONTRACT}
+  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--topic "<...>"]
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--topic "<...>"]
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
@@ -236,7 +239,9 @@ async function main(argv) {
   if (verb === 'show') {
     const id = args._[1];
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
-    const r = await show(id, opened, { via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null });
+    const r = await show(id, opened, {
+      via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+    });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
     return exitFor(r.state);
@@ -257,14 +262,15 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
     if (json) out(JSON.stringify(r, null, 2));
-    else emit(captureLines(r));
+    // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
+    else emit(captureLines(r, { card: true }));
     // A refusal is not a failure -- it is the design working (the ranking missed an entry that
     // exists, and instead of a duplicate the base gets a confirmation) -- but it is not a queued
     // capture either, and 0 would say it was.
     if (r.state === 'invalid' || r.state === 'refused') return EXIT.NO_COVERAGE;
-    return r.state === 'queued' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
+    return r.state === 'queued' || r.state === 'dry-run' ? EXIT.ANSWER : r.state === 'disabled' ? EXIT.NO_BASE : exitFor(r.state);
   }
 
   if (verb === 'confirm' || verb === 'dispute') {

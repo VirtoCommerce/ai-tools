@@ -15,13 +15,16 @@ import { join } from 'node:path';
 import { canonicalStand, mintId } from './canonical.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
+import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
 import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+  DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  readQueue, sessionId,
 } from './queue.mjs';
+import { lastWord, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -575,6 +578,9 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
   return { state: 'miss', verdict: 'none', concepts, hits: [], nearMiss: null, queued, rows: cat.rows.length, ...repair };
 }
 
+/** An ask handle is the ask's own `at`: an ISO timestamp, never prose. */
+const ISO_AT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
+
 /**
  * The agent's half of an `ambiguous` verdict when NONE of the headlines answers (Decision 1a): one
  * log line pointing at the ask it closes. That line is the label M6 recalibrates on -- with `kb_show`
@@ -590,13 +596,21 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   // recalibrates on; recorded unpaired, it is merely unpaired.
   const latest = asks.at(-1) ?? null;
   const target = named ?? (handle || latest?.state !== 'ambiguous' ? null : latest);
-  const written = await log({ kind: 'none', ...(target ? { after: target.at } : {}), ...context({ via, call, topic }) }, { env });
+  // A HANDLE THE SESSION NO LONGER REMEMBERS (the sidecar keeps the last ASK_MEMORY asks, the queue
+  // is flushed) is still the agent's explicit pointer, and it is a timestamp, not prose: recorded as
+  // `after`, so the ask it names is closed instead of being reminded about (PR #400 review). One that
+  // is not an `at` at all is recorded without it, as before.
+  const pointer = target?.at ?? (handle && !named && ISO_AT.test(handle.trim()) ? handle.trim() : null);
+  const written = await log({ kind: 'none', ...(pointer ? { after: pointer } : {}), ...context({ via, call, topic }) }, { env });
   if (written.disabled) return { state: 'disabled', why: written.why };
   if (!written.ok) return { state: 'unreachable', why: written.why };
   return {
     state: 'recorded',
-    ...(target ? { after: target.at, q: target.q } : {}),
-    ...(handle && !named ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
+    ...(pointer ? { after: pointer } : {}),
+    ...(target ? { q: target.q } : {}),
+    // Said as it happened: an unremembered ISO handle WAS recorded (PR #400 review, cycle 3).
+    ...(handle && !named && pointer ? { why: `recorded against handle ${handle.trim()}, which this session no longer remembers` } : {}),
+    ...(handle && !named && !pointer ? { why: `no ask of this session has the handle ${handle}; the verdict was recorded without one` } : {}),
     ...(!handle && latest && !target ? { why: `this session's latest ask ended ${latest.state ?? 'without a verdict'}, not ambiguous; pass its handle to pair them` } : {}),
   };
 }
@@ -710,10 +724,17 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
   // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
   // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
-  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
+  // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
+  // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
+  // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
+  // WITHOUT EITHER, THE PAIRING IS RESOLVED HERE, at the write, as `none()` resolves its target: the
+  // latest list of this session that showed the entry and was not closed by `kb_none` -- logged as an
+  // explicit `after`, or `unpaired` when there is none. Hook and report then read the line, not a rule.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() }
+    : verify ? { verify: true } : pairShow(id, env);
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
@@ -742,6 +763,22 @@ export async function show(id, opened, { env = process.env, via = null, call = n
   }
   await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+/** The write-time pairing of a handle-less, non-`verify` show (see `show`): `{ after }`, `{ unpaired }`, or `{}` with no session. */
+function pairShow(id, env) {
+  if (!hasSessionId(env)) return {};
+  const journal = readLoop(env);
+  const pointed = pointersByAsk(journal);
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of journal) {
+    if (r.kind !== 'ask' || r.state !== 'ambiguous' || !Array.isArray(r.shown)) continue;
+    if (!r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict === 'none') continue;
+    if (!at || r.at > at) at = r.at;
+  }
+  return at ? { after: at } : { unpaired: true };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -856,21 +893,21 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  * a contradiction is likelier with what was read a minute ago than with what was read at the start.
  */
 async function openedThisSession({ env }) {
+  // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`). One walk for
+  // both stores -- queue lines and journal records share the shape it reads (`loop.mjs` `openedIds`).
   const { lines } = await readQueue({ env });
-  const out = [];
-  const seen = new Set();
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const l = lines[i];
-    const ids = l.kind === 'ask' ? (l.opened ?? [])
-      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
-        : [];
-    for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
-    }
-  }
-  return out;
+  return openedIds(lines);
+}
+
+/**
+ * Every entry the session has opened, upper-cased: its journal, which outlives the queue's flush at
+ * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
+ * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
+ */
+async function openedEver({ env, journal = readLoop(env) }) {
+  const ids = [...openedIds(journal), ...(await openedThisSession({ env }))];
+  return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
 /**
@@ -886,7 +923,9 @@ async function openedThisSession({ env }) {
  * which names a directory on the writer's machine. The kind says what went wrong; the text that
  * went wrong stays on the laptop. `subject` travels, as it does on every capture line.
  */
-async function refuseAtDoor(result, input, { env, via, call, topic, repair = {} }) {
+async function refuseAtDoor(result, input, { env, via, call, topic, repair = {}, dryRun = false }) {
+  // A dry run sends nothing, the refusal line included: it is a payload check, not an attempt.
+  if (dryRun) return result;
   // An `unstructured` verdict is either a rule too strict or a coordinate chosen badly, and the kind
   // alone cannot say which (VCST-6102). The SHAPE can — segment count and path/dotted/prose — and
   // it is numbers and an enum, so no part of the rejected value reaches the public log.
@@ -934,28 +973,44 @@ export async function capture(input, opened, opts = {}) {
   return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
 }
 
-async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
-  const door = { env, via, call, topic, repair };
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, dryRun = false } = {}) {
+  // `dryRun` (VCST-6156): every check below runs -- the door, the corpus-aware anchor check, the
+  // dedup and the subject check -- and nothing is logged or queued. Until this existed the CLI parsed
+  // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
+  const door = { env, via, call, topic, repair, dryRun };
+  const note = (line) => (dryRun ? null : log(line, { env }));
   const missing = REQUIRED.filter((f) => !String(input[f] ?? '').trim());
   if (!input.anchors?.length) missing.push('anchor');
-  if (missing.length) return refuseAtDoor({ state: 'invalid', why: `capture needs: ${missing.join(', ')}` }, input, door);
+  // Every refusal carries `doorHints` -- the fix per anchor, coordinates the writer's own text names,
+  // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
+  // logs kinds and shapes, never a rejected value.
+  if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
   const problems = anchorProblems(input.anchors)
     .filter((p) => !(p.kind === 'unstructured' && isSingleSegmentPath(p.normalized)));
-  if (problems.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems }, input, door);
+  if (problems.length) return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems }, input), input, door);
 
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
-    await log({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
+    await note({ kind: 'capture', subject: input.subject, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) });
     return { state: cat.state, why: cat.why };
   }
-  const late = anchorProblems(input.anchors, { namespaces: namespaceRoots(cat.rows) });
-  if (late.length) return refuseAtDoor({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, door);
+  const namespaces = namespaceRoots(cat.rows);
+  const late = anchorProblems(input.anchors, { namespaces });
+  if (late.length) {
+    return refuseAtDoor(doorHints({ state: 'invalid', why: 'unusable anchor(s)', problems: late }, input, { rows: cat.rows, namespaces }), input, door);
+  }
 
   const scope = normalizeScope(input.scope);
-  if (!scope.length) return refuseAtDoor({ state: 'invalid', why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)' }, input, door);
+  if (!scope.length) {
+    return refuseAtDoor(doorHints({
+      state: 'invalid',
+      why: 'capture needs at least one --scope axis=value (without scope, a storefront fact gets applied to admin)',
+      missing: ['scope'],
+    }, input, { namespaces }), input, door);
+  }
 
   // Read BEFORE this capture writes its own line, or the lookback finds nothing but itself.
   const after = await precedingAsk({ env, input });
@@ -965,10 +1020,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // Anchors + scope + CLAIM (VCST-6102): the same coordinate with a different subject is a new fact.
   const dupe = findDuplicate(cat.rows, { anchors: input.anchors, scope, subject: input.subject });
   if (dupe) {
-    await log({
+    await note({
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
       why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
   }
 
@@ -979,11 +1034,11 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   const holder = cat.rows.find((r) => r.id === id);
   if (holder) {
     const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
-    await log({
+    await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
       ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
-    }, { env });
+    });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
   const entry = {
@@ -1052,6 +1107,10 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     retrievable(cat.rows),
     { exclude: [id, ...read, ...alsoHere.hits.map((n) => n.id)] },
   );
+
+  if (dryRun) {
+    return { state: 'dry-run', id, entry, why: 'the payload is valid -- nothing was logged or queued (dry run)', read: readRows, alsoHere, related };
+  }
 
   const written = await log({
     kind: 'capture',
@@ -1123,10 +1182,34 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
     };
     walk(row);
-    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
+  // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
+  // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
+  // it, the list's handle included when a list showed it. The refusal is logged as `<kind>-invalid`
+  // (id + reason code, never prose) so kb:report can count the gate; no evidence is written.
+  // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
+  // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
+  // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
+  // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
+  if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
+  // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
+  // show in one command could never satisfy the confirm in the next. The gate guards agents.
+  const journal = hasSessionId(env) ? readLoop(env) : [];
+  if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
+    // ALWAYS a `verify` open: the gate cannot know which list, if any, the entry answers, and a handle it
+    // guessed would record a pick on the wrong question (PR #407 review). Closing a list is the agent's
+    // own choice, and the Stop reminder names each one still open with its handle.
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
+    return {
+      state: 'invalid',
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id} with verify`
+        + `, or \`npm run kb -- show ${row.id} --verify\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
+    };
+  }
 
   const item = {
     method: input.method ?? 'observation',

@@ -342,6 +342,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Docs:** platform/user-guide/docs/order-management/managing-documents.md (published) — refunds can be issued for payments/orders with Paid status; capture is an action on the PaymentIn document.
 - **Source:** vc-module-order `PaymentFlowService.cs` — `CaptureAllowedPaymentStatuses => [Authorized, Paid]`, `RefundAllowedPaymentStatuses => [Paid, PartiallyRefunded, Refunded]` (Voided excluded); shipment status enum = New / Pick & Pack / Ready to Send / Send (no "Delivered").
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] ORD-074 failed in REG-2026-10-06-1457
 
 ### BL-ORD-002: Cancellation restores inventory conditionally `[P1-data]`
 - **Rule:** When an order is cancelled, the stock reserved for it is released automatically, for **every** line item of the order, not only the first. The adjustment is governed by **"Adjust inventory for orders"** — *"Update the inventory when the order status changes"* — a **global** Orders → General setting (Settings in the main menu), **not** a store-specific one: in that blade the store-specific settings carry a `Store` badge and this one does not. With the setting off, a status change (cancellation included) does not adjust stock, and any correction is manual.
@@ -1894,6 +1895,7 @@ Scoped storefront GraphQL surface for sales representatives (`POST /graphql/sale
 - **Source:** module README (`localizedName` on all rule discovery; `statusDisplayValue`); vc-frontend PR #2395 (13 locales).
 - **Source:** VCST-5681 (Done) — Sales Rep account sidebar rendered raw i18n keys in a non-English locale; fixed to render localized labels
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-CO-032 failed in REG-2026-10-06-1457
 
 ### BL-SR-014: Embedded Sales Rep Admin app gates on customer-member + platform-security permissions, not on `sales-rep:access` `[P1-data]`
 - **Rule:** The embedded Sales Rep Admin app (`api/sales-rep`) is gated by the **customer module's member permissions + platform security permissions**, NOT by `sales-rep:access` (which only defines a storefront rep) and NOT merely by the module being installed. The exact matrix (`[Authorize]` attributes; **multiple attributes = AND — all required**):
@@ -2073,6 +2075,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/ui-kit/composables/useFocusManagement.ts` — the focusable-elements selector and the Tab-cycle keydown handler that wraps focus at the first/last element when `trapFocus` is enabled; wired into `client-app/ui-kit/components/molecules/dialog/vc-dialog.vue`.
 - **Source:** VCST-5671 (Done) — overflow popover was not keyboard reachable and focus did not move into it; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] SR-CO-051 failed in REG-2026-10-06-1457
 
 ### BL-A11Y-002: Accessible naming and label association `[P1-data]`
 - **Rule:** Every interactive control MUST expose a non-empty, contextual accessible name to assistive technology (WCAG 4.1.2), distinct from a generic element-type label. Every visible field label MUST be programmatically associated with its input via `<label for>`/`aria-labelledby`/`aria-label` (WCAG 1.3.1). Every informative image's `alt` describes its content/purpose; a purely decorative image carries `alt=""` (WCAG 1.1.1).
@@ -2388,7 +2391,7 @@ ticket or a docs page disputes (`status`).
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 1 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
 | Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
-| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 0 |
+| Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
 | B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 1 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 4 |
@@ -2405,8 +2408,8 @@ ticket or a docs page disputes (`status`).
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
-| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 2 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 2 |
+| Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 3 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
@@ -2414,4 +2417,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **20** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **23** |

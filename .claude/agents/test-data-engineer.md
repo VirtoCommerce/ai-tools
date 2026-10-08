@@ -121,6 +121,7 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    `.mjs` seeder). **Before it, ASK** the base about each Platform-API endpoint the seeder calls:
    `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<endpoint> <question>"`) — what an endpoint was *seen*
    doing (a default it applies, a field it ignores) is what a seeder otherwise re-learns by failing.
+   Then close each list by its handle (`kb_show`/`kb_none`).
    Then confirm the outcome deterministically:
    - runtime GUIDs landed in `test-data/aliases.<env>.json` (not in any committed CSV);
    - `TEST_ENV=<env> npm run td:validate` + `td:validate:<domain>` still green post-seed;
@@ -129,8 +130,8 @@ You own **`/qa-generate-data`** (design + author gap fixtures, offline) and **`/
    - then re-run `--teardown` on a throwaway pass to prove zero-residue symmetry (`verifyRemoved`),
      re-seed if the data is meant to persist for the run.
    - **BANK** what the live run established about the platform (not about your script): matched ⇒
-     `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, unrecorded ⇒ `kb capture`
-     (`--deployment <env>`, nothing client-specific). List the ids in your report
+     `kb_confirm`, contradicted ⇒ `kb_dispute`, unrecorded ⇒ `kb_capture`
+     (`.claude/knowledge/execution/kb-capture-contract.md`, nothing client-specific). List the ids in your report
      (`knowledge/agents/authoring-standard.md` §5).
 7. **Delegate ONLY the browser part.** Hand off to `qa-backend-expert` / `qa-frontend-expert` the
    storefront/Admin-SPA rendering check or the full suite run against the seeded env — the only steps

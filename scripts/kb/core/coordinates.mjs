@@ -36,23 +36,34 @@ import { LOOKS_LIKE_A_LOCAL_PATH, LOOKS_LIKE_A_MENU_PATH, MSYS_REMEDY, namespace
  * @returns {Set<string>} lowercased root segments, without the slash
  */
 export function namespaceRoots(rows) {
+  return new Set([...deeperByRoot(rows)].filter(([, paths]) => paths.size >= 2).map(([root]) => root));
+}
+
+/**
+ * The one walk both questions share: lowercased root segment -> Map(lowercased deeper route -> the
+ * anchor key as the corpus spells it). `namespaceRoots` counts the routes; `door-hints.mjs`
+ * `deeperUnder` shows a few of them (`activeOnly`) as what a full route under a namespace looks like.
+ */
+export function deeperByRoot(rows, { activeOnly = false } = {}) {
   const deeper = new Map();
   for (const row of rows ?? []) {
+    if (activeOnly && row.status && row.status !== 'active') continue;
     for (const key of row.anchorKeys ?? []) {
       const path = routeOf(key);
       if (!path) continue;
       const segs = path.split('/').filter(Boolean);
       if (segs.length < 2) continue;
       const root = segs[0].toLowerCase();
-      if (!deeper.has(root)) deeper.set(root, new Set());
-      deeper.get(root).add(path.toLowerCase());
+      if (!deeper.has(root)) deeper.set(root, new Map());
+      const paths = deeper.get(root);
+      if (!paths.has(path.toLowerCase())) paths.set(path.toLowerCase(), String(key));
     }
   }
-  return new Set([...deeper].filter(([, paths]) => paths.size >= 2).map(([root]) => root));
+  return deeper;
 }
 
 // The route of a coordinate, with any leading HTTP verb dropped; null when it is not a route.
-function routeOf(raw) {
+export function routeOf(raw) {
   const s = String(raw ?? '').trim();
   const path = /^[A-Za-z]+\s+(\S+)$/.exec(s)?.[1] ?? s;
   return path.startsWith('/') ? path : null;

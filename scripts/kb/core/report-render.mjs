@@ -306,11 +306,23 @@ function panelRefusals(p) {
       the base rejected as malformed &mdash; a missing field, an unusable anchor, no scope &mdash;
       ${esc(p.atDoorRetried)} of them retried and landed. Not a duplicate: nothing was re-discovered,
       the write itself was wrong.</p>
+    ${p.door?.attempts ? doorBlock(p.door) : ''}
     ${p.atDoor.length ? table(['what was written', 'why', 'problem kind', 'retried', 'session', 'when'], p.atDoor.map((r) => [
     `<span class="q">${esc(r.subject)}</span>`, esc(r.why), esc(r.problems.join(', ')),
-    r.retried ? 'yes' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
+    r.pairedBy === 'subject' ? 'yes' : r.pairedBy === 'ask' ? 'likely' : '<strong class="bad">no</strong>', esc(r.session), `<code>${esc(when(r.at))}</code>`,
   ])) : ''}
   </section>`;
+}
+
+/** The door's own numbers (VCST-6156): refused per attempt, first-attempt success, abandoned, by door and person. */
+function doorBlock(d) {
+  const split = (o) => Object.entries(o).sort((a, b) => b[1].attempts - a[1].attempts)
+    .map(([k, v]) => [esc(k), esc(v.attempts), esc(v.refused), esc(pct(v.refused / v.attempts))]);
+  return `<p class="metric"><strong>Door:</strong> ${esc(d.refused)} of ${esc(d.attempts)} capture attempt(s)
+      refused = ${esc(pct(d.rate))}; first-attempt success ${esc(pct(d.firstAttempt))};
+      ${d.abandoned ? `<strong class="bad">${esc(d.abandoned)} fact(s) abandoned</strong>` : '0 facts abandoned'}${d.pairedByAsk ? ` (${esc(d.pairedByAsk)} refusal(s) <em>likely</em> retried under a reworded subject: matched only by the ask they followed)` : ''}.</p>
+    ${table(['door', 'attempts', 'refused', 'rate'], split(d.byDoor))}
+    ${table(['who', 'attempts', 'refused', 'rate'], split(d.byWho))}`;
 }
 
 function panelReach(p) {
@@ -396,6 +408,33 @@ function panelDoors(rows = []) {
   </section>`;
 }
 
+function panelLists(p) {
+  if (!p) return '';
+  const share = (r) => (r.unclosedShare === null ? '—' : `${Math.round(100 * r.unclosedShare)}%`);
+  const body = p.rows.map((r) => [
+    r.agent ? `<code>${esc(r.agent)}</code>` : '<span class="muted">unattributed</span>',
+    esc(r.asks), esc(r.show), esc(r.none),
+    r.unclosed ? `<strong class="bad">${esc(r.unclosed)}</strong>` : esc(r.unclosed),
+    esc(share(r)), esc(r.wroteAfter),
+  ]);
+  return `<section id="lists">
+    <h2>10 &middot; Lists &mdash; who closes what the base could not certify</h2>
+    <p class="lede">An <code>ambiguous</code> ask hands the agent a short list; it is closed by opening one
+      entry (<code>kb_show</code>) or by saying none fits (<code>kb_none</code>). An unclosed list is a miss
+      in every panel above. <em>wrote after</em> counts unclosed lists the session later wrote about &mdash; a
+      confirm or dispute of an entry the list showed, or a capture pointing at the ask &mdash; without
+      closing the list. Since the confirm gate the entry itself was opened before a confirm or dispute;
+      what is missing is the choice that tells the base which question it answered.</p>
+    <p class="metric"><strong>${esc(p.unclosed)}</strong> of <strong>${esc(p.asks)}</strong> list(s) unclosed
+      (${esc(share(p))}); ${esc(p.show)} opened, ${esc(p.none)} closed by none, ${esc(p.wroteAfter)} written about without closing the list.</p>
+    ${p.gate?.refused ? `<p class="metric">Confirm gate: <strong>${esc(p.gate.refused)}</strong> confirm/dispute refused as
+      not opened, over ${esc(p.gate.facts)} entr(ies) a session tried to confirm or dispute; ${esc(p.gate.landed)}
+      later landed on the same entry, ${esc(p.gate.abandoned)} never did.</p>` : ''}
+    ${body.length ? table(['agent', 'lists', 'opened', 'none', 'unclosed', 'unclosed share', 'wrote after'], body)
+    : empty('No ambiguous ask in this window.')}
+  </section>`;
+}
+
 const CSS = `
 :root{--fg:#1c1c1c;--dim:#6a6a6a;--line:#e0ddd8;--bg:#fbfaf8;--card:#fff;--bad:#a4262c;--accent:#2f5d50}
 *{box-sizing:border-box}
@@ -470,6 +509,7 @@ ${panelRefusals(p.refusals)}
 ${panelReach(p.reach)}
 ${panelTopics(p.topics)}
 ${panelDoors(p.doors)}
+${panelLists(p.lists)}
 <footer>Read from the base's <code>log/</code> over the network, analysed locally, rendered here.
 Nothing was written to the base and nothing was written into the repository tree.</footer>
 </main></body></html>`;
@@ -505,6 +545,12 @@ export function renderText(report) {
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
     + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
+  const d = p.refusals.door;
+  if (d?.attempts) {
+    const doors = Object.entries(d.byDoor).map(([k, v]) => `${k} ${v.refused}/${v.attempts}`).join(', ');
+    out.push(`  door           ${d.refused}/${d.attempts} capture attempts refused = ${pct(d.rate)} (${doors}); `
+      + `first attempt ${pct(d.firstAttempt)}; ${d.abandoned} fact(s) abandoned${d.pairedByAsk ? ` (${d.pairedByAsk} refusal(s) likely reworded retries)` : ''}`);
+  }
   // THE DENOMINATOR, printed with the panels rather than after them, because it is the line that
   // decides how to read every other number here. `n/a` and not `0%` when nothing is accounted for:
   // a machine with no `Stop` hook registered has not measured a reach of zero, it has not measured.
@@ -518,6 +564,16 @@ export function renderText(report) {
     + `${p.topics.untopiced ? `, ${p.topics.untopiced} line(s) carry none` : ''}`
     + `${p.topics.rows.length ? `; top "${p.topics.rows[0].topic}" (${p.topics.rows[0].lines})` : ''}`);
   out.push(`  doors          ${(p.doors ?? []).map((d) => `${d.via} ${d.calls} (${d.unattributed} unattributed)`).join(', ') || 'no agent call'}`);
+  if (p.lists?.asks) {
+    const worst = p.lists.rows.filter((r) => r.unclosed).slice(0, 3)
+      .map((r) => `${r.agent ?? 'unattributed'} ${r.unclosed}/${r.asks}`).join(', ');
+    out.push(`  lists          ${p.lists.unclosed}/${p.lists.asks} unclosed = ${pct(p.lists.unclosedShare)}`
+      + ` (${p.lists.show} opened, ${p.lists.none} none, ${p.lists.wroteAfter} written about unclosed)${worst ? `; ${worst}` : ''}`);
+  }
+  if (p.lists?.gate?.refused) {
+    out.push(`  confirm gate   ${p.lists.gate.refused} refused as not opened over ${p.lists.gate.facts} entr(ies); `
+      + `${p.lists.gate.landed} landed later, ${p.lists.gate.abandoned} abandoned`);
+  }
   out.push(`  loop           ${p.loop.afterMiss} capture(s) after a miss, ${p.loop.afterAnswer} after an answer`
     + `${p.loop.unlinked ? `, ${p.loop.unlinked} carrying no after-pointer to link` : ''}`);
   if (report.verdict) {

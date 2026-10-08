@@ -60,6 +60,9 @@ export const ORDER_FIXTURES = [
     fixtureFile: 'orders/completed-order.json',
     orderStatus: 'Completed',
     shipmentStatus: 'Delivered',
+    // ORD-003 asserts reorder carries each line's OWN quantity — equal quantities on every line make
+    // a "reorder at qty 1" bug indistinguishable from a correct one (SECOND RULE). Guarded below.
+    distinctLineQuantities: true,
     blockedCases: ['CHK-025', 'CHK-039', 'CHK-040', 'ORD-001', 'ORD-003', 'ORD-007', 'ORD-008', 'ORD-009', 'ORD-010', 'ORD-035'],
   },
   {
@@ -173,9 +176,40 @@ export function validateFixtureShape(spec, obj, kind /* 'order' | 'quote' */) {
   const expectedStatus = kind === 'order' ? spec.orderStatus : spec.quoteStatus;
   if (obj.status !== expectedStatus) problems.push(`status "${obj.status}" != spec "${expectedStatus}" (fix the spec OR the fixture — single source of truth)`);
   if (!Array.isArray(obj.items) || obj.items.length === 0) problems.push('items[] must be non-empty');
+  if (spec.distinctLineQuantities) {
+    const qtys = (obj.items || []).map((i) => Number(i.quantity));
+    if (qtys.length < 2 || new Set(qtys).size < 2) problems.push(`distinctLineQuantities: needs >=2 lines with DIFFERENT quantities (have ${qtys.join(', ') || 'none'}) — equal quantities make ORD-003 vacuous`);
+  }
+  if (kind === 'order' && ['Shipped', 'Completed'].includes(spec.orderStatus)) {
+    // A shipped/delivered order's storefront detail reads WHERE it went from the shipment's own
+    // deliveryAddress, not from order.addresses (kb KB-CC9A98D3: each operation keeps its own copy).
+    const noAddr = (obj.shipments || []).filter((sh) => !sh.deliveryAddress?.line1);
+    if (!(obj.shipments || []).length || noAddr.length) problems.push('every shipment of a Shipped/Completed order needs a deliveryAddress (CHK-013 reads it)');
+  }
   const leaks = findGuidLeaks(obj);
   if (leaks.length) problems.push(`${leaks.length} runtime GUID(s) leaked into the committed fixture (belong in aliases.<env>.json): ${leaks.map((l) => l.path).join(', ')}`);
   return { ok: problems.length === 0, problems };
+}
+
+/**
+ * Can `qty` of this product be added to a cart? (PURE.) A line seeded below the product's min order
+ * quantity (or above its max) makes every reorder case fail on PRODUCT_MIN_MAX_QTY instead of on the
+ * behaviour under test (REG-2026-10-02-2022 ORD-001/007, CHK-039: Xerox min 2 seeded at qty 1).
+ * min/max of 0 mean "no limit". A product whose limits are UNKNOWN (`null`/absent — the caller never
+ * read them) does NOT fit: an unread limit is not "no limit", and passing it would silently restore
+ * the bug this guards. Stock: when the product tracks inventory AND the caller stamped a numeric
+ * `availableQuantity`, the line must not exceed it (a reorder of an out-of-stock line fails on stock,
+ * not on the behaviour under test); no `availableQuantity` ⇒ stock is not judged.
+ */
+export function fitsLineQuantity(product, qty) {
+  if (!product || product.minQuantity == null || product.maxQuantity == null) return false;
+  const min = Number(product.minQuantity) || 0;
+  const max = Number(product.maxQuantity) || 0;
+  if (!(qty >= Math.max(min, 1) && (max === 0 || qty <= max))) return false;
+  if (product.trackInventory === true && Number.isFinite(product.availableQuantity)) {
+    return qty <= product.availableQuantity;
+  }
+  return true;
 }
 
 /**
@@ -184,14 +218,25 @@ export function validateFixtureShape(spec, obj, kind /* 'order' | 'quote' */) {
  * seeder live-discovers products that actually EXIST in the target env's catalog and this stamps each
  * item's product identity from them, so the seeded order/quote references browsable products (reorder,
  * PDP link, product image all resolve). Quantity / price / currency / productType are KEPT from the
- * fixture (deterministic totals). `products` = [{ id, sku, name, catalogId }]; fewer than items → cycle;
- * empty (e.g. dry-run / bare catalog) → the fixture's placeholders are left untouched.
+ * fixture (deterministic totals). `products` = [{ id, sku, name, catalogId, minQuantity, maxQuantity,
+ * trackInventory?, availableQuantity? }] in a DETERMINISTIC order (the seeder sorts by code); each line
+ * takes the first DISTINCT product that `fitsLineQuantity` admits, then any that fits, then cycles;
+ * empty (e.g. dry-run / bare catalog) → the fixture's placeholders are left untouched. The two
+ * fallbacks can put one product on two lines; check `duplicateLineProducts` on the result — a reorder
+ * merges such lines into one, so "each line keeps its own quantity" becomes undecidable.
  */
 export function applyCatalogItems(fixtureObj, products = []) {
   const body = structuredClone(fixtureObj);
   if (!Array.isArray(body.items) || !products.length) return body;
+  const used = new Set();
   body.items = body.items.map((item, i) => {
-    const p = products[i % products.length];
+    // Prefer a DISTINCT product whose min/max order quantity admits this line's quantity; fall back to
+    // the old cycling only when nothing fits (a bare catalog), so the seed still produces a body.
+    const qty = Number(item.quantity) || 1;
+    const p = products.find((c) => !used.has(c.id) && fitsLineQuantity(c, qty))
+      || products.find((c) => fitsLineQuantity(c, qty))
+      || products[i % products.length];
+    if (p) used.add(p.id);
     if (!p) return item;
     return {
       ...item,
@@ -202,6 +247,54 @@ export function applyCatalogItems(fixtureObj, products = []) {
     };
   });
   return body;
+}
+
+/** productIds that appear on more than one line of `items` (PURE). [] when every line is distinct. */
+export function duplicateLineProducts(items = []) {
+  const ids = items.map((i) => i?.productId).filter(Boolean);
+  return [...new Set(ids.filter((id, i) => ids.indexOf(id) !== i))];
+}
+
+/**
+ * Judge an EXISTING seeded order against the fixture (PURE) — the self-heal decision. It answers
+ * "is this order still a valid instance of the fixture?", never "is it what THIS run would build":
+ * line products are picked from a live catalog page, so comparing against a fresh pick rebuilt every
+ * order whenever the catalog moved (2026-10-05: PROCESSING_ORDER's id changed for no reason). Rebuild
+ * only when one of these is true:
+ *   - the owner or the order status drifted from the spec;
+ *   - the line QUANTITY multiset differs from the fixture's (a fixture edit — e.g. distinct quantities);
+ *   - a live line's product no longer exists (`productsById` has no entry for its productId);
+ *   - a live line's quantity violates that product's min/max order quantity (fitsLineQuantity);
+ *   - two live lines share one product (a reorder merges them — duplicateLineProducts);
+ *   - a Shipped/Completed order has no shipment, or a shipment without a deliveryAddress.
+ * `productsById` = Map(productId → { minQuantity, maxQuantity, ... }) re-read for THIS order's lines;
+ * pass `null` when the catalog could not be read, and the product checks are skipped (never guessed).
+ * Stock is deliberately NOT judged here — it moves under every order, and a rebuild on a stock dip is
+ * exactly the churn this replaces; stock is respected when a line's product is first chosen.
+ * Returns `{ rebuild, reasons[] }`.
+ */
+export function judgeExistingOrder(spec, fixtureObj, live, productsById, { ownerId = null } = {}) {
+  const reasons = [];
+  if (ownerId && live?.customerId !== ownerId) reasons.push(`owner ${live?.customerId || '(none)'} != ${ownerId}`);
+  if (live?.status !== spec.orderStatus) reasons.push(`status "${live?.status}" != "${spec.orderStatus}"`);
+  const qtys = (items) => (items || []).map((i) => Number(i.quantity)).sort((a, b) => a - b).join(',');
+  if (qtys(live?.items) !== qtys(fixtureObj?.items)) reasons.push(`line quantities [${qtys(live?.items)}] != fixture [${qtys(fixtureObj?.items)}]`);
+  const dup = duplicateLineProducts(live?.items);
+  if (dup.length) reasons.push(`product(s) ${dup.join(', ')} on more than one line`);
+  if (productsById) {
+    for (const item of live?.items || []) {
+      const p = productsById.get(item.productId);
+      if (!p) { reasons.push(`line ${item.sku}: product ${item.productId} no longer exists`); continue; }
+      if (!fitsLineQuantity({ ...p, availableQuantity: undefined }, Number(item.quantity))) {
+        reasons.push(`line ${item.sku}: qty ${item.quantity} outside min ${p.minQuantity} / max ${p.maxQuantity}`);
+      }
+    }
+  }
+  if (['Shipped', 'Completed'].includes(spec.orderStatus)) {
+    const ships = live?.shipments || [];
+    if (!ships.length || ships.some((sh) => !sh.deliveryAddress?.line1)) reasons.push('a shipment lacks a deliveryAddress');
+  }
+  return { rebuild: reasons.length > 0, reasons };
 }
 
 /**

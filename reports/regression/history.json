@@ -1,19 +1,5 @@
 [
   {
-    "runId": "REG-2026-07-06-1958",
-    "date": "2026-07-06",
-    "suiteId": "072b",
-    "suiteName": "Configurable Products E2E — P0 File/Text sections",
-    "environment": "vcst",
-    "browser": "playwright-chrome",
-    "total": 7,
-    "passed": 7,
-    "failed": 0,
-    "blocked": 0,
-    "skipped": 0,
-    "pass_rate": 100
-  },
-  {
     "runId": "REG-2026-07-09-0706",
     "date": "2026-07-09",
     "suiteId": "??",
@@ -205,34 +191,6 @@
     "failed": 0,
     "blocked": 5,
     "skipped": 0,
-    "pass_rate": 100
-  },
-  {
-    "runId": "SMOKE-2026-07-06-1845",
-    "date": "2026-07-06",
-    "suiteId": "042",
-    "suiteName": "Storefront Smoke Tests",
-    "environment": "vcst",
-    "browser": "playwright-chrome",
-    "total": 30,
-    "passed": 30,
-    "failed": 0,
-    "blocked": 0,
-    "skipped": 0,
-    "pass_rate": 100
-  },
-  {
-    "runId": "SMOKE-2026-07-06-1845",
-    "date": "2026-07-06",
-    "suiteId": "078",
-    "suiteName": "Admin/Backend Smoke Tests (Track B — Admin SPA)",
-    "environment": "vcst",
-    "browser": "playwright-edge",
-    "total": 47,
-    "passed": 45,
-    "failed": 0,
-    "blocked": 0,
-    "skipped": 2,
     "pass_rate": 100
   },
   {
@@ -2974,6 +2932,38 @@
     "skipped": 0,
     "pass_rate": 100,
     "duration_minutes": 13.4,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-06-1457",
+    "date": "2026-10-06",
+    "suiteId": "014b",
+    "suiteName": "Orders Frontend — Returns, Documents & Date Filtering",
+    "environment": "vcptcore",
+    "browser": "playwright-edge",
+    "total": 3,
+    "passed": 2,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 66.67,
+    "duration_minutes": 3.23,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-06-1457",
+    "date": "2026-10-06",
+    "suiteId": "097",
+    "suiteName": "Sales Rep — Customer Orders (storefront)",
+    "environment": "vcptcore",
+    "browser": "playwright-chrome",
+    "total": 14,
+    "passed": 11,
+    "failed": 2,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 84.62,
+    "duration_minutes": 12.63,
     "mode": "interactive"
   }
 ]
