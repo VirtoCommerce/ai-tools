@@ -43,7 +43,9 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `method` | how you established it | optional; `observation` (the default) is the only value the tool description admits — see §Open decision |
 
 `confirm` and `dispute` need the entry `id` and `deployment` (`dispute` also `saw`). A superseded id
-is refused with the ids of its successors — confirm or dispute the one you actually observed.
+is refused with the ids of its successors — confirm or dispute the one you actually observed. An entry
+this session has not opened (`kb_show`, or an answer that printed its body) is refused with the command
+that opens it (VCST-6191): a list line is not the entry, and its caveats sit below it.
 
 ## Anchors — accepted forms
 
