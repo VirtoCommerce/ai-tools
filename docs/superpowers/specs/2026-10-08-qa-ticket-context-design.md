@@ -187,7 +187,7 @@ most often missed), every link in description, comments and fields (including Pr
 
 ### Block 3 — Change (PRs)
 
-**Find** — reuse the measured ladder of `technical-change.md` §2.1 unchanged, with C2/C3 applied:
+**Find** — reuse the measured ladder of `technical-change.md` §2.1, with C2/C3 applied and rung 3 moved from `git log` to MCP:
 explicit link → org-wide search by key → commit search by key (`search_commits`; the agent has no shell, A4) → paths named in the ticket (weakest; say so).
 
 **Per PR, return:**
