@@ -1,6 +1,6 @@
 # `/qa-test-model` after the test-strategy step — design
 
-> **Status: DRAFT.** These are brainstorm decisions from 2026-10-09; nothing is built yet. Work is tracked in VCST-6250.
+> **Status: for review.** §3–§5 record the phase-A decisions taken in the 2026-10-09 brainstorm; nothing is built yet. Work is tracked in VCST-6250.
 > This spec depends on the `/qa-test` redesign (#417, D1–D12) and its prototype (#416, VCST-6249). Phase A
 > starts only after the strategy step lands.
 
