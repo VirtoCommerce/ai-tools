@@ -56,7 +56,9 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
-The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
+First reconcile the strategy ([`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+§Reconcile): a High or Critical risk without a result caps the verdict below `PASS`. The vocabulary and
+the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
 §5-verdict.2 — `PASS` / `PASS_WITH_NOTES` / `FAIL` / `BLOCKED`. The conditions it reconciles are the
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
 functional ticket.
@@ -71,6 +73,7 @@ functional ticket.
   - `discovery` — the exploratory lane
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
+  - `strategy` — the strategy file, its approval and the reconciliation counts
   - `bugs_filed` / `bugs_not_filed`
   - `tracker.comment_id` — `null` until §Tracker comment posts, then the returned id
   - `report.page_url` and `report.kb` — filled after §HTML page and the kb step
@@ -94,14 +97,14 @@ functional ticket.
 - <severity> <title> — <the path qa-bug returned> (<tracker key | not filed>)
 
 ## Not tested, and why
-- <item / charter item> — <reason>
+- <R-n / item / charter item> — <reason>
 - <node id> — candidate case (passed here, no suite case stamps it)
 
 ## Data
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
 
 ## Context used
-Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
+Strategy <path> (<APPROVED | AUTO>) · Model <path | SKIPPED: reason> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run

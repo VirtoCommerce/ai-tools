@@ -104,8 +104,8 @@ one sentence is how it got inverted for a day without anything noticing.
 ## The verifier, in one place
 
 The FULL path dispatches a **fresh `qa-lead-orchestrator` in §Verifier Mode**
-([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **twice: Step 3 and
-Step 5-report — only the first is a hard STOP.** 5-report ratifies without holding the close-out: it
+([`.claude/agents/qa-lead-orchestrator.md`](../../agents/qa-lead-orchestrator.md)) **three times: Step 1s
+(the test strategy, before the user is asked), Step 3 and Step 5-report — 1s and 3 are hard STOPs.** 5-report ratifies without holding the close-out: it
 re-derives the recommendation. (Two more went: `5g` on 2026-09-10 with promotion, `5b` on 2026-09-16 —
 folded into `5-verdict` as an inline self-check.) What makes the
 verifier independent rather than ceremonial:
@@ -123,7 +123,7 @@ verifier independent rather than ceremonial:
 - **Loop = 1 round.** `REJECT → REASONS + FIX → the doer fixes → re-verify once`. Still not APPROVE →
   **STOP** for a human. A persistent REJECT never silently proceeds.
 
-Every other step — 1, 2, 4, 5-file, 5-status, 5-docs — and the entire FAST path self-check inline. Diagram + role/hand-off detail:
+Every other step — the rest of 1, 2, 4, 5-file, 5-status, 5-docs — and the entire FAST path self-check inline. Diagram + role/hand-off detail:
 `docs/qa-test-flow.md`.
 
 ## Ordering — what may move, and the three things that may not
@@ -223,6 +223,7 @@ Per [`.claude/rules/reports.md`](../../rules/reports.md) §1 — that file is th
 | Artifact | Path | Category |
 |---|---|---|
 | `summary.json` (incl. `timing`, `bugs_not_filed`) | `reports/tickets/{SPRINT}/<ticket-key>/` | 6 |
+| `test-strategy.md` (1s, reconciled at 5-verdict) | same folder | 6 |
 | `testing-checklist.md` (Artifact B) | same folder | 6 |
 | Evidence screenshots | same folder `screenshots/` | 6 |
 | `design-report.md` — **only when the Step-4 visual lane ran** (`visual_surface: true`) | same folder | 6 |
