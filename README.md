@@ -184,7 +184,7 @@ Use an agent by name: `Use the qa-backend-expert to test the Platform API`.
 
 ```bash
 npm run env:check          # Validate env vars (active TEST_ENV)
-npm run ci:smoke           # CI smoke (042, 078, 078b-d)   ·  ci:critical / ci:frontend / ci:backend / ci:full
+npm run ci:smoke           # CI smoke selection   ·  ci:critical / ci:frontend / ci:backend / ci:full
 npm run ci:cycle           # Full pipeline: sync → review → regression
 npm run seed[:minimal|:catalog|:full|:teardown]   # Test-data seeding (repo seed scripts; per-domain seed:<name>)
 npm run graphql:validate   # Run GraphQL fixtures  ·  schema:check (drift gate)
@@ -238,7 +238,7 @@ ai-tools/
 
 CSV suites in enriched agent-native format, organized under `Frontend/<module>/` and `Backend/<module>/`. **Authoritative definitions + selection groups live in [`config/test-suites.json`](config/test-suites.json)** (groups: `smoke`, `critical`, `frontend`, `backend`, `sprint`, `full`, plus module/feature-aligned groups like `catalog`, `orders`, `returns`, `b2b`, `payment`, `loyalty`, `sales-rep` — `npm run regression:plan -- <name>` resolves one). Per-module index: [`regression/suites/README.md`](regression/suites/README.md).
 
-P0 suites: 042 (Smoke), 078 (Smoke companion), 039 (CyberSource payment), 044 (Security), 049 (Platform REST API).
+Priority is per suite — the `priority` field in the manifest, shown beside every suite in the [per-module index](regression/suites/README.md). The `critical` selection that `ci:critical` runs is a curated subset of the P0 suites, not all of them: `npm run regression:plan -- critical` lists it.
 
 Authoring guides: browser-mode tags ([`test-runner-tags.md`](.claude/knowledge/execution/test-runner-tags.md)) · GraphQL ([`graphql-test-cases-runner.md`](.claude/knowledge/api/graphql-test-cases-runner.md)) · test data ([`.claude/rules/test-data.md`](.claude/rules/test-data.md)) · cases that catch bugs ([`cases-that-catch-bugs.md`](.claude/knowledge/execution/cases-that-catch-bugs.md)).
 

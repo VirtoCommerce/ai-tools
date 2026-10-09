@@ -22,21 +22,31 @@
  *      tool, not just that it exists). They stay hand-written, but a command, skill, agent, plugin or
  *      decision record they never mention fails the check. That is the lag DOC-003 cannot see.
  *
+ * WHAT IT READS: GIT-TRACKED FILES ONLY. Every listing (components, a skill's supporting files,
+ * decision records) comes from `git ls-files`, never the disk — a `.DS_Store`, a `bin/` from a local
+ * build or an untracked scratch file would otherwise be written into a row locally and then fail the
+ * check on CI's clean checkout. So `git add` a new component before running `npm run docs:index`.
+ *
  * WHAT IT DOES NOT DO. It never writes a description. A row's text is the first sentence of the
  * component's own `description:` (its `[Category]` tag dropped), so a wrong row is fixed in that
  * component's frontmatter, not here — the same rule `gen-knowledge-index.mjs` applies to scope lines.
+ * And it never degrades quietly: a source it cannot read fails, rather than rendering a "—" row.
  *
  * CHECKS
  *   DOC-IDX-001  a generated block differs from what the sources derive        (hard, --check only)
  *   DOC-IDX-002  a hand-written index does not mention a component it covers   (hard)
  *   DOC-IDX-003  a host file is missing a block's BEGIN/END markers            (hard)
+ *   DOC-IDX-004  a component's frontmatter is missing, unparseable or has no description  (hard)
+ *   DOC-IDX-005  a manifest suite is filed where the suites roster has no row for it      (hard)
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import YAML from "yaml";
+import { firstSentence, splitFrontmatter, spliceBlock } from "../lib/doc-index.mjs";
 
 // fileURLToPath, not .pathname — the repo path has a space ("My Projects"), see gen-knowledge-index.mjs.
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
@@ -46,47 +56,71 @@ const MAX_TEXT = 160;
 const findings = [];
 
 const rd = (rel) => readFileSync(join(ROOT, rel), "utf8");
-const ls = (rel) => (existsSync(join(ROOT, rel)) ? readdirSync(join(ROOT, rel)).sort() : []);
-const isDir = (rel) => statSync(join(ROOT, rel)).isDirectory();
+
+// -z: no path quoting, so a non-ASCII or spaced name arrives verbatim. A git failure throws — a silent
+// fallback to the disk listing would bring back exactly the machine-dependence this exists to remove.
+const TRACKED = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT, encoding: "utf8", maxBuffer: 64 << 20 })
+  .split("\0")
+  .filter(Boolean);
+const IS_TRACKED = new Set(TRACKED);
+
+/** The tracked immediate children of a folder, dotfiles excluded: [{ name, dir }], sorted by name. */
+function children(rel) {
+  const prefix = `${rel}/`;
+  const seen = new Map();
+  for (const p of TRACKED) {
+    if (!p.startsWith(prefix)) continue;
+    const rest = p.slice(prefix.length);
+    const cut = rest.indexOf("/");
+    const name = cut === -1 ? rest : rest.slice(0, cut);
+    if (!name.startsWith(".")) seen.set(name, seen.get(name) || cut !== -1);
+  }
+  return [...seen.keys()].sort().map((name) => ({ name, dir: seen.get(name) }));
+}
 
 // ---------------------------------------------------------------- sources
 
+/** A component's frontmatter. Anything that would degrade its row is a finding, never a quiet `{}`. */
 function frontmatter(rel) {
-  const text = rd(rel).replace(/\r\n/g, "\n");
-  if (!text.startsWith("---\n")) return {};
-  const end = text.indexOf("\n---", 4);
-  if (end === -1) return {};
-  try {
-    return YAML.parse(text.slice(4, end)) ?? {};
-  } catch {
+  const fail = (why) => {
+    findings.push({ code: "DOC-IDX-004", file: rel, msg: why });
     return {};
+  };
+  const raw = rd(rel);
+  if (raw.charCodeAt(0) === 0xfeff) return fail("starts with a UTF-8 BOM, so the `---` fence is not at byte 0");
+  const { fm } = splitFrontmatter(raw.replace(/\r\n/g, "\n"));
+  if (fm === null) return fail("no frontmatter — the file must open with a closed `---` fence");
+  let data;
+  try {
+    data = YAML.parse(fm);
+  } catch (e) {
+    return fail(`frontmatter is not valid YAML — ${String(e.message).split("\n")[0].replace(/:\s*$/, "")}`);
   }
+  if (!data || typeof data !== "object" || Array.isArray(data)) return fail("frontmatter is not a key/value mapping");
+  if (!String(data.description ?? "").trim()) return fail("frontmatter has no `description`");
+  return data;
 }
 
 const TAG_RE = /^\s*\[([A-Za-z ]+)\]\s*/;
 // The two spellings of one category (skills/README.md says so); the tag is the category, not a label.
 const TAG_ALIAS = { "QA Method": "QA Methodology" };
 
-/** First sentence of a description, tag dropped, safe inside a table cell. */
-function summary(desc) {
-  let t = String(desc ?? "")
-    .replace(TAG_RE, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  // "e.g." / "i.e." / "vs." are not sentence ends — shield them, split, then restore.
-  t = t.replace(/\b(e\.g|i\.e|etc|vs)\./g, "$1\u0000");
-  const m = t.match(/^(.{25,}?[.!?])(\s|$)/);
-  if (m) t = m[1];
-  t = t.replace(/\u0000/g, ".");
-  if (t.length > MAX_TEXT) t = t.slice(0, MAX_TEXT - 1).replace(/\s+\S*$/, "") + "…";
-  // A cut can land inside a code span; an unclosed backtick swallows the rest of the table.
-  if ((t.match(/`/g) ?? []).length % 2) t += "`";
+/** Text safe inside a table cell: `|` escaped, and `<`/`>` escaped outside code spans. */
+function cell(text) {
   // Outside code spans a bare `<X.Y>` is an HTML tag to GitHub's renderer — the text vanishes.
-  t = t
+  return String(text)
     .split(/(`[^`]*`)/)
     .map((part, i) => (i % 2 ? part : part.replace(/</g, "&lt;").replace(/>/g, "&gt;")))
-    .join("");
-  return t.replace(/\|/g, "\\|") || "—";
+    .join("")
+    .replace(/\|/g, "\\|");
+}
+
+/** First sentence of a description, tag dropped, safe inside a table cell. */
+function summary(desc) {
+  let t = firstSentence(String(desc ?? "").replace(TAG_RE, "").replace(/\s+/g, " ").trim(), MAX_TEXT);
+  // A cut can land inside a code span; an unclosed backtick swallows the rest of the table.
+  if ((t.match(/`/g) ?? []).length % 2) t += "`";
+  return cell(t) || "—";
 }
 
 const tagOf = (desc) => {
@@ -95,21 +129,21 @@ const tagOf = (desc) => {
 };
 
 function skillsIn(dirRel) {
-  return ls(dirRel)
-    .filter((n) => isDir(`${dirRel}/${n}`) && existsSync(join(ROOT, dirRel, n, "SKILL.md")))
-    .map((name) => {
+  return children(dirRel)
+    .filter((c) => c.dir && IS_TRACKED.has(`${dirRel}/${c.name}/SKILL.md`))
+    .map(({ name }) => {
       const fm = frontmatter(`${dirRel}/${name}/SKILL.md`);
-      const support = ls(`${dirRel}/${name}`)
-        .filter((f) => f !== "SKILL.md")
-        .map((f) => (isDir(`${dirRel}/${name}/${f}`) ? `${f}/` : f));
+      const support = children(`${dirRel}/${name}`)
+        .filter((c) => c.name !== "SKILL.md")
+        .map((c) => (c.dir ? `${c.name}/` : c.name));
       return { name, tag: tagOf(fm.description), text: summary(fm.description), support };
     });
 }
 
 function mdComponents(dirRel) {
-  return ls(dirRel)
-    .filter((f) => f.endsWith(".md") && f !== "README.md")
-    .map((f) => ({ name: f.replace(/\.md$/, ""), fm: frontmatter(`${dirRel}/${f}`), rel: `${dirRel}/${f}` }))
+  return children(dirRel)
+    .filter((c) => !c.dir && c.name.endsWith(".md") && c.name !== "README.md")
+    .map(({ name: f }) => ({ name: f.replace(/\.md$/, ""), fm: frontmatter(`${dirRel}/${f}`), rel: `${dirRel}/${f}` }))
     .sort((a, b) => (a.name < b.name ? -1 : 1)); // by name, so "qa-hotfix" precedes "qa-hotfix-check"
 }
 
@@ -171,25 +205,20 @@ function renderPluginSkills() {
   return out;
 }
 
-const mentions = (text, name) => new RegExp(`(^|[^a-z0-9-])${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9-]|$)`).test(text);
-
-function skillMapRows(agents, skills) {
-  return agents.map((a) => {
-    const body = rd(a.rel);
-    const hits = skills.map((s) => s.name).filter((n) => n !== "vc-docs" && mentions(body, n));
-    return `| \`${a.name}\` | ${hits.length ? hits.join(", ") : "—"} |`;
-  });
-}
-
-function renderSkillMap() {
-  const out = ["| Agent | Skills its definition names |", "|---|---|", ...skillMapRows(localAgents, localSkills)];
-  for (const p of PLUGINS) {
-    const { agents, skills } = plugin[p.name];
-    if (!agents.length || !skills.length) continue;
-    for (const row of skillMapRows(agents, skills)) out.push(row.replace(/^\| `([^`]+)`/, `| \`${p.name}:$1\``));
-  }
-  return [...out, ""];
-}
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** `name` as a whole word — `perf-analyst` matches in `vc-perf:perf-analyst`, not in `perf-analyst-v2`. */
+const mentions = (text, name) => new RegExp(`(^|[^a-z0-9-])${esc(name)}([^a-z0-9-]|$)`).test(text);
+/**
+ * `/name` used as an invocation, not as part of a path: `.claude/skills/qa-design/x.md`,
+ * `commands/qa-test.md` and `https://host/qa-test/` all contain `/qa-design` or `/qa-test` but name a file.
+ */
+const invokes = (text, name) =>
+  new RegExp(`(^|[^A-Za-z0-9_./~-])/${esc(name)}(?![A-Za-z0-9_/-]|\\.[A-Za-z])`).test(text);
+// No Agent → Skill map is generated. Nothing declares that relationship (no agent lists its skills in
+// frontmatter, and Claude Code's `skills:` key PRELOADS skills, so it is not one to add for an index),
+// and every text rule tried on the agent bodies was wrong both ways: a bare word or a `/qa-test` counts
+// the pipeline that DISPATCHES the agent, while excluding command names drops real invocations such as
+// `/qa-seed-data`. skills/README.md points at the agent definitions instead.
 
 function agentTable(agents, prefix = "") {
   const out = ["| Agent | Model | Color | What it does |", "|---|---|---|---|"];
@@ -237,10 +266,17 @@ function renderSuites() {
   const byLayer = { Frontend: new Map(), Backend: new Map() };
   for (const s of suites) {
     const m = String(s.file ?? "").match(/^regression\/suites\/(Frontend|Backend)\/([^/]+)\//);
-    const layer = m ? m[1] : null;
-    if (!layer) continue;
-    if (!byLayer[layer].has(m[2])) byLayer[layer].set(m[2], []);
-    byLayer[layer].get(m[2]).push(s);
+    if (!m) {
+      // Dropping it would shorten the roster while the check stays green — the lag this script exists to catch.
+      findings.push({
+        code: "DOC-IDX-005",
+        file: "config/test-suites.json",
+        msg: `suite ${s.id} (\`${s.file}\`) is not under regression/suites/{Frontend,Backend}/<module>/ — the roster has no row for it`,
+      });
+      continue;
+    }
+    if (!byLayer[m[1]].has(m[2])) byLayer[m[1]].set(m[2], []);
+    byLayer[m[1]].get(m[2]).push(s);
   }
   const out = [];
   for (const layer of ["Frontend", "Backend"]) {
@@ -249,7 +285,7 @@ function renderSuites() {
       const cells = byLayer[layer]
         .get(mod)
         .sort((a, b) => String(a.id).localeCompare(String(b.id), "en", { numeric: true }))
-        .map((s) => `${s.id} ${String(s.name).replace(/\|/g, "\\|")} (${s.priority ?? "—"})`);
+        .map((s) => `${s.id} ${cell(s.name)} (${s.priority ?? "—"})`);
       out.push(`| \`${mod}/\` | ${cells.join(" · ")} |`);
     }
     out.push("");
@@ -262,7 +298,6 @@ function renderSuites() {
 const BLOCKS = [
   { id: "skills", file: ".claude/skills/README.md", render: renderSkills },
   { id: "plugin-skills", file: ".claude/skills/README.md", render: renderPluginSkills },
-  { id: "agent-skill-map", file: ".claude/skills/README.md", render: renderSkillMap },
   { id: "agents", file: ".claude/knowledge/agents/README.md", render: renderAgents },
   { id: "plugin-agents", file: ".claude/knowledge/agents/README.md", render: renderPluginAgents },
   { id: "commands", file: ".claude/knowledge/agents/README.md", render: renderCommands },
@@ -281,20 +316,18 @@ for (const b of BLOCKS) {
   const text = pending.get(b.file) ?? rd(b.file);
   const eol = text.includes("\r\n") ? "\r\n" : "\n";
   const norm = text.replace(/\r\n/g, "\n");
-  const bi = norm.indexOf(begin(b.id));
-  const ei = norm.indexOf(end(b.id));
-  if (bi === -1 || ei === -1 || ei < bi) {
+  const block = [begin(b.id), "", NOTE, "", ...b.render(), end(b.id)].join("\n");
+  const spliced = spliceBlock(norm, begin(b.id), end(b.id), block);
+  if (!spliced) {
     findings.push({ code: "DOC-IDX-003", file: b.file, msg: `missing markers for block "${b.id}"` });
     continue;
   }
   blocksChecked++;
-  const block = [begin(b.id), "", NOTE, "", ...b.render(), end(b.id)].join("\n");
-  const current = norm.slice(bi, ei + end(b.id).length);
-  if (current === block) continue;
+  if (spliced.current === block) continue;
   if (check) {
     findings.push({ code: "DOC-IDX-001", file: b.file, msg: `block "${b.id}" is stale — run \`npm run docs:index\`` });
   } else {
-    pending.set(b.file, (norm.slice(0, bi) + block + norm.slice(ei + end(b.id).length)).replace(/\n/g, eol));
+    pending.set(b.file, spliced.next.replace(/\n/g, eol));
   }
 }
 
@@ -302,28 +335,37 @@ for (const [file, text] of pending) writeFileSync(join(ROOT, file), text, "utf8"
 
 // ---------------------------------------------------------------- coverage of the hand-written indexes
 
-const slash = (n) => `/${n}`;
+// Each entry: an index file and the names it must cover, each with how a mention is recognised. A slash
+// name is covered only where it is USED as one — a path to the component's own file is not the "when to
+// reach for it" a hand-written index exists to say. A plugin's skill or command also counts in its
+// namespaced form (`/vc-secrets:doctor`), which is how a short name like `/install` is really invoked.
+const asSlash = (name, pluginName) => ({
+  label: `/${name}`,
+  hit: (text) => invokes(text, name) || (pluginName !== undefined && invokes(text, `${pluginName}:${name}`)),
+});
+// A bare word: an agent, a plugin, a file name. `vc-perf:perf-analyst` (the picker form) contains it too.
+const asWord = (name) => ({ label: name, hit: (text) => mentions(text, name) });
+const fromPlugins = (kind, as) => PLUGINS.flatMap((p) => plugin[p.name][kind].map((c) => as(c.name, p.name)));
+
 const COVERAGE = [
-  { file: ".claude/ROUTING.md", what: "command", names: localCommands.map((c) => c.name), form: slash },
-  { file: ".claude/ROUTING.md", what: "skill", names: localSkills.map((s) => s.name), form: slash },
-  { file: ".claude/ROUTING.md", what: "agent", names: localAgents.map((a) => a.name), form: (n) => n },
-  {
-    file: ".claude/ROUTING.md",
-    what: "plugin command",
-    names: PLUGINS.flatMap((p) => plugin[p.name].commands.map((c) => c.name)),
-    form: slash,
-  },
+  { file: ".claude/ROUTING.md", what: "command", names: localCommands.map((c) => asSlash(c.name)) },
+  { file: ".claude/ROUTING.md", what: "skill", names: localSkills.map((s) => asSlash(s.name)) },
+  { file: ".claude/ROUTING.md", what: "agent", names: localAgents.map((a) => asWord(a.name)) },
+  { file: ".claude/ROUTING.md", what: "plugin command", names: fromPlugins("commands", asSlash) },
+  { file: ".claude/ROUTING.md", what: "plugin skill", names: fromPlugins("skills", asSlash) },
+  { file: ".claude/ROUTING.md", what: "plugin agent", names: fromPlugins("agents", asWord) },
   ...[".claude/ROUTING.md", "INDEX.md", "README.md"].map((file) => ({
     file,
     what: "plugin",
-    names: PLUGINS.map((p) => p.name),
-    form: (n) => n,
+    names: PLUGINS.map((p) => asWord(p.name)),
   })),
   {
     file: "docs/decisions/README.md",
     what: "decision record",
-    names: ls("docs/decisions").filter((f) => f.endsWith(".md") && f !== "README.md"),
-    form: (n) => n,
+    names: children("docs/decisions")
+      .map((c) => c.name)
+      .filter((f) => f.endsWith(".md") && f !== "README.md")
+      .map((f) => asWord(f)),
   },
 ];
 
@@ -336,11 +378,7 @@ for (const c of COVERAGE) {
   const text = rd(c.file);
   for (const n of c.names) {
     coverageChecked++;
-    const needle = c.form(n);
-    const hit = needle.startsWith("/")
-      ? new RegExp(`${needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9-]|$)`).test(text)
-      : mentions(text, needle);
-    if (!hit) findings.push({ code: "DOC-IDX-002", file: c.file, msg: `never mentions the ${c.what} \`${needle}\`` });
+    if (!n.hit(text)) findings.push({ code: "DOC-IDX-002", file: c.file, msg: `never mentions the ${c.what} \`${n.label}\`` });
   }
 }
 

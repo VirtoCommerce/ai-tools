@@ -124,7 +124,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 
 ### Development (Skills — used by the `developers/` team in `/qa-fix`)
 
-> **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
+> **These skills and the developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
 > removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
 > this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
 > once `vc-fix@ai-tools` is installed.
@@ -135,6 +135,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/vue-unit-test` — Reproduce a vc-frontend bug as a failing vitest test (red → green)
 - `/vue-fix` — Minimal, idiomatic Vue 3 / TS fix in vc-frontend
 - `/vc-shell-fix` — Fix a module-embedded Vue 3 shell sub-app (declared in `moduleFrontendSubApps`); the sub-app's own `tsx --test` for state/logic, an ephemeral never-committed vitest harness for DOM
+- `/qa-fix-routing` — Not a step you run: the routing library `/qa-fix` and `/project-init` call to decide which repo owns a bug, how the fix delivers (direct PR / fork PR / upstream issue) and which tracker/host to talk to
 
 ### Tooling & Diagnostics
 - `/project-init` — Onboard onto a deployment: tracker + code host + auth per axis, derive client-vs-platform, write `project-profile.json` / `.env.<env>` / `.mcp.json`, verify access
@@ -198,9 +199,9 @@ cross-product-reuse change), `.claude/templates/` (`test-model.md`, `agent-dispa
 post-edit typecheck).
 
 ### Plugins (distributed separately — NOT part of this `.claude/` surface)
-- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`, plus the Developers team and its six skills. Self-contained; the canonical copy of the self-diagnostics subsystem. Docs: [`plugins/vc-fix/README.md`](../plugins/vc-fix/README.md)
-- **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Depends on `vc-fix`; advisory only, never a CI gate
-- **`vc-secrets`** (`plugins/vc-secrets/`) — a launcher that resolves an MCP server's secrets per launch from the OS credential store or Azure Key Vault, so no client config holds a token (skills `install`, `migrate`, `doctor`). Depends on neither of the others; enabled in this repo's `.claude/settings.json`. Normative description: [`plugins/vc-secrets/README.md`](../plugins/vc-secrets/README.md)
+- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`, plus the Developers team and its `[Development]` skills (§Development above). Its own agents beyond that team: `monitor-triage-agent` (classifies one deduplicated App Insights signature for `/qa-monitoring`; read-only), `self-check-diagnostician` (reads one session's telemetry and returns the finding struct for `/vc-self-check`) and `self-check-deliverer` (files that struct as a GitHub Issue after the operator's one yes). Self-contained; the canonical copy of the self-diagnostics subsystem. Docs: [`plugins/vc-fix/README.md`](../plugins/vc-fix/README.md)
+- **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Reach for a layer directly when you know which question you are asking: `/perf-benchmark` (L1, BenchmarkDotNet — did this change regress allocations or time), `/perf-loadtest` (L2, k6 against the live backend — throughput, p95, GC pressure under load), `/perf-trace` (L3, dotnet-trace + perftools — WHO is responsible for what L2 observed). `perf-analyst` ranks optimization candidates from those artifacts for `/perf-fix`; read-only. Depends on `vc-fix`; advisory only, never a CI gate
+- **`vc-secrets`** (`plugins/vc-secrets/`) — a launcher that resolves an MCP server's secrets per launch from the OS credential store or Azure Key Vault, so no client config holds a token (`/vc-secrets:install` puts the shim at a stable path, `/vc-secrets:migrate` moves old flat-prefix keys once — both human-invoked only — and `/vc-secrets:doctor` diagnoses a wrapped server that shows failed). Depends on neither of the others; enabled in this repo's `.claude/settings.json`. Normative description: [`plugins/vc-secrets/README.md`](../plugins/vc-secrets/README.md)
 
 ## Single Sources of Truth (read these, don't re-derive)
 

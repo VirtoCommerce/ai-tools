@@ -119,13 +119,14 @@ build that reintroduces a count there.) Per-module breakdown:
 groups: [config/test-suites.json](config/test-suites.json); `npm run regression:plan -- <name>`
 resolves a group to its suites.
 
-**Selection groups:** `smoke` (042, 078, 078b-d) · `critical` (042, 078, 078b-d, 039, 044, 049) ·
+**Selection groups:** `smoke` · `critical` (a curated subset of the P0 suites) ·
 `frontend` · `backend` · `sprint` (plan-driven) · `full` · plus module/feature groups (`catalog`,
 `search`, `orders`, `returns`, `auth`, `b2b`, `marketing`, `platform`, `bopis`, `payment`,
 `configurable-products`, `whitelabeling`, `purchase-flow`, `loyalty`, `sales-rep`, `customer-reviews`, …)
 and the `domain:*` / `concern:*` facets.
 
-**P0 suites:** 042 (Smoke), 078 (Backend Smoke), 039 (CyberSource Payment), 044 (Security), 049 (Platform API).
+**Priority** is per suite — the manifest's `priority` field, shown beside every suite in
+[regression/suites/README.md](regression/suites/README.md); membership of a group is never typed here.
 
 ## Claude Code Agents
 
@@ -175,8 +176,8 @@ Full reference: [.claude/knowledge/execution/browser-lanes.md](.claude/knowledge
 ```bash
 npm install              # Install dependencies
 npm run env:check        # Validate env vars for active TEST_ENV layer
-npm run ci:smoke         # Smoke selection (042, 078, 078b-d)
-npm run ci:critical      # P0 selection (042, 078, 078b-d, 039, 044, 049)
+npm run ci:smoke         # Smoke selection
+npm run ci:critical      # Critical selection (a curated subset of the P0 suites)
 npm run ci:frontend      # Frontend selection
 npm run ci:backend       # Backend selection
 npm run ci:full          # Full regression (the manifest's `full` selection)
