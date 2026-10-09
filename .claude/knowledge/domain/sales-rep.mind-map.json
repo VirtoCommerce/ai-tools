@@ -4,7 +4,7 @@
   "domain_slug": "sr",
   "domain_map_rev": 3,
   "generated": "2026-09-28",
-  "amended": "2026-09-29",
+  "amended": "2026-10-08",
   "metadata": {
     "scope": "Sales Rep: rep provisioning, served-org membership, store toggle, storefront hub (dashboard, my customers, customer profile, customer orders, document library, calendar), buyer-facing rep directory, scoped GraphQL contract, layout persistence, account access removal. Impersonation (suite 082) is out, as in the domain map.",
     "built_from": "sales-rep.md rev 3 (sections 1-8, 10), business-logic.md Domain 20 (BL-SR-001..032), suites 050m/050m2/089/090/091/093/097 titles + References, kb KB-EA467E9B / KB-1144B33E / KB-7DA9B0B7 / KB-5A0C4200",
@@ -380,7 +380,7 @@
     {
       "id": "sr.store-toggle.statistics-cache-settings",
       "type": "branch",
-      "name": "The four statistics cache settings are declared in source and absent from the store Settings surface",
+      "name": "The statistics cache settings (four expirations, four InvalidateOnChange) are declared in source and absent from the store Settings surface",
       "status": "DRIFT",
       "branch_kind": "integration",
       "technique": "EG",
@@ -398,13 +398,20 @@
           "ref": "domain-map:sr@rev3 section 2c",
           "note": "Sales Rep has exactly one child, General, at store level",
           "date": "2026-09-18"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs:156",
+          "note": "VCST-5755 adds four InvalidateOnChange settings: the Statistics group now holds eight, still module-global with no store-level registration",
+          "date": "2026-10-08"
         }
       ],
       "drift": {
-        "expected": "ModuleConstants.Settings: General + Statistics groups (vc-module-sales-rep) and PlatformUserGuide sends the operator to store settings",
-        "observed": "Stores > B2B store > Settings (106 settings) shows Sales Rep > General only; no Statistics node (domain-map:sr@rev3 section 6 D15)",
+        "expected": "ModuleConstants.Settings: General + Statistics groups, now eight Statistics settings (vc-module-sales-rep PR #18 at d367a155) and PlatformUserGuide sends the operator to store settings",
+        "observed": "Stores > B2B store > Settings (106 settings) shows Sales Rep > General only; no Statistics node (domain-map:sr@rev3 section 6 D15, observed 2026-09-18, before the four InvalidateOnChange settings existed). Source at d367a155: no store-level registration. Not re-observed on the VCST-5755 build.",
         "route": "UNFILED - no ticket exists; resolve via /qa-review-oracles (add or amend the BL entry), then file a VCST bug; first answer G11 (where the values are editable)"
-      }
+      },
+      "notes": "Extended 2026-10-08 from VCST-5755 (source only); still DRIFT. The live run re-observes it and answers G11 (where the settings are editable)."
     },
     {
       "id": "sr.hub",
@@ -4352,6 +4359,523 @@
           "date": "2026-09-29"
         }
       ]
+    },
+    {
+      "id": "sr.stats.freshness",
+      "type": "behavior",
+      "name": "A cached statistic is evicted per family and organization when the rep's cart or order changes",
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "chain_link": "5",
+      "interfaces": [
+        "graphql",
+        "event"
+      ],
+      "description": "Statistics were TTL-only. Each family (Cart, Order, CustomerCounts, TopSeller) now attaches a per-organization change token to its cache entry, and CartChangedEvent / OrderChangedEvent handlers expire that token so the next read recomputes. Key = family + method + criteria incl. period bounds at second resolution; the token key is family:organizationId.",
+      "notes": "integrates with: carts (CartChangedEvent), orders (OrderChangedEvent). Neither domain has a mind map yet, so the link is named here, not drawn. Entry key built at Data/Services/Statistics/StatisticsCache.cs:25.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 1"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/SalesRepStatisticsCacheRegion.cs:14",
+          "note": "per-(family, organization) token, CompositeChangeToken with the region token",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/Statistics/StatisticsCache.cs:25",
+          "note": "cache key; token attached before the aggregation",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.cart-change-evicts",
+      "name": "A cart change evicts the Cart family for the old and the new organization",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "event"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Warm salesRepCustomerCartStatistics, change a cart in a served org, re-read with the same arguments: the figure moves at once. The cart handler has no delta filter, so every CartChangedEvent evicts.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 1"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenario 1"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsCartChangedEventHandler.cs:23",
+          "note": "expires Cart for OldEntry and NewEntry OrganizationId, no delta filter",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Web/Module.cs:148",
+          "note": "handler registered on CartChangedEvent",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.order-change-evicts",
+      "name": "An order change evicts the Order, CustomerCounts and TopSeller families for the old and the new organization",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql",
+        "event"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Covers order statistics, the customer order counts, the used-status filter vocabulary and the top-seller ranking; each family is gated by its own flag, so with the defaults TopSeller is not evicted.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 1"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenarios 3, 4"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsOrderChangedEventHandler.cs:27",
+          "note": "OrderDriven families = Order, CustomerCounts, TopSeller; old and new organization",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Web/Module.cs:149",
+          "note": "handler registered on OrderChangedEvent",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.order-delta-filter",
+      "name": "An order save that changes no aggregate-relevant field evicts nothing",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "event"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "The status pipeline saves an order repeatedly. A Modified entry evicts only when OrganizationId, CustomerId, StoreId, Status, Currency, Total, IsCancelled, IsPrototype, CreatedDate or the line-item signature set differs; Added and Deleted entries always evict. Line-item values are compared, never a joined string (scale 12.0000 vs 12).",
+      "notes": "The dev fixed a scale false-positive (VCST-5755 F1 in the source comment). A status change must evict (Status is in the list), which ties to the status filter vocabulary refresh in comment 109138 scenario 4.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) (delta filter fixed after the dev E2E)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsOrderChangedEventHandler.cs:42",
+          "note": "IsAggregateRelevant field list",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsOrderChangedEventHandler.cs:68",
+          "note": "line-item signature as a value set",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.settings-declared",
+      "name": "Four expiration and four InvalidateOnChange settings exist, module-global, group Sales Rep|Statistics",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "admin-ui"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "SalesRep.Statistics.{Order,Cart,CustomerCounts,TopSeller}InvalidateOnChange are Boolean, defaults true, true, true, false, next to the four existing CacheExpirationMinutes (Integer, default 5). Where an operator edits them is the open question on sr.store-toggle.statistics-cache-settings.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) Agreed design section 3"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) settings table"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs:156",
+          "note": "four InvalidateOnChange descriptors, Boolean; TopSeller default false at :181",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs:212",
+          "note": "AllCachingSettings yields all eight",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.mode-ttl-zero",
+      "name": "TTL 0 disables caching for the family: every read recomputes",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "CacheExpirationMinutes <= 0 gives a one-tick expiry and attaches no token; the flag is irrelevant. IsEnabledAsync is false for TTL 0, so the handlers also skip the expiry and broadcast nothing.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 5"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) settings table"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/Statistics/StatisticsCache.cs:48",
+          "note": "TTL <= 0 sets a one-tick expiry",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/StatisticsCacheInvalidation.cs:13",
+          "note": "IsEnabledAsync = TTL > 0 and flag",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.mode-ttl-only",
+      "name": "TTL above 0 with the flag off: the entry lives its full TTL and a change does not evict it",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "The pre-feature behaviour, the off branch of the feature switch. A key warmed before a rep's cart change stays stale until the TTL ends, while a different key (new period or criteria) is computed fresh.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenario 1 (instrument check) and settings table"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/Statistics/StatisticsCache.cs:35",
+          "note": "token attached only when the flag is on",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.mode-evict-on-change",
+      "name": "TTL above 0 with the flag on: a change evicts the organization's entries and the TTL is only a ceiling",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Default for Cart, Order and CustomerCounts. Entries cached with the flag on carry the region token and one per-organization token, so a change in the organization removes them.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 1, 5"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) settings table"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/Statistics/StatisticsCache.cs:35",
+          "note": "per-organization change token attached",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.flag-flip-runtime",
+      "name": "The InvalidateOnChange flags flip at runtime without a restart; the next change evicts",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "ST",
+      "interfaces": [
+        "admin-ui",
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Entry creation and both handlers read the flag per call through ISettingsManager. Flipping false to true mid-session makes the next change evict entries created after the flip.",
+      "notes": "The handling instance reads the flag from its own settings cache, so a flag change must itself reach every instance (the PR does not state it).",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 5"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenario 5"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/StatisticsCacheInvalidation.cs:11",
+          "note": "settings read on every call",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.flag-flip-tokenless-entries",
+      "name": "Entries cached before a flag flip to on carry no token and live out their TTL",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Flipping a flag on does not refresh what is already cached; only entries created from then on can be evicted. Declared as intended in the setting's own comment.",
+      "notes": "Must-not-be-a-bug per comment 109138.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) (not a bug: flipping a flag on does not refresh entries already cached)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs:153",
+          "note": "setting comment: an entry cached while the flag was off cannot be evicted until it expires",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.ttl-to-zero-no-flush",
+      "name": "Setting TTL to 0 does not flush entries that already exist",
+      "type": "branch",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "TTL 0 only affects entries created afterwards; an entry already in memory is served until its own TTL or token ends. A tester who sets TTL 0 and still sees a stale figure has not found a bug.",
+      "notes": "Must-not-be-a-bug per comment 109138. The source read found no region flush on a setting change, which is consistent.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) (not a bug: TTL to 0 does not flush existing entries)"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.topseller-ttl-only-default",
+      "name": "TopSeller is TTL-only by default: the ranking stays stale after an order until the flag is set",
+      "type": "branch",
+      "branch_kind": "state",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "TopSellerInvalidateOnChange defaults to false because it is the heaviest query. Setting it to true makes order changes evict the ranking and the sold-categories filter vocabulary.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenario 6"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Core/ModuleConstants.cs:181",
+          "note": "default false, comment: deliberately TTL-only",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/SalesRepTopSellerService.cs:51",
+          "note": "ranking and vocabulary cached under the TopSeller family",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.cross-instance-propagation",
+      "name": "An eviction on one backend instance reaches the other instances through the Redis backplane",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "EG",
+      "interfaces": [
+        "graphql",
+        "event"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "The domain event is in-process, so the handler runs only on the instance that served the mutation. ExpireTokenForKey propagates by default, so the other instances drop the entries and the next read there recomputes. Prerequisite: ConnectionStrings:RedisConnectionString is set and /health reports Redis healthy; without it eviction is per instance. The backplane is fire-and-forget pub/sub.",
+      "notes": "integrates with: platform Redis cache backplane (no map). The PR has no multi-instance test and the platform half is not in the diff; the claim rests on the dev's research note PLATFORM-CACHE-CONSISTENCY section 2 and on comment 109138 ('one was not verified'). Instance count on the test env is not observable from an endpoint.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 1"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) (cross-instance propagation not verified by the dev)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/SalesRepStatisticsCacheRegion.cs:28",
+          "note": "ExpireTokenForKey with default propagation",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsCartChangedEventHandler.cs:12",
+          "note": "source comment: other instances are reached by the Redis backplane",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.multi-org-entry",
+      "name": "An entry spanning several organizations is evicted by a change in any one of them",
+      "type": "branch",
+      "branch_kind": "boundary",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "A criteria with organization ids A and B gets one token per organization, so a change in A evicts the A+B entry. An empty organization list gets the region token alone, so a per-organization change cannot evict it.",
+      "notes": "Ties to sr.stats.cross-customer-aggregate (omitted organizationId aggregates every served customer).",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/SalesRepStatisticsCacheRegion.cs:17",
+          "note": "one token per organization id in the criteria; empty list gives the region token only",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.buyer-change-same-number",
+      "name": "A buyer's own cart or order change evicts the entry but recomputes the same number",
+      "type": "branch",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "The handlers do not look at who changed the entity, but every family counts only what the calling rep created, so the recomputed value equals the evicted one. A non-rep's change that moves no tile is not a bug.",
+      "notes": "Must-not-be-a-bug per comment 109138.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) (not a bug: buyer order changes no tile)"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Handlers/SalesRepStatisticsCartChangedEventHandler.cs:26",
+          "note": "organization ids only, no creator check",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.customers-sort-order-metrics",
+      "name": "salesRepCustomers sorted by order metrics reflects an order change at once",
+      "type": "branch",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "interfaces": [
+        "graphql"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "The inline orderStatistics and the sort by order metrics read the Order family through GetStatisticsByOrganizationAsync, so an order change moves both the figure and the ranking of the customers.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 3"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Services/Statistics/CustomerOrderStatisticsService.cs:62",
+          "note": "by-organization statistics cached under the Order family",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "id": "sr.stats.freshness.dashboard-equals-card-sum",
+      "name": "The hub total equals the sum of the customer cards for the same client and period",
+      "type": "branch",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "status": "UNVERIFIED",
+      "maturity": "new",
+      "description": "Every cached variant of an organization (periods, filters, currencies) is keyed under one token, so the aggregate and the per-customer entries die together and cannot disagree after a rep order.",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 description (Verification / DoD, Agreed design) DoD 2"
+        },
+        {
+          "class": "SPEC",
+          "ref": "VCST-5755 comment 109138 (QA notes) scenario 7"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-sales-rep@d367a155 src/VirtoCommerce.SalesRep.Data/Caching/SalesRepStatisticsCacheRegion.cs:9",
+          "note": "source comment: variants of an organization die together, so hub totals agree with their cards",
+          "date": "2026-10-08"
+        }
+      ]
     }
   ],
   "edges": [
@@ -5398,6 +5922,139 @@
       "to": "sr.list-share.notify-separate",
       "type": "depends_on",
       "note": "the send is client-orchestrated through sendCustomerCommunication"
+    },
+    {
+      "from": "sr.stats",
+      "to": "sr.stats.freshness",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.cart-change-evicts",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.order-change-evicts",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.order-delta-filter",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.settings-declared",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.mode-ttl-zero",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.mode-ttl-only",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.mode-evict-on-change",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.flag-flip-runtime",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.flag-flip-tokenless-entries",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.ttl-to-zero-no-flush",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.topseller-ttl-only-default",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.cross-instance-propagation",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.multi-org-entry",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.buyer-change-same-number",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.customers-sort-order-metrics",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness",
+      "to": "sr.stats.freshness.dashboard-equals-card-sum",
+      "type": "contains"
+    },
+    {
+      "from": "sr.stats.freshness.buyer-change-same-number",
+      "to": "sr.scope.creator-only-statistics",
+      "type": "depends_on",
+      "note": "the number is creator-scoped, so a buyer change recomputes the same value"
+    },
+    {
+      "from": "sr.stats.freshness.flag-flip-tokenless-entries",
+      "to": "sr.stats.freshness.mode-evict-on-change",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.flag-flip-runtime",
+      "to": "sr.stats.freshness.settings-declared",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.cross-instance-propagation",
+      "to": "sr.stats.freshness.mode-evict-on-change",
+      "type": "depends_on",
+      "note": "no token, nothing to propagate"
+    },
+    {
+      "from": "sr.stats.freshness.topseller-ttl-only-default",
+      "to": "sr.stats.top-sellers",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.customers-sort-order-metrics",
+      "to": "sr.stats.sort-rules",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.dashboard-equals-card-sum",
+      "to": "sr.stats.freshness.order-change-evicts",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.multi-org-entry",
+      "to": "sr.stats.cross-customer-aggregate",
+      "type": "depends_on"
+    },
+    {
+      "from": "sr.stats.freshness.settings-declared",
+      "to": "sr.store-toggle.statistics-cache-settings",
+      "type": "depends_on",
+      "note": "same settings group, editable surface unresolved"
     }
   ]
 }

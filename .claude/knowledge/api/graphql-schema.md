@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-06)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-08)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (121 queries, derived at refresh):
+    message to notice. Measured on this schema (120 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
     | `cultureName` | 65 (54%) | 3 | 62 |
     | `storeId` | 72 (60%) | 38 | 34 |
     | `userId` | 31 (26%) | 2 | 29 |
-    | `organizationId` | 15 (12%) | 3 | 12 |
+    | `organizationId` | 15 (13%) | 3 | 12 |
 
-    **92 of 121 queries (76%) accept at least one; 79 (65%) accept one OPTIONALLY** —
+    **92 of 120 queries (77%) accept at least one; 79 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -183,7 +183,6 @@ searchHistory(storeId: String!, maxCount: Int!)
 loyaltyPointsHistory(after: String, first: Int, keyword: String, sort: String, storeId: String!, userId: String, operationType: String)
 loyaltyBalance(storeId: String!, userId: String, orderId: String)
 loyaltyMissionProgress(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], completedStartDate: DateTime, completedEndDate: DateTime, cultureName: String, currencyCode: String, isStarted: Boolean, userId: String)
-punchoutMockQuery()
 checkDuplicateAddress(memberId: String!, address: InputMemberAddressType!)
 currentCustomerAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
 returnableItems(orderId: String!)
@@ -376,7 +375,6 @@ wishlists(after: String, first: Int, storeId: String, userId: String, currencyCo
 | `activateBackInStockSubscription` | `ActivateBackInStockSubscriptionCommandType` |
 | `deactivateBackInStockSubscription` | `DeactivateBackInStockSubscriptionCommandType` |
 | `saveSearchQuery` | `InputSaveSearchQueryType` |
-| `activatePunchoutSession` | `ActivatePunchoutSessionCommandType` |
 | `registerByInvitation` | `InputRegisterByInvitationType` |
 | `cancelReturn` | `CancelReturnCommandType` |
 | `createReturn` | `CreateReturnCommandType` |
