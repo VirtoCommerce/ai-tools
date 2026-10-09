@@ -184,6 +184,7 @@ npm run ci:cycle         # Full cycle: sync → review → regression
 npm run ci:monitor       # Online bug monitoring from App Insights
 npm run ci:notify        # Teams notification
 npm run context:check    # Docs/prompt budget + dangling-reference gate (runs on every PR)
+npm run docs:index       # Regenerate the README rosters (skills, agents, commands, suites); :check gates CI
 npm run kb -- ask "<q>"  # Ask the observed-behaviour knowledge base (no MCP server needed)
 ```
 
