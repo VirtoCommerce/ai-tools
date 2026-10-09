@@ -1,7 +1,7 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
 > **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D7, by the owner
-> on 2026-10-09); none are open. A prototype of the strategy step exists as
+> on 2026-10-09); §13 records the dry-run findings and five proposed amendments (A1–A5) awaiting a decision. A prototype of the strategy step exists as
 > draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
 
 ## 1. Problem
@@ -236,3 +236,31 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | **Speed, large ticket** | up: no in-run case authoring, no `3-cases` verifier, no single-writer wait (D2); fewer re-runs after a wrong direction | the floors push most tickets to "deep", which is today's FULL minus authoring |
 | **Maintenance** | up: one command, one router table and nine floors instead of two commands, two paths and §5–§5d with four special cases | the migration (§7, 80+ citing files) is done before §8 proves the design |
 
+
+## 13. Dry-run findings (2026-10-09) — proposed amendments, not yet decided
+
+The prototype (#416) was run strategy-only on three returns tickets: VCST-5884 (round 3, by the
+orchestrator), VCST-5883 and VCST-5628 (round 1 reconstructed, one agent per ticket, each compared with
+the recorded run). Nothing was executed, so §8's wall-time and token measures are still open.
+
+| | VCST-5883 | VCST-5628 | VCST-5884 |
+|---|---|---|---|
+| Baseline | recorded FULL run: model, 38 new + 15 repaired cases | no `/qa-test` run; the manual run in Jira comments (33 cases, 4 builds) + COV-VCST-5628-5883 | rounds 1–2 (PASS WITH NOTES, FAIL) |
+| Recorded findings covered | 9 direct, 3 partial, 2 missed (both Low, pre-existing, outside the diff) | 4 direct, 1 likely, 1 partial | n/a — round 3 not yet run |
+| Added by the strategy | 2 ACs left GAP become decidable (data that differs: unit, recipients, cultures) | missing organization scope surfaced to the PO; stepper vs free input as FAIL; escaped VCST-6176 caught by the visual lane; 3 blocked cases avoided | fix not deployed (F6); `SubmittedDate` backfill risk; renamed REST field breaks 2 Draft cases |
+| Cost vs baseline | cheaper (D2: no in-run authoring, no verifier) | more expensive (model, explore-first, visual, regression, verifier) | — |
+| Context gathering | ~30 min | ~25 min | ~15 min |
+
+**Holds:** risks from the diff + ACs covered every recorded Medium-or-higher finding; the misses were Low
+and pre-existing. The "data must differ" rule made untestable ACs testable. Project risks pre-empted
+blocked cases. Manual context gathering is the largest cost — the case for `/ticket-context` (#413).
+
+**Proposed amendments** (each needs an owner decision before it changes §6):
+
+| # | Finding | Proposal |
+|---|---|---|
+| A1 | **F1 fires on almost every Story** — "≥2 layers" is true of most features, so `deep` stops discriminating (D5) and VCST-5628 came out dearer than its baseline | F1 on **High/Critical risk or P0/P1 only**; layer and domain count raise risk scores in the register instead of triggering artifacts |
+| A2 | **80-line cap is too tight**: all three strategies hit exactly 80 after several trim passes, prose cut to fragments | raise the cap to 120, **or** move §4 (approach per risk) into the checklist header and keep the strategy at 80 |
+| A3 | **Gaps in the method**: ACs without ids (unnumbered Gherkin) and ACs owned by sibling tickets; two `{SPEC}` sources that contradict; a developer's own E2E report (input, oracle or prior run?); more than 3 browser lanes needed; no "as of build X" mode for reconstructing a past round | one rule per case in the skill: number ACs `AC-n` in source order and mark sibling-owned ones out of scope; contradicting `{SPEC}`s become a PO question and the risk's oracle is `{HYPOTHESIS}`; a developer E2E report is an input, never an oracle; >3 lanes ⇒ sequence by risk level; reconstruction is out of scope for the product (tooling for §8 only) |
+| A4 | **F5 runs regression over stale cases** — 9 of 22 `073` rows were repaired later (VCST-5883); 8 of 46 round-2 cases are known broken (VCST-5884) | before the regression run, a cheap staleness check over the selected cases (renamed fields, removed selectors, known-defective ids); stale ones go to `/qa-test-lifecycle`, never into the run |
+| A5 | Small fixes | template header still says FAST/FULL → drop it; the per-risk "Depth" column reuses D5's words with another meaning → rename the column to "Effort" (low/medium/high) |
