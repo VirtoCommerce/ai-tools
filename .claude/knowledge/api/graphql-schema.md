@@ -1,6 +1,6 @@
 # GraphQL xAPI Schema Reference
 
-> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-07)
+> **Source**: Live introspection of `{{BACK_URL}}/graphql` (2026-10-08)
 > **Purpose**: Agents MUST consult this file before writing or reviewing GraphQL queries/mutations.
 > **Refresh**: `npm run schema:refresh` — run when the schema may have changed.
 > **SCOPE — read this before concluding a field does not exist.** The query and mutation
@@ -26,16 +26,16 @@
 12. **Pass the ambient context — `cultureName`, `storeId`, `userId`, `organizationId` — on almost every query and mutation.**
     Most xAPI operations resolve against an implied context, and **omitting a context arg is not an error**:
     the server substitutes a default and returns `200` with data that is wrong, empty, or `null`. There is no
-    message to notice. Measured on this schema (119 queries, derived at refresh):
+    message to notice. Measured on this schema (120 queries, derived at refresh):
 
     | Context arg | Queries accepting it | Required | Optional |
     |---|---|---|---|
-    | `cultureName` | 65 (55%) | 3 | 62 |
-    | `storeId` | 71 (60%) | 37 | 34 |
+    | `cultureName` | 65 (54%) | 3 | 62 |
+    | `storeId` | 72 (60%) | 38 | 34 |
     | `userId` | 31 (26%) | 2 | 29 |
-    | `organizationId` | 14 (12%) | 2 | 12 |
+    | `organizationId` | 15 (13%) | 3 | 12 |
 
-    **91 of 119 queries (76%) accept at least one; 79 (66%) accept one OPTIONALLY** —
+    **92 of 120 queries (77%) accept at least one; 79 (66%) accept one OPTIONALLY** —
     that last figure is the exposure, because those are the calls that can quietly answer for a context you
     never chose. Mutations take the same fields inside the `command:` wrapper (see Rule 1), so the same rule applies.
 
@@ -226,6 +226,7 @@ validatePassword(password: String!)
 user(id: String, userName: String, email: String, loginProvider: String, providerKey: String)
 role(roleName: String!)
 currentOrganizationAddresses(after: String, first: Int, keyword: String, sort: String, countryCodes: [String], regionIds: [String], cities: [String], ids: [String])
+organizationReturns(after: String, first: Int, keyword: String, sort: String, storeId: String!, statuses: [String], startDate: DateTime, endDate: DateTime, organizationId: String!)
 ```
 
 ### Quotes

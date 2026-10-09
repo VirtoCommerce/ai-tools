@@ -24,7 +24,7 @@
  *   node scripts/refresh-sitemap.mjs --front <url> --back <url> --store <id> --label acme
  *                                                # ad-hoc client run with NO .env file
  *
- * Env: layered like config.js — .env.defaults → .env.${TEST_ENV} → .env.local → process.env.
+ * Env: as config.js resolves it (lib/load-env.mjs) — .env.defaults → .env.${TEST_ENV} → .env.local, then KEY_<ENV> pins.
  * Reads FRONT_URL, BACK_URL, STORE_ID, CULTURE_NAME, ADMIN_USER, ADMIN_PASSWORD[_<ENV>].
  * Flags --front/--back/--store override the env; --label scopes the snapshot file.
  *
@@ -41,8 +41,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { execFileSync } from 'child_process';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { parse } from 'dotenv';
-import { resolveTestEnv } from '../lib/resolve-test-env.js';
+import { loadEnv } from '../lib/load-env.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..', '..');
@@ -57,13 +56,10 @@ const flagVal = (name) => {
   return i !== -1 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null;
 };
 
-const testEnv = resolveTestEnv('vcst');
-const merged = {};
-for (const layer of ['.env.defaults', `.env.${testEnv}`, '.env.local']) {
-  const p = resolve(ROOT, layer);
-  if (existsSync(p)) Object.assign(merged, parse(readFileSync(p)));
-}
-const cfg = (k, dflt = null) => process.env[k] ?? merged[k] ?? dflt;
+// The layered env with config.js's `KEY_<ENV>` promotion, so a BACK_URL_<ENV> / FRONT_URL_<ENV> pin beats
+// .env.local's localhost. Like config.js, the env files beat the shell; the flags below override both.
+const { testEnv, sourceOf } = loadEnv({ fallback: 'vcst' });
+const cfg = (k, dflt = null) => process.env[k] ?? dflt;
 
 // URLs / store context: an ad-hoc `--front/--back/--store` flag wins over env, so
 // the script can point at ANY VC deployment (a client storefront) without editing
@@ -145,7 +141,7 @@ async function fetchThemeVersion() {
 /** Platform assembly line + module count — needs an admin token (never a password literal in output). */
 async function fetchPlatform() {
   const user = cfg('ADMIN_USER', 'admin');
-  const pass = cfg(`ADMIN_PASSWORD_${testEnv.toUpperCase()}`) || cfg('ADMIN_PASSWORD');
+  const pass = cfg('ADMIN_PASSWORD'); // ADMIN_PASSWORD_<ENV> is already promoted over it
   if (!pass) return { maxPlatformVersion: null, moduleCount: null, note: 'no admin creds' };
   try {
     const body = new URLSearchParams({ grant_type: 'password', username: user, password: pass });
@@ -372,7 +368,7 @@ function diffScalar(prev, curr, label, lines) {
 }
 
 async function main() {
-  console.error(`Querying ${GQL} (store=${STORE_ID}, label=${label})...`);
+  console.error(`Querying ${GQL} (store=${STORE_ID}, label=${label}; TEST_ENV=${testEnv}, ${flagVal('--back') ? '--back' : sourceOf('BACK_URL')})...`);
 
   const navCategories = await fetchNavCategories(null);
   // resolve the products-with-options category id from the nav tree, then drill in

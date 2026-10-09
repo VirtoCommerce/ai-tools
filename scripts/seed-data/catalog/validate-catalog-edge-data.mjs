@@ -27,6 +27,7 @@ import {
   EMPTY_CATEGORY, EXCLUDED_PRODUCT, SEO_PRODUCT, RUNTIME_FIELDS,
   validateFixtureShape, validateSeoShape,
 } from './catalog-edge-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const GUID_RE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
@@ -72,7 +73,7 @@ for (const [name, fields] of Object.entries(ALIAS_CONTRACT)) {
 
 // 3. Store-relative URLs.
 console.log('\n[3] storefront paths are store-RELATIVE (an SPA soft-404 returns HTTP 200, so this cannot be caught downstream)');
-const env0 = process.env.TEST_ENV || 'vcst';
+const env0 = resolveTestEnv('vcst');
 const overlay0Path = join(ROOT, 'test-data', `aliases.${env0}.json`);
 const overlay0 = existsSync(overlay0Path) ? JSON.parse(readFileSync(overlay0Path, 'utf8')) : {};
 // The SEO product's PDP path is CATEGORY-QUALIFIED, not the bare SEO semanticUrl leaf. Writing the
@@ -100,7 +101,7 @@ for (const p of seo) fail(p);
 if (!seo.length) ok(`pageTitle "${SEO_PRODUCT.pageTitle.slice(0, 45)}…" ≠ metaDescription (${String(SEO_PRODUCT.metaDescription).length} chars)`);
 
 // 5. Overlay presence (informational — an unseeded env is a legitimate state).
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 console.log(`\n[5] aliases.${env}.json: runtime ids present (informational — seed the env to populate)`);
 const overlayPath = join(ROOT, 'test-data', `aliases.${env}.json`);
 const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};

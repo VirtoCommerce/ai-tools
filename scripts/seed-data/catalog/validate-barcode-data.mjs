@@ -21,6 +21,7 @@ import { fileURLToPath } from 'node:url';
 import {
   validateFixtureShape, aliasStaticFields, expectedExactHits, buildPropertyBody, PROPERTIES, PRODUCTS, IMAGES, IMAGE_DIR, RUNTIME_FIELDS,
 } from './barcode-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const GUID_RE = /\b[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}\b/gi;
@@ -109,7 +110,7 @@ for (const [key, img] of Object.entries(IMAGES)) {
 }
 
 // 5. informational — overlay for the current env
-const env = process.env.TEST_ENV || 'vcst';
+const env = resolveTestEnv('vcst');
 const overlayPath = join(ROOT, `test-data/aliases.${env}.json`);
 const overlay = existsSync(overlayPath) ? JSON.parse(readFileSync(overlayPath, 'utf8')) : {};
 const idAliases = Object.keys(aliasStaticFields()).filter((n) => n !== 'BARCODE_STORE');

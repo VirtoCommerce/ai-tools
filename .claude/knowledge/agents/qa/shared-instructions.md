@@ -397,7 +397,7 @@ When running in parallel, each browser slot uses a **dedicated test user** to pr
 Bugs: [list with severity]
 Decision: [APPROVED / CONDITIONS / BLOCKED]
 Blocking: [none or list]
-Full report: reports/tickets/SprintXX-XX/VCST-XXXX/test-execution-report.md
+Full report: reports/tickets/SprintXX-XX/VCST-XXXX/<env>/test-execution-report.md
 ```
 
 **Approval criteria:**
@@ -417,7 +417,7 @@ See [`.claude/rules/reports.md`](../../../rules/reports.md) — the single sourc
 
 **Hook-enforced.** A `PreToolUse` hook (`hooks/enforce-real-user.mjs`) blocks `browser_evaluate`, `browser_run_code_unsafe`, and `evaluate_script` MCP calls unless the JS payload matches the narrow auto-allow regex list (GraphiQL JWT `execCommand('insertText')`, `dataLayer`/`gtag()`, cross-origin iframe inspection). Do not try to bypass — if your case fits an exception but was blocked, extend the regex.
 
-**Typing a password — the token is the BARE KEY NAME.** On a Playwright lane, `browser_type(text="ORG_USER_PASSWORD")`; the MCP substitutes the value from `--secrets` and redacts it everywhere. **Never `{{ORG_USER_PASSWORD}}`** — the repo's `{{VAR}}` test-data convention does not apply to this flag, the lookup misses, and the miss is SILENT (the literal string is typed; the form just says "Login attempt failed"). Confirm the hit from the response's *Ran Playwright code* line: `fill(process.env['NAME'])` = hit, `fill('NAME')` = miss. A second `PreToolUse` hook (`hooks/enforce-secret-token.mjs`) blocks a placeholder, an unknown credential-shaped key, and a plaintext secret before the keystroke. Chrome DevTools MCP has **no** `--secrets` — that brief must name its own auth path. Contract: [`../../execution/browser-lanes.md`](../../execution/browser-lanes.md) §Browser login secrets.
+**Typing a password — the token is the key NAME in the `--secrets` file.** On a Playwright lane, `browser_type(text="ORG_USER_PASSWORD_VCST_QA")` when the lanes read the combined `.env.playwright.all` (`KEY_<ENV>`, ENV = the run's `TEST_ENV` upper-cased), or `browser_type(text="ORG_USER_PASSWORD")` on a single-env file; the MCP substitutes the value from `--secrets` and redacts it everywhere. **Never `{{ORG_USER_PASSWORD}}`** — the repo's `{{VAR}}` test-data convention does not apply to this flag, the lookup misses, and the miss is SILENT (the literal string is typed; the form just says "Login attempt failed"). Confirm the hit from the response's *Ran Playwright code* line: `fill(process.env['NAME'])` = hit, `fill('NAME')` = miss. A second `PreToolUse` hook (`hooks/enforce-secret-token.mjs`) blocks a placeholder, an unknown credential-shaped key (naming the form the lane's file uses), a key older than its source, and a plaintext secret before the keystroke. Chrome DevTools MCP has **no** `--secrets` — that brief must name its own auth path. Contract: [`../../execution/browser-lanes.md`](../../execution/browser-lanes.md) §Browser login secrets.
 
 You MUST drive the browser like a real customer:
 

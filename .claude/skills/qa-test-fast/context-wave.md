@@ -85,7 +85,7 @@ chain link and descent).
 
 `/qa-checklist <TICKET> --from-model --mind-map <slug>`
 ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)), written to
-`reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`. The model's unresolved items are **not**
+`reports/tickets/{SPRINT}/<TICKET>/<env>/testing-checklist.md`. The model's unresolved items are **not**
 checklist items. They are the exploratory charter ([`execution.md`](execution.md) §Exploratory).
 
 **Map signals decide what a node's item asserts.** Mode 5 step 3 already gives every in-scope node an

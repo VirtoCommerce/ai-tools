@@ -204,7 +204,7 @@ deploy, Teams, the public `kb`.
   prompt that fixes product code and opens a PR → BLOCKER.
 - **The `kb` is public:** nothing client-specific, credentialed or customer-named goes into a
   capture → BLOCKER.
-- **Secrets:** a Playwright `--secrets` key is typed bare, never as `{{VAR}}` (`.claude/rules/agents.md`
+- **Secrets:** a Playwright `--secrets` key is typed as its plain NAME (`KEY`, or `KEY_<ENV>` on the combined file), never as `{{VAR}}` (`.claude/rules/agents.md`
   §MCP servers) → BLOCKER; a password literal in committed test data → BLOCKER
   (`.claude/rules/test-data.md`).
 

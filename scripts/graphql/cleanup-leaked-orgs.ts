@@ -23,17 +23,13 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 import { TokenCache } from "../lib/graphql-auth.js";
 
-// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
-// A bare loadDotenv() reads only `.env`, which does not exist in this repo, so BACK_URL
-// and the admin creds would be missing and every run would exit 2.
-const _TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
+// The layered env WITH config.js's `KEY_<ENV>` promotion (lib/load-env.mjs). The three bare loads this
+// replaces left it out, so `.env.local`'s BACK_URL beat the env's own pin (BACK_URL_VCPTCORE_DEV) and
+// this DELETE was aimed at localhost. Per-env admin passwords (`*_PASSWORD_<ENV>`) now apply as well.
+const { testEnv, sourceOf } = loadEnv({ fallback: "vcst" });
 
 const DEFAULT_LEAKED = [
   "7725c8a7-46e2-4556-851b-fa3243da15e4",
@@ -68,11 +64,11 @@ async function main() {
   const args = parseArgs();
   const backUrl = process.env.BACK_URL;
   if (!backUrl) {
-    console.error("BACK_URL not set in .env");
+    console.error(`BACK_URL not set in .env.defaults / .env.${testEnv} / .env.local`);
     process.exit(2);
   }
 
-  console.log(`Target: ${backUrl}`);
+  console.log(`Target: ${backUrl}  (TEST_ENV=${testEnv}; ${sourceOf("BACK_URL")})`);
   console.log(`Role:   ${args.role}`);
   console.log(`IDs:    ${args.ids.length} to delete`);
   for (const id of args.ids) console.log(`  - ${id}`);

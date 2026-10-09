@@ -31,12 +31,13 @@ import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
   validateDecisionFixtureSet, validateDecisionTemplate,
 } from './return-decisions-specs.mjs';
+import { resolveTestEnv } from '../../lib/resolve-test-env.js';
 
 /**
  * The env whose SEEDED STATE section [6] checks. Static checks ([1]–[5]) are env-agnostic; the
  * returns fixtures' age can only be judged against the overlay of the env they were seeded on.
  */
-const TARGET_ENV = process.env.TEST_ENV || 'vcst';
+const TARGET_ENV = resolveTestEnv('vcst');
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const problems = [], notes = [];

@@ -35,6 +35,7 @@ import { existsSync, readFileSync, writeFileSync } from "fs";
 import { basename, join, resolve } from "path";
 import { fileURLToPath } from "url";
 import { REG_ROOT, appendSuiteHistory, resolveRunDir } from "../lib/regression-triage.js";
+import { resolveTestEnv } from "../lib/resolve-test-env.js";
 
 const STATUS_PATH = join(REG_ROOT, "test-run-status.json");
 
@@ -184,7 +185,9 @@ function main(): void {
     console.error("--run-id <RUN_ID> is required (there is no 'latest' default: closing the newest run is how a LIVE run gets closed by mistake)");
     process.exit(2);
   }
-  const env = argValue(argv, "env") ?? process.env.TEST_ENV ?? "vcst";
+  // --env, else the session env as every other entry point resolves it (TEST_ENV, else .env.test-env,
+  // else vcst). Reading TEST_ENV alone labelled history rows vcst whenever .env.test-env chose the env.
+  const env = argValue(argv, "env") ?? resolveTestEnv("vcst");
   const statusArg = (argValue(argv, "status") ?? "completed") as CloseStatus;
   if (statusArg !== "completed" && statusArg !== "stalled") {
     console.error(`--status must be "completed" or "stalled" (got "${statusArg}")`);

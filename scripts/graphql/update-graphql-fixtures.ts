@@ -28,8 +28,7 @@
  */
 
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { config as loadDotenv } from "dotenv";
-import { resolveTestEnv } from "../lib/resolve-test-env.js";
+import { loadEnv } from "../lib/load-env.mjs";
 import { readdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { join, resolve, basename } from "path";
 import {
@@ -41,13 +40,10 @@ import {
   ValidationError,
 } from "../lib/graphql-validator.js";
 
-// Layered, TEST_ENV-aware env load (later files override earlier; no legacy root `.env`).
-// Mirrors scripts/lib/seed-common.mjs — a bare loadDotenv() reads only `.env`, which does
-// not exist in this repo, so `--refresh` introspection would see no BACK_URL.
-const _TEST_ENV = resolveTestEnv("vcst");
-loadDotenv({ path: ".env.defaults" });
-loadDotenv({ path: `.env.${_TEST_ENV}`, override: true });
-loadDotenv({ path: ".env.local", override: true });
+// The layered env WITH config.js's `KEY_<ENV>` promotion. The three bare loads this replaces
+// left it out, so `.env.local`'s BACK_URL beat the env's own pin (BACK_URL_VCPTCORE_DEV) and
+// `--refresh` overwrote the schema cache shared with validate-graphql-fixtures.ts from the wrong backend.
+const { testEnv, sourceOf } = loadEnv({ fallback: "vcst" });
 
 const ROOT = resolve(process.cwd());
 const FIXTURES_DIR = join(ROOT, "test-data", "graphql");
@@ -238,10 +234,10 @@ async function main(): Promise<void> {
   // Schema load
   if (args.refresh) {
     if (!backUrl) {
-      console.error("--refresh requires BACK_URL in .env");
+      console.error(`--refresh needs a backend: no BACK_URL in .env.defaults / .env.${testEnv} / .env.local`);
       process.exit(2);
     }
-    console.log(`Refreshing schema from ${backUrl}/graphql ...`);
+    console.log(`Refreshing schema from ${backUrl}/graphql (TEST_ENV=${testEnv}; ${sourceOf("BACK_URL")}) ...`);
     const intro = await introspect({ backUrl });
     saveSchemaCache(intro, SCHEMA_CACHE);
     console.log(`Cached at ${SCHEMA_CACHE}\n`);

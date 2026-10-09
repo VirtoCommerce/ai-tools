@@ -1,12 +1,14 @@
 import { config } from 'dotenv';
-import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
+import { resolveTestEnv, envSuffix, TEST_ENV_PATTERN } from './scripts/lib/resolve-test-env.js';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
 //   2. .env.${TEST_ENV}    — per-env URLs/identifiers (vcst | vcptcore | virtostart)
 //   3. .env.local          — secrets (passwords, tokens) — gitignored
-//   4. process.env         — already wins (CI passes via -e flags)
+//   4. .env.playwright.${TEST_ENV} — this env's passwords (gitignored); resolveTestEnv()
+//                            exposes them as KEY_<ENV>, so the promotion below lifts them over 3.
+//   5. process.env         — already wins (CI passes via -e flags)
 // The legacy monolithic .env file was removed — all values live in the layered
 // files above. Per-env scaffolds are committed; secrets stay in .env.local.
 //
@@ -19,7 +21,7 @@ const TEST_ENV = resolveTestEnv('vcst');
 // (which uppercases TEST_ENV and appends as a var suffix) works correctly.
 // Kebab-case names like `customer-staging-eu` silently break suffix promotion
 // because `_CUSTOMER-STAGING-EU` is not a valid env-var suffix.
-if (!/^[a-z0-9_]+$/.test(TEST_ENV)) {
+if (!TEST_ENV_PATTERN.test(TEST_ENV)) {
     console.error(
         `[config] Invalid TEST_ENV="${TEST_ENV}". Must match [a-z0-9_]+. ` +
         `Use underscores instead of hyphens (e.g. "customer_staging_eu", not "customer-staging-eu"). ` +
@@ -35,7 +37,7 @@ config({ path: '.env.local', override: true, quiet: true });
 // Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
 // is promoted to its base name. Lets `.env.local` carry per-env password
 // variants (e.g. USER_PASSWORD_VIRTOSTART) without leaking into committed files.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
+const ENV_SUFFIX = envSuffix(TEST_ENV);
 for (const [key, value] of Object.entries(process.env)) {
     if (key.endsWith(ENV_SUFFIX) && value) {
         process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
