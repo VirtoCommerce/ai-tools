@@ -1,10 +1,11 @@
 # Test strategy — VCST-5884 — 2026-10-09 (round 3)
 
-Status: DRAFT · Flow: test (Story) · Depth label: deep · Prototype dry run — nothing executed, nothing posted
+Status: DRAFT · Flow: test (Story) · Round 3 of 3 — the last allowed · Depth label: deep · Dry run, nothing executed
 Build to test: Return #28 @ 9bcdf23 · theme #2523 @ b9a7294 · Stand: vcst — **NOT deployed** (manifest: 3.1005.0-pr-28-62f9, 2.60.0-pr-2523-9e4e)
 
 **Mission.** Confirm the round-2 FAIL is fixed (VCST-6226 + the Admin header) without the new `SubmittedDate`
 mechanism hiding returns the organization should see, and that the five storefront fixes broke nothing.
+Last round: a FAIL here escalates to the developer, PO and QA lead — there is no round 4.
 
 ## 1. Inputs
 | Input | What we have | Gap → project risk |
@@ -67,8 +68,7 @@ per holder org, one each of live draft · draft cancelled before submit · submi
 
 ## 7. Out of scope
 - Attachments of a colleague's return — no FileUpload scope on vcst — residual Low
-- CC/BCC overlap, retry duplication of the org copy — unchanged code since round 2 — residual Low
-- vs. DESIGN — the ticket names no design project · PO questions from round 2 (placement, default permission) — unchanged
+- CC/BCC overlap, retry duplication of the org copy — unchanged since round 2 — residual Low · vs. DESIGN — no design project · PO questions from round 2 — unchanged
 
 ## 8. Criteria
 Entry: both PRs deployed and visible in `/api/platform/modules` + theme · ticket back in a testable status · fix builds green · fixtures re-seeded
