@@ -88,7 +88,7 @@ test job whose mission is "reproduce and characterize", with `/qa-fix` named as 
 Owned by `/qa-test-strategy` (prototype: PR #416). The orchestrator writes it inline — choosing needs the
 whole bundle, and a dispatch brief carries only a summary. The file: inputs (project environment, product
 elements, quality criteria), risk register, strategy mix (ISTQB types), approach per risk (technique +
-oracle with authority + lane + depth), artifacts, data, out of scope, entry/exit criteria, amendments,
+oracle with authority + lane + effort), artifacts, data, out of scope, entry/exit criteria, amendments,
 reconciliation. Cap 120 lines (D9).
 
 **Who chooses, and where independence lives.** The orchestrator that gathered the context — never a
