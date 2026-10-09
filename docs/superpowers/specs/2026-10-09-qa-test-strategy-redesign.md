@@ -1,7 +1,7 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
-> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D5, by the owner
-> on 2026-10-09); none are open. A prototype of the strategy step exists as
+> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D6, by the owner
+> on 2026-10-09) and one open question (O1). A prototype of the strategy step exists as
 > draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
 
 ## 1. Problem
@@ -102,6 +102,40 @@ never its executor.
 strategy is then a deliverable in its own right: a team can review "how will we test this?" before any
 run is paid for, and `/qa-test` picks the approved file up instead of writing a new one.
 
+### Rounds — re-testing after a FAIL
+
+A **round** is one QA verdict on one deployed build of the ticket's PRs. A re-run on the **same** build
+amends the current round; a **new** build starts the next one (`.claude/rules/reports.md` §0, rule 5 —
+a new round gets a new tracker comment). Rounds count per ticket across stands: a round on another
+environment still counts.
+
+**At most three rounds per ticket (D6).** The router reads the count from the ticket's prior verdicts
+before anything else runs. A fourth is refused: no context, no strategy, no browser. The run reports
+the three verdicts, what failed in each and what keeps failing, and names the escalation — the ticket
+goes back to the people who own it (developer, PO, QA lead), not to another agent round.
+
+**What round N (N = 2, 3) reads from round N−1**, so its strategy is the delta, not the ticket again:
+
+| Input | Use |
+|---|---|
+| last tested commit of each PR | the diff is taken **from it**, not from the PR base |
+| verdict and bugs | each bug becomes a risk: "fixed, and nothing next to it broke" |
+| reconciliation | every unresulted risk carries over automatically |
+| PASS rows | a baseline: re-checked only where the code under them changed (via regression) |
+| defective cases, stale kb entries | cases → `/qa-test-lifecycle`; kb entries disputed after the check |
+| fixtures | checked for survival — a migration or a renamed field can invalidate them |
+
+Floors apply to the delta. The model and the mind map are amended, never rebuilt. Round 3 says in its
+mission line that it is the last one, so its out-of-scope list is read as the residual risk of the
+ticket, not of the round.
+
+**Storage:** one `test-strategy.md` per ticket, one section per round, each with its own
+reconciliation — the ticket's whole history in one file (proposed; see O1).
+
+**Worked example:** the dry run on VCST-5884 (`reports/tickets/Sprint26-20/VCST-5884/test-strategy.md`
+on `qa/vcst-5884`) is round 3: 9 risks, 7 of them born from the fixes since round 2, and blocked
+because the fixed build is not yet deployed (F6).
+
 **Floors — deterministic gate rules that replace `ticket-routing.md` §5–§5d.** The strategy may add to a
 floor, never go under it.
 
@@ -167,6 +201,13 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | D3 | Exploratory before the checklist or alongside? | **The strategy decides**, by the rule in §6. (owner, 2026-10-09) |
 | D4 | Approve every strategy, or only a non-default one? | **Every strategy, every run.** `--yes` is the only way past the question (CI, unattended); no `AUTO` for "default-looking" strategies. The edit count at approval is a §8 measure. (owner, 2026-10-09) |
 | D5 | Named depth levels? | **A derived label for reports only** — `light` / `standard` / `deep`, computed from the artifacts table (`light` = checklist only; `deep` = test model + exploratory, or the Critical-risk verifier ran; `standard` = anything between), shown in `verdict.md`, the HTML page and `summary.json`. Never an input: no rule, floor or gate reads it, so it cannot drift from what ran. (owner, 2026-10-09) |
+| D6 | How many rounds? | **At most three per ticket.** A fourth is refused before any work; the run escalates to people instead (§6 Rounds). (owner, 2026-10-09) |
+
+### Open
+
+| # | Question | Options · recommendation |
+|---|---|---|
+| O1 | One strategy file per ticket with a section per round, or one file per round? | **Recommend one file**: the history reads in one place and round N cites round N−1 by section, not by path. |
 
 ## 10. Risks
 
