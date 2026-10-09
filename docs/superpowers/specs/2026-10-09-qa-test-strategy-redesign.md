@@ -1,7 +1,7 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
-> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken so far (D1–D3, by
-> the owner on 2026-10-09) and the ones still open (O1–O2). A prototype of the strategy step exists as
+> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D5, by the owner
+> on 2026-10-09); none are open. A prototype of the strategy step exists as
 > draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
 
 ## 1. Problem
@@ -165,13 +165,8 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | D1 | One command or two? | **One — `/qa-test`.** Depth is a property of the strategy, not of the command. (owner, 2026-10-09) |
 | D2 | Author regression cases inside a ticket run? | **No — moved to `/qa-test-lifecycle`.** The run emits `candidate cases` (passing items no suite case covers) in `summary.json`. Removes Artifact A, `3-cases`, `1e-plan` and the in-run single-writer race. (owner, 2026-10-09) |
 | D3 | Exploratory before the checklist or alongside? | **The strategy decides**, by the rule in §6. (owner, 2026-10-09) |
-
-### Open
-
-| # | Question | Options · recommendation |
-|---|---|---|
-| O1 | Approve every strategy, or only a non-default one? | (a) every run, `--yes` to skip; (b) ask only when the strategy deviates from its floors — a Critical risk, a skipped artifact the signals suggest, a recommended extra lane — else `AUTO`. **Recommend (a) for the validation phase** (§8 needs the edit count), then revisit (b) on its data. |
-| O2 | Named depth levels (light / standard / deep)? | (a) none — the artifacts table is the depth; (b) a derived label for reports only, never an input. **Recommend (b):** people read "deep" faster than a table, and a label computed from the table cannot drift from it. |
+| D4 | Approve every strategy, or only a non-default one? | **Every strategy, every run.** `--yes` is the only way past the question (CI, unattended); no `AUTO` for "default-looking" strategies. The edit count at approval is a §8 measure. (owner, 2026-10-09) |
+| D5 | Named depth levels? | **A derived label for reports only** — `light` / `standard` / `deep`, computed from the artifacts table (`light` = checklist only; `deep` = test model + exploratory, or the Critical-risk verifier ran; `standard` = anything between), shown in `verdict.md`, the HTML page and `summary.json`. Never an input: no rule, floor or gate reads it, so it cannot drift from what ran. (owner, 2026-10-09) |
 
 ## 10. Risks
 
@@ -179,7 +174,7 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 |---|---|
 | The model over-plans: every strategy selects everything, and nothing gets faster | floors set the minimum; the gate rejects an artifact with no risk naming it; §8 measures wall time |
 | The model under-plans and skips what FULL would have caught | floors F1–F9 are deterministic; F9 resolves doubt upward; the Critical-risk verifier |
-| Approval becomes a rubber stamp | the question shows four short tables, not the file; O1 is revisited with edit-count data |
+| Approval becomes a rubber stamp | the question shows four short tables, not the file; the edit count at approval is tracked (§8, D4) |
 | Agents drift from the approved plan | reconciliation before the verdict; an unresulted High/Critical risk caps it below PASS |
 | Losing case authoring lowers regression growth | `candidate cases` in every summary; `/qa-test-lifecycle` consumes them; track the count in §8 |
 | A big-bang migration of 80+ citing files | ship behind the prototype first, migrate consumers only after §8 passes |
@@ -200,7 +195,7 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 
 | | Expected | Why it might not hold |
 |---|---|---|
-| **Quality** | up: risks and oracles are visible, out-of-scope is written down, drift is caught at reconciliation, a wrong direction is corrected at approval instead of after the run | a rubber-stamp approval (O1) or a strategy written to fit the checklist rather than the risks |
+| **Quality** | up: risks and oracles are visible, out-of-scope is written down, drift is caught at reconciliation, a wrong direction is corrected at approval instead of after the run | a rubber-stamp approval (D4) or a strategy written to fit the checklist rather than the risks |
 | **Speed, small ticket** | about equal: one extra step (minutes) plus the approval wait, against no model, mind map or exploratory when the floors do not require them | the model over-plans (§10) and selects everything |
 | **Speed, large ticket** | up: no in-run case authoring, no `3-cases` verifier, no single-writer wait (D2); fewer re-runs after a wrong direction | the floors push most tickets to "deep", which is today's FULL minus authoring |
 | **Maintenance** | up: one command, one router table and nine floors instead of two commands, two paths and §5–§5d with four special cases | the migration (§7, 80+ citing files) is done before §8 proves the design |
