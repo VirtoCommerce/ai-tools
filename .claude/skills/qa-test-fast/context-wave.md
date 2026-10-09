@@ -62,7 +62,17 @@ Write it to your scratchpad, never under `reports/`. It is not a report category
 [`../qa-test/contract-refresh.md`](../qa-test/contract-refresh.md) §2. Drift on an operation the diff
 touches goes into the bundle as a model input.
 
+## Strategy — between Join 1 and Wave 2
+
+[`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md), run by you with the bundle. Its approved
+Artifacts table decides every row below; a skipped row keeps the strategy's reason.
+
 ## Wave 2 — one message
+
+- **Staleness check — you, inline**, when F5 fired: the four checks of
+  [`../qa-test-strategy/floors.md`](../qa-test-strategy/floors.md) §Staleness check over the cases
+  `regression:select` picked. Stale ids → the strategy's Artifacts row and `/qa-test-lifecycle`; the rest
+  is the regression id list for Stage 2.
 
 - **Test model — you, inline.** `/qa-test-model <TICKET> --context <bundle>`. You are the Judge, and
   the model's gate runs inside that skill.
@@ -83,9 +93,15 @@ path. A map built in this wave did not exist when the model was written, so the 
 no node ids from it, and that is expected. Node-level tracing is Wave 3's job (Mode 5 selects by
 chain link and descent).
 
-## Wave 3 — the checklist
+## Wave 3 — explore first (only when the strategy says `FIRST`)
 
-`/qa-checklist <TICKET> --from-model --mind-map <slug>`
+The session of [`execution.md`](execution.md) §Exploratory, run **before** the checklist (D3: a
+High/Critical risk rests on a `{HYPOTHESIS}` oracle, or the feature is new). What it observed — conditions
+the ACs never named, grounded oracles — goes into the checklist as items, not as notes.
+
+## Wave 4 — the checklist
+
+Model ran ⇒ `/qa-checklist <TICKET> --from-model --mind-map <slug>`; model skipped ⇒ `/qa-checklist <TICKET>` from the strategy's approach table.
 ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)), written to
 `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`. The model's unresolved items are **not**
 checklist items. They are the exploratory charter ([`execution.md`](execution.md) §Exploratory).
@@ -105,6 +121,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 
 | Check | Fails when |
 |---|---|
+| Regression list | it holds a case the staleness check marked stale |
 | Strategy | `test-strategy.md` is `DRAFT`, or a checklist item names no `R-n` |
 | Model | it ran, and any gate line is neither `PASS` nor `FIXED` |
 | Checklist | an in-scope risk, scenario row or node is neither an item nor an omission line |

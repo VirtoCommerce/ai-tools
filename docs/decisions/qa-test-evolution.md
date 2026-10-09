@@ -296,12 +296,15 @@ whose refusal set makes it free.
 
 ## Explicit test strategy (2026-10-09)
 
-**What changed.** `/qa-test` gained step `1s` and `/qa-test-fast` a Stage-1 strategy step, both run by
-`/qa-test-strategy`. After the context is gathered and before anything is tested, the orchestrator writes
-`test-strategy.md`: the risk register, the strategy mix, a technique and an oracle per risk, lanes, data,
-which artifacts run, and entry/exit criteria. The user approves it once (`--yes` skips the question);
-FULL puts a fresh `qa-lead` verifier in front of the user. At close-out the same file is reconciled
-against what actually ran.
+**What changed.** `/qa-test-fast` became the prototype of a single `/qa-test` (design
+`docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md`, draft #417, decisions D1–D12). It routes
+the *job* deterministically, gathers context, and then `/qa-test-strategy` writes `test-strategy.md`: the
+risk register, the strategy mix, a technique and an oracle per risk, lanes, data, which artifacts run, and
+entry/exit criteria — under deterministic floors F1–F9 that replace the FAST/FULL effort axis, and at most
+three rounds per ticket. The user approves it every run (`--yes` skips the question); a verifier re-derives
+it first when a risk is Critical. At close-out the same file is reconciled against what actually ran.
+`/qa-test` FAST/FULL stay untouched until the design's §8 validation passes. A first version of this
+prototype also added a step `1s` to `/qa-test`; it was withdrawn so the prototype lives in one command.
 
 **Why.** The strategy existed only implicitly — spread across six derived axes, opt-in flags and
 whichever artifacts happened to be built — so no one chose a method and no one could argue with the
@@ -333,8 +336,13 @@ context and a dispatch brief carries a summary of it. Independence (Bolton's *cr
 put on the check — the user's approval, plus the FULL verifier — and on execution, which other agents
 do.
 
-**What the strategy may decide.** On `/qa-test-fast` it selects the test model, the mind map and the
-exploratory lane; that is the simplification. On `/qa-test` FAST it may only *recommend* an opt-in axis,
-which runs on the user's yes, so the one-agent promise holds unless a human widens it. On FULL it
-decides depth, boxes and order but removes nothing.
+**What the strategy may decide.** Every artifact — test model, mind map, exploratory (first or
+alongside), visual lane, contract refresh, a staleness-checked regression run, the verifier — above the
+floors, never under them. Case authoring is not one of them: a run lists candidate cases and
+`/qa-test-lifecycle` writes them (D2).
 
+**What the dry runs changed (2026-10-09).** Three strategy-only runs (VCST-5883, VCST-5628, VCST-5884;
+the design's §13) covered every recorded Medium-or-higher finding, and produced five amendments: F1 fires
+only on a High/Critical risk or P0/P1 (layers raise L×I instead, D8); 120 lines per round (D9); five method
+rules (D10); a staleness check before any regression run (D11); a per-risk "effort" distinct from the depth
+label (D12).
