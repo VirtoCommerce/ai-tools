@@ -9,8 +9,8 @@ argument-hint: "<TICKET> [--context <bundle>] [--yes] | reconcile <TICKET>"
 A strategy answers one question: **given this change, these risks and these means, how do we test it,
 and when are we done?** It is one short file, checked against deterministic floors, approved by the user,
 and compared at close-out against what actually ran. Depth comes from risk, never from the ticket type.
-Design and decisions D1–D12: `docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md` (draft <!-- doclint:may-not-exist — the design lands with #417 -->
-#417). Why this shape (HTSM, ISTQB strategy types, ISO/IEC/IEEE 29119-3, agent research):
+Design and decisions D1–D12: `docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md`.
+Why this shape (HTSM, ISTQB strategy types, ISO/IEC/IEEE 29119-3, agent research):
 [`docs/decisions/qa-test-evolution.md`](../../../docs/decisions/qa-test-evolution.md) §Explicit test strategy.
 
 | Need | Read |
