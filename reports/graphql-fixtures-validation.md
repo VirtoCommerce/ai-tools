@@ -1,7 +1,7 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-10-06T21:54:48.777Z
-**Schema source:** https://vcptcore-dev.govirto.com/graphql
+**Validated at:** 2026-10-08T21:22:27.347Z
+**Schema source:** https://vcst-qa.govirto.com/graphql
 **Total:** 86 fixtures — 86 passed, 0 failed
 
 ## ✅ Passed Fixtures (86)
