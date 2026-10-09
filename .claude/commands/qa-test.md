@@ -1,6 +1,6 @@
 ---
 description: "Test a tracker ticket, feature area, or PR. Step 1a routes by ticket type × status (per ticket-routing.md) to the right flow — a fix-ready Bug runs /vc-fix:qa-verify-fix inline, a refactor/migration/dependency bump takes the fixed-shape technical-change flow (2a + a blast-radius regression, no feature test), else feature-test at a FAST path (a checklist; the design/a11y visual lane under --visual) or a FULL path (mandatory Test Model, case authoring, independent verifier gates). Regression is C1 — the exact set of cases this run wrote or changed. Dispatches specialist agents, correlates App Insights logs for the test window, and produces a verdict. --iterate drives a bounded test→fix→re-test loop; --epic runs a series of sibling stories with cross-story integration."
-argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes] [--yes]"
+argument-hint: "<ticket-key> | feature name | PR #NNN | --epic <EPIC-KEY> [--iterate [--max-rounds N]] [--visual|--contract|--coverage|--axes]"
 disable-model-invocation: true
 ---
 
@@ -18,7 +18,6 @@ a judgment call a gate does not settle, or when you are about to change how a st
 |---|---|
 | Step 1e — the fault model, its eight rules, its gate | [`skills/qa-test-model/test-model.md`](../skills/qa-test-model/test-model.md) · shape: [`templates/test-model.md`](../templates/test-model.md) |
 | Steps 1a–1b — the fetch, the routing branch, the two pre-flight waves | [`skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) |
-| Step 1s — the test strategy: risks, mix, technique + oracle per risk, approval, reconcile | [`skills/qa-test-strategy/SKILL.md`](../skills/qa-test-strategy/SKILL.md) |
 | Steps 1r · 1c · 1c-map · 1d — the FULL-only context wave: briefs, returns, what each carries | [`skills/qa-test/context-wave.md`](../skills/qa-test/context-wave.md) |
 | The six derived axes as ONE mechanism (2b–2g) | [`skills/qa-test/axes.md`](../skills/qa-test/axes.md) |
 | Ticket status — who moves it, when, on whose authority | [`knowledge/execution/ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) |
@@ -49,7 +48,6 @@ a judgment call a gate does not settle, or when you are about to change how a st
 /qa-test <ticket-key> --contract         # + the GraphQL schema + fixture refresh
 /qa-test <ticket-key> --coverage         # + tc:scope over the existing corpus
 /qa-test <ticket-key> --axes             # all three
-/qa-test <ticket-key> --yes              # approve the 1s strategy without asking (CI, unattended)
 ```
 
 **Argument normalization — there is no argv parser, so state what you resolved.** This command is a prompt,
@@ -78,13 +76,15 @@ Labels are a **citation contract** and are never renumbered. `1e-plan`/`3x` are 
 **`2a` is a PHASE of Step 3's corpus artifact `A`** (merged 2026-09-11), and its label survives only so the
 existing `§2a` citations still resolve.
 
-`5r` (C2) and `5g` are **retired labels, never reused** ([`decisions`](../../docs/decisions/qa-test-evolution.md) §Removing 5r and 5g).
+**`5r` (C2) and `5g` (promotion) were REMOVED 2026-09-10** with `--release-regression`; their labels are
+**retired, never reused** — the capability went nowhere, only its automatic placement (§FAST mode · §Step 3
+· [`decisions`](../../docs/decisions/qa-test-evolution.md) §Removing 5r and 5g).
 
 ```
 TECH   1a → 1b → 2a ‖ [B] ‖ RG → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs   ← a FLOW, not a path
-FAST   1a → 1b → 2 → 1s → 3 → 4 → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs
+FAST   1a → 1b → 2 → 3 → 4 → 5-triage → 5-verdict → 5-file → 5-report → 5-status → 5-docs
 FULL   1a → 1b → 1r ‖ 1c ‖ 1d ‖ [1c-map] ‖ 2-load
-                → 1s → 1e → 1e-plan → 2-topup
+                → 1e → 1e-plan → 2-topup
                 → 3x  ‖  3a          ← discovery on one lane, seeding browserless beside it
                 → B                  ← the checklist, written AFTER discovery has corrected the model
                 → 3-exec ────────► 4a ‖ 4v                    ◄── FIRST TEST
@@ -143,7 +143,6 @@ mirror.
                                                        their flag is passed
 2   load the affected domains' BL-* AND ECL-* rule TEXT (the agent prompt contract requires both);
     route ONE execution agent. Stop there.
-1s  the test strategy (§1s); an opt-in axis it RECOMMENDS runs only on the user's yes
 3   Artifact B checklist (conditions from 1a's ACs) + 3a ONLY when 2f said so
     + under --coverage: DISPATCH test-management-specialist for Artifact A, which on FAST is its
       2a triage phase ALONE (no authoring). C1's exact set = its REPAIR + RE-BASE ids
@@ -158,6 +157,9 @@ derived axes are **opt-in** here (`--visual` · `--contract` · `--coverage`, or
 off by default; `2b`, `2f` and `2g` apply on both paths because none can add an agent to a FAST run. The
 opt-in three still **derive** (token + sources recorded, so a `false` is auditable) — they just do not
 *run*. Per-axis behaviour on this path: [`axes.md`](../skills/qa-test/axes.md) §4.
+
+**`5r`/C2 was the largest breach of it** — removed 2026-09-10
+([`decisions`](../../docs/decisions/qa-test-evolution.md) §Removing 5r and 5g).
 
 **What FAST does not run is exactly §FULL mode's added list — read it there, not twice.** Two things are
 FAST-side only: the archetype/UIP/`VC-*` sweeps do not run, and the three opt-in axes run only under their
@@ -192,7 +194,7 @@ In **§The steps**, a heading marked *(FULL only)* is one this mode adds.
 | **`3x` discovery lane** | most outputs consume a model and an authoring batch; FAST has neither ([`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md) §2) |
 | **Artifact A's *authoring* phase** + the **`3-cases`** gate | FAST still runs A's **`2a` triage phase** under `--coverage` |
 | **`4v` visual lane** | a second agent; on FAST it is `--visual` opt-in |
-| **Three verifier dispatches** (`1s`, `3-cases`, `5-report`) | FAST self-checks every gate inline (`1s` still asks the user) |
+| **Two verifier dispatches** (`3-cases`, `5-report`) | FAST self-checks every gate inline |
 
 **The gate ladder — the rows are BOTH paths except `3-cases`; what FULL adds is the *verifier* column.**
 A step passes its gate or **STOPS**. **On FAST every applicable row self-checks inline.** On FULL, **one**
@@ -201,7 +203,6 @@ is a hard-STOP gate verified by a **fresh `qa-lead-orchestrator` in §Verifier M
 
 | Gate | Where | Verified by |
 |---|---|---|
-| Strategy approved | 1s | the user, once (`--yes` skips); FULL: a fresh `qa-lead` verifier first |
 | Reachable at all | 1r (FULL) | inline — **never a PASS/FAIL on the ticket**; `BLOCKED` ends the run early |
 | Model complete | 1e (13 clauses) | inline (doer's own check) |
 | Existing coverage disposed | Artifact A phase `2a` | in the agent's return — checked at `3-cases`, FAST at C1's dispatch (§A phase `2a`) |
@@ -224,7 +225,7 @@ is a hard-STOP gate verified by a **fresh `qa-lead-orchestrator` in §Verifier M
 **Every heading below carries its mode.** *(both paths)* = normative for FAST and FULL alike; *(FULL only)*
 = §FULL mode adds it. A clause that differs by mode says so in place.
 
-### Step 1 — Gather Context, Story & Test Model *(1a · 1b · 1s both paths; the rest FULL only)*
+### Step 1 — Gather Context, Story & Test Model *(1a · 1b both paths; the rest FULL only)*
 
 Five ordered sub-parts; each consumes the one before it, so don't reorder. Story analysis is **part of this
 step**: its AC table is a field of the Test Model, the single hand-off to `test-management-specialist`.
@@ -332,14 +333,6 @@ separate lanes, not separate waves. Briefs, returns and the rules that decide wh
 
 The `1c` · `1c-map` · `1d` rows (agent, lane, when, returns, gate + record) and the two brief rules:
 [`context-wave.md`](../skills/qa-test/context-wave.md) §At a glance — read them before dispatching the wave.
-
-#### 1s — Choose the test strategy *(both paths)*
-
-**Invoke the Skill tool with `skill: "qa-test-strategy"`**, args `<ticket-key> --context <1a–1d + 2-load>
---path fast|full` (plus `--yes`). Inline, never dispatched: choosing needs the whole context. It writes
-`test-strategy.md`, runs its gate and asks the user **once**. **Nothing after 1s runs until it is `APPROVED` or
-`AUTO (--yes)`**; headless without `--yes` ⇒ STOP. On FULL every artifact stays mandatory and 1e models
-the strategy's risks. Every checklist item names its `R-n`; 5-verdict reconciles plan against fact first.
 
 #### 1e — Build the Test Model *(FULL only)*
 
@@ -452,6 +445,8 @@ Three rules hold it ([`sequencing.md`](../skills/qa-test/sequencing.md) §Orderi
 | **B** | Testing checklist (both paths) — written **after `3x` returns**, so it carries what discovery observed and not only what the ACs named. **One checklist, one execution pass** | `test-management-specialist`, or the orchestrator inline for a single-surface tweak | `reports/tickets/{SPRINT}/<ticket-key>/testing-checklist.md` |
 | **C1** | Ticket regression — **the exact set: every case this run wrote or changed** | orchestrator | scope assembled **at A's append** (§C1 — the exact set); one `/qa-regression … --ids` run, executed at `4c` |
 
+**There is no C2** — the change-scoped Critical sweep answered a *release* question, not this ticket's (§FAST mode).
+Cutting a release means running [`/qa-regression`](qa-regression.md) deliberately.
 
 #### A phase `2a` — dispose the corpus, then author the gaps *(both paths — FAST under `--coverage`)*
 
@@ -535,11 +530,21 @@ the running feature until Step 4 executes cases that are already written — so 
 scope-sized 30-60 minutes, inside time 3a is already spending**, to turn them into observations first.
 
 **Invoke `/qa-exploratory ticket <ticket-key>`** — its `ticket` charter mode. **This pipeline supplies the
-CHARTER — five derived sources and nothing else, plus the 1s strategy's `EXPLORE` risks; that command runs
-the SESSION**, and `ticket` mode **STOPs without a model** rather than improvising. **The lane files no bugs
-and never blocks:** the box is hard and Artifact A proceeds on what returned.
+CHARTER; that command runs the SESSION.** Deliberately *not* the visual lane's pattern: `/qa-design` is only
+a shell over its agent, whereas `/qa-exploratory` is where the substance is. The charter is derived from
+**five sources and nothing else** (unresolved matrix cells · reverse edges · `{HYPOTHESIS}` oracles · `1d`
+DRIFT ACs · `RE-BASE` rows), and `ticket` mode **STOPs without a model** rather than improvising.
 
-Charter payload, the five outputs, gate and record:
+Five outputs, each routed — **model amendments** (amend, never fork) · **`{HYPOTHESIS}` → `{OBSERVED}`
+grounding** per row · **net-new scenarios** with a `Fate`, where `PROMOTE` means authored **in this run** ·
+**Oracle Feedback** as proposals · **checklist conditions the ACs never named**, into Artifact B. **The lane files
+no bugs.**
+
+**It never blocks:** the box is hard and Artifact A proceeds on what returned. Every charter source is
+**covered or `NOT REACHED + reason`**, a skip is stated, and `summary.json.discovery = null` means the lane
+never ran — an empty findings array means it ran and found nothing.
+
+Charter payload, gate and record:
 [`skills/qa-test/exploratory-lane.md`](../skills/qa-test/exploratory-lane.md). **Cite it; do not restate it.**
 
 ---
@@ -632,7 +637,7 @@ The ordered close-out phases, plus **`5-loop`** — the bounded loop that repeat
 | | Phase | In one line | Gate |
 |---|---|---|---|
 | **5-triage** | Triage | **`/qa-triage-results <RUN_ID> --fix`** on C1, **`… ticket <key> --verify`** on the checklist (4a/4v/3x rows); each real bug → `vc-fix:qa-investigate` → 5-file's `/vc-fix:qa-bug`. Correlate App Insights, validate evidence, then classify → provenance → severity → dedup the rest | — |
-| **5-verdict** | Reconcile AC & DoD **live**, then decide | Reconcile the 1s strategy (its §Reconcile; an unresulted High/Critical risk caps the verdict), close `1d`'s static hypothesis against what the agents observed, resolve every DoD item and compute both percentages **from the actual counts** — then PASS / PASS WITH NOTES / FAIL / BLOCKED, derived from that plus 5-triage, **no new judgment**. It is **recorded, not published**: 5-report publishes | inline |
+| **5-verdict** | Reconcile AC & DoD **live**, then decide | Close `1d`'s static hypothesis against what the agents observed, resolve every DoD item and compute both percentages **from the actual counts** — then PASS / PASS WITH NOTES / FAIL / BLOCKED, derived from that plus 5-triage, **no new judgment**. It is **recorded, not published**: 5-report publishes | inline |
 | **5-file** | File bugs | **Ask first.** **Severity floor: `Critical`/`High`/`Medium` only** — a `Low` keeps its `reports/bugs/open/` draft, is named in the 5-report comment and `summary.json.bugs_not_filed`, and gets no tracker item, in either shape. Relationship by provenance: IN-SCOPE → Sub-task · PRE-EXISTING → link only · OUT-OF-SCOPE → standalone + related · **`BL-A11Y-*` on a functional/feature/E2E ticket → standalone + related, at its real severity, and it does NOT fail 5-verdict** ([`triage.md`](../skills/qa-test/triage.md) §7a) | inline |
 | **5-report** | Report | Feed + ratify the Feature Release Gate · post the tracker comment (**incl. the mandatory `Not filed (below severity floor)` line, `None` when empty**) · persist `summary.json` + update the checklist in place with verdicts · output the one chat report | verifier |
 | **5-status** | Change status | **After** the report, **ask first**, `qa-lead` only. PASS / PASS WITH NOTES → TESTED · FAIL → REOPEN with failures + bug links · **BLOCKED → NO transition + a mandatory comment naming the blocker** (the ticket stays in-testing: TESTED would be a lie and REOPEN files an env blocker into the dev queue). **TESTED is the terminal state this command may reach.** One row per verdict, the record, and the per-flow ownership: [`ticket-status-transitions.md`](../knowledge/execution/ticket-status-transitions.md) | — |
@@ -667,7 +672,7 @@ and promotion deferred to the exit round
   domains' `BL-*`.
 - If an agent fails with an internal error, fall back to working directly rather than retrying the same
   delegation. If the tracker MCP is unavailable, skip transitions and ask the user for ticket details.
-- **What persists:** `summary.json` + `test-strategy.md` + `testing-checklist.md` + screenshots under
+- **What persists:** `summary.json` + `testing-checklist.md` + screenshots under
   `reports/tickets/{SPRINT}/<ticket-key>/`; the FULL-path Test Model to `reports/ba/test-models/`; new
   cases to `regression/suites/`; the 3x session report to `reports/exploratory/`. `ac-analysis.md` and
   `test-execution-report.md` are **never written**. Full table, and the per-axis `summary.json` blocks:
