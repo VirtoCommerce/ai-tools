@@ -2,7 +2,7 @@
   ".claude/agents/ba-doc-writer.md": 35411,
   ".claude/agents/ba-story-writer.md": 25408,
   ".claude/agents/ba-system-analyzer.md": 34700,
-  ".claude/agents/qa-lead-orchestrator.md": 29753,
+  ".claude/agents/qa-lead-orchestrator.md": 29661,
   ".claude/agents/qa-testing-expert.md": 19269,
   ".claude/agents/regression-orchestrator.md": 28807,
   ".claude/agents/test-management-specialist.md": 26750,

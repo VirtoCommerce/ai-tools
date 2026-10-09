@@ -56,6 +56,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Ask what the platform was OBSERVED to do** | `mcp__kb__kb_ask` (fallback `npm run kb -- ask "<q>"`) — rule: `CLAUDE.md` §Essential Rules → *Product context* | MCP / CLI |
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
+| **Choose a ticket's test strategy before running anything** (risks, mix, technique + oracle per risk, artifacts, criteria; one approval) | `/qa-test-strategy <ticket-key> [--context <bundle>] [--yes]` · `reconcile <ticket-key>` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
 | **Design the test-data combinations a feature needs** | `/qa-generate-data <feature \| flow \| VCST-XXXX>` | Skill |
