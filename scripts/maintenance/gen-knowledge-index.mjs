@@ -39,6 +39,7 @@ import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lo
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { firstSentence as cutSentence, splitFrontmatter as splitFm, spliceBlock } from "../lib/doc-index.mjs";
 
 // fileURLToPath, not .pathname — a space in the repo path URL-encodes to %20 and the read fails
 // SILENTLY, which reads as "no files to index" and passes. This repo (".../My Projects/...") hits it.
@@ -64,10 +65,8 @@ function walk(dir) {
 }
 
 function splitFrontmatter(text) {
-  if (!text.startsWith("---")) return { fm: "", body: text };
-  const end = text.indexOf("\n---", 3);
-  if (end === -1) return { fm: "", body: text };
-  return { fm: text.slice(4, end), body: text.slice(end + 4) };
+  const { fm, body } = splitFm(text);
+  return { fm: fm ?? "", body };
 }
 
 const strip = (s) =>
@@ -82,13 +81,7 @@ const strip = (s) =>
     .replace(/^["'“”]+|["'“”]+$/g, "")
     .trim();
 
-function firstSentence(s) {
-  const t = strip(s);
-  const m = t.match(/^(.{25,}?[.!?])(\s|$)/);
-  let out = m ? m[1] : t;
-  if (out.length > MAX_SCOPE) out = out.slice(0, MAX_SCOPE - 1).replace(/\s+\S*$/, "") + "…";
-  return out;
-}
+const firstSentence = (s) => cutSentence(strip(s), MAX_SCOPE);
 
 /**
  * One frontmatter field, block scalar (`rationale: |`) or quoted one-liner, first match wins.
@@ -212,18 +205,16 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
 
   const block = render();
   const readme = readFileSync(README, "utf8");
-  const b = readme.indexOf(BEGIN);
-  const e = readme.indexOf(END);
+  const spliced = spliceBlock(readme, BEGIN, END, block);
 
-  if (b === -1 || e === -1) {
+  if (!spliced) {
     findings.push({
       code: "KB-IDX-003",
       file: ".claude/knowledge/README.md",
       msg: `missing ${BEGIN} / ${END} markers`,
     });
   } else {
-    const current = readme.slice(b, e + END.length);
-    if (current !== block) {
+    if (spliced.current !== block) {
       if (check) {
         findings.push({
           code: "KB-IDX-001",
@@ -231,7 +222,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
           msg: "index block is stale — run `npm run knowledge:index`",
         });
       } else {
-        writeFileSync(README, readme.slice(0, b) + block + readme.slice(e + END.length), "utf8");
+        writeFileSync(README, spliced.next, "utf8");
       }
     }
   }

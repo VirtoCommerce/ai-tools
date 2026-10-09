@@ -15,7 +15,10 @@ process**, and stays as its parent to forward stdio and kill the tree on exit. T
 not say: a sibling process gets nothing, and the declared process's own children get everything it got —
 environment is inherited, and nothing can un-inherit it. The child also keeps your ambient environment, as
 any spawned process does, so a credential already exported in your shell reaches it too; moving those into
-declarations is what removes them. No token in `.mcp.json`, in `~/.claude.json`, in a settings `env` block,
+declarations is what removes them. (Three inherited names are the exception, dropped in any spelling before
+the declaration's own values are merged in, because the setup this plugin replaces kept a plaintext token in
+them: `ADO_MCP_AUTH_TOKEN`, `GITHUB_PERSONAL_ACCESS_TOKEN` and `AZURE_CLIENT_SECRET`. A declaration that sets
+one still sets it.) No token in `.mcp.json`, in `~/.claude.json`, in a settings `env` block,
 or in a `.env` file.
 
 **What this protects, and what it does not.** It protects credentials **at rest** — out of the files that
@@ -60,12 +63,12 @@ but a command you type by hand does not:
 
 | Verb | |
 |---|---|
-| `set <name>` | Store one secret. Hidden prompt; the value never appears in argv. Only works for a name already declared — it refuses an unknown one, and a repository's `local` secret until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
+| `set <name>` | Store one secret. Hidden prompt; the value never appears in argv. Only works for a name already declared as a `local`-backend secret — it refuses an unknown one, a `keyvault` one (set that in the vault itself), and a repository's `local` secret until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
 | `login <name>` | Sign in to the `oauth` entry `<name>` in a browser and store its token. Refuses an entry a repository declares until your user file acknowledges its app registration and [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. |
 | `logout <name>` | Delete the stored token for that entry, and print which entries were removed and how many were already absent. Refuses an entry a repository declares until [this checkout is trusted](#trusting-a-repositorys-declarations) for its namespace. A `login` still waiting on its browser tab can finish afterwards and store a token again — close that tab. |
 | `run <server>` | Resolve and run that server on stdio, staying as its parent. This is what an MCP entry calls. |
 | `task <name>` | Same, for a declared non-MCP command — a load-test harness, a migration step. |
-| `doctor` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. |
+| `doctor [--all]` | Diagnose. Exits non-zero on any `FAIL`, so it works as a gate. `--all` also reads a Key Vault secret that no enabled server consumes (it does not lift the rule for a [repository-declared one](#trusting-a-repositorys-declarations)); any other argument is refused rather than ignored. |
 | `unlock` | Warm the gpg agent for the session (gpg backend only) — decrypts whichever of the current or the older stored file exists. A repository's `local` secrets and `oauth` entries are skipped, with a `SKIP` line, until [this checkout is trusted](#trusting-a-repositorys-declarations) for their namespace. No-op on Windows and macOS. |
 | `migrate` | Copy legacy-prefix entries to namespaced keys, for user-scope declarations only: a legacy entry is your own value, so it is never copied into a repository's namespace, and a repository's local-store secrets are skipped with a line saying so (a Key Vault secret never reaches `migrate`). Idempotent. |
 | `emit-config <client>` | Print the MCP entries for every declared server in that client's format — `claude-code`, `cursor` or `codex`. Stdout is exactly what you paste; the guidance goes to stderr, including a note for each repository server you have not trusted yet. See [Clients](#clients). |
@@ -538,10 +541,10 @@ valid file.
 
 ## Setup
 
-Every verb reads the declaration, so write one first — `<repo>/.claude/vc-secrets.json` for the team's
-secrets, `~/.claude/vc-secrets.json` for your own. On a fresh machine, skipping this step means every
-verb below throws. Then, for a repository's servers and tasks, read them and run `vc-secrets trust` in
-that repository from a terminal — a launch refuses them until you have, and again after any change to
+Every verb but `untrust` reads the declaration, so write one first — `<repo>/.claude/vc-secrets.json` for
+the team's secrets, `~/.claude/vc-secrets.json` for your own. On a fresh machine, skipping this step means
+every verb below fails (`doctor` reports the missing file as a `FAIL` rather than dying on it). Then, for a
+repository's servers and tasks, read them and run `vc-secrets trust` in that repository from a terminal — a launch refuses them until you have, and again after any change to
 them. Your own user-scope ones need no such step, unless they read a secret or sign-in the repository
 declares (a `local`-backend secret or an `oauth` entry): those need the same `trust`, for the namespace — as do
 `set`, `login` and `logout` for a repository's own entries.
@@ -640,6 +643,7 @@ The secrets themselves stay in the credential store; nothing here removes them.
 | `VC_SECRETS_LOCAL_BACKEND` | Override the detected backend (`wcm` / `keychain` / `gpg`). WSL is **not** treated as Windows |
 | `VC_SECRETS_GPG_RECIPIENT` | Encrypt to a specific key instead of your default |
 | `VC_SECRETS_POWERSHELL` | Set to `pwsh` if Constrained Language Mode blocks the in-box PowerShell's `Add-Type` |
+| `VC_SECRETS_WSL_NO_INTEROP` | `1` makes `login` on Linux and WSL open no browser at all — neither the Windows default browser through `wslview` or `powershell.exe`, nor `xdg-open`. Sign in by hand from the URL `login` prints |
 | `VC_SECRETS_TIMING` | `1` prints the resolve-phase duration to stderr. The probe drops it from the launcher it spawns — that line would otherwise be the last one before a silent server death, and get read as a launcher refusal |
 | `VC_SECRETS_CONFIG_DIR` | Test support — read declarations from one directory. That directory is a project root like any other and needs [trust](#trusting-a-repositorys-declarations): exempting it would let anything able to set this variable name a directory of its own and skip the gate. It is one of several launcher-environment inputs the gate does not defend; see [Scope of the protection](#scope-of-the-protection). `doctor` warns whenever it is set |
 
@@ -697,7 +701,9 @@ a test pins that value, so the repointing is not silent, but the detector is a s
 The third covers `scripts/install-shim.mjs`, which nothing on the token path imports and decides what the installed
 shim contains on the next install, together with `vc-secrets-shim.mjs`, whose bytes are what it copies.
 
-Two things stay writable: the package's own test files, and `README.md`. A guard that freezes the files
+Two things stay writable: the package's own test files (each `*.test.mjs`, at the package root and beside
+the `lib/` modules, and the two shared helpers `test-fixtures.mjs` and `test-support.mjs`, which nothing
+outside the tests imports), and `README.md`. A guard that freezes the files
 the package is worked on is a guard somebody switches off wholesale, which costs more than what it was
 protecting; and this file grants nothing — no frontmatter, no permission grant, no key any client reads,
 and nothing executes it.
@@ -842,7 +848,14 @@ the launcher process itself runs code inside the process that holds every secret
 those can already do what the gate exists to prevent.
 
 Two things it does harden regardless: `NODE_OPTIONS`, `LD_PRELOAD`, `LD_AUDIT`, `LD_LIBRARY_PATH`,
-`DYLD_INSERT_LIBRARIES`, and `DYLD_LIBRARY_PATH` are refused as declaration `env` keys and stripped
+`DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH`, `NPM_CONFIG_NODE_OPTIONS`, `NPM_CONFIG_SCRIPT_SHELL`,
+`DOTNET_STARTUP_HOOKS` and `CORECLR_ENABLE_PROFILING` are refused as declaration `env` keys and stripped
 from every child the launcher spawns, so a declaration cannot inject code into the process that holds
-a secret. And a backend's stderr is redacted of any resolved value before it is reported, with the
-in-process copy dropped right after the child starts.
+a secret. Both checks ignore case, since on Windows `node_options` reaches the child as `NODE_OPTIONS`.
+`NPM_CONFIG_USERCONFIG` and `NPM_CONFIG_GLOBALCONFIG` are refused as declaration keys too, but an inherited
+value is kept: those name the rc files where a private registry's scope mapping and auth live, and
+stripping them would send `npx <private-pkg>` to the public registry. The one `NODE_OPTIONS` a child does
+receive is the launcher's own, composed for an `oauth:` launch after the inherited one is dropped: an
+`--import` of this package's preload, which is how a renewed token reaches the server. The project
+`.npmrc` that `npx` reads is beyond any env key, and stays open. And a backend's stderr is redacted of
+any resolved value before it is reported, with the in-process copy dropped right after the child starts.
