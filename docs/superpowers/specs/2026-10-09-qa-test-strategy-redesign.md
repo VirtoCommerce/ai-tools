@@ -1,7 +1,7 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
-> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D6, by the owner
-> on 2026-10-09) and one open question (O1). A prototype of the strategy step exists as
+> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D7, by the owner
+> on 2026-10-09); none are open. A prototype of the strategy step exists as
 > draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
 
 ## 1. Problem
@@ -130,7 +130,7 @@ mission line that it is the last one, so its out-of-scope list is read as the re
 ticket, not of the round.
 
 **Storage:** one `test-strategy.md` per ticket, one section per round, each with its own
-reconciliation — the ticket's whole history in one file (proposed; see O1).
+reconciliation — the ticket's whole history in one file (D7).
 
 **Worked example:** the dry run on VCST-5884 (`reports/tickets/Sprint26-20/VCST-5884/test-strategy.md`
 on `qa/vcst-5884`) is round 3: 9 risks, 7 of them born from the fixes since round 2, and blocked
@@ -202,12 +202,7 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | D4 | Approve every strategy, or only a non-default one? | **Every strategy, every run.** `--yes` is the only way past the question (CI, unattended); no `AUTO` for "default-looking" strategies. The edit count at approval is a §8 measure. (owner, 2026-10-09) |
 | D5 | Named depth levels? | **A derived label for reports only** — `light` / `standard` / `deep`, computed from the artifacts table (`light` = checklist only; `deep` = test model + exploratory, or the Critical-risk verifier ran; `standard` = anything between), shown in `verdict.md`, the HTML page and `summary.json`. Never an input: no rule, floor or gate reads it, so it cannot drift from what ran. (owner, 2026-10-09) |
 | D6 | How many rounds? | **At most three per ticket.** A fourth is refused before any work; the run escalates to people instead (§6 Rounds). (owner, 2026-10-09) |
-
-### Open
-
-| # | Question | Options · recommendation |
-|---|---|---|
-| O1 | One strategy file per ticket with a section per round, or one file per round? | **Recommend one file**: the history reads in one place and round N cites round N−1 by section, not by path. |
+| D7 | One strategy file per ticket, or one per round? | **One file per ticket**, one section per round, each with its own reconciliation; round N cites round N−1 by section. (owner, 2026-10-09) |
 
 ## 10. Risks
 
