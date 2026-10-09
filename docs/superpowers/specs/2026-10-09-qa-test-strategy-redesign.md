@@ -91,6 +91,17 @@ elements, quality criteria), risk register, strategy mix (ISTQB types), approach
 oracle with authority + lane + depth), artifacts, data, out of scope, entry/exit criteria, amendments,
 reconciliation. Cap 80 lines.
 
+**Who chooses, and where independence lives.** The orchestrator that gathered the context — never a
+separate "strategist" agent. A subagent would decide from a brief, and a fact relayed to a subagent is
+dropped silently (measured: `.claude/knowledge/execution/regression-suites.md` §Working concurrently on
+suites). Independence (Bolton's *critical distance*) belongs at the **check**, not the choice: the user's
+approval, the verifier when a risk is Critical, and execution by other agents, so the plan's author is
+never its executor.
+
+**Also a standalone skill.** `/qa-test-strategy <TICKET>` runs context + strategy and stops. The
+strategy is then a deliverable in its own right: a team can review "how will we test this?" before any
+run is paid for, and `/qa-test` picks the approved file up instead of writing a new one.
+
 **Floors — deterministic gate rules that replace `ticket-routing.md` §5–§5d.** The strategy may add to a
 floor, never go under it.
 
@@ -172,3 +183,25 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | Agents drift from the approved plan | reconciliation before the verdict; an unresulted High/Critical risk caps it below PASS |
 | Losing case authoring lowers regression growth | `candidate cases` in every summary; `/qa-test-lifecycle` consumes them; track the count in §8 |
 | A big-bang migration of 80+ citing files | ship behind the prototype first, migrate consumers only after §8 passes |
+
+## 11. Grounding — what the strategy is built on
+
+| Source | What it gives the design |
+|---|---|
+| Heuristic Test Strategy Model (Bach, v6.3, 2024) | techniques are the *output* of three inputs — project environment, product elements, quality criteria. The strategy file's inputs section is that shape |
+| ISTQB Test Manager — strategy types | analytical, model-based, methodical, process-compliant, reactive, consultative, regression-averse; real strategies mix them. The mix table makes the mix explicit instead of an accident of which artifacts exist |
+| ISO/IEC/IEEE 29119-3:2021 §7.2 | a strategy follows a product + project risk register and names techniques, entry/exit criteria, data, environment, retest, regression; the agile example tailors content by risk. The floors are that tailoring, made deterministic |
+| Planner/executor agents (DeepPlanner, arXiv 2510.12979; ScenGen, 2506.05079; ResTest, 2506.00520) | separating the plan from the actions is what makes an agent's plan inspectable — the strategy is that plan |
+| Plan Declaration–Execution Gap (arXiv 2609.38108) | agents drift from a declared plan, and the drift is invisible in the final verdict — hence the reconciliation before the verdict |
+| LLM testing surveys + oracle authority taxonomy (arXiv 2307.07221, 2509.25043, 2607.05031) | the oracle is the weak point; every risk names its oracle *and where its authority comes from*; a `{HYPOTHESIS}` oracle never decides PASS/FAIL |
+| Bolton & Bach — testing vs checking (2025) | agents do checking well; discovery needs a deliberate, time-boxed reactive part — exploratory is a strategy decision (D3), not a by-product |
+
+## 12. Expected effect — stated as hypotheses for §8, not claims
+
+| | Expected | Why it might not hold |
+|---|---|---|
+| **Quality** | up: risks and oracles are visible, out-of-scope is written down, drift is caught at reconciliation, a wrong direction is corrected at approval instead of after the run | a rubber-stamp approval (O1) or a strategy written to fit the checklist rather than the risks |
+| **Speed, small ticket** | about equal: one extra step (minutes) plus the approval wait, against no model, mind map or exploratory when the floors do not require them | the model over-plans (§10) and selects everything |
+| **Speed, large ticket** | up: no in-run case authoring, no `3-cases` verifier, no single-writer wait (D2); fewer re-runs after a wrong direction | the floors push most tickets to "deep", which is today's FULL minus authoring |
+| **Maintenance** | up: one command, one router table and nine floors instead of two commands, two paths and §5–§5d with four special cases | the migration (§7, 80+ citing files) is done before §8 proves the design |
+
