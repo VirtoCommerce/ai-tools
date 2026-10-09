@@ -8,7 +8,8 @@
 > `grep -ohE '^description: "?\[[A-Za-z ]+\]' .claude/skills/*/SKILL.md | sort | uniq -c` for the
 > per-category split. Skills without a tag are the root-level ones (`project-init`,
 > `vc-self-check`, `prompt-review`) plus `qa-local-env`, which is grouped under Testing but
-> carries no tag of its own. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
+> carries no tag of its own; `kb-report` carries its own `[KB]` tag and is listed with the root-level
+> ones. Both `[QA Method]` and `[QA Methodology]` spellings exist in the wild — they
 > are the same category.
 
 ## Directory Layout (flat)
@@ -31,6 +32,7 @@ skills/
 ├── qa-local-env/                    # [Testing]  Local VC stack via start-local (fresh DB per run)
 ├── qa-test-fast/                    # [Testing]  Method behind /qa-test-fast (grounded quick ticket test)
 │
+├── qa-test/                         # [QA Methodology]  Methodology behind the /qa-test command (one file per step)
 ├── qa-investigate/                  # [QA Methodology]  Bug investigation (5 phases)
 ├── qa-evidence/                     # [QA Methodology]  Evidence capture & report formatting
 ├── qa-defect/                       # [QA Methodology]  Defect management lifecycle
@@ -58,11 +60,12 @@ skills/
 ├── project-init/                    # (root-level) Onboard the toolset onto a deployment
 ├── vc-self-check/                   # (root-level) Self-diagnostician (Tier B) → local DIAG-*.md
 ├── prompt-review/                   # (root-level) Review / heal / improve our own skills, commands, agents
+├── kb-report/                       # [KB] (root-level) Report on the observed-behaviour knowledge base's own logs
 │
 └── README.md                        # This file
 ```
 
-## VC Knowledge (1)
+## VC Knowledge
 
 Auto-invocable, read-only reference. No side effects.
 
@@ -72,24 +75,25 @@ Auto-invocable, read-only reference. No side effects.
 
 > **Note:** Module suite mapping (`module-suite-map.md`), storefront sitemap (`sitemap.md`), and product-type reference (`products.md`) live in `knowledge/` and are accessed directly by agents. xAPI & REST API reference (`xapi-query-ref.md`) lives in `qa-api/` — use `/qa-api ref <module>`.
 
-## Testing (12)
+## Testing
 
 Manual invocation, delegates to specialist agents.
 
 | Skill | Delegates To | Supporting Files |
 |-------|-------------|-----------------|
-| `/qa-storybook` | ui-ux-expert | visual-regression-testing.md, responsive-component-testing.md, how-to-test-storybook.md |
+| `/qa-storybook` | ui-ux-expert | visual-regression-testing.md, responsive-component-testing.md, how-to-test-storybook.md, play-function-patterns.md, tooling-stack.md |
 | `/qa-accessibility` | ui-ux-expert | wcag-accessibility-checklist.md |
-| `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md |
+| `/qa-design` | ui-ux-expert | design-system-consistency.md, ux-heuristic-evaluation.md, claude-design-verification.md |
 | `/qa-plan` | test-management-specialist | e2e-scenario-catalog.md |
-| `/qa-checklist` | test-management-specialist | domain-checklists.md, backend-admin-checklists.md, graphql-checklist.md, checklist-creation-guide.md |
+| `/qa-checklist` | test-management-specialist | domain-checklists.md, backend-admin-checklists.md, graphql-checklist.md, checklist-creation-guide.md, from-model.md |
 | `/qa-api` | qa-backend-expert | xapi-query-ref.md, test-cases-api-graphql.md, api-test-case-patterns.md |
 | `/qa-coverage-gap` | test-management-specialist | coverage-gap-methodology.md, feature-domain-map.md |
-| `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md |
-| `/qa-seed-data` | test-data-engineer | test-data-generation.md (knowledge file) |
+| `/qa-postman` | qa-backend-expert | mcp-tools.md, variables-and-environments.md, collections-and-requests.md, graphql-authoring.md, test-data-fixtures.md, execution.md, common-mistakes.md, examples.md, bug-evidence.md |
+| `/qa-seed-data` | test-data-engineer | test-data-generation.md, profile-seeding.md, sales-rep-profiles.md |
 | `/qa-generate-data` | test-data-engineer | SKILL.md (combination-design flow + no-hardcode rules) |
-| `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md |
+| `/qa-review-tests` | test-management-specialist + qa-testing-expert | review-criteria.md, triangulation-criteria.md |
 | `/qa-local-env` | (deterministic scripts) | resolve-task.mjs, resolve-theme.mjs, gen-manifest.mjs, provision.ps1, healthcheck.mjs, init-admin.mjs |
+| `/qa-test-fast` | (method behind the `/qa-test-fast` command) | context-wave.md, execution.md, verdict.md, report-template.html |
 
 ## QA Methodology
 
@@ -99,6 +103,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
+| `/qa-test` | The methodology behind the `/qa-test` command (the command is the orchestration shell): routing, pre-flight axes, Test Model, corpus triage + authoring, fan-out, verifiers, close-out. Read the file for the step you are on | preflight.md, axes.md, context-wave.md, contract-refresh.md, coverage-triage.md, authoring.md, dispatch-pack.md, sequencing.md, modes.md, exploratory-lane.md, visual-axis.md, ui-kit-class.md, technical-change.md, triage.md, reporting.md, close-out.md |
 
 ### Reactive (post-bug)
 
@@ -113,13 +118,13 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/qa-test-design` | EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md |
+| `/qa-test-design` | FLOW (value chain, run first), EP, BVA, decision tables, state transitions, pairwise, error guessing | test-design-techniques.md, examples/ |
 | `/qa-test-model` | The only builder of a ticket's Test Model (`/qa-test` FULL 1e and `/qa-test-fast` invoke it) — prior-model rule, contract refresh, the gate inline | test-model.md |
 | `/qa-test-mind-map` | Build / update / audit the behaviour graph of a domain — nodes, branches, states, data needs, evidence; cases link via `Behavior:` stamps | build.md, update.md, audit.md |
 | `/qa-test-data-model` | Build / update / audit the data STATE each behaviour requires, as profiles `/qa-seed-data --profile` executes | build.md, update.md, audit.md |
 | `/qa-risk` | Risk-based prioritization: 5x5 matrix, severity/priority, test depth | risk-prioritization-framework.md |
 | `/qa-metrics` | Quality metrics & gates: pass rate, defect density, DRE, coverage | quality-metrics-catalog.md, quality-gates.md |
-| `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT | session-based-testing.md |
+| `/qa-sbtm` | Session-based exploratory testing: SBTM charters, CRISP/SFDPOT, sprint charter selection | session-based-testing.md, charter-library.md, sprint-charter-selection.md, scenario-discovery.md, adversarial-heuristics.md, modern-web-attack-surface.md, personas.md |
 
 ### Monitoring & Generation
 
@@ -134,7 +139,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
 | `/qa-bundle-check` | Audit a stable bundle for module/Platform/Theme hotfixes available on the same major.minor line | SKILL.md (bundle resolution + same-line hotfix detection + PR/JIRA tracing) |
-| `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder) |
+| `/qa-hotfix` | Release a hotfix of a merged+released fix into the current latest-stable bundles (gated writes, never auto-merges) | SKILL.md (ask-bundles step + hotfix mechanics + gate ladder), parallel-lanes.md, self-check-offer.md |
 | `/qa-hotfix-check` | Deliver an already-released hotfix onto the deployed stable + regression envs; verify live, transition tickets, bump bundles | SKILL.md (env wiring + deploy-poll + verification + transition) |
 | `/qa-deploy-pr` | Gather all fresh CI prerelease artifacts a change produced (modules + platform + vc-frontend) and deploy them together to the test env in one manifest update; dry-run by default, `--apply` opens a gated deploy PR, `--verify` polls live state. Never merges | SKILL.md |
 | `/qa-env-upgrade` | Bring a deployed env up to the latest released modules + platform and the newest green theme alpha; asks only where no release exists; one deploy PR, never merges | SKILL.md (orchestration) + reference.md (statuses, rationale); core scripts/deploy/vc-deploy.ts upgrade |
@@ -146,7 +151,7 @@ Manual invocation (except `/qa-evidence` and `/qa-sbtm`, which are auto-invocabl
 | `/qa-review-oracles` | Keep the oracles true: sync BL rules (`bl/<slug>.yaml`) from human sources and re-check `SUSPECT` ones; triangulate ECL sections against docs + live + source and auto-apply confirmed changes; reconcile test-case citations | SKILL.md, bl-audit-criteria.md, ecl-audit-criteria.md |
 | `/qa-review-bl` | Alias of `/qa-review-oracles bl` — kept working because `/qa-test-lifecycle` Phase 4c auto-runs it by this name | alias stub → `qa-review-oracles/` |
 
-## Development (6)
+## Development (plugin-only)
 
 Manual invocation, used by the **developers/** team in `/qa-fix` (the only write-capable team). One
 test-skill + one fix-skill per repo kind; backend adds the Admin-SPA path; frontend adds the
@@ -168,32 +173,40 @@ module-embedded Vue 3 sub-app path.
 
 > `/storybook-test` (UI-kit Storybook play-function interaction tests) is planned/optional — `fullstack-frontend` degrades to a `/vue-unit-test` component test when it's absent.
 
-## Root-level (3)
+## Root-level
 
 Outside the four QA categories.
 
 | Skill | Purpose | Supporting Files |
 |-------|---------|-----------------|
-| `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs |
-| `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce. Never modifies the install | SKILL.md, deliver.mjs |
+| `/project-init` | Onboard the toolset onto a deployment — native-platform vs client; tracker + VCS host; write `project-profile.json` + `.env.<env>` + `.env.local` + `.mcp.json`; verify access. The profile is what routes each `/qa-fix` to the right repo + tracker | scaffold-env.mjs, scaffold-secrets.mjs, write-env.mjs, gen-profile.mjs, reconcile-profile.mjs, derive-context.mjs, discover-repos.mjs, gen-mcp.mjs, verify-access.mjs, ensure-session.mjs, probe-lib.mjs |
+| `/vc-self-check` | Tier-B self-diagnostician — reads the passive session-telemetry jsonl + transcript + skill-expectations oracle → per-skill verdict into a local `DIAG-*.md`; the consent-gated `deliver` sub-step contributes a scrubbed quality report to VirtoCommerce, built only from the closed-vocabulary struct. Never modifies the install | SKILL.md, deliver.mjs, upstream-reduce.mjs |
+| `/kb-report` | Read the observed-behaviour knowledge base's own logs and render the report — what agents asked, what the base could not answer, which answers were useless, and the acceptance verdict. Run before deciding what to build for the base next | SKILL.md |
 | `/prompt-review` | Review, heal (`--fix`) and improve (`--improve`) THIS repo's own prompt files — skills, commands, agents in `.claude/` and `plugins/*/` — against generic review dimensions (any prompt, any repo), plus a QA profile of repo-specific criteria for `qa-*` skills and commands and the QA agents; findings to chat, gated by `context:check` | SKILL.md, review-dimensions.md, repo-profile.md, healing-playbook.md, improvement-loop.md |
 
 ## Agent → Skill Map
 
-> All QA agents also reference the auto-invocable `/vc-docs` and may read `knowledge/` files directly. Omitted below for brevity.
+> What each agent DEFINITION names (`.claude/agents/<name>.md`), re-derived 2026-10-09. All agents also reference
+> the auto-invocable `/vc-docs` and may read `knowledge/` files directly — omitted for brevity. On top of its own
+> list, every QA agent inherits what [`knowledge/agents/qa/shared-instructions.md`](../knowledge/agents/qa/shared-instructions.md)
+> names (`qa-evidence`, `qa-investigate`, `qa-defect`, `qa-risk`, `qa-sbtm`, `qa-test-design`, `qa-api`, `qa-review-tests`,
+> `qa-test-cases-generator`, `qa-seed-data`). Re-derive rather than trust this table:
+> `for s in $(ls .claude/skills); do grep -lwE "$s" .claude/agents/*.md; done`.
 
 | Agent | Skills Referenced |
 |-------|-----------------|
-| qa-lead-orchestrator | qa-risk, qa-metrics, qa-defect, qa-evidence, qa-investigate, qa-checklist |
-| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan |
-| qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm |
-| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-test-design, qa-risk, qa-sbtm, qa-design, qa-plan, qa-api, qa-postman |
-| ui-ux-expert | qa-storybook, qa-accessibility, qa-design, qa-evidence, qa-investigate, qa-defect |
-| test-management-specialist | qa-plan, qa-checklist, qa-evidence, qa-test-design, qa-test-cases-generator, qa-risk, qa-sbtm, qa-metrics, qa-review-tests, qa-coverage-gap, qa-test-mind-map |
-| test-data-engineer | qa-generate-data, qa-seed-data, qa-test-data-model |
-| fullstack-backend | dotnet-unit-test, dotnet-fix, angular-admin |
-| fullstack-frontend | vue-unit-test, vue-fix, vc-shell-fix |
-| regression-orchestrator | qa-metrics (gate enforcement after runs) |
+| qa-lead-orchestrator | qa-test, qa-triage-results, qa-review-tests, qa-metrics, qa-postman |
+| qa-frontend-expert | qa-evidence, qa-investigate, qa-defect, qa-checklist, qa-sbtm, qa-design, qa-plan, qa-seed-data |
+| qa-backend-expert | qa-api, qa-postman, qa-evidence, qa-investigate, qa-defect, qa-checklist, qa-seed-data |
+| qa-testing-expert | qa-evidence, qa-investigate, qa-defect, qa-checklist, qa-sbtm, qa-design, qa-plan, qa-api, qa-seed-data |
+| ui-ux-expert | qa-storybook, qa-accessibility, qa-design |
+| test-management-specialist | qa-test, qa-plan, qa-checklist, qa-test-design, qa-test-cases-generator, qa-sbtm, qa-review-tests, qa-review-oracles, qa-generate-data, qa-seed-data, qa-api |
+| test-data-engineer | qa-generate-data, qa-seed-data |
+| regression-orchestrator | qa-metrics (gate enforcement after runs), qa-seed-data, qa-test |
+| test-runner-agent | qa-seed-data |
+| ba-system-analyzer | qa-review-oracles, qa-review-bl, qa-review-tests |
+| fullstack-backend *(vc-fix)* | dotnet-unit-test, dotnet-fix, angular-admin |
+| fullstack-frontend *(vc-fix)* | vue-unit-test, vue-fix, vc-shell-fix |
 
 ## Frontmatter Reference
 
