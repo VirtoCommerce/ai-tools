@@ -1,6 +1,8 @@
 # Stage 1 — the context waves, in detail
 
-Three waves, each one message. Every brief uses the section structure of
+Three waves, each one message, with the strategy between Wave 1 and Wave 2
+([`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)). Wave 2 runs only the rows the
+approved strategy marked `RUN`; a skipped row keeps the strategy's reason. Every brief uses the section structure of
 [`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) §Agent Prompt Structure.
 Briefs A and B are **Mechanic** dispatches (tracker and diff reading, no platform observation), so they
 omit the `Observed behaviour` line, as that template allows. Anything the brief can pass as a **file**
@@ -103,8 +105,9 @@ item or an omission line; this table says which, for the nodes whose truth is no
 
 | Check | Fails when |
 |---|---|
-| Model | any gate line is neither `PASS` nor `FIXED` |
-| Checklist | an in-scope scenario row or node is neither an item nor an omission line |
+| Strategy | `test-strategy.md` is `DRAFT`, or a checklist item names no `R-n` |
+| Model | it ran, and any gate line is neither `PASS` nor `FIXED` |
+| Checklist | an in-scope risk, scenario row or node is neither an item nor an omission line |
 | Data | an item has no Data cell (`FIXTURE-GAP` with a reason counts as a cell) |
 | Record | a Stage-1 artifact is neither produced nor SKIPPED with an observable reason |
 | Visual | `visual_surface` is not recorded with its sources |

@@ -1,6 +1,6 @@
 ---
-description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket, the domain map, a test model and the mind map feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
-argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run]"
+description: "[Testing] Use when a ticket needs a fast but GROUNDED test pass — more than /qa-test FAST's single-agent checklist, less than /qa-test FULL's verifier-gated pipeline. Context from the PR diff, the ticket and the domain map feeds an explicit test strategy the user approves (or --yes); the strategy decides whether a test model and the mind map are built, and feeds one traced checklist; the checklist and an exploratory session run in parallel with test data made on the fly, plus the qa-design visual lane when the ticket is UI-visible; the run ends in a short human-readable verdict. feature-test route only."
+argument-hint: "<TICKET> [--layer fe|be|both] [--no-explore] [--no-visual] [--dry-run] [--yes]"
 disable-model-invocation: true
 ---
 
@@ -12,7 +12,9 @@ behind every step, the rationalization table and the red flags are in
 
 | | `/qa-test` FAST | **`/qa-test-fast`** | `/qa-test` FULL |
 |---|---|---|---|
-| Context | the ticket | ticket + PR diff + domain map + test model + mind map | the same + story review + reachability |
+| Context | the ticket | ticket + PR diff + domain map | the same + story review + reachability |
+| Strategy | implicit | **explicit, approved by the user** (`--yes` skips the question) | explicit, verifier + user |
+| Test model · mind map | none | **when the strategy selects them** | always |
 | Execution | one agent (+ visual lane under `--visual`) | checklist lanes ‖ exploratory ‖ visual lane when UI-visible, ≤3 browser lanes at once | + suite authoring + C1 regression + visual lane |
 | Gates | inline self-check | inline, per stage | independent verifier per step |
 | Suites | untouched | **untouched** | new `Draft` cases |
@@ -26,7 +28,8 @@ behind every step, the rationalization table and the red flags are in
    ([`../skills/qa-test-fast/execution.md`](../skills/qa-test-fast/execution.md) §Data). There is no
    pre-seed wave. A seeder runs only when an item's Data cell names it.
 4. **Every Stage-1 artifact either runs, or is recorded in `verdict.md` as SKIPPED with an observable
-   reason** — for example `domain map ABSENT and build FAILED: <why>`. Time pressure is not a reason.
+   reason** — for example `domain map ABSENT and build FAILED: <why>`, or the approved strategy's own
+   `SKIP — <reason>`. Time pressure is not a reason.
 5. **No suite CSV is written.** That means no `Behavior:` stamps and no `Draft` cases.
 6. **The deliverable is the HTML page plus `verdict.md`** (≤60 lines, verdict first). The page is not
    optional.
@@ -69,15 +72,21 @@ Full briefs, merge rules and the context bundle:
      `ABSENT`/`unresolved`
 2. **Join.** Merge A+B+C into the context bundle. If B names a GraphQL operation, run both
    contract-refresh commands ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
-3. **Wave 2 — one message:**
+3. **Strategy — you, inline.** Invoke the Skill tool with `skill: "qa-test-strategy"`, args
+   `<TICKET> --context <bundle> --path fast-grounded` (plus `--yes` when passed). It writes
+   `test-strategy.md`, runs its gate and asks the user **once** to approve. **Nothing below runs until
+   the strategy is `APPROVED` or `AUTO (--yes)`.** Its artifacts table decides Wave 2.
+4. **Wave 2 — one message, only the rows the strategy marked `RUN`:**
    - `/qa-test-model <TICKET> --context <bundle>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
      **without** build step 10; then copy the map signals into the bundle
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
-4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
-   `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
-5. **Stage gate.** Every model gate clause is `PASS`/`FIXED`. Every in-scope scenario row and node is
-   either an item or an omission line. Every item has a Data cell.
+5. **Wave 3.** Model ran ⇒ `/qa-checklist <TICKET> --from-model --mind-map <slug>`; model skipped ⇒
+   `/qa-checklist <TICKET>` with the strategy's approach table as its conditions. Write the result to
+   `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`; every item names its `R-n`.
+6. **Stage gate.** The strategy is approved. Every model gate clause is `PASS`/`FIXED` (when the model
+   ran). Every in-scope risk, scenario row and node is either an item or an omission line. Every item
+   has a Data cell.
 
    **`--dry-run` stops here.** It prints the artifact list and the Stage-2 dispatch plan and writes
    nothing to the tracker.
@@ -89,9 +98,10 @@ Briefs, the lane split, the data rules and teardown:
 
 1. **Checklist runners** — one per checklist lane section. `qa-frontend-expert` takes
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
-2. **Exploratory** — `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`.
-   The charter is the model's unresolved items. `--no-explore` drops the lane. That is recorded, never
-   silent.
+2. **Exploratory** — when the strategy marks it `RUN`: `/qa-exploratory ticket <TICKET>` →
+   `qa-testing-expert` on `playwright-firefox`, in the strategy's box. The charter is the strategy's
+   `EXPLORE` risks plus the model's unresolved items. `--no-explore` drops the lane. A skip is recorded,
+   never silent.
 3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
    Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
@@ -117,9 +127,11 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    so that it reuses the package and does not reproduce the bug again. A `needs-review` candidate is listed in
    `verdict.md` and not filed. Its tracker-ticket step runs only after the user says yes. Then tear down
    by ledger id ([`execution.md`](../skills/qa-test-fast/execution.md) §Data) and re-read.
-3. **Verdict.** Decide it per [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md)
-   §5-verdict.2.
-4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
+3. **Reconcile, then verdict.** Fill the strategy's reconciliation table
+   ([`qa-test-strategy`](../skills/qa-test-strategy/SKILL.md) §Reconcile). Then decide the verdict per
+   [`../skills/qa-test/close-out.md`](../skills/qa-test/close-out.md) §5-verdict.2.
+4. **Write the ticket folder:** `summary.json`, `verdict.md`, the reconciled `test-strategy.md` and the
+   updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
 5. **HTML page.** Load the `artifact-design` skill, fill in
    [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
