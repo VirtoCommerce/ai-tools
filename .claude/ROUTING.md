@@ -27,6 +27,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Quick but grounded test of a ticket** (PR diff + ticket + domain/model/mind map → checklist ‖ exploratory ‖ visual → triage → investigate → bugs → HTML verdict) | `/qa-test-fast <ticket-key> [--layer fe\|be\|both] [--no-explore] [--no-visual] [--dry-run]` | Command |
 | **Run an exploratory session** | `/qa-exploratory [sprint\|sprint:XX-YY\|checkout\|catalog\|B2B\|mobile\|new]` | Command |
 | **File or investigate a bug** | `/qa-bug description \| <ticket-key> \| screenshot` | Command |
+| **Pick up bugs reported in Teams chats** (classify → dedup against Jira → file + label for `/qa-fix`) | `/qa-teams-watch [--since=HOURS] [--dry-run] [--chats=<id>,…]` | Command |
 | **Autonomously fix a filed bug** | `/qa-fix VCST-XXXX` | Command |
 | **Verify a bug fix** | `/qa-verify-fix VCST-XXXX` | Command |
 | **Deploy a PR's prerelease artifacts to a test env** | `/qa-deploy-pr <ticket-key> [--apply] [--verify]` | Command |
@@ -51,6 +52,9 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| VCST-XXXX [--from-model] \| new <domain> \| admin <module>` | Skill |
 | **Generate test cases** | `/qa-test-cases-generator VCST-XXXX \| domain \| suite ID \| migrate <suite>` | Skill |
+| **Map a domain (actors, value chain, surfaces per layer, coverage shape)** | `/qa-domain-map <domain-slug> [--refresh]` | Command |
+| **Ask what the platform was OBSERVED to do** | `mcp__kb__kb_ask` (fallback `npm run kb -- ask "<q>"`) — rule: `CLAUDE.md` §Essential Rules → *Product context* | MCP / CLI |
+| **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
@@ -84,17 +88,17 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 ### Plan & Manage Test Cases (Commands + Skills)
 - `/qa-test-lifecycle` — Unified pipeline: scope → sync stale → analyze gaps → generate → review → fix → verify → approve → **promote** (Phase 6P is the **full** promoter — handoff / re-promotion / non-`/qa-test` sources / the `Draft` cases a `/qa-test` run left; `--run-id` reaches `Automated`. A direct `/qa-regression` flips already-grounded cases at its Step 6.5)
 - `/qa-test-plan` — Sprint plan from tracker Done + merged vc-frontend PRs; risk-scores domains, maps to suites, derives §5.2 gaps and §5.3 exploratory charters
-- `/qa-coverage-gap` — coverage gap analysis + generation (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
+- `/qa-coverage-gap` — autonomous coverage gap analysis + generation, 4-cycle pipeline (single-agent; the orchestrated `/qa-coverage-generation` twin was removed 2026-09-08 with zero recorded runs)
 - `/qa-plan` — Test plans from the E2E scenario catalog
 - `/qa-checklist` — Oracle-grounded test-writing checklists (storefront + backend/admin + GraphQL domains)
 - `/qa-test-design` — Derivation techniques. **`FLOW` runs FIRST** on any state-changing feature (model the value chain; the parameter-space techniques EP/BVA/DT/ST/PW/CT/EG only refine a link FLOW has already named)
 - `/qa-test-cases-generator` — Agent-native enriched-CSV cases from tickets, features, checklists or legacy suites
 - `/qa-risk` — Risk-based prioritization (5×5 matrix)
 - `/qa-sbtm` — SBTM charters, heuristics, tours, debrief, sprint charter selection
-- `/qa-coverage-gap` — Autonomous gap analysis + generation (4-cycle pipeline)
+- `/qa-domain-map` (command) — Build or refresh `domain/<slug>.md`: the persistent, feature-scoped answer to "what is this and where are its surfaces"; freshness `npm run domain:check`
 - `/qa-test-mind-map` — The behaviour graph of a domain (`domain/<name>.mind-map.json`): behaviours, branches, states, data needs, evidence, stable ids. Cases link to it with `Behavior:` stamps; `npm run models:check -- --json` derives coverage and the suspect-case list
 - `/qa-review-tests` — 11-dimension quality review; `--triangulate` (Dim 11) checks whether a provenance tag is *true*, not merely present
-- `/qa-test` (skill) — the methodology behind the `/qa-test` command: `authoring.md`, `close-out.md`, `modes.md`
+- `/qa-test` (skill) — the methodology behind the `/qa-test` command, one supporting file per step (`preflight.md`, `axes.md`, `coverage-triage.md`, `authoring.md`, `modes.md`, `close-out.md`, …); `/qa-test-fast` (skill) is the same for `/qa-test-fast`
 - `/qa-test-model` — a ticket's Test Model (fault model): the method, the gate and the prior-model rules; `/qa-test` FULL Step 1e invokes it
 
 ### Test Data (Skills)
@@ -120,7 +124,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 
 ### Development (Skills — used by the `developers/` team in `/qa-fix`)
 
-> **These six skills and the four developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
+> **These skills and the developer agents live ONLY in `plugins/vc-fix/`.** The `.claude/` copies were
 > removed 2026-09-25 for the same reason the bug-lifecycle commands were on 2026-09-08 (see the note at the top of
 > this file): they had silently forked, and `/qa-fix` — the only caller — is plugin-only. They appear in the `/` menu
 > once `vc-fix@ai-tools` is installed.
@@ -131,17 +135,23 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/vue-unit-test` — Reproduce a vc-frontend bug as a failing vitest test (red → green)
 - `/vue-fix` — Minimal, idiomatic Vue 3 / TS fix in vc-frontend
 - `/vc-shell-fix` — Fix a module-embedded Vue 3 shell sub-app (declared in `moduleFrontendSubApps`); the sub-app's own `tsx --test` for state/logic, an ephemeral never-committed vitest harness for DOM
+- `/qa-fix-routing` — Not a step you run: the routing library `/qa-fix` and `/project-init` call to decide which repo owns a bug, how the fix delivers (direct PR / fork PR / upstream issue) and which tracker/host to talk to
 
 ### Tooling & Diagnostics
 - `/project-init` — Onboard onto a deployment: tracker + code host + auth per axis, derive client-vs-platform, write `project-profile.json` / `.env.<env>` / `.mcp.json`, verify access
 - `/vc-self-check` — Read this session's telemetry + transcript against `.claude/knowledge/diagnostics/skill-expectations.md`; per-finding verdict + severity; `deliver` contributes a consent-gated GitHub Issue upstream
+- `/prompt-review` — Review / heal / improve this repo's own skill, command and agent prompts (gated by `context:check`)
+- `/kb-report` — The observed-behaviour knowledge base's own report: what agents asked, what it could not answer, which answers were useless
+- `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
 ### VC Knowledge (Skill — auto-invocable)
 - `/vc-docs` — Documentation lookup. **Primary: VirtoOZ MCP** (12 topic-scoped tools); Context7 `/virtocommerce/vc-docs` is the fallback
 
 ### Agents (use directly for complex multi-step work)
 
-**QA Team (9 agents + shared-instructions):**
+Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](knowledge/agents/README.md); counts: `ls .claude/agents`.
+
+**QA Team (+ shared-instructions):**
 - `qa-lead-orchestrator` — Coordinates testing, go/no-go. **Also the independent per-step verifier** in `/qa-test` (§Verifier Mode — a fresh instance, never the step's own doer)
 - `qa-frontend-expert` — Storefront, checkout, mobile, cross-browser
 - `qa-backend-expert` — APIs, GraphQL xAPI, Admin SPA, background jobs
@@ -152,13 +162,13 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
 
-**BA Team (4 agents + shared-instructions):**
-- `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **sole writer of both shared oracles**
+**BA Team (+ shared-instructions):**
+- `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)
 - `ba-api-specialist` — API surface via Postman/Swagger, health assessment
 - `ba-story-writer` — Agile user stories with BDD acceptance criteria
 - `ba-doc-writer` — Audience-targeted docs (Customer / Admin / Developer / Sales)
 
-**Developers Team (4 agents — the only write-capable team, used by `/qa-fix`; one dev + one reviewer per repo kind):**
+**Developers Team (plugin-only — `plugins/vc-fix/agents/`, picker name `vc-fix:<name>`; the only write-capable team, used by `/qa-fix`; one dev + one reviewer per repo kind):**
 - `fullstack-backend` — One `vc-module-*` / `vc-platform` repo (.NET 10 + the module's Admin Angular): reproduce-as-test → minimal fix → PR
 - `backend-reviewer` — Gate-4 reviewer of the C#/Angular diff before the PR
 - `fullstack-frontend` — `vc-frontend`, **and** a module's declared embedded Vue 3 sub-app: reproduce-as-test → minimal fix → PR
@@ -167,23 +177,31 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 Browser lane assignments and the firefox click-capability prerequisites (the lane is click-capable since 2026-09-08; the historical "firefox cannot click" rule is retired): `.claude/rules/agents.md`.
 
 ### Knowledge Base (shared agent references in `.claude/knowledge/`)
-- **`api/`** — `api-auth.md`, `graphiql-interaction.md`, `graphql-schema.md`, `graphql-test-cases-runner.md`, `order-creation-matrix.md`, `platform-patterns.md`
-- **`architecture/`** — `vc-frontend-architecture.md`, `vc-module-architecture.md`
-- **`automation/`** — `browser-quirks.md`, `storefront-config-flags.md`, `storefront-selectors.md`
-- **`ba/`** — `virto-doc-style.md`
-- **`diagnostics/`** — `skill-expectations.md`
-- **`domain/`** — `catalog.md`, `mobile-navigation.md`, `products.md`, `sitemap.md`, `store-settings.md`, `white-labeling.md`
-- **`execution/`** — `debugging-signals.md`, `es-call-ab-method.md`, `live-discovery.md`, `module-suite-map.md`, `performance-thresholds.md`, `test-data-authoring.md`, `test-execution-preflight.md`, `test-runner-tags.md`, `ticket-routing.md`, `tracker-ops.md`
-- **`oracles/`** — `bl/<slug>.yaml` (BL-*, read via `bl:extract`), `critical-ui-scope.md`, `e-commerce-edge-cases-library.md` (ECL-*), `vc-bug-catalog.md` (VC-* archetypes)
-- **`agents/`** — per-team `shared-instructions.md` + `README.md` (a plain reference dir, not scanned as components)
+
+**The file roster is generated, not typed here** — [`knowledge/README.md`](knowledge/README.md) §File index
+(`npm run knowledge:index`, gated by `knowledge:index:check`). A per-folder file list stood here until 2026-10-09
+and had drifted the same way the one in §Knowledge bases below did (it named 6 of the domain files). What each
+folder answers, which never drifts:
+
+- **`oracles/`** — is this behaviour correct, has it failed before (BL-* in `bl/<slug>.yaml`, read via `bl:extract`; ECL-*; VC-* archetypes)
+- **`domain/`** — what a feature IS and where its surfaces are: domain maps (`/qa-domain-map`), mind maps (`*.mind-map.json`), reference files (sitemap, release ledger, store settings, …)
+- **`api/`** — REST + GraphQL surface, schema and authoring contracts
+- **`automation/`** — driving the live UI as a real user (selectors, config flags, browser quirks)
+- **`execution/`** — routing, gates, data, evidence, regression mechanics, tracker ops — the files `.claude/rules/` cites
+- **`architecture/`** — repo anatomy for the developers team
+- **`agents/`** — per-team `shared-instructions.md` + `README.md` + `authoring-standard.md` (a plain reference dir, not scanned as components)
+- **`ba/`** — BA documentation style · **`diagnostics/`** — the self-diagnostics oracle
 
 Also: `.claude/architecture/TIER.md` (A/B/C/D classification — read before any standardization or
-cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-summary.schema.json`,
-`agent-dispatch.md`).
+cross-product-reuse change), `.claude/templates/` (`test-model.md`, `agent-dispatch.md` and the
+`qa-test-summary` / `mind-map` / `test-data-model` JSON schemas) and `.claude/hooks/` (the hooks the tracked
+`.claude/settings.json` registers — browser-auth and tracker-comment guards, the `kb` session hooks, the
+post-edit typecheck).
 
 ### Plugins (distributed separately — NOT part of this `.claude/` surface)
-- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`. Self-contained; the canonical copy of the self-diagnostics subsystem
-- **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Depends on `vc-fix`; advisory only, never a CI gate
+- **`vc-fix`** (`plugins/vc-fix/`) — the bug-lifecycle slice shipped to teammates/customers via the `ai-tools` marketplace: `/project-init`, `/qa-env-check`, `/qa-bug`, `/qa-fix`, `/qa-verify-fix`, `/qa-monitoring`, `/vc-self-check`, `/vc-feedback`, plus the Developers team and its `[Development]` skills (§Development above). Its own agents beyond that team: `monitor-triage-agent` (classifies one deduplicated App Insights signature for `/qa-monitoring`; read-only), `self-check-diagnostician` (reads one session's telemetry and returns the finding struct for `/vc-self-check`) and `self-check-deliverer` (files that struct as a GitHub Issue after the operator's one yes). Self-contained; the canonical copy of the self-diagnostics subsystem. Docs: [`plugins/vc-fix/README.md`](../plugins/vc-fix/README.md)
+- **`vc-perf`** (`plugins/vc-perf/`) — the three-layer performance loop (`/perf-init`, `/perf-benchmark`, `/perf-loop`, `/perf-fix`, `/perf-verify`). Reach for a layer directly when you know which question you are asking: `/perf-benchmark` (L1, BenchmarkDotNet — did this change regress allocations or time), `/perf-loadtest` (L2, k6 against the live backend — throughput, p95, GC pressure under load), `/perf-trace` (L3, dotnet-trace + perftools — WHO is responsible for what L2 observed). `perf-analyst` ranks optimization candidates from those artifacts for `/perf-fix`; read-only. Depends on `vc-fix`; advisory only, never a CI gate
+- **`vc-secrets`** (`plugins/vc-secrets/`) — a launcher that resolves an MCP server's secrets per launch from the OS credential store or Azure Key Vault, so no client config holds a token (`/vc-secrets:install` puts the shim at a stable path, `/vc-secrets:migrate` moves old flat-prefix keys once — both human-invoked only — and `/vc-secrets:doctor` diagnoses a wrapped server that shows failed). Depends on neither of the others; enabled in this repo's `.claude/settings.json`. Normative description: [`plugins/vc-secrets/README.md`](../plugins/vc-secrets/README.md)
 
 ## Single Sources of Truth (read these, don't re-derive)
 
@@ -214,6 +232,8 @@ cross-product-reuse change) and `.claude/templates/` (`test-model.md`, `qa-test-
 | `/qa-fix` | `/qa-deploy-pr` | A PR's prerelease has to be deployed before `/qa-test PR #N` or `/qa-verify-fix` can see the change |
 | `/qa-fix` | `/qa-bundle-check` → `/qa-hotfix` → `/qa-hotfix-check` | After a fix ships to master: find the bundles that lack it → cherry-pick + release → deliver onto the deployed envs |
 | `/qa-monitoring` | `/qa-bug`, `/qa-fix` | Monitoring drafts confirmed bugs → a human picks them up (monitoring never files a ticket or auto-fixes) |
+| `/qa-teams-watch` | `/qa-fix` | Teams-reported defects are filed as VCST Bugs and labelled so `/qa-fix` can pick them up |
+| `/qa-domain-map` | `/qa-test`, `/qa-test-fast`, `/qa-test-mind-map` | The map is read FIRST by any analysis of a surface; the mind map is its machine-readable behaviour graph |
 | `/qa-test` | `/qa-test` skill, `/qa-test-design`, `/qa-checklist`, `/qa-risk` | Command = the pipeline + its gates; skill = the methodology. The FULL path writes a Test Model before any case exists |
 | `/qa-test` | `/qa-test-cases-generator`, `/qa-review-tests`, `/qa-generate-data` | Step 3 reuses the same skills `/qa-test-lifecycle` Phases 3–4 use, and appends cases as `Draft` straight into `regression/suites/` |
 | `/qa-test` | `/qa-verify-fix`, `/qa-hotfix-check`, `/qa-regression` | Step 1a routes a fix-ready Bug into `/qa-verify-fix` inline, a hotfix-status Bug into `/qa-hotfix-check`, and a `technical-change` (refactor / migration / dependency bump) into a blast-radius `/qa-regression` with no feature test |
