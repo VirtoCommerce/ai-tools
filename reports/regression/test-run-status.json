@@ -1,6 +1,6 @@
 {
  "runId": "REG-2026-10-08-1840",
- "status": "in_progress",
+ "status": "completed",
  "startedAt": "2026-10-08T16:39:43.090Z",
  "windowStart": "2026-10-08T16:39:43.090Z",
  "selection": "073a,073b,073,050o,014c",
@@ -27,35 +27,63 @@
    "id": "073b",
    "name": "Returns - Admin SPA Decisions",
    "agent": "qa-backend-expert",
-   "status": "running",
+   "status": "done",
    "testCount": 4,
    "lane": "browser",
    "browser": "playwright-chrome",
-   "startedAt": "2026-10-08T16:50:29Z"
+   "startedAt": "2026-10-08T16:50:29Z",
+   "pass": 2,
+   "fail": 1,
+   "blocked": 1,
+   "finishedAt": "2026-10-08T17:04:05Z"
   },
   {
    "id": "073",
    "name": "Returns",
    "agent": "qa-backend-expert",
-   "status": "pending",
+   "status": "done",
    "testCount": 2,
    "lane": "browser",
-   "browser": "playwright-chrome"
+   "browser": "playwright-chrome",
+   "pass": 1,
+   "fail": 1,
+   "blocked": 0,
+   "startedAt": "2026-10-08T16:58:30Z",
+   "finishedAt": "2026-10-08T17:04:05Z"
   },
   {
    "id": "050o",
    "name": "GraphQL xAPI - Returns",
    "agent": "qa-backend-expert",
-   "status": "pending",
-   "testCount": 14
+   "status": "done",
+   "testCount": 14,
+   "lane": "fastpath",
+   "browser": "none",
+   "startedAt": "2026-10-08T17:04:05Z",
+   "pass": 12,
+   "fail": 1,
+   "blocked": 1,
+   "finishedAt": "2026-10-08T17:05:52Z"
   },
   {
    "id": "014c",
    "name": "Orders Frontend - Returns",
    "agent": "qa-frontend-expert",
-   "status": "pending",
-   "testCount": 16
+   "status": "done",
+   "testCount": 16,
+   "lane": "browser",
+   "browser": "playwright-chrome",
+   "startedAt": "2026-10-08T17:05:52Z",
+   "pass": 10,
+   "fail": 3,
+   "blocked": 3,
+   "finishedAt": "2026-10-08T17:35:51Z"
   }
  ],
- "outputDir": "reports/regression/REG-2026-10-08-1840"
+ "outputDir": "reports/regression/REG-2026-10-08-1840",
+ "finishedAt": "2026-10-08T17:37:05Z",
+ "pass": 25,
+ "fail": 10,
+ "blocked": 11,
+ "total": 46
 }

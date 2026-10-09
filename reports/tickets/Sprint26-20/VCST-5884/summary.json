@@ -1,0 +1,262 @@
+{
+  "ticket": "VCST-5884",
+  "ticket_type": "Story",
+  "flow": "feature-test",
+  "tracker": { "kind": "jira", "comment_id": "111713", "subtask_comment_ids": [], "documentation_comment_id": null, "amended": false },
+  "path": "full",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "narrow_story_tokens": {
+      "priority": "P2",
+      "layer": "cross-layer (vc-module-return + vc-frontend)",
+      "domains": "returns, with b2b and notifications seams",
+      "chain_shape": "adds new chain links O1-O7 (organization visibility)",
+      "surface": "obvious",
+      "reach": "exceeds diff: shared access service and shared list page"
+    },
+    "escalated_reason": "ticket-routing.md 5b: layer is cross-layer; chain_shape adds net-new links. Story default FULL.",
+    "basis": "ticket-routing.md 5 / 5b, confirmed at end of 1b"
+  },
+  "shape_class": {
+    "value": "feature",
+    "sources": [
+      "PR #2523 diff: only client-app/modules/returns/** and locales; no ui-kit, token, preset or Storybook file",
+      "PR #28 diff: module code, no design-system surface"
+    ]
+  },
+  "layer": "cross-layer",
+  "domain_map": {
+    "state": "PRESENT",
+    "slug": "ret",
+    "path": ".claude/knowledge/domain/returns.md",
+    "rev": 2,
+    "generated": "2026-10-06",
+    "all_layer_chain": true,
+    "all_layer_confirmed_at": "1e-confirmed",
+    "built_in_run": false,
+    "mind_map": ".claude/knowledge/domain/returns.mind-map.json",
+    "amended_in_run": false,
+    "amend_outcome": "not-attempted",
+    "amend_skipped_reason": "deferred to the operator: 13 surfaces added by PR #28/#2523 are missing from the map and AC-2's location is an open PO question; a /qa-domain-map ret --refresh after the PRs settle is cleaner than a write-back now",
+    "unmapped_surfaces": [
+      "Query.organizationReturns",
+      "ReturnType.customerId/customerName/organizationId/organizationName",
+      "permissions xapi:my_organization:return:view and :submit",
+      "setting Return.NotifyOrganizationEmail (map says 10 settings, live 11)",
+      "REST search criteria organizationId/excludeDrafts",
+      "Admin Return list Organization column",
+      "storefront ?scope=organization tab, Buyer name, Requested by",
+      "Return.OrganizationId/Name + index + backfill",
+      "account-state guard on every return operation",
+      "colleague attachment-read path",
+      "org-copy Hangfire path"
+    ],
+    "mind_map_findings": [
+      "ret.buyer.read.org-colleague (CONFIRMED: cannot read a buyer's return) is true for non-holders only: DRIFT for holders",
+      "no node for organizationReturns, the permission, the organization copy, the account-state guard",
+      "domain map excludes: mis-attributes VCST-5884 as orderless returns",
+      "V9 sizing: of 11 store-less returns only 3 carry an organization"
+    ]
+  },
+  "verdict": "FAIL",
+  "date": "2026-10-08",
+  "timing": {
+    "started_at": null,
+    "test_window_start": "2026-10-08T16:39:43Z",
+    "finished_at": null,
+    "time_to_first_test_minutes": null,
+    "reachability_minutes": 5,
+    "agent_dispatches": 14,
+    "note": "started_at and time_to_first_test were not captured at 1a. 3x ran 21 of 60 min; BS shared-setting window 46 s; C1 57 min serial."
+  },
+  "environment": "vcst (https://vcst-qa.govirto.com / https://vcst-qa-storefront.govirto.com), store B2B-store, ENV_RISK=test",
+  "build": {
+    "platform": "3.1076.0",
+    "theme": "vc-theme-b2b-vue 2.60.0-pr-2523-9e4e-9e4e67ef",
+    "relevant_modules": { "VirtoCommerce.Return": "3.1005.0-pr-28-62f9" },
+    "deployed": {
+      "platform": "3.1076.0",
+      "relevant_modules": {
+        "VirtoCommerce.Return": "3.1005.0-pr-28-62f9",
+        "VirtoCommerce.Customer": "3.1029.0",
+        "VirtoCommerce.Xapi": "3.1026.0",
+        "VirtoCommerce.Notifications": "3.1018.0",
+        "VirtoCommerce.Orders": "3.1018.0"
+      }
+    },
+    "releasedThrough": { "ledger_generated": null, "components": {}, "behind": [], "breaking": [], "note": "release ledger has no Returns row" }
+  },
+  "status_transitions": [
+    { "at": "1a", "hop": "opening", "from": "Ready for test", "to": "Testing", "transition": "On QA (id 4)", "by": "qa-lead (inline orchestrator)", "confirmed": false, "result": "done" },
+    { "at": "5-status", "hop": "closing", "from": "Testing", "to": "Reopen", "transition": "Need fixes (id 7), re-resolved live from Testing", "by": "qa-lead (inline orchestrator)", "confirmed": true, "result": "done" }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r, 4a lane A)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "test-data-engineer (3a + LEAVER top-up)",
+    "qa-testing-expert (3x)",
+    "test-management-specialist (Artifact B; Artifact A + fix round)",
+    "qa-backend-expert (4a lane B; BS)",
+    "ui-ux-expert (4v)",
+    "qa-lead-orchestrator (3-cases verifier, 2 rounds)",
+    "regression-orchestrator (C1)",
+    "general-purpose (5 Low drafts)"
+  ],
+  "epic": { "key": "VCST-5626", "summary": "Returns", "status": "Draft", "done_siblings": ["VCST-5628", "VCST-5883"], "note": "seams: draft/cancel/submit semantics, notification handlers, status vocabulary" },
+  "ac_analysis": {
+    "story_acs": 3,
+    "weak_acs": 4,
+    "gap_acs_added": 28,
+    "impl_coverage": { "SATISFIED": 9, "DRIFT": 4, "NOT-FOUND": 1, "CONTRADICTS": 1 },
+    "conditions_total": 35,
+    "conditions_with_evidence": 32,
+    "conditions_satisfied_live": 24,
+    "ac_coverage_pct": 91.4,
+    "ac_met": "24 of 35 conditions satisfied live (68.6%); 7 observed without an oracle; 1 CONTRADICTS live (3.d); 3 untested (3.g, 4.e, 4.h). AC-4 is an unratified proposal (comment 110487).",
+    "dod": "none declared",
+    "dod_pct": null
+  },
+  "total_cases": 35,
+  "passed": 24,
+  "failed": 1,
+  "blocked": 3,
+  "iterations": null,
+  "new_cases_authored": 40,
+  "promotion": { "ran": false, "reason": "--no-promote; 38 Draft + 2 Manual, none promoted (route: /qa-test-lifecycle 6P)" },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-08-1840",
+      "suites": ["073a", "073b", "073", "050o", "014c"],
+      "ids": 46,
+      "passed": 25,
+      "failed": 10,
+      "blocked": 11,
+      "pass_rate": 0.543,
+      "wall_clock_minutes": 57,
+      "compute_metrics": "NOT EVALUATED: run absent from reports/regression/history.json (agent-run)"
+    },
+    "feature_release_gate": "NO-GO (automatic on FAIL); change-scoped regression criterion not-assessed",
+    "bl_fresh": "regression Step 6.6 rewrote 6 records in 4 .claude/knowledge/oracles/bl/*.yaml (+ business-logic.md and its plugin mirror): BL-B2B-007 and BL-NOTIF-001 ACTIVE to SUSPECT from case defects (spurious: clear at lifecycle 4c); BL-UI-004 ACTIVE to SUSPECT from real findings; BL-B2B-012/013 and BL-GQL-001 re-verified"
+  },
+  "regression_triage": {
+    "RET-ORG-006": "real: draft cancelled before submit listed and readable (VCST-6226, IN-SCOPE, Medium)",
+    "RET-ORG-019": "real: same defect, storefront (VCST-6226)",
+    "RET-ORG-041": "real: Low, Admin header clipped (BL-UI-004, IN-SCOPE; draft)",
+    "RET-ORG-027": "real: Low, mid-word breaks at 768/799 px (BL-UI-004 arguable; draft)",
+    "RET-ORG-022": "hypothesis leg only: breadcrumb drops ?scope (expectation unratified; case to hold)",
+    "RET-ORG-035/036/039": "test-defect ASSERTION_DEFECT: [COUNT ?to=<email>] evaluates to NaN (path splitter splits the dotted value); behaviour confirmed by the BS lane",
+    "RET-ORG-037": "test-defect ASSERTION_DEFECT: expects HTTP 200, the organization PUT answers 204",
+    "RET-ORG-038": "test-defect TEST_DATA_DEFECT: @td(ORG_RET_BUYER_NOEMAIL.email) has no value; runner leaves the ON window open on abort",
+    "RET-ORG-011": "test-defect TEST_STEPS_DEFECT: the other-store PUT recipe answered 400",
+    "RET-ORG-030/031/032": "test-defect TEST_STEPS_DEFECT: sweep rows unreachable with real-user tools; empty-org leg order-coupled",
+    "RET-021": "STALE_TEST: RE-BASE resolved by the run, the grid has nine columns (re-base via /qa-review-tests --fix)",
+    "RET-AUTH-009/028..031, RET-ADM-010": "ENV/TEST_DATA: inline aliases RETURNS_AUTH_* have no values on vcst (pre-existing); not a product signal"
+  },
+  "bugs_filed": [
+    {
+      "key": "VCST-6226",
+      "url": "https://virtocommerce.atlassian.net/browse/VCST-6226",
+      "title": "[Returns] Organization returns: a draft cancelled before it was ever submitted is listed to organization holders, who can read its comment and line reasons",
+      "severity": "Medium",
+      "provenance": "IN-SCOPE",
+      "relationship": "sub-task-of VCST-5884",
+      "labels": ["found-by-agent", "found-in-testing"],
+      "autofix_labels": "withheld: the operator approved filing only; add vc-fix + qa-autofix by hand if auto-fix is wanted",
+      "report": "reports/bugs/open/medium/BUG-organization-returns-cancelled-draft-visible-to-holders-VCST-5884.md",
+      "inline_images_rendered": 2
+    }
+  ],
+  "bugs_not_filed": [
+    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884.md" },
+    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-table-breaks-words-mid-word-at-768-960px-VCST-5884.md" },
+    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-colleague-return-requested-by-label-fails-contrast-VCST-5884.md" },
+    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-negative-page-parameter-shows-sql-error-as-no-returns-VCST-5884.md" },
+    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-refetch-queries-names-unmounted-query-apollo-warning-VCST-5884.md" }
+  ],
+  "discovery": {
+    "ran": true,
+    "lane": "playwright-chrome",
+    "session": "reports/exploratory/SBTM-VCST-5884-2026-10-08.md",
+    "minutes": 21,
+    "charter_items_covered": "all five sources covered or explained; unreached legs named (PartiallyApproved copy, CC/BCC, buyer without e-mail, expired/deleted accounts, holder view of legacy returns)",
+    "hypotheses_grounded": 8,
+    "model_amendments": 6,
+    "promoted_scenarios": 3,
+    "note": "a real e-mail reached a team member's mailbox through a cloned fixture order; Return.NotifyOrganizationEmail restored to explicit false"
+  },
+  "visual": {
+    "surface": true,
+    "surface_source": [".vue + locales in PR #2523", "derived layer storefront + admin-spa", "target suite layer frontend"],
+    "ran": true,
+    "report": "reports/tickets/Sprint26-20/VCST-5884/design-report.md",
+    "vs_design": "SKIPPED: the ticket names no design project",
+    "axes": { "a11y": "FAIL (1 new in-scope finding; platform chrome pre-existing)", "design-system": "PASS with WARN", "vs_design": "SKIPPED" },
+    "fails": [
+      "BL-UI-004 V6 Admin header clipped (invariant_failure)",
+      "BL-UI-004 V5 mid-word wrap, arguable (invariant_failure)",
+      "BL-A11Y-003 V12 'Requested by' 2.52:1 on the default preset (a11y_finding, standalone, non-blocking)"
+    ],
+    "theme_served": "default preset, not Coffee/Red (BL-A11Y-003 gate not reached)"
+  },
+  "contract": {
+    "surface": true,
+    "surface_source": ["PR #28 adds Query.organizationReturns and four ReturnType fields", "refreshed graphql-schema.md"],
+    "ran": true,
+    "snapshot": "graphql-schema.md refreshed 2026-10-08 from vcst (120 queries, 148 mutations); graphql:fixtures:validate:refresh 86/86 pass"
+  },
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": ["domains ret, b2b, notif", "target suites 014b 014c 050o 073 073a 073b", "observables the change moves: Organization column, Return|Notifications group, buyer name"],
+    "ran": true,
+    "hits": 83,
+    "dispositions": { "CONFIRMED": 79, "REPAIR": 0, "RE-BASE": 4, "SUPERSEDED": 0 },
+    "record": "testing-checklist.md section F",
+    "note": "79 CONFIRMED includes 5 flagged SEAM (RET-AUTH-009/028..031)"
+  },
+  "test_data": {
+    "surface": true,
+    "surface_source": ["no role held the permission; no returns fixtures on vcst", "value chain needs a holder and a colleague in ONE org, an org with and without an address"],
+    "dispatched": true,
+    "fixtures_covering": ["@td(ORG_RET_*): 27 aliases, scripts/seed-data/orders/seed-org-returns.mjs"],
+    "divergence_resolved": true,
+    "td_validate": "green",
+    "seed_run": "seeded on vcst; teardown pending (npm run seed:returns:org:teardown), AGENT-TEST entities remain"
+  },
+  "business_rules_verified": ["BL-B2B-012", "BL-B2B-013", "BL-GQL-001", "BL-B2B-005", "BL-B2B-007", "BL-UI-004 (violated)", "BL-A11Y-003 (gate not reached)"],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "window_minutes": 0,
+    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "correlated_failures": [],
+    "skipped_reason": "APPINSIGHTS_API_KEY_* are empty in this checkout and the Azure MCP applicationinsights tool cannot query logs"
+  },
+  "screenshots": "reports/tickets/Sprint26-20/VCST-5884/screenshots/",
+  "report": {
+    "page_url": null,
+    "verdict_md": null,
+    "kb": {
+      "read": ["KB-9E0ED0F4", "KB-5B2E99AB", "KB-657521DF", "KB-40BBC91A", "KB-1F2EBF83", "KB-06CFE625"],
+      "confirmed": ["KB-9E0ED0F4", "KB-5B2E99AB", "KB-17232A1F", "KB-40BBC91A", "KB-25682485", "KB-890E6A04", "KB-735C7B46", "KB-2C4FA5E9", "KB-4E9C8D27", "KB-49F6B6EF"],
+      "disputed": ["KB-ED01C2A4"],
+      "captured": ["KB-4E9C8D27", "KB-890E6A04", "KB-74682777", "KB-735C7B46", "KB-EC27E231", "KB-D4914072", "KB-9EAB5507", "KB-79B30FDE", "KB-94700769", "KB-6897B86A", "KB-33E0A778", "KB-16A03137", "KB-B36F3F94"]
+    }
+  },
+  "release": {
+    "layers": ["storefront", "module"],
+    "layer_source": ["PR #28 (vc-module-return)", "PR #2523 (vc-frontend)"],
+    "layers_conflict": false,
+    "audience": [],
+    "component_versions": { "VirtoCommerce.Return": "3.1005.0-pr-28-62f9", "vc-theme-b2b-vue": "2.60.0-pr-2523-9e4e-9e4e67ef" },
+    "platform_version": "3.1076.0",
+    "breaking": false,
+    "breaking_source": null,
+    "user_visible": true,
+    "fragment": null,
+    "refusal": "verdict-not-pass",
+    "aggregated_into": null
+  },
+  "documentation": null
+}
