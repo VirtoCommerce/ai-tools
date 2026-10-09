@@ -77,7 +77,7 @@ sequenceDiagram
     participant AI as App Insights
 
     User->>Orch: /qa-test VCST-XXXX
-    note over Orch,V: FULL path only: 1 hard-STOP GATE — Step 3 (fresh qa-lead, re-derives from source). 5-report is a second, NON-blocking dispatch. 1 round: REJECT to reason+fix, re-verify once, then STOP. Other steps + the whole FAST path self-check inline
+    note over Orch,V: FULL path only: 2 hard-STOP GATES — Step 1s strategy and Step 3 (fresh qa-lead, re-derives from source). 5-report is a second, NON-blocking dispatch. 1 round: REJECT to reason+fix, re-verify once, then STOP. Other steps + the whole FAST path self-check inline
 
     note over Orch,BA1: Step 1 · sub-parts 1a-1e (each consumes the prior)
     note over Orch: 1a · Fetch, classify TYPE×STATUS, ROUTE flow then fast/full
@@ -93,12 +93,17 @@ sequenceDiagram
             Orch->>BA2: Review ACs vs PR diff (no writes)
             BA2-->>Orch: AC scorecard, gap-ACs, AC-vs-impl
         end
+        Orch->>Orch: 1s · Choose TEST STRATEGY (/qa-test-strategy) → test-strategy.md
+        Orch->>V: 1s gate (fresh qa-lead, hard STOP)
+        Orch->>User: Approve strategy? (skipped by --yes)
         Orch->>Orch: 1e · Build TEST MODEL — REQUIRED, written to reports/ba/test-models/
         note over Orch: Gate 1 = inline self-check (no verifier dispatch)
         note over Orch: Step 2 · enrich the model (BL, ECL, E2E, VC-* probes, archetype + UIP sweeps)
     else FAST path
         Orch->>Orch: Gather context inline; skip story review, skip 1e ENTIRELY (note it)
         note over Orch: Step 2 · load the domains' BL-* only — no sweeps, no VC-* triage
+        Orch->>Orch: 1s · Choose TEST STRATEGY (/qa-test-strategy) → test-strategy.md
+        Orch->>User: Approve strategy? RECOMMENDED axes run only on yes (skipped by --yes)
     end
 
     note over Orch,TDE: Step 3 · Write, Review, Provision (reuse lifecycle skills)

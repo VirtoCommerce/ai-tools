@@ -293,3 +293,48 @@ headless. The only new step in the whole design is the two-command `RG`.
 `BL-*` **and `ECL-*`** rule text — without it a FAST verdict is ungrounded, not merely cheap · `5-verdict`'s AC/DoD
 reconciliation, which produces the verdict · the committed `testing-checklist.md`, this run's **only** durable record · **`5-docs`**,
 whose refusal set makes it free.
+
+## Explicit test strategy (2026-10-09)
+
+**What changed.** `/qa-test` gained step `1s` and `/qa-test-fast` a Stage-1 strategy step, both run by
+`/qa-test-strategy`. After the context is gathered and before anything is tested, the orchestrator writes
+`test-strategy.md`: the risk register, the strategy mix, a technique and an oracle per risk, lanes, data,
+which artifacts run, and entry/exit criteria. The user approves it once (`--yes` skips the question);
+FULL puts a fresh `qa-lead` verifier in front of the user. At close-out the same file is reconciled
+against what actually ran.
+
+**Why.** The strategy existed only implicitly — spread across six derived axes, opt-in flags and
+whichever artifacts happened to be built — so no one chose a method and no one could argue with the
+choice. The literature agrees that strategy comes first and that the method follows from the context:
+
+- *Heuristic Test Strategy Model* (Bach, v6.3, 2024): techniques are the output of three inputs —
+  project environment, product elements, quality criteria. That is the shape of the file's §1–§4.
+- *ISTQB Test Manager*: strategies are analytical, model-based, methodical, process-compliant,
+  reactive, consultative and regression-averse, and real ones mix them. The mix table makes the mix
+  explicit instead of an accident of which artifacts exist.
+- *ISO/IEC/IEEE 29119-3:2021* §7.2: the strategy follows a product + project risk register and names
+  techniques, entry/exit criteria, data, environment, retest and regression; the agile example tailors
+  the content by risk. The file is that clause, tailored to one ticket.
+
+**What is agent-specific.** Three findings changed the design rather than just the vocabulary:
+
+1. *Separate the plan from the action.* Planner/executor splits are what make an agent's plan
+   inspectable (DeepPlanner, arXiv 2510.12979; ScenGen, arXiv 2506.05079; ResTest, arXiv 2506.00520).
+   The strategy is that plan, written down before any lane opens.
+2. *Agents drift from their declared plan* (Plan Declaration–Execution Gap, arXiv 2609.38108): a ReAct
+   agent reacts to intermediate observations and the divergence is invisible in the final verdict. So
+   the strategy ends with a reconciliation, and an unresulted High/Critical risk caps the verdict.
+3. *The oracle is the weak point* (LLM testing surveys, arXiv 2307.07221, 2509.25043; source-of-authority
+   taxonomy, arXiv 2607.05031). Every risk names its oracle with its authority, and a `{HYPOTHESIS}`
+   oracle may not decide a pass/fail row.
+
+**Who chooses, and where independence lives.** The orchestrator, inline: choosing needs the whole
+context and a dispatch brief carries a summary of it. Independence (Bolton's *critical distance*) is
+put on the check — the user's approval, plus the FULL verifier — and on execution, which other agents
+do.
+
+**What the strategy may decide.** On `/qa-test-fast` it selects the test model, the mind map and the
+exploratory lane; that is the simplification. On `/qa-test` FAST it may only *recommend* an opt-in axis,
+which runs on the user's yes, so the one-agent promise holds unless a human widens it. On FULL it
+decides depth, boxes and order but removes nothing.
+
