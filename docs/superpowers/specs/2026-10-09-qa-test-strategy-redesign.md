@@ -1,7 +1,7 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
-> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D7, by the owner
-> on 2026-10-09); §13 records the dry-run findings and five proposed amendments (A1–A5) awaiting a decision. A prototype of the strategy step exists as
+> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D12, by the owner
+> on 2026-10-09); none are open. §13 records the dry-run findings behind D8–D12. A prototype of the strategy step exists as
 > draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
 
 ## 1. Problem
@@ -89,7 +89,7 @@ Owned by `/qa-test-strategy` (prototype: PR #416). The orchestrator writes it in
 whole bundle, and a dispatch brief carries only a summary. The file: inputs (project environment, product
 elements, quality criteria), risk register, strategy mix (ISTQB types), approach per risk (technique +
 oracle with authority + lane + depth), artifacts, data, out of scope, entry/exit criteria, amendments,
-reconciliation. Cap 80 lines.
+reconciliation. Cap 120 lines (D9).
 
 **Who chooses, and where independence lives.** The orchestrator that gathered the context — never a
 separate "strategist" agent. A subagent would decide from a brief, and a fact relayed to a subagent is
@@ -141,15 +141,26 @@ floor, never go under it.
 
 | # | Signal (from the bundle) | Floor |
 |---|---|---|
-| F1 | any High/Critical risk, P0/P1, ≥2 layers or ≥2 domains | test model + exploratory |
+| F1 | any High/Critical risk, or P0/P1 (D8) — layer and domain counts raise a risk's L×I in the register instead | test model + exploratory |
 | F2 | Story whose surface purpose is `UNDECLARED` (§5b) | test model + exploratory, whatever else holds |
 | F3 | `visual_surface: true` | visual lane |
 | F4 | revenue-critical flow touched | no risk on it below Medium |
-| F5 | diff touches a surface existing suite cases cover | coverage triage + a regression run over those cases |
+| F5 | diff touches a surface existing suite cases cover | coverage triage + a regression run over those cases, after a staleness check (D11): renamed fields, removed selectors and known-defective ids go to `/qa-test-lifecycle`, never into the run |
 | F6 | a PR is not deployed on the stand (`/ticket-context` block 3) | BLOCKED before any browser opens |
 | F7 | `Review task` (no ACs) | oracles from the diff only; F5 on by default |
 | F8 | design-system / token change (`ui-kit`, §5c) | F3 + token audit; fails closed |
 | F9 | any doubt about a floor's signal | the floor applies |
+
+**Method rules (D10).**
+- ACs without ids are numbered `AC-n` in source order; an AC owned by a sibling ticket is out of scope, named with its ticket.
+- Two `{SPEC}` sources that contradict each other (ticket vs developer, ticket vs mockup) become a PO question; the risk's oracle is `{HYPOTHESIS}` until it is answered.
+- A developer's own E2E report is an input (it names risks and data), never an oracle and never a prior round.
+- More than 3 browser lanes needed ⇒ lanes are sequenced by risk level, highest first; the cap is never raised.
+- Reconstructing a past round ("as of build X") is not a product mode; it exists only as tooling for §8.
+
+**Approach columns (D12).** Per risk: technique · oracle with authority · layer and tool · lane and agent ·
+**effort** (low / medium / high). "Effort" is per risk; `light` / `standard` / `deep` is the run's label (D5)
+and never appears in a risk row. The template carries no FAST/FULL header.
 
 **Approval.** One question to the user, showing mission, risks, artifacts and out-of-scope. `--yes` skips
 it (CI, unattended). No human and no `--yes` ⇒ STOP with the file as output. A fresh `qa-lead` verifier
@@ -203,6 +214,11 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | D5 | Named depth levels? | **A derived label for reports only** — `light` / `standard` / `deep`, computed from the artifacts table (`light` = checklist only; `deep` = test model + exploratory, or the Critical-risk verifier ran; `standard` = anything between), shown in `verdict.md`, the HTML page and `summary.json`. Never an input: no rule, floor or gate reads it, so it cannot drift from what ran. (owner, 2026-10-09) |
 | D6 | How many rounds? | **At most three per ticket.** A fourth is refused before any work; the run escalates to people instead (§6 Rounds). (owner, 2026-10-09) |
 | D7 | One strategy file per ticket, or one per round? | **One file per ticket**, one section per round, each with its own reconciliation; round N cites round N−1 by section. (owner, 2026-10-09) |
+| D8 | F1's trigger (A1) | **High/Critical risk or P0/P1 only**; layer and domain counts raise L×I instead of firing F1. (owner, 2026-10-09) |
+| D9 | Strategy size (A2) | **Cap 120 lines**; the approach table stays in the strategy, so approval reads one file. (owner accepted A2; option chosen 2026-10-09) |
+| D10 | Method gaps (A3) | **The five method rules in §6.** (owner, 2026-10-09) |
+| D11 | Stale cases in regression (A4) | **Staleness check before F5's run**; stale cases go to `/qa-test-lifecycle`. (owner, 2026-10-09) |
+| D12 | Template wording (A5) | **No FAST/FULL in the template; per-risk "Effort" (low/medium/high), distinct from D5's label.** (owner, 2026-10-09) |
 
 ## 10. Risks
 
@@ -237,7 +253,7 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 | **Maintenance** | up: one command, one router table and nine floors instead of two commands, two paths and §5–§5d with four special cases | the migration (§7, 80+ citing files) is done before §8 proves the design |
 
 
-## 13. Dry-run findings (2026-10-09) — proposed amendments, not yet decided
+## 13. Dry-run findings (2026-10-09) — amendments A1–A5, accepted as D8–D12
 
 The prototype (#416) was run strategy-only on three returns tickets: VCST-5884 (round 3, by the
 orchestrator), VCST-5883 and VCST-5628 (round 1 reconstructed, one agent per ticket, each compared with
@@ -255,7 +271,7 @@ the recorded run). Nothing was executed, so §8's wall-time and token measures a
 and pre-existing. The "data must differ" rule made untestable ACs testable. Project risks pre-empted
 blocked cases. Manual context gathering is the largest cost — the case for `/ticket-context` (#413).
 
-**Proposed amendments** (each needs an owner decision before it changes §6):
+**Amendments** — all five accepted by the owner on 2026-10-09 and applied to §6 as D8–D12:
 
 | # | Finding | Proposal |
 |---|---|---|
