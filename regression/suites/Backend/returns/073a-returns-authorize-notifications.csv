@@ -1624,7 +1624,7 @@ mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
 [DATA label=a_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
 [ERRORS label=a_submit] errors[] empty {SPEC} (VCST-5628)
 [DATA label=a_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
-[ERRORS label=org_upper] HTTP 200 {OBSERVED}
+[ERRORS label=org_upper] HTTP 204 {OBSERVED}
 [ERRORS label=org_state] HTTP 200 {OBSERVED}
 [DATA label=org_state] body.emails.0 = {{org_email_upper}} {OBSERVED} (the organization now stores the mixed-case address before the observation)
 [ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
@@ -1635,7 +1635,7 @@ mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
 [COUNT label=ja] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (AC-4d: the organization address equals the buyer's, one email only)
 [ERRORS label=jb] HTTP 200 {OBSERVED}
 [COUNT label=jb] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 1 {HYPOTHESIS} (AC-4d: the same mailbox in another letter case is still one email; 3x observed)
-[ERRORS label=org_restore] HTTP 200 {OBSERVED}
+[ERRORS label=org_restore] HTTP 204 {OBSERVED}
 [ERRORS label=off] HTTP 204 {OBSERVED}
 [ERRORS label=off_reset] HTTP 204 {OBSERVED}
 [ERRORS label=cancel_a] errors[] empty {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
