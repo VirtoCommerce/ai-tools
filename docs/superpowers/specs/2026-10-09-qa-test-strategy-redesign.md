@@ -1,8 +1,8 @@
 # `/qa-test` redesign — route the job, choose a strategy, then test
 
-> **Status: DRAFT — for review.** Nothing here is built. §9 records the decisions taken (D1–D12, by the owner
-> on 2026-10-09); none are open. §13 records the dry-run findings behind D8–D12. A prototype of the strategy step exists as
-> draft PR #416; it predates D1–D3 and is input to this design, not its implementation.
+> **Status: for review.** §9 records the decisions taken (D1–D12, by the owner on 2026-10-09); none are open.
+> §13 records the dry-run findings behind D8–D12. The prototype — `/qa-test-fast` as the single `/qa-test`
+> under D1–D12 — is draft PR #416; `/qa-test` FAST/FULL are untouched until §8 passes. Tracked in VCST-6249.
 
 ## 1. Problem
 
@@ -255,7 +255,7 @@ hand. A failed measure goes back to the floors, not to more prose in the strateg
 
 ## 13. Dry-run findings (2026-10-09) — amendments A1–A5, accepted as D8–D12
 
-The prototype (#416) was run strategy-only on three returns tickets: VCST-5884 (round 3, by the
+The first version of the prototype (#416, before D8–D12) was run strategy-only on three returns tickets: VCST-5884 (round 3, by the
 orchestrator), VCST-5883 and VCST-5628 (round 1 reconstructed, one agent per ticket, each compared with
 the recorded run). Nothing was executed, so §8's wall-time and token measures are still open.
 
