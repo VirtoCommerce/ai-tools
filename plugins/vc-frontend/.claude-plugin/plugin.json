@@ -1,0 +1,23 @@
+{
+  "name": "vc-frontend",
+  "description": "Working on a Virto Commerce frontend fork (vc-frontend-next or a customer's storefront theme). Skills: merge-upstream — brings upstream vc-frontend (dev or a release tag) into the fork, keeping the fork's look and upstream's behavior; port-upstream-to-fork — finds upstream changes the merge did not deliver because the fork replaced or stopped rendering the code, and ports them. Can make mistakes: every change needs human review before merging.",
+  "version": "0.1.0",
+  "displayName": "Virto Commerce Frontend",
+  "author": {
+    "name": "Virto Commerce",
+    "email": "support@virtocommerce.com"
+  },
+  "homepage": "https://github.com/VirtoCommerce/ai-tools",
+  "repository": "https://github.com/VirtoCommerce/ai-tools",
+  "license": "SEE LICENSE IN LICENSE",
+  "keywords": [
+    "vc-frontend",
+    "theme",
+    "fork",
+    "upstream",
+    "merge",
+    "conflicts",
+    "virtocommerce"
+  ],
+  "defaultEnabled": false
+}
