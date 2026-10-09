@@ -7,7 +7,7 @@ SMK-001,Homepage — Load and Hero Navigation,Smoke > Homepage,Critical,BL-CROSS
 [WAIT] homepage reloads","[DOM] hero banner section ('.slider-block') visible above the fold
 [DOM] 'Popular categories' section visible with ≥1 category tile
 [DOM] navigation bar visible with 'All products' dropdown button
-[DOM] language selector visible in top header ('[data-test-id=""language-selector""]')
+[DOM] language selector visible in the header ('[data-test-id=""preferences-menu""]', the locale pill that opens the language list)
 [DOM] cart icon visible in header ('header a[href=""/cart""]')
 [DOM] document.title is non-empty and contains the storefront's configured site name
 [NAV] hero CTA navigates to a category or catalog page (not 404)","[CONSOLE] no JS errors on homepage load

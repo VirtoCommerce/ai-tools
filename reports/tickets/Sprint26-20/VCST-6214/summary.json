@@ -1,0 +1,278 @@
+{
+  "ticket": "VCST-6214",
+  "ticket_type": "Task",
+  "flow": "feature-test",
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "111782",
+    "subtask_comment_ids": [],
+    "documentation_comment_id": null
+  },
+  "path": "fast",
+  "path_route": {
+    "decided_at": "1a",
+    "provisional": false,
+    "routed": "full (>= 2 domains: search, loyalty, i18n, auth, lists, orders/returns)",
+    "override": "operator override FAST --visual --coverage (2026-10-09)",
+    "basis": "ticket-routing.md §5 — operator override recorded, not derived"
+  },
+  "shape_class": {
+    "value": "feature",
+    "sources": [
+      "vc-frontend-next PR #2 (merge of vc-frontend dev @ #2519 + VCST-5840 port) and PR #3 (vc-frontend 2.59 / backend 3.1076.0) — app code, not a ui-kit/token-only diff"
+    ]
+  },
+  "layer": "storefront",
+  "domain_map": null,
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-09",
+  "timing": {
+    "started_at": "2026-10-09T10:15:11Z",
+    "test_window_start": "2026-10-09T10:28:19Z",
+    "finished_at": "2026-10-09T14:06:00Z",
+    "time_to_first_test_minutes": 13,
+    "first_evidence_minutes": 39,
+    "reachability_minutes": null,
+    "agent_dispatches": 20,
+    "note": "4a/4v/2a dispatched 10:28Z; C1 10:57Z; 5-triage classifiers + 7 live investigations 11:05–11:32Z; D5 blocked on env 11:11Z → operator added the /api/otp ingress route → D5 re-run 13:51–13:57Z. Wall clock includes ~2 h waiting on the env fix."
+  },
+  "environment": "vcst-qa (TEST_ENV=vcst, B2B-store) — storefront {{FRONT_URL}}, platform {{BACK_URL}}",
+  "build": {
+    "theme": "vc-frontend-next 3.0.0-alpha.2685 (footer 'Ver. 3.0.0-alpha.2685'; Paprika preset)",
+    "declared": {
+      "vc-deploy-dev@vcst-qa theme/artifact.json": "vc-frontend-next-3.0.0-alpha.2685",
+      "ticket comment 111697": "vc-frontend-next-3.0.0-alpha.2685.zip"
+    },
+    "deployed": {
+      "theme": "3.0.0-alpha.2685",
+      "platform": "3.1076.0",
+      "VirtoCommerce.OTP": "3.1000.0",
+      "VirtoCommerce.Return": "3.1005.0-pr-28",
+      "VirtoCommerce.SalesRep": "3.1013.0-pr-18",
+      "VirtoCommerce.XCart": "3.1040.0-pr-149",
+      "VirtoCommerce.XOrder": "3.1015.0-pr-55",
+      "VirtoCommerce.Quote": "3.1004.0-pr-159",
+      "VirtoCommerce.PageBuilder": "3.1034.0-pr-172",
+      "VirtoCommerce.FileExperienceApi": "3.1007.0-pr-25"
+    },
+    "releasedThrough": "81/88 modules = the theme's backend-packages.json; 7 newer PR builds from other tickets (listed above)",
+    "upstream_baseline": "vcptcore-qa = vc-frontend 2.59.0-pr-2458 (sales-rep GA widgets only); virtostart (2.59.0-pr-2494) is the Paprika demo branch, NOT upstream"
+  },
+  "release": {
+    "layer": "storefront",
+    "audience": "customer",
+    "version": "vc-frontend-next 3.0.0-alpha.2685",
+    "breaking": false,
+    "breaking_source": null,
+    "refusal": null
+  },
+  "status_transitions": [
+    {
+      "at": "1a",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "done"
+    },
+    {
+      "at": "5-status",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "reason": "verdict PASS WITH NOTES",
+      "result": "done"
+    }
+  ],
+  "agents_dispatched": [
+    "qa-frontend-expert (4a, G1/I1/I5 investigations, G1 upstream baseline, D5 re-run)",
+    "ui-ux-expert (4v)",
+    "test-management-specialist (Artifact A 2a)",
+    "regression-orchestrator (4c C1)",
+    "general-purpose (5-triage classifiers ×7)",
+    "qa-testing-expert (I3, I4 investigations)",
+    "qa-backend-expert (J1 investigation)"
+  ],
+  "epic": null,
+  "ac_analysis": {
+    "story_acs": 16,
+    "source": "ticket description + PR #2/#3 QA checklists ({SPEC}); checklist sections A–E",
+    "conditions_total": 44,
+    "conditions_with_evidence": 44,
+    "ac_met": "16 of 16 = 100% (D5 FAIL (env) in round 1 → PASS after the ingress route was added)",
+    "dod": "none stated",
+    "dod_pct": null
+  },
+  "total_cases": 44,
+  "passed": 20,
+  "failed": 15,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 0,
+  "promotion": {
+    "ran": false,
+    "reason": "FAST path authors no cases; C1 ran --no-promote"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-09-1257",
+      "ids": [
+        "SMK-001",
+        "MSNF-075",
+        "SR-HD-042"
+      ],
+      "passed": 1,
+      "failed": 1,
+      "blocked": 1,
+      "pass_rate": 0.5,
+      "compute_metrics": "feature gate NO-GO (50% < 80%) — both misses test-side (STALE_TEST, TEST_DATA_DEFECT); not a gate figure"
+    },
+    "feature_release_gate": "not-assessed"
+  },
+  "regression_triage": {
+    "SMK-001": "STALE_TEST — old home-page assertions; fix recommended (vc-frontend-next /qa-review-tests pass), not applied",
+    "MSNF-075": "TEST_DATA_DEFECT — missions-e2e fixtures unseeded on vcst; seed:missions-e2e recommended",
+    "SR-HD-042": "PASS — RE-BASE confirmed"
+  },
+  "bugs_filed": [],
+  "bugs_not_filed": [
+    {
+      "row": "G1",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (upstream)",
+      "reason": "operator: do not file — table in findings.md",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    },
+    {
+      "row": "I1",
+      "severity": "Medium",
+      "provenance": "OUT-OF-SCOPE (Paprika preset)",
+      "reason": "operator: do not file",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    },
+    {
+      "row": "I3",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (upstream)",
+      "reason": "operator: do not file",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    },
+    {
+      "row": "I4",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (upstream)",
+      "reason": "operator: do not file",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    },
+    {
+      "row": "I5",
+      "severity": "Medium",
+      "provenance": "PRE-EXISTING (upstream)",
+      "reason": "operator: do not file",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    },
+    {
+      "row": "I2, I6, I8, I10, J1–J7, C2a (mobile), I9 (mobile)",
+      "severity": "Low",
+      "reason": "below severity floor",
+      "draft": "reports/tickets/Sprint26-20/VCST-6214/findings.md"
+    }
+  ],
+  "discovery": null,
+  "visual": {
+    "surface": true,
+    "surface_source": [
+      ".vue + locales in PR #2/#3",
+      "layer storefront",
+      "--visual flag"
+    ],
+    "ran": true,
+    "report": "reports/tickets/Sprint26-20/VCST-6214/design-report.md",
+    "vs_design": "SKIPPED — no Prototype / Claude Design link",
+    "fails": [
+      "BL-UI-001 (PRE-EXISTING upstream)",
+      "BL-A11Y-001",
+      "BL-A11Y-002",
+      "BL-A11Y-003",
+      "BL-A11Y-004"
+    ],
+    "note": "a11y never blocks a functional ticket (triage §7a); Paprika is not a gated preset"
+  },
+  "contract": null,
+  "coverage_triage": {
+    "surface": true,
+    "surface_source": [
+      "--coverage flag",
+      "renamed/moved header controls (preferences-menu), home page, sort rail"
+    ],
+    "ran": true,
+    "hits": 145,
+    "dispositions_record": "testing-checklist.md §H",
+    "repairs_staged": [
+      "042 SMK-001 language-selector → preferences-menu",
+      "083c MSNF-075 currency-selector-button → preferences-menu"
+    ],
+    "out_of_scope": "~92 org-switcher rows, ~45 locale/currency-pill rows, 24 sort-rail rows, home page 042/070/071/046/048 → recommended corpus-wide /qa-review-tests pass for vc-frontend-next"
+  },
+  "test_data": {
+    "seeded": [],
+    "created": [
+      "order CO261009-00001 (kept, E1 record)",
+      "return RET261009-00001 (cancelled)",
+      "minted account AGENT-TEST-…-v6214b@qa.test (left for teardown sweep; cart holds 9 lines)",
+      "J1 investigation: 13 vcst + 6 vcptcore orders created and cancelled"
+    ],
+    "settings_writes": [
+      "B2B-store barcode fields [] → [gtin] → restored exactly",
+      "B2B-store OtpSignIn.Enabled: unset → true → false (10:45Z); found true at 13:52Z (external change) → false 13:55Z → true 14:05:02Z (operator decision: restore the value found), re-read true"
+    ],
+    "stale": [
+      "OTP_* aliases not seeded on vcst",
+      "missions-e2e runtime fields blank in aliases.vcst.json"
+    ]
+  },
+  "business_rules_verified": [
+    "BL-SRCH-002/004/007 PASS (barcode)",
+    "BL-LOY-020 PASS (missions banners)",
+    "BL-A11Y-002/004 PASS on the language selector (C1/C2)",
+    "BL-UI-001 FAIL (pre-existing upstream)",
+    "BL-A11Y-001/002/003/004 FAIL on other surfaces (non-blocking)"
+  ],
+  "appinsights": {
+    "checked": false,
+    "layers": [],
+    "skipped_reason": "no az login and no APPINSIGHTS API key on this machine"
+  },
+  "screenshots": "reports/tickets/Sprint26-20/VCST-6214/screenshots/",
+  "report": {
+    "verdict_basis": "16/16 ACs PASS live (D5 after the env fix); no IN-SCOPE bug; G1 and I3–I5 PRE-EXISTING upstream, I1 a Paprika preset issue; a11y non-blocking (§7a). PASS WITH NOTES.",
+    "env_blocker_resolved": "vcst-qa storefront ingress lacked /api/otp → platform; added by DevOps 2026-10-09 (as vc-deploy-dev#6674 did for vcptcore-qa1)",
+    "findings": "reports/tickets/Sprint26-20/VCST-6214/findings.md",
+    "triage": [
+      "reports/tickets/Sprint26-20/VCST-6214/triage-report.md",
+      "reports/regression/REG-2026-10-09-1257/triage-report.md"
+    ],
+    "kb": [
+      "KB-6D7B2ED7 disputed (vcst_qa: route present ⇒ works)",
+      "KB-08CC76A3 confirmed (happy path)",
+      "KB-EED5F6AC captured (sign-out firebase-messaging-sw.js 404)"
+    ],
+    "side_effects": [
+      "2a agent ran git fetch origin dev in the local vc-frontend clone (remote ref only)",
+      "I5 cart cleanup removed a disabled qty-1 line it may not have added"
+    ],
+    "uncommitted": "042/083c REPAIRs + report files staged, not committed",
+    "findings_in_comment": "full six-column table (Title · Pre-conditions · Steps · Actual · Expected · Evidence, viewport per row) in comment 111782, amended 2026-10-09 at operator request; findings.md attached (86077)"
+  },
+  "documentation": {
+    "published": false,
+    "audiences": [],
+    "files": [],
+    "amended": false,
+    "comment_posted": false,
+    "refusal": "operator declined — ported features are documented under their own vc-frontend tickets"
+  }
+}

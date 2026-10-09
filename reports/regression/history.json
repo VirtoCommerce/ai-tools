@@ -3111,5 +3111,53 @@
     "skipped": 0,
     "pass_rate": 100,
     "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-09-1257",
+    "date": "2026-10-09",
+    "suiteId": "042",
+    "suiteName": "Smoke Tests",
+    "environment": "vcst",
+    "browser": "playwright-firefox",
+    "total": 1,
+    "passed": 0,
+    "failed": 1,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 0,
+    "duration_minutes": 2.77,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-09-1257",
+    "date": "2026-10-09",
+    "suiteId": "083c",
+    "suiteName": "Loyalty Missions Storefront",
+    "environment": "vcst",
+    "browser": "playwright-edge",
+    "total": 1,
+    "passed": 0,
+    "failed": 0,
+    "blocked": 1,
+    "skipped": 0,
+    "pass_rate": 0,
+    "duration_minutes": 1.22,
+    "mode": "interactive"
+  },
+  {
+    "runId": "REG-2026-10-09-1257",
+    "date": "2026-10-09",
+    "suiteId": "093",
+    "suiteName": "Sales Rep — Hub Dashboard (storefront)",
+    "environment": "vcst",
+    "browser": "playwright-chrome",
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "blocked": 0,
+    "skipped": 0,
+    "pass_rate": 100,
+    "duration_minutes": 3.33,
+    "mode": "interactive"
   }
 ]

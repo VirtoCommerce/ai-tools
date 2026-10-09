@@ -1435,7 +1435,7 @@ Build under test: vc-frontend PR #2396 (the loyalty routes are registered at boo
 [ACT] record the progress-so-far amount with its currency code in the modal
 [ACT] click the modal's Close control
 [WAIT] the modal has been dismissed
-[ACT] --- ARM 1, session currency varies at fixed culture --- click the header currency selector (data-test-id 'currency-selector-button')
+[ACT] --- ARM 1, session currency varies at fixed culture --- click the header locale pill that opens the currency list (data-test-id 'preferences-menu')
 [WAIT] the currency list has rendered its options
 [ACT] record every currency option the selector offers
 [ACT] click the first currency option whose code differs from the recorded session currency
@@ -1446,7 +1446,7 @@ Build under test: vc-frontend PR #2396 (the loyalty routes are registered at boo
 [ACT] record the goal target amount with its currency code a second time
 [ACT] click the modal's Close control
 [WAIT] the modal has been dismissed
-[ACT] click the header currency selector (data-test-id 'currency-selector-button')
+[ACT] click the header locale pill that opens the currency list (data-test-id 'preferences-menu')
 [WAIT] the currency list has rendered its options
 [ACT] click the option carrying the originally recorded session currency code
 [WAIT] the missions page has re-rendered under the restored currency
