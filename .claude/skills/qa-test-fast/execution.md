@@ -8,8 +8,9 @@ Execution); the visual lane joins it or follows as soon as one lane returns
 |---|---|---|---|---|
 | Storefront | `qa-frontend-expert` | `playwright-chrome` | `@td(AGENT_POOL_SLOT_1.*)` | the checklist's storefront section |
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
-| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>` |
-| Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when `visual_surface: true` |
+| Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>`, when the strategy marks it `RUN` |
+| Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when F3/F8 fired |
+| Regression | `regression-orchestrator` | its own slots, counted toward the 3 | the suites' own | `/qa-regression <non-stale ids> --no-promote` (§Regression) |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 §Test isolation in parallel runs. A checklist with a cross-layer section gives it to the lane that
@@ -21,7 +22,7 @@ The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](.
 Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **including** its
 `Observed behaviour` line — runners are Observers. Add:
 - **Items:** the path to `testing-checklist.md` and the section letter. The runner reads its section
-  from the file and nothing else.
+  from the file and nothing else. Each item's `R-n` comes back with its result, for reconciliation.
 - **Data:** the Data cell of each item is the instruction (§Data below).
 - **Shared state:** the checklist header's Rules block. Only the lane it names writes a shared setting,
   and that lane restores the setting and re-reads it to prove it.
@@ -38,10 +39,12 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 
 Invoke `/qa-exploratory ticket <TICKET>` — the command, never a re-implementation. The charter
 payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and
-its mission is the `/qa-test-model` output's item 4 (the unresolved cells, reverse edges, `{HYPOTHESIS}`
+its mission is the strategy's `EXPLORE` risks plus the `/qa-test-model` output's item 4 (the unresolved cells, reverse edges, `{HYPOTHESIS}`
 oracles and flagged ACs) plus the mind-map branches the checklist declared as omissions, including
-the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 3).
-- **The box** is sized per §5 there: 30-minute floor, 60-minute ceiling, stated in the payload.
+the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 4).
+- **First or alongside** is the strategy's (D3). A `FIRST` session runs in Wave 3, before any checklist
+  exists, so its charter is the strategy's `EXPLORE` risks plus the model's item 4 only.
+- **The box** is the strategy's, sized per §5 there: 30-minute floor, 60-minute ceiling, stated in the payload.
 - **Read-only by default.** When a charter item needs its own data, it follows §Data with its own pool
   user.
 - **No promotion in this flow.** The brief says so explicitly (rule 5). A net-new scenario returns with
@@ -49,8 +52,8 @@ the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 
   *Not tested, and why* as `candidate case`, for a later `/qa-test-lifecycle` run.
 - **A same-day SBTM file for this ticket already exists** ⇒ pass the prior session as input. The new
   charter covers what that session marked NOT REACHED; it is never a re-run of the old charter.
-- **No unresolved item anywhere** ⇒ the lane is recorded as `ran: false` with that reason. That is the
-  one legitimate skip besides `--no-explore`.
+- **The strategy skipped it, or no unresolved item exists anywhere** ⇒ the lane is recorded as
+  `ran: false` with that reason. Those are the only legitimate skips besides `--no-explore`.
 
 ## Visual
 
@@ -64,6 +67,13 @@ credential names), the lane-count rule and the verdict vocabulary are
 - **Read-only.** It creates no data; a role-gated target uses the pre-signed profile, never a minted
   account ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §2).
 - **Skipped** (`visual_surface: false` or `--no-visual`) ⇒ `visual.ran: false` + the reason.
+
+## Regression
+
+When the strategy marks it `RUN` (F5, or added by the strategy): `/qa-regression <ids> --no-promote` over
+the non-stale id list from Wave 2 — never the raw `regression:select` output. It promotes nothing and writes
+no suite row (D2). Its lanes count toward the 3 browser lanes; more than 3 needed ⇒ sequence by risk level,
+highest first. Its `RUN_ID` goes to Stage 3 triage; its non-passing cases are triaged like checklist rows.
 
 ## Data — made during the run
 

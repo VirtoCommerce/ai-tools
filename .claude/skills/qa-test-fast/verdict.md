@@ -56,21 +56,30 @@ bug. The calls run sequentially because `qa-bug` may take a browser lane.
 
 ## Verdict
 
-The vocabulary and the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
+First reconcile the strategy ([`../qa-test-strategy/SKILL.md`](../qa-test-strategy/SKILL.md)
+§Reconcile): a High or Critical risk without a result caps the verdict below `PASS`. The vocabulary and
+the decision rules are [`../qa-test/close-out.md`](../qa-test/close-out.md)
 §5-verdict.2 — `PASS` / `PASS_WITH_NOTES` / `FAIL` / `BLOCKED`. The conditions it reconciles are the
 checklist's AC items. A `Low` finding never makes a FAIL, and an accessibility finding never blocks a
 functional ticket.
+
+**Round 3 with a non-`PASS` verdict** — the last allowed round (D6): `verdict.md` adds an `## Escalation`
+section per [`../qa-test-strategy/rounds.md`](../qa-test-strategy/rounds.md) §At most three — the three
+verdicts, what failed more than once, and the people the ticket goes back to. No round 4 is offered.
 
 ## Files — `reports/tickets/{SPRINT}/<TICKET>/`
 
 - **`summary.json`** — keys come only from
   [`../../templates/qa-test-summary.schema.json`](../../templates/qa-test-summary.schema.json):
   - `path: "FAST_GROUNDED"`, `flow: "feature-test"`
-  - `regression: null` (C1 never runs here)
+  - `regression` — `null` when the strategy skipped it; otherwise `regression.c1` holds the run over the
+    non-stale id list (`RUN_ID`, ids, pass rate) and the stale ids it kept out
   - `visual` — the visual lane, or `ran: false` + `skipped_reason`; never `null` (a `null` reads as a gap)
   - `discovery` — the exploratory lane
   - `test_data` — the ledger and teardown
   - `domain_map` — its state, plus the mind-map path and `mind_map_findings[]`
+  - `strategy` — the strategy file, round, depth label, floors fired, approval, reconciliation counts and
+    candidate cases
   - `bugs_filed` / `bugs_not_filed`
   - `tracker.comment_id` — `null` until §Tracker comment posts, then the returned id
   - `report.page_url` and `report.kb` — filled after §HTML page and the kb step
@@ -94,21 +103,24 @@ functional ticket.
 - <severity> <title> — <the path qa-bug returned> (<tracker key | not filed>)
 
 ## Not tested, and why
-- <item / charter item> — <reason>
-- <node id> — candidate case (passed here, no suite case stamps it)
+- <R-n / item / charter item> — <reason>
+- Stale cases kept out of regression → /qa-test-lifecycle: <ids | none>
+
+## Candidate cases (→ /qa-test-lifecycle, D2)
+- <item / node id> — passed here, no suite case covers it
 
 ## Data
 Created <n> AGENT-TEST- entities · removed <n> · settings restored and re-read: <list | none>
 
 ## Context used
-Model <path> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
+Round <N> of 3 · Depth <light | standard | deep> · Strategy <path> (<APPROVED | AUTO>) · Regression <RUN_ID, n cases | SKIPPED: reason> · Model <path | SKIPPED: reason> · Checklist <path> · Domain map <state> · Mind map <path | SKIPPED: reason> · Exploratory <SBTM path | ran:false reason> · PRs <repo#n list>
 ```
 
 **Mind-map findings** go into `summary.json.domain_map.mind_map_findings[]`: a node the run
 contradicted, a scenario that fit no node, every DRIFT item's `HOLDS`/`RESOLVED` result with its
 evidence, and an UNVERIFIED node the exploratory session established. A DRIFT that holds and whose
 route `TM-018` flags as unfiled is a bug: it reaches triage as a FAIL row
-([`context-wave.md`](context-wave.md) §Wave 3) and goes through investigate → `/vc-fix:qa-bug` like any other, and the key
+([`context-wave.md`](context-wave.md) §Wave 4) and goes through investigate → `/vc-fix:qa-bug` like any other, and the key
 or path that returns becomes the finding's proposed route. They are handed to the next
 `/qa-test-mind-map update --from <TICKET>`, never applied here
 ([`../qa-test/reporting.md`](../qa-test/reporting.md) §5-docs-map).

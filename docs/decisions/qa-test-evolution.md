@@ -293,3 +293,56 @@ headless. The only new step in the whole design is the two-command `RG`.
 `BL-*` **and `ECL-*`** rule text — without it a FAST verdict is ungrounded, not merely cheap · `5-verdict`'s AC/DoD
 reconciliation, which produces the verdict · the committed `testing-checklist.md`, this run's **only** durable record · **`5-docs`**,
 whose refusal set makes it free.
+
+## Explicit test strategy (2026-10-09)
+
+**What changed.** `/qa-test-fast` became the prototype of a single `/qa-test` (design
+`docs/superpowers/specs/2026-10-09-qa-test-strategy-redesign.md`, draft #417, decisions D1–D12). It routes
+the *job* deterministically, gathers context, and then `/qa-test-strategy` writes `test-strategy.md`: the
+risk register, the strategy mix, a technique and an oracle per risk, lanes, data, which artifacts run, and
+entry/exit criteria — under deterministic floors F1–F9 that replace the FAST/FULL effort axis, and at most
+three rounds per ticket. The user approves it every run (`--yes` skips the question); a verifier re-derives
+it first when a risk is Critical. At close-out the same file is reconciled against what actually ran.
+`/qa-test` FAST/FULL stay untouched until the design's §8 validation passes. A first version of this
+prototype also added a step `1s` to `/qa-test`; it was withdrawn so the prototype lives in one command.
+
+**Why.** The strategy existed only implicitly — spread across six derived axes, opt-in flags and
+whichever artifacts happened to be built — so no one chose a method and no one could argue with the
+choice. The literature agrees that strategy comes first and that the method follows from the context:
+
+- *Heuristic Test Strategy Model* (Bach, v6.3, 2024): techniques are the output of three inputs —
+  project environment, product elements, quality criteria. That is the shape of the file's §1–§4.
+- *ISTQB Test Manager*: strategies are analytical, model-based, methodical, process-compliant,
+  reactive, consultative and regression-averse, and real ones mix them. The mix table makes the mix
+  explicit instead of an accident of which artifacts exist.
+- *ISO/IEC/IEEE 29119-3:2021* §7.2: the strategy follows a product + project risk register and names
+  techniques, entry/exit criteria, data, environment, retest and regression; the agile example tailors
+  the content by risk. The file is that clause, tailored to one ticket.
+
+**What is agent-specific.** Three findings changed the design rather than just the vocabulary:
+
+1. *Separate the plan from the action.* Planner/executor splits are what make an agent's plan
+   inspectable (DeepPlanner, arXiv 2510.12979; ScenGen, arXiv 2506.05079; ResTest, arXiv 2506.00520).
+   The strategy is that plan, written down before any lane opens.
+2. *Agents drift from their declared plan* (Plan Declaration–Execution Gap, arXiv 2609.38108): a ReAct
+   agent reacts to intermediate observations and the divergence is invisible in the final verdict. So
+   the strategy ends with a reconciliation, and an unresulted High/Critical risk caps the verdict.
+3. *The oracle is the weak point* (LLM testing surveys, arXiv 2307.07221, 2509.25043; source-of-authority
+   taxonomy, arXiv 2607.05031). Every risk names its oracle with its authority, and a `{HYPOTHESIS}`
+   oracle may not decide a pass/fail row.
+
+**Who chooses, and where independence lives.** The orchestrator, inline: choosing needs the whole
+context and a dispatch brief carries a summary of it. Independence (Bolton's *critical distance*) is
+put on the check — the user's approval, plus the FULL verifier — and on execution, which other agents
+do.
+
+**What the strategy may decide.** Every artifact — test model, mind map, exploratory (first or
+alongside), visual lane, contract refresh, a staleness-checked regression run, the verifier — above the
+floors, never under them. Case authoring is not one of them: a run lists candidate cases and
+`/qa-test-lifecycle` writes them (D2).
+
+**What the dry runs changed (2026-10-09).** Three strategy-only runs (VCST-5883, VCST-5628, VCST-5884;
+the design's §13) covered every recorded Medium-or-higher finding, and produced five amendments: F1 fires
+only on a High/Critical risk or P0/P1 (layers raise L×I instead, D8); 120 lines per round (D9); five method
+rules (D10); a staleness check before any regression run (D11); a per-risk "effort" distinct from the depth
+label (D12).

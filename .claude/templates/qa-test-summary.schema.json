@@ -18,6 +18,23 @@
     "narrow_story_tokens": null,
     "escalated_reason": "priority|layer|domains|chain_shape|surface|reach|purpose_undeclared|null"
   },
+  "strategy": {
+    "$comment": "The test strategy chosen by /qa-test-strategy (.claude/skills/qa-test-strategy/SKILL.md) in the /qa-test-fast prototype of the single /qa-test (design D1-D12, draft #417). NULL means no strategy step ran. round is 1-3 (D6: a fourth is refused before any work, so it never reaches a summary). depth_label is computed per floors.md, never chosen (D5). floors_fired lists F1-F9 ids that fired. status APPROVED = the user said yes; AUTO = --yes skipped the question; CHANGED = approved after edits. verifier is the Critical-risk qa-lead ruling, null when no risk was Critical. artifacts records each decision as RUN or 'SKIP - <reason>'. reconciled is filled at close-out from the round's reconciliation: planned = in-scope risks + amendments, unresulted = rows with neither a result nor a deviation reason (a High/Critical one caps the verdict below PASS). candidate_cases are passing items no suite case covers, for /qa-test-lifecycle (D2); stale_cases are the ids the staleness check kept out of regression (D11).",
+    "path": "reports/tickets/<SPRINT>/<TICKET>/test-strategy.md",
+    "round": 1,
+    "depth_label": "light|standard|deep",
+    "floors_fired": [],
+    "status": "APPROVED|AUTO|CHANGED",
+    "verifier": "APPROVE|REJECT|null",
+    "mix": [],
+    "risks": { "critical": 0, "high": 0, "medium": 0, "low": 0 },
+    "artifacts": {},
+    "amendments": 0,
+    "reconciled": { "planned": 0, "resulted": 0, "deviations": 0, "unresulted": 0 },
+    "candidate_cases": [],
+    "stale_cases": []
+  },
+
   "layer": "storefront|admin-spa|api|module|platform|cross-layer|null",
   "domain_map": {
     "$comment": "The sixth pre-flight axis, derived at 1b item 2g on BOTH paths (the derivation is one local frontmatter read and dispatches nothing). Resolves whether a DOMAIN MAP exists for this ticket's domain: .claude/knowledge/domain/<name>.md whose `domain_slug` matches. Its LANE is FULL-only: on ABSENT/unresolved + an all-layer chain a FULL run BUILDS the map at item 1c-map (ba-system-analyzer, in the 1c/1d/2-load wave, on a lane 1c is not using) and binds 1e clauses 11/11b against it; a FAST run recommends /qa-domain-map <slug> and proceeds. A STALE map is never auto-refreshed — `--refresh` stays operator-invoked. Nothing here ever blocks a run: a failed or gate-refused build records build_outcome FAILED, leaves state ABSENT and degrades to the pre-2026-09-10 behaviour. Four states because absence and staleness are different facts — a STALE map is the more dangerous one, read as current and carrying a written deliverable's authority. When a map DOES exist the run writes back what it verified at 5-docs-map (after 5-status, so clause 11b can never bind against inventory the same run widened): new §2 surfaces, a D* verdict upgraded live, a G* closed, a §4 count corrected — recorded in amendments[] and in the map's §7. An amendment moves the map's `amended` field and NEVER `generated`/`rev`, so staleness keeps measuring the last full enumeration and a trickle of true facts cannot silence domain:check. NOTHING_TO_AMEND is a real recorded outcome, distinct from the step not running. Contract + fail direction: skills/qa-test/axes.md §2g. `null` means the axis never ran (a gap), not that no map exists — that is ABSENT.",
