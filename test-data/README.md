@@ -2,7 +2,7 @@
 
 **Purpose:** Centralized test data for all Virto Commerce B2B e-commerce regression testing.
 
-**Last Updated:** 2026-03-26
+**Last Updated:** 2026-10-09
 
 ---
 
@@ -27,7 +27,7 @@ Regression suite CSVs reference test data using the `@td()` notation instead of 
 ### How It Works
 
 1. Suite CSV contains `@td(ALIAS.field)` tokens in the `Test_Data` column
-2. **CI mode**: `lib/test-data-resolver.ts` resolves all tokens before injecting CSV into agent prompt
+2. **CI mode**: `scripts/lib/test-data-resolver.ts` resolves all tokens before injecting CSV into agent prompt
 3. **Interactive mode**: Orchestrator agents resolve tokens by reading `aliases.json` + CSV files
 4. Agents receive fully resolved values — no @td() parsing needed during test execution
 
@@ -40,7 +40,7 @@ All aliases are defined in [`aliases.json`](aliases.json). Each alias maps to:
 
 ### Validation
 
-Run `npx tsx scripts/test-data/validate-td-refs.ts` to verify all `@td()` references across all suites resolve correctly.
+Run `npm run td:validate` (`scripts/test-data/validate-td-refs.ts`) to verify all `@td()` references across all suites resolve correctly. Each seeded domain also has its own drift guard, `npm run td:validate:<domain>`; `npm run td:validate:all` runs every one of them (the domain list is derived from `package.json`), and `TEST_ENV=<env> npm run td:reconcile` is the live companion.
 
 ---
 
@@ -49,33 +49,40 @@ Run `npx tsx scripts/test-data/validate-td-refs.ts` to verify all `@td()` refere
 ```
 test-data/
 ├── README.md                        # This file
+├── aliases.json                     # @td() alias registry (business keys)
+├── aliases.<env>.json               # Per-env runtime GUID overlays written by the seeders
+│                                    #   (vcst, vcptcore, vcptcore_qa1, vcptcore_regression,
+│                                    #    vcptcore_stable, virtostart)
 ├── b2b/                             # B2B test data (orgs, contacts, users) — SEEDED
-│   ├── organizations.csv           # 8 orgs (4 seeded with platform IDs)
-│   ├── contacts.csv                # 13 contacts (10 seeded with platform IDs)
-│   ├── users.csv                   # 13 users (10 seeded with platform IDs)
-│   ├── roles.csv                   # 5 B2B role definitions
-│   └── addresses.csv               # 15 addresses (org + contact level)
-│                                   # (platform IDs resolve via @td() aliases; on non-vcst envs
-│                                   #  seeders write them to aliases.{env}.json — see aliases.json)
+│   ├── organizations.csv           # Orgs (seeded rows carry platform IDs)
+│   ├── contacts.csv                # Contacts (seeded rows carry platform IDs)
+│   ├── users.csv                   # Users (seeded rows carry platform IDs)
+│   ├── organization-memberships.csv # Cross-org memberships (seed:b2b:memberships)
+│   ├── roles.csv                   # B2B role definitions
+│   └── addresses.csv               # Addresses (org + contact level)
+│                                   # (platform IDs resolve via @td() aliases; seeders write them
+│                                   #  to aliases.{env}.json on every env, vcst included)
 ├── users/                           # Personal user accounts
-│   ├── test-users.csv              # 50 personal user templates
-│   ├── agent-user-pool.csv         # 3 dedicated users for parallel agents (1 per browser slot)
+│   ├── test-users.csv              # Personal user templates
+│   ├── agent-user-pool.csv         # Dedicated users for parallel agents (1 per browser slot)
 │   └── seed-agent-users.md         # REST API seeding scripts for agent pool users
+├── auth/                            # OTP email sign-in inputs (VCST-5748) — seed:otp-signin
+│   └── otp-inputs.json
 ├── compare/                         # /compare tab + characteristic fixtures (VCST-5735) — SEEDED
-│   └── compare-products.csv        # 12 products across 6 tabs; ids in aliases.<env>.json
+│   └── compare-products.csv        # Products across several tabs; ids in aliases.<env>.json
 ├── wishlists/                       # Two-store wishlist fixture (VCST-5705) — SEEDED
 │   └── two-store-wishlists.csv     # 1 customer x 2 stores x 2 products; ids in aliases.<env>.json
 ├── organizations/                   # B2B organizations (legacy, special chars)
 │   ├── sample-organizations.csv    # Special character testing
-│   ├── search-test-data.csv        # Organization search test cases
-│   └── search-test-plan.md         # Search test plan
+│   └── search-test-data.csv        # Organization search test cases
 ├── catalogs/                        # Catalog seed data
 │   ├── catalogs.csv
 │   ├── categories.csv
 │   ├── category-images.csv          # image file → category name (seed:category-images)
 │   └── properties.csv
 ├── products/                        # Product test data
-│   ├── test-products.csv           # Standard products
+│   ├── test-products.csv           # Standard products (seed:products)
+│   ├── standard.csv                # Imported STD-* fixtures the standard seeder discovers, never creates
 │   ├── products-full.csv           # Full product definitions
 │   └── configurable-products.csv   # Products with variants
 ├── pricing/                         # Pricing seed data
@@ -83,49 +90,84 @@ test-data/
 │   └── prices.csv
 ├── inventory/                       # Inventory seed data
 │   ├── fulfillment-centers.csv
-│   └── stock-levels.csv
+│   ├── stock-levels.csv
+│   └── variation-stock.csv         # Master + variation with divergent stock (see §14)
 ├── stores/                          # Store configurations
 │   ├── stores.csv
+│   ├── currencies.csv
 │   └── bopis-locations.csv
 ├── addresses/                       # Shipping/billing addresses
 │   └── us-addresses.csv            # United States addresses
 ├── payment/                         # Payment test data
 │   ├── test-cards.csv              # Test credit/debit cards
 │   ├── payment-scenarios.csv       # Success/failure scenarios
-│   └── payment-processor-config.md # Processor-specific details
-├── promotions/                      # Marketing promotions & coupons (VCST-4590)
-│   ├── promotions.csv              # 16 promotion definitions (reward types, conditions, exclusivity)
-│   ├── coupons.csv                 # 18 coupon codes (usage limits, expiry, edge cases)
-│   ├── conditions.csv              # 4 cart/catalog conditions
-│   ├── rewards.csv                 # 15 reward configurations (%, $, shipping, gift, category)
-│   ├── edge-cases.csv              # 8 edge case scenarios with setup and expected behavior
-│   ├── qa-bulk-coupons.csv         # 3-code CSV for Admin bulk import test
+│   ├── payment-processor-config.md # Processor-specific details
+│   ├── order-creation-matrix.txt
+│   └── * test cards.png            # Processor test-card reference sheets
+├── promotions/                      # Marketing promotions & coupons (VCST-4590) — seed:promotions
+│   ├── promotions.csv              # Promotion definitions (reward types, conditions, exclusivity)
+│   ├── coupons.csv                 # Coupon codes (usage limits, expiry, edge cases)
+│   ├── conditions.csv              # Cart/catalog conditions
+│   ├── rewards.csv                 # Reward configurations (%, $, shipping, gift, category)
+│   ├── edge-cases.csv              # Edge case scenarios with setup and expected behavior
+│   ├── qa-bulk-coupons.csv         # Small CSV for Admin bulk import test
+│   ├── seed-report.md              # Record of the earlier one-off agent seeding run
 │   └── setup-guide.md             # REST API seeding scripts + cleanup
+├── orders/                          # Order-state JSON fixtures (seed:orders)
+│   ├── completed-order.json, processing-order.json, shipped-order.json
+│   └── returns/                    # Return-order fixtures (seed:returns, seed:returns:decisions)
+├── quotes/                          # Quote JSON fixtures (seed:quotes)
+│   ├── quote-accepted.json
+│   └── quote-admin-response.json
+├── loyalty/                         # Loyalty programs + org-loyalty users (seed:loyalty, seed:org-loyalty)
+│   ├── programs.csv
+│   ├── program-factors.csv
+│   └── org-loyalty-users.csv
+├── sales-rep/                       # Sales Rep fixture family (seed:sales-rep-family)
+│   ├── sales-reps.csv
+│   ├── admin-users.csv
+│   ├── sales-rep-orders.csv
+│   └── document-reps.csv
 ├── search-queries/                  # Search test data
 │   ├── top-50-amazon.csv           # Common search terms
-│   └── top-100-aliexpress.csv      # Additional search terms
+│   ├── top-100-aliexpress.csv      # Additional search terms
+│   └── b2b-buyer-queries.csv       # B2B buyer search terms
+├── security/                        # Security input data
+│   └── xss-payloads.csv
 ├── bopis/                           # Buy Online Pickup In Store
-│   └── pickup-locations.csv        # Store locations
+│   ├── pickup-locations.csv        # Store locations
+│   └── sprint26-08-pickup-locations-snapshot.json
 ├── localization/                    # Multi-language data
 │   └── languages.csv               # Supported languages
-├── uploads/                         # Test file uploads (flat directory)
+├── files/                           # Small static file fixtures
+│   └── test-fixture-1page.pdf
+├── uploads/                         # Test file uploads
 │   ├── *.png, *.jpg, *.webp        # Image files
 │   ├── *.pdf, *.xlsx               # Document files
 │   ├── *.mp4                       # Video files
-│   ├── *.svg, *.avif               # Other formats
-│   └── barcodes/                   # VCST-2945 scannable barcode PNGs (see §14b)
+│   ├── *.svg, *.avif               # Other formats (incl. msn-banner-*.svg, see §15)
+│   ├── barcodes/                   # VCST-2945 scannable barcode PNGs (see §14b)
+│   └── sales-rep-demo/             # Documents for the sales-rep demo profile (seed:sales-rep-demo)
 ├── graphql/                         # Curated xAPI GraphQL fixture library — see graphql/README.md
 │   ├── index.json                  # Registry: path, category, role, requiredVars, gqlVars, usedBy
 │   ├── queries/                    # Schema-validated query bodies (copy into [GQL-OP] cells)
 │   └── mutations/                  # Schema-validated mutation bodies
+├── models/                          # Test data models (/qa-test-data-model), one per domain
+│   └── <domain>.data-model.json
+├── postman/                         # Postman collection + vcst-qa environment
 ├── cms/                             # CMS PageBuilder test data
-│   └── pagebuilder-pages.md        # 5 test pages with block structures, access matrices, scheduling
+│   ├── pagebuilder-pages.md        # Test pages with block structures, access matrices, scheduling
+│   ├── pages.csv
+│   ├── page-content.json           # Content blocks for seed:cms-pages
+│   ├── shared-components-content.json # Content for seed:pb-shared (VCST-4933)
+│   └── uploads-5725/               # Asset Library upload files; images generated by
+│                                   #   `npm run td:gen:cms-uploads` (PNGs are gitignored)
 └── white-labeling/                  # White labeling test data (VCST-4637)
-    ├── organizations.csv           # Org configs (5 orgs, different WL setups)
-    ├── link-lists.csv              # Menu/footer link list items (22 links)
-    ├── users.csv                   # Test users per org (6 users)
+    ├── organizations.csv           # Org configs (different WL setups)
+    ├── link-lists.csv              # Menu/footer link list items
+    ├── users.csv                   # Test users per org
     ├── graphql-queries.md          # GraphQL queries for verification
-    └── setup-guide.md              # Step-by-step data setup instructions
+    └── assets/                     # Per-org logo + favicon files
 ```
 
 ---
@@ -147,8 +189,8 @@ The B2B test data in `b2b/` is **seeded on the live platform** and can be consum
 
 Look up orgs/contacts/users by their aliases in `aliases.json`, resolved via
 `scripts/lib/test-data-resolver.ts`. Business keys (email, name, role) come from the
-committed CSVs; platform GUIDs come from `aliases.json` (vcst) or `aliases.{env}.json`
-(other envs, written by the seeders). Never hardcode IDs or passwords.
+committed CSVs; platform GUIDs come from `aliases.{env}.json` (every env, vcst included —
+written by the seeders). Never hardcode IDs or passwords.
 
 ```
 @td(ORG_ACME.platform_id)      # AcmeCorp org GUID
@@ -162,7 +204,7 @@ Passwords resolve from `.env.local` via the CSV `{{B2B_USER_PASSWORD}}` token �
 ### For LLM Agents (read CSVs directly)
 
 Agents read `test-data/b2b/users.csv` to get:
-- `platform_id` — live entity ID on the platform
+- `platform_id` — committed blank; the live entity ID resolves through the row's `@td()` alias from `aliases.<env>.json`
 - `user_name` / `email` — login credentials
 - `password` — `{{B2B_USER_PASSWORD}}` token, resolved from `.env.local` at seed time (never a literal)
 - `roles` — platform role name
@@ -174,7 +216,7 @@ Agents read `test-data/b2b/users.csv` to get:
 
 | Column: `seeded` | Meaning |
 |-------------------|---------|
-| `true` | Entity exists on platform with `platform_id` — ready for testing |
+| `true` | Created by the seeder (`npm run seed:b2b`); its platform ID is in `aliases.<env>.json` once seeded on that env |
 | `false` | Template only — needs `/qa-seed-data` to create on platform |
 
 ### Available Test Scenarios (from seeded data)
@@ -191,7 +233,7 @@ Agents read `test-data/b2b/users.csv` to get:
 
 ### Postman Collection
 
-**"VC B2B Test Data — Orgs, Contacts, Users"** in VirtoPlatform workspace — 22 requests covering full CRUD + teardown. All templates include `status: Approved`.
+**"VC B2B Test Data — Orgs, Contacts, Users"** in VirtoPlatform workspace — requests covering full CRUD + teardown. All templates include `status: Approved`.
 
 ---
 
@@ -201,9 +243,9 @@ Agents read `test-data/b2b/users.csv` to get:
 B2B organizations, contacts, and users with **live platform IDs**. Primary test data for agent-driven testing. See Agent Testing Workflow above.
 
 ### 2. Users (users/)
-Personal user accounts for authentication and authorization testing. Additional credentials stored in `.env` (USER_EMAIL, USER2_EMAIL, USER_VIRTO, ADMIN).
-- `test-users.csv` — 50 personal user templates (not seeded by default)
-- `agent-user-pool.csv` — **3 dedicated users for parallel agent testing** (1 per browser slot). Prevents session/cart/order conflicts when agents run simultaneously. See `seed-agent-users.md` for seeding instructions.
+Personal user accounts for authentication and authorization testing. Additional credentials (USER_EMAIL, USER2_EMAIL, USER_VIRTO, ADMIN) resolve through the layered env loader — secrets live in `.env.local`, never in a committed file.
+- `test-users.csv` — personal user templates (not seeded by default; `npm run seed:users` creates them)
+- `agent-user-pool.csv` — **dedicated users for parallel agent testing** (1 per browser slot). Prevents session/cart/order conflicts when agents run simultaneously. See `seed-agent-users.md` for seeding instructions.
 - `seed-agent-users.md` — REST API scripts to create agent pool users on the platform
 
 ### 3. Organizations (organizations/)
@@ -216,7 +258,8 @@ Product catalog data including standard products, variant templates, and configu
   - `price_eur` — optional **second-currency** list price. A pricelist is single-currency platform-side, so a non-blank value makes the seeder create/assign a second `SEED-<date>-Standards-EUR` pricelist for that row. This is what keeps a fixture priced and addable after a storefront currency switch; a USD-only row collapses to `0.00` with a **disabled** qty stepper in EUR. `PROD_MULTI_CURRENCY` (PROD-106) is the reference dual-currency fixture.
   - `product_slug` / `storefront_url` — the **store-relative** storefront path the seeder actually puts the product on. Cases navigate `{{FRONT_URL}}@td(ALIAS.url)`; **never** hand-compose `/product/<sku>`, which renders a client-side 404 (HTTP 200 SPA soft-404). Both are *derived* (`standard-specs.mjs` `productSlug` / `storefrontPathForAdHoc`) and re-checked by `npm run td:validate:standard` — do not hand-edit them. Filled for the `Test Fixtures` family, where the category path makes the URL deterministic; blank elsewhere.
   - `seeded` — the seeder's create flag, not a provisioning status. A row's real provisioning state lives in its alias `_status` (e.g. `authored-…-NOT-YET-SEEDED` until someone runs `TEST_ENV=<env> npm run seed:products`).
-- `configurable-products.csv` — 10 QA environment configurable products with section types, slugs, and IDs (used by Suite 36)
+- `standard.csv` — imported `STD-*` fixtures that `seed-standard-products.mjs` discovers by `code` and captures to the overlay, never creates; `npm run td:validate:standard` guards it together with `test-products.csv`.
+- `configurable-products.csv` — QA environment configurable products with section types, slugs, and IDs (referenced through `CFG_*` aliases by the `072*` configurable-products suites, `050i`, `052` and others; seed `npm run seed:configurable`, guard `npm run td:validate:cfg`)
 - `products-full.csv` — Full product definitions for seeding
 
 ### 4. Addresses (addresses/)
@@ -235,16 +278,16 @@ Pickup locations for Buy Online Pickup In Store.
 Supported languages list for multi-language testing.
 
 ### 9. Uploads (uploads/)
-Test files for file upload functionality (images, documents, videos) — flat directory.
+Test files for file upload functionality (images, documents, videos) — flat, except `barcodes/` (§14b) and `sales-rep-demo/` (the demo profile's document library). The Page Builder Asset Library upload files live under `cms/uploads-5725/` instead and are generated by `npm run td:gen:cms-uploads`.
 
 ### 10. White Labeling (white-labeling/)
 Organization-specific branding test data with GraphQL verification queries.
 
 ### 11. CMS / PageBuilder (cms/)
-5 test page definitions for PageBuilder (Builder.io integration) with block structures, access control matrices, scheduling configs, and language verification. Covers all 14 designer block types across homepage, B2B gated content, multi-language policy, scheduled promo, and org-restricted support page scenarios. References users from `b2b/users.csv` for access control testing.
+Test page definitions for PageBuilder (Builder.io integration) with block structures, access control matrices, scheduling configs, and language verification. Covers the designer block types across homepage, B2B gated content, multi-language policy, scheduled promo, and org-restricted support page scenarios. References users from `b2b/users.csv` for access control testing. Seeded pages: `npm run seed:cms-pages` (spec `scripts/seed-data/cms/pagebuilder-pages-specs.mjs`, content `page-content.json`; guard `npm run td:validate:cms-pages`, aliases `PB_HOMEPAGE`, `PB_WHOLESALE_GUIDE`, …). Shared components (VCST-4933): `npm run seed:pb-shared` (spec `shared-components-specs.mjs`, content `shared-components-content.json`; guard `npm run td:validate:pb-shared`, aliases `PB_SC_*`).
 
 ### 12. Promotions (promotions/)
-Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward types (% off, $ off, free shipping, gift item), 3 condition types (category, cart threshold, shipping method), exclusivity modes, usage limits, coupon-level expiry, and 8 edge case scenarios. See `promotions/setup-guide.md` for REST API seeding scripts.
+Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward types (% off, $ off, free shipping, gift item), 3 condition types (category, cart threshold, shipping method), exclusivity modes, usage limits, coupon-level expiry, and edge case scenarios. Seed: `npm run seed:promotions` (from `promotions.csv` + `coupons.csv`); guard: `npm run td:validate:marketing`. `promotions/setup-guide.md` keeps the manual REST API scripts.
 
 
 ### 13. Wishlists (wishlists/)
@@ -254,7 +297,7 @@ Marketing promotions and coupon codes for VCST-4590 testing. Covers 4 reward typ
 A master product plus a genuine **variation** child (`mainProductId`), with **divergent** non-zero stock at the store's **main** fulfillment center (VCST-5546 / INV-047). Equal quantities would make "the variation row shows its own inventory, not the master's aggregate" unfalsifiable, so the guard requires them to differ. Seed: `npm run seed:variation-stock`; guard: `npm run td:validate:variation-stock`. Aliases: `INV_VARIATION_STOCKED`, `INV_VARIATION_MASTER`. This seeder also writes `FC_EAST`'s runtime GUID to the overlay — before it, `@td(FC_EAST.id)` resolved to the bare CSV business key `FFC-001`, which is not a platform id on any env.
 
 ### 14a. Compare (compare/compare-products.csv)
-Twelve products across **six** compare tabs for the `/compare` v2 redesign (VCST-5735). The page groups the list by `getProductCategoryKey` — the itemIds of the FIRST TWO `Category` breadcrumbs joined by `/`, labelled by the LAST of those two — so a fixture set living in one category proves nothing about tabs. Seeded: **Group A** (six products against a per-category limit of **five**, so the cap is observable), **Group B** (`PROD_MOQ` / `PROD_PACK`, whose minQuantity / packSize / maxQuantity / stock all DIVERGE, because the suspected render loop only triggers when two products in ONE tab disagree), **Group C**, a **parent/child pair** whose keys differ (`X` vs `X/Y`) while both tabs render the SAME label, and one product with **no category at all** (key `""` → the `uncategorized` tab).
+Products spread across several compare tabs for the `/compare` v2 redesign (VCST-5735). The page groups the list by `getProductCategoryKey` — the itemIds of the FIRST TWO `Category` breadcrumbs joined by `/`, labelled by the LAST of those two — so a fixture set living in one category proves nothing about tabs. Seeded: **Group A** (six products against a per-category limit of **five**, so the cap is observable), **Group B** (`PROD_MOQ` / `PROD_PACK`, whose minQuantity / packSize / maxQuantity / stock all DIVERGE, because the suspected render loop only triggers when two products in ONE tab disagree), **Group C**, a **parent/child pair** whose keys differ (`X` vs `X/Y`) while both tabs render the SAME label, and one product with **no category at all** (key `""` → the `uncategorized` tab).
 
 Two independent **formatted-string collisions** carry the fixture that matters most: `differs` is computed over FORMATTED strings, so a discriminating row needs two RAW values that differ while their rendered strings do not — a Number property at `1234.5678` vs `1234.5679` (both format to `1234.568`) and stock `12` vs `340` (both render the same in-stock label). Properties are **inline**, not catalog-defined, so nothing leaks onto the other ~100 products of the shared seed catalog; the "auto-hidden row" case (every product lacks a value) already exists for free as the inherited `AGENT_TEST_VP9279_1786951191351`.
 
@@ -285,7 +328,7 @@ It never touches either store's barcode settings, any other product, prices or s
 ### 15. Loyalty missions (no CSV — `scripts/seed-data/loyalty/missions-specs.mjs`)
 The VCST-5319 mission fixtures have **no committed data file**: the side-effect-free spec module IS the
 source of truth, and everything runtime (mission GUIDs, the resolved currency/locale codes, the banner
-asset URLs) lives in `aliases.<env>.json`. Fourteen `MSN_*` mission aliases plus `MSN_STORE_SETTINGS`
+asset URLs) lives in `aliases.<env>.json`. The `MSN_*` mission aliases plus `MSN_STORE_SETTINGS`
 (the `Loyalty.Missions.Enable` gate), the two live-discovered `MSN_PERSKU_PRODUCT_*` targets and
 `MSN_PROGRESS_ORDER`. Three things
 worth knowing before editing them: **`MSN_EXPIRED` is the one fixture deliberately OUTSIDE its date
@@ -306,12 +349,31 @@ the order but **cannot remove the progress rows it produced** (search+get API on
 orphaned and unreachable, which is reported rather than swallowed. Seed:
 `npm run seed:loyalty-missions`; guard: `npm run td:validate:missions`; artwork edited →
 `npm run seed:loyalty-missions -- --reupload-banners`.
+
+### 16. Other seeded fixture families
+Each has a side-effect-free spec module under `scripts/seed-data/` as its source of truth; runtime GUIDs go to `aliases.<env>.json`. Add `:teardown` to a seed script to remove what it created. `npm run` lists every `seed:*` / `td:validate:*` script.
+
+| Family | Spec module | Seed | Guard |
+|---|---|---|---|
+| Sales Rep (lists, docs, stats/row cap, i18n plurals, orders, rep-only org, demo profile) | `sales-rep/*-specs.mjs` | `seed:sales-rep-family` (one entrypoint, fixtures or demo profile) or the individual `seed:sales-rep*` / `seed:rep-only-org` | `td:validate:sales-rep`, `-docs`, `-stats`, `-demo`, `td:validate:sr-orders` |
+| Sales Rep tasks (VCST-5732), aliases `SR_TASK_*` | `sales-rep/sales-rep-tasks-specs.mjs` | `seed:sales-rep-tasks` | `td:validate:sales-rep-tasks` |
+| Edge-case blockers for suites 006 / 011 / 014 — multi-org boundary personas (`ORG_EXACTLY_11`, `ORG_EXACTLY_10`), a 22-address org (`ORG_ADDR22`, `ORG_ADDR22_ADMIN`), an order with a discontinued item (`DISCONTINUED_ITEM_ORDER`), a personal non-org customer (`PERSONAL_NON_ORG_USER`) | `edge-cases/edge-cases-specs.mjs` | `seed:edge-cases` | `td:validate:edge-cases` |
+| OTP email sign-in (VCST-5748) + `auth/otp-inputs.json` | `auth/otp-signin-specs.mjs` | `seed:otp-signin` (`:rearm`, `:verify-only`) | `td:validate:otp-signin` |
+| Push messages / push audience (audience: VCST-5944) | `push/push-specs.mjs`, `push-messages/push-audience-specs.mjs` | `seed:push`, `seed:push-audience` (each has `:verify`) | `td:validate:push`, `td:validate:push-audience` |
+| Org-level loyalty (VCST-5024) + multi-org balance + `loyalty/org-loyalty-users.csv` | `loyalty/org-loyalty-specs.mjs`, `loyalty/multiorg-balance-specs.mjs` | `seed:org-loyalty`, `seed:multiorg-loyalty-balance` | `td:validate:org-loyalty`, `td:validate:multiorg-balance` |
+| Loyalty missions end-to-end | `loyalty/missions-e2e-specs.mjs` | `seed:missions-e2e` | `td:validate:missions-e2e` |
+| Org contract pricing | `pricing/org-contract-specs.mjs` | `seed:org-contract` (`:verify`) | `td:validate:org-contract` |
+| Back-office RBAC accounts | `platform/backoffice-rbac-specs.mjs` | `seed:rbac` | `td:validate:rbac` |
+| Catalog edge fixtures | `catalog/catalog-edge-specs.mjs` | `seed:catalog-edge` | `td:validate:catalog-edge` |
+| Review variants | `products/review-variants-specs.mjs` | `seed:review-variants` | `td:validate:review-variants` |
+| B2B membership lock / role whitelist | `b2b/membership-lock-specs.mjs`, `b2b/membership-roles-whitelist-specs.mjs` | `seed:membership-lock`, `seed:membership-roles` (each has `:verify`) | `td:validate:membership-lock` |
+
 ---
 
 ## Usage Guidelines
 
-### Environment Variables (.env)
-Many test data references use environment variables. See `config.js` for available vars:
+### Environment Variables (layered `.env.*`)
+Many test data references use environment variables, loaded `.env.defaults` → `.env.${TEST_ENV}` → `.env.local` (`npm run env:check` validates them). See `config.js` for available vars:
 - USER_EMAIL, USER_PASSWORD (personal user)
 - USER2_EMAIL, USER2_PASSWORD (second personal user)
 - USER_VIRTO, USER_VIRTO_PASSWORD (organization user)
@@ -333,17 +395,17 @@ Each test should:
 
 | Regression Suite | Primary Test Data |
 |------------------|-------------------|
-| 01-smoke-tests | users/, products/, payment/ |
-| 02-authentication-tests | users/, organizations/ |
-| 03-catalog-search-tests | products/, search-queries/ |
-| 04a/04b/04c-cart-checkout-orders | products/, addresses/, payment/ |
-| 05-bopis-pickup-tests | bopis/, products/, addresses/ |
-| 06-payment-tests | payment/, products/ |
-| 10-localization-tests | localization/, products/ |
-| 32-whitelabeling-tests | white-labeling/ |
-| 36-configurable-products | products/configurable-products.csv, promotions/coupons.csv, uploads/, b2b/users.csv |
-| 059/060-cms-pagebuilder | cms/pagebuilder-pages.md, b2b/users.csv |
-| VCST-4590-coupons | promotions/ |
+| 042 Smoke Tests | users/, products/, payment/ |
+| 031 / 032 / 033 Auth | users/, organizations/ |
+| 001–005 Catalog & Search | products/, search-queries/ |
+| 028–030 Cart · 011–013 Checkout · 014 Orders | products/, addresses/, payment/ |
+| 036 / 037 / 038 BOPIS | bopis/, products/, addresses/ |
+| 039 / 040a–c / 041 Payment | payment/, products/ |
+| 046 Localization | localization/, products/ |
+| 067 / 070 / 071 Whitelabeling | white-labeling/ |
+| 072* Configurable Products | products/configurable-products.csv, promotions/coupons.csv, uploads/, b2b/users.csv |
+| 059 / 060 / 060b Page Builder | cms/, b2b/users.csv |
+| 023 / 025 / 077 Promotions & Coupons | promotions/ |
 
 ---
 
@@ -351,7 +413,7 @@ Each test should:
 
 - **NEVER commit real payment cards** — Use only test processor cards
 - **NEVER commit real user credentials** — Use environment variables
-- **NEVER commit API keys** — Use .env file (gitignored)
+- **NEVER commit API keys** — Use `.env.local` (gitignored)
 
 All payment cards in `payment/test-cards.csv` are test mode cards from payment processors, non-functional in production.
 
@@ -359,7 +421,7 @@ All payment cards in `payment/test-cards.csv` are test mode cards from payment p
 
 ## Test Fixture Gaps Blocking Regression — Seed These
 
-**Status (updated 2026-07-25):** the four product fixtures below are **live** — `seed-standard-products.mjs` creates them from the `seeded=true` rows and they were re-confirmed on the QA env on 2026-07-25 (each resolves by `code` with the expected stock / MOQ / tier shape). The stale "not provisioned" claim, and the matching `"Template only — NOT seeded"` manual recipe in the CSV `notes`, have been removed; `npm run td:validate:standard` check [11] now fails any `seeded=true` row that reintroduces one. Env vars stay declared in `config.js` as optional (empty default) so an **unseeded** env still gives agents a clear "not provisioned" fail-fast signal — see the `.env.*` reconciliation rule in `.claude/rules/test-data.md`.
+**Status (updated 2026-07-25):** the four product fixtures below are **live** — `seed-standard-products.mjs` creates them from the `seeded=true` rows and they were re-confirmed on the QA env on 2026-07-25 (each resolves by `code` with the expected stock / MOQ / tier shape). The stale "not provisioned" claim, and the matching `"Template only — NOT seeded"` manual recipe in the CSV `notes`, have been removed; `npm run td:validate:standard` check [11] now fails any `seeded=true` row that reintroduces one. Env vars stay declared in `config.js` as optional (empty default) so an **unseeded** env still gives agents a clear "not provisioned" fail-fast signal — see the `.env.*` ↔ CSV SKU reconciliation in `.claude/knowledge/execution/test-data-authoring.md` (checked by `npm run td:validate:standard`).
 
 | Fixture | Template row | Alias | Env var | Provisioned |
 |---------|-------------|-------|---------|-------------|
@@ -378,7 +440,7 @@ All payment cards in `payment/test-cards.csv` are test mode cards from payment p
 - `MinOrderTotal=50` — Admin > Stores > [Store] > General (DESTRUCTIVE — isolated runs only)
 - Net-30 / On Account payment terms — Admin > Customers > Organizations > [Org]
 - Order approval workflow w/ buyer limit — Admin > Customers > Organizations > [Org]
-- 2+ saved addresses for `USER_EMAIL` — Storefront action
+- 2+ saved addresses for `USER_EMAIL` — Storefront action (a seeded alternative designed for CHK-059/060 exists: `ORG_ADDR22` / `ORG_ADDR22_ADMIN` via `npm run seed:edge-cases`, §16 — not yet referenced by suite 011)
 - Saved tokenized card for `USER_EMAIL` — Storefront action
 
 All fixtures should be stable, non-destructive, and reusable across runs. The following table documents the admin paths to provision each one.
@@ -399,14 +461,12 @@ All fixtures should be stable, non-destructive, and reusable across runs. The fo
 | `Net-30 payment method for {{ORG_USER_EMAIL}} org` | B2B organization for ORG_USER_EMAIL must have Net 30 / On Account payment terms configured. Also requires store-level On Account payment method enabled. | 013 (CHK-032) | Admin > Customers > Organizations > [Org] > Payment terms = Net 30; Admin > Stores > Payment methods > enable On Account |
 | `Approval workflow for {{ORG_USER_EMAIL}} org` | B2B org must have order approval workflow enabled with a buyer purchase limit (e.g. ≤ $100 auto-approved, above = Pending Approval). | 013 (CHK-033, CHK-034) | Admin > Customers > Organizations > [Org] > Order approval > enable; set buyer limit threshold |
 
-**Total blocked cases unblocked when all fixtures provisioned:** approximately 35 cases across the 6 suites.
-
 ---
 
 ## Orders Suite Seed Requirements (2026-04-22 review)
 
 **Scope:** Suite 014 (orders-frontend) and Suite 015 (quotes)
-**Root cause of blocks:** Emily's agent-pool account had only New + Payment-required orders at time of REG-2026-04-20-1000 run. 47 of 67 suite-014 cases were BLOCKED due to missing order states.
+**Root cause of blocks:** Emily's agent-pool account had only New + Payment-required orders at time of REG-2026-04-20-1000 run. Most suite-014 cases were BLOCKED due to missing order states.
 
 ### Status vocabulary note
 
@@ -465,7 +525,7 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 > `npm run returns:decisions:check`; guard `td:validate:orders` §[7]–[9].
 >
 > **Deferral re-checked 2026-07-25 (TLC-2026-07-25-0415) — the store-config half of the premise is
-> WRONG.** A live read of all 96 settings on `GET /api/stores/{STORE_ID}` found **no** store-level
+> WRONG.** A live read of every setting on `GET /api/stores/{STORE_ID}` found **no** store-level
 > enable flag for returns, invoice, or buyer-cancel: the keys assumed below
 > (`RETURNS_FEATURE_ENABLED`, an invoice store setting, `STORE_CONFIG_BUYER_CANCEL`) **do not exist**,
 > and there is no storefront `$cfg.*` counterpart either. So "enable the store setting first" is not
@@ -485,7 +545,7 @@ Admin status strings and storefront display labels are NOT 1:1. Test case assert
 | `PROCESSING_ORDER` | Order owned by `{{USER_EMAIL}}` with admin-set Processing status | DEFERRED (likely "Processing") | "Processing" | 014: CHK-024 precondition, ORD-047 | Admin > Orders > [Order] > change status to Processing |
 | `INVOICE_AVAILABLE_ORDER` | Completed order for `{{USER_EMAIL}}` that has a PDF invoice available; invoice feature enabled for store | DEFERRED | "Completed" | 014: CHK-047, CHK-048, ORD-014, ORD-041, ORD-042, ORD-043 | Admin > Store > enable invoice generation; Admin > Orders > mark complete |
 | `PARTIALLY_SHIPPED_ORDER` | Order owned by `{{USER_EMAIL}}` with 2+ shipments where at least one is Sent and at least one is still New/PickPack | DEFERRED (aggregate status from BL-ORD-003: mixed shipment states) | "Partially Shipped" (or equivalent) | 014: ORD-045 | Admin > Orders > [Order] > create 2 shipments; mark first as Sent, leave second as New |
-| `ORDER_WITH_DISCONTINUED_ITEM` | Completed order for `{{USER_EMAIL}}` where at least one ordered SKU has since been discontinued (removed from catalog) | DEFERRED | "Completed" | 014: CHK-041, ORD-002, ORD-034, ORD-036 | Place order for a product; then Admin > Catalog > [Product] > deactivate/remove |
+| `ORDER_WITH_DISCONTINUED_ITEM` | Completed order for `{{USER_EMAIL}}` where at least one ordered SKU has since been discontinued (removed from catalog). **Seeded alternative:** `@td(DISCONTINUED_ITEM_ORDER.*)`, owned by its own buyer, via `npm run seed:edge-cases` (§16) — not yet referenced by suite 014 | DEFERRED | "Completed" | 014: CHK-041, ORD-002, ORD-034, ORD-036 | Place order for a product; then Admin > Catalog > [Product] > deactivate/remove |
 | `ORDER_WITH_OOS_ITEM` | Completed order for `{{USER_EMAIL}}` where at least one ordered SKU is currently out of stock (inventory=0) | DEFERRED | "Completed" | 014: CHK-042 | Place order; then Admin > Inventory > set stock=0 for that SKU |
 | `ORDER_WITH_RETURN` | Completed order for `{{USER_EMAIL}}` that has an active return request (RMA) acknowledged by admin; RETURNS_FEATURE_ENABLED=true | DEFERRED | "Completed" + return status visible | 014: ORD-038 | Place order; submit return via storefront; admin acknowledges return |
 | `ORDER_PAST_RETURN_WINDOW` | Completed order for `{{USER_EMAIL}}` delivered 30+ days ago, past the store return window; RETURNS_FEATURE_ENABLED=true | DEFERRED | "Completed" (return window expired) | 014: ORD-040 | Place order with back-dated delivery (or set return window to 0 days temporarily) |
@@ -530,38 +590,36 @@ All quotes must be owned by `{{ORG_USER_EMAIL}}` (B2B org buyer). Quote statuses
 ### Priority Order for Provisioning
 
 **Highest ROI (unblocks most cases):**
-1. `COMPLETED_ORDER` — unblocks 10 cases in suite 014 (reorder, return, reorder pricing)
-2. `SHIPPED_ORDER` — unblocks 4 cases (status display, tracking, filter, cancel-blocked)
-3. `QUOTE_WITH_ADMIN_RESPONSE` — unblocks 10 cases in suite 015 (accept/reject/negotiate flows)
-4. `ACCEPTED_QUOTE` — unblocks 5 more suite-015 conversion cases
-5. Confirm `STORE_CONFIG_BUYER_CANCEL` key — unblocks 4 cancellation cases
-
-**Total cases unblocked when all orders fixtures provisioned:** approximately 32 cases in suite 014 + 22 cases in suite 015 = 54 total.
+1. `COMPLETED_ORDER` — suite 014 (reorder, return, reorder pricing)
+2. `SHIPPED_ORDER` — suite 014 (status display, tracking, filter, cancel-blocked)
+3. `QUOTE_WITH_ADMIN_RESPONSE` — suite 015 (accept/reject/negotiate flows)
+4. `ACCEPTED_QUOTE` — suite-015 conversion cases
+5. Confirm `STORE_CONFIG_BUYER_CANCEL` key — cancellation cases
 
 **Admin status mapping DEFERRED items — needs product owner input:**
 The exact internal admin status string values (e.g. the string passed to admin API to set "Processing", "Shipped", "Completed") are not fully documented in the knowledge base. BL-ORD-007 documents the shipment sub-states (New → PickPack → Sent → Delivered) but the order-aggregate status labels differ. The storefront reads `statusDisplayValue` from xAPI which is culture-dependent. Before writing seeding scripts, verify with product owner or by introspecting a live order in admin to capture the exact status field values.
 
 **Priority order for seeding (highest BLOCKED-rate reduction first):**
-1. `VALID_COUPON_CODE` — unblocks 4 cases across suites 029, 030, 011, 013
-2. `OOS_SKU` — unblocks 3 cases in suite 029 (CART-046, CART-082, plus CART-023/045 rewrites)
-3. `MinOrderTotal` store setting — unblocks 4 cases in suite 011 (CHK-054, -055, -084, -085)
-4. Approval workflow seed — unblocks 2 critical cases in suite 013 (CHK-033, -034)
-5. `2+ saved addresses` for USER_EMAIL — unblocks 2 cases in suite 011 (CHK-059, -060)
-6. `MULTI_ORG_USER_EMAIL` — unblocks 2 cases in suite 028 (CART-052, -053)
-7. `LOW_STOCK_SKU` — unblocks 2 cases in suite 028 (CART-037), suite 029 (CART-082)
-8. `TIER_PRICED_SKU` — unblocks 1 case in suite 029 (CART-078)
-9. `PACK_SIZE_SKU` — unblocks 2 cases in suite 028 (CART-054, -055)
-10. `EUR_USER_EMAIL` — unblocks 1 case in suite 030 (CART-102)
-11. `CONFIGURABLE_SKU` — unblocks 1 case in suite 030 (CART-104)
-12. `Saved tokenized credit card` — unblocks 2 cases in suite 011 (CHK-056, -057)
-13. `Net-30 payment terms` — unblocks 1 case in suite 013 (CHK-032)
+1. `VALID_COUPON_CODE` — suites 029, 030, 011, 013
+2. `OOS_SKU` — suite 029 (CART-046, CART-082, plus CART-023/045 rewrites)
+3. `MinOrderTotal` store setting — suite 011 (CHK-054, -055, -084, -085)
+4. Approval workflow seed — critical cases in suite 013 (CHK-033, -034)
+5. `2+ saved addresses` for USER_EMAIL — suite 011 (CHK-059, -060)
+6. `MULTI_ORG_USER_EMAIL` — suite 028 (CART-052, -053)
+7. `LOW_STOCK_SKU` — suite 028 (CART-037), suite 029 (CART-082)
+8. `TIER_PRICED_SKU` — suite 029 (CART-078)
+9. `PACK_SIZE_SKU` — suite 028 (CART-054, -055)
+10. `EUR_USER_EMAIL` — suite 030 (CART-102)
+11. `CONFIGURABLE_SKU` — suite 030 (CART-104)
+12. `Saved tokenized credit card` — suite 011 (CHK-056, -057)
+13. `Net-30 payment terms` — suite 013 (CHK-032)
 
 ---
 
 ## Catalog Suite Seed Requirements (2026-04-21 review)
 
 Review performed by test-management-specialist as part of catalog-suite hardcoded-value audit (REG-2026-04-20-1000).
-Full report: `reports/regression/REG-2026-04-20-1000/catalog-suite-review.md`
+Source run: `REG-2026-04-20-1000` (its run folder, which held `catalog-suite-review.md`, has since been pruned — `reports:prune`).
 
 ### New Fixture Dependencies Identified
 
@@ -569,11 +627,13 @@ The following test cases in catalog suites 001–003 now reference env vars for 
 
 | Case ID | Suite | Fixture | Env Var | Template Row | Status |
 |---------|-------|---------|---------|-------------|--------|
-| CAT-051 | 002-product-detail | Out-of-stock product (inventory = 0, stable) | `OOS_SKU` | `products/test-products.csv` PROD-101 | Not provisioned |
-| CAT-057 | 002-product-detail | Out-of-stock product (same fixture as CAT-051) | `OOS_SKU` | `products/test-products.csv` PROD-101 | Not provisioned |
-| CAT-058 | 002-product-detail | Low-stock product (inventory at or below configured threshold, e.g., 1–5 units) | `LOW_STOCK_SKU` | `products/test-products.csv` PROD-102 | Not provisioned |
+| CAT-051 | 002-product-detail | Out-of-stock product (inventory = 0, stable) | `OOS_SKU` | `products/test-products.csv` PROD-101 | Seeded by `npm run seed:products` (`seeded=true`) |
+| CAT-057 | 002-product-detail | Out-of-stock product (same fixture as CAT-051) | `OOS_SKU` | `products/test-products.csv` PROD-101 | Seeded by `npm run seed:products` (`seeded=true`) |
+| CAT-058 | 002-product-detail | Low-stock product (inventory at or below configured threshold, e.g., 1–5 units) | `LOW_STOCK_SKU` | `products/test-products.csv` PROD-102 | Seeded by `npm run seed:products` (`seeded=true`) |
 
 ### Seeding Instructions
+
+Both rows are `seeded=true` and created by `npm run seed:products`; the manual Admin paths below are only a fallback.
 
 **OOS_SKU (PROD-101):** Create a dedicated product in the B2B virtual catalog with inventory permanently set to 0 across all fulfillment centers. Do not use a regularly-sold product — this must be a stable OOS fixture that is never restocked.
 Admin path: `Admin > Catalog > Products > Add product` (type: Physical, category: any B2B-mixed category) then `Admin > Inventory > [product] > set all fulfillment center stock = 0`
