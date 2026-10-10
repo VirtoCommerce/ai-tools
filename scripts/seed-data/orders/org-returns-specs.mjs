@@ -166,6 +166,14 @@ export const ORDER_LINES = Object.freeze({ [LINE_ROLE_X]: 40, [LINE_ROLE_Y]: 25 
 
 export const fullNameOf = (p) => p.fullName || `${p.firstName} ${p.lastName}`;
 export const emailOf = (p) => (p.noEmail ? null : p.login);
+/** Address the ACCOUNT keeps: users/create refuses one without an email, so an email-less persona gets <login>@yopmail.com. */
+export const accountEmailOf = (p) => emailOf(p) || `${p.login}@yopmail.com`;
+/**
+ * The password-grant `username` — what the alias's `email` field must hold, because graphql-auth resolveRole
+ * sends @td(<role>.email) as `username`. Always the LOGIN (user name): for an email-less persona that is a
+ * plain user name, never an address, so the field adds no email to the persona.
+ */
+export const authUsernameOf = (p) => p.login;
 export const orgEmailOf = (o) => (o.emailOfPersona ? emailOf(personaByKey[o.emailOfPersona]) : o.email);
 /** Mixed-case variant of an address (local part upper-cased) — same mailbox, different letters. */
 export const upperVariant = (address) => (address ? address.replace(/^[^@]+/, (s) => s.toUpperCase()) : null);

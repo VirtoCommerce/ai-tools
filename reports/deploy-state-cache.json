@@ -1,20 +1,37 @@
 {
- "capturedAt": "2026-10-08T08:12:47.493Z",
+ "capturedAt": "2026-10-09T15:20:02.123Z",
  "env": "vcst",
+ "runId": "REG-2026-10-09-1716",
  "declared": {
-  "source": "vc-deploy-dev@vcst-qa backend/packages.json",
-  "PageBuilderModule": "3.1033.0-pr-170-236e (blob)"
+  "source": "vc-deploy-dev@vcst-qa backend/packages.json (sha 5b26104b)",
+  "Platform": "3.1076.0",
+  "XCart": "3.1040.0-pr-147-9199",
+  "XOrder": "3.1015.0-pr-53-f652",
+  "Quote": "3.1004.0-pr-158-c2a0",
+  "FileExperienceApi": "3.1007.0-pr-25-ff70",
+  "Return": "3.1005.0-pr-28-62f9",
+  "SalesRep": "3.1013.0-pr-18-d367",
+  "PageBuilderModule": "3.1034.0-pr-172-5aad",
+  "Loyalty": "3.1009.0",
+  "Xapi": "3.1026.0",
+  "Cart": "3.1012.0",
+  "Orders": "3.1018.0"
  },
  "deployed": {
   "source": "GET /api/platform/modules",
-  "Platform": "3.1076.0",
-  "PageBuilderModule": "3.1033.0-pr-170-236e",
-  "Store": "3.1009.0",
-  "Content": "3.1006.0",
+  "Cart": "3.1012.0",
   "Customer": "3.1029.0",
-  "Search": "3.1010.0",
-  "Assets": "3.1010.0",
-  "Core": "3.1012.0"
- },
- "runId": "REG-2026-10-08-0812"
+  "FileExperienceApi": "3.1007.0-pr-25-ff70",
+  "Loyalty": "3.1009.0",
+  "Orders": "3.1018.0",
+  "PageBuilderModule": "3.1034.0-pr-172-5aad",
+  "Quote": "3.1004.0-pr-158-c2a0",
+  "Return": "3.1005.0-pr-28-62f9",
+  "SalesRep": "3.1013.0-pr-18-d367",
+  "Store": "3.1009.0",
+  "Xapi": "3.1026.0",
+  "XCart": "3.1040.0-pr-147-9199",
+  "XOrder": "3.1015.0-pr-53-f652",
+  "XPickup": "3.1008.0"
+ }
 }

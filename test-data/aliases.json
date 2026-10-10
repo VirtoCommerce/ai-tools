@@ -9412,6 +9412,21 @@
     },
     "notes": "VCST-5883 — a SECOND buyer in the SAME organization as the returns buyer (USER_EMAIL): the negative actor for \"a colleague cannot act on another buyer's return\". It is the existing USER2 persona; the seeder verifies same-org membership live via me.contact.organizations and writes the ids to aliases.<env>.json; it creates nothing. Password = {{USER2_PASSWORD}} (layered env). If USER2 is not in the buyer's org on an env the seeder writes nothing and reports FIXTURE-GAP."
   },
+  "RETURNS_AUTH_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:decisions",
+    "email": "agent-test-retdec-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-RetDec Buyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id"
+    },
+    "notes": "VCST-5883 — the DEDICATED buyer that owns every RETURNS_AUTH_* order and return. A public yopmail inbox (never the env persona USER, whose USER_EMAIL can be a real mailbox: one seed sends ~20 order/return notifications), a Customer account on B2B-store with NO organization. Sign in with [AUTH role=RETURNS_AUTH_BUYER]. Find-or-created by `TEST_ENV=<env> npm run seed:returns:decisions` (or `-- --buyer-only`) via user-provision ensurePersonalAccount; the seeder refuses to write as any other buyer. Spec: DECISION_BUYER in scripts/seed-data/orders/return-decisions-specs.mjs; guard npm run td:validate:orders §9 pins this entry to it. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). A full `npm run seed:returns:decisions:teardown` deletes it."
+  },
   "RETURNS_AGENT_NO_AUTHORIZE": {
     "seed": "seed:rbac",
     "_inline": true,
@@ -9949,12 +9964,14 @@
   "ORG_RET_BUYER_NOEMAIL": {
     "_inline": true,
     "seed": "seed:returns:org",
+    "email": "agent-test-orgret-buyer-noemail",
     "login": "agent-test-orgret-buyer-noemail",
     "account_email": "agent-test-orgret-buyer-noemail@yopmail.com",
     "password": "{{DEFAULT_TEST_PASSWORD}}",
     "name": "AGENT-TEST-OrgRet NoEmailBuyer",
     "store_id": "B2B-store",
     "fields": {
+      "email": "email",
       "login": "login",
       "account_email": "account_email",
       "password": "password",
@@ -9975,7 +9992,7 @@
       "lineBOrderedQuantity": "lineBOrderedQuantity",
       "seededAt": "seededAt"
     },
-    "_notes": "VCST-5884 — A buyer whose CONTACT and ORDER ADDRESSES carry no email; the login is a plain user name. The platform refuses an account without one, so the ACCOUNT keeps <login>@yopmail.com — the last rung of the buyer-address fallback (order address → contact → account). NOT \"no email anywhere\" (FIXTURE-GAP for that shape). STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. FIXTURE-GAP for \"no email ANYWHERE\": users/create refuses an account without one (\"Email '' is invalid.\") and the update keeps it, so the buyer email resolves to account_email (ReturnBuyerResolver: contact email ?? account email; order address first). What this alias proves is the FALLBACK, not the absence. Sign in with `login` (a user name, not an email). Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+    "_notes": "VCST-5884 — A buyer whose CONTACT and ORDER ADDRESSES carry no email; the login is a plain user name. The platform refuses an account without one, so the ACCOUNT keeps <login>@yopmail.com — the last rung of the buyer-address fallback (order address → contact → account). NOT \"no email anywhere\" (FIXTURE-GAP for that shape). STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. FIXTURE-GAP for \"no email ANYWHERE\": users/create refuses an account without one (\"Email '' is invalid.\") and the update keeps it, so the buyer email resolves to account_email (ReturnBuyerResolver: contact email ?? account email; order address first). What this alias proves is the FALLBACK, not the absence. Sign in with `login` (a user name, not an email). `email` is NOT an address: it holds the LOGIN because [AUTH role=…] (scripts/lib/graphql-auth.ts resolveRole) sends @td(<role>.email) as the password-grant `username` and resolves no other field — without it RET-ORG-038 aborted at AUTH (REG-2026-10-08-1840). The grant accepts the user name (vcst 2026-10-09: 200 for both login and account_email). Never use `email` as the buyer's mailbox — that is `account_email`; td:validate:returns-org pins email = login. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
   "ORG_RET_MULTI_ORG": {
     "_inline": true,

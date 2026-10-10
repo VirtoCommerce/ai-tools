@@ -19,7 +19,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   ROLES, ORGS, PERSONAS, OTHER_RETURN, OWNED_ALIASES, FIXTURE_GAPS, SEED_SCRIPT, PASSWORD_TOKEN, BASE_ROLE,
-  emailOf, orgEmailOf, upperVariant, fullNameOf, orgOrderNumber, validateOrgReturnsFixtureSet,
+  emailOf, accountEmailOf, authUsernameOf, orgEmailOf, upperVariant, fullNameOf, orgOrderNumber, validateOrgReturnsFixtureSet,
 } from './org-returns-specs.mjs';
 import { GUID_RE } from './orders-specs.mjs';
 
@@ -54,8 +54,10 @@ for (const o of ORGS) {
   expectStatic[o.alias] = e;
 }
 for (const p of PERSONAS) {
-  const e = { login: p.login, password: PASSWORD_TOKEN, name: fullNameOf(p), store_id: 'B2B-store' };
-  if (emailOf(p)) e.email = emailOf(p);
+  // `email` is the AUTH username (graphql-auth resolveRole sends @td(<role>.email) as `username`) — the
+  // login for every persona; an email-less persona's real account address lives in `account_email`.
+  const e = { login: p.login, password: PASSWORD_TOKEN, name: fullNameOf(p), store_id: 'B2B-store', email: authUsernameOf(p) };
+  if (!emailOf(p)) e.account_email = accountEmailOf(p);
   expectStatic[p.alias] = e;
 }
 expectStatic[OTHER_RETURN.alias] = {};

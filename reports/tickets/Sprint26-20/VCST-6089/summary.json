@@ -1,0 +1,67 @@
+{
+ "ticket": "VCST-6089",
+ "ticket_type": "Bug",
+ "flow": "verify-fix (operator-directed: deploy-pr -> change-scoped regression -> targeted defect repro)",
+ "path": "regression-scoped",
+ "verdict": "PASS WITH NOTES",
+ "date": "2026-10-09",
+ "environment": "vcst",
+ "build": {
+  "XCart": "3.1040.0-pr-147-9199",
+  "XOrder": "3.1015.0-pr-53-f652",
+  "Quote": "3.1004.0-pr-158-c2a0",
+  "deploy_pr": "VirtoCommerce/vc-deploy-dev#6901"
+ },
+ "tracker": {
+  "kind": "jira",
+  "comment_id": "111785",
+  "amended": false
+ },
+ "status_transitions": [
+  {
+   "at": "5-status",
+   "hop": "opening",
+   "from": "Testing",
+   "to": "Testing",
+   "skipped": "already in-testing at run start",
+   "by": "qa-lead (inline orchestrator)",
+   "confirmed": false,
+   "result": "skipped"
+  },
+  {
+   "at": "5-status",
+   "hop": "closing",
+   "from": "Testing",
+   "to": "Tested",
+   "transition": "Finish test (id 8), re-resolved live from Testing",
+   "by": "qa-lead (inline orchestrator)",
+   "confirmed": true,
+   "result": "done"
+  }
+ ],
+ "regression": {
+  "run_id": "REG-2026-10-09-1716",
+  "scope": "exact --ids, cart-validation focus (user-narrowed)",
+  "suites": 7,
+  "cases": 27,
+  "passed": 24,
+  "failed": 0,
+  "blocked": 2,
+  "ambiguous": 1,
+  "report": "reports/regression/REG-2026-10-09-1716/regression-2026-10-09.md",
+  "defect_repro": {
+   "defect": "Defect 1 - stale validation mirror on ValidationErrorsByRuleSet cache hit",
+   "verdict": "PASS",
+   "runs": 2,
+   "evidence": "reports/regression/REG-2026-10-09-1716/vcst-6089-defect1/"
+  }
+ },
+ "bugs_filed": [],
+ "bugs_not_filed": [
+  {
+   "id": "BUG_015_001",
+   "title": "RFQ created from cart has $0.00 lines (MFD-catalog products)",
+   "reason": "not attributed to VCST-6089: deploy also rolled back x-cart/quote dev commits; re-check after the PRs are rebased on dev"
+  }
+ ]
+}

@@ -18,7 +18,11 @@
  * including its two silent-failure lessons (platform-assigned line ids ⇒ two-phase create; shipment
  * items need the inline lineItem). Never touches step 1's AGENT-TEST-ORD-RET-<A..G> orders.
  *
+ * BUYER: the dedicated DECISION_BUYER (AGENT-TEST yopmail, no org), find-or-created here — NEVER the env
+ * persona USER, whose USER_EMAIL can be a real mailbox. The seed refuses to write as anyone else.
+ *
  * Flags: --dry-run · --verbose · --teardown · --only <KEY|ALIAS> · --fresh (rebuild even when valid)
+ *        · --buyer-only (provision + sign in the buyer, nothing else). A full --teardown also deletes the buyer.
  * Usage: TEST_ENV=vcptcore_qa1 npm run seed:returns:decisions
  */
 import { readFileSync } from 'node:fs';
@@ -35,9 +39,15 @@ import {
   RETURN_DECISION_FIXTURES, DECISION_TEMPLATE_FIXTURE, DECISION_COLLEAGUE_ALIAS, VIA_XAPI, VIA_ADMIN_PUT,
   decisionOrderNumber, decisionReturnRef, toOrderSpec, shapeDecisionTemplate, buildReturnItems,
   buildAdminReturnBody, diagnoseSeededReturns, decisionAliasRecord, rolesOf,
+  DECISION_BUYER, isDedicatedDecisionBuyer,
 } from './return-decisions-specs.mjs';
+import {
+  authenticate as provisionAuth, ensurePersonalAccount, deleteUserByEmail, findUserByEmail,
+} from '../../lib/user-provision.mjs';
 
 const FRESH = process.argv.includes('--fresh');
+// --buyer-only: find-or-create the dedicated buyer, prove its storefront sign-in, write nothing else.
+const BUYER_ONLY = process.argv.includes('--buyer-only');
 // --return-ids <id,id,…> (teardown only): extra AGENT-TEST return ids another lane of the same run left on
 // orders this seeder does not own (e.g. step 1's E/G). Passed on the command line, never committed — a
 // runtime GUID in a committed file resolves the wrong entity on every other env.
@@ -71,11 +81,27 @@ async function gqlMutate(label, query, variables, token) {
   return r.data;
 }
 
+/** The env persona `<key>_EMAIL` / `<key>_PASSWORD` (the colleague). */
+const envPersona = (key) => ({ key, email: process.env[`${key}_EMAIL`], password: process.env[`${key}_PASSWORD`] });
+/** The dedicated buyer (DECISION_BUYER) — never an env persona, so never a real mailbox. */
+const buyerPersona = () => ({ key: DECISION_BUYER.alias, email: DECISION_BUYER.email, password: process.env[DECISION_BUYER.passwordVar] });
+
+/** Find-or-create the dedicated buyer: contact + Customer account on STORE_ID, no organization. */
+async function ensureDecisionBuyer() {
+  const p = buyerPersona();
+  if (!p.password) throw new Error(`${DECISION_BUYER.passwordVar} is unset in the layered env — refusing to create ${p.email} with a fallback password`);
+  await provisionAuth();
+  const r = await ensurePersonalAccount({
+    email: p.email, password: p.password, first: DECISION_BUYER.firstName, last: DECISION_BUYER.lastName,
+    source: 'return-decisions', status: 'Active', pwDeclared: true,
+  });
+  log(`  buyer ${p.email}: ${r}`);
+}
+
 /** A platform user who can sign in to the storefront, with contact + org read back through `me`. */
-async function signedInPersona(key) {
-  const email = process.env[`${key}_EMAIL`]; const password = process.env[`${key}_PASSWORD`];
+async function signedInPersona({ key, email, password }) {
   const u = email && await api('GET', `/api/platform/security/users/${encodeURIComponent(email)}`, null, { expectStatus: [200, 404] });
-  if (!u?.id) return { ok: false, reason: `${key}_EMAIL=${email || '(unset)'} has no platform account` };
+  if (!u?.id) return { ok: false, reason: `${key}: ${email || '(unset)'} has no platform account` };
   const t = await storefrontToken(email, password);
   if (!t.ok) return { ok: false, reason: `${email} cannot sign in to ${STORE_ID}: ${t.reason}` };
   const me = await gql('{ me { id contact { id fullName organizationId organizations { items { id name } } } } }', {}, t.token);
@@ -246,18 +272,30 @@ async function teardown(buyer) {
     }
     return n;
   });
-  if (residue) { log(`  ⚠ ${residue} decision order(s)/return(s) still present after teardown`); process.exitCode = 1; }
+  // The dedicated buyer goes last, and only on a FULL teardown (an --only pass keeps it for the rest).
+  let buyerResidue = 0;
+  if (!ONLY) {
+    await provisionAuth();
+    await deleteUserByEmail(DECISION_BUYER.email);
+    buyerResidue = await verifyRemoved(async () => ((await findUserByEmail(DECISION_BUYER.email))?.id ? 1 : 0));
+    if (buyerResidue) log(`  ⚠ buyer ${DECISION_BUYER.email} still present after teardown`);
+  }
+  if (residue || buyerResidue) { if (residue) log(`  ⚠ ${residue} decision order(s)/return(s) still present after teardown`); process.exitCode = 1; }
   else log('Teardown complete — zero residue.');
 }
 
 async function main() {
   assertSafeTarget();
   await auth();
-  const buyerR = await signedInPersona('USER');
+  if (!TEARDOWN) await ensureDecisionBuyer();
+  const buyerR = await signedInPersona(buyerPersona());
   if (TEARDOWN) { await teardown(buyerR.ok ? buyerR : null); return; }
   if (!buyerR.ok) throw new Error(`buyer unusable: ${buyerR.reason}`);
   const buyer = buyerR;
-  log(`Buyer: ${buyer.email} — storefront sign-in verified; org "${buyer.organizationName}"`);
+  // Fail closed BEFORE any order/return write: only the dedicated AGENT-TEST yopmail buyer may receive these notifications.
+  if (!isDedicatedDecisionBuyer(buyer.email)) throw new Error(`buyer ${buyer.email} is not the dedicated ${DECISION_BUYER.email} — refusing to seed`);
+  log(`Buyer: ${buyer.email} — storefront sign-in verified; ${buyer.organizationId ? `org "${buyer.organizationName}"` : 'no organization'}`);
+  if (BUYER_ONLY) { log('--buyer-only: buyer provisioned and signed in; nothing else written.'); return; }
 
   const pol = (await gql(`query($s:String!){ returnPolicy(storeId:$s){ isEnabled windowDays allowedOrderStatuses } returnReasons(storeId:$s){ code requiresComment } }`, { s: STORE_ID }, buyer.token))?.data;
   if (!pol?.returnPolicy?.isEnabled) throw new Error(`returns are disabled on ${STORE_ID} — nothing here would be submittable`);
@@ -291,9 +329,10 @@ async function main() {
 
   // Same-organization colleague (a second buyer who must NOT be able to act on the first buyer's return).
   if (!ONLY || ONLY === DECISION_COLLEAGUE_ALIAS) {
-    const col = await signedInPersona('USER2');
+    const col = await signedInPersona(envPersona('USER2'));
     if (!col.ok) log(`  ⚠ ${DECISION_COLLEAGUE_ALIAS}: ${col.reason} — FIXTURE-GAP`);
     else if (col.id === buyer.id) log(`  ⚠ ${DECISION_COLLEAGUE_ALIAS}: USER2 IS the buyer — FIXTURE-GAP`);
+    else if (!buyer.organizationId) log(`  ⚠ ${DECISION_COLLEAGUE_ALIAS}: the buyer ${buyer.email} has no organization, so no same-org colleague can exist — FIXTURE-GAP`);
     else if (!buyer.organizationId || !col.orgIds.includes(buyer.organizationId)) log(`  ⚠ ${DECISION_COLLEAGUE_ALIAS}: ${col.email} is NOT in ${buyer.organizationName} — FIXTURE-GAP (provision a same-org contact)`);
     else {
       writeback[DECISION_COLLEAGUE_ALIAS] = {

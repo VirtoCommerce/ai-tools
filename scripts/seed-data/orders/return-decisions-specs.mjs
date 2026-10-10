@@ -3,8 +3,8 @@
  * submitted return PER LINE, and the buyer is notified (email + push).
  *
  * SINGLE SOURCE OF TRUTH, side-effect-free (no env load, no network): imported by the seeder
- * (seed-return-decisions.mjs), the read-only reconcile probe (check-return-decisions.mjs), the drift
- * guard (validate-orders-data.mjs §7–§9) and the unit tests.
+ * (seed-return-decisions.mjs), the read-only reconcile probe (check-return-decisions.mjs) and the drift
+ * guard (validate-orders-data.mjs §7–§9). Also declares the dedicated buyer (DECISION_BUYER).
  *
  * WHY A SIBLING OF orders-specs.mjs, NOT MORE ROWS IN IT: the step-1 family (RETURN_ORDER_FIXTURES)
  * answers "what is returnable"; this family answers "what happens to a return that was SUBMITTED".
@@ -160,6 +160,27 @@ export const RETURN_DECISION_FIXTURES = [
     decisionUnderTest: { [LINE_ROLE_X]: 2 },
   },
 ];
+
+/**
+ * The DEDICATED buyer every decision fixture belongs to. Never the env persona `USER`: seeding sends
+ * ~20 order/return notifications to the buyer, and USER_EMAIL is a real mailbox on some machines. A public
+ * yopmail inbox, AGENT-TEST-named contact (sweepable), NO organization, password from the layered env
+ * (`{{DEFAULT_TEST_PASSWORD}}`, never a literal). The seeder find-or-creates it (user-provision
+ * ensurePersonalAccount); cases sign in as it with `[AUTH role=RETURNS_AUTH_BUYER]`.
+ */
+export const DECISION_BUYER = Object.freeze({
+  alias: 'RETURNS_AUTH_BUYER',
+  email: 'agent-test-retdec-buyer@yopmail.com',
+  firstName: 'AGENT-TEST-RetDec',
+  lastName: 'Buyer',
+  passwordVar: 'DEFAULT_TEST_PASSWORD',
+});
+export const DECISION_BUYER_PASSWORD_TOKEN = `{{${DECISION_BUYER.passwordVar}}}`;
+/** Fail-closed guard (PURE): the seeder refuses to write as anyone but the dedicated AGENT-TEST yopmail buyer. */
+export function isDedicatedDecisionBuyer(email) {
+  const e = String(email || '').toLowerCase();
+  return e === DECISION_BUYER.email && e.startsWith('agent-test-') && e.endsWith('@yopmail.com');
+}
 
 export const DECISION_COLLEAGUE_ALIAS = 'RETURNS_COLLEAGUE';
 export const DECISION_OWNED_ALIASES = [...RETURN_DECISION_FIXTURES.map((f) => f.alias), DECISION_COLLEAGUE_ALIAS];

@@ -27,7 +27,7 @@ import {
 } from './orders-specs.mjs';
 import {
   ROLES, ORGS, PERSONAS, FIXTURE_GAPS, OTHER_RETURN, OTHER_RETURN_REF, BASE_ROLE, PASSWORD_VAR, ORDER_TEMPLATE_FIXTURE,
-  VIEW_PERMISSION, fullNameOf, emailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
+  VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
   expectedCanView, validateOrgReturnsFixtureSet,
 } from './org-returns-specs.mjs';
 
@@ -181,7 +181,7 @@ async function ensureUser(p, contactId, password) {
     const body = {
       userName: p.login, password, memberId: contactId, storeId: STORE_ID, userType: 'Customer', isAdministrator: false,
       status: 'Approved', emailConfirmed: true, lockoutEnabled: false, roles,
-      email: email || `${p.login}@yopmail.com`,
+      email: accountEmailOf(p),
     };
     const res = await api('POST', '/api/platform/security/users/create', body);
     if (res && res.succeeded === false) throw new Error(`users/create ${p.login}: ${JSON.stringify(res.errors)}`);

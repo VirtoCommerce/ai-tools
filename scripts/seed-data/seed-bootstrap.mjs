@@ -8,7 +8,7 @@
  *
  * Order (explicit seed priority — see STEPS[].priority):
  *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
- *   priority 30+ : properties → products → configurable → pricing → inventory → bopis
+ *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → bopis
  *                  → company-users → promotions → loyalty → white-labeling
  *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
  *    so a fulfillment center exists; company-users after the member index is ready.)
@@ -98,6 +98,9 @@ const TEARDOWN_STEPS = [
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
   { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Category images before the catalog sweep: it strips our images from every store-catalog category
+  // (real ones included) and deletes the uploaded files — a catalog-first sweep would leave the files.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
@@ -145,6 +148,10 @@ const STEPS = [
   // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
   // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
+  // Category artwork (test-data/catalogs/category-images.csv). Resolves categories BY NAME inside the
+  // store's catalog, so it runs after store(80) binds that catalog and after every phase that creates
+  // categories. Optional: a name the env does not carry is reported unmatched, never created.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', required: false, priority: 85 },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
