@@ -25,7 +25,8 @@ rules:
       kind: manual
       ref: Place order → check email inbox → exactly 1 confirmation received. Check Admin → Notification feed → sent status shown. Simulate email service failure → retry mechanism sends email after service recovery → still only 1 email total.
     violation_signal: 0 or 2+ confirmation emails; email silently dropped on service failure; no retry mechanism; notification feed shows no record.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] RET-ORG-035, RET-ORG-036, RET-ORG-037 failed in REG-2026-10-08-1840"
   - id: BL-NOTIF-002
     title: Email content matches order data
     rule: "Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields."

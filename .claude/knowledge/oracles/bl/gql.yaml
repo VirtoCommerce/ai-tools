@@ -29,8 +29,8 @@ rules:
     violation_signal: HTTP 5xx on schema-validation error; `errors[]` empty on an obviously-invalid query; stack trace or SQL fragment exposed in `errors[0].message`; thrown exception bubbles to transport layer.
     status: ACTIVE
     verified:
-      date: 2026-10-06
-      by: REG-2026-10-06-1857
+      date: 2026-10-09
+      by: REG-2026-10-09-1716
   - id: BL-GQL-002
     title: GraphQL query performance thresholds
     rule: "Happy-path GraphQL operations against the xAPI complete within target wall-clock thresholds measured from request-send to response-received: simple single-resolver queries (`me`, `categories(first:1)`, flat `orders(first:10)`) **< 500 ms**; deep nested queries (`orders { items addresses inPayments shipments }`) **< 1000 ms**; introspection (`__schema { types }`) **< 1000 ms**. Thresholds are environment-specific — these are baselines for one deployment; other environments may differ."

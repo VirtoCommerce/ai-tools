@@ -1,25 +1,163 @@
 {
- "runId": "REG-2026-10-08-1151",
+ "runId": "REG-2026-10-09-1716",
  "status": "completed",
- "startedAt": "2026-10-08T09:51:40.270Z",
- "windowStart": "2026-10-08T09:51:40.270Z",
- "selection": "106",
+ "startedAt": "2026-10-09T15:16:42.957Z",
+ "windowStart": "2026-10-09T15:16:42.957Z",
+ "selection": "050b5,029,010,083b,042,015,011",
  "env": "vcst",
  "scoped": true,
- "purpose": "VCST-6077 round 2 C1 supplement: SR-TK-023 only; --no-promote",
- "suites": {
-  "106": {
+ "purpose": "VCST-6089 NARROWED by user to cart validation: exact --ids set (27 cases) across 7 suites; descoped before dispatch: 028,037,050b4,050b1,030,050b2,012,013,050c,050b3; no --seed; Step 6.5 dry",
+ "suites": [
+  {
+   "id": "011",
+   "name": "Checkout Flow",
    "status": "done",
    "lane": "browser",
-   "browser": "playwright-edge",
-   "laneId": 3,
-   "startedAt": "2026-10-08T09:51:40.270Z",
-   "attempts": 1,
+   "testCount": 1,
+   "timeoutMinutes": 93,
+   "ids": [
+    "CHK-008"
+   ],
    "pass": 1,
    "fail": 0,
    "blocked": 0,
-   "finishedAt": "2026-10-08T09:52:50.831Z"
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:31:32Z",
+   "browser": "playwright-firefox",
+   "laneId": "2"
+  },
+  {
+   "id": "010",
+   "name": "B2B Bulk Ship Dashboard",
+   "status": "done",
+   "lane": "browser",
+   "testCount": 4,
+   "timeoutMinutes": 85,
+   "ids": [
+    "B2C-BULK-003",
+    "B2C-BULK-005",
+    "B2C-BULK-006",
+    "B2C-LIST-030"
+   ],
+   "browser": "playwright-firefox",
+   "laneId": "2",
+   "startedAt": "2026-10-09T15:20:57Z",
+   "pass": 3,
+   "fail": 0,
+   "blocked": 1,
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:31:32Z"
+  },
+  {
+   "id": "029",
+   "name": "Cart Validation & Persistence",
+   "status": "done",
+   "lane": "browser",
+   "testCount": 6,
+   "timeoutMinutes": 58,
+   "ids": [
+    "CART-015",
+    "CART-026",
+    "CART-047",
+    "CART-048",
+    "CART-096",
+    "CART-097"
+   ],
+   "browser": "playwright-chrome",
+   "laneId": "1",
+   "startedAt": "2026-10-09T15:20:57Z",
+   "pass": 5,
+   "fail": 0,
+   "blocked": 1,
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:32:32Z"
+  },
+  {
+   "id": "015",
+   "name": "Quotes",
+   "status": "done",
+   "lane": "browser",
+   "testCount": 1,
+   "timeoutMinutes": 53,
+   "ids": [
+    "QUOTE-001"
+   ],
+   "pass": 0,
+   "fail": 0,
+   "blocked": 0,
+   "skipped": 0,
+   "ambiguous": 1,
+   "finishedAt": "2026-10-09T15:31:32Z",
+   "browser": "playwright-edge",
+   "laneId": "3"
+  },
+  {
+   "id": "042",
+   "name": "Smoke Tests",
+   "status": "done",
+   "lane": "browser",
+   "testCount": 1,
+   "timeoutMinutes": 45,
+   "ids": [
+    "SMK-022"
+   ],
+   "pass": 1,
+   "fail": 0,
+   "blocked": 0,
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:32:32Z",
+   "browser": "playwright-chrome",
+   "laneId": "1"
+  },
+  {
+   "id": "083b",
+   "name": "Loyalty Mixed Cart Order",
+   "status": "done",
+   "lane": "browser",
+   "testCount": 3,
+   "timeoutMinutes": 38,
+   "ids": [
+    "MCO-E2E-002",
+    "MCO-E2E-006",
+    "MCO-E2E-008"
+   ],
+   "browser": "playwright-edge",
+   "laneId": "3",
+   "startedAt": "2026-10-09T15:20:57Z",
+   "pass": 3,
+   "fail": 0,
+   "blocked": 0,
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:31:32Z"
+  },
+  {
+   "id": "050b5",
+   "name": "GraphQL xCart — Per-RuleSet Validation & Line-Item Validity",
+   "status": "done",
+   "lane": "fastpath",
+   "testCount": 11,
+   "timeoutMinutes": 18,
+   "ids": [
+    "CVAL-GQL-001",
+    "CVAL-GQL-002",
+    "CVAL-GQL-003",
+    "CVAL-GQL-004",
+    "CVAL-GQL-005",
+    "CVAL-GQL-006",
+    "CVAL-GQL-007",
+    "CVAL-GQL-008",
+    "CVAL-GQL-009",
+    "CVAL-GQL-010",
+    "CVAL-GQL-011"
+   ],
+   "startedAt": "2026-10-09T15:20:57Z",
+   "pass": 11,
+   "fail": 0,
+   "blocked": 0,
+   "skipped": 0,
+   "finishedAt": "2026-10-09T15:21:06Z"
   }
- },
- "finishedAt": "2026-10-08T09:52:50.831Z"
+ ],
+ "outputDir": "reports/regression/REG-2026-10-09-1716",
+ "finishedAt": "2026-10-09T16:05:58Z"
 }

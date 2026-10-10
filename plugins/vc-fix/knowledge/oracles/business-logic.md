@@ -279,7 +279,6 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Violation signal:** Two orders with same items created; button remains clickable during processing; no loading indicator.
 - **Agents:** qa-frontend-expert, qa-backend-expert, qa-testing-expert, test-management-specialist
 - **Trust:** INFERRED
-- **Lifecycle:** SUSPECT — [code] vc-frontend@203908b:client-app/shared/checkout/components/proceed-to.vue - the only double-submit guard found is the button disabled while loading; no server-side idempotency (same cart -> same order) found in vc-module-x-order@0288eeb createOrderFromCart path, against the clause 'backend must enforce idempotency' - re-run the check
 
 ### BL-CHK-003: Address validation by country `[P1-data]`
 - **Rule:** Checkout address forms adapt the **State/Province** requirement to the selected country, but **ZIP/Postal code is required unconditionally regardless of country** (the `postalCode` field's schema has no country branch). State/Province is required when the selected country has one or more regions and is hidden/optional otherwise. US requires state; the address must be validated before proceeding to payment.
@@ -693,6 +692,7 @@ Testable business rules for the Virto Commerce B2B e-commerce platform. Use this
 - **Source:** VCST-5028 (Done) — roles must be scoped to a single organization so a user can hold different roles in different organizations
 - **Source:** VCST-5401 (Done) — fixed an org membership role leaking into the global account; per-org permissions must come only for the active org
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] RET-ORG-022 failed in REG-2026-10-08-1840
 
 ### BL-B2B-008: Org-scoped role change mutates only the target org's membership `[P1-data]`
 - **Rule:** Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)
@@ -1226,6 +1226,7 @@ These invariants are extracted from BOPIS suite assertions (suites 036–038). T
 - **Docs:** platform/user-guide/docs/notifications/notification-log.md (published) — sent notifications are recorded in the Notification activity feed
 - **Source:** vc-module-order `SendNotificationsOrderChangedEventHandler.Handle(OrderChangedEvent)` — `SendOrderNotifications`-gated, `IsNewlyAdded` → one `OrderCreateEmailNotification` via `BackgroundJob.Enqueue` → `ScheduleSendNotificationAsync`; failures surface in the Admin Notification activity feed (attempt count / status).
 - **Trust:** INFERRED
+- **Lifecycle:** SUSPECT — [case] RET-ORG-035, RET-ORG-036, RET-ORG-037 failed in REG-2026-10-08-1840
 
 ### BL-NOTIF-002: Email content matches order data `[P1-data]`
 - **Rule:** Order confirmation email content must match the actual order: order number, item names, quantities, prices, subtotal, shipping cost, tax, and grand total. The email uses the same currency as the order. Personalization tokens (customer name, shipping address) must be resolved — no `{{customerName}}` or blank fields.
@@ -1416,6 +1417,7 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4597 (Done) — PDP shipment options content overflowed its widget container
 - **Source:** VCST-5124 (Done) — cart save-for-later control overflowed its card by 27px on mobile
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] RET-ORG-027, RET-ORG-041 failed in REG-2026-10-08-1840
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
 - **Rule:** Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row.
@@ -2403,20 +2405,20 @@ ticket or a docs page disputes (`status`).
 |--------|----------|-------|----|----|----|----------|---------|
 | Pricing & Discounts | BL-PRICE-001–009 | 9 | 7 | 1 | 1 | 6 | 2 |
 | Cart | BL-CART-001–015 | 15 | 5 | 10 | 0 | 7 | 1 |
-| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 1 |
+| Checkout | BL-CHK-001–008 | 8 | 5 | 3 | 0 | 1 | 0 |
 | Orders & Fulfillment | BL-ORD-001–010 | 10 | 3 | 7 | 0 | 5 | 1 |
 | Users & Authentication | BL-AUTH-001–017 | 17 | 5 | 11 | 1 | 9 | 3 |
-| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 3 |
+| B2B / Organization | BL-B2B-001–013 | 13 | 4 | 9 | 0 | 10 | 4 |
 | Catalog & Inventory | BL-CAT-001–012 | 12 | 2 | 6 | 4 | 8 | 5 |
 | Cross-Domain Invariants | BL-CROSS-001–012 | 12 | 7 | 5 | 0 | 5 | 5 |
 | Search | BL-SRCH-001–007 | 7 | 0 | 5 | 2 | 6 | 0 |
 | Shipping & BOPIS | BL-SHIP-001–004 | 4 | 2 | 2 | 0 | 2 | 0 |
 | BOPIS-Specific Rules | BL-BOPIS-001–008 | 8 | 1 | 6 | 1 | 3 | 0 |
-| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 3 |
+| Notifications | BL-NOTIF-001–007 | 7 | 1 | 5 | 1 | 4 | 4 |
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
@@ -2430,4 +2432,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **36** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **38** |

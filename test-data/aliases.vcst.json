@@ -2777,5 +2777,240 @@
     "all_minus_tabs": "4",
     "seeded_at": "2026-10-08T08:51:55.791Z",
     "decays_at_utc": "2026-10-09T04:00:00.000Z"
+  },
+  "ORG_RET_VIEWER_ORG": {
+    "id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09"
+  },
+  "ORG_RET_ORGROLE_ORG": {
+    "id": "18d30f05-85a9-4eb6-b262-9b862aab88c2"
+  },
+  "ORG_RET_OTHER_ORG": {
+    "id": "1d86c8df-8470-42d2-8523-cddca92b90d3"
+  },
+  "ORG_RET_SAME_ADDRESS_ORG": {
+    "id": "a74f77f8-196d-41de-aa5a-3290263e5b55"
+  },
+  "ORG_RET_NOEMAIL_ORG": {
+    "id": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6"
+  },
+  "ORG_RET_LONG_NAME_ORG": {
+    "id": "c711e53c-791e-432e-aa2c-d5ee49d7a050"
+  },
+  "ORG_RET_HOME_ORG": {
+    "id": "b2f694ad-be10-40cc-afc0-423cec85d750"
+  },
+  "ORG_RET_BUYER": {
+    "userId": "8c3fb993-654e-4506-a8ae-28759c6bdc25",
+    "contactId": "f690f668-a02a-4064-bba6-5af5953e7980",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "2c6b2d49-102a-45da-bced-1dc25610f582",
+    "orderId": "9d12fd5f-e0db-42cb-a612-ecdad20350b1",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "63c425d3-9dfc-4a8b-bac9-08e93221e735",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "9f1cb8a3-ef63-4a04-8ef5-d269221581ef",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_HOLDER_GLOBAL": {
+    "userId": "c6a48020-0b32-43d6-ad05-e43e7dc8b293",
+    "contactId": "99fef6df-f7a4-4f15-b5b6-b0ceae7d200d",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "e86c86d1-776f-4ac0-bc4f-e0c2d95ba237"
+  },
+  "ORG_RET_HOLDER_MEMBERSHIP": {
+    "userId": "9f059e55-cd51-48c5-8cf0-08ae5c0489b0",
+    "contactId": "ae8efca4-5c29-402b-a453-a053e2bb0623",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "ec7e052f-a343-42b3-8f36-db0fd8242f43",
+    "orderId": "f8f40ac8-28ac-4d2b-91e2-d83048ebe55b",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-HOLDER-MEMBERSHIP",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "4d75b1d1-ddda-45bd-9c43-82ebecdc00c9",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "d1b36d83-ac55-4e0f-8f08-ef699006cd30",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_HOLDER_SUBMIT": {
+    "userId": "5742beaa-1d50-4cb1-aef3-31c124977665",
+    "contactId": "bf60b45c-85da-4c9a-b5aa-8a22bc681add",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "25947774-64c7-4fbe-bf96-5dbbe049cdd6"
+  },
+  "ORG_RET_HOLDER_LOCKED": {
+    "userId": "9a137762-e884-48c1-ad2e-2e45df15ed2c",
+    "contactId": "fa08d0f9-48da-408c-9980-7ff503374bd0",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "ab23032b-bbb9-48de-88df-c58b8a5b6de9"
+  },
+  "ORG_RET_HOLDER_INVITED": {
+    "userId": "c8c9e968-d8d9-469b-8fb3-13bfad4aaa4a",
+    "contactId": "459c5a22-013f-4d59-8f6d-292387c0925a",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "82fcd712-43d3-45d0-8ab2-e964b70012b3"
+  },
+  "ORG_RET_HOLDER_REJECTED": {
+    "userId": "c08972fc-c030-4648-b4fc-4b8e1bcc9c02",
+    "contactId": "0dc96cf0-e9fc-4616-ab1c-1f4ac61641f4",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "b67c7e9e-96d0-4bbf-918d-d7c19029337e"
+  },
+  "ORG_RET_HOLDER_DELETED": {
+    "userId": "04fc972f-76c4-4414-aba0-7e2eac0411db",
+    "contactId": "e3af0208-b58b-49f0-a351-7cb9842a1a06",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "3a90ecb5-0486-4ffa-9299-8d5ff29d7e7d"
+  },
+  "ORG_RET_BUYER_NOEMAIL": {
+    "userId": "d2e28ab7-c930-4366-8be6-aa8b6fa633f8",
+    "contactId": "74b24b7c-4ba0-44d9-90f1-057a99a44471",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "a0ac8dc5-2679-41ee-a00c-6550b8bf45a9",
+    "orderId": "75d9972c-ebcd-4bc1-a979-42a8064a41d2",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-BUYER-NOEMAIL",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "96231972-1e4b-4be0-8113-db5191785774",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "a45ef607-473f-455e-b974-db5716622d76",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_MULTI_ORG": {
+    "userId": "188ba8ac-7e05-4e1d-9cf9-b7ec0dc022bd",
+    "contactId": "26f089b0-981a-494c-800f-3b306ae40c08",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "33d5273a-9b6e-4cf1-a5d2-45c7fd703885",
+    "org_x_id": "b2f694ad-be10-40cc-afc0-423cec85d750",
+    "org_y_id": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "org_x_membership_id": "fb8850e2-12ad-4816-8109-d26c6e0c6ffc",
+    "org_y_membership_id": "33d5273a-9b6e-4cf1-a5d2-45c7fd703885",
+    "orderId": "a9c681ab-b611-4e04-9838-485e8bc4f79a",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-MULTI",
+    "orderOrganizationId": "b2f694ad-be10-40cc-afc0-423cec85d750",
+    "lineAItemId": "692c1fc6-55ff-427e-8480-0b3adc34a28a",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "0ed395bb-2141-4805-9040-7d6258e5f7ed",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_HOLDER_ORGROLE": {
+    "userId": "dd5e0d34-b8ba-4486-9d94-94cb1fcc25fb",
+    "contactId": "863c27fc-a68a-4baf-ba9e-7730f26a6095",
+    "organizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "membershipId": "be737a36-83ea-44ce-826b-c85ad097bd4b"
+  },
+  "ORG_RET_ORGROLE_BUYER": {
+    "userId": "d09e969d-6e92-44e0-a8e9-9abea5869a0d",
+    "contactId": "008ebd5c-f89d-4329-8b8a-d46f4e3001ba",
+    "organizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "membershipId": "4ddeb0cb-eacf-49ce-a074-99f9f8acba71",
+    "orderId": "513af0ca-3ae3-4353-b220-20d77e8b6832",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER",
+    "orderOrganizationId": "18d30f05-85a9-4eb6-b262-9b862aab88c2",
+    "lineAItemId": "9ff6ec36-fbb7-409f-8f6a-df4d03b1be60",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "eae8642a-28ee-4285-9466-806de8a47d98",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_OTHER_BUYER": {
+    "userId": "16fe6d72-0487-4683-8a3d-75e366b0d4fe",
+    "contactId": "c1b1ab72-c9d9-4289-bbfc-b64708489688",
+    "organizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3",
+    "membershipId": "c951881b-2cb1-4de9-91a5-77f25aff6ea0",
+    "orderId": "beffd122-05b1-4d94-8c8f-5552d1c8e553",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "orderOrganizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3",
+    "lineAItemId": "f5ebb35d-fb10-419f-a074-0868dc03d944",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "49d1598a-963a-47a0-b2e5-24f6fc0fb13a",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_SAME_ADDRESS_BUYER": {
+    "userId": "41a2c010-8918-4939-809b-8e0a9c3a0012",
+    "contactId": "ea0aba33-edb4-42cc-8009-9f2d41d8719b",
+    "organizationId": "a74f77f8-196d-41de-aa5a-3290263e5b55",
+    "membershipId": "cf71be9d-c87b-4247-953b-c0a0e9b0b16e",
+    "orderId": "07cbb0e4-facf-4be9-9381-9fdf78830d0d",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-SAME-ADDRESS-BUYER",
+    "orderOrganizationId": "a74f77f8-196d-41de-aa5a-3290263e5b55",
+    "lineAItemId": "250e255c-8755-4b03-8086-88efa62416bb",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "2c49010d-1406-4832-839b-74933c5053bc",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_NOEMAIL_ORG_BUYER": {
+    "userId": "53c67bef-08b3-48f3-a2dc-e1cbfe775ca8",
+    "contactId": "1d056732-4815-4dd1-a77f-6a41a165e28f",
+    "organizationId": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6",
+    "membershipId": "ca32bdd7-c81b-4fe1-a9df-1fdc0c95751c",
+    "orderId": "bea00557-ff7c-4393-9899-8d512d389531",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-NOEMAIL-ORG-BUYER",
+    "orderOrganizationId": "934b6749-cfab-4c67-86c5-ecbb4f0b89d6",
+    "lineAItemId": "b011dba0-4157-4795-9031-271f4daf2df7",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "3e2a4905-bcd2-41f4-bff6-61855c0f0b3f",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_LONG_NAME_BUYER": {
+    "userId": "c82e90fc-80c3-4288-b2a4-c5178d78f12e",
+    "contactId": "d674bc62-9848-482c-aec7-a3866c5b17ab",
+    "organizationId": "c711e53c-791e-432e-aa2c-d5ee49d7a050",
+    "membershipId": "302904d4-0693-4905-9ad1-66d8a628ff2c",
+    "orderId": "8a99a3b2-4f45-4a97-9da5-5a78b3bbf771",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER",
+    "orderOrganizationId": "c711e53c-791e-432e-aa2c-d5ee49d7a050",
+    "lineAItemId": "8dab8657-6dc6-4765-bf19-0e8224995294",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "7f63941e-e408-4547-86b9-6da6c355cc66",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:34:21.655Z"
+  },
+  "ORG_RET_OTHER_ORG_RETURN": {
+    "id": "e58a6f6d-5d53-4670-894c-0d827e63963e",
+    "number": "RET261008-00019",
+    "status": "Requested",
+    "orderId": "beffd122-05b1-4d94-8c8f-5552d1c8e553",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-OTHER-BUYER",
+    "organizationId": "1d86c8df-8470-42d2-8523-cddca92b90d3"
+  },
+  "ORG_RET_LEAVER": {
+    "userId": "94334be0-8b2c-4ab9-acd4-2d878d2261d1",
+    "contactId": "481831c6-56cd-4351-88b6-2a4bf3c08178",
+    "organizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "membershipId": "a3fa58b8-c16e-4b60-b66c-1a532b3c3135",
+    "orderId": "f90ae547-a2a1-483a-b557-60fb38b8d13b",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-LEAVER",
+    "orderOrganizationId": "180022db-2ef9-44ad-8999-6fd6e7ca7d09",
+    "lineAItemId": "82a67905-34ac-43cc-8778-7e1fa28a4541",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "e60b6a4c-9270-410d-906d-aa22e1fdfce5",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-08T15:44:57.498Z"
   }
 }

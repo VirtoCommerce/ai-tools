@@ -29,6 +29,7 @@ import {
 } from './orders-specs.mjs';
 import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
+  DECISION_BUYER, DECISION_BUYER_PASSWORD_TOKEN, isDedicatedDecisionBuyer,
   validateDecisionFixtureSet, validateDecisionTemplate,
 } from './return-decisions-specs.mjs';
 
@@ -243,6 +244,18 @@ console.log(`\n[9] Return-decision aliases — registered _inline with no commit
     if (!a._inline) fail(`alias ${alias} must be _inline (every value is runtime, from the overlay)`);
     else if (Object.entries(a).some(([k, v]) => typeof v === 'string' && GUID_RE.test(v) && k !== 'notes')) fail(`alias ${alias} pins a runtime GUID in the committed base`);
     else ok(`${alias} → _inline, no committed value`);
+  }
+  // The dedicated buyer's committed entry must agree with DECISION_BUYER, and must stay a public AGENT-TEST yopmail inbox.
+  {
+    const b = aliases[DECISION_BUYER.alias];
+    if (!b) fail(`alias ${DECISION_BUYER.alias} missing from aliases.json`);
+    else {
+      if (b.email !== DECISION_BUYER.email || !isDedicatedDecisionBuyer(b.email)) fail(`${DECISION_BUYER.alias}.email ${JSON.stringify(b.email)} != spec ${DECISION_BUYER.email} (must be the AGENT-TEST yopmail buyer)`);
+      if (b.password !== DECISION_BUYER_PASSWORD_TOKEN) fail(`${DECISION_BUYER.alias}.password must be the ${DECISION_BUYER_PASSWORD_TOKEN} token, never a literal`);
+      if (b.name !== `${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`) fail(`${DECISION_BUYER.alias}.name ${JSON.stringify(b.name)} != spec ${DECISION_BUYER.firstName} ${DECISION_BUYER.lastName}`);
+      if (Object.values(b).some((v) => typeof v === 'string' && GUID_RE.test(v))) fail(`${DECISION_BUYER.alias} pins a runtime GUID in the committed base`);
+      if (!problems.some((p) => p.includes(DECISION_BUYER.alias))) ok(`${DECISION_BUYER.alias} → ${DECISION_BUYER.email}, password token, matches DECISION_BUYER`);
+    }
   }
   for (const spec of RETURN_DECISION_FIXTURES) {
     const o = overlay[spec.alias];

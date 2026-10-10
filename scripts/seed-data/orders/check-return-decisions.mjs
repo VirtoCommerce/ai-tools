@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { assertSafeTarget, auth, api, log, ROOT, BACK_URL, STORE_ID, ONLY } from '../../lib/seed-common.mjs';
 import { LINE_ROLE_X, LINE_ROLE_Y } from './orders-specs.mjs';
 import {
-  RETURN_DECISION_FIXTURES, SEEDED_STATUS, VIA_XAPI, expectedReturnableAfterSeed, rolesOf,
+  RETURN_DECISION_FIXTURES, SEEDED_STATUS, VIA_XAPI, expectedReturnableAfterSeed, rolesOf, DECISION_BUYER,
 } from './return-decisions-specs.mjs';
 
 const TARGET_ENV = process.env.TEST_ENV || 'vcst';
@@ -31,9 +31,10 @@ const LETTER = { [LINE_ROLE_X]: 'A', [LINE_ROLE_Y]: 'B' };
 async function buyerToken() {
   const res = await fetch(`${BACK_URL}/connect/token`, {
     method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ grant_type: 'password', username: process.env.USER_EMAIL, password: process.env.USER_PASSWORD, scope: 'offline_access', storeId: STORE_ID }),
+    // The dedicated buyer the seeder owns every fixture by (DECISION_BUYER), never the env persona USER.
+    body: new URLSearchParams({ grant_type: 'password', username: DECISION_BUYER.email, password: process.env[DECISION_BUYER.passwordVar] || '', scope: 'offline_access', storeId: STORE_ID }),
   });
-  if (!res.ok) throw new Error(`buyer sign-in failed: ${res.status}`);
+  if (!res.ok) throw new Error(`buyer ${DECISION_BUYER.email} sign-in failed: ${res.status}`);
   return (await res.json()).access_token;
 }
 async function gql(query, variables, token) {

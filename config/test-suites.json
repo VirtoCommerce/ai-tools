@@ -433,7 +433,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P1",
-      "testCount": 23,
+      "testCount": 41,
       "estimatedMinutes": 45,
       "agent": "qa-frontend-expert",
       "tags": [
@@ -1835,7 +1835,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 45,
+      "testCount": 60,
       "estimatedMinutes": 75,
       "agent": "qa-backend-expert",
       "tags": [
@@ -1851,9 +1851,9 @@
       "customerApplicability": "reference",
       "notes": "RET-GQL-031..035 (added 2026-09-25) prove five store settings are actually READ, not hardcoded defaults, by changing each live via POST /api/platform/settings/v2/tenant/Store/{id}/values, observing the shift, then restoring: Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses (blank means ANY status here, the inverse of AllowedOrderStatuses's blank), and Return.ReturnNewNumberTemplate; RET-GQL-035 is a pure read proving returnReasons.localizedName is per-culture admin text with a code fallback, not a global string. These intentionally do NOT write through PUT /api/stores despite a live 2026-09-25 finding that it propagates faster: PUT /api/stores REPLACES the whole store entity (scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage from a partial body), and safely reconstructing its ~100-entry settings array has no equivalent in this runner's declarative Steps grammar — only a real GET-spread-PUT script (or the Admin SPA's own Save) can do that safely. So these cases accept the slower, already-documented (RET-GQL-028) propagation risk of the tenant-values endpoint instead; a WAIT timeout on them is a cache/propagation finding, not a functional regression. Return.Reasons (the reason-dictionary SELECTION setting, distinct from ReasonsRequiringComment) could not be covered at all: PUT /api/stores returns 204 but the value stays null on every write attempt — no case exists for it, and none should be authored until that write path is understood. VERIFIED LIVE ON vcptcore_qa1 2026-09-25 (npm run store:set -- --list --store B2B-store) that the real persisted setting names are Return.WindowDays / Return.AllowedOrderStatuses / Return.AllowedShipmentStatuses / Return.ReturnNewNumberTemplate / Return.ReturnEnabled / Return.Reasons / Return.ReasonsRequiringComment / Return.AttachmentsRequired — NOT the ReturnWindowDays/ReturnAllowedOrderStatuses/ReturnAllowedShipmentStatuses spelling the domain map's own ModuleConstants.cs citation uses; that citation names C# field identifiers, not the dotted setting keys the REST/GraphQL surface actually reads.",
       "lanes": {
-        "machine": 45,
+        "machine": 59,
         "browser": 0,
-        "manual": 0
+        "manual": 1
       }
     },
     {
@@ -2565,7 +2565,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 31,
+      "testCount": 36,
       "estimatedMinutes": 50,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2580,7 +2580,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 31,
+        "machine": 36,
         "browser": 0,
         "manual": 0
       }
@@ -2593,7 +2593,7 @@
       "layer": "backend",
       "concern": "admin",
       "priority": "P1",
-      "testCount": 12,
+      "testCount": 14,
       "estimatedMinutes": 40,
       "agent": "qa-backend-expert",
       "tags": [

@@ -1456,3 +1456,917 @@ mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } 
 [DATA label=read_back] data.return.customerReference = AGENT-TEST-PO-2
 [DATA label=read_back] data.return.customerComment = AGENT-TEST edited comment
 [ERRORS label=cleanup_cancel] errors[] empty","[REST] GET /api/return/{id} as ADMIN_DEFAULT: the persisted return carries the EDITED customerReference and customerComment and status Requested - the field is stored on the return record, not only echoed by the xAPI","customerReference is dropped on create, not editable on a Draft, or reset by submit; customerComment loses the edit",cancelReturn on {{RETURN_ID}} as USER if the inline cancel did not run (Draft or Requested),VCST-5628 · Archetype:BOUNDARY · Technique:EP | Promoted: VCST-5628 (2026-10-01) | Behavior:ret.buyer.draft,Automated
+RET-ORG-001,"organizationReturns — non-holder gets the same Forbidden for own, empty and unknown organization, never an empty list",GraphQL xAPI — Returns > Organization returns (step 3),Critical,"BL-B2B-007, BL-GQL-001",ECL-14.3,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The viewer ORG_RET_BUYER is a NON-holder (organization employee only; read me.permissions as a precondition, it carries no xapi:my_organization:return:view). A colleague, ORG_RET_HOLDER_MEMBERSHIP, submits the return first, so the organization is NOT empty when the refusals are read. unknown_org is a string that cannot be an organization id; the empty string is the second class.",own_org=@td(ORG_RET_VIEWER_ORG.id); col_order=@td(ORG_RET_HOLDER_MEMBERSHIP.orderId); col_line=@td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId); unknown_org=AGENT-TEST-NO-SUCH-ORG-{{TIMESTAMP}},"[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP col_create]
+mutation { createReturn(command: { orderId: ""{{col_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{col_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC col_create]
+[GQL-CAPTURE col_create.data.createReturn.id → COL_ID]
+[GQL-CAPTURE col_create.data.createReturn.number → COL_NO]
+[GQL-OP col_submit]
+mutation { submitReturn(command: { returnId: ""{{COL_ID}}"" }) { id number status } }
+[GQL-EXEC col_submit]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP control_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{own_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC control_list]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP own_org_q]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{own_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC own_org_q]
+[GQL-OP empty_org_q]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: """", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC empty_org_q]
+[GQL-OP unknown_org_q]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{unknown_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC unknown_org_q]
+[GQL-OP colleague_read]
+query { return(id: ""{{COL_ID}}"") { id status } }
+[GQL-EXEC colleague_read]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP cleanup_cancel]
+mutation { cancelReturn(command: { returnId: ""{{COL_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_cancel]","[ERRORS label=col_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=col_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=col_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=col_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=control_list] errors[] empty {SPEC} (VCST-5884 AC-1: a holder reads the organization)
+[DATA label=control_list] data.organizationReturns.items[?number={{COL_NO}}].number = {{COL_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=own_org_q] errors[] non-empty {SPEC} (VCST-5884 AC-1: only the permission opens the organization)
+[DATA label=own_org_q] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=own_org_q] data.organizationReturns {DOC} (PR #28: an error, never a narrower or empty list)
+[ERRORS label=empty_org_q] errors[] non-empty {SPEC} (VCST-5884 AC-1: only the permission opens the organization)
+[DATA label=empty_org_q] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=empty_org_q] data.organizationReturns {DOC} (PR #28: an error, never a narrower or empty list)
+[ERRORS label=unknown_org_q] errors[] non-empty {SPEC} (VCST-5884 AC-1: only the permission opens the organization)
+[DATA label=unknown_org_q] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=unknown_org_q] data.organizationReturns {DOC} (PR #28: an error, never a narrower or empty list)
+[ERRORS label=colleague_read] errors[] empty {OBSERVED} (kb KB-657521DF)
+[NULL label=colleague_read] data.return {SPEC} (VCST-5884 AC-1: a non-holder reads no colleague return)
+[ERRORS label=cleanup_cancel] errors[] empty {SPEC} (VCST-5628)
+[DATA label=cleanup_cancel] data.cancelReturn.status = Cancelled {SPEC} (VCST-5628)","[EVIDENCE] the organization list, read as a permitted holder in the same case, proves the colleague return existed at the moment the other identity was refused or answered, so a refusal is not an empty organization","any of the three refusals returns data or an empty list instead of an error; the three refusals carry different codes (a distinguishable error lets a caller enumerate organization ids); the non-holder reads the colleague return; control_list is refused (the permitted holder was never a holder, the case proves nothing)","cancelReturn on COL_ID as ORG_RET_HOLDER_MEMBERSHIP (inline above as cleanup_cancel). If the case aborted before it, the Requested return holds one unit of line A (40 ordered); re-seed with npm run seed:returns:org -- --fresh when it runs low.",VCST-5884 · Archetype:SCOPE · Technique:DT,Draft
+RET-ORG-002,"organizationReturns — the permission counts whether it arrives by a global role, an organization-level role or a membership role",GraphQL xAPI — Returns > Organization returns (step 3),High,"BL-B2B-005, BL-B2B-007",,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. Three holders that differ ONLY in where the grant sits: ORG_RET_HOLDER_GLOBAL (global account role), ORG_RET_HOLDER_MEMBERSHIP (membership role in the viewer organization), ORG_RET_HOLDER_ORGROLE (organization-level role on its OWN organization ORGROLE_ORG, deliberately not the viewer organization: an organization-level role is inherited by every member, so putting it on the viewer organization would make the buyer a holder). Read each holder's me.permissions as a precondition; only the permission-to-gate binding is asserted. The last read, ORGROLE holder asking for the VIEWER organization, is the scope control: the role grants nothing outside its own organization.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); orgrole_org=@td(ORG_RET_ORGROLE_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId); r_order=@td(ORG_RET_ORGROLE_BUYER.orderId); r_line=@td(ORG_RET_ORGROLE_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP b_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC b_create]
+[GQL-CAPTURE b_create.data.createReturn.id → B_ID]
+[GQL-CAPTURE b_create.data.createReturn.number → B_NO]
+[GQL-OP b_submit]
+mutation { submitReturn(command: { returnId: ""{{B_ID}}"" }) { id number status } }
+[GQL-EXEC b_submit]
+[AUTH role=ORG_RET_ORGROLE_BUYER]
+[GQL-OP r_create]
+mutation { createReturn(command: { orderId: ""{{r_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{r_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC r_create]
+[GQL-CAPTURE r_create.data.createReturn.id → R_ID]
+[GQL-CAPTURE r_create.data.createReturn.number → R_NO]
+[GQL-OP r_submit]
+mutation { submitReturn(command: { returnId: ""{{R_ID}}"" }) { id number status } }
+[GQL-EXEC r_submit]
+[AUTH role=ORG_RET_HOLDER_GLOBAL]
+[GQL-OP global_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC global_list]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP membership_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC membership_list]
+[AUTH role=ORG_RET_HOLDER_ORGROLE]
+[GQL-OP orgrole_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{orgrole_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC orgrole_list]
+[GQL-OP orgrole_foreign]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC orgrole_foreign]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_b]
+mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_b]
+[AUTH role=ORG_RET_ORGROLE_BUYER]
+[GQL-OP cleanup_r]
+mutation { cancelReturn(command: { returnId: ""{{R_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_r]","[ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=b_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=r_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=r_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=r_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=r_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=global_list] errors[] empty {SPEC} (VCST-5884 AC-1: the permission by a global role)
+[DATA label=global_list] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {SPEC} (VCST-5884 AC-3)
+[DATA label=global_list] data.organizationReturns.items[?number={{B_NO}}].customerName is non-null {SPEC} (VCST-5884 AC-3: the buyer is named)
+[ERRORS label=membership_list] errors[] empty {BL} (BL-B2B-005: permissions are the union of global, organization and membership roles)
+[DATA label=membership_list] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {SPEC} (VCST-5884 AC-3)
+[DATA label=membership_list] data.organizationReturns.items[?number={{B_NO}}].customerName is non-null {SPEC} (VCST-5884 AC-3)
+[ERRORS label=orgrole_list] errors[] empty {BL} (BL-B2B-005, BL-B2B-007: an organization-level role counts)
+[DATA label=orgrole_list] data.organizationReturns.items[?number={{R_NO}}].number = {{R_NO}} {SPEC} (VCST-5884 AC-3)
+[DATA label=orgrole_list] data.organizationReturns.items[?number={{R_NO}}].customerName is non-null {SPEC} (VCST-5884 AC-3)
+[ERRORS label=orgrole_foreign] errors[] non-empty {SPEC} (VCST-5884 AC-1: only the permission opens the organization)
+[DATA label=orgrole_foreign] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=orgrole_foreign] data.organizationReturns {DOC} (PR #28: an error, never a narrower or empty list)
+[ERRORS label=cleanup_b] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=cleanup_r] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] the organization list, read as a permitted holder in the same case, proves the colleague return existed at the moment the other identity was refused or answered, so a refusal is not an empty organization",a holder reached through one of the three placements gets Forbidden or an empty list; the colleague return is missing or customerName is null; the ORGROLE holder reads the VIEWER organization (the grant leaked across organizations); a cleanup cancel fails,cancelReturn on B_ID and R_ID as their owners (inline). Aborted before that: two Requested returns each hold one unit; re-seed with --fresh when line A runs low.,VCST-5884 · Archetype:SCOPE · Technique:DT,Draft
+RET-ORG-003,"organizationReturns — a locked, Invited, Rejected or Deleted membership holding the permission is refused at once",GraphQL xAPI — Returns > Organization returns (step 3),Critical,"BL-B2B-012, BL-B2B-013",,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The four holders are BLOCKED AT REST (a token request answers 400 invalid_grant or an empty token), so per holder: an administrator sets the membership to Approved (the locked one is unlocked), the holder signs in, the administrator sets the blocking status (or locks the membership), and the holder calls with the OLD token. Each holder is left BLOCKED, as found. The shared TechFlow fixtures are NOT used: they hold no view permission, so a refusal there would prove nothing about the block. The role id and name are read from ORG_RET_HOLDER_MEMBERSHIP's membership, never typed. SHARED STATE: four memberships are written; run this case alone, never beside another lane that signs these holders in. The REST bodies mirror scripts/seed-data/orders/seed-org-returns.mjs (membership PUT / lock); the first live run settles anything the platform rejects.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); col_order=@td(ORG_RET_HOLDER_MEMBERSHIP.orderId); col_line=@td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId),"[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP col_create]
+mutation { createReturn(command: { orderId: ""{{col_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{col_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC col_create]
+[GQL-CAPTURE col_create.data.createReturn.id → COL_ID]
+[GQL-CAPTURE col_create.data.createReturn.number → COL_NO]
+[GQL-OP col_submit]
+mutation { submitReturn(command: { returnId: ""{{COL_ID}}"" }) { id number status } }
+[GQL-EXEC col_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_role]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+[REST-EXEC get_role]
+[REST-CAPTURE get_role.body.roles.0.roleId → VIEW_ROLE_ID]
+[REST-CAPTURE get_role.body.roles.0.roleName → VIEW_ROLE_NAME]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP invited_approve]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_INVITED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_INVITED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_INVITED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC invited_approve]
+[AUTH role=ORG_RET_HOLDER_INVITED]
+[GQL-OP invited_before]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount } }
+[GQL-EXEC invited_before]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP invited_block]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_INVITED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_INVITED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_INVITED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Invited"", ""isLocked"": false}
+[REST-EXEC invited_block]
+[REST-OP invited_state]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_INVITED.membershipId)
+[REST-EXEC invited_state]
+[AUTH role=ORG_RET_HOLDER_INVITED]
+[GQL-OP invited_after]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC invited_after]
+[GQL-OP invited_open]
+query { return(id: ""{{COL_ID}}"") { id status customerComment } }
+[GQL-EXEC invited_open]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP rejected_approve]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_REJECTED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_REJECTED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_REJECTED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC rejected_approve]
+[AUTH role=ORG_RET_HOLDER_REJECTED]
+[GQL-OP rejected_before]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount } }
+[GQL-EXEC rejected_before]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP rejected_block]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_REJECTED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_REJECTED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_REJECTED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Rejected"", ""isLocked"": false}
+[REST-EXEC rejected_block]
+[REST-OP rejected_state]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_REJECTED.membershipId)
+[REST-EXEC rejected_state]
+[AUTH role=ORG_RET_HOLDER_REJECTED]
+[GQL-OP rejected_after]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC rejected_after]
+[GQL-OP rejected_open]
+query { return(id: ""{{COL_ID}}"") { id status customerComment } }
+[GQL-EXEC rejected_open]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP deleted_approve]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_DELETED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_DELETED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_DELETED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC deleted_approve]
+[AUTH role=ORG_RET_HOLDER_DELETED]
+[GQL-OP deleted_before]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount } }
+[GQL-EXEC deleted_before]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP deleted_block]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_DELETED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_DELETED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_DELETED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Deleted"", ""isLocked"": false}
+[REST-EXEC deleted_block]
+[REST-OP deleted_state]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_DELETED.membershipId)
+[REST-EXEC deleted_state]
+[AUTH role=ORG_RET_HOLDER_DELETED]
+[GQL-OP deleted_after]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC deleted_after]
+[GQL-OP deleted_open]
+query { return(id: ""{{COL_ID}}"") { id status customerComment } }
+[GQL-EXEC deleted_open]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP locked_approve]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_LOCKED.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_LOCKED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_LOCKED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC locked_approve]
+[REST POST /api/customer/organization-memberships/@td(ORG_RET_HOLDER_LOCKED.membershipId)/unlock]
+[AUTH role=ORG_RET_HOLDER_LOCKED]
+[GQL-OP locked_before]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount } }
+[GQL-EXEC locked_before]
+[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/customer/organization-memberships/@td(ORG_RET_HOLDER_LOCKED.membershipId)/lock]
+{""lockoutEnd"": null}
+[REST-OP locked_state]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_LOCKED.membershipId)
+[REST-EXEC locked_state]
+[AUTH role=ORG_RET_HOLDER_LOCKED]
+[GQL-OP locked_after]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC locked_after]
+[GQL-OP locked_open]
+query { return(id: ""{{COL_ID}}"") { id status customerComment } }
+[GQL-EXEC locked_open]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP cleanup_col]
+mutation { cancelReturn(command: { returnId: ""{{COL_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_col]","[ERRORS label=col_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=col_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=col_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=col_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=get_role] HTTP 200 {OBSERVED}
+[DATA label=get_role] body.roles.0.roleId is non-null {SPEC} (VCST-5884 AC-3)
+[ERRORS label=invited_before] errors[] empty {BL} (BL-B2B-005: a holder in good standing reads the organization)
+[DATA label=invited_state] body.status = Invited {OBSERVED}
+[ERRORS label=invited_after] errors[] non-empty {BL} (BL-B2B-012, BL-B2B-013: a blocked membership opens nothing, at once)
+[DATA label=invited_after] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=invited_after] data.organizationReturns {SPEC} (VCST-5884 AC-1)
+[NULL label=invited_open] data.return {BL} (BL-B2B-012, BL-B2B-013: the colleague's return stays closed too)
+[ERRORS label=rejected_before] errors[] empty {BL} (BL-B2B-005: a holder in good standing reads the organization)
+[DATA label=rejected_state] body.status = Rejected {OBSERVED}
+[ERRORS label=rejected_after] errors[] non-empty {BL} (BL-B2B-012, BL-B2B-013: a blocked membership opens nothing, at once)
+[DATA label=rejected_after] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=rejected_after] data.organizationReturns {SPEC} (VCST-5884 AC-1)
+[NULL label=rejected_open] data.return {BL} (BL-B2B-012, BL-B2B-013: the colleague's return stays closed too)
+[ERRORS label=deleted_before] errors[] empty {BL} (BL-B2B-005: a holder in good standing reads the organization)
+[DATA label=deleted_state] body.status = Deleted {OBSERVED}
+[ERRORS label=deleted_after] errors[] non-empty {BL} (BL-B2B-012, BL-B2B-013: a blocked membership opens nothing, at once)
+[DATA label=deleted_after] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=deleted_after] data.organizationReturns {SPEC} (VCST-5884 AC-1)
+[NULL label=deleted_open] data.return {BL} (BL-B2B-012, BL-B2B-013: the colleague's return stays closed too)
+[ERRORS label=locked_before] errors[] empty {BL} (BL-B2B-005: a holder in good standing reads the organization)
+[DATA label=locked_state] body.isCurrentlyLocked = true {OBSERVED}
+[ERRORS label=locked_after] errors[] non-empty {BL} (BL-B2B-012, BL-B2B-013: a blocked membership opens nothing, at once)
+[DATA label=locked_after] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=locked_after] data.organizationReturns {SPEC} (VCST-5884 AC-1)
+[NULL label=locked_open] data.return {BL} (BL-B2B-012, BL-B2B-013: the colleague's return stays closed too)
+[ERRORS label=cleanup_col] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] each holder reads the organization successfully BEFORE the block (xx_before) and is refused AFTER it with the SAME token, and the membership is read back in the blocking state (xx_state), so the refusal is the block and not a bad token or a missing grant","a blocked member (Invited, Rejected, Deleted or locked) still reads the list or the colleague return with a token issued before the block; the ""before"" read is refused (the holder never held the permission: the case proves nothing); the membership read-back does not show the blocking state (the REST write failed: BLOCKED, not a pass)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_HOLDER_INVITED.membershipId)]
+{""id"": ""@td(ORG_RET_HOLDER_INVITED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_INVITED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Invited"", ""isLocked"": false}
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_HOLDER_REJECTED.membershipId)]
+{""id"": ""@td(ORG_RET_HOLDER_REJECTED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_REJECTED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Rejected"", ""isLocked"": false}
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_HOLDER_DELETED.membershipId)]
+{""id"": ""@td(ORG_RET_HOLDER_DELETED.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_DELETED.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Deleted"", ""isLocked"": false}
+[REST POST /api/customer/organization-memberships/@td(ORG_RET_HOLDER_LOCKED.membershipId)/lock]
+{""lockoutEnd"": null}",VCST-5884 · Archetype:SCOPE · Technique:EP,Draft
+RET-ORG-004,organizationReturns — an administrator who is not a member of the organization is refused,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} The ticket does not say whether a platform administrator who is not a member may read an organization's returns; PR #28 states ""no bypass"" and the build refuses uniformly (3x observed). The expectation below is the PR's statement, real when the PO ratifies it. Read the administrator token's claims first: no organization_id and no xapi:* claim. The control read is a holder of the same organization.",viewer_org=@td(ORG_RET_VIEWER_ORG.id),"[AUTH role=ADMIN_DEFAULT]
+[GQL-OP admin_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC admin_list]
+[AUTH role=ORG_RET_HOLDER_GLOBAL]
+[GQL-OP control_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount } }
+[GQL-EXEC control_list]","[ERRORS label=admin_list] errors[] non-empty {HYPOTHESIS} (PR #28 ""no bypass""; real when the PO ratifies membership as the rule)
+[DATA label=admin_list] errors[0].extensions.code = Forbidden {OBSERVED} (3x 2026-10-08)
+[NULL label=admin_list] data.organizationReturns {HYPOTHESIS}
+[ERRORS label=control_list] errors[] empty {SPEC} (VCST-5884 AC-1)
+[DATA label=control_list] data.organizationReturns.totalCount >= 0 {SPEC} (VCST-5884 AC-1: the organization exists and a holder reads it)","[EVIDENCE] control_list proves the organization id is real and readable, so the administrator refusal is about the caller and not the id",the administrator reads the organization (a bypass nobody ratified: every organization is open to any administrator account); or the administrator refusal differs from the non-holder refusal; control_list is refused (the control holder lost its grant),none -- read-only,VCST-5884 · Archetype:SCOPE · Technique:EG,Draft
+RET-ORG-005,"organizationReturns — permission held only in a non-active organization: API answers for that organization, not for the other",GraphQL xAPI — Returns > Organization returns (step 3),High,BL-B2B-007,ECL-14.3,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. ORG_RET_MULTI_ORG is a contact in TWO organizations: X (ORG_RET_HOME_ORG, ordinary member) and Y (the viewer organization, membership role holding the view permission). Always pass organization_id when requesting the token; without it the platform picks an organization and it differed on each seed. The two token reads are made with the same person and a different ACTIVE organization. The row marked {HYPOTHESIS} (the token's active organization is X, the query asks for Y) is the tab-gate versus server-gate drift: it is real when the PO says which of the two decides.",org_x=@td(ORG_RET_MULTI_ORG.org_x_id); org_y=@td(ORG_RET_MULTI_ORG.org_y_id); y_order=@td(ORG_RET_BUYER.orderId); y_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP y_create]
+mutation { createReturn(command: { orderId: ""{{y_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{y_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC y_create]
+[GQL-CAPTURE y_create.data.createReturn.id → Y_ID]
+[GQL-CAPTURE y_create.data.createReturn.number → Y_NO]
+[GQL-OP y_submit]
+mutation { submitReturn(command: { returnId: ""{{Y_ID}}"" }) { id number status } }
+[GQL-EXEC y_submit]
+[AUTH role=ORG_RET_MULTI_ORG org=@td(ORG_RET_MULTI_ORG.org_x_id)]
+[GQL-OP tokx_list_y]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{org_y}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC tokx_list_y]
+[GQL-OP tokx_list_x]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{org_x}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC tokx_list_x]
+[AUTH role=ORG_RET_MULTI_ORG org=@td(ORG_RET_MULTI_ORG.org_y_id)]
+[GQL-OP toky_list_y]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{org_y}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC toky_list_y]
+[GQL-OP toky_list_x]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{org_x}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC toky_list_x]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_y]
+mutation { cancelReturn(command: { returnId: ""{{Y_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_y]","[ERRORS label=y_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=y_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=y_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=y_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=tokx_list_x] errors[] non-empty {SPEC} (VCST-5884 AC-1: no permission in X)
+[DATA label=tokx_list_x] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=tokx_list_x] data.organizationReturns {SPEC} (VCST-5884 AC-3)
+[ERRORS label=tokx_list_y] errors[] empty {HYPOTHESIS} (the server decides per QUERIED organization from live roles, PR #28; real when the PO states the rule — the tab decides from the token)
+[DATA label=tokx_list_y] data.organizationReturns.items[?number={{Y_NO}}].number = {{Y_NO}} {HYPOTHESIS}
+[ERRORS label=toky_list_y] errors[] empty {BL} (BL-B2B-007: the token carries the active organization permissions)
+[DATA label=toky_list_y] data.organizationReturns.items[?number={{Y_NO}}].number = {{Y_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=toky_list_x] errors[] non-empty {SPEC} (VCST-5884 AC-1: no permission in X, whichever organization is active)
+[DATA label=toky_list_x] errors[0].extensions.code = Forbidden {OBSERVED}
+[NULL label=toky_list_x] data.organizationReturns {SPEC} (VCST-5884 AC-3)
+[ERRORS label=cleanup_y] errors[] empty {SPEC} (VCST-5628)",[EVIDENCE] the colleague return exists in Y (created in this case); the two refusals for X are the same Forbidden whichever organization is active,the contact reads organization X (the permission leaked across organizations); the contact is refused in Y while Y is active; Y reads differ between the two tokens in a way the PO has not accepted,cancelReturn on Y_ID as ORG_RET_BUYER (inline). Nothing else is written.,VCST-5884 · Archetype:SCOPE · Technique:PW,Draft
+RET-ORG-006,organizationReturns and return(id) — a draft cancelled before it was submitted is not listed and not readable by a holder,GraphQL xAPI — Returns > Organization returns (step 3),High,BL-GQL-004,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. HELD, read before running: this case keeps the SPEC and DOC expectation (a draft the buyer cancelled WITHOUT submitting is never visible to a holder, neither in the list nor by id) and the build is known to break it (3x observed: listed as Cancelled, opens read-only with the buyer's comment and line reason; the exclusion is Status != Draft and a cancelled draft carries status Cancelled). A red result is the finding, not a bad case. It is NOT inverted to the build, and stays Draft until the PO answers ""is a draft cancelled before submit an organization record"". owner_read is the control: the draft really exists when the holder is refused or served.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP d_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884 abandoned draft"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 never sent"" }] }) { id number status } }
+[GQL-EXEC d_create]
+[GQL-CAPTURE d_create.data.createReturn.id → D_ID]
+[GQL-CAPTURE d_create.data.createReturn.number → D_NO]
+[GQL-OP d_cancel]
+mutation { cancelReturn(command: { returnId: ""{{D_ID}}"" }) { id status } }
+[GQL-EXEC d_cancel]
+[GQL-OP owner_read]
+query { return(id: ""{{D_ID}}"") { id number status customerComment } }
+[GQL-EXEC owner_read]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP holder_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, statuses: [""Cancelled""]) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC holder_list]
+[GQL-OP holder_read]
+query { return(id: ""{{D_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC holder_read]","[ERRORS label=d_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=d_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=d_cancel] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=d_cancel] data.cancelReturn.status = Cancelled {SPEC} (VCST-5628)
+[ERRORS label=owner_read] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=owner_read] data.return.number = {{D_NO}} {SPEC} (VCST-5628: the owner still reads the abandoned draft)
+[ERRORS label=holder_list] errors[] empty {SPEC} (VCST-5884 AC-1)
+[NULL label=holder_list] data.organizationReturns.items[?number={{D_NO}}] {DOC} (PR #28 ""drafts are never listed""; module guide: an abandoned draft is not an organization record; HELD: the build lists it, 3x observed, the PO decides)
+[ERRORS label=holder_read] errors[] empty {SPEC} (VCST-5884 AC-3)
+[NULL label=holder_read] data.return {DOC} (PR #28 ""drafts are never listed""; HELD, same decision)",[EVIDENCE] owner_read proves the draft exists at the moment the holder reads; the holder reads the buyer's comment and line reason when the defect is present,"D_NO is in the holder list; return(id) as the holder returns data (the buyer's comment or reasonComment leak); owner_read is null (the control failed, nothing proven)",none -- the draft is already Cancelled and holds no unit,VCST-5884 · Archetype:SCOPE · Technique:ST · Behavior:ret.state.cancelled,Draft
+RET-ORG-007,organizationReturns — statuses [Draft] returns nothing and the search never offers a draft,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The buyer holds a LIVE Draft (created, not submitted, not cancelled) while the holder filters by status Draft. The cancelled-never-submitted case is RET-ORG-006; this one isolates the Draft filter and the live Draft. Cancelling the draft in cleanup leaves one Cancelled draft in the organization list (RET-ORG-006's HELD defect): other lanes must identify rows by their own return numbers.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP d_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC d_create]
+[GQL-CAPTURE d_create.data.createReturn.id → D_ID]
+[GQL-CAPTURE d_create.data.createReturn.number → D_NO]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP draft_filter]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, statuses: [""Draft""]) { totalCount items { id number status } } }
+[GQL-EXEC draft_filter]
+[GQL-OP all_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC all_list]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_d]
+mutation { cancelReturn(command: { returnId: ""{{D_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_d]","[ERRORS label=d_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=d_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=draft_filter] errors[] empty {SPEC} (VCST-5884 AC-1)
+[DATA label=draft_filter] data.organizationReturns.totalCount = 0 {DOC} (PR #28 ""no drafts"")
+[COUNT label=draft_filter] data.organizationReturns.items.length = 0 {DOC} (PR #28 ""no drafts"")
+[ERRORS label=all_list] errors[] empty {SPEC} (VCST-5884 AC-3)
+[NULL label=all_list] data.organizationReturns.items[?number={{D_NO}}] {DOC} (PR #28 ""drafts are never listed"")
+[ERRORS label=cleanup_d] errors[] empty {SPEC} (VCST-5628)",[EVIDENCE] the draft exists (status Draft in d_create) while the holder asks for statuses [Draft],statuses [Draft] returns the buyer's unsent draft (totalCount > 0 or the number listed); the unfiltered list contains the live draft,cancelReturn on D_ID as ORG_RET_BUYER (inline as cleanup_d),VCST-5884 · Archetype:BOUNDARY · Technique:EP,Draft
+RET-ORG-008,"organizationReturns — keyword, status, date, sort and paging stay inside the organization at the page boundary",GraphQL xAPI — Returns > Organization returns (step 3),High,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The case creates TWO Requested returns in the viewer organization (the buyer's and the holder's own), so a page of one row always has a next page, and compares only the rows it created. The page-size boundaries at 10, 11 and 0 returns are NOT asserted: 11 per-run returns would hold 11 units of a 40-unit line on a shared organization; the boundary here is page size 1 over two or more rows. The buyer's name is read from the list (the order's customer name) and used as the keyword, so no name is typed. Partial-name and other-letter-case keyword legs are not asserted: no string function exists in the assertion grammar, and a typed fragment of a persona name would be a hardcode.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId); h_order=@td(ORG_RET_HOLDER_MEMBERSHIP.orderId); h_line=@td(ORG_RET_HOLDER_MEMBERSHIP.lineAItemId); other_number=@td(ORG_RET_OTHER_ORG_RETURN.number),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP b_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC b_create]
+[GQL-CAPTURE b_create.data.createReturn.id → B_ID]
+[GQL-CAPTURE b_create.data.createReturn.number → B_NO]
+[GQL-OP b_submit]
+mutation { submitReturn(command: { returnId: ""{{B_ID}}"" }) { id number status } }
+[GQL-EXEC b_submit]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP h_create]
+mutation { createReturn(command: { orderId: ""{{h_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{h_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC h_create]
+[GQL-CAPTURE h_create.data.createReturn.id → H_ID]
+[GQL-CAPTURE h_create.data.createReturn.number → H_NO]
+[GQL-OP h_submit]
+mutation { submitReturn(command: { returnId: ""{{H_ID}}"" }) { id number status } }
+[GQL-EXEC h_submit]
+[GQL-OP find_name]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC find_name]
+[GQL-CAPTURE find_name.data.organizationReturns.items[?number={{B_NO}}].customerName → B_NAME]
+[GQL-OP by_name]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, keyword: ""{{B_NAME}}"") { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC by_name]
+[GQL-OP by_number]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, keyword: ""{{B_NO}}"") { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC by_number]
+[GQL-OP by_foreign_number]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, keyword: ""{{other_number}}"") { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC by_foreign_number]
+[GQL-OP by_status]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, statuses: [""Requested""]) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC by_status]
+[GQL-OP sort_asc]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, sort: ""customerName:asc"") { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC sort_asc]
+[GQL-OP sort_desc]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50, sort: ""customerName:desc"") { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC sort_desc]
+[GQL-OP page_one]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 1, sort: ""customerName:asc"") { totalCount pageInfo { hasNextPage endCursor } items { id number organizationId } } }
+[GQL-EXEC page_one]
+[GQL-CAPTURE page_one.data.organizationReturns.items.0.id → PAGE1_ID]
+[GQL-CAPTURE page_one.data.organizationReturns.pageInfo.endCursor → CURSOR1]
+[GQL-OP page_two]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 1, after: ""{{CURSOR1}}"", sort: ""customerName:asc"") { totalCount pageInfo { hasNextPage endCursor } items { id number organizationId } } }
+[GQL-EXEC page_two]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_b]
+mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_b]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP cleanup_h]
+mutation { cancelReturn(command: { returnId: ""{{H_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_h]","[ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=b_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=h_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=h_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=h_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=h_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=find_name] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=find_name] data.organizationReturns.items[?number={{B_NO}}].customerName is non-null {SPEC} (VCST-5884 AC-3: the buyer is named)
+[ERRORS label=by_name] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=by_name] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {DOC} (PR #28: the keyword also matches the buyer name)
+[COUNT label=by_name] data.organizationReturns.items[*?organizationId!={{viewer_org}}].length = 0 {SPEC} (VCST-5884 AC-3: never another organization's row)
+[ERRORS label=by_number] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=by_number] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {DOC} (PR #28: keyword matches the RMA)
+[ERRORS label=by_foreign_number] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=by_foreign_number] data.organizationReturns.totalCount = 0 {SPEC} (VCST-5884 AC-3: another organization's RMA finds nothing here)
+[ERRORS label=by_status] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=by_status] data.organizationReturns.items[*?status!=Requested].length = 0 {DOC} (PR #28: the status filter)
+[COUNT label=by_status] data.organizationReturns.items[*?organizationId!={{viewer_org}}].length = 0 {SPEC} (VCST-5884 AC-3)
+[ERRORS label=sort_asc] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=sort_asc] data.organizationReturns.items[*?organizationId!={{viewer_org}}].length = 0 {SPEC} (VCST-5884 AC-3: a sort never drops the organization filter)
+[ERRORS label=sort_desc] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=sort_desc] data.organizationReturns.items[*?organizationId!={{viewer_org}}].length = 0 {SPEC} (VCST-5884 AC-3)
+[ERRORS label=page_one] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=page_one] data.organizationReturns.totalCount >= 2 {SPEC} (VCST-5884 AC-3: this case created two returns in the organization)
+[DATA label=page_one] data.organizationReturns.pageInfo.hasNextPage = true {SPEC} (VCST-5884 AC-3: first:1 over two or more rows has a next page)
+[ERRORS label=page_two] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=page_two] data.organizationReturns.items[*?id={{PAGE1_ID}}].length = 0 {SPEC} (VCST-5884 AC-3: the second page repeats nothing of the first)
+[COUNT label=page_two] data.organizationReturns.items[*?organizationId!={{viewer_org}}].length = 0 {SPEC} (VCST-5884 AC-3: paging stays inside the organization)
+[ERRORS label=cleanup_b] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=cleanup_h] errors[] empty {SPEC} (VCST-5628)",[EVIDENCE] other_number is a seeded Requested return of ANOTHER organization (ORG_RET_OTHER_ORG_RETURN): finding it here would be a cross-organization leak,"the keyword by buyer name finds nothing; a sort, filter or page returns a row whose organizationId is not the queried organization; the second page repeats the first row; the foreign RMA is found",cancelReturn on B_ID and H_ID as their owners (inline). Aborted before that: two Requested returns each hold one unit; re-seed with --fresh when line A runs low.,VCST-5884 · Archetype:PARITY · Technique:BVA,Draft
+RET-ORG-009,"cancelReturn, updateReturn, submitReturn and createReturn — a colleague holding the view permission changes nothing",GraphQL xAPI — Returns > Organization returns (step 3),Critical,BL-GQL-004,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. Two holders: ORG_RET_HOLDER_MEMBERSHIP (view only) and ORG_RET_HOLDER_SUBMIT (view AND xapi:my_organization:return:submit, which nothing in the build checks: it must change nothing either). The owner has one Requested return (OWN) and one live Draft (DR). The Admin-side read-back is the owner's own token. Deleting a colleague's attachment is part of S11 and is NOT asserted here: it needs the FileUpload return-attachments scope, which vcst lacks (the storefront attachments case, Manual). The ""nothing persisted"" claim rests on the owner's status and comment read-backs, and on every colleague attempt answering with an error.",b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP own_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC own_create]
+[GQL-CAPTURE own_create.data.createReturn.id → OWN_ID]
+[GQL-CAPTURE own_create.data.createReturn.number → OWN_NO]
+[GQL-OP own_submit]
+mutation { submitReturn(command: { returnId: ""{{OWN_ID}}"" }) { id number status } }
+[GQL-EXEC own_submit]
+[GQL-OP dr_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884 owner draft"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 owner draft"" }] }) { id number status } }
+[GQL-EXEC dr_create]
+[GQL-CAPTURE dr_create.data.createReturn.id → DR_ID]
+[GQL-CAPTURE dr_create.data.createReturn.number → DR_NO]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP holder_cancel]
+mutation { cancelReturn(command: { returnId: ""{{OWN_ID}}"" }) { id status } }
+[GQL-EXEC holder_cancel]
+[GQL-OP holder_update]
+mutation { updateReturn(command: { returnId: ""{{DR_ID}}"", customerComment: ""AGENT-TEST hijack attempt"" }) { id status customerComment } }
+[GQL-EXEC holder_update]
+[GQL-OP holder_submit]
+mutation { submitReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC holder_submit]
+[GQL-OP holder_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST hijack"" }] }) { id status } }
+[GQL-EXEC holder_create]
+[AUTH role=ORG_RET_HOLDER_SUBMIT]
+[GQL-OP submit_holder_cancel]
+mutation { cancelReturn(command: { returnId: ""{{OWN_ID}}"" }) { id status } }
+[GQL-EXEC submit_holder_cancel]
+[GQL-OP submit_holder_update]
+mutation { updateReturn(command: { returnId: ""{{DR_ID}}"", customerComment: ""AGENT-TEST hijack attempt"" }) { id status customerComment } }
+[GQL-EXEC submit_holder_update]
+[GQL-OP submit_holder_submit]
+mutation { submitReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC submit_holder_submit]
+[GQL-OP submit_holder_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST hijack"" }] }) { id status } }
+[GQL-EXEC submit_holder_create]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP holder_view]
+query { return(id: ""{{OWN_ID}}"") { id number status availableActions { name isAvailable unavailableReason } } }
+[GQL-EXEC holder_view]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP owner_check_req]
+query { return(id: ""{{OWN_ID}}"") { id status } }
+[GQL-EXEC owner_check_req]
+[GQL-OP owner_check_draft]
+query { return(id: ""{{DR_ID}}"") { id status customerComment items { quantity } } }
+[GQL-EXEC owner_check_draft]
+[GQL-OP cleanup_own]
+mutation { cancelReturn(command: { returnId: ""{{OWN_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_own]
+[GQL-OP cleanup_dr]
+mutation { cancelReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_dr]","[ERRORS label=own_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=own_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=own_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=own_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=dr_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=dr_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=holder_cancel] errors[] non-empty {SPEC} (VCST-5884 AC-3: read-only)
+[DATA label=holder_cancel] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED} (kb KB-657521DF)
+[ERRORS label=holder_update] errors[] non-empty {SPEC} (VCST-5884 AC-3)
+[DATA label=holder_update] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED}
+[ERRORS label=holder_submit] errors[] non-empty {SPEC} (VCST-5884 AC-3)
+[DATA label=holder_submit] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED}
+[ERRORS label=holder_create] errors[] non-empty {SPEC} (VCST-5884 AC-3: nothing is created on a colleague's order)
+[DATA label=holder_create] errors[0].extensions.code = ORDER_NOT_FOUND {OBSERVED}
+[ERRORS label=submit_holder_cancel] errors[] non-empty {SPEC} (VCST-5884 AC-3: read-only)
+[DATA label=submit_holder_cancel] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED} (kb KB-657521DF)
+[ERRORS label=submit_holder_update] errors[] non-empty {SPEC} (VCST-5884 AC-3)
+[DATA label=submit_holder_update] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED}
+[ERRORS label=submit_holder_submit] errors[] non-empty {SPEC} (VCST-5884 AC-3)
+[DATA label=submit_holder_submit] errors[0].extensions.code = RETURN_NOT_FOUND {OBSERVED}
+[ERRORS label=submit_holder_create] errors[] non-empty {SPEC} (VCST-5884 AC-3: nothing is created on a colleague's order)
+[DATA label=submit_holder_create] errors[0].extensions.code = ORDER_NOT_FOUND {OBSERVED}
+[ERRORS label=holder_view] errors[] empty {SPEC} (VCST-5884 AC-3: a holder reads a colleague's return)
+[DATA label=holder_view] data.return.number = {{OWN_NO}} {SPEC} (VCST-5884 AC-3)
+[COUNT label=holder_view] data.return.availableActions[*?isAvailable=true].length = 0 {SPEC} (VCST-5884 AC-3: read-only, no action is offered)
+[ERRORS label=owner_check_req] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=owner_check_req] data.return.status = Requested {SPEC} (VCST-5884 AC-3: nothing the colleague did persisted)
+[ERRORS label=owner_check_draft] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=owner_check_draft] data.return.status = Draft {SPEC} (VCST-5884 AC-3)
+[DATA label=owner_check_draft] data.return.customerComment = AGENT-TEST VCST-5884 owner draft {SPEC} (VCST-5884 AC-3: the colleague's edit did not persist)
+[ERRORS label=cleanup_own] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=cleanup_dr] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] owner_check_req and owner_check_draft are read as the OWNER after each refused attempt: the refusals were genuine no-ops, not partial mutations that merely failed to return a payload",any holder call answers errors[] empty (a colleague acted on the return); the owner's status or comment changed; the :submit holder changes anything; the holder sees an available action on a colleague's return; a return appears on the owner's order that the owner did not create,cancelReturn on OWN_ID and DR_ID as ORG_RET_BUYER (inline). Aborted before that: a Requested return holds one unit of line A (40 ordered) and a Draft holds none; re-seed with --fresh when it runs low.,VCST-5884 · Archetype:SILENT · Technique:DT · Behavior:ret.buyer.cancel.not-owner,Draft
+RET-ORG-010,organizationReturns filter and REST search — a legacy return with a backfilled organization and no store is dropped by the store filter,GraphQL xAPI — Returns > Organization returns (step 3),High,,,"HELD and MANUAL. FIXTURE-GAP: the platform API cannot create a return without a store, and the three organizations that carry a store-less return on vcst (observed through REST search, 3x 2026-10-08: 1 row each for organizationId + excludeDrafts, 0 once storeId=B2B-store is added) are SHARED, non-AGENT-TEST organizations, so no holder can be provisioned there. The xAPI holder view of those rows is not reachable; no alias is invented for it. The REST leg is a manual probe: as the administrator, POST /api/return/search {""organizationId"": <an organization that carries a store-less return>, ""excludeDrafts"": true, ""take"": 100} with and without ""storeId"": ""B2B-store"" and record both row counts. The expectation is the SPEC/DOC one (the migration note and the module guide say the organization of an existing return was ""filled in"", so it belongs in the organization's list): the filtered query returns the same row, and the case stays Draft/Manual while the PO has not stated whether legacy returns belong in the list. Would make it real: a store-less return in an AGENT-TEST organization (a seeder that can write a return row) or the PO's rule.",admin={{ADMIN_USER}},"[AUTH role=ADMIN_DEFAULT]
+[REST-OP legacy_unfiltered]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""<id of an organization that carries a store-less return>"", ""excludeDrafts"": true, ""take"": 100}
+[REST-EXEC legacy_unfiltered]
+[REST-OP legacy_store_filtered]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""<the same organization>"", ""excludeDrafts"": true, ""storeId"": ""{{STORE_ID}}"", ""take"": 100}
+[REST-EXEC legacy_store_filtered]","[REL] the number of rows POST /api/return/search returns for the legacy organization with excludeDrafts equals the number it returns with storeId added {DOC} (PR #28 Database: the organization of an existing return is filled in; HELD: 3x observed 1 row without the store filter and 0 with it)
+[EVIDENCE] once a holder fixture exists, organizationReturns for that organization lists the legacy return {DOC} (PR #28 Database)",[EVIDENCE] the row counts of the two REST calls are the evidence; nothing is written,the storeId-filtered REST search returns fewer rows than the unfiltered one for the same organization (a legacy return never reaches the organization list although the upgrade note says its organization was filled in); the holder-side list omits a legacy return the REST search shows for the same organization,none -- read-only,VCST-5884 · Archetype:FALLBACK · Technique:EP,Manual
+RET-ORG-011,return(id) and organizationReturns — a holder reading a return created in another store gets the rule the PO states,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} createReturn has NO storeId: the store of a return comes from its ORDER, so a buyer cannot create an other-store return through the xAPI (execution lane B, corrects the plan). The per-run setup is therefore an administrator PUT /api/return that moves the AGENT-TEST return to store Electronics, built from the scalar fields read from the return itself (GET /api/return/{id}); the first live run confirms the PUT keeps the return's lines (execution lane B moved a return this way on vcst). The store is restored to the order's store BEFORE the buyer cancels, and the return is cancelled in Cleanup if the case aborts. Observed (3x, lane B): the store is NOT compared on return(id), and the list's storeId argument matches case-insensitively. The expectation is the consistent one (a by-id read agrees with the list), kept as a {HYPOTHESIS} that stays Draft until the PO states the store rule: a red holder_read is a candidate finding for the PO, not a certified defect and not inverted to the build.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP x_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC x_create]
+[GQL-CAPTURE x_create.data.createReturn.id → X_ID]
+[GQL-CAPTURE x_create.data.createReturn.number → X_NO]
+[GQL-OP x_submit]
+mutation { submitReturn(command: { returnId: ""{{X_ID}}"" }) { id number status } }
+[GQL-EXEC x_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_ret]
+GET {{BACK_URL}}/api/return/{{X_ID}}
+[REST-EXEC get_ret]
+[REST-CAPTURE get_ret.body.number → X_NUMBER]
+[REST-CAPTURE get_ret.body.orderId → X_ORDERID]
+[REST-CAPTURE get_ret.body.orderNumber → X_ORDERNUMBER]
+[REST-CAPTURE get_ret.body.customerId → X_CUSTOMERID]
+[REST-CAPTURE get_ret.body.customerName → X_CUSTOMERNAME]
+[REST-CAPTURE get_ret.body.organizationId → X_ORGANIZATIONID]
+[REST-CAPTURE get_ret.body.organizationName → X_ORGANIZATIONNAME]
+[REST-CAPTURE get_ret.body.status → X_STATUS]
+[REST-OP move]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""Electronics"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}
+[REST-EXEC move]
+[REST-OP moved_state]
+GET {{BACK_URL}}/api/return/{{X_ID}}
+[REST-EXEC moved_state]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP holder_read]
+query { return(id: ""{{X_ID}}"") { id number status } }
+[GQL-EXEC holder_read]
+[GQL-OP list_home_store]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount items { id number } } }
+[GQL-EXEC list_home_store]
+[GQL-OP list_other_store]
+query { organizationReturns(storeId: ""Electronics"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount items { id number } } }
+[GQL-EXEC list_other_store]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore]
+PUT {{BACK_URL}}/api/return
+Content-Type: application/json
+Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}
+[REST-EXEC restore]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_x]
+mutation { cancelReturn(command: { returnId: ""{{X_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_x]","[ERRORS label=x_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=x_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=x_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=x_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=get_ret] HTTP 200 {OBSERVED}
+[ERRORS label=move] HTTP 200 {OBSERVED}
+[ERRORS label=moved_state] HTTP 200 {OBSERVED}
+[DATA label=moved_state] body.storeId = Electronics {OBSERVED} (the per-run return really sits in another store before the holder reads it)
+[ERRORS label=holder_read] errors[] empty {HYPOTHESIS} (the store rule is unstated; real when the PO states it)
+[NULL label=holder_read] data.return {HYPOTHESIS} (the store rule is unstated; the organization list filters StoreId, so a by-id read of a return the list would not show should agree with it; real when the PO states the rule. 3x and lane B observed: store NOT compared, the return opens)
+[ERRORS label=list_home_store] errors[] empty {HYPOTHESIS} (the store rule is unstated; real when the PO states it)
+[NULL label=list_home_store] data.organizationReturns.items[?number={{X_NO}}] {SPEC} (PR #28 Behaviour: the list filters the store of the request; the return now belongs to another store)
+[ERRORS label=list_other_store] errors[] empty {OBSERVED} (the storeId argument matches case-insensitively; no expectation on the other store's own list)
+[ERRORS label=restore] HTTP 200 {OBSERVED}
+[ERRORS label=cleanup_x] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] moved_state reads the store of the return as the administrator after the PUT, so the holder's read is made against a known StoreId; the buyer owns the return throughout","a holder reads, by id, a return of a store other than the one the list shows (the by-id read and the list disagree about the same return); the PUT dropped the return's lines or customer (BLOCKED: the setup, not the product); the store is left on Electronics","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/return]
+{""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}",VCST-5884 · Archetype:SCOPE · Technique:EG,Draft
+RET-ORG-012,organizationReturns — a permission revoked mid-session is refused on the next call while the old token is still valid,GraphQL xAPI — Returns > Organization returns (step 3),High,BL-GQL-004,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The same access token is used for before_revoke, after_revoke and after_regrant: the runner caches one token per role for the run, and the whole case signs the holder in once. The holder's membership role is removed and re-granted through the platform API. Do NOT cite VC-B2B-002 (""without re-login""): it contradicts BL-B2B-005 and the docs, which say the server applies the change at once and only the signed-in session is stale. SHARED STATE: this writes the membership of ORG_RET_HOLDER_MEMBERSHIP, which other cases use as their holder: run this case alone and let it restore the role before anything else signs that holder in (the checklist's revoke row names ORG_RET_HOLDER_ORGROLE, whose grant is an organization-level role and cannot be written without sending a whole organization object through this grammar). The role id and name are read from the membership itself. The REST body mirrors seed-org-returns.mjs; the first live run settles anything the platform rejects.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP b_create]
+mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC b_create]
+[GQL-CAPTURE b_create.data.createReturn.id → B_ID]
+[GQL-CAPTURE b_create.data.createReturn.number → B_NO]
+[GQL-OP b_submit]
+mutation { submitReturn(command: { returnId: ""{{B_ID}}"" }) { id number status } }
+[GQL-EXEC b_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_role]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+[REST-EXEC get_role]
+[REST-CAPTURE get_role.body.roles.0.roleId → VIEW_ROLE_ID]
+[REST-CAPTURE get_role.body.roles.0.roleName → VIEW_ROLE_NAME]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP before_revoke]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC before_revoke]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP revoke]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC revoke]
+[REST-OP state_revoked]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+[REST-EXEC state_revoked]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP after_revoke]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC after_revoke]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP regrant]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC regrant]
+[REST-OP state_regranted]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)
+[REST-EXEC state_regranted]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP after_regrant]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC after_regrant]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_b]
+mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_b]","[ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=b_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=get_role] HTTP 200 {OBSERVED}
+[DATA label=get_role] body.roles.0.roleId is non-null {OBSERVED}
+[ERRORS label=before_revoke] errors[] empty {SPEC} (VCST-5884 AC-1: a holder reads the organization)
+[DATA label=before_revoke] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=state_revoked] HTTP 200 {OBSERVED}
+[COUNT label=state_revoked] body.roles.length = 0 {OBSERVED}
+[ERRORS label=after_revoke] errors[] non-empty {DOC} (VirtoOZ PlatformUserGuide: organization-scoped roles are applied on the server immediately, only the signed-in session is stale; execution lane B observed the same token refused on the next call)
+[DATA label=after_revoke] errors[0].extensions.code = Forbidden {OBSERVED} (kb KB-9E0ED0F4)
+[NULL label=after_revoke] data.organizationReturns {DOC} (VirtoOZ PlatformUserGuide, as above)
+[ERRORS label=state_regranted] HTTP 200 {OBSERVED}
+[DATA label=state_regranted] body.roles.0.roleId = {{VIEW_ROLE_ID}} {OBSERVED}
+[ERRORS label=after_regrant] errors[] empty {OBSERVED} (execution lane B: the server re-reads roles on every call, so the OLD token is answered again after the restore; BL-B2B-005 and ECL-4.3 concern what the TOKEN carries, so they are not cited for this server leg)
+[DATA label=after_regrant] data.organizationReturns.items[?number={{B_NO}}].number = {{B_NO}} {OBSERVED} (execution lane B, as above)
+[ERRORS label=cleanup_b] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] state_revoked and state_regranted read the membership back through REST, so the call outcomes are tied to a verified role state; the token is the same in all three holder reads","after the revoke the same token still reads the organization (stale authorisation: the maintainer keeps reading until the token expires); after the re-grant the same token is still refused (a granted permission is ignored for the session); a REST write failed (BLOCKED, not a verdict)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)]
+{""id"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.membershipId)"", ""userId"": ""@td(ORG_RET_HOLDER_MEMBERSHIP.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{VIEW_ROLE_ID}}"", ""roleName"": ""{{VIEW_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-013,every return query and mutation except returnStatuses refuses a locked account; healthy accounts' own flows are unchanged,GraphQL xAPI — Returns > Organization returns (step 3),High,BL-GQL-004,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. SCOPE CREEP, no acceptance criterion: PR #28 adds an account-state guard (UserLocked / PasswordExpired / Unauthorized) in front of EVERY return query and mutation except returnStatuses. This case asserts the PR's description and is raised to the PO; it is {HYPOTHESIS} until the PO confirms the guard belongs in this story. ORG_RET_OTHER_BUYER signs in FIRST (a locked account cannot sign in), then is locked through the platform API and UNLOCKED in the same case and in Cleanup. Never LOCKOUT_TEST_* (shared with other suites). CARRIED, NOT ASSERTED (execution lane B): the password-expired leg is INCONCLUSIVE (a flag set through the users API did not trip the guard, so PasswordExpired is not asserted) and the deleted-account leg was not reached (a deleted account cannot be restored on a shared stand); both stay {HYPOTHESIS} and add no assertion here. Observed on the locked leg: UserLocked on returns, return, organizationReturns, returnableItems, returnPolicy, returnReasons, createReturn, updateReturn, submitReturn and cancelReturn, while returnStatuses still answers.",o_order=@td(ORG_RET_OTHER_BUYER.orderId); o_line=@td(ORG_RET_OTHER_BUYER.lineAItemId); o_org=@td(ORG_RET_OTHER_ORG.id),"[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP dr_create]
+mutation { createReturn(command: { orderId: ""{{o_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{o_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC dr_create]
+[GQL-CAPTURE dr_create.data.createReturn.id → DR_ID]
+[GQL-CAPTURE dr_create.data.createReturn.number → DR_NO]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP healthy_policy]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { isEnabled windowDays allowedOrderStatuses } }
+[GQL-EXEC healthy_policy]
+[GQL-OP healthy_reasons]
+query { returnReasons(storeId: ""{{STORE_ID}}"") { code localizedName requiresComment } }
+[GQL-EXEC healthy_reasons]
+[GQL-OP healthy_list]
+query { returns(storeId: ""{{STORE_ID}}"", first: 5) { totalCount items { id number status } } }
+[GQL-EXEC healthy_list]
+[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/security/users/@td(ORG_RET_OTHER_BUYER.userId)/lock]
+[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP lk_returns]
+query { returns(storeId: ""{{STORE_ID}}"", first: 5) { totalCount items { id } } }
+[GQL-EXEC lk_returns]
+[GQL-OP lk_return]
+query { return(id: ""{{DR_ID}}"") { id status } }
+[GQL-EXEC lk_return]
+[GQL-OP lk_policy]
+query { returnPolicy(storeId: ""{{STORE_ID}}"") { isEnabled } }
+[GQL-EXEC lk_policy]
+[GQL-OP lk_reasons]
+query { returnReasons(storeId: ""{{STORE_ID}}"") { code } }
+[GQL-EXEC lk_reasons]
+[GQL-OP lk_create]
+mutation { createReturn(command: { orderId: ""{{o_order}}"", items: [{ orderLineItemId: ""{{o_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST locked"" }] }) { id status } }
+[GQL-EXEC lk_create]
+[GQL-OP lk_org]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{o_org}}"", first: 1) { totalCount } }
+[GQL-EXEC lk_org]
+[GQL-OP lk_returnable]
+query { returnableItems(orderId: ""{{o_order}}"") { orderLineItemId returnableQuantity } }
+[GQL-EXEC lk_returnable]
+[GQL-OP lk_update]
+mutation { updateReturn(command: { returnId: ""{{DR_ID}}"", customerComment: ""AGENT-TEST locked edit"" }) { id status } }
+[GQL-EXEC lk_update]
+[GQL-OP lk_submit]
+mutation { submitReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC lk_submit]
+[GQL-OP lk_cancel]
+mutation { cancelReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC lk_cancel]
+[GQL-OP lk_statuses]
+query { returnStatuses { items { key } } }
+[GQL-EXEC lk_statuses]
+[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/security/users/@td(ORG_RET_OTHER_BUYER.userId)/unlock]
+[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP after_unlock]
+query { return(id: ""{{DR_ID}}"") { id status } }
+[GQL-EXEC after_unlock]
+[GQL-OP cleanup_dr]
+mutation { cancelReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_dr]","[ERRORS label=dr_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=dr_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=healthy_policy] errors[] empty {HYPOTHESIS} (PR #28: healthy accounts are unchanged; released VCST-5883 behaviour)
+[DATA label=healthy_policy] data.returnPolicy.isEnabled = true {SPEC} (VCST-5883)
+[ERRORS label=healthy_reasons] errors[] empty {SPEC} (VCST-5883)
+[DATA label=healthy_reasons] data.returnReasons[?code=NoLongerNeeded].code = NoLongerNeeded {SPEC} (VCST-5883)
+[ERRORS label=healthy_list] errors[] empty {SPEC} (VCST-5883)
+[DATA label=healthy_list] data.returns.totalCount >= 0 {SPEC} (VCST-5883)
+[ERRORS label=lk_returns] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_returns] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_return] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_return] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_policy] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_policy] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_reasons] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_reasons] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_org] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_org] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_returnable] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_returnable] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_create] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_create] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_update] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_update] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_submit] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_submit] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_cancel] errors[] non-empty {HYPOTHESIS} (PR #28 Runtime: every return operation but returnStatuses refuses a locked account; no AC, real when the PO confirms it belongs here)
+[DATA label=lk_cancel] errors[0].extensions.code = UserLocked {OBSERVED} (3x 2026-10-08)
+[ERRORS label=lk_statuses] errors[] empty {HYPOTHESIS} (PR #28: returnStatuses is the one exemption)
+[ERRORS label=after_unlock] errors[] empty {SPEC} (VCST-5883)
+[DATA label=after_unlock] data.return.status = Draft {SPEC} (VCST-5883: the refused calls changed nothing)
+[ERRORS label=cleanup_dr] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] after_unlock reads the owner's draft after the refused calls: still Draft, so every refusal was a no-op; healthy_* are read by a healthy account BEFORE the lock, so ""unchanged for healthy accounts"" is a before-and-after on the same operations","a locked account reads or changes a return through any one operation (a builder outside the guard); a healthy buyer is refused on returnPolicy, returnReasons or the own list; returnStatuses is refused for the locked account; the lock REST call failed (BLOCKED)","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/security/users/@td(ORG_RET_OTHER_BUYER.userId)/unlock]",VCST-5884 · Archetype:PARITY · Technique:DT,Draft
+RET-ORG-014,organizationReturns — a buyer removed from the organization keeps their returns in the organization's list,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} The expectation is the PR's own: the list filters the OrganizationId snapshot stored on the return, not the buyer's current membership, so a departed buyer's return stays in the organization's list. It is what 3x observed and the PO has not stated it; it is NOT certified here as correct. What would make it real: a PO rule either way. If the PO says a departed buyer's returns must leave the list, this assertion is the one that flips. The buyer is ORG_RET_LEAVER (a non-holder with its own order), and its membership is set to Deleted and RESTORED in the same case and in Cleanup. The role id and name are read from the membership. The REST body mirrors seed-org-returns.mjs.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); l_order=@td(ORG_RET_LEAVER.orderId); l_line=@td(ORG_RET_LEAVER.lineAItemId),"[AUTH role=ORG_RET_LEAVER]
+[GQL-OP l_create]
+mutation { createReturn(command: { orderId: ""{{l_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{l_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC l_create]
+[GQL-CAPTURE l_create.data.createReturn.id → L_ID]
+[GQL-CAPTURE l_create.data.createReturn.number → L_NO]
+[GQL-OP l_submit]
+mutation { submitReturn(command: { returnId: ""{{L_ID}}"" }) { id number status } }
+[GQL-EXEC l_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP get_role]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC get_role]
+[REST-CAPTURE get_role.body.roles.0.roleId → BASE_ROLE_ID]
+[REST-CAPTURE get_role.body.roles.0.roleName → BASE_ROLE_NAME]
+[REST-OP remove]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Deleted"", ""isLocked"": false}
+[REST-EXEC remove]
+[REST-OP state_removed]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC state_removed]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP holder_list]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 50) { totalCount pageInfo { hasNextPage endCursor } items { id number status customerId customerName organizationId organizationName } } }
+[GQL-EXEC holder_list]
+[GQL-OP holder_read]
+query { return(id: ""{{L_ID}}"") { id number status customerName organizationName } }
+[GQL-EXEC holder_read]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP restore]
+PUT {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}
+[REST-EXEC restore]
+[REST-OP state_restored]
+GET {{BACK_URL}}/api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)
+[REST-EXEC state_restored]
+[AUTH role=ORG_RET_LEAVER]
+[GQL-OP cleanup_l]
+mutation { cancelReturn(command: { returnId: ""{{L_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_l]","[ERRORS label=l_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=l_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=l_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=l_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=get_role] HTTP 200 {OBSERVED}
+[ERRORS label=state_removed] HTTP 200 {OBSERVED}
+[DATA label=state_removed] body.status = Deleted {OBSERVED}
+[ERRORS label=holder_list] errors[] empty {SPEC} (VCST-5884 AC-1)
+[DATA label=holder_list] data.organizationReturns.items[?number={{L_NO}}].number = {{L_NO}} {HYPOTHESIS} (the organization snapshot is by design per PR #28: a departed buyer's return stays in the organization history; real when the PO states it; 3x observed)
+[ERRORS label=holder_read] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=holder_read] data.return.number = {{L_NO}} {HYPOTHESIS} (same rule)
+[ERRORS label=state_restored] HTTP 200 {OBSERVED}
+[DATA label=state_restored] body.status = Approved {OBSERVED}
+[ERRORS label=cleanup_l] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] state_removed reads the membership back as Deleted before the holder reads the list, so the buyer really had left",the departed buyer's return is gone (if the PO rule is to keep it) or still listed (if the PO rule is to drop it); the membership is not restored (a later case finds ORG_RET_LEAVER blocked),"[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/customer/organization-memberships/@td(ORG_RET_LEAVER.membershipId)]
+{""id"": ""@td(ORG_RET_LEAVER.membershipId)"", ""userId"": ""@td(ORG_RET_LEAVER.userId)"", ""organizationId"": ""@td(ORG_RET_VIEWER_ORG.id)"", ""organizationName"": ""@td(ORG_RET_VIEWER_ORG.name)"", ""roles"": [{""roleId"": ""{{BASE_ROLE_ID}}"", ""roleName"": ""{{BASE_ROLE_NAME}}""}], ""status"": ""Approved"", ""isLocked"": false}",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-015,organizationReturns and REST search — a renamed organization keeps its old name on existing returns and on returns created after the rename,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} Records what is observed after a rename (3x: existing rows keep the old name AND a return created after the rename also gets the old name, because it copies the order's snapshot). It is NOT a verdict that this is right: the PO has not said whether a rename should reach existing or new returns, and there is no re-snapshot path in the product (ABSENT, a finding for the PO). What would make it real: the PO's rule; if the rule is ""the current name"", the two after_rename assertions flip. The holder-side leg is not testable here: ORG_RET_OTHER_ORG has no holder, so the observation is the Admin REST search (the Admin Organization column reads the same field). The rename is written through PUT /api/organizations with the fields the seeder sets (id, memberType, name, emails); the first live run confirms it drops nothing else, and the name is restored in the same case and in Cleanup. The original name is captured from a return read before the rename.",o_order=@td(ORG_RET_OTHER_BUYER.orderId); o_line=@td(ORG_RET_OTHER_BUYER.lineAItemId); old_name=@td(ORG_RET_OTHER_ORG.name),"[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP n_create]
+mutation { createReturn(command: { orderId: ""{{o_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{o_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC n_create]
+[GQL-CAPTURE n_create.data.createReturn.id → N_ID]
+[GQL-CAPTURE n_create.data.createReturn.number → N_NO]
+[GQL-OP n_submit]
+mutation { submitReturn(command: { returnId: ""{{N_ID}}"" }) { id number status } }
+[GQL-EXEC n_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP before_rename]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""@td(ORG_RET_OTHER_ORG.id)"", ""take"": 50}
+[REST-EXEC before_rename]
+[REST-OP rename]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_OTHER_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""AGENT-TEST-Org-RetOther-RENAMED"", ""emails"": [""@td(ORG_RET_OTHER_ORG.email)""]}
+[REST-EXEC rename]
+[REST-OP org_state]
+GET {{BACK_URL}}/api/organizations/@td(ORG_RET_OTHER_ORG.id)
+[REST-EXEC org_state]
+[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP m_create]
+mutation { createReturn(command: { orderId: ""{{o_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{o_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
+[GQL-EXEC m_create]
+[GQL-CAPTURE m_create.data.createReturn.id → M_ID]
+[GQL-CAPTURE m_create.data.createReturn.number → M_NO]
+[GQL-OP m_submit]
+mutation { submitReturn(command: { returnId: ""{{M_ID}}"" }) { id number status } }
+[GQL-EXEC m_submit]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP after_rename]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""@td(ORG_RET_OTHER_ORG.id)"", ""take"": 50}
+[REST-EXEC after_rename]
+[REST-OP restore]
+PUT {{BACK_URL}}/api/organizations
+Content-Type: application/json
+Body: {""id"": ""@td(ORG_RET_OTHER_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""{{old_name}}"", ""emails"": [""@td(ORG_RET_OTHER_ORG.email)""]}
+[REST-EXEC restore]
+[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP cleanup_n]
+mutation { cancelReturn(command: { returnId: ""{{N_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_n]
+[AUTH role=ORG_RET_OTHER_BUYER]
+[GQL-OP cleanup_m]
+mutation { cancelReturn(command: { returnId: ""{{M_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_m]","[ERRORS label=n_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=n_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=n_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=n_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=m_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=m_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=m_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=m_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=before_rename] HTTP 200 {OBSERVED}
+[DATA label=before_rename] body.results[?number={{N_NO}}].organizationName = {{old_name}} {OBSERVED} (the baseline before the rename)
+[ERRORS label=org_state] HTTP 200 {OBSERVED}
+[DATA label=org_state] body.name = AGENT-TEST-Org-RetOther-RENAMED {OBSERVED} (the rename took effect before the observation)
+[ERRORS label=after_rename] HTTP 200 {OBSERVED}
+[DATA label=after_rename] body.results[?number={{N_NO}}].organizationName = {{old_name}} {HYPOTHESIS} (a return keeps the organization name copied from its order at creation: snapshot by design per PR #28; real when the PO states the rule; 3x observed)
+[DATA label=after_rename] body.results[?number={{M_NO}}].organizationName = {{old_name}} {HYPOTHESIS} (a return created AFTER the rename also copies the order's old name; whether that is wanted is the PO question; 3x observed)
+[ERRORS label=cleanup_n] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=cleanup_m] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] org_state reads the organization back after the rename, so the observation is made with the new name really in place; the two returns are compared by their own numbers","the organization name on the returns differs from what the PO decides (stale on existing returns, or on the one created after the rename); the rename or its restore fails (BLOCKED: ORG_RET_OTHER_ORG left renamed)","[AUTH role=ADMIN_DEFAULT]
+[REST PUT /api/organizations]
+{""id"": ""@td(ORG_RET_OTHER_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""@td(ORG_RET_OTHER_ORG.name)"", ""emails"": [""@td(ORG_RET_OTHER_ORG.email)""]}",VCST-5884 · Archetype:STALE · Technique:ST,Draft
