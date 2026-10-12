@@ -52,7 +52,7 @@ export function gateSuites(suites: SuiteRef[], facts: EnvFacts, ledger: Ledger |
       const state = classify(mod, s.layer, facts, ledgerRepos);
       if (state === "deployed") continue;
       if (state === "unmapped") unmappedMap.set(entry, { module: mod.pascal, suites: [...(unmappedMap.get(entry)?.suites ?? []), s.id] });
-      else gated.push({ suite: s.id, module: mod.id, state });
+      else gated.push({ suite: s.id, module: mod.pascal, state });
     }
   }
   return { gated, unmapped: [...unmappedMap].map(([entry, u]) => ({ entry, module: u.module, suites: u.suites })), requiredBySuite, gatingOff: null };
