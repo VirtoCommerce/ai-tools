@@ -6,6 +6,9 @@
  * (validate-configurable-data.mjs) import it. The seeder creates these on the platform and
  * writes runtime GUIDs to aliases.<env>.json; test-data/products/configurable-products.csv
  * mirrors the business fields (name/slug/price/…) for @td() resolution and carries NO GUIDs.
+ *
+ * Section options: Product sections list `{ name, price, … }` (an option PRODUCT is created per entry);
+ * Text sections may list predefined `{ text }` presets (no product).
  */
 export const SPECS = [
   // ---------- base family (date 20260518, catalog SEED-Configurables) ----------
@@ -185,4 +188,79 @@ export const SPECS = [
           { name: 'Pedals', price: 14, quantity: 1 },
         ] },
     ] },
+
+  // ---------- checklist family (VCST-6027, shares the unified AGENT-TEST-SEED-Configurables catalog) ----------
+  // The "Price and delivery" checklist renders one row per VISIBLE section: Done (green
+  // `{name} — {value}`, clamped to 2 lines), Required (red, link per type: Text / File / Product),
+  // Optional (yellow, "Review"). CFG-023..033 each cover ONE required type, so no page showed all
+  // three red link variants at once, and no label was long enough to overflow 2 lines — the clamp
+  // was unfalsifiable (SECOND RULE: equal-on-both-sides data). This spec exists to make both
+  // decidable; the contract is CHECKLIST_CONTRACT below, enforced by td:validate:cfg.
+  //  - LAY: required root Product with NO default, and EVERY option label long. Option order is NOT
+  //    controllable: options carry no display order, and on vcst 2026-10-06 both REST and
+  //    productConfiguration returned them in neither spec nor creation order. So "make the long one
+  //    first" cannot be guaranteed — making all of them long guarantees whichever option lands
+  //    selected on load overflows 2 lines. The two differ, so the Done label changes per selection.
+  //  - TXT / PHO: required root Text / File — the other two red link variants.
+  //  - FIL: required Product revealed by LAY (does a revealed required Product show its link?). All of
+  //    its options are SHORT: a Done FIL row is the unclamped contrast to the clamped LAY row.
+  //  - ICE / DEC / MSG / ART: optional Product / Product / Text(presets+custom) / File (yellow rows);
+  //    ART's section NAME is the long one (an Optional row clamps on the name alone).
+  { csvId: 'CFG-034', family: 'checklist', name: 'AGENT-TEST-CFG-Checklist-All-Types', code: 'AGENT-TEST-CFG-034', basePrice: 60,
+    sections: [
+      { key: 'LAY', name: 'Layers', type: 'Product', isRequired: true, dependsOn: null,
+        options: [
+          { name: 'Layers Top Chocolate Ganache with Hazelnut Praline / Bottom Dark Chocolate Sponge with Raspberry Coulis', price: 18 },
+          { name: 'Layers Top Vanilla Bean Mousse with Salted Caramel Crunch / Bottom Almond Joconde Sponge with Apricot Glaze', price: 14 },
+        ] },
+      { key: 'TXT', name: 'Text', type: 'Text', isRequired: true, dependsOn: null, allowCustomText: true, maxLength: 50, options: [] },
+      { key: 'PHO', name: 'Photo for the cake topper', type: 'File', isRequired: true, dependsOn: null, options: [] },
+      { key: 'FIL', name: 'Filling', type: 'Product', isRequired: true, dependsOn: 'LAY',
+        options: [{ name: 'Strawberry Jam', price: 6 }, { name: 'Lemon Curd', price: 8 }] },
+      { key: 'ICE', name: 'Icing', type: 'Product', isRequired: false, dependsOn: null,
+        options: [{ name: 'Buttercream', price: 5 }, { name: 'Fondant', price: 9 }] },
+      { key: 'DEC', name: 'Decoration', type: 'Product', isRequired: false, dependsOn: null,
+        options: [{ name: 'Fresh Berries', price: 7 }, { name: 'Sugar Flowers', price: 11 }] },
+      { key: 'MSG', name: 'Message', type: 'Text', isRequired: false, dependsOn: null, allowCustomText: true, maxLength: 100,
+        options: [{ text: 'Happy Birthday!' }, { text: 'Congratulations!' }] },
+      { key: 'ART', name: 'AGENT-TEST Additional printed artwork for the box lid and the ribbon card', type: 'File', isRequired: false, dependsOn: null, options: [] },
+    ] },
 ];
+
+/**
+ * Non-vacuity contract for CFG-034 (VCST-6027 checklist). Thresholds, not values: the guard fails
+ * when the data stops being able to tell a right checklist from a wrong one — e.g. the long label is
+ * shortened (clamp no longer observable), a required type disappears (its red link variant cannot be
+ * seen), or LAY gains a default (the "no default → which option is picked" question goes away).
+ */
+export const CHECKLIST_CONTRACT = { csvId: 'CFG-034', longOptionMin: 90, longSectionNameMin: 70, shortOptionMax: 30, minOptions: 2 };
+
+/** Pure: returns a list of contract violations for a spec (empty = discriminating). */
+export function checklistContractProblems(spec, c = CHECKLIST_CONTRACT) {
+  const out = [];
+  if (!spec) return [`${c.csvId}: spec missing`];
+  const secs = spec.sections || [];
+  const root = (s) => !s.dependsOn;
+  for (const t of ['Product', 'Text', 'File']) {
+    if (!secs.some((s) => s.type === t && s.isRequired && root(s))) out.push(`no REQUIRED root ${t} section — its red link variant is unobservable`);
+    if (!secs.some((s) => s.type === t && !s.isRequired)) out.push(`no OPTIONAL ${t} section — the yellow row is unobservable for ${t}`);
+  }
+  // Option order is not controllable on the platform, so the long-label property is asserted on EVERY
+  // option of the required root Product (order-independent), never on "the first" one.
+  const reqProduct = secs.find((s) => s.type === 'Product' && s.isRequired && root(s));
+  if (reqProduct) {
+    const opts = reqProduct.options || [];
+    if (opts.length < c.minOptions) out.push(`${reqProduct.name}: ${opts.length} option(s), needs >= ${c.minOptions}`);
+    if (opts.some((o) => o.default)) out.push(`${reqProduct.name}: has a default option — must have none`);
+    const short = opts.filter((o) => (o.name || '').length < c.longOptionMin);
+    if (short.length) out.push(`${reqProduct.name}: option(s) under ${c.longOptionMin} chars (${short.map((o) => o.name).join(', ')}) — the one selected on load may not overflow 2 lines`);
+    if (new Set(opts.map((o) => o.name)).size !== opts.length) out.push(`${reqProduct.name}: duplicate option names — the Done label would not change per selection`);
+  }
+  const dep = secs.find((s) => s.type === 'Product' && s.isRequired && s.dependsOn && secs.some((p) => p.key === s.dependsOn));
+  if (!dep) out.push('no REQUIRED dependent Product section (revealed required row unobservable)');
+  else if ((dep.options || []).length < c.minOptions || (dep.options || []).some((o) => (o.name || '').length > c.shortOptionMax)) out.push(`${dep.name}: needs >= ${c.minOptions} options all <= ${c.shortOptionMax} chars — the unclamped Done contrast row`);
+  if (!secs.some((s) => (s.name || '').length >= c.longSectionNameMin)) out.push(`no section name >= ${c.longSectionNameMin} chars`);
+  const names = secs.map((s) => s.name);
+  if (new Set(names).size !== names.length) out.push('duplicate section names — rows would be indistinguishable');
+  return out;
+}

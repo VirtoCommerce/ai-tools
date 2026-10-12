@@ -14,6 +14,8 @@
  *   2. No CFG CSV row carries a runtime GUID (product_id_guid, configuration_id, section/option
  *      ids must be blank — they belong in aliases.<env>.json).
  *   3. CFG CSV rows with no matching spec are reported (legacy/stale — not seeder-managed).
+ *   4. CFG-034 (VCST-6027 checklist) keeps its non-vacuity contract (configurable-specs.mjs
+ *      checklistContractProblems) and is registered in aliases.json.
  *
  * Usage:  node scripts/seed-data/validate-configurable-data.mjs   (exit 1 on any hard problem)
  */
@@ -23,7 +25,7 @@ import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'csv-parse/sync';
-import { SPECS } from './configurable-specs.mjs';
+import { SPECS, CHECKLIST_CONTRACT, checklistContractProblems } from './configurable-specs.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const CSV = join(ROOT, 'test-data', 'products', 'configurable-products.csv');
@@ -71,6 +73,18 @@ const specIds = new Set(SPECS.map((s) => s.csvId));
 const orphans = cfgRows.filter((r) => !specIds.has(r.product_id)).map((r) => r.product_id);
 if (orphans.length) warn(`${orphans.length} CFG CSV row(s) have no spec in configurable-specs.mjs — legacy/stale, NOT regenerated or drift-checked: ${orphans.join(', ')}`);
 else ok('every CFG CSV row maps to a spec');
+
+// 4. CFG-034 (VCST-6027 checklist) non-vacuity contract — the data must keep the clamp and all three
+//    red link variants decidable, and its alias must be registered.
+console.log(`\n[4] ${CHECKLIST_CONTRACT.csvId} checklist non-vacuity contract`);
+const chk = SPECS.find((s) => s.csvId === CHECKLIST_CONTRACT.csvId);
+const chkProblems = checklistContractProblems(chk);
+for (const m of chkProblems) fail(`${CHECKLIST_CONTRACT.csvId}: ${m}`);
+if (!chkProblems.length) ok(`${CHECKLIST_CONTRACT.csvId} discriminates: required root Product/Text/File, every Layers option long (no default), short-optioned required dependent Product, long section name`);
+const aliases = JSON.parse(readFileSync(join(ROOT, 'test-data', 'aliases.json'), 'utf8'));
+const chkAliases = Object.entries(aliases).filter(([, d]) => d?.file === 'products/configurable-products' && d?.filter?.product_id === CHECKLIST_CONTRACT.csvId);
+if (!chkAliases.length) fail(`${CHECKLIST_CONTRACT.csvId}: no alias in aliases.json points at it`);
+else ok(`${CHECKLIST_CONTRACT.csvId} alias: ${chkAliases.map(([k]) => k).join(', ')}`);
 
 console.log('\n=== configurable-products drift check ===');
 console.log(`  specs: ${SPECS.length} | CSV CFG rows: ${cfgRows.length} | hard problems: ${problems.length} | warnings: ${notes.length}`);

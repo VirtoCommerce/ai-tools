@@ -4,16 +4,18 @@ Schema-validated xAPI operations — queries in [`queries/`](queries/), mutation
 [`mutations/`](mutations/) — plus the registry [`index.json`](index.json), whose `totalFixtures`
 is the current count.
 
-> **Not to be confused with `scripts/fixtures/graphql/`** — that is a 5-file set of
-> *deliberately broken* operations that tests the runner's own validator. This directory
-> is the curated golden set.
+> **Not to be confused with `scripts/fixtures/graphql/`** — that is a small set of
+> *deliberately broken* operations (plus one valid control) that tests the runner's own
+> validator via `npm run graphql:validate`. This directory is the curated golden set.
 
 ## What a fixture is for
 
-**Nothing executes these files.** Only
+**Almost nothing executes these files.** The directory is read by
 [`validate-graphql-fixtures.ts`](../../scripts/graphql/validate-graphql-fixtures.ts) and
-[`update-graphql-fixtures.ts`](../../scripts/graphql/update-graphql-fixtures.ts) read the
-directory. A fixture earns its place two ways:
+[`update-graphql-fixtures.ts`](../../scripts/graphql/update-graphql-fixtures.ts); the one
+exception is `npm run store:caps`
+([`probe-store-capabilities.mjs`](../../scripts/maintenance/probe-store-capabilities.mjs)), which
+reads `queries/initializeApplicationClient.graphql` and POSTs it. A fixture earns its place two ways:
 
 1. **A copy-paste source of a known-correct operation body** — the real field names, the
    `command:` wrapper, the `MoneyType` shape, the args that exist. The runner's CSV grammar has
@@ -23,7 +25,7 @@ directory. A fixture earns its place two ways:
    turns a fixture red *before* a suite blames the product for it. The `used-by:` header line
    records which case IDs copied that body — that is the blast radius when one goes red.
 
-Fixtures are validated for **shape, not for data**. They are never POSTed. Whether the operation
+Fixtures are validated for **shape, not for data**. The validator never POSTs them. Whether the operation
 returns anything on a given environment is a suite's job.
 
 ## Using one
@@ -71,7 +73,8 @@ blank line, body. The validator parses the header and rejects a fixture without 
 Leave `last-validated` as a placeholder; step 3 stamps it.
 
 **2. Register it in `index.json`** under `queries` or `mutations` (`path`, `category`, `role`,
-`requiredVars`, plus optional `gqlVars` / `exampleVars` / `runnerNote` / `semantics` / `usedBy`)
+`requiredVars`, plus optional `gqlVars` / `exampleVars` / `exampleVarsAlt` / `runnerNote` / `semantics` /
+`usedBy` / `knownIssues`)
 **and bump `totalFixtures`**.
 
 Both are manual and **neither is gate-enforced**: the updater only regex-bumps the top-level
