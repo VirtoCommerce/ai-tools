@@ -80,13 +80,15 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
         }
       } catch { /* unreadable dir ⇒ skip */ }
     }
-  } else if (!isTicket(f) && opts.domain) {
+  } else if (!isTicket(f) && (opts.domain || opts.ticket)) {
     const [dir, prefix] = f === "exploratory" ? ["reports/exploratory", "SBTM-"] : ["reports/test-lifecycle", "TLC-"];
     const base = join(root, dir);
+    // Session files are named by ticket (SBTM-VCST-5317-…) as often as by domain: match either.
+    const keys = [opts.domain, opts.ticket].filter((k): k is string => !!k).map((k) => k.toLowerCase());
     if (existsSync(base)) {
       try {
         for (const n of readdirSync(base))
-          if (n.startsWith(prefix) && n.toLowerCase().includes(opts.domain.toLowerCase())) candidates.push(join(base, n));
+          if (n.startsWith(prefix) && keys.some((k) => n.toLowerCase().includes(k))) candidates.push(join(base, n));
       } catch { /* unreadable dir ⇒ skip */ }
     }
   }
@@ -179,6 +181,9 @@ export function buildChecks(i: PolicyInput): Check[] {
         checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "none"}`, who: "me",
           do: "do not test it on this stand; report it as not deployed", diagnose: [] });
     }
+    for (const r of f.ledger.noLiveSource ?? [])
+      checks.push({ id: `not-deployed:${r.repo}`, status: "UNKNOWN", found: `${r.component} ${r.released} released; no live source reports the deployed ${r.repo} version`, who: "you",
+        do: `confirm the deployed ${r.component} version on the stand before testing what ${r.released} ships`, diagnose: [] });
   }
 
   // components — an input with no repo silently drops out of breaking / not-deployed, so say so

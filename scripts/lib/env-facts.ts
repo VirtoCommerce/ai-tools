@@ -21,7 +21,9 @@ export interface DeployedModule { version: string; repo: string | null; repoGues
 export interface DriftRow { id: string; declared: string | null; deployed: string | null }
 export interface ReleasedNotDeployed { component: string; repo: string; released: string; deployed: string | null; feature: string }
 /** `releasedNotDeployed` is UNKNOWN when `deployed` is — "released, not deployed" cannot be told from "not probed". */
-export interface LedgerFacts { generated: string | null; stale: boolean | null; releasedNotDeployed: ReleasedNotDeployed[] | Unknown; breaking: LedgerRow[] }
+/** A released component whose deployed version no live source reports (vc-platform, vc-frontend): unknown, never "not deployed". */
+export interface NoLiveSource { component: string; repo: string; released: string }
+export interface LedgerFacts { generated: string | null; stale: boolean | null; releasedNotDeployed: ReleasedNotDeployed[] | Unknown; noLiveSource: NoLiveSource[]; breaking: LedgerRow[] }
 export interface EnvFacts {
   env: string; observedAt: string; backUrl: string; frontUrl: string;
   config: { missing: string[] };
@@ -53,13 +55,22 @@ export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, Depl
   // Neither §1 nor §2 parsed ⇒ the headings drifted from the reader, not "nothing shipped".
   if (ledger.latest.length === 0 && ledger.rows.length === 0) return U("ledger-unparsed");
   const wanted = new Set(repos);
+  const deployedByRepo = new Map<string, string>();
+  for (const m of Object.values(deployed ?? {})) if (m.repo) deployedByRepo.set(m.repo, m.version);
+  // /api/platform/modules reports modules only: vc-platform and vc-frontend have no live version, so their
+  // releases are UNKNOWN against the stand — never "not deployed" (spec §4: UNKNOWN is never upgraded).
+  const hasLiveSource = (repo: string) => /^vc-module-/.test(repo) || deployedByRepo.has(repo);
+  const noLive = new Map<string, NoLiveSource>();
+  for (const row of ledger.rows) {
+    if (!wanted.has(row.repo) || hasLiveSource(row.repo)) continue;
+    const prev = noLive.get(row.repo);
+    if (!prev || cmpSemver(row.version, prev.released) > 0) noLive.set(row.repo, { component: row.component, repo: row.repo, released: row.version });
+  }
   let releasedNotDeployed: ReleasedNotDeployed[] | Unknown = U("deployed-unknown");
   if (deployed) {
-    const deployedByRepo = new Map<string, string>();
-    for (const m of Object.values(deployed)) if (m.repo) deployedByRepo.set(m.repo, m.version);
     const rows: ReleasedNotDeployed[] = [];
     for (const row of ledger.rows) {
-      if (!wanted.has(row.repo)) continue;
+      if (!wanted.has(row.repo) || !hasLiveSource(row.repo)) continue;
       const live = deployedByRepo.get(row.repo) ?? null;
       // A PR build of the released base counts as having it (Review Focus 2).
       if (live !== null && cmpSemver(baseOf(live), row.version) >= 0) continue;
@@ -71,7 +82,7 @@ export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, Depl
   // An unparsable `generated` date is UNKNOWN freshness, never "fresh".
   const generatedMs = ledger.generated ? new Date(ledger.generated).getTime() : NaN;
   const stale = Number.isNaN(generatedMs) || ledger.staleAfterDays === null ? null : (now.getTime() - generatedMs) / 86_400_000 > ledger.staleAfterDays;
-  return { generated: ledger.generated, stale, releasedNotDeployed, breaking };
+  return { generated: ledger.generated, stale, releasedNotDeployed, noLiveSource: [...noLive.values()], breaking };
 }
 
 export function resolveComponentRepos(inputs: string[], ledger: Ledger | null, deployed: Record<string, DeployedModule> | null): { input: string; repo: string | null }[] {
@@ -80,7 +91,8 @@ export function resolveComponentRepos(inputs: string[], ledger: Ledger | null, d
     if (/^vc-/i.test(s)) return { input, repo: s.toLowerCase() };
     if (/^VirtoCommerce\./i.test(s)) {
       const live = deployed?.[s.toLowerCase()];
-      return { input, repo: live?.repo ?? moduleIdToRepoGuess(s) };
+      // moduleIdToRepoGuess strips only a PascalCase prefix: normalise it so any casing guesses the same repo.
+      return { input, repo: live?.repo ?? moduleIdToRepoGuess(s.replace(/^virtocommerce./i, "VirtoCommerce.")) };
     }
     const byName = ledger?.latest.find((l) => l.component.toLowerCase() === s.toLowerCase());
     return { input, repo: byName?.repo ?? null };

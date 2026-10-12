@@ -81,11 +81,11 @@ Step 0a: the charter is **received, not authored**.
 
 Rationale, the charter derivation table and the record: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md).
 
-### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
+### Step 0 — Pre-Flight
 
-1. **`/preflight exploratory --domain <slug> --components <domain's components> [--storefront]`**
+1. **`/preflight exploratory --domain <slug> --components <domain's components> [--ticket <KEY>] [--storefront]`**
    ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
-   build, the release-ledger Δ, the 24 h duplicate check for this domain and MCP availability, in one
+   build, the release-ledger Δ, the 24 h duplicate check (this domain or ticket) and MCP availability, in one
    output form. Record the block in the session report header.
 3a. **What shipped recently** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
 
