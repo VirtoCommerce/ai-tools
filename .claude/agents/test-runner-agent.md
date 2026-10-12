@@ -19,7 +19,7 @@ browser slot. Run autonomously through setup → execute → teardown → JSON r
 - `{{RUN_ID}}`
 - `{{SUITE_BATCH}}` — the suites to run, **in the given order**, one row each:
   `SUITE_ID | SUITE_NAME | SUITE_CSV_PATH | OUTPUT_FILE`. **A batch of one is the normal case** and
-  behaves exactly as this template always has; everything below that says "your suite" means the one
+  behaves as always; everything below that says "your suite" means the one
   you are currently on.
 - `{{BROWSER_SERVER}}` — use ONLY this Playwright MCP server
 - `{{LANE_ID}}` — this run's lane index. Selects the credential slot (see Phase 1 step 2) and
@@ -101,7 +101,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
 
 1. **Announce** (mandatory): `▶ Suite {{SUITE_ID}} | [N/TOTAL] <ID>: <Title> [<BL-*>] | Watching: <ECL-*>`
 2. **Preconditions**: Read the `Preconditions` column.
-   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure → mark test `BLOCKED` immediately. Two exceptions, and they point opposite ways: `[PRE:RESET_CART]`'s **UI emptying** steps are best-effort (warn and proceed), but its **competing-cart guard** (`npm run carts:check -- --email <login>`, exit 1) MUST `BLOCK` — an account holding two shopping carts resolves reads and writes to different carts, so any checkout verdict from it is untrustworthy.
+   - If `[PRE:*]` tags are present: consult `knowledge/execution/test-execution-preflight.md`, execute each tag via browser UI in listed order before verifying plain-text conditions. `[PRE:*]` failure → mark test `BLOCKED` immediately. Two exceptions: `[PRE:RESET_CART]`'s **UI emptying** steps are best-effort (warn and proceed), but its **competing-cart guard** (`npm run carts:check -- --email <login>`, exit 1) MUST `BLOCK` — an account holding two shopping carts resolves reads and writes to different carts, so any checkout verdict from it is untrustworthy.
    - Then verify plain-text preconditions; unmet → `BLOCKED`.
 3. **Arm Failure_Signals monitoring** + common signals (see knowledge file). **Continuous observation (shared-instructions §Always-On Bug Detection):** beyond this case's assertions, watch every layer on every screen you touch — console exceptions, network 4xx/5xx, GraphQL `errors[]` inside 200, visual breaks, broken state. An incidental defect is recorded even when the case PASSes (Phase 3; no timed discovery pass in bulk regression — the always-on reflex).
 4. **Execute Steps** by tag. Inline `[ASSERT]` = checkpoint (fail immediately).
@@ -117,7 +117,7 @@ If environment unreachable or auth fails → write all tests `BLOCKED`, populate
         - Also record `failedAssertion`, page `url` at failure, and `capturedAt` (ISO).
         - **Redact secrets** before writing: replace any `Authorization` header, bearer token, password, or PAN with `<redacted>` (these traces are gitignored, but the repo is public — never persist a live token).
    - **PASS / BLOCKED / SKIPPED / AMBIGUOUS** → no screenshot, no trace (HAR covers PASS traffic; the others are not real failures).
-9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation (FAIL, BLOCKED, unexpected result, step-3 incidental), ask before you classify it:** `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). Cite a hit in `notes`, keep its id for Phase 5; a miss blocks nothing. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
+9. **Record result**: PASS | FAIL | BLOCKED | SKIPPED. **On a deviation (FAIL, BLOCKED, unexpected result, step-3 incidental), ask before you classify it:** `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). Close the list by its handle (`kb_show`/`kb_none`); cite the hit in `notes`, keep its id for Phase 5; a miss blocks nothing. Rule: `CLAUDE.md` §Essential Rules → *Product context*. Then **append ONE line** to `reports/regression/{{RUN_ID}}/suite-{{SUITE_ID}}-cases.jsonl`:
 
    ```
    {"id":"CART-002","title":"Add to Cart - From Category List","status":"PASS","durationMs":41230,"notes":"","evidence":[],"trace":""}
@@ -162,7 +162,7 @@ For each FAIL record a preliminary entry with `confirmed: false`. A separate `qa
 
 ## Phase 5: Write Results
 
-1. **Bank what the run established**, even on a PASS (bar: `authoring-standard.md` §5.3): matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, nothing held ⇒ ask once more, then `kb capture --deployment {TEST_ENV}`. Public base: nothing client-specific; ids in `kb`.
+1. **Bank what the run established**, even on a PASS (`authoring-standard.md` §5.3): match ⇒ `kb_confirm`, contradiction ⇒ `kb_dispute`, none ⇒ re-ask, then `kb_capture` (anchor = route/request, not a label: `kb-capture-contract.md`). Public base: nothing client-specific; ids in `kb`.
 2. JSON to `{{OUTPUT_FILE}}`:
 
 ```json

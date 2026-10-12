@@ -29,6 +29,20 @@ export function pinnedModule(json: any, id: string): { version: string; source: 
   }
   return null;
 }
+/** Every pinned module, by the same two rules `pinnedModule` applies to one Id. */
+export function listPinnedModules(json: any): { id: string; version: string; source: string }[] {
+  const out: { id: string; version: string; source: string }[] = [];
+  for (const s of json?.Sources ?? []) for (const m of s?.Modules ?? []) {
+    // Three shapes: {Id, Version} · BlobName only · {Id, BlobName} with no Version (vcptcore-qa prerelease
+    // pins). The version comes from Version, else from the BlobName; an entry with neither is skipped,
+    // never recorded as the string "undefined".
+    const bm = typeof m?.BlobName === 'string' ? m.BlobName.match(/^(.+)_(\d.*)\.zip$/i) : null;
+    const id = m?.Id ? String(m.Id) : bm?.[1];
+    const version = m?.Version != null ? String(m.Version) : bm?.[2];
+    if (id && version) out.push({ id, version, source: String(s.Name ?? (bm ? 'AzureBlob' : '')) });
+  }
+  return out;
+}
 /** Pin a module as a pre-release AzureBlob item (and drop it from GithubReleases). Mutates `json`. */
 export function applyModule(json: any, id: string, version: string, blobName: string): void {
   json.Sources ||= [];

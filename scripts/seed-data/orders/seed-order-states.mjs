@@ -8,7 +8,8 @@
  * test-data/orders/*.json, ALL non-body logic (status/shipment targets, totals normalization, the
  * @td() aliases) lives in orders-specs.mjs so the seeder, the validator, and the unit tests share one
  * source of truth. Order-creation mechanics mirror the proven seed-sales-rep.mjs (POST
- * /api/order/customerOrders, idempotent by deterministic number, delete+recreate on drift).
+ * /api/order/customerOrders, idempotent by EXACT deterministic number; on drift the replacement is
+ * created FIRST and the old order deleted after — judgeExistingOrder in orders-specs.mjs defines drift).
  *
  * Business keys (the AGENT-TEST-ORD-* number) stay in the committed fixture; the runtime order GUID
  * is written to test-data/aliases.<env>.json (never the fixture). Owner is resolved live from
@@ -23,9 +24,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   assertSafeTarget, auth, api, log, verbose,
-  ROOT, DRY_RUN, TEARDOWN, ONLY, writeEnvAliasOverride, verifyRemoved, discoverCatalogProducts,
+  ROOT, DRY_RUN, TEARDOWN, ONLY, writeEnvAliasOverride, verifyRemoved,
+  findOrdersByExactNumber, readProductsById, discoverLineCandidates,
 } from '../../lib/seed-common.mjs';
-import { ORDER_FIXTURES, orderNumber, resolveTokens, finalizeOrderBody, applyCatalogItems } from './orders-specs.mjs';
+import {
+  ORDER_FIXTURES, orderNumber, resolveTokens, finalizeOrderBody, applyCatalogItems, fitsLineQuantity, judgeExistingOrder,
+  duplicateLineProducts,
+} from './orders-specs.mjs';
 
 /** Load a Swagger-shaped fixture object from test-data/. */
 function loadFixture(relPath) {
@@ -39,52 +44,98 @@ async function resolveOwner(email) {
   return u && u.id ? { id: u.id, name: u.userName || email } : { id: null, name: null };
 }
 
-async function ensureOrder(spec, owner, products) {
+/** Line-item candidates for a NEW order — discovered lazily (only when an order is actually created
+ * or rebuilt), once per run. See seed-common.mjs discoverLineCandidates. */
+let _candidates = null;
+async function lineCandidates(maxItems) {
+  if (!_candidates) _candidates = await discoverLineCandidates(api, maxItems * 5);
+  return _candidates;
+}
+
+async function ensureOrder(spec, owner, maxItems) {
   const number = orderNumber(spec.key);
   const raw = loadFixture(spec.fixtureFile);
   const { obj, unresolved } = resolveTokens(raw, process.env);
   if (unresolved.length) { log(`  WARN: order ${number} — unresolved env token(s) ${unresolved.join(', ')} — skip`); return null; }
-  // Point line items at real catalog products that exist on this env (reorder / PDP link resolve).
-  const withItems = applyCatalogItems(obj, products);
-  const body = finalizeOrderBody(spec, withItems, { customerId: owner.id, customerName: owner.name || obj.customerName });
 
-  // Idempotency + self-heal: match by our deterministic number; rebuild if the owner/status drifted.
-  const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 });
-  const existing = (found?.results || [])[0];
+  // Idempotency: EXACT number match (the search keyword is a prefix match — kb KB-F7E4DB8E), newest
+  // first. Older exact-number hits are residue of a create-then-delete whose delete failed.
+  const hits = (await findOrdersByExactNumber(api, number))
+    .sort((a, b) => String(b.createdDate || '').localeCompare(String(a.createdDate || '')));
+  const [existing, ...dupes] = hits;
+
   if (existing) {
+    // Judge the EXISTING order (owner, status, quantity multiset, products still exist and admit their
+    // quantity, shipment address) — never against what this run would pick from the catalog today.
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
-    const ownerOk = !owner.id || full?.customerId === owner.id;
-    const statusOk = full?.status === spec.orderStatus;
-    if (ownerOk && statusOk) {
-      verbose(`order ${number} exists (owner + status ok) → ${existing.id}`);
+    const productsById = await readProductsById(api, (full?.items || []).map((i) => i.productId));
+    const { rebuild, reasons } = judgeExistingOrder(spec, obj, full, productsById, { ownerId: owner.id });
+    if (!rebuild) {
+      log(`  order ${number} exists and is a valid instance of the fixture → ${existing.id} (kept)`);
+      await removeSuperseded(number, dupes);
+      writeEnvAliasOverride({ [spec.alias]: { id: existing.id, number } });
       return existing.id;
     }
-    await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (ownerOk=${ownerOk}, statusOk=${statusOk})`);
+    log(`  order ${number} ${DRY_RUN ? 'WOULD BE REBUILT' : 'rebuilding'}: ${reasons.join('; ')}`);
   }
 
+  // Point line items at real catalog products that exist on this env and admit each line's quantity.
+  const products = await lineCandidates(maxItems);
+  if (!products.length && !DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
+  const withItems = applyCatalogItems(obj, products);
+  if (products.length) {
+    const byId = new Map(products.map((p) => [p.id, p]));
+    for (const it of withItems.items || []) {
+      if (!fitsLineQuantity(byId.get(it.productId), Number(it.quantity))) log(`  WARN: order ${number} line ${it.sku} qty ${it.quantity} — no discovered product admits it (min/max/stock); reorder cases on it will fail`);
+    }
+    // One product on two lines is not a WARN: a reorder merges them, so the cases on this order cannot
+    // decide anything. Refuse before the create — the existing order (if any) stays in place.
+    const dup = duplicateLineProducts(withItems.items);
+    if (dup.length) throw new Error(`order ${number}: no ${(withItems.items || []).length} DISTINCT discovered products admit the line quantities (${dup.join(', ')} would repeat) — seed the catalog, then re-run`);
+  }
+  const body = finalizeOrderBody(spec, withItems, { customerId: owner.id, customerName: owner.name || obj.customerName });
+
+  if (DRY_RUN) {
+    log(`  [DRY] order ${number} would be ${existing ? 'created, then the old one deleted' : 'created'}`);
+    return existing?.id || null;
+  }
+
+  // CREATE FIRST, then delete the old one: a failed create leaves the old (still referenced) order in
+  // place, never an overlay pointing at a deleted id.
   const created = await api('POST', '/api/order/customerOrders', body);
-  const id = created?.id || (DRY_RUN ? `dry-${spec.key}` : null);
-  log(`  order ${number} (${spec.orderStatus}, shipment ${spec.shipmentStatus}) → ${id || '(created)'}`);
-  return id;
+  if (!created?.id) throw new Error(`order ${number}: create returned no id — the existing order (if any) was left in place`);
+  writeEnvAliasOverride({ [spec.alias]: { id: created.id, number } });
+  log(`  order ${number} (${spec.orderStatus}, shipment ${spec.shipmentStatus}) → ${created.id}`);
+  await removeSuperseded(number, [existing, ...dupes].filter(Boolean));
+  return created.id;
+}
+
+/** Delete superseded exact-number orders; a failure is reported, and the next run removes it as a dupe. */
+async function removeSuperseded(number, orders) {
+  for (const o of orders) {
+    if (o?.number !== number) continue; // belt-and-braces: never delete another fixture's order
+    if (DRY_RUN) { log(`  [DRY] would delete superseded ${number} ${o.id}`); continue; }
+    try {
+      await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
+      log(`  deleted superseded ${number} ${o.id}`);
+    } catch (e) {
+      log(`  WARN: could not delete superseded ${number} ${o.id} (${String(e.message).slice(0, 120)}) — the overlay names the new order; the next run removes this one`);
+    }
+  }
 }
 
 async function teardown() {
-  log('TEARDOWN — deleting only AGENT-TEST-ORD-* orders');
+  log('TEARDOWN — deleting only AGENT-TEST-ORD-* orders (exact number match)');
   for (const spec of ORDER_FIXTURES) {
     const number = orderNumber(spec.key);
-    const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 5 });
-    for (const o of (found?.results || [])) {
+    for (const o of await findOrdersByExactNumber(api, number)) {
       await api('DELETE', `/api/order/customerOrders?ids=${o.id}`, null, { expectStatus: [200, 204] });
-      log(`  deleted order ${number}`);
+      log(`  deleted order ${number} ${o.id}`);
     }
   }
   const residue = await verifyRemoved(async () => {
     let n = 0;
-    for (const spec of ORDER_FIXTURES) {
-      const r = await api('POST', '/api/order/customerOrders/search', { keyword: orderNumber(spec.key), take: 5 });
-      n += (r?.results || []).length;
-    }
+    for (const spec of ORDER_FIXTURES) n += (await findOrdersByExactNumber(api, orderNumber(spec.key))).length;
     return n;
   });
   if (residue) log(`  ⚠ ${residue} AGENT-TEST-ORD-* order(s) still present after teardown`);
@@ -104,18 +155,10 @@ async function main() {
     verbose(`orders owned by ${owner.name} (${owner.id})`);
   }
 
-  // Real catalog products for the line items (max 2 per order fixture) — env-resilient, not hardcoded.
+  // Line items are discovered lazily, only for an order that is actually created or rebuilt; each
+  // order writes its own alias as soon as it is settled (a later throw cannot orphan an earlier one).
   const maxItems = Math.max(1, ...specs.map((s) => (loadFixture(s.fixtureFile).items || []).length));
-  const products = await discoverCatalogProducts(api, maxItems);
-  if (products.length) verbose(`line items use ${products.length} real catalog product(s): ${products.map((p) => p.sku).join(', ')}`);
-  else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
-
-  const writeback = {};
-  for (const spec of specs) {
-    const id = await ensureOrder(spec, owner, products);
-    if (id && !String(id).startsWith('dry-')) writeback[spec.alias] = { id, number: orderNumber(spec.key) };
-  }
-  writeEnvAliasOverride(writeback);
+  for (const spec of specs) await ensureOrder(spec, owner, maxItems);
   log(DRY_RUN ? 'DRY RUN complete (no writes).' : 'Order-state seed complete. Runtime GUIDs written to aliases.<env>.json.');
 }
 

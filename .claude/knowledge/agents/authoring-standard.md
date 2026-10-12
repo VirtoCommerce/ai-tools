@@ -120,9 +120,11 @@ Mechanic, ask one question: *does its output state how the platform behaves?* If
    alone does not count. For each statement:
    - it matched an entry → `confirm`;
    - it contradicted an entry → `dispute`;
-   - the base held nothing → `capture`, with `--deployment <env>`.
+   - the base held nothing → `capture`.
    
-   Never capture a second copy of something the base already holds.
+   Door, fields, anchor forms and where each value comes from:
+   [`../execution/kb-capture-contract.md`](../execution/kb-capture-contract.md). MCP first, as for
+   the read step. Never capture a second copy of something the base already holds.
    **The write step also covers what the run noticed on the side**, not only what its verdicts
    state: a case that PASSes can still show something new about the platform. The bar is one
    question — *would the next run otherwise have to find this out again?*
@@ -149,16 +151,17 @@ Read step — unscripted work (a ticket, an investigation, an exploratory charte
 
 ```
 N. **Ask the base for this run's coordinates** — for each page path / GraphQL operation / endpoint in
-   scope: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids; a
-   miss is not a blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
+   scope: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record hit ids;
+   close each list by its handle (`kb_show`/`kb_none`); a miss is not a blocker. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
 
 Read step — scripted suite execution, inside the per-case loop:
 
 ```
 N. **On a deviation, ask before you classify it** — a FAIL, BLOCKED, unexpected result or incidental
-   observation: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). A hit
-   that records this as known behaviour is cited in the result; a miss is not a blocker and does not
+   observation: `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <what you saw>"`). Close the
+   list by its handle (`kb_show`/`kb_none`). A hit that records this as known behaviour is cited
+   in the result; a miss is not a blocker and does not
    stop the next deviation being asked. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 ```
 
@@ -166,8 +169,9 @@ Write step (close-out):
 
 ```
 N. **Bank what the run established** — for each platform behaviour your output states: matched ⇒
-   `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in your output.
+   `mcp__kb__kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (CLI:
+   `npm run kb -- capture`). Anchor = the route or request, never a label; contract:
+   `.claude/knowledge/execution/kb-capture-contract.md`. Public base. List the ids in your output.
 ```
 
 The dispatch-brief line lives in [`agent-dispatch.md`](../../templates/agent-dispatch.md)

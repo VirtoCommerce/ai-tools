@@ -50,6 +50,12 @@ jobs:
       # caught shrinking, never missing 22 of 60 files the way ROUTING.md was on 2026-09-25.
       - name: knowledge:index:check — knowledge/ roster is current
         run: npm run knowledge:index:check
+      # The same idea for every other roster: skills, agents, commands (project + plugins) and the
+      # per-module suite index are GENERATED blocks, and ROUTING.md / INDEX.md / README.md /
+      # docs/decisions/README.md must MENTION every component they cover. The 2026-10-09 audit found
+      # all of them lagging and none of it dangling, so context:check had passed through all of it.
+      - name: docs:index:check — README rosters current, hand-written indexes complete
+        run: npm run docs:index:check
       - name: qa-test:doclint — /qa-test command↔skill integrity
         run: npm run qa-test:doclint
       - name: suites:lint — manifest ↔ CSV sync, global case IDs, XREF-001

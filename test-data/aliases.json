@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.59",
+    "version": "1.5.60",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -61,7 +61,8 @@
     "changelog_1_5_56": "B2B_STORE_MEMBERSHIP_ROLES — store-level Customer.MembershipRolesWhitelist fixture for B2B-store (settings v2 tenant values). Seeded by seed:membership-roles; guarded by td:validate:b2b. Answers domain-map open question G7.",
     "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac).",
     "changelog_1_5_58": "VCST-6054 UCP stock-refusal fixtures: PROD_MIN_ABOVE_STOCK (test-products.csv PROD-112 / QA-MINQ-001, minQuantity 3 > stock 2 > 0 -> inventory_unavailable) and PROD_STOCK_DROP (PROD-113 / QA-DROP-001, stock 10 / cart_qty 2 / dropped_stock 1 -> insufficient_stock after an accepted cart). New test-products.csv columns min_quantity (seeded as the product minQuantity) and cart_qty / dropped_stock (scenario quantities, not seeded). Ordering guarded by td:validate:standard check [14]. Both aliases expose id = the runtime product GUID from aliases.<env>.json (seed:products writes it for these two rows only), and seed:products now also writes FC_EAST.id - the FFC their stock sits on.",
-    "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data."
+    "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
+    "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -2648,24 +2649,34 @@
   },
   "CFG_FILE_HOODIE": {
     "_inline": true,
-    "productAlias": "CFG-004",
-    "productName": "Hoodie Base with Only File non required",
-    "slug": "physical",
-    "url": "/products-with-options/configurable-caps-shirts/physical",
-    "fullUrl_template": "{{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical",
-    "fileSectionName": "Only File non required",
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-FILE"
+    },
+    "fields": {
+      "productId": "product_id_guid",
+      "fileSectionId": "file_section_id"
+    },
+    "productAlias": "CFG-FILE",
+    "productName": "AGENT-TEST-Config-FileUpload",
+    "slug": "agent-test-config-fileupload",
+    "url": "/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fullUrl_template": "{{FRONT_URL}}/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fileSectionName": "Design Upload",
     "fileSectionType": "File",
     "fileSectionIsRequired": false,
     "maxFiles": 5,
-    "maxFileSizeMb": 9.5,
-    "categoryPath": "Products with Options > Configurable Caps & Shirts",
-    "basePrice": 300,
+    "maxFileSizeMb": 1,
+    "maxFileSizeBytes": 1048576,
+    "limits_source": "Storefront fallback, NOT a section or server setting: vc-frontend client-app/shared/files/constants.ts DEFAULT_FILE_MAX_COUNT=5 and DEFAULT_FILE_MAX_SIZE=getBytes({value:1,unit:'megabyte'}) (ui-kit/utilities/file-size.ts base 1024 => 1048576 bytes; constant unchanged since vc-frontend #938, 2024-02-05). option-file.vue calls useFiles('product-configuration'); useFiles keeps these defaults whenever fileUploadOptions(scope:'product-configuration') returns null, which it does on vcst (scope not registered, 2026-10-12). Neither REST /api/catalog/products/configurations nor xAPI productConfiguration exposes a per-section size/count. If the scope is ever registered server-side, its fileUploadOptions.maxFileSize/maxFileCount win and these two fields must be re-read from that query.",
+    "categoryPath": "SEED-Configurables > Configurable Parents",
+    "basePrice": 80,
     "currency": "USD",
-    "captured_at": "2026-04-30",
-    "captured_via": "productConfiguration(configurableProductId,storeId) GraphQL on FRONT_URL/graphql",
-    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..003 + CFG-FILE-BVA-001..002. CFG-004 is a Configurable hoodie with exactly one optional File section (None option present, max 5 files, max 9.5MB each). For BVA cases use maxFiles=5 (boundary). For ST cases use the (url, fileSectionId) pair. fileSectionId resolved live from xAPI 2026-04-30 — re-introspect if the underlying product configuration is reseeded.",
-    "_status": "needs-reseed-20260518",
-    "_status_note": "CFG-004 Hoodie File-only optional. No [F?] single-section survivor (Tramadol/Revlimid are [F!])."
+    "captured_at": "2026-10-12",
+    "captured_via": "TEST_ENV=vcst: REST POST /api/catalog/products/configurations/search + xAPI product/productConfiguration(configurableProductId,storeId) + fileUploadOptions(scope:\"product-configuration\") (null) + storefront GET of url (200); runtime GUIDs written to aliases.vcst.json by seed-configurable.mjs --only CFG-FILE (syncEnvAliases via file/filter/fields above).",
+    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..002 + CFG-FILE-BVA-001..002 (072e) and backs CFG-GQL-029 (050i). A configurable with exactly ONE optional File section (None option present). Business fields mirror the seeder spec CFG-FILE (scripts/seed-data/products/configurable-specs.mjs) and its row in products/configurable-products.csv; td:validate:cfg fails if they diverge. productId/fileSectionId are runtime GUIDs: they live ONLY in aliases.<env>.json and are rewritten on every `npm run seed:configurable -- --only CFG-FILE`. Same product as CFG_FILE_UPLOAD (which has no section/limit fields). For BVA use maxFiles (count boundary) and maxFileSizeBytes (size boundary — 1 MiB, not 1,000,000).",
+    "_status": "repointed-20261012",
+    "_status_note": "Repointed 2026-10-12 from CFG-004 'Hoodie Base with Only File non required' (demo-catalog product with no seeder spec; gone from vcst — name search empty, old GUID a04bbb3c… resolves to nothing, url 404) to the seeder-owned CFG-FILE. Shape preserved (one optional File section, None option); name/price/section name changed (Hoodie $300 'Only File non required' -> $80 'Design Upload'). maxFileSizeMb corrected 9.5 -> 1 from its real source (limits_source)."
   },
   "CFG_PRODUCT_CONDITIONAL_DEFERRED": {
     "_inline": true,
@@ -2718,7 +2729,7 @@
       "pdfVersion": "1.4",
       "generated_at": "2026-04-30",
       "generator": "scripts/inline node — handcrafted minimal PDF/1.4 (Catalog, Pages, single Page with Helvetica text 'CFG-PDP-048 test fixture - 1 page')",
-      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeMb)=9.5 MB and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
+      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeBytes) and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
     },
     "_status": "unchanged-20260518",
     "_status_note": "File-upload fixture aliases — no product GUID dependency. Unaffected by restore."
@@ -2887,13 +2898,13 @@
     "captured_at": "2026-05-06",
     "captured_via": "productConfiguration GraphQL on https://vcst-qa.govirto.com/graphql",
     "notes": "Wedding cake with conditional 5-section graph: Base (req root) → Creme (opt) → Message (opt) → [Custom text required (req Text, maxLen=50), Image (opt File)]. The richest CFG product in QA — exercises ALL 4 section types (Product/Text/File) AND conditional dependencies AND mixed-required semantics. Use for: (a) mixed-type selection toggle in single batch; (b) conditional cascade interaction with selectedForCheckout flag; (c) parent deselect → does it cascade-disable child configurationItems? (open contract question — PR #114 doesn't specify). Distinct from CFG_WEDDING_CAKE_CONDITIONAL (CFG-023, agent-test-prefixed seed) — YOC-85609878 is the persistent QA fixture.",
-    "_status": "weak-match-20260518",
-    "_status_note": "See CFG_WEDDING_CAKE_CONDITIONAL."
+    "_status": "gone-20261006",
+    "_status_note": "STALE — product YOC-85609878 no longer exists on vcst (2026-10-06: Platform API search/products + listentries by code and by name return nothing; GET /api/catalog/products/f4f27033-… returns empty; storefront slug 404s). Kept, not deleted: regression suite row CFG-GQL-032 (050i-graphql-configurations.csv, already Quarantined) still references it — re-point it at a seeded fixture (e.g. CFG_WEDDING_CAKE_CONDITIONAL / CFG-023 after reseed, or CFG_CHECKLIST_ALLTYPES for all-types coverage). Earlier note: see CFG_WEDDING_CAKE_CONDITIONAL."
   },
   "UPLOAD_FIXTURES": {
     "_inline": true,
     "_directory": "test-data/uploads/",
-    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are <9.5MB so they pass @td(CFG_FILE_HOODIE.maxFileSizeMb) validation. Re-introspect sizeBytes after any directory edit.",
+    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are under @td(CFG_FILE_HOODIE.maxFileSizeBytes) (the storefront 1 MiB fallback — see CFG_FILE_HOODIE.limits_source) so they pass File-section size validation. Re-introspect sizeBytes after any directory edit.",
     "primary": {
       "path": "test-data/uploads/Logo1.png",
       "mimeType": "image/png",
@@ -8031,6 +8042,23 @@
     "notes": "VCST-5735 /compare v2 — a configurable whose TWO configuration sections share one display label (\"Finish\"). The compare table keys configuration rows config:<label>, so a shared label is the only shape that can show one row overwriting the other; all 22 pre-existing configurable specs carry distinct section names, so the collision was unreachable however many configurables a case put side by side. The two sections carry DIFFERENT option sets and prices on purpose — identical content would make the rows indistinguishable even when the implementation is correct. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-033; drift-guarded by td:validate:cfg. NAVIGATE VIA {{FRONT_URL}}@td(CFG_DUPLABEL.url).",
     "_status": "authored-20260903"
   },
+  "CFG_CHECKLIST_ALLTYPES": {
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-034"
+    },
+    "fields": {
+      "id": "product_id_guid",
+      "configurationId": "configuration_id",
+      "name": "product_name",
+      "slug": "product_slug",
+      "url": "storefront_url",
+      "price": "base_price",
+      "sections": "section_ids"
+    },
+    "notes": "VCST-6027 configurable PDP Price-and-delivery checklist fixture (CFG-034, a cake). 8 sections in order: LAY Layers (Product, REQUIRED root, NO default; BOTH options are long AGENT-TEST-CHK-Layers Top … products, 118 and 122 chars — option order is not controllable, so whichever is selected on load overflows the clamp) · TXT Text (Text, REQUIRED root, maxLength 50) · PHO Photo for the cake topper (File, REQUIRED root) · FIL Filling (Product, REQUIRED, dependsOn LAY; short options — the unclamped Done contrast) · ICE Icing / DEC Decoration (Product, optional) · MSG Message (Text, optional, presets + custom, maxLength 100) · ART a 73-char section name (File, optional). The only fixture with all three REQUIRED link variants (Text / File / Product) on one page and a label long enough to overflow the 2-line clamp — td:validate:cfg FAILS if a Layers label shrinks, a required type disappears, Filling options grow long or Layers gains a default. Section GUIDs resolve per env as @td(CFG_CHECKLIST_ALLTYPES.sections.<KEY>) (LAY/TXT/PHO/FIL/ICE/DEC/MSG/ART) from aliases.<env>.json. Seeded by scripts/seed-data/products/seed-configurable.mjs --only CFG-034. NAVIGATE VIA {{FRONT_URL}}@td(CFG_CHECKLIST_ALLTYPES.url).",
+    "_status": "seeded-20261006"
+  },
   "ORG_LOY_A": {
     "_inline": true,
     "email": "agent-test-orgloy-a@test-agent.com",
@@ -8555,19 +8583,147 @@
     "completed": "true",
     "_notes": "VCST-5732 Sales Rep task fixture (CP4). COMPLETED and due in the FUTURE. Load-bearing: it must NOT appear under \"upcoming\". The second half of the both-directions straddle — if both completed tasks sat in the past, \"completed\" and \"past\" would be one partition and undecidable. DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
   },
+  "SR_TASK_CANCELED_KILO": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Kilo canceled past due",
+    "type": "Order Processing",
+    "priority": "Normal",
+    "due_offset_days": "-3",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN1). CANCELED (isActive=false, completed=false — closed via TaskManagement REST finish?completed=false) and PAST DUE. Load-bearing: must NOT appear in the Overdue tab or badge; day -3 carries ONLY this task, so a calendar dot there is a defect. Test Model VCST-6077 scenarios 3, 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_CANCELED_LIMA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Lima canceled due today",
+    "type": "Customer Support",
+    "priority": "High",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN2). CANCELED and due TODAY (browser-local). Load-bearing: decides whether the Today scope shows a canceled row (SR_TASK_GROUPS.canceled_due_today — not settled, NOT an oracle); must carry no row action. Scenario 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_CANCELED_HOTEL": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Hotel canceled due future",
+    "type": "Content Management",
+    "priority": "Low",
+    "due_offset_days": "2",
+    "due_date": "",
+    "completed": "false",
+    "canceled": "true",
+    "_notes": "VCST-6077 Sales Rep task fixture (CN3). CANCELED and due in the FUTURE (+2). Load-bearing: must NOT appear in the Upcoming tab or badge; day +2 carries ONLY this task, so a dot there is a defect. Scenario 6. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_NODATE_INDIA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK India no due date",
+    "type": "Registration Review",
+    "priority": "Normal",
+    "due_offset_days": "",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-6077 Sales Rep task fixture (ND1). DATELESS (dueDate null, open) — created via TaskManagement REST because createSalesRepTask requires dueDate. Load-bearing: client chips it \"Upcoming\" while every dated tab omits it, so All - (Upcoming+Overdue+Completed) = canceled + dateless (SR_TASK_GROUPS.all_minus_tabs; PO decision, NOT an oracle). Scenarios 7, 16. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_GOLF": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Golf edge local midnight",
+    "type": "Order Review",
+    "priority": "Low",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "00:00",
+    "due_zone": "browser",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG1). DAY BOUNDARY: open, due at exactly 00:00 BROWSER-LOCAL today (zone resolved at seed time — BROWSER_TZ or the seeding host; for a CEST lane that is 22:00Z the previous UTC day). Load-bearing: a day window built in UTC files it under Overdue / yesterday. Scenario 4. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_PAPA": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Papa edge local 2330",
+    "type": "Pricing and Promotions",
+    "priority": "Normal",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "23:30",
+    "due_zone": "browser",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG2). DAY BOUNDARY: open, due at 23:30 BROWSER-LOCAL today (21:30Z for CEST). Load-bearing: must stay in Today, not fall out of it. Scenario 4. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_QUEBEC": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Quebec edge new york 2330",
+    "type": "Other",
+    "priority": "High",
+    "due_offset_days": "0",
+    "due_date": "",
+    "completed": "false",
+    "due_local": "23:30",
+    "due_zone": "America/New_York",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG3). DAY BOUNDARY: open, due 23:30 America/New_York on New York's today — TOMORROW in UTC and for a CEST browser (future), TODAY for a New York browser. Load-bearing for the UTC-5/-4 case; counts for that view are in SR_TASK_GROUPS_NY. Scenario 18. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_EDGE_UNIFORM": {
+    "_inline": true,
+    "id": "",
+    "name": "AGENT-TEST-TASK Uniform edge off screen month",
+    "type": "Order Processing",
+    "priority": "Low",
+    "due_offset_days": "60",
+    "due_date": "",
+    "completed": "false",
+    "_notes": "VCST-6077 Sales Rep task fixture (EG4). OFF-SCREEN: open, due +60 days — more than 48 days ahead, so never on today's month grid (any 7-week grid spans at most 48 days). Load-bearing: the date chip's \"x when its day is off-screen\" fallback. Scenario 11. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
   "SR_TASK_GROUPS": {
     "_inline": true,
     "open_overdue": "2",
-    "open_today": "3",
-    "open_future": "5",
+    "open_today": "5",
+    "open_future": "7",
     "completed": "4",
-    "total": "14",
+    "canceled": "3",
+    "dateless": "1",
+    "total": "22",
+    "chip_upcoming": "12",
+    "chip_overdue": "2",
+    "chip_completed": "4",
+    "chip_all": "22",
+    "today_scope_excl_canceled": "6",
+    "canceled_due_today": "1",
+    "all_minus_tabs": "4",
     "shared_day_offset": "7",
     "empty_day_offsets": "8,9,10,11,12,13",
     "seeded_at": "",
     "decays_at_utc": "",
     "owner_rep_email": "",
-    "_notes": "VCST-5732 GROUP-SIZE EXPECTATIONS for the Sales Rep task fixture — so no case ever hardcodes a count. All four sizes DIFFER on purpose (overdue=2, today=3, future=5, completed=4): if any two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. shared_day_offset is the one calendar day carrying TWO tasks (multi-task day indicator); empty_day_offsets are the days immediately after it that must carry NONE (empty-day indicator). DECAY: the due dates are WALL-CLOCK RELATIVE and recomputed at seed time — the three dueOffsetDays:0 tasks stop being \"due today\" at the next UTC MIDNIGHT, at which point they silently become overdue and 2/3/5/4 becomes 5/0/5/4. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks). seeded_at / decays_at_utc / owner_rep_email are written per-env by the seeder and are EMPTY here. Tasks are PRIVATE to their owning rep (another rep reads totalCount:0), so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed). Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Seed: npm run seed:sales-rep-tasks. Teardown: npm run seed:sales-rep-tasks:teardown. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+    "browser_tz": "",
+    "_notes": "VCST-5732 + VCST-6077 COUNT EXPECTATIONS for the Sales Rep task fixture (22 rows) — so no case ever hardcodes a count. Values here are derived from the spec rows; the seeder rewrites them in aliases.<env>.json from the PERSISTED rows, classified in the BROWSER's local day (browser_tz). Groups: open_overdue / open_today / open_future / completed / canceled / dateless — all six sizes DIFFER on purpose: if two were equal, a filter wired to the wrong predicate would return a plausible number and PASS. Chips (Test Model reading of PR #2536): chip_upcoming = open dated due today or later (Today is a subset of Upcoming); chip_overdue; chip_completed; chip_all = every row. today_scope_excl_canceled = rows due in the local day incl. completed, excl. canceled; canceled_due_today stated separately (whether the Today scope lists a canceled row is NOT settled). all_minus_tabs = chip_all - (chip_upcoming + chip_overdue + chip_completed) = canceled + dateless — the PR-code expectation and an OPEN PO question (Test Model scenario 7), NOT an oracle. shared_day_offset is the one calendar day carrying TWO tasks; empty_day_offsets must carry NONE. seeded_at / decays_at_utc / owner_rep_email / browser_tz are written per-env by the seeder and are EMPTY here. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
+  },
+  "SR_TASK_GROUPS_NY": {
+    "_inline": true,
+    "time_zone": "America/New_York",
+    "open_overdue": "",
+    "open_today": "",
+    "open_future": "",
+    "completed": "",
+    "canceled": "",
+    "dateless": "",
+    "total": "",
+    "chip_upcoming": "",
+    "chip_overdue": "",
+    "chip_completed": "",
+    "chip_all": "",
+    "today_scope_excl_canceled": "",
+    "canceled_due_today": "",
+    "all_minus_tabs": "",
+    "seeded_at": "",
+    "decays_at_utc": "",
+    "_notes": "VCST-6077 COUNT EXPECTATIONS for a browser switched to America/New_York (Test Model scenario 18). Same fields as SR_TASK_GROUPS, computed by the seeder from the PERSISTED instants classified in New York's local day — so all counts are EMPTY here and live only in aliases.<env>.json. Seeded with a CEST lane zone, the 00:00-CEST edge row becomes New York's YESTERDAY (overdue) and the 23:30-New-York row becomes today; overdue and canceled then tie at 3 in this view, which is acceptable only because canceled has no chip. DECAY: due dates are WALL-CLOCK RELATIVE and recomputed at seed time; the browser's day ends at LOCAL midnight (22:00Z for a CEST lane), and SR_TASK_GROUPS.decays_at_utc in aliases.<env>.json names the instant. Any suite asserting group membership or size MUST re-seed first (npm run seed:sales-rep-tasks — it tears down every AGENT-TEST-TASK row of the rep and recreates all 22). Tasks are PRIVATE to their owning rep, so this set is isolated per REP ACCOUNT — not per run and not per suite. Owner identity: {{SALES_REP_EMAIL}}; secret SALES_REP_PASSWORD (.env.local, per-env suffixed); canceled/dateless steps also use the admin token. Single source of truth: scripts/seed-data/sales-rep/sales-rep-tasks-specs.mjs. Guard: npm run td:validate:sales-rep-tasks. Runtime id + absolute due_date live ONLY in aliases.<env>.json."
   },
   "BARCODE_STORE": {
     "_inline": true,
@@ -9424,5 +9580,80 @@
     "password": "{{B2B_USER_PASSWORD}}",
     "id": "",
     "platform_id": ""
+  },
+  "ORG_EXACTLY_11": {
+    "_inline": true,
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "Member of exactly 11 AGENT-TEST filler orgs (organizations.csv ORG-009..019, org-employee in each). Serves the >10 org-switcher search-bar cases (B2C-ORG-007/012) and the 11 side of the exactly-10-vs-11 boundary (B2C-ORG-014). Alias MULTI_ORG_11 is the same account. Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss).",
+    "org_count": 11,
+    "org_ids": []
+  },
+  "MULTI_ORG_11": {
+    "_inline": true,
+    "email": "agent-test-org-exactly-11-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "Same account as ORG_EXACTLY_11. Member of exactly 11 AGENT-TEST filler orgs (organizations.csv ORG-009..019, org-employee in each). Serves the >10 org-switcher search-bar cases (B2C-ORG-007/012) and the 11 side of the exactly-10-vs-11 boundary (B2C-ORG-014). Alias MULTI_ORG_11 is the same account. Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss).",
+    "org_count": 11,
+    "org_ids": []
+  },
+  "ORG_EXACTLY_10": {
+    "_inline": true,
+    "email": "agent-test-org-exactly-10-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "Member of exactly 10 AGENT-TEST filler orgs (organizations.csv ORG-009..018, org-employee in each). Serves the <=10 org-switcher NO-search-bar case (B2C-ORG-013) and the 10 side of the boundary (B2C-ORG-014). Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss).",
+    "org_count": 10,
+    "org_ids": []
+  },
+  "ORG_ADDR22": {
+    "_inline": true,
+    "org_id": "",
+    "org_name": "AGENT-TEST-Org-Addr22-20260811",
+    "count": 22,
+    "notes": "Isolated AGENT-TEST org carrying 22 addresses (4 pages at 6/page, partial last page) for checkout address-book pagination (011 CHK-059/060). Disposable — NOT TechFlow. Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "ORG_ADDR22_ADMIN": {
+    "_inline": true,
+    "email": "agent-test-addr22-admin-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "Org-maintainer of AGENT-TEST-Org-Addr22-20260811 (ORG_ADDR22). Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "DISCONTINUED_ITEM_ORDER": {
+    "_inline": true,
+    "id": "",
+    "number": "AGENT-TEST-ORD-DISCONTINUED",
+    "discontinued_sku": "AGENT-TEST-DISC-SKU-20260811",
+    "discontinued_product_id": "",
+    "notes": "Completed order owned by DISCONTINUED_ORDER_BUYER with one available line + one DEDICATED product the seeder discontinues (isActive=false, isBuyable=false). Blocks 014 CHK-041 / ORD-002 / ORD-034. Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "DISCONTINUED_ORDER_BUYER": {
+    "_inline": true,
+    "email": "agent-test-discontinued-buyer-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "Personal (no-org) buyer owning DISCONTINUED_ITEM_ORDER. Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "PERSONAL_NON_ORG_USER": {
+    "_inline": true,
+    "email": "agent-test-personal-virto-20260811@test-agent.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "store_id": "B2B-store",
+    "userId": "",
+    "contactId": "",
+    "notes": "AGENT-TEST personal (no-org) storefront customer replacing the real external mailbox {{PERSONAL_USER_VIRTO}} used to point at. Re-points {{PERSONAL_USER_VIRTO}} / {{PERSONAL_USER_VIRTO_PASSWORD}}. No org membership by design (B2C-ORG-031 asserts a non-org user sees default price). Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
   }
 }

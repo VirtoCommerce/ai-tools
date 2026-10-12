@@ -33,9 +33,9 @@ import { join } from 'node:path';
 
 import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
-import { findDuplicate } from './identity.mjs';
+import { claimKey, findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, entryPath } from './index-build.mjs';
+import { buildIndex, buildRow, claimHash, entryPath } from './index-build.mjs';
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
@@ -399,7 +399,11 @@ export function appendEvidence(text, item, where) {
   if ((data.evidence ?? []).some((e) => sameEvidence(e, item))) return { text, data, already: true };
   // A handed-off item (`mergedFrom`) from a session this entry already counts is the same observer
   // twice: flagged, kept for provenance, not counted (as sync-base / merge-entries do).
-  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), item]) };
+  // WHICH BODY IT WAS APPLIED TO (VCST-6179) -- a FALLBACK. The door stamps `bodyHash` when the
+  // session confirms (verbs.mjs `appendEvidence`); only an item queued by an older client, or one whose
+  // body the door could not read, arrives without it and is stamped here, against the body it lands on.
+  const stamped = item.bodyHash ? item : { ...item, bodyHash: claimHash(body) };
+  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), stamped]) };
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 
@@ -522,8 +526,13 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
       // So a collision is only treated as a duplicate when the SUBJECTS actually agree. When they do
       // not, nothing is written and nothing is confirmed: the capture is refused with its own
       // reason, which is a state a human can see and act on, where a silent merge is not.
-      const idClash = !dupe && working.find((r) => r.id === entry.id);
-      const sameSubject = idClash && String(idClash.subject ?? '').trim() === String(entry.subject ?? '').trim();
+      // By id AND by subject, as the door does (`capture`, verbs.mjs): an id is minted from the subject
+      // at birth and never changes, so an entry whose subject was later corrected holds its subject under
+      // an id the subject no longer hashes to. Keyed on the id alone, a queued capture of the corrected
+      // subject at other coordinates was written as a second entry (VCST-6179 review).
+      const idClash = !dupe && (working.find((r) => r.id === entry.id)
+        ?? working.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(entry.subject)));
+      const sameSubject = idClash && claimKey(idClash.subject) === claimKey(entry.subject);
       // ONLY an anchors+scope+claim duplicate converts. A SAME-SUBJECT id collision used to convert too, and
       // that was the common case of the loss described above (PR #313 review 2): the same subject
       // re-captured under DIFFERENT anchors appended its one evidence item to the incumbent — an
@@ -576,7 +585,7 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
           why: sameSubject ? 'id-collision-same-subject' : 'id-collision-different-subject',
           when: 'push',
           note: sameSubject
-            ? `${entry.id} already holds this subject at other coordinates; nothing was merged and nothing was `
+            ? `${idClash.id} already holds this subject at other coordinates; nothing was merged and nothing was `
               + 'confirmed — confirm the incumbent if it is the same fact, or reword this subject and capture again'
             : `${entry.id} is already held by a DIFFERENT subject (${JSON.stringify(idClash.subject)}); `
               + 'nothing was merged and nothing was confirmed — reword this subject and capture again',

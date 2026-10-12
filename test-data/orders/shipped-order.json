@@ -58,7 +58,20 @@
       "status": "Sent",
       "number": "AGENT-TEST-ORD-SHIPPED-S1",
       "trackingNumber": "AGENT-TEST-TRK-SHIPPED",
-      "items": []
+      "items": [],
+      "deliveryAddress": {
+        "addressType": "Shipping",
+        "firstName": "AGENT-TEST",
+        "lastName": "Buyer",
+        "line1": "1 Test Way",
+        "city": "New York",
+        "regionName": "New York",
+        "countryCode": "USA",
+        "countryName": "United States",
+        "postalCode": "10001",
+        "phone": "+1-206-555-0100",
+        "email": "{{USER_EMAIL}}"
+      }
     }
   ],
   "inPayments": [

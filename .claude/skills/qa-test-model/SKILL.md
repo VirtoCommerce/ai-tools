@@ -26,7 +26,7 @@ model's header**, never a guess.
 
 | Part | How it is obtained | Rule it follows |
 |---|---|---|
-| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/preflight.md`](../qa-test/preflight.md) §1a |
+| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/intake.md`](../qa-test/intake.md) §1a |
 | Change surface — changed files, GraphQL operations, endpoints, layers | the four-rung PR ladder, then `gh pr diff`; only **product-repo** PRs are change surface — a deployment-manifest or QA-repo PR is context | [`../qa-test/technical-change.md`](../qa-test/technical-change.md) §2.1 |
 | Domain map state | step 2 below | [`../qa-test/axes.md`](../qa-test/axes.md) §2g |
 | Mind map path, or `null` | step 2 below | `/qa-test-mind-map` |
@@ -64,8 +64,8 @@ model's header**, never a guess.
    against the written file. A failing clause is fixed in the file, then re-checked; it is never waived
    in the output. No verifier dispatch — the gate is the doer's own completeness check on every path.
 7. **Bank what THIS run observed** — only a fresh observation or a document read this session counts;
-   agreeing with an entry you only read is not a confirmation. For each: matched ⇒ `kb confirm <id>`,
-   contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`).
+   agreeing with an entry you only read is not a confirmation. For each: matched ⇒ `kb_confirm`,
+   contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture` (`.claude/knowledge/execution/kb-capture-contract.md`).
    Public base — nothing client-specific.
 
 ## Output — returned to the caller, in this order

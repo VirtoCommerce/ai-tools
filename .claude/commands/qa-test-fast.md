@@ -37,9 +37,11 @@ behind every step, the rationalization table and the red flags are in
    [`../knowledge/execution/ticket-routing.md`](../knowledge/execution/ticket-routing.md). Anything
    other than `feature-test` ⇒ **STOP** and name the right command (`/qa-verify-fix`,
    `/qa-hotfix-check`, `/qa-test`).
-2. **Environment.** Run `npm run env:check`, record the deployed build per
-   [`../templates/agent-dispatch.md`](../templates/agent-dispatch.md) §Build Verification, and resolve
-   `{SPRINT}` as [`../skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) does.
+2. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
+   `ticket-fast --ticket <KEY> --components <…> [--expect <PR module@version>]`. It returns env health,
+   the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
+   `expect` row is BLOCKED-on-deploy, never a FAIL.
 3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
@@ -52,10 +54,8 @@ behind every step, the rationalization table and the red flags are in
      ([`../knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) §0).
 4. **Domain slug.** Take the candidate from the ticket's components and summary, then check it with
    `npm run bl:extract -- --has-domain <slug>`.
-5. **Ask the base for this run's coordinates.** For each page path, GraphQL operation and endpoint the
-   ticket names, run `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record the
-   hit ids; a miss is not a blocker. Rule: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules →
-   *Product context*.
+5. **Ask the base for this run's coordinates** — done inside `/preflight` step 3 (kb first, then
+   VirtoOZ). Carry its hit ids into Stage 1.
 
 ## Stage 1 — Context
 
@@ -129,7 +129,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
    (Step 0.3); a new build posts a new comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
-   `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held nothing ⇒ `kb capture`
-   (`--deployment {TEST_ENV}`). Public base — nothing client-specific. List the ids in
+   `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture`
+   (`.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in
    `summary.json.report.kb`, then re-run `npm run summary:validate`.
 8. **Chat.** The verdict line, the page link, the `verdict.md` path, the bug links. Nothing else.

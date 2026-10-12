@@ -48,8 +48,8 @@ If you observe anything live yourself, you are also an **Observer** and step 9 a
 8. **Validate.** `npm run models:check`. It must be green before anything else. TM-014 coverage gaps
    are expected and are reported, not fixed here.
 9. **Bank what you observed yourself** (skip if you observed nothing live). For each platform behaviour
-   you established first-hand: matched ⇒ `kb confirm <id>`, contradicted ⇒ `kb dispute <id>`, base held
-   nothing ⇒ `kb capture` (`--deployment {TEST_ENV}`). Public base — nothing client-specific.
+   you established first-hand: matched ⇒ `kb_confirm`, contradicted ⇒ `kb_dispute`, base held
+   nothing ⇒ `kb_capture` (`.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific.
 10. **Stamp** existing cases with `Behavior:<node-id>` only after the map is green, as the single
     writer of each suite (`.claude/rules/regression.md`). Read each candidate row's Steps and
     Assertions first: a Title that names the behaviour is a lead, not a stamp. Reuse `applyCellEdits`
