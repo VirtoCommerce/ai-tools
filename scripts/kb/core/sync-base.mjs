@@ -27,11 +27,14 @@ const withoutEvidence = (data) => JSON.stringify({ ...data, evidence: undefined 
 const lf = (t) => String(t).replace(/\r\n/g, '\n');
 
 const resolutionOf = (e) => Object.fromEntries(RESOLUTION_FIELDS.filter((f) => e?.[f] !== undefined).map((f) => [f, e[f]]));
-const sameResolution = (a, b) => JSON.stringify(resolutionOf(a)) === JSON.stringify(resolutionOf(b));
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const withResolution = (e, r) => ({ ...Object.fromEntries(Object.entries(e).filter(([k]) => !RESOLUTION_FIELDS.includes(k))), ...r });
 
 /**
- * What `main` did to one entry since the merge base: `{ fresh: [items], resolutions: [items] }` when
- * it only appended evidence and/or closed disputes, or `{ problem }` when it changed anything else.
+ * What `main` did to one entry since the merge base: `{ fresh: [items], resolutions: [changes] }` when
+ * it only appended evidence and/or changed a dispute's resolution, or `{ problem }` when it changed
+ * anything else. A change is `{ item, from, to }`: the resolution at the merge base and on main, so
+ * the branch can be judged THREE-way -- a rewritten or withdrawn verdict is a change too.
  *
  * A JUDGE'S RESOLUTION IS THE ONE IN-PLACE EDIT an evidence item gets (VCST-6179): `kb:disputes
  * resolve` writes `RESOLUTION_FIELDS` onto the contradicting item. `evidenceKey` does not see them, so
@@ -50,7 +53,8 @@ export function evidenceOnlyChange(id, baseText, mainText) {
   const after = mainItems.map(evidenceKey);
   if (before.some((k, i) => after[i] !== k)) return { problem: `${id}: main removed or reordered evidence` };
   const resolutions = mainItems.slice(0, before.length)
-    .filter((e, i) => Object.keys(resolutionOf(e)).length && !sameResolution(e, baseItems[i]));
+    .map((e, i) => ({ item: e, from: resolutionOf(baseItems[i]), to: resolutionOf(e) }))
+    .filter((c) => !same(c.from, c.to));
   return { fresh: mainItems.slice(before.length), resolutions };
 }
 
@@ -131,34 +135,35 @@ export function syncEvidence({ changed, branch }) {
     for (const t of targets) append(`entries/${t}.md`, p.fresh.map((x) => (isMerge ? { ...x, mergedFrom: p.id } : { ...x, splitFrom: p.id })));
     handedOff.push(`${p.id} -> ${targets.join(', ')} (${isMerge ? 'merge' : 'split'})`);
   }
-  // Disputes main CLOSED in place (VCST-6179): the verdict goes onto every branch copy of the item --
-  // the entry's own and, when the branch retired the entry, its successors' (a split or merge copies
-  // the item with its `at|by|note` intact). A copy the branch closed DIFFERENTLY is two judges
-  // disagreeing, which only a person settles.
+  // Resolutions main CHANGED in place (VCST-6179) -- closed, rewritten or withdrawn -- go onto every
+  // branch copy of the item: the entry's own and, when the branch retired the entry, its successors'
+  // (a split or merge copies the item with its `at|by|note` intact). Three-way, per copy: still as at
+  // the merge base -> take main's; already main's -> nothing; changed by the branch some other way ->
+  // two judges disagreeing, which only a person settles.
   const resolvedOn = [];
   for (const p of plan) {
     if (!p.resolutions.length) continue;
     const me = load(p.path).data;
     const holders = [p.path, ...(me.status === 'superseded'
       ? [...new Set(ids(me.supersededBy).flatMap((t) => activeSuccessors(t, p.id)))].map((t) => `entries/${t}.md`) : [])];
-    for (const item of p.resolutions) {
+    for (const { item, from, to } of p.resolutions) {
       const key = evidenceKey(item);
+      const said = (r) => r.resolved ?? 'open';
       let found = 0;
       for (const h of holders) {
         const e = load(h);
         e.data.evidence = (e.data.evidence ?? []).map((x) => {
           if (!x.contradicts || evidenceKey(x) !== key) return x;
           found += 1;
-          if (sameResolution(x, item)) return x;
-          if (Object.keys(resolutionOf(x)).length) {
-            problems.push(`${p.id}: main resolved the dispute at ${item.at} as ${item.resolved}, the branch's copy in ${h} says ${x.resolved}`);
-            return x;
-          }
-          return { ...x, ...resolutionOf(item) };
+          const mine = resolutionOf(x);
+          if (same(mine, to)) return x;
+          if (same(mine, from)) return withResolution(x, to);
+          problems.push(`${p.id}: main changed the dispute at ${item.at} from ${said(from)} to ${said(to)}, the branch's copy in ${h} says ${said(mine)}`);
+          return x;
         });
       }
-      if (!found) problems.push(`${p.id}: main resolved the dispute at ${item.at}, but the branch holds no copy of it`);
-      else resolvedOn.push(`${p.id}@${item.at}`);
+      if (!found) problems.push(`${p.id}: main changed the resolution of the dispute at ${item.at}, but the branch holds no copy of it`);
+      else resolvedOn.push(`${p.id}@${item.at} -> ${said(to)}`);
     }
   }
   if (problems.length) return { writes: new Map(), problems, extended: [], handedOff: [] };

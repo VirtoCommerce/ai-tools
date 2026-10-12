@@ -80,7 +80,7 @@ function main() {
   }
   for (const id of r.extended) console.log(`  + evidence ${id}`);
   for (const h of r.handedOff) console.log(`  handed off ${h}`);
-  for (const d of r.resolvedOn ?? []) console.log(`  resolved on main ${d}`);
+  for (const d of r.resolvedOn ?? []) console.log(`  resolution from main ${d}`);
   if (a.dryRun) { console.log('dry run: nothing merged'); return 0; }
 
   const merged = tryGit('merge', '--no-commit', '--no-ff', target);

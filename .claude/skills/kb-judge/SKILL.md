@@ -113,6 +113,9 @@ second branch opened alongside the first must be brought up to date by hand.
      --note "<what was seen>" --base <base>
    ```
 
+   `observe` takes only an active entry with an open dispute, so record before you resolve. It marks
+   the item as the investigation's; an observation of any other entry goes through the door.
+
 2. **Edit the entries** the verdicts require: the claim in the body (and subject when it states the
    clause), the build range or condition the entry now holds under, `appliesTo` for a closed axis. A
    split goes through a `split` plan and `npm run kb:migrate-schema2` (its header has the shape).
@@ -123,9 +126,11 @@ second branch opened alongside the first must be brought up to date by hand.
      --why "<one checkable sentence>" --in <branch or PR> --base <base>
    ```
 
-   It writes the verdict onto that evidence item, rebuilds `index.json`, and **refuses** a session that
-   wrote evidence on the entry at or before that dispute — a party never judges its own case. Evidence
-   your own investigation added after the dispute does not disqualify you. A party is a session, not a
+   It writes the verdict onto that evidence item (every copy of it), rebuilds `index.json`, and
+   **refuses** a session that confirmed or disputed the entry itself, before or after the dispute — a
+   party never judges its own case. Only your own `observe` items after the dispute do not disqualify
+   you, so never `kb_confirm` / `kb_dispute` an entry you are judging. If two different disputes share
+   one `at`, it refuses until `--by <that dispute's by>` names one. A party is a session, not a
    person: when the dispute carries your own `who` it says so, and the PR must too. Both `observe` and
    `resolve` run the push's secret gate over what they write and refuse on a hit.
 4. After body edits, `npm run kb -- reindex --base <base>`, then `git -C <base> diff` — every change

@@ -6,7 +6,7 @@
 //   cluster <KB-id>              the dossiers of every disputed entry clustered with it
 //   observe <KB-id> --deployment <stand> --conditions "k=v; k=v" --note "<what was seen>"
 //                                the investigation's observation of a disputed entry, on the judge's branch
-//   resolve <KB-id> --at <iso> --verdict <v> --why "<one sentence>" --in <PR or branch>
+//   resolve <KB-id> --at <iso> [--by <session:...>] --verdict <v> --why "<one sentence>" --in <PR or branch>
 //                                close ONE dispute on the entry, in place, and rebuild index.json
 //
 // Reads a LOCAL checkout of the base (entries + logs). `resolve` writes only to that checkout and
@@ -31,7 +31,7 @@ const USAGE = `usage: npm run kb:disputes -- list --base <checkout> [--json]
        npm run kb:disputes -- dossier <KB-id> --base <checkout>
        npm run kb:disputes -- cluster <KB-id> --base <checkout>
        npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" --note "<...>" --base <checkout>
-       npm run kb:disputes -- resolve <KB-id> --at <iso> --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> --base <checkout>`;
+       npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> --base <checkout>`;
 
 function parseArgs(argv) {
   const a = { verb: argv[0], id: null, flags: {} };
@@ -118,14 +118,15 @@ function main() {
     const entry = byId.get(a.id);
     if (!entry) throw new Error(`${a.id} is not in ${a.flags.base}`);
     const r = applyResolution(entry.data, {
-      at: a.flags.at, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session: judgeSession(),
+      at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session: judgeSession(),
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);
     if (blocked) { console.error(blocked); return 1; }
     // A session is not a person (applyResolution, header): say so when the operator is the same one.
     const me = cachedWho({ dir: queueDir(process.env), env: process.env });
-    const filedBy = (entry.data.evidence ?? []).filter((e) => e.contradicts && String(e.at) === String(a.flags.at)).map((e) => e.who).filter(Boolean);
+    const filedBy = (entry.data.evidence ?? []).filter((e) => e.contradicts && String(e.at) === String(a.flags.at)
+      && (!a.flags.by || e.by === a.flags.by)).map((e) => e.who).filter(Boolean);
     if (me && filedBy.includes(me)) console.error(`note: this dispute was filed by the same operator (${me}) in another session -- say so in the PR`);
     const row = write(entry, r.data);
     console.log(`resolved the dispute at ${a.flags.at} on ${a.id} as ${a.flags.verdict}; ${row.disputed} open, ${row.resolved ?? 0} resolved`);

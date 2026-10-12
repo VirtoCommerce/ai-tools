@@ -19,10 +19,38 @@ const anchorOf = (a) => lower(typeof a === 'string' ? a : a?.coordinate);
 const idsIn = (v) => (Array.isArray(v) ? v : v ? [v] : []).map((x) => (typeof x === 'string' ? x : x?.id)).filter(Boolean);
 const counted = (evidence) => (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
 
-/** Build strings a note names in prose: `3.1007.27`, `2.59.0-pr-2476-31b5`, `pr-141`. */
+/**
+ * Two evidence / log stamps compared by TIME. A string comparison of ISO stamps is wrong when only
+ * one carries milliseconds (`…:00Z` sorts after `…:00.000Z`), and legacy items were written both
+ * ways. Unparsable stamps fall back to the string order rather than to "never".
+ */
+const cmpAt = (a, b) => {
+  const x = Date.parse(String(a ?? ''));
+  const y = Date.parse(String(b ?? ''));
+  if (Number.isFinite(x) && Number.isFinite(y)) return x - y;
+  return String(a ?? '').localeCompare(String(b ?? ''));
+};
+const atOrBefore = (a, b) => cmpAt(a, b) <= 0;
+const after = (a, b) => cmpAt(a, b) > 0;
+
+/** The investigation's own observation (`appendObservation`): the one item that does not make its session a party. */
+export const isInvestigation = (e) => e?.investigation === true && !e?.contradicts;
+
+/** An entry a judge may still work on: active, with at least one open dispute. */
+const hasOpenDispute = (data) => String(data?.status ?? 'active') === 'active'
+  && (Array.isArray(data?.evidence) ? data.evidence : []).some((e) => e.contradicts && !isResolved(e));
+
+/**
+ * Build strings a note names in prose: `3.1007.27`, `2.59.0-pr-2476-31b5`, `pr-141`. Exactly three
+ * numeric parts, so an IP address (`10.0.0.1`) is not read as `10.0.0`; a dotted date (`08.10.2026`)
+ * is dropped. Both are common in notes and neither is a build.
+ */
+const DOTTED_DATE = /^\d{1,2}\.\d{1,2}\.\d{4}$/;
 export function mentionedBuilds(text) {
   const found = new Set();
-  for (const m of String(text ?? '').matchAll(/\b\d+\.\d+\.\d+(?:-[a-z]+(?:-[0-9a-z]+)*)?\b|\bpr-\d+\b/gi)) found.add(m[0]);
+  for (const m of String(text ?? '').matchAll(/(?<![\d.])\d+\.\d+\.\d+(?!\.?\d)(?:-[a-z]+(?:-[0-9a-z]+)*)?\b|\bpr-\d+\b/gi)) {
+    if (!DOTTED_DATE.test(m[0])) found.add(m[0]);
+  }
   return [...found];
 }
 
@@ -37,7 +65,7 @@ export function disputeState(entry) {
   const open = items.filter((e) => e.contradicts && !isResolved(e));
   if (!open.length) return null;
   const support = items.filter((e) => !e.contradicts);
-  const firstOpenAt = open.map((e) => String(e.at ?? '')).sort()[0];
+  const firstOpenAt = open.map((e) => String(e.at ?? '')).sort(cmpAt)[0];
   const sessionsOf = (xs) => new Set(xs.map((e) => e.by).filter(Boolean));
   const supportSessions = sessionsOf(support);
   const supportStands = new Set(support.map((e) => lower(e.deployment)).filter(Boolean));
@@ -56,7 +84,7 @@ export function disputeState(entry) {
     // Hints, each a hypothesis the investigation must confirm or kill:
     selfDisputed: open.some((e) => e.by && supportSessions.has(e.by)),
     otherStand: open.some((e) => e.deployment && !supportStands.has(lower(e.deployment))),
-    confirmedSince: support.filter((e) => String(e.at ?? '') > firstOpenAt).length,
+    confirmedSince: support.filter((e) => after(e.at, firstOpenAt)).length,
     withConditions: items.filter((e) => e.conditions).length,
   };
 }
@@ -79,12 +107,11 @@ export function exposure(lines, states) {
   const out = new Map(states.map((s) => [s.id, { asks: 0, shows: 0 }]));
   for (const l of lines) {
     if (l.synthetic === true) continue;
-    const at = String(l.at ?? '');
     if (l.kind === 'ask') {
       for (const id of new Set([...idsIn(l.shown), ...idsIn(l.matched)])) {
-        if (since.has(id) && at > since.get(id)) out.get(id).asks += 1;
+        if (since.has(id) && after(l.at, since.get(id))) out.get(id).asks += 1;
       }
-    } else if (l.kind === 'show' && since.has(l.id) && at > since.get(l.id)) {
+    } else if (l.kind === 'show' && since.has(l.id) && after(l.at, since.get(l.id))) {
       out.get(l.id).shows += 1;
     }
   }
@@ -143,7 +170,7 @@ export function dossier(entry, { exp = null, state = null } = {}) {
   if (state) for (const h of hints(state)) lines.push(`- hint: ${h}`);
   lines.push('', '| # | side | stand | conditions | builds in note | at | by | resolution |', '|---|---|---|---|---|---|---|---|');
   items.forEach((e, i) => {
-    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : 'confirm';
+    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation' : 'confirm';
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => `${k}=${v}`).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
     const res = e.contradicts ? (isResolved(e) ? `${e.resolved}` : e.resolved ? `INVALID ${e.resolved}` : 'open') : '';
@@ -169,7 +196,9 @@ export function dossier(entry, { exp = null, state = null } = {}) {
  *
  * It never contradicts: a contradiction the investigation finds is what the verdict and the body
  * edit are for, and a new open dispute inside the PR that resolves the old ones would restart the
- * queue.
+ * queue. It is refused on an entry that is retired or holds no open dispute -- there it would be a
+ * confirmation that bypassed the door and its gates -- and it is marked `investigation: true`, the
+ * one thing that lets `applyResolution` tell the judge's own work from a session taking a side.
  */
 export function appendObservation(data, { deployment, conditions, note, session, who = null, now = new Date() }) {
   if (!String(deployment ?? '').trim()) return { problem: '--deployment is required' };
@@ -178,6 +207,7 @@ export function appendObservation(data, { deployment, conditions, note, session,
   // Refused, not cut as the door cuts it: a judge writes this once, by hand, and can shorten it.
   if (String(note).trim().length > NOTE_MAX) return { problem: `--note is over ${NOTE_MAX} characters; the argument belongs in the PR` };
   if (!session) return { problem: 'no session key: run inside a Claude Code session' };
+  if (!hasOpenDispute(data)) return { problem: `${data.id} is not an active entry with an open dispute; an observation of any other entry goes through the door (kb_confirm / kb_dispute)` };
   const item = {
     method: 'observation',
     deployment: String(deployment).trim(),
@@ -186,6 +216,7 @@ export function appendObservation(data, { deployment, conditions, note, session,
     by: `session:${session}`,
     ...(who ? { who } : {}),
     note: String(note).trim(),
+    investigation: true,
   };
   return { data: { ...data, evidence: [...(Array.isArray(data.evidence) ? data.evidence : []), item] }, item };
 }
@@ -193,30 +224,23 @@ export function appendObservation(data, { deployment, conditions, note, session,
 export const RESOLUTION_MAX = 600;
 
 /**
- * `a` at or before `b`, by TIME. A string comparison of two ISO stamps is wrong when only one carries
- * milliseconds (`…:00Z` sorts after `…:00.000Z`), and legacy items were written both ways.
- */
-const atOrBefore = (a, b) => {
-  const x = Date.parse(String(a ?? ''));
-  const y = Date.parse(String(b ?? ''));
-  return Number.isFinite(x) && Number.isFinite(y) ? x <= y : String(a ?? '') <= String(b ?? '');
-};
-
-/**
  * Close one dispute on an entry: write how it was resolved ON the contradicting item, in place.
  * Returns `{data}` or `{problem}`.
  *
- * INDEPENDENCE IS CHECKED HERE, not asked for in a prompt: a session that was a party to the
- * dispute -- it wrote any evidence on this entry at or before the dispute being resolved -- cannot
- * resolve it. Evidence the judging session wrote AFTER the dispute is its own investigation and does
- * not disqualify it.
+ * INDEPENDENCE IS CHECKED HERE, not asked for in a prompt: a session that wrote ANY evidence on this
+ * entry is a party and cannot resolve it -- a confirm or dispute through the door after the dispute
+ * takes a side as surely as one before it. The only exception is the judge's own investigation
+ * (`appendObservation`, marked `investigation`) written after the dispute.
+ *
+ * The dispute is named by `at`; every open copy of it shares `at|by|note` (a split or merge copies the
+ * item whole). Two DIFFERENT disputes with one `at` are refused unless `by` names which.
  *
  * A party is a SESSION, which is what `by` holds -- not a person: one operator in the desktop app and
  * in the CLI holds two keys. `session` must be a real session key (`hasSessionId`); outside Claude
  * Code every process mints its own key, so every run would be "independent" of everyone, and the
  * caller passes null instead. The dossier prints `who` beside `by` so a reviewer sees the person.
  */
-export function applyResolution(data, { at, verdict, why, ref, session, now = new Date() }) {
+export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
   const reason = String(why ?? '').trim();
   if (!reason) return { problem: '--why is required: one sentence a reader of the entry can check' };
@@ -227,13 +251,16 @@ export function applyResolution(data, { at, verdict, why, ref, session, now = ne
   // Every open item with this `at` is the SAME dispute: a schema-2 split or a merge can carry one
   // dispute into an entry twice (KB-59E4B5FC held two copies), and closing only the first left the
   // entry DISPUTED with no way to name the second.
-  const matching = items.filter((e) => e.contradicts && e.at != null && String(e.at) === String(at));
-  if (!matching.length) return { problem: `no dispute at ${at} on ${data.id}; the dossier lists each item's \`at\`` };
+  const matching = items.filter((e) => e.contradicts && e.at != null && String(e.at) === String(at)
+    && (!disputedBy || e.by === disputedBy));
+  if (!matching.length) return { problem: `no dispute at ${at}${disputedBy ? ` by ${disputedBy}` : ''} on ${data.id}; the dossier lists each item's \`at\` and \`by\`` };
+  const disputes = new Set(matching.map((e) => `${e.by ?? ''}|${e.note ?? ''}`));
+  if (disputes.size > 1) return { problem: `${disputes.size} different disputes on ${data.id} share at ${at}; name one with --by <its by>` };
   const targets = new Set(matching.filter((e) => !isResolved(e)));
   if (!targets.size) return { problem: `the dispute at ${at} is already resolved (${matching[0].resolved})` };
   const by = `session:${session}`;
-  const party = items.some((e) => e.by === by && atOrBefore(e.at, at));
-  if (party) return { problem: `${by} wrote evidence on ${data.id} at or before this dispute: a party to a dispute never judges it` };
+  const party = items.some((e) => e.by === by && !(isInvestigation(e) && !atOrBefore(e.at, at)));
+  if (party) return { problem: `${by} confirmed or disputed ${data.id} itself: a party to a dispute never judges it (only its own \`observe\` items after the dispute are exempt)` };
   const evidence = items.map((e) => (!targets.has(e) ? e : {
     ...e,
     resolved: verdict,
