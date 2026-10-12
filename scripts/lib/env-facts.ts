@@ -20,7 +20,8 @@ const U = (reason: string): Unknown => ({ unknown: reason });
 export interface DeployedModule { version: string; repo: string | null; repoGuessed: boolean }
 export interface DriftRow { id: string; declared: string | null; deployed: string | null }
 export interface ReleasedNotDeployed { component: string; repo: string; released: string; deployed: string | null; feature: string }
-export interface LedgerFacts { generated: string | null; stale: boolean | null; releasedNotDeployed: ReleasedNotDeployed[]; breaking: LedgerRow[] }
+/** `releasedNotDeployed` is UNKNOWN when `deployed` is — "released, not deployed" cannot be told from "not probed". */
+export interface LedgerFacts { generated: string | null; stale: boolean | null; releasedNotDeployed: ReleasedNotDeployed[] | Unknown; breaking: LedgerRow[] }
 export interface EnvFacts {
   env: string; observedAt: string; backUrl: string; frontUrl: string;
   config: { missing: string[] };
@@ -35,7 +36,7 @@ export interface EnvFacts {
 export interface EnvFactsOptions { env?: string; components?: string[]; storefront?: boolean; now?: Date }
 
 /** The base version a PR / prerelease build is built from: 3.1006.0-pr-21-8964 → 3.1006.0. */
-const baseOf = (v: string) => v.split("-")[0];
+export const baseOf = (v: string) => v.split("-")[0];
 
 export function computeDrift(declared: Record<string, string>, deployed: Record<string, DeployedModule>): DriftRow[] {
   const ids = [...new Set([...Object.keys(declared), ...Object.keys(deployed)])].sort();
@@ -48,24 +49,28 @@ export function computeDrift(declared: Record<string, string>, deployed: Record<
   return rows;
 }
 
-export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, DeployedModule> | null, repos: string[], now: Date): LedgerFacts {
+export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, DeployedModule> | null, repos: string[], now: Date): LedgerFacts | Unknown {
+  // Neither §1 nor §2 parsed ⇒ the headings drifted from the reader, not "nothing shipped".
+  if (ledger.latest.length === 0 && ledger.rows.length === 0) return U("ledger-unparsed");
   const wanted = new Set(repos);
-  const deployedByRepo = new Map<string, string>();
-  for (const m of Object.values(deployed ?? {})) if (m.repo) deployedByRepo.set(m.repo, m.version);
-  const releasedNotDeployed: ReleasedNotDeployed[] = [];
-  for (const row of ledger.rows) {
-    if (!wanted.has(row.repo)) continue;
-    const live = deployed ? deployedByRepo.get(row.repo) ?? null : null;
-    // A PR build of the released base counts as having it (Review Focus 2).
-    if (live !== null && cmpSemver(baseOf(live), row.version) >= 0) continue;
-    releasedNotDeployed.push({ component: row.component, repo: row.repo, released: row.version, deployed: live, feature: row.feature });
+  let releasedNotDeployed: ReleasedNotDeployed[] | Unknown = U("deployed-unknown");
+  if (deployed) {
+    const deployedByRepo = new Map<string, string>();
+    for (const m of Object.values(deployed)) if (m.repo) deployedByRepo.set(m.repo, m.version);
+    const rows: ReleasedNotDeployed[] = [];
+    for (const row of ledger.rows) {
+      if (!wanted.has(row.repo)) continue;
+      const live = deployedByRepo.get(row.repo) ?? null;
+      // A PR build of the released base counts as having it (Review Focus 2).
+      if (live !== null && cmpSemver(baseOf(live), row.version) >= 0) continue;
+      rows.push({ component: row.component, repo: row.repo, released: row.version, deployed: live, feature: row.feature });
+    }
+    releasedNotDeployed = rows;
   }
   const breaking = ledger.rows.filter((r) => r.breaking && wanted.has(r.repo));
-  let stale: boolean | null = null;
-  if (ledger.generated && ledger.staleAfterDays !== null) {
-    const ageDays = (now.getTime() - new Date(ledger.generated).getTime()) / 86_400_000;
-    stale = ageDays > ledger.staleAfterDays;
-  }
+  // An unparsable `generated` date is UNKNOWN freshness, never "fresh".
+  const generatedMs = ledger.generated ? new Date(ledger.generated).getTime() : NaN;
+  const stale = Number.isNaN(generatedMs) || ledger.staleAfterDays === null ? null : (now.getTime() - generatedMs) / 86_400_000 > ledger.staleAfterDays;
   return { generated: ledger.generated, stale, releasedNotDeployed, breaking };
 }
 

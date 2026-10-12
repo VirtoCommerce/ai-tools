@@ -1,9 +1,10 @@
 // scripts/preflight/policy.ts — the CHANGE-SCOPED policy and the remedy catalog (spec §5, §8a, §8b).
 // The single statement of which fact is OK/WARN/BLOCK for which consumer, and of who can fix it.
 // Facts come from scripts/lib/env-facts.ts, which carries no policy.
+import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { isUnknown, type EnvFacts } from "../lib/env-facts.ts";
+import { baseOf, isUnknown, type EnvFacts, type ReleasedNotDeployed } from "../lib/env-facts.ts";
 import type { McpStatic } from "./mcp-static.ts";
 import { cmpSemver } from "../maintenance/refresh-release-ledger.mjs";
 
@@ -15,7 +16,7 @@ export interface Check { id: string; status: Status; found: string; who: Who | n
 export interface Duplicate { path: string; ageMinutes: number; verdict: string | null; priorBuild: string | null }
 export interface PolicyInput {
   for: ChangeFor; ticket?: string; domain?: string; expect?: { module: string; version: string };
-  facts: EnvFacts; mcp: { servers: McpStatic[]; liveLanes: number; lanes: { min: number; want: number } };
+  facts: EnvFacts; mcp: { servers: McpStatic[]; liveLanes: number; lanes: { min: number; want: number }; jsonError?: string | null };
   sprint: string | null; duplicate: Duplicate | null;
 }
 
@@ -34,11 +35,35 @@ export function resolveSprint(root: string): string | null {
   return sprints.at(-1) ?? null;
 }
 
+/**
+ * A comparable id for the deployed build: `modules:<12 hex of sha1 over the sorted "id@version" lines>`.
+ * The platform has no live version source, so the module set IS the build; two runs are on the same
+ * build iff their fingerprints are equal strings.
+ */
+export function buildFingerprint(modules: Record<string, { version: string } | string>): string {
+  const lines = Object.entries(modules).map(([id, m]) => `${id.toLowerCase()}@${typeof m === "string" ? m : m?.version}`).sort();
+  return `modules:${createHash("sha1").update(lines.join("\n")).digest("hex").slice(0, 12)}`;
+}
+
+/** The prior run's build: the fingerprint of its stored `preflight` block (the CLI JSON), else a legacy string. */
 function priorBuildOf(json: any): string | null {
-  const p = json?.preflight?.deployed;
-  if (p && !p.unknown && p.modules) return `deployed modules @ ${json.preflight.observedAt ?? "?"}`;
+  const mods = json?.preflight?.facts?.deployed?.modules ?? json?.preflight?.deployed?.modules;
+  if (mods && typeof mods === "object") return buildFingerprint(mods);
   const legacy = json?.build?.deployed?.platform ?? json?.build?.platform;
   return typeof legacy === "string" && !/UNKNOWN/i.test(legacy) ? legacy : null;
+}
+
+/** A prerelease `--expect` (a PR build) must be exactly that build; a release is met by any build of that base or later. */
+function expectMet(live: string, want: string): boolean {
+  return want.includes("-") ? live.toLowerCase() === want.toLowerCase() : cmpSemver(baseOf(live), want) >= 0;
+}
+
+/** Remedy for a requested storefront probe that could not run, by reason. */
+function storefrontRemedy(reason: string, env: string): { who: Who; do: string } {
+  if (reason === "no-back-or-front-url") return { who: "you", do: `set FRONT_URL and BACK_URL in .env.${env}` };
+  if (reason === "front-url-unparsable") return { who: "you", do: `fix FRONT_URL in .env.${env} (a full https:// URL)` };
+  if (reason === "no-store-for-domain") return { who: "you", do: `point FRONT_URL in .env.${env} at a host a store lists as its domain` };
+  return { who: "me", do: "wait and re-run" };
 }
 
 export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: string; domain?: string; now: Date }): Duplicate | null {
@@ -84,12 +109,13 @@ export function buildChecks(i: PolicyInput): Check[] {
   const f = i.facts;
   const checks: Check[] = [];
 
-  // config — a missing CORE var blocks every consumer
+  // config — a missing CORE var blocks every consumer. Only a URL has a source Claude can read
+  // (the env's own deploy); an account name or store id is the user's to supply.
   for (const v of f.config.missing) {
-    const secret = SECRET.test(v);
+    const secret = SECRET.test(v), url = /_URL$/.test(v);
     checks.push({ id: `config:${v}`, status: "BLOCK", found: `${v} is not set in any .env layer`,
-      who: secret ? "you" : "me, with OK",
-      do: secret ? `add ${v} to .env.local (value from the team secret store)` : `add ${v} to .env.${f.env}`,
+      who: url ? "me, with OK" : "you",
+      do: secret ? `add ${v} to .env.local (value from the team secret store)` : url ? `add ${v} to .env.${f.env}` : `add ${v} to .env.${f.env} or .env.local (the value for this environment)`,
       diagnose: [`which layer: .env.defaults → .env.${f.env} → .env.local (value never printed)`] });
   }
 
@@ -100,7 +126,9 @@ export function buildChecks(i: PolicyInput): Check[] {
   else checks.push(ok("health", "UP"));
 
   // declared
-  if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "gh auth login, or set GIT_TOKEN in .env.local", diagnose: ["gh auth status"] });
+  // read over GitHub REST with GIT_TOKEN / GITHUB_TOKEN only — `gh` auth is not consulted
+  if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "set GIT_TOKEN in .env.local",
+    diagnose: ["which .env layer GIT_TOKEN resolves from (value never printed)"] });
   else checks.push(ok("declared", `Platform ${f.declared.platform ?? "?"} · Theme ${f.declared.theme ?? "?"}`));
 
   // deployed — UNKNOWN is never upgraded; compute who/do for reuse by expect
@@ -113,18 +141,11 @@ export function buildChecks(i: PolicyInput): Check[] {
       deployedUnknownFound = "not probed: no-back-url";
       checks.push({ id: "deployed", status: "UNKNOWN", found: deployedUnknownFound, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
     } else {
-      // Controller ruling 1: treat ANY 4xx on token call as credentials problem; name the actual call in found
-      const isTokenFailure = /^token: 4\d\d$/.test(f.deployed.unknown) || /^token: \d\d\d$/.test(f.deployed.unknown);
+      // Controller ruling 1: ANY 4xx on the token call is a credentials problem; name the actual call in found
       const auth = /^token: 4\d\d$/.test(f.deployed.unknown) || /\b40[13]\b/.test(f.deployed.unknown);
       deployedUnknownWho = auth ? "you" : "me";
       deployedUnknownDo = auth ? "check ADMIN / ADMIN_PASSWORD in .env.local" : "wait and re-run";
-      if (isTokenFailure) {
-        deployedUnknownFound = `POST /connect/token → ${f.deployed.unknown}`;
-      } else if (/^modules: /.test(f.deployed.unknown)) {
-        deployedUnknownFound = `/api/platform/modules → ${f.deployed.unknown}`;
-      } else {
-        deployedUnknownFound = `/api/platform/modules → ${f.deployed.unknown}`;
-      }
+      deployedUnknownFound = `${/^token: /.test(f.deployed.unknown) ? "POST /connect/token" : "/api/platform/modules"} → ${f.deployed.unknown}`;
       checks.push({ id: "deployed", status: "UNKNOWN", found: deployedUnknownFound, who: deployedUnknownWho, do: deployedUnknownDo,
         diagnose: ["which .env layer ADMIN_PASSWORD resolves from (value never printed)", "status of POST /connect/token"] });
     }
@@ -135,23 +156,37 @@ export function buildChecks(i: PolicyInput): Check[] {
     checks.push({ id: "drift", status: "WARN", found: `${f.drift.length} module(s) differ: ${f.drift.slice(0, 3).map((d) => `${d.id} ${d.declared ?? "—"}→${d.deployed ?? "—"}`).join(", ")}`,
       who: "me", do: "wait for the deploy to settle and re-run", diagnose: [`gh run list on vc-deploy-dev for the ${f.env} branch`] });
 
-  // ledger
+  // ledger — UNKNOWN (absent, unreadable, unparsed, or freshness undecidable) is a row, never silence
+  const ledgerUnknown = isUnknown(f.ledger) ? f.ledger.unknown : f.ledger.stale === null ? `freshness undecidable (generated ${f.ledger.generated ?? "absent"})` : null;
+  if (ledgerUnknown !== null) checks.push({ id: "ledger", status: "UNKNOWN", found: `release-ledger: ${ledgerUnknown}`, who: "me, with OK", do: "npm run releases:refresh, then commit",
+    diagnose: ["npm run releases:check"] });
   if (!isUnknown(f.ledger)) {
     if (f.ledger.stale) checks.push({ id: "ledger", status: "WARN", found: `release-ledger generated ${f.ledger.generated}, past stale_after_days`, who: "me, with OK", do: "npm run releases:refresh, then commit", diagnose: [] });
     for (const b of f.ledger.breaking)
       checks.push({ id: `breaking:${b.repo}`, status: "WARN", found: `⚠ BREAKING ${b.component} ${b.version} (${b.month})`, who: "me",
-        do: "consumer rule applies (/qa-test: run FULL); name it in the report header", diagnose: [] });
-    // Controller ruling 3: emit not-deployed only when deployed is known; collapse to one row per repo with latest version
-    if (!isUnknown(f.deployed)) {
-      const byRepo = new Map<string, typeof f.ledger.releasedNotDeployed[0]>();
+        do: "name it in the report header; the consumer's rule for BREAKING applies", diagnose: [] });
+    // Controller ruling 3: no not-deployed rows when deployed is unknown; one row per repo with its latest version
+    if (!isUnknown(f.ledger.releasedNotDeployed)) {
+      const byRepo = new Map<string, ReleasedNotDeployed>();
       for (const r of f.ledger.releasedNotDeployed) {
         const existing = byRepo.get(r.repo);
         if (!existing || cmpSemver(r.released, existing.released) > 0) byRepo.set(r.repo, r);
       }
       for (const r of byRepo.values())
-        checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "UNKNOWN"}`, who: "me",
-          do: "treat as NOT_DEPLOYED (BLOCKED-on-deploy), never FAIL", diagnose: [] });
+        checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "none"}`, who: "me",
+          do: "do not test it on this stand; report it as not deployed", diagnose: [] });
     }
+  }
+
+  // components — an input with no repo silently drops out of breaking / not-deployed, so say so
+  for (const c of f.components) if (!c.repo)
+    checks.push({ id: `component:${c.input}`, status: "UNKNOWN", found: "not mapped to a repo", who: "you",
+      do: "pass its vc-module-* repo or VirtoCommerce.* id in --components", diagnose: [] });
+
+  // storefront — only when requested (null = not requested)
+  if (f.storefrontVisible !== null && isUnknown(f.storefrontVisible)) {
+    const r = storefrontRemedy(f.storefrontVisible.unknown, f.env);
+    checks.push({ id: "storefront", status: "UNKNOWN", found: `InitializeApplication not probed: ${f.storefrontVisible.unknown.slice(0, 120)}`, who: r.who, do: r.do, diagnose: [] });
   }
 
   // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do but change status for tickets
@@ -159,7 +194,7 @@ export function buildChecks(i: PolicyInput): Check[] {
     const id = i.expect.module.toLowerCase();
     const live = isUnknown(f.deployed) ? null : f.deployed.modules[id]?.version ?? null;
     if (isUnknown(f.deployed)) checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
-    else if (live !== null && cmpSemver(live, i.expect.version) >= 0) checks.push(ok("expect", `${i.expect.module} ${live}`));
+    else if (live !== null && expectMet(live, i.expect.version)) checks.push(ok("expect", `${i.expect.module} ${live}`));
     else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live ?? "none"})`,
       who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev backend/packages.json"] });
   }
@@ -169,9 +204,18 @@ export function buildChecks(i: PolicyInput): Check[] {
     : { id: "sprint", status: "UNKNOWN", found: "no reports/tickets/SprintXX-XX folder", who: "you", do: "name the sprint folder to create", diagnose: [] });
 
   // duplicate
-  if (i.duplicate) checks.push({ id: "duplicate", status: "WARN",
-    found: `ran ${i.duplicate.ageMinutes} min ago${i.duplicate.verdict ? `, verdict ${i.duplicate.verdict}` : ""}${i.duplicate.priorBuild ? `, build ${i.duplicate.priorBuild}` : ""}`,
-    who: "you", do: `re-run overwrites ${i.duplicate.path} — commit it first if uncommitted`, diagnose: [] });
+  if (i.duplicate) {
+    const prior = i.duplicate.priorBuild;
+    const current = isUnknown(f.deployed) ? null : buildFingerprint(f.deployed.modules);
+    const build = !prior ? "" : prior.startsWith("modules:") && current ? (prior === current ? ", same build" : ", different build") : `, build ${prior}`;
+    checks.push({ id: "duplicate", status: "WARN",
+      found: `ran ${i.duplicate.ageMinutes} min ago${build}${i.duplicate.verdict ? `, verdict ${i.duplicate.verdict}` : ""}`,
+      who: "you", do: `re-run overwrites ${i.duplicate.path} — commit it first if uncommitted`, diagnose: [] });
+  }
+
+  // .mcp.json that does not parse — its servers count as unconfigured below
+  if (i.mcp.jsonError) checks.push({ id: "mcp:.mcp.json", status: "UNKNOWN", found: `malformed .mcp.json: ${i.mcp.jsonError}`, who: "you",
+    do: "fix the JSON in .mcp.json, then restart the session", diagnose: [] });
 
   // MCP levels 1–2 (user-scope servers are the skill's)
   for (const s of i.mcp.servers) {

@@ -92,9 +92,21 @@ export const defaultReadFile = (p: string): string | null => {
   return existsSync(abs) ? readFileSync(abs, "utf8") : null;
 };
 
-export function readMcpJson(root: string = REPO_ROOT): any | null {
+/**
+ * `.mcp.json` parsed, or the reason it could not be. A malformed file is a fact (the policy turns it into
+ * an UNKNOWN row), never a crash. The parse message is stripped of the source excerpt V8 quotes, because
+ * `.mcp.json` routinely holds tokens.
+ */
+export function readMcpJson(root: string = REPO_ROOT): { json: any | null; error: string | null } {
   const p = join(root, ".mcp.json");
-  return existsSync(p) ? JSON.parse(readFileSync(p, "utf8")) : null;
+  if (!existsSync(p)) return { json: null, error: null };
+  try {
+    return { json: JSON.parse(readFileSync(p, "utf8")), error: null };
+  } catch (e) {
+    // V8's `Unexpected token 'x', "<excerpt>"... is not valid JSON` form is the one that echoes the file.
+    const msg = (e as Error).message;
+    return { json: null, error: / is not valid JSON/.test(msg) ? "unexpected token (source excerpt withheld)" : msg.replace(/"[^"]*"?/g, '"…"').slice(0, 160) };
+  }
 }
 
 export function checkMcpStatic(consumer: Consumer, reqs: McpRequirements, mcpJson: any | null, readFile: (p: string) => string | null = defaultReadFile) {
@@ -105,8 +117,7 @@ export function checkMcpStatic(consumer: Consumer, reqs: McpRequirements, mcpJso
   for (const [name, r] of Object.entries(wanted)) {
     const s = reqs.servers[name];
     const base = { server: name, scope: s.scope, class: r.class, fallback: s.fallback, ...(r.when ? { when: r.when } : {}) };
-    // Check if server is configured: primary key or any mcpKeys alternative
-    const configuredEntry = configured[name] ?? (s.mcpKeys ? s.mcpKeys.find(k => configured[k]) : undefined);
+    // Configured under its own name or any mcpKeys alias
     const mcpKey = Object.keys(configured).find(k => k === name || s.mcpKeys?.includes(k));
     if (s.scope === "user" && !mcpKey) { servers.push({ ...base, level: "NOT_VISIBLE", problem: null }); continue; }
     if (!mcpKey) { servers.push({ ...base, level: "ABSENT", problem: null }); continue; }

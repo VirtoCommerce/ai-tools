@@ -30,7 +30,8 @@ if (expectRaw) {
 try {
   const now = new Date();
   const facts = await getEnvFacts({ components, storefront: argv.includes("--storefront"), now });
-  const mcp = checkMcpStatic(forFlag, loadMcpRequirements(ROOT), readMcpJson(ROOT));
+  const mcpJson = readMcpJson(ROOT);
+  const mcp = { ...checkMcpStatic(forFlag, loadMcpRequirements(ROOT), mcpJson.json), jsonError: mcpJson.error };
   const sprint = forFlag === "ticket" || forFlag === "ticket-fast" ? resolveSprint(ROOT) : null;
   const duplicate = findDuplicate(ROOT, forFlag, { ticket, domain, now });
   const checks = buildChecks({ for: forFlag, ticket, domain, expect, facts, mcp, sprint, duplicate });

@@ -45,6 +45,7 @@ export function renderHuman(meta: { env: string; for: string; ticket?: string; a
   // Escape cell values before computing widths
   const escapedRows = rows.map((r) => ({
     ...r,
+    id: escapeCell(r.id), // component:<input> carries user input
     found: escapeCell(r.found),
     who: r.who ? escapeCell(r.who) : "—",
     do: r.do ? escapeCell(r.do) : "—",
