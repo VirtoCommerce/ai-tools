@@ -219,7 +219,7 @@ deliverable is the release note (or the refusal). Print the fragment path (or th
 - Flag any security concerns (exposed sensitive endpoints, missing auth, etc.) immediately
 - Write each document for its declared **audience** (`customer | admin | developer | sales`) in the matching Virto style — `knowledge/ba/virto-doc-style.md` is the single source of truth for skeletons and voice. Do not collapse audiences (a Sales one-pager is benefit-led, not a how-to; a Customer guide has no GUIDs/code)
 - Browser assignments: `ba-system-analyzer` → `playwright-firefox` (fallback: `playwright-edge`), `ba-api-specialist` → `playwright-edge` (fallback: `playwright-firefox`)
-- Always query Context7 in Step 0 before launching sub-agents
+- Ground in Step 0 via `/preflight` (kb → VirtoOZ; Context7 only as VirtoOZ's fallback) before launching sub-agents
 - **BA never edits the BL oracle and writes no proposals file** — Step 4.5 routes each candidate (human source → `/qa-review-bl`; observation → `kb`; contradiction → finding). Every candidate cites a source; drop unsourced ones rather than guess.
 
 ## Stories review mode (`stories --review <TICKET>`)

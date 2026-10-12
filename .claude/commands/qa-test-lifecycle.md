@@ -961,7 +961,7 @@ Output: per-case verification:
   incoming case on collision; never renumber the existing one, never reuse a retired ID.
 - **Never delete test cases without user confirmation** — prefer deprecation (`Automation_Status: Deprecated`) over removal
 - **Preserve case IDs** — never renumber or reuse IDs. Deprecated cases keep their IDs.
-- **Context7 is mandatory** — always query `/virtocommerce/vc-docs` for current module behavior before updating or generating cases
+- **Ground via `/preflight lifecycle`** — kb → VirtoOZ, Context7 only as fallback — before updating or generating cases
 - **Deduplication** — before generating cases, check target suite and related suites for semantic duplicates
 - **One browser at a time** — Phase 5 uses `playwright-firefox` via `qa-testing-expert`; no parallel browser sessions
 - **Read URLs from .env** via `config.js`, never hardcode
