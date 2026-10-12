@@ -15,6 +15,8 @@ rejectUnknownFlags(argv, ["--for", "--ticket", "--components", "--domain", "--ex
 const forFlag = enumFlag(argv, "--for", CHANGE_FOR) as ChangeFor | undefined;
 if (!forFlag) { console.error(`✗ --for is required: ${CHANGE_FOR.join(" | ")}`); process.exit(1); }
 const ticket = flagValue(argv, "--ticket");
+if ((forFlag === "ticket" || forFlag === "ticket-fast") && !ticket) { console.error("✗ --for ticket needs --ticket <KEY>"); process.exit(1); }
+if (ticket && !/^[A-Z][A-Z0-9]*-\d+$/.test(ticket)) { console.error(`✗ --ticket expects a key like VCST-1234, got "${ticket}"`); process.exit(1); }
 const domain = flagValue(argv, "--domain");
 const components = (flagValue(argv, "--components") ?? "").split(",").map((s) => s.trim()).filter(Boolean);
 const expectRaw = flagValue(argv, "--expect");
@@ -24,7 +26,6 @@ if (expectRaw) {
   if (at <= 0) { console.error(`✗ --expect expects Module.Id@version, got "${expectRaw}"`); process.exit(1); }
   expect = { module: expectRaw.slice(0, at), version: expectRaw.slice(at + 1) };
 }
-if ((forFlag === "ticket" || forFlag === "ticket-fast") && !ticket) { console.error("✗ --for ticket needs --ticket <KEY>"); process.exit(1); }
 
 try {
   const now = new Date();

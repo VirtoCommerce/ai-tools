@@ -39,6 +39,9 @@ export function renderHuman(meta: { env: string; for: string; ticket?: string; a
 
   const verdict = block > 0 ? "NOT READY" : "READY";
   const rows = checks.filter((c) => c.status !== "OK");
+  // Sort non-OK rows: BLOCK → WARN → UNKNOWN, stable within a status
+  const statusOrder = { "BLOCK": 0, "WARN": 1, "UNKNOWN": 2 };
+  rows.sort((a, b) => (statusOrder[a.status as keyof typeof statusOrder] ?? 3) - (statusOrder[b.status as keyof typeof statusOrder] ?? 3));
   // Escape cell values before computing widths
   const escapedRows = rows.map((r) => ({
     ...r,

@@ -141,16 +141,24 @@ export function buildChecks(i: PolicyInput): Check[] {
     for (const b of f.ledger.breaking)
       checks.push({ id: `breaking:${b.repo}`, status: "WARN", found: `⚠ BREAKING ${b.component} ${b.version} (${b.month})`, who: "me",
         do: "consumer rule applies (/qa-test: run FULL); name it in the report header", diagnose: [] });
-    for (const r of f.ledger.releasedNotDeployed)
-      checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "UNKNOWN"}`, who: "me",
-        do: "treat as NOT_DEPLOYED (BLOCKED-on-deploy), never FAIL", diagnose: [] });
+    // Controller ruling 3: emit not-deployed only when deployed is known; collapse to one row per repo with latest version
+    if (!isUnknown(f.deployed)) {
+      const byRepo = new Map<string, typeof f.ledger.releasedNotDeployed[0]>();
+      for (const r of f.ledger.releasedNotDeployed) {
+        const existing = byRepo.get(r.repo);
+        if (!existing || cmpSemver(r.released, existing.released) > 0) byRepo.set(r.repo, r);
+      }
+      for (const r of byRepo.values())
+        checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "UNKNOWN"}`, who: "me",
+          do: "treat as NOT_DEPLOYED (BLOCKED-on-deploy), never FAIL", diagnose: [] });
+    }
   }
 
-  // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do
+  // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do but change status for tickets
   if (i.expect) {
     const id = i.expect.module.toLowerCase();
     const live = isUnknown(f.deployed) ? null : f.deployed.modules[id]?.version ?? null;
-    if (isUnknown(f.deployed)) checks.push({ id: "expect", status: "UNKNOWN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
+    if (isUnknown(f.deployed)) checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
     else if (live !== null && cmpSemver(live, i.expect.version) >= 0) checks.push(ok("expect", `${i.expect.module} ${live}`));
     else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live ?? "none"})`,
       who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev backend/packages.json"] });
