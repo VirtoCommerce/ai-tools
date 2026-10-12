@@ -282,19 +282,21 @@ before this record existed, a skipped transition left no trace in any artifact, 
 
 #### 1b — Pre-flight, sprint resolution & duplicate check *(both paths)*
 
-**TWO I/O waves, not nine sequential steps** — the round-trip is the unit being saved
+**TWO I/O waves** — the round-trip is the unit being saved
 ([`sequencing.md`](../skills/qa-test/sequencing.md) §Concurrency). Item detail and the reason each exists:
 [`preflight.md`](../skills/qa-test/preflight.md) §1b.
 
 | Wave | Issue in ONE message |
 |---|---|
-| **A** | 1 env health (`/vc-fix:qa-env-check endpoints`) · 2 build & version — `declared` from `vc-deploy-dev`, then the `GET {{BACK_URL}}/api/platform/modules` probe for **`deployed`**, which is ground truth (a failed probe records `UNKNOWN`, **never** falls back to `declared`) · 2-release the release-ledger Δ · **2-map** the functionality map (below) · 2b's local reads · 3 sprint resolve → 4 duplicate check (glob `reports/tickets/*/*/summary.json` across **all** sprints, 2 h window) |
-| *(no I/O)* | derive the **six** axes — see below. **2g `domain_map` derives FIRST**, because `2-map` in wave A consumes it to decide what to read |
+| *(before A)* | **2g `domain_map`** — the slug from `1a` + one frontmatter read; no other input, so it derives first |
+| **A** | **`/preflight ticket --ticket <KEY> --components <1a components> [--expect <PR module@version>] [--storefront]`** — env health, `declared`/`deployed`, the `2-release` ledger Δ, sprint, duplicate check and MCP availability in one call ([`skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) · **2-map** the functionality map (below), read in the order 2g set · 2b's local reads |
+| *(no I/O)* | derive the other **five** axes (2b–2f) from what wave A returned — see below |
 | **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently |
 
-**2-release's three consequences** ([`preflight.md`](../skills/qa-test/preflight.md) §1b): **⚠ BREAKING** in
-the component under test **forces FULL** · a third leg for `1d`'s AC↔implementation check · **released ≠
-deployed** — `NOT_DEPLOYED` is BLOCKED-on-deploy, never a FAIL, never a filed bug, never `{DOC}`.
+**What `/preflight` returns is a fact; what it means here is this command's.** A `breaking:*` row in
+the component under test **forces FULL** · it is a third leg for `1d`'s AC↔implementation check · a
+`not-deployed:*` or `expect` row is BLOCKED-on-deploy — never a FAIL, never a filed bug, never `{DOC}`.
+Store the skill's block as `summary.json.preflight`.
 
 **2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order, and
 the order is the point: **the DOMAIN MAP first, then the per-ticket prior art.** Read order is decided by
@@ -318,8 +320,8 @@ Five things it must leave behind, each consumed by a named later step:
 may be stale**: prior art is a hypothesis until the `2-release` Δ since its date plus a live check confirm it.
 Detail: [`preflight.md`](../skills/qa-test/preflight.md) §2-map.
 
-**PR testing:** confirm the PR's artifact version is deployed; if not → offer `/qa-deploy-pr <ticket-key>`
-(**ask first**) or warn and ask whether to wait.
+**PR testing:** pass the PR's module and version as `--expect`; a NOT READY `expect` row carries the
+`/qa-deploy-pr` remedy and `/preflight` asks before running it.
 
 #### 1r · 1c · 1c-map · 1d — the context wave, ONE message *(FULL only)*
 
