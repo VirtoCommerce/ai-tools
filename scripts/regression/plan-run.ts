@@ -33,8 +33,8 @@
  * no executor, or a cap that would guarantee truncation).
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 import { browserDenyListFor, loadManifest, resolveSelection, selectionNames, type ManifestSuite } from "../../ci/lib/suite-manifest.ts";
 import { classifyLane } from "../../ci/lib/lane-classifier.ts";
@@ -42,6 +42,8 @@ import { buildRunPlan, formatRunPlan, type PlannableSuite } from "../../ci/lib/r
 import { batchSuites, DEFAULT_MAX_BATCH_CASES } from "../../ci/lib/suite-batching.ts";
 import { orderLpt, simulateMakespan } from "../../ci/lib/scheduler.ts";
 import { formatPreflightProblems, preflightManifest, type PreflightSuite } from "../../ci/lib/manifest-preflight.ts";
+import { runRegressionPreflight, type RegressionPreflight } from "./preflight.ts";
+import { renderHuman } from "../preflight/render.ts";
 
 const DEFAULT_CONCURRENCY = { browser: 3, fastpath: 4, deterministic: 2 };
 
@@ -50,10 +52,13 @@ function parseArgs(argv: string[]): {
   json: boolean;
   verbose: boolean;
   concurrency: typeof DEFAULT_CONCURRENCY;
+  preflight: boolean;
+  preflightOut: string | null;
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const positional = args.filter((a) => !a.startsWith("--"));
+  const valued = new Set(["--preflight-out", "--browsers", "--fastpath", "--deterministic"]);
+  const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
     const i = args.indexOf(`--${name}`);
@@ -66,6 +71,8 @@ function parseArgs(argv: string[]): {
     selection: positional[0] || "smoke",
     json: flags.has("--json"),
     verbose: flags.has("--verbose"),
+    preflight: flags.has("--preflight"),
+    preflightOut: (() => { const i = args.indexOf("--preflight-out"); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : null; })(),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -74,8 +81,8 @@ function parseArgs(argv: string[]): {
   };
 }
 
-function main(): void {
-  const { selection, json, verbose, concurrency } = parseArgs(process.argv.slice(2));
+async function main(): Promise<void> {
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut } = parseArgs(process.argv.slice(2));
   const manifest = loadManifest();
 
   const resolved = resolveSelection(manifest, selection);
@@ -112,7 +119,24 @@ function main(): void {
     (p) => p.kind !== "missing-agent",
   );
 
-  const plannable: PlannableSuite[] = suites.map((s) => ({
+  let pf: RegressionPreflight | null = null;
+  let toPlan = suites;
+  if (wantPreflight) {
+    pf = await runRegressionPreflight({
+      for: selection === "smoke" ? "smoke" : "regression", selection,
+      suites: suites.map((s) => ({ id: s.id, layer: s.layer, requiresModules: s.requiresModules })),
+      manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
+      root: process.cwd(),
+    });
+    const gated = new Set(pf.gating.gated.map((g) => g.suite));
+    toPlan = suites.filter((s) => !gated.has(s.id));
+    if (preflightOut) {
+      mkdirSync(dirname(preflightOut), { recursive: true });
+      writeFileSync(preflightOut, JSON.stringify(pf, null, 2) + "\n", "utf8");
+    }
+  }
+
+  const plannable: PlannableSuite[] = toPlan.map((s) => ({
     id: s.id,
     description: s.name,
     lane: classifyLane(s),
@@ -129,6 +153,7 @@ function main(): void {
     // Shape the orchestrator follows: per lane, the LPT dispatch order with everything needed
     // to place each suite without re-deriving anything.
     const out = {
+      ...(pf ? { preflight: pf } : {}),
       selection,
       filterSummary: resolved.filterSummary,
       skipped: resolved.skipped,
@@ -162,10 +187,15 @@ function main(): void {
       capAnomalies: plan.capAnomalies,
     };
     console.log(JSON.stringify(out, null, 2));
-    process.exit(problems.length > 0 || plan.capAnomalies.length > 0 ? 1 : 0);
+    process.exit(problems.length > 0 || plan.capAnomalies.length > 0 ? 1 : pf?.verdict === "NOT READY" ? 2 : 0);
   }
 
   console.log(`=== Regression plan: ${selection} ===`);
+  if (pf) {
+    process.stdout.write(renderHuman({ env: pf.facts.env, for: pf.for, at: new Date() }, pf.facts, pf.checks));
+    if (pf.falseFailureRisk.length) console.log(`False-failure risk (changed since ${pf.baselineRunId}): ${pf.falseFailureRisk.join(", ")}`);
+    console.log("");
+  }
   console.log(`Env filters: ${resolved.filterSummary}`);
   if (resolved.skipped.length > 0) {
     console.log("");
@@ -227,9 +257,13 @@ function main(): void {
 
   console.log("");
   console.log("Plan is runnable: every suite has a CSV and an executor, and no cap guarantees truncation.");
+  if (pf?.verdict === "NOT READY") {
+    console.error("\nPre-flight NOT READY — see the BLOCK rows above.");
+    process.exit(2);
+  }
   process.exit(0);
 }
 
 // Same CLI guard as scripts/test-cases/sync-test-suites.ts: importing this module must not run it.
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isCli) main();
+if (isCli) main().catch((e) => { console.error(`✗ regression pre-flight could not run: ${(e as Error).message}`); process.exit(3); });
