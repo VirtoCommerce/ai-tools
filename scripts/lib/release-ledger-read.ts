@@ -45,9 +45,9 @@ export function parseLedger(text: string): Ledger {
     if (m) { month = m[1]; continue; }
     if (!isRow(line) || !month) continue;
     const [feature, comp] = cells(line);
-    const link = /\[(.+?) (\d[^\]]*)\]\(https:\/\/github\.com\/[^/]+\/([^/]+)\/releases\/tag\/[^)]+\)/.exec(comp ?? "");
-    if (!link) continue;
-    rows.push({ month, feature, component: link[1], version: link[2], repo: link[3], breaking: /BREAKING/.test(feature) });
+    // A feature can ship in several components ("[Customer 3.1014.0](…) + [Frontend 2.53.0](…)"): one row each.
+    for (const link of (comp ?? "").matchAll(/\[(.+?) (\d[^\]]*)\]\(https:\/\/github\.com\/[^/]+\/([^/]+)\/releases\/tag\/[^)]+\)/g))
+      rows.push({ month, feature, component: link[1], version: link[2], repo: link[3], breaking: /BREAKING/.test(feature) });
   }
 
   return { generated, staleAfterDays: staleRaw ? Number(staleRaw) : null, latest, rows };

@@ -98,6 +98,9 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
       let verdict: string | null = null, priorBuild: string | null = null;
       if (p.endsWith(".json")) {
         try { const j = JSON.parse(readFileSync(p, "utf8")); verdict = typeof j.verdict === "string" ? j.verdict : null; priorBuild = priorBuildOf(j); } catch { /* unreadable ⇒ nulls */ }
+        // No verdict ⇒ a run still in progress (e.g. the current one, which may already have written
+        // its 1a status hop) — not a completed prior run.
+        if (verdict === null) continue;
       }
       if (!best || ageMinutes < best.ageMinutes) best = { path: p.replace(root, "").replace(/^[\\/]/, "").replace(/\\/g, "/"), ageMinutes, verdict, priorBuild };
     } catch { /* file deleted or unreadable ⇒ skip */ }
