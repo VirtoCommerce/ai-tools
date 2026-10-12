@@ -92,7 +92,7 @@ export function resolveComponentRepos(inputs: string[], ledger: Ledger | null, d
     if (/^VirtoCommerce\./i.test(s)) {
       const live = deployed?.[s.toLowerCase()];
       // moduleIdToRepoGuess strips only a PascalCase prefix: normalise it so any casing guesses the same repo.
-      return { input, repo: live?.repo ?? moduleIdToRepoGuess(s.replace(/^virtocommerce./i, "VirtoCommerce.")) };
+      return { input, repo: live?.repo ?? moduleIdToRepoGuess(s.replace(/^virtocommerce\./i, "VirtoCommerce.")) };
     }
     const byName = ledger?.latest.find((l) => l.component.toLowerCase() === s.toLowerCase());
     return { input, repo: byName?.repo ?? null };
