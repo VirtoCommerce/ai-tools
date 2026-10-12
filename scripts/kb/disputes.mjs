@@ -238,13 +238,27 @@ async function main() {
       // A SPLIT CHILD is new on the branch, so main never held its body -- main held its PARENT's, and
       // that is the wording confirmations kept landing on while the PR was open (push hands them to the
       // child, hashed against the parent). So the parent's body is what this amendment replaced.
+      // Up the `splitFrom` chain (a child of a child is two splits from main), taking each ancestor
+      // as main held it at the merge base or, failing that, as main holds it now. Every way this ends
+      // without a body is SAID: a silent miss records a dated verdict and lets old-wording
+      // confirmations count again.
       let before = main.base;
       let from = entry.path;
-      if (before === null) {
-        const parents = [...new Set((entry.data.evidence ?? []).map((e) => e.splitFrom).filter(Boolean))];
-        if (parents.length === 1) { from = `entries/${parents[0]}.md`; before = onMain(a.flags.base, from, ref).base; }
-        else console.error(`warning: ${a.id} is not on ${ref} and names ${parents.length || 'no'} split parent(s); the amendment is dated, not hashed`);
+      let node = entry;
+      let warned = false;
+      for (let hop = 0; before === null && hop < 8; hop++) {
+        const parents = [...new Set((node.data.evidence ?? []).map((e) => e.splitFrom).filter(Boolean))];
+        if (parents.length !== 1) {
+          console.error(`warning: ${from} is not on ${ref} and names ${parents.length || 'no'} split parent(s); the amendment is dated, not hashed`);
+          warned = true;
+          break;
+        }
+        from = `entries/${parents[0]}.md`;
+        const at = onMain(a.flags.base, from, ref);
+        before = at.base === null && at.tip ? at.tip : at.base;
+        node = byId.get(parents[0].toUpperCase()) ?? { data: {} };
       }
+      if (before === null && !warned) console.error(`warning: neither ${a.id} nor its split ancestors are on ${ref}; the amendment is dated, not hashed`);
       if (before === undefined) console.error(`warning: git could not show ${from} at ${ref}; the amendment is dated, not hashed`);
       else if (before) {
         if (claimHash(before.body) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
