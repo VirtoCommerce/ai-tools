@@ -47,25 +47,35 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
   const candidates: string[] = [];
   if (isTicket(f) && opts.ticket) {
     const base = join(root, "reports/tickets");
-    if (existsSync(base)) for (const sprint of readdirSync(base)) {
-      const p = join(base, sprint, opts.ticket, "summary.json");
-      if (existsSync(p)) candidates.push(p);
+    if (existsSync(base)) {
+      try {
+        for (const sprint of readdirSync(base)) {
+          const p = join(base, sprint, opts.ticket, "summary.json");
+          if (existsSync(p)) candidates.push(p);
+        }
+      } catch { /* unreadable dir ⇒ skip */ }
     }
   } else if (!isTicket(f) && opts.domain) {
     const [dir, prefix] = f === "exploratory" ? ["reports/exploratory", "SBTM-"] : ["reports/test-lifecycle", "TLC-"];
     const base = join(root, dir);
-    if (existsSync(base)) for (const n of readdirSync(base))
-      if (n.startsWith(prefix) && n.toLowerCase().includes(opts.domain.toLowerCase())) candidates.push(join(base, n));
+    if (existsSync(base)) {
+      try {
+        for (const n of readdirSync(base))
+          if (n.startsWith(prefix) && n.toLowerCase().includes(opts.domain.toLowerCase())) candidates.push(join(base, n));
+      } catch { /* unreadable dir ⇒ skip */ }
+    }
   }
   let best: Duplicate | null = null;
   for (const p of candidates) {
-    const ageMinutes = Math.round((opts.now.getTime() - statSync(p).mtimeMs) / 60_000);
-    if (ageMinutes > windowMin) continue;
-    let verdict: string | null = null, priorBuild: string | null = null;
-    if (p.endsWith(".json")) {
-      try { const j = JSON.parse(readFileSync(p, "utf8")); verdict = j.verdict ?? null; priorBuild = priorBuildOf(j); } catch { /* unreadable ⇒ nulls */ }
-    }
-    if (!best || ageMinutes < best.ageMinutes) best = { path: p.replace(root, "").replace(/^[\\/]/, "").replace(/\\/g, "/"), ageMinutes, verdict, priorBuild };
+    try {
+      const ageMinutes = Math.round((opts.now.getTime() - statSync(p).mtimeMs) / 60_000);
+      if (ageMinutes > windowMin) continue;
+      let verdict: string | null = null, priorBuild: string | null = null;
+      if (p.endsWith(".json")) {
+        try { const j = JSON.parse(readFileSync(p, "utf8")); verdict = typeof j.verdict === "string" ? j.verdict : null; priorBuild = priorBuildOf(j); } catch { /* unreadable ⇒ nulls */ }
+      }
+      if (!best || ageMinutes < best.ageMinutes) best = { path: p.replace(root, "").replace(/^[\\/]/, "").replace(/\\/g, "/"), ageMinutes, verdict, priorBuild };
+    } catch { /* file deleted or unreadable ⇒ skip */ }
   }
   return best;
 }
@@ -84,7 +94,7 @@ export function buildChecks(i: PolicyInput): Check[] {
   }
 
   // health
-  if (isUnknown(f.health)) checks.push({ id: "health", status: "UNKNOWN", found: `not probed: ${f.health.unknown}`, who: "you", do: "set BACK_URL", diagnose: [] });
+  if (isUnknown(f.health)) checks.push({ id: "health", status: "UNKNOWN", found: `not probed: ${f.health.unknown}`, who: "you", do: `set BACK_URL in .env.${f.env}`, diagnose: [] });
   else if (f.health === "DOWN") checks.push({ id: "health", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${f.backUrl}/health is not 200`, who: "me",
     do: "wait for the deploy and re-run, or switch TEST_ENV", diagnose: ["/health detail", `gh run list on vc-deploy-dev for the ${f.env} branch`] });
   else checks.push(ok("health", "UP"));
@@ -93,16 +103,29 @@ export function buildChecks(i: PolicyInput): Check[] {
   if (isUnknown(f.declared)) checks.push({ id: "declared", status: "UNKNOWN", found: f.declared.unknown, who: "you", do: "gh auth login, or set GIT_TOKEN in .env.local", diagnose: ["gh auth status"] });
   else checks.push(ok("declared", `Platform ${f.declared.platform ?? "?"} · Theme ${f.declared.theme ?? "?"}`));
 
-  // deployed — UNKNOWN is never upgraded
+  // deployed — UNKNOWN is never upgraded; compute who/do for reuse by expect
+  let deployedUnknownWho: Who | null = null, deployedUnknownDo: string | null = null, deployedUnknownFound: string | null = null;
   if (isUnknown(f.deployed)) {
     // Controller ruling 2: handle no-back-url specially
     if (f.deployed.unknown === "no-back-url") {
-      checks.push({ id: "deployed", status: "UNKNOWN", found: `not probed: ${f.deployed.unknown}`, who: "you", do: `set BACK_URL in .env.${f.env}`, diagnose: [] });
+      deployedUnknownWho = "you";
+      deployedUnknownDo = `set BACK_URL in .env.${f.env}`;
+      deployedUnknownFound = "not probed: no-back-url";
+      checks.push({ id: "deployed", status: "UNKNOWN", found: deployedUnknownFound, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
     } else {
-      // Controller ruling 1: treat ANY 4xx on token call as credentials problem
+      // Controller ruling 1: treat ANY 4xx on token call as credentials problem; name the actual call in found
+      const isTokenFailure = /^token: 4\d\d$/.test(f.deployed.unknown) || /^token: \d\d\d$/.test(f.deployed.unknown);
       const auth = /^token: 4\d\d$/.test(f.deployed.unknown) || /\b40[13]\b/.test(f.deployed.unknown);
-      checks.push({ id: "deployed", status: "UNKNOWN", found: `/api/platform/modules → ${f.deployed.unknown}`, who: auth ? "you" : "me",
-        do: auth ? "check ADMIN / ADMIN_PASSWORD in .env.local" : "wait and re-run",
+      deployedUnknownWho = auth ? "you" : "me";
+      deployedUnknownDo = auth ? "check ADMIN / ADMIN_PASSWORD in .env.local" : "wait and re-run";
+      if (isTokenFailure) {
+        deployedUnknownFound = `POST /connect/token → ${f.deployed.unknown}`;
+      } else if (/^modules: /.test(f.deployed.unknown)) {
+        deployedUnknownFound = `/api/platform/modules → ${f.deployed.unknown}`;
+      } else {
+        deployedUnknownFound = `/api/platform/modules → ${f.deployed.unknown}`;
+      }
+      checks.push({ id: "deployed", status: "UNKNOWN", found: deployedUnknownFound, who: deployedUnknownWho, do: deployedUnknownDo,
         diagnose: ["which .env layer ADMIN_PASSWORD resolves from (value never printed)", "status of POST /connect/token"] });
     }
   } else checks.push(ok("deployed", `${Object.keys(f.deployed.modules).length} modules probed`));
@@ -123,11 +146,11 @@ export function buildChecks(i: PolicyInput): Check[] {
         do: "treat as NOT_DEPLOYED (BLOCKED-on-deploy), never FAIL", diagnose: [] });
   }
 
-  // expect — is the change under test on the stand
+  // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do
   if (i.expect) {
     const id = i.expect.module.toLowerCase();
     const live = isUnknown(f.deployed) ? null : f.deployed.modules[id]?.version ?? null;
-    if (isUnknown(f.deployed)) checks.push({ id: "expect", status: "UNKNOWN", found: `${i.expect.module} — deployed state unknown`, who: null, do: "resolve the deployed check first", diagnose: [] });
+    if (isUnknown(f.deployed)) checks.push({ id: "expect", status: "UNKNOWN", found: `${i.expect.module} — deployed state unknown`, who: deployedUnknownWho, do: deployedUnknownDo, diagnose: [] });
     else if (live !== null && cmpSemver(live, i.expect.version) >= 0) checks.push(ok("expect", `${i.expect.module} ${live}`));
     else checks.push({ id: "expect", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${i.expect.module} ${i.expect.version} not deployed (has ${live ?? "none"})`,
       who: "me, with OK", do: `/qa-deploy-pr ${i.ticket ?? "<KEY>"}, or wait`, diagnose: ["is the PR artifact built", "is it in vc-deploy-dev backend/packages.json"] });
