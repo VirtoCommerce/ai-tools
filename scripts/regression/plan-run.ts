@@ -28,9 +28,12 @@
  *   npm run regression:plan -- critical
  *   npm run regression:plan -- full --verbose    # + per-suite caps
  *   npm run regression:plan -- sprint --json     # machine-readable, for an agent to follow
+ *   npm run regression:plan -- smoke --preflight                          # + the build-scoped pre-flight; gated suites leave the plan
+ *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
  *
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
- * no executor, or a cap that would guarantee truncation).
+ * no executor, or a cap that would guarantee truncation) · 2 --preflight: pre-flight NOT READY ·
+ * 3 --preflight: the pre-flight could not run.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, mkdirSync, writeFileSync } from "fs";
@@ -256,14 +259,19 @@ async function main(): Promise<void> {
   }
 
   console.log("");
-  console.log("Plan is runnable: every suite has a CSV and an executor, and no cap guarantees truncation.");
   if (pf?.verdict === "NOT READY") {
-    console.error("\nPre-flight NOT READY — see the BLOCK rows above.");
+    console.log("Pre-flight NOT READY — see the BLOCK rows above.");
     process.exit(2);
   }
+  console.log("Plan is runnable: every suite has a CSV and an executor, and no cap guarantees truncation.");
   process.exit(0);
 }
 
 // Same CLI guard as scripts/test-cases/sync-test-suites.ts: importing this module must not run it.
 const isCli = !!process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isCli) main().catch((e) => { console.error(`✗ regression pre-flight could not run: ${(e as Error).message}`); process.exit(3); });
+if (isCli) main().catch((e) => {
+  // Only the --preflight path has a defined "could not run" exit; without it, keep the old uncaught-exception behaviour.
+  if (process.argv.includes("--preflight")) { console.error(`✗ regression pre-flight could not run: ${(e as Error).message}`); process.exit(3); }
+  console.error(e);
+  process.exit(1);
+});
