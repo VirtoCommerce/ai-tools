@@ -33,11 +33,13 @@ export function pinnedModule(json: any, id: string): { version: string; source: 
 export function listPinnedModules(json: any): { id: string; version: string; source: string }[] {
   const out: { id: string; version: string; source: string }[] = [];
   for (const s of json?.Sources ?? []) for (const m of s?.Modules ?? []) {
-    if (m?.Id) { out.push({ id: String(m.Id), version: String(m.Version), source: String(s.Name ?? '') }); continue; }
-    if (typeof m?.BlobName === 'string') {
-      const bm = m.BlobName.match(/^(.+)_(\d.*)\.zip$/i);
-      if (bm) out.push({ id: bm[1], version: bm[2], source: String(s.Name ?? 'AzureBlob') });
-    }
+    // Three shapes: {Id, Version} · BlobName only · {Id, BlobName} with no Version (vcptcore-qa prerelease
+    // pins). The version comes from Version, else from the BlobName; an entry with neither is skipped,
+    // never recorded as the string "undefined".
+    const bm = typeof m?.BlobName === 'string' ? m.BlobName.match(/^(.+)_(\d.*)\.zip$/i) : null;
+    const id = m?.Id ? String(m.Id) : bm?.[1];
+    const version = m?.Version != null ? String(m.Version) : bm?.[2];
+    if (id && version) out.push({ id, version, source: String(s.Name ?? (bm ? 'AzureBlob' : '')) });
   }
   return out;
 }
