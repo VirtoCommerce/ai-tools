@@ -45,6 +45,10 @@ export function writeBaselineFromRun(root: string, runDir: string, env: string, 
   try { pf = JSON.parse(readFileSync(p, "utf8")); } catch { return { written: false, reason: "preflight.json does not parse" }; }
   const b = pf.facts ? baselineFromFacts(pf.facts, env, runId) : null;
   if (!b) return { written: false, reason: "the run's pre-flight had no deployed module list" };
-  writeFileSync(baselinePath(root, env), JSON.stringify(b, null, 2) + "\n", "utf8");
+  try {
+    writeFileSync(baselinePath(root, env), JSON.stringify(b, null, 2) + "\n", "utf8");
+  } catch (e) {
+    return { written: false, reason: `could not write baseline: ${(e as Error).message}` };
+  }
   return { written: true };
 }
