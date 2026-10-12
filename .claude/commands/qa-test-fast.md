@@ -121,10 +121,7 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    §5-verdict.2.
 4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
-5. **HTML page.** Load the `artifact-design` skill, fill in
-   [`../skills/qa-test-fast/report-template.html`](../skills/qa-test-fast/report-template.html), and
-   publish it as an Artifact for **Anyone at Virto Commerce** — the user sets that in Share
-   ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
+5. **HTML page and comment.** Build the page and the comment through `/vc-fix:qa-report` ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
 6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
    comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
    (Step 0.3); a new build posts a new comment. No status transition.

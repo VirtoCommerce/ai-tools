@@ -23,7 +23,7 @@ Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── jo
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored
                 + visual(devtools, ui-ux-expert → Skill qa-design) when visual_surface; ≤3 at once
 Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per
-                confirmed bug, with its package ── teardown → verdict → files → HTML page → ask → comment → kb
+                confirmed bug, with its package ── teardown → verdict → files → HTML page + comment (qa-report) → kb
 ```
 
 **Why three waves, not six parallel agents:** the dependencies are real. The mind map is derived
@@ -44,7 +44,7 @@ mind map. `/qa-exploratory ticket` stops without a model. Parallelism lives *ins
 |---|---|---|
 | 1 | `reports/ba/test-models/<TICKET>-<date>.md` · the domain map (only via `/qa-domain-map`) · the mind map (only via `/qa-test-mind-map`) · `testing-checklist.md` | suite CSVs, the tracker |
 | 2 | evidence under `reports/tickets/{SPRINT}/<TICKET>/screenshots/` · `design-report.md` (visual lane) · `AGENT-TEST-` entities (then deletes them) · the SBTM session file · a setting or fixture a Data cell names (`flip+restore` / `mutate` + its seeder part, re-read after) · the Results in `testing-checklist.md` (you, at the join) | any other shared fixture, other lanes' settings |
-| 3 | `summary.json`, `verdict.md`, `triage-report.md` + the investigation packages (via `qa-triage-results`), bug reports **via `qa-bug`** · the Artifact page (shared with Anyone at Virto Commerce) + its `Page:` line · one tracker comment after a yes · kb entries | a status transition, a hand-written bug |
+| 3 | `summary.json`, `verdict.md`, `triage-report.md` + the investigation packages (via `qa-triage-results`), bug reports **via `qa-bug`** · the Artifact page and the one tracker comment, both rendered by `/vc-fix:qa-report` (page shared with Anyone at Virto Commerce; comment after a yes) + the `Page:` line · kb entries | a status transition, a hand-written bug |
 
 ## Rationalization table (each row was produced by a baseline run without this skill)
 

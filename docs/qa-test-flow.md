@@ -294,7 +294,7 @@ sequenceDiagram
   (parent-child; `.claude/knowledge/execution/tracker-ops.md` §5b), replacing a plain link — it *is* this
   ticket's defect. **PRE-EXISTING → linked only, never re-filed.** **OUT-OF-SCOPE incidental → its own
   standalone ticket + a related link (unchanged)**, since it wasn't caused by this ticket's change.
-- **Step 5-report Report, before Step 5-status status change.** The tracker comment (QA Complete summary, incl. the
+- **Step 5-report Report, before Step 5-status status change.** The tracker comment (rendered by /vc-fix:qa-report from summary.json, incl. the
   AC/DoD percentages, the regression-triage counts, and the release-gate recommendation) is posted **before**
   the TESTED/REOPEN transition — two distinct actions, not bundled.
 - **Close-out loop (pointer, not auto-trigger — the default)** — FAIL/REOPEN → `/qa-fix` → human

@@ -274,7 +274,7 @@ Then flip `reports/regression/test-run-status.json` to `status: "completed"` (se
 ```
 npm run report:regression -- --run-id {RUN_ID}
 ```
-This writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files. It is idempotent with the watcher's output.
+This writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files.
 
 ### Step 6.5 — Post-run promotion (`Draft → Automated`)
 
@@ -331,12 +331,11 @@ rides the run's PR. [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audi
 3. On teardown failure: log to report but do not fail the overall run — the regression results are what matter.
 
 ### Step 8 — Deliver Summary
-Output concise verdict to user with pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M
-held`, or `skipped — delegated run`), and **both report paths**:
-- Markdown: `reports/regression/{RUN_ID}/regression-YYYY-MM-DD.md`
-- HTML dashboard: `reports/regression/{RUN_ID}/regression-report.html` (the live dashboard, now final)
-
-Mention seed profile used and whether teardown ran. The HTML report was generated automatically — no manual `npm run report:regression` needed.
+Output the verdict, pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M held`, or `skipped —
+delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`
+(`regression-YYYY-MM-DD.md`, `regression-report.html`). Then `/vc-fix:qa-report {RUN_ID} --verdict <Step 6 Quality
+Gate verdict> --lede "<is the sweep clean, and if not do the failures share a cause>"` (+ `--ticket <KEY> --bugs <keys>` when the run
+belongs to a ticket) — comment + page.
 
 ---
 
