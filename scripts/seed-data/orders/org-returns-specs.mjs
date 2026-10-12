@@ -81,7 +81,17 @@ export const ORGS = Object.freeze([
     purpose: '60-character name for the organization tab label; its only member is a holder with a 32-character unbroken name.' },
   { key: 'HOME', alias: 'ORG_RET_HOME_ORG', name: 'AGENT-TEST-Org-RetMultiHome', email: mail('home-org'), orgRoles: [],
     purpose: 'Organization X of the multi-org contact: the contact is an ordinary member here, WITHOUT the permission.' },
+  // ISOLATED sets (round 3 triage, REG-2026-10-12-1119): each is a single-member organization that NO other
+  // case or persona touches, so a state one case needs cannot be spent by another. Ensured on their own by
+  // `--isolated-only`, which never touches the shared organizations, the main/spare orders or the returns on them.
+  { key: 'EMPTY', alias: 'ORG_RET_EMPTY_ORG', name: 'AGENT-TEST-Org-RetEmpty', email: mail('empty-org'), orgRoles: [], isolated: true,
+    purpose: 'The ZERO-RETURNS organization (RET-ORG-032 empty leg): its only member is a view holder that owns no order, so no return can exist in it.' },
+  { key: 'RENAME', alias: 'ORG_RET_RENAME_ORG', name: 'AGENT-TEST-Org-RetRename', email: mail('rename-org'), orgRoles: [], isolated: true,
+    renamedName: 'AGENT-TEST-Org-RetRename-RENAMED',
+    purpose: 'The organization RET-ORG-028 RENAMES per run (and restores in Cleanup): its only member is ORG_RET_RENAME_BUYER, so a rename disturbs no other case.' },
 ]);
+/** Organizations whose single member no other persona or case shares (PURE). */
+export const ISOLATED_ORG_KEYS = Object.freeze(ORGS.filter((o) => o.isolated).map((o) => o.key));
 const orgByKey = Object.fromEntries(ORGS.map((o) => [o.key, o]));
 
 const m = (org, roles, extra = {}) => ({ org, roles, status: 'Approved', locked: false, ...extra });
@@ -143,6 +153,12 @@ export const PERSONAS = Object.freeze([
   { key: 'LONG_NAME_BUYER', alias: 'ORG_RET_LONG_NAME_BUYER', login: mail('longname-buyer'), fullName: LONG_BUYER_NAME, firstName: LONG_BUYER_NAME, lastName: 'AgentTest',
     globalRoles: [], memberships: [m('LONG_NAME', ['VIEW'])], order: 'LONG_NAME', spares: 1,
     purpose: 'A holder (membership view role) in the 60-character organization whose order customerName is a 32-character unbroken string: its own returns fill the org tab\'s Buyer name column.' },
+  { key: 'EMPTY_HOLDER', alias: 'ORG_RET_EMPTY_HOLDER', login: mail('empty-holder'), firstName: 'AGENT-TEST-OrgRet', lastName: 'EmptyHolder', isolated: true,
+    globalRoles: [], memberships: [m('EMPTY', ['VIEW'])], order: null,
+    purpose: 'The ONLY member of ORG_RET_EMPTY_ORG: holds the view permission through a membership role (ORG_RET_VIEWER_ROLE, assigned, never edited), owns NO order and is never a buyer — the organization tab it opens has nothing to list.' },
+  { key: 'RENAME_BUYER', alias: 'ORG_RET_RENAME_BUYER', login: mail('rename-buyer'), firstName: 'AGENT-TEST-OrgRet', lastName: 'RenameBuyer', isolated: true,
+    globalRoles: [], memberships: [m('RENAME', ['VIEW'])], order: 'RENAME',
+    purpose: 'The ONLY member of ORG_RET_RENAME_ORG and both roles RET-ORG-028 needs: the buyer that raises RMA_BEFORE and RMA_AFTER on its own order AND the holder (membership view role, the LONG_NAME pattern) that reads them in the organization tab.' },
 ]);
 const personaByKey = Object.fromEntries(PERSONAS.map((p) => [p.key, p]));
 
@@ -189,9 +205,9 @@ export const orgOrderKey = (key) => `ORG-${key.replace(/_/g, '-')}`;
  * main order (same organization, same two lines 40/25, delivered on the seed day). The floor is what
  * round 3 needs across parallel lanes: ORG_RET_BUYER carries S26's three-return set per lane, the S27/S30
  * spares, checklist lane 4a (~6) and the ~10 in-case returns of RET-ORG-042..052 (16); every other owner
- * one three-return set (3).
+ * one three-return set (3). RENAME_BUYER: RET-ORG-028's RMA_BEFORE + RMA_AFTER, one line each (2).
  */
-export const RETURNABLE_LINE_FLOOR = Object.freeze({ BUYER: 16, ORGROLE_BUYER: 3, OTHER_BUYER: 3, LONG_NAME_BUYER: 3 });
+export const RETURNABLE_LINE_FLOOR = Object.freeze({ BUYER: 16, ORGROLE_BUYER: 3, OTHER_BUYER: 3, LONG_NAME_BUYER: 3, RENAME_BUYER: 2 });
 export const LINES_PER_ORDER = 2;
 /** Spare order keys of a persona, 1-based: BUYER → BUYER_SPARE_1 … (PURE). */
 export const spareOrderKeys = (p) => Array.from({ length: p?.spares || 0 }, (_, i) => `${p.key}_SPARE_${i + 1}`);
@@ -398,5 +414,39 @@ export function validateOrgReturnsFixtureSet({ roles = ROLES, orgs = ORGS, perso
   for (const p of personas) if (p.spares && !p.order) P(`${p.key}: spares without a main order`);
   const nums = personas.flatMap((p) => orderKeysOf(p).map(orgOrderNumber));
   if (new Set(nums).size !== nums.length) P('two seeded orders share one order number');
+  const orgNames = orgs.flatMap((o) => [o.name, o.renamedName].filter(Boolean));
+  if (new Set(orgNames).size !== orgNames.length) P('two organizations (or a rename target) share one name — find-by-name would resolve the wrong one');
+  // ISOLATED sets: one member, nobody else in it, no inherited grant, the member a view holder. A second
+  // member (or a shared persona) would let another case spend the state this one reads.
+  for (const o of orgs.filter((x) => x.isolated)) {
+    const members = personas.filter((p) => p.memberships.some((x) => x.org === o.key));
+    if (members.length !== 1) { P(`isolated org ${o.key} has ${members.length} member(s), must have exactly 1`); continue; }
+    const [mb] = members;
+    if (!mb.isolated) P(`isolated org ${o.key}: its member ${mb.key} is not marked isolated (a shared persona would bring other cases in)`);
+    if (mb.memberships.length !== 1 || mb.globalRoles.length) P(`isolated org ${o.key}: ${mb.key} must be a single-org member with no global role`);
+    if (o.orgRoles.length) P(`isolated org ${o.key} carries an org-level role — it must hold its grant through the membership only`);
+    if (!expectedCanView(mb, o.key)) P(`isolated org ${o.key}: ${mb.key} cannot view it — the org tab would be Forbidden, not empty/renamed`);
+    if (personas.some((p) => p !== mb && p.order === o.key)) P(`isolated org ${o.key}: another persona raises an order in it`);
+    if (mb.key === OTHER_RETURN.persona) P(`isolated org ${o.key}: its member owns the seeded other-org return`);
+  }
+  for (const p of personas.filter((x) => x.isolated)) if (!p.memberships.every((x) => ok[x.org]?.isolated)) P(`${p.key} is isolated but is a member of a shared organization`);
+  // EMPTY: the zero-returns state — no order can be raised in it, so no return can ever snapshot it.
+  const eo = ok.EMPTY; const eh = pk.EMPTY_HOLDER;
+  if (!eo || !eh) P('EMPTY org / EMPTY_HOLDER missing');
+  else {
+    if (eh.order || eh.spares) P('EMPTY_HOLDER owns an order — a return could be raised in the empty organization');
+    if (personas.some((p) => p.order === 'EMPTY')) P('a persona raises an order in the EMPTY organization');
+    if (Object.keys(RETURNABLE_LINE_FLOOR).includes('EMPTY_HOLDER')) P('EMPTY_HOLDER has a returnable-line floor — it must never be a buyer');
+  }
+  // RENAME: the old name and the new one must differ, and the buyer must have two lines (RMA_BEFORE, RMA_AFTER).
+  const ro = ok.RENAME; const rb = pk.RENAME_BUYER;
+  if (!ro || !rb) P('RENAME org / RENAME_BUYER missing');
+  else {
+    if (!ro.renamedName || ro.renamedName === ro.name) P('RENAME: renamedName must exist and differ from name — "returns keep the old name" would be undecidable');
+    else if (!ro.renamedName.startsWith('AGENT-TEST-')) P('RENAME: renamedName must keep the AGENT-TEST- prefix (teardown finds a left-renamed org by it)');
+    if (!ro.email) P('RENAME: the org needs an email (the case\'s restore PUT re-sends it)');
+    if (rb.order !== 'RENAME') P('RENAME_BUYER must own an order in the RENAME organization');
+    if (declaredLineCapacity(rb) < 2) P('RENAME_BUYER needs at least 2 returnable lines (RMA_BEFORE + RMA_AFTER)');
+  }
   return { ok: problems.length === 0, problems };
 }

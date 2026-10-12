@@ -3062,5 +3062,33 @@
     "lineBSku": "55557702",
     "lineBOrderedQuantity": 25,
     "seededAt": "2026-10-08T15:44:57.498Z"
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "id": "d807b6d4-2c7b-40d7-917f-8bbef43220c5"
+  },
+  "ORG_RET_RENAME_ORG": {
+    "id": "302cc57c-8051-4bd7-a3c3-795109c96909"
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "userId": "a433351c-61e9-421e-835a-4dcf3c0c7497",
+    "contactId": "0cb0599a-53fd-4267-9130-d2aa99ac8c0c",
+    "organizationId": "d807b6d4-2c7b-40d7-917f-8bbef43220c5",
+    "membershipId": "e86b4e49-4136-4707-8c11-8a8b4ac47df0"
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "userId": "13f7e4b4-ec9e-4b00-b4ed-02971007593b",
+    "contactId": "c03813b7-7925-43f1-9a8d-42662d94101e",
+    "organizationId": "302cc57c-8051-4bd7-a3c3-795109c96909",
+    "membershipId": "906a66de-9e60-4e99-9d7c-3e165df2e1a3",
+    "orderId": "fc4e4ad7-b914-41ab-a2a7-a3e122afb25d",
+    "orderNumber": "AGENT-TEST-ORD-RET-ORG-RENAME-BUYER",
+    "orderOrganizationId": "302cc57c-8051-4bd7-a3c3-795109c96909",
+    "lineAItemId": "1da8d9bc-5d8c-4ed4-a9bd-744dd938c6f2",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 40,
+    "lineBItemId": "b0d01f0c-271e-4969-b137-f044a76c00f0",
+    "lineBSku": "55557702",
+    "lineBOrderedQuantity": 25,
+    "seededAt": "2026-10-12T10:40:40.696Z"
   }
 }

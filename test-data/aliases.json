@@ -66,7 +66,8 @@
     "changelog_1_5_61": "VCST-5884 organization returns fixture set (seed:returns:org): 2 dedicated AGENT-TEST roles (view; view+submit), 7 AGENT-TEST organizations, 16 personas isolating the three grant sources (global / organization-level / membership) and the four blocking memberships, one submitted other-organization return. FIXTURE-GAPs (no alias registered): RETURNS_LEGACY_STORELESS, ORG_RET_OTHER_STORE_RETURN — reasons in org-returns-specs.mjs FIXTURE_GAPS.",
     "changelog_1_5_62": "VCST-5884 top-up: ORG_RET_LEAVER — a separate non-holder buyer in ORG_RET_VIEWER_ORG whose membership the S21 cases remove and restore per run.",
     "changelog_1_5_63": "VCST-5884 round 3 returnable capacity: spare orders (spare<N>* fields) on ORG_RET_BUYER (3), ORG_RET_ORGROLE_BUYER, ORG_RET_OTHER_BUYER, ORG_RET_LONG_NAME_BUYER (1 each) — RETURNABLE_LINE_FLOOR in org-returns-specs.mjs, guarded by td:validate:returns-org.",
-    "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16."
+    "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16.",
+    "changelog_1_5_65": "VCST-5884 round 3 isolated sets (REG-2026-10-12-1119 triage): ORG_RET_EMPTY_ORG + ORG_RET_EMPTY_HOLDER (zero-returns organization for RET-ORG-032) and ORG_RET_RENAME_ORG + ORG_RET_RENAME_BUYER (single-member organization RET-ORG-028 renames; fields original_name / renamed_name). Ensured/removed alone by seed:returns:org:isolated[:teardown] (--isolated-only); live guard td:validate:returns-org:live."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -10300,5 +10301,85 @@
       "seededAt": "seededAt"
     },
     "_notes": "VCST-5884 — the DEPARTING buyer (S21): a second NON-holder buyer (org-employee membership, no global role, token carries no return permission) in ORG_RET_VIEWER_ORG, the same organization as ORG_RET_BUYER and the holders, with its own order so it can raise a return. STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-LEAVER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered), order address = this account's AGENT-TEST yopmail address. Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (a rebuild DELETES the returns on the order). PER-RUN MUTATION: the S21 cases REMOVE this membership (buyer leaves the organization) and RESTORE it in Cleanup; a re-seed also restores it (the seeder recreates a missing membership and re-links contact.organizations). Run the S21 cases serially — two lanes removing/restoring it at once collide. Returns it raises are per-run and TERMINAL once submitted/decided/cancelled; after it leaves, those returns keep the snapshot organization. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+  },
+  "ORG_RET_EMPTY_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetEmpty",
+    "email": "agent-test-orgret-empty-org@yopmail.com",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email"
+    },
+    "_notes": "VCST-5884 round 3 (REG-2026-10-12-1119 triage) — The ZERO-RETURNS organization (RET-ORG-032 empty leg): its only member is a view holder that owns no order, so no return can exist in it. For RET-ORG-032's EMPTY leg, which could not run on ORG_RET_LONG_NAME_ORG because other cases raise returns there. STATED LIMITS: exactly ONE member, ORG_RET_EMPTY_HOLDER (membership role agent-test-org-ret-viewer, no global role); NO org-level role; NO order is ever seeded in it and no persona raises one, so no return can snapshot it. EMPTINESS IS A LIVE STATE, NOT A GUARANTEE: any lane that raises a return or order for this organization breaks it until teardown — td:validate:returns-org:live [L1]/[L2] FAILS naming each offending return/order (REST POST /api/return/search {organizationId} with no status flag, so drafts and cancelled rows count). Never cite it as a buyer's organization. Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_EMPTY_HOLDER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-empty-holder@yopmail.com",
+    "login": "agent-test-orgret-empty-holder@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet EmptyHolder",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId"
+    },
+    "_notes": "VCST-5884 round 3 — The ONLY member of ORG_RET_EMPTY_ORG: holds the view permission through a membership role (ORG_RET_VIEWER_ROLE, assigned, never edited), owns NO order and is never a buyer — the organization tab it opens has nothing to list. STATED LIMITS: Memberships — EMPTY: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. The token issued with organization_id = ORG_RET_EMPTY_ORG.id carries xapi:my_organization:return:view (read back by the seeder's sign-in check). NO order, NO spares, NEVER a buyer — a case that raises a return as this account breaks the empty state for every later run. Its organizationReturns is EMPTY only while td:validate:returns-org:live is green. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_RENAME_ORG": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "name": "AGENT-TEST-Org-RetRename",
+    "email": "agent-test-orgret-rename-org@yopmail.com",
+    "original_name": "AGENT-TEST-Org-RetRename",
+    "renamed_name": "AGENT-TEST-Org-RetRename-RENAMED",
+    "fields": {
+      "id": "id",
+      "name": "name",
+      "email": "email",
+      "original_name": "original_name",
+      "renamed_name": "renamed_name"
+    },
+    "_notes": "VCST-5884 round 3 (REG-2026-10-12-1119 triage) — The organization RET-ORG-028 RENAMES per run (and restores in Cleanup): its only member is ORG_RET_RENAME_BUYER, so a rename disturbs no other case. STATED LIMITS: exactly ONE member, ORG_RET_RENAME_BUYER; NO org-level role. PUT /api/organizations is a FULL REPLACE (vcst 2026-10-12): a body carrying only id/memberType/name/emails NULLS status (Approved -> null) and description; the membership survives. So the rename and the Cleanup restore should GET the organization and PUT it back whole with only name changed (restore name = original_name) — a minimal-body Cleanup restores the name but leaves status null. original_name (= name) is what RET-ORG-028 restores in Cleanup and what its returns must keep; renamed_name is the value its SETUP writes — both AGENT-TEST-prefixed and different, both read from the spec. PER-RUN MUTATION: the case renames it and restores it; run RET-ORG-028 serially (two lanes renaming at once collide). A run that died before Cleanup leaves it renamed — td:validate:returns-org:live [L4] FAILS, and the isolated seed restores the name (the seeder finds it by either name, so no duplicate is created and teardown still reaches it). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
+  },
+  "ORG_RET_RENAME_BUYER": {
+    "_inline": true,
+    "seed": "seed:returns:org",
+    "email": "agent-test-orgret-rename-buyer@yopmail.com",
+    "login": "agent-test-orgret-rename-buyer@yopmail.com",
+    "password": "{{DEFAULT_TEST_PASSWORD}}",
+    "name": "AGENT-TEST-OrgRet RenameBuyer",
+    "store_id": "B2B-store",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "password": "password",
+      "name": "name",
+      "store_id": "store_id",
+      "userId": "userId",
+      "contactId": "contactId",
+      "organizationId": "organizationId",
+      "membershipId": "membershipId",
+      "orderId": "orderId",
+      "orderNumber": "orderNumber",
+      "orderOrganizationId": "orderOrganizationId",
+      "lineAItemId": "lineAItemId",
+      "lineASku": "lineASku",
+      "lineAOrderedQuantity": "lineAOrderedQuantity",
+      "lineBItemId": "lineBItemId",
+      "lineBSku": "lineBSku",
+      "lineBOrderedQuantity": "lineBOrderedQuantity",
+      "seededAt": "seededAt"
+    },
+    "_notes": "VCST-5884 round 3 — The ONLY member of ORG_RET_RENAME_ORG and both roles RET-ORG-028 needs: the buyer that raises RMA_BEFORE and RMA_AFTER on its own order AND the holder (membership view role, the LONG_NAME pattern) that reads them in the organization tab. STATED LIMITS: Memberships — RENAME: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-RENAME-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 — the SAME two products as ORG_RET_BUYER (read from its live main order, no discovery). 2 independent returnable lines (floor 2: RMA_BEFORE on lineAItemId, RMA_AFTER on lineBItemId — one line per return, because a storefront return defaults to a line's FULL quantity; an API return of quantity 1 leaves the rest returnable). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (a rebuild DELETES the returns on the order). Returns it raises are per-run and TERMINAL once submitted; the case cancels them in Cleanup (a cancelled return holds no unit). Order address email = this account's AGENT-TEST yopmail address ≠ ORG_RET_RENAME_ORG.email. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org:isolated` (scripts/seed-data/orders/seed-org-returns.mjs --isolated-only — never touches the shared organizations, the main/spare orders or the returns on them; the full `npm run seed:returns:org` also ensures it; spec org-returns-specs.mjs; guards npm run td:validate:returns-org + td:validate:returns-org:live). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:isolated:teardown` removes the isolated sets with zero residue."
   }
 }

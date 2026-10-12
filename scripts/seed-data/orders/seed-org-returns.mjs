@@ -14,6 +14,10 @@
  * Flags: --dry-run · --verbose · --teardown · --only <PERSONA_KEY|ALIAS> · --fresh (rebuild orders) · --verify (read-only probe)
  *        · --spares-only (ensure ONLY the personas' spare orders: reads the main order for its products and never
  *          touches roles, organizations, accounts, memberships, or the main orders and the returns on them)
+ *        · --isolated-only (ensure — or with --teardown remove — ONLY the ISOLATED single-member sets: ORG_RET_EMPTY_*
+ *          and ORG_RET_RENAME_*. Roles are READ and verified, never written; the shared organizations, their
+ *          members, the main/spare orders and every return on them are never read for write. The RENAME order
+ *          takes its two products from ORG_RET_BUYER's LIVE main order, so no catalog discovery runs.)
  * Usage: TEST_ENV=vcst npm run seed:returns:org   ·   TEST_ENV=vcst npm run seed:returns:org:teardown
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -36,6 +40,7 @@ import {
 const FRESH = process.argv.includes('--fresh');
 const VERIFY_ONLY = process.argv.includes('--verify');
 const SPARES_ONLY = process.argv.includes('--spares-only');
+const ISOLATED_ONLY = process.argv.includes('--isolated-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const template = JSON.parse(readFileSync(join(ROOT, 'test-data', ORDER_TEMPLATE_FIXTURE), 'utf8'));
 const roleByKey = Object.fromEntries(ROLES.map((r) => [r.key, r]));
@@ -98,14 +103,21 @@ const roleRef = (k) => (k === 'BASE' ? { roleId: BASE_ROLE.id, roleName: BASE_RO
 
 /* ── organizations ───────────────────────────────────────────────────────────────────────────── */
 
+// A case may rename an organization per run (RET-ORG-028 renames ORG_RET_RENAME_ORG to its renamedName and
+// restores it in Cleanup). A run that died before Cleanup leaves it renamed, so both names identify it —
+// otherwise a re-seed would create a duplicate and teardown would orphan the renamed one.
+const namesOf = (spec) => [spec.name, spec.renamedName].filter(Boolean);
 async function findOrg(spec, knownId) {
   if (knownId) {
     const byId = await api('GET', `/api/organizations/${knownId}`, null, { expectStatus: [200, 204, 404] }).catch(() => null);
-    if (byId?.id && byId.name === spec.name) return byId;
+    if (byId?.id && namesOf(spec).includes(byId.name)) return byId;
   }
-  const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword: spec.name, take: 20 });
-  const hit = (r?.results || []).find((x) => x.name === spec.name);
-  return hit ? api('GET', `/api/organizations/${hit.id}`) : null;
+  for (const name of namesOf(spec)) {
+    const r = await api('POST', '/api/members/search', { memberType: 'Organization', keyword: name, take: 20 });
+    const hit = (r?.results || []).find((x) => x.name === name);
+    if (hit) return api('GET', `/api/organizations/${hit.id}`);
+  }
+  return null;
 }
 
 async function ensureOrg(spec, knownId) {
@@ -124,12 +136,20 @@ async function ensureOrg(spec, knownId) {
   const haveRoleIds = (org.roles || []).map((r) => r.roleId).sort();
   const wantEmails = email ? [email] : [];
   const dirty = JSON.stringify(haveRoleIds) !== JSON.stringify(wantRoles.map((r) => r.roleId).sort())
-    || JSON.stringify(org.emails || []) !== JSON.stringify(wantEmails);
+    || JSON.stringify(org.emails || []) !== JSON.stringify(wantEmails) || org.name !== spec.name || org.status !== 'Approved';
   if (dirty) {
-    await api('PUT', '/api/organizations', { ...org, emails: wantEmails, roles: wantRoles }, { expectStatus: [200, 204] });
-    log(`  ↻ org ${spec.name}: emails [${wantEmails}] org-level roles [${wantRoles.map((r) => r.roleId)}]`);
+    // PUT /api/organizations is a FULL replace: a case body carrying only id/memberType/name/emails nulls
+    // status and description (vcst 2026-10-12), so the restore re-sends both, not just the name.
+    const renamed = org.name !== spec.name ? ` name restored from "${org.name}"` : '';
+    const restored = org.status !== 'Approved' ? `, status restored from ${org.status}` : '';
+    await api('PUT', '/api/organizations', {
+      ...org, name: spec.name, emails: wantEmails, roles: wantRoles, status: 'Approved',
+      description: org.description || `AGENT-TEST VCST-5884 organization returns fixture (${spec.key})`,
+    }, { expectStatus: [200, 204] });
+    log(`  ↻ org ${spec.name}: emails [${wantEmails}] org-level roles [${wantRoles.map((r) => r.roleId)}]${renamed}${restored}`);
     if (!DRY_RUN) {
       const back = await api('GET', `/api/organizations/${org.id}`);
+      if (back.name !== spec.name || back.status !== 'Approved') throw new Error(`org ${spec.name}: name/status did not take (${back.name}, ${back.status})`);
       if (JSON.stringify((back.roles || []).map((r) => r.roleId).sort()) !== JSON.stringify(wantRoles.map((r) => r.roleId).sort())) throw new Error(`org ${spec.name}: org-level roles did not take (${JSON.stringify(back.roles)})`);
       if (JSON.stringify(back.emails || []) !== JSON.stringify(wantEmails)) throw new Error(`org ${spec.name}: emails did not take (${JSON.stringify(back.emails)})`);
       org = back;
@@ -319,6 +339,46 @@ async function ensureSpares(p, owner, org, ctx) {
   return rec;
 }
 
+/** The two products of a persona's LIVE main order (a GET — the order is never diagnosed or written). */
+async function productsFromMainOrder(alias, rec) {
+  if (!rec?.orderId || !rec.lineASku || !rec.lineBSku) throw new Error(`${alias}: no orderId/lineASku/lineBSku in aliases.${TEST_ENV}.json — run the full seed first`);
+  const main = await api('GET', `/api/order/customerOrders/${rec.orderId}`);
+  const rolesBySku = { [rec.lineASku]: LINE_ROLE_X, [rec.lineBSku]: LINE_ROLE_Y };
+  const productsByRole = {};
+  for (const li of main?.items || []) if (rolesBySku[li.sku]) productsByRole[rolesBySku[li.sku]] = { id: li.productId, sku: li.sku, name: li.name, catalogId: li.catalogId };
+  if (!productsByRole[LINE_ROLE_X] || !productsByRole[LINE_ROLE_Y]) throw new Error(`${alias}: main order ${main?.number} does not carry lineA ${rec.lineASku} + lineB ${rec.lineBSku}`);
+  return { productsByRole, rolesBySku };
+}
+
+/**
+ * --isolated-only. Ensures the single-member ISOLATED sets (ORG_RET_EMPTY_*, ORG_RET_RENAME_*) and nothing
+ * else: roles are verified read-only (a drifted role is an error, never a write), the shared organizations
+ * are not looked at, and the RENAME order borrows ORG_RET_BUYER's two products from its LIVE main order —
+ * a fresh discovery is never run, so nothing can tempt a rebuild of a main order and the returns on it.
+ */
+async function seedIsolatedOnly(windowDays, password) {
+  for (const r of ROLES) {
+    const live = await findRoleById(r.id, r.name);
+    const have = (live?.permissions || []).map((x) => x.name).sort();
+    if (live?.id !== r.id || JSON.stringify(have) !== JSON.stringify([...r.permissions].sort())) throw new Error(`role ${r.id} is missing or drifted live ([${have}]) — --isolated-only never writes a role; run the full seed`);
+    verbose(`role ${r.id} verified [${have}]`);
+  }
+  const ov = overlay();
+  const orgs = {};
+  for (const o of ORGS.filter((x) => x.isolated)) orgs[o.key] = await ensureOrg(o, ov[o.alias]?.id);
+  const orgIdByKey = Object.fromEntries(Object.entries(orgs).map(([k, o]) => [k, o.id]));
+  const ctx = { ...(await productsFromMainOrder('ORG_RET_BUYER', ov.ORG_RET_BUYER)), windowDays, now: new Date(), orgIdByKey };
+  const writeback = {};
+  for (const o of ORGS.filter((x) => x.isolated)) writeback[o.alias] = { id: orgs[o.key].id };
+  const personas = PERSONAS.filter((p) => p.isolated);
+  for (const p of personas) writeback[p.alias] = await seedPersona(p, { password, orgs, orgIdByKey, ctx });
+  if (!DRY_RUN) {
+    writeEnvAliasOverride(writeback);
+    await verifyPersonas(password, orgIdByKey, personas);
+  }
+  log(DRY_RUN ? 'DRY RUN complete (no writes).' : `\nIsolated sets ensured — ${Object.keys(writeback).length} alias(es) written to aliases.${TEST_ENV}.json.`);
+}
+
 /**
  * --spares-only. The products come from the persona's LIVE main order, not from a fresh catalog
  * discovery, so a spare carries the same two SKUs and the main order is never re-diagnosed: a drifted
@@ -338,12 +398,7 @@ async function seedSparesOnly(personas, windowDays) {
     if (!user?.id || String(user.userName).toLowerCase() !== p.login.toLowerCase()) throw new Error(`${p.alias}: userId ${rec.userId} is not ${p.login} live`);
     const org = await api('GET', `/api/organizations/${orgId}`);
     if (org?.name !== orgByKey[p.order].name) throw new Error(`${p.alias}: organization ${orgId} is not ${orgByKey[p.order].name}`);
-    const main = await api('GET', `/api/order/customerOrders/${rec.orderId}`);
-    const rolesBySku = { [rec.lineASku]: LINE_ROLE_X, [rec.lineBSku]: LINE_ROLE_Y };
-    const productsByRole = {};
-    for (const li of main?.items || []) if (rolesBySku[li.sku]) productsByRole[rolesBySku[li.sku]] = { id: li.productId, sku: li.sku, name: li.name, catalogId: li.catalogId };
-    if (!productsByRole[LINE_ROLE_X] || !productsByRole[LINE_ROLE_Y]) throw new Error(`${p.alias}: main order ${main?.number} does not carry lineA ${rec.lineASku} + lineB ${rec.lineBSku}`);
-    const ctx = { productsByRole, rolesBySku, windowDays, now };
+    const ctx = { ...(await productsFromMainOrder(p.alias, rec)), windowDays, now };
     writeback[p.alias] = await ensureSpares(p, { customerId: rec.userId, customerName: fullNameOf(p), email: emailOf(p) }, org, ctx);
   }
   writeEnvAliasOverride(writeback);
@@ -373,6 +428,41 @@ async function ensureOtherReturn(order, buyer, password, ctx) {
   return r;
 }
 
+/** One persona: contact, account, memberships, credential, main order + spares. Returns its write-back record. */
+async function seedPersona(p, { password, orgs, orgIdByKey, ctx, ids = {} }) {
+  log(`\n${p.alias} — ${p.login}`);
+  const orgIds = p.memberships.map((x) => orgIdByKey[x.org]);
+  const existing = await findUser(p.login);
+  const contactId = await ensureContact(p, orgIds, existing);
+  const userId = await ensureUser(p, contactId, password);
+  const memberships = await ensureMemberships(p, userId, orgIdByKey);
+  // Credential: verify by signing in; reset only when the declared password does not work.
+  if (!DRY_RUN) {
+    const t = await tokenFor(p.login, password);
+    if (!t.ok && /invalid|password|credential/i.test(String(t.error))) { await resetSecurityPassword(api, p.login, password); log(`  ↻ password reconciled for ${p.login}`); }
+  }
+  const rec = { userId, contactId };
+  const home = p.memberships[p.memberships.length === 1 ? 0 : 1];
+  rec.organizationId = orgIdByKey[home.org]; rec.membershipId = memberships[home.org];
+  if (p.key === 'MULTI') Object.assign(rec, { org_x_id: orgIdByKey.HOME, org_y_id: orgIdByKey.VIEWER, org_x_membership_id: memberships.HOME, org_y_membership_id: memberships.VIEWER });
+  if (p.order) {
+    const owner = { customerId: userId, customerName: fullNameOf(p), email: emailOf(p) };
+    const { order, rebuilt } = await ensureOrder(p.key, owner, orgs[p.order], ctx);
+    if (order) {
+      const byRole = lineMaps(order, ctx.rolesBySku);
+      Object.assign(rec, {
+        orderId: order.id, orderNumber: order.number, orderOrganizationId: order.organizationId,
+        lineAItemId: byRole[LINE_ROLE_X]?.id, lineASku: byRole[LINE_ROLE_X]?.sku, lineAOrderedQuantity: byRole[LINE_ROLE_X]?.quantity,
+        lineBItemId: byRole[LINE_ROLE_Y]?.id, lineBSku: byRole[LINE_ROLE_Y]?.sku, lineBOrderedQuantity: byRole[LINE_ROLE_Y]?.quantity,
+        ...(rebuilt ? { seededAt: ctx.now.toISOString() } : {}),
+      });
+      ids[p.key] = { order, login: p.login };
+    }
+    Object.assign(rec, await ensureSpares(p, owner, orgs[p.order], ctx));
+  }
+  return rec;
+}
+
 /* ── verification: what the token actually carries ───────────────────────────────────────────── */
 
 async function verifyPersonas(password, orgIdByKey, personas) {
@@ -392,24 +482,30 @@ async function verifyPersonas(password, orgIdByKey, personas) {
 
 /* ── teardown ────────────────────────────────────────────────────────────────────────────────── */
 
-async function teardown(personas) {
-  log(`TEARDOWN — ${personas.length} persona(s)${ONLY ? ` (--only ${ONLY})` : ''}, their orders/returns${ONLY ? '' : ', every return snapshotting a seeded organization, the organizations and the two roles'}`);
-  const idsBefore = Object.fromEntries(ORGS.map((o) => [o.alias, overlay()[o.alias]?.id]));
+/**
+ * Scope: by default every persona + (unless --only) every organization, the roles and every return that
+ * snapshots a seeded organization. `--isolated-only` narrows it to the isolated sets — their personas,
+ * orders, returns and organizations — and never touches a role or a shared organization.
+ */
+async function teardown(personas, { orgs = ORGS, roles = ROLES, wide = !ONLY } = {}) {
+  const X = DRY_RUN ? '[DRY] would remove' : '✗';
+  log(`TEARDOWN — ${personas.length} persona(s)${ONLY ? ` (--only ${ONLY})` : ''}, their orders/returns${wide ? `, every return snapshotting ${orgs.length} seeded organization(s), those organizations${roles.length ? ` and ${roles.length} role(s)` : ''}` : ''}`);
+  const idsBefore = Object.fromEntries(orgs.map((o) => [o.alias, overlay()[o.alias]?.id]));
   const orderKeys = personas.flatMap(orderKeysOf); // main + spare orders
-  for (const k of orderKeys) for (const o of await findOrdersByExactNumber(api, orgOrderNumber(k))) log(`  ✗ ${o.number} + ${await deleteOrderTree(o)} return(s)`);
+  for (const k of orderKeys) for (const o of await findOrdersByExactNumber(api, orgOrderNumber(k))) log(`  ${X} order ${o.number} (${o.id}) + ${await deleteOrderTree(o)} return(s) on it`);
   // Order-less returns (the legacy shape, or anything a case left) still snapshot one of OUR
   // organizations — every return whose organizationId is an AGENT-TEST org of this seeder is ours.
   const orgReturns = async () => {
     const out = [];
-    for (const o of ORGS) {
+    for (const o of orgs) {
       const id = overlay()[o.alias]?.id;
       if (id) out.push(...(((await api('POST', '/api/return/search', { organizationId: id, take: 100 }))?.results || []).filter((r) => r.organizationId === id)));
     }
     return out;
   };
-  if (!ONLY) {
+  if (wide) {
     const left = await orgReturns();
-    if (left.length) { await api('DELETE', `/api/return?${idsParam(left.map((r) => r.id))}`, null, { expectStatus: [200, 204] }); log(`  ✗ ${left.length} order-less return(s) in the seeded organizations (${left.map((r) => r.number).join(', ')})`); }
+    if (left.length) { await api('DELETE', `/api/return?${idsParam(left.map((r) => r.id))}`, null, { expectStatus: [200, 204] }); log(`  ${X} ${left.length} order-less return(s) in the seeded organizations (${left.map((r) => r.number).join(', ')})`); }
   }
   for (const p of personas) {
     const u = await findUser(p.login);
@@ -418,17 +514,17 @@ async function teardown(personas) {
       if (mems.length) await api('DELETE', `/api/customer/organization-memberships?${idsParam(mems.map((x) => x.id))}`, null, { expectStatus: [200, 204, 404] });
       await api('DELETE', `/api/platform/security/users?names=${encodeURIComponent(u.userName)}`, null, { expectStatus: [200, 204, 404] });
       if (u.memberId) await api('DELETE', `/api/members?ids=${encodeURIComponent(u.memberId)}`, null, { expectStatus: [200, 204, 404] });
-      log(`  ✗ ${p.login} (account, contact, ${mems.length} membership(s))`);
+      log(`  ${X} ${p.alias}: account ${p.login} (${u.id}), contact ${u.memberId}, ${mems.length} membership(s) [${mems.map((x) => x.id).join(', ')}]`);
     }
   }
-  if (!ONLY) {
-    for (const o of ORGS) {
+  if (wide) {
+    for (const o of orgs) {
       const org = await findOrg(o, overlay()[o.alias]?.id);
-      if (org?.id && org.name.startsWith('AGENT-TEST-')) { await api('DELETE', `/api/members?ids=${org.id}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ org ${o.name}`); }
+      if (org?.id && org.name.startsWith('AGENT-TEST-')) { await api('DELETE', `/api/members?ids=${org.id}`, null, { expectStatus: [200, 204, 404] }); log(`  ${X} org ${o.alias}: ${org.name} (${org.id})`); }
     }
-    for (const r of ROLES) {
+    for (const r of roles) {
       const live = await findRoleById(r.id, r.name);
-      if (live?.id === r.id) { await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(r.id)}`, null, { expectStatus: [200, 204, 404] }); log(`  ✗ role ${r.id}`); }
+      if (live?.id === r.id) { await api('DELETE', `/api/platform/security/roles?ids=${encodeURIComponent(r.id)}`, null, { expectStatus: [200, 204, 404] }); log(`  ${X} role ${r.id}`); }
     }
   }
   if (DRY_RUN) { log('DRY RUN teardown complete (no writes).'); return; }
@@ -437,15 +533,15 @@ async function teardown(personas) {
     let n = 0;
     for (const k of orderKeys) n += (await findOrdersByExactNumber(api, orgOrderNumber(k))).length;
     for (const p of personas) n += (await findUser(p.login)) ? 1 : 0;
-    if (!ONLY) {
+    if (wide) {
       n += (await orgReturns()).length;
       // By id (index-independent) AND by name (catches a duplicate created while the overlay was stale).
-      for (const o of ORGS) {
+      for (const o of orgs) {
         const id = idsBefore[o.alias];
         if (id && (await api('GET', `/api/members/${id}`, null, { expectStatus: [200, 204, 404] }).catch(() => null))?.id) n += 1;
-        n += (await api('POST', '/api/members/search', { memberType: 'Organization', keyword: o.name, take: 5 }))?.results?.filter((x) => x.name === o.name && x.id !== id).length || 0;
+        for (const name of namesOf(o)) n += (await api('POST', '/api/members/search', { memberType: 'Organization', keyword: name, take: 5 }))?.results?.filter((x) => x.name === name && x.id !== id).length || 0;
       }
-      for (const r of ROLES) n += (await findRoleById(r.id, r.name))?.id === r.id ? 1 : 0;
+      for (const r of roles) n += (await findRoleById(r.id, r.name))?.id === r.id ? 1 : 0;
     }
     return n;
   });
@@ -463,6 +559,8 @@ async function main() {
   if (!password) throw new Error(`${PASSWORD_VAR} is unset in the layered env — refusing to create accounts with a fallback password`);
   const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY);
   if (ONLY && !personas.length && ONLY !== OTHER_RETURN.alias) throw new Error(`--only ${ONLY} matches no persona`);
+  if (ISOLATED_ONLY && (ONLY || SPARES_ONLY || FRESH)) throw new Error('--isolated-only cannot be combined with --only / --spares-only / --fresh');
+  if (TEARDOWN && ISOLATED_ONLY) { await teardown(PERSONAS.filter((p) => p.isolated), { orgs: ORGS.filter((o) => o.isolated), roles: [], wide: true }); return; }
   if (TEARDOWN) { await teardown(personas); return; }
 
   const store = await api('GET', `/api/stores/${STORE_ID}`);
@@ -477,6 +575,7 @@ async function main() {
   if (setting('Return.ReturnEnabled') !== true) throw new Error(`returns are disabled on ${STORE_ID}`);
   const windowDays = Number(setting('Return.WindowDays')) || RETURN_WINDOW_DAYS_ASSUMED;
   if (SPARES_ONLY) { await seedSparesOnly(personas, windowDays); return; }
+  if (ISOLATED_ONLY) { await seedIsolatedOnly(windowDays, password); return; }
 
   for (const r of ROLES) await ensureRole(r);
   const ov = overlay();
@@ -495,39 +594,7 @@ async function main() {
   const writeback = {};
   for (const o of ORGS) writeback[o.alias] = { id: orgs[o.key].id };
   const ids = {};
-  for (const p of personas) {
-    log(`\n${p.alias} — ${p.login}`);
-    const orgIds = p.memberships.map((x) => orgIdByKey[x.org]);
-    const existing = await findUser(p.login);
-    const contactId = await ensureContact(p, orgIds, existing);
-    const userId = await ensureUser(p, contactId, password);
-    const memberships = await ensureMemberships(p, userId, orgIdByKey);
-    // Credential: verify by signing in; reset only when the declared password does not work.
-    if (!DRY_RUN) {
-      const t = await tokenFor(p.login, password);
-      if (!t.ok && /invalid|password|credential/i.test(String(t.error))) { await resetSecurityPassword(api, p.login, password); log(`  ↻ password reconciled for ${p.login}`); }
-    }
-    const rec = { userId, contactId };
-    const home = p.memberships[p.memberships.length === 1 ? 0 : 1];
-    rec.organizationId = orgIdByKey[home.org]; rec.membershipId = memberships[home.org];
-    if (p.key === 'MULTI') Object.assign(rec, { org_x_id: orgIdByKey.HOME, org_y_id: orgIdByKey.VIEWER, org_x_membership_id: memberships.HOME, org_y_membership_id: memberships.VIEWER });
-    if (p.order) {
-      const owner = { customerId: userId, customerName: fullNameOf(p), email: emailOf(p) };
-      const { order, rebuilt } = await ensureOrder(p.key, owner, orgs[p.order], ctx);
-      if (order) {
-        const byRole = lineMaps(order, rolesBySku);
-        Object.assign(rec, {
-          orderId: order.id, orderNumber: order.number, orderOrganizationId: order.organizationId,
-          lineAItemId: byRole[LINE_ROLE_X]?.id, lineASku: byRole[LINE_ROLE_X]?.sku, lineAOrderedQuantity: byRole[LINE_ROLE_X]?.quantity,
-          lineBItemId: byRole[LINE_ROLE_Y]?.id, lineBSku: byRole[LINE_ROLE_Y]?.sku, lineBOrderedQuantity: byRole[LINE_ROLE_Y]?.quantity,
-          ...(rebuilt ? { seededAt: now.toISOString() } : {}),
-        });
-        ids[p.key] = { order, login: p.login };
-      }
-      Object.assign(rec, await ensureSpares(p, owner, orgs[p.order], ctx));
-    }
-    writeback[p.alias] = rec;
-  }
+  for (const p of personas) writeback[p.alias] = await seedPersona(p, { password, orgs, orgIdByKey, ctx, ids });
 
   for (const g of FIXTURE_GAPS) log(`
 ⚠ FIXTURE-GAP ${g.alias}: ${g.reason}`);

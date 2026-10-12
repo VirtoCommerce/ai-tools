@@ -2565,7 +2565,7 @@
       "layer": "backend",
       "concern": "api",
       "priority": "P1",
-      "testCount": 36,
+      "testCount": 37,
       "estimatedMinutes": 50,
       "agent": "qa-backend-expert",
       "tags": [
@@ -2580,7 +2580,7 @@
       "envRiskGate": "staging",
       "customerApplicability": "reference",
       "lanes": {
-        "machine": 36,
+        "machine": 37,
         "browser": 0,
         "manual": 0
       }

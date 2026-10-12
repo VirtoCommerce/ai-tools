@@ -472,11 +472,13 @@ GET {{BACK_URL}}/api/return/{{RETURN_ID}}/available-statuses
 [GQL-OP cleanup]
 mutation { cancelReturn(command: { returnId: ""{{RETURN_ID}}"" }) { id status } }
 [GQL-EXEC cleanup]","[ERRORS label=available] HTTP 200
+[DATA label=available] body matches /""Requested""/
+[EVIDENCE] non-vacuity: on a stand with the default dictionary a Requested return answers [Requested] (KB-21F4F161; ReturnStateProvider.ClosedStatuses contains Requested). An empty answer [] would let every negative lookahead below pass vacuously, so this check gates the case first.
 [DATA label=available] body matches /^(?!.*Canceled).*$/
 [DATA label=available] body matches /^(?!(?:.*Cancelled){2}).*$/
 [DATA label=available] body matches /^(?!.*Completed).*$/
 [DATA label=available] body matches /^(?!.*Processing).*$/
-[EVIDENCE] PO decision (VCST-5883): only ""Cancelled"" is offered; the legacy ""Canceled"" spelling is never offered and ""Cancelled"" appears at most once. available-statuses returns a bare string array (confirmed via ret-swagger.json), so a [?key=value]/.length filter cannot evaluate it - the checks above assert on the stringified body via negative-lookahead regex instead. The Completed/Processing absence checks are this case's original contract for a Requested return and are unchanged.",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"the response includes the legacy ""Canceled"" spelling, or ""Cancelled"" more than once (duplicate cancel entries in the dropdown), or Completed/Processing (asserted absent for a Requested return by this case's original contract)",none,"VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01) | Behavior:ret.agent.next-status.no-legacy-canceled | Audited: 2026-10-07 (TCA-2026-10-07); Source: vc-module-return/src/VirtoCommerce.ReturnModule.Web/Controllers/Api/ReturnController.cs:293-329; Docs: vc-module-return docs/return-module-guide.md (module guide @3.1004.0, an in-repo doc, not a VirtoOZ page) lines 320-321, 328-332",Automated
+[EVIDENCE] PO decision (VCST-5883): only ""Cancelled"" is offered; the legacy ""Canceled"" spelling is never offered and ""Cancelled"" appears at most once. available-statuses returns a bare string array (confirmed via ret-swagger.json), so a [?key=value]/.length filter cannot evaluate it - the checks above assert on the stringified body via negative-lookahead regex instead. The Completed/Processing absence checks are this case's original contract for a Requested return and are unchanged.",[REST] evidence is the graphql-runner JSON (request/response per label); [API] no unexpected 4xx/5xx beyond the one under test,"the response includes the legacy ""Canceled"" spelling, or ""Cancelled"" more than once (duplicate cancel entries in the dropdown), or Completed/Processing (asserted absent for a Requested return by this case's original contract), or the answer does not contain Requested (empty or foreign list: the negatives below would pass vacuously)",none,"VCST-5883 · Archetype:RENDER · Technique:EP | Promoted: VCST-5883 (2026-10-01) | Behavior:ret.agent.next-status.no-legacy-canceled | Audited: 2026-10-07 (TCA-2026-10-07); Source: vc-module-return/src/VirtoCommerce.ReturnModule.Web/Controllers/Api/ReturnController.cs:293-329; Docs: vc-module-return docs/return-module-guide.md (module guide @3.1004.0, an in-repo doc, not a VirtoOZ page) lines 320-321, 328-332",Automated
 RET-AUTH-018,"Admin PUT adding a second line for an order line already on the return is refused (""listed more than once"") and nothing persists",Returns > Authorize & Notifications > Admin REST,High,PROPOSED-BL-RET-A,ECL-2.1,"Runner-native. No browser. Fixture @td(RETURNS_AUTH_DUP_LINE.returnId) - a plain Requested return of 5 of a 5-unit single line. SHARED FIXTURE: the PUT below is REFUSED and persists nothing, so it does not consume the fixture; it is placed BEFORE RET-AUTH-022 (which decides this same return) by ID/file order on purpose. Regression guard for the VCST-5883 round-2 fix (Return module PR #27): before it, a second return-line for the SAME order line was accepted and both lines could be authorized (6 of 5 observed on RET260928-00011, PROPOSED-BL-RET-A). Developer decision: the duplicate is rejected at save. OBSERVED 2026-10-01: the refusal is HTTP 400 whose body is a JSON ARRAY of messages (not an object with .message): [""Order line item '<id>' is listed more than once. Ask for the total on a single line.""] - so the message is asserted at body.[0].",return=@td(RETURNS_AUTH_DUP_LINE.returnId); orderLineA=@td(RETURNS_AUTH_DUP_LINE.lineAItemId); lineA=@td(RETURNS_AUTH_DUP_LINE.returnLineAReturnLineItemId); orderedA=@td(RETURNS_AUTH_DUP_LINE.lineAOrderedQuantity),"[AUTH role=ADMIN_DEFAULT]
 [REST-OP get_current]
 GET {{BACK_URL}}/api/return/{{return}}
@@ -1814,3 +1816,63 @@ POST {{BACK_URL}}/api/platform-cache/reset
 [REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
 {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
 [REST POST /api/platform-cache/reset]",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-053,Organization copy ON — a colleague's return submitted and approved in full journals one Registered and one Approved email to the buyer and one of each to the organization's address,Returns — Authorize & Notifications > Organization copy (step 3),High,BL-NOTIF-001,,"Runner-native. No browser. Moved here from the storefront organization journey, which no longer writes the shared setting. BS-PRE applies: (1) NO REAL MAILBOX: every address in this case is an AGENT-TEST yopmail address (the buyer email goes to the ORDER's address email, which the 3a fixtures set to the account address; yopmail inboxes are PUBLIC, nothing but test content). (2) Return.NotifyOrganizationEmail on B2B-store is a SHARED setting: while it is ON, RET-AUTH-009 and RET-AUTH-028..031 of this suite (and any parallel run) fail ""exactly one email"". This case turns it ON, so it runs ALONE, inside the one serial organization-copy window of this suite together with RET-ORG-035..039, after the ""exactly one email"" rows RET-AUTH-009 and RET-AUTH-028..031 and never beside them or beside another lane that submits returns; it restores the original at the end and in Cleanup. READ BEFORE CHANGE: the case GETs the store settings first (settings_before, kept as evidence). The runner path grammar cannot address a dotted settings key, so the original is the DECLARED EFFECTIVE value in Test_Data (orig_notify_org=false, as observed on vcst 2026-10-08) and the restore writes that variable back explicitly: the store settings API IGNORES value:null. If the effective original on another stand differs, change the Test_Data value before running. (3) Evidence is the notification journal, not delivery: SMTP may be absent (status Error is still inspectable). The journal recipient field is read as `to`. Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). The Hangfire delay is observed, not documented: the copy is searched for after a fixed wait. The buyer and the organization belong together and the organization's email differs from the buyer's order address, so the copy is distinguishable. ONE return of ORG_RET_BUYER on spare order 1 line A (the regression lane's share), submitted and approved in full through POST /api/return/{id}/authorize as the administrator: an Approved return keeps its unit held for good (no un-authorize), so the case consumes one unit of a line of 40 per run; re-seed with TEST_ENV=<env> npm run seed:returns:org -- --spares-only when it runs low. Counts are read from the return's OWN journal, never as totals.",orig_notify_org=false; order=@td(ORG_RET_BUYER.spare1OrderId); la=@td(ORG_RET_BUYER.spare1LineAItemId); buyer_email=@td(ORG_RET_BUYER.email); org_email=@td(ORG_RET_VIEWER_ORG.email),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP settings_before]
+GET {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+[REST-EXEC settings_before]
+[REST-OP on]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"":true}
+[REST-EXEC on]
+[REST-OP on_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC on_reset]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP j_create]
+mutation { createReturn(command: { orderId: ""{{order}}"", customerComment: ""AGENT-TEST VCST-5884 053"", items: [{ orderLineItemId: ""{{la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 053"" }] }) { id number status } }
+[GQL-EXEC j_create]
+[GQL-CAPTURE j_create.data.createReturn.id → J_ID]
+[GQL-CAPTURE j_create.data.createReturn.number → J_NO]
+[GQL-OP j_submit]
+mutation { submitReturn(command: { returnId: ""{{J_ID}}"" }) { id number status items { id orderLineItemId quantity } } }
+[GQL-EXEC j_submit]
+[GQL-CAPTURE j_submit.data.submitReturn.items[?orderLineItemId={{la}}].id → J_LA]
+[AUTH role=ADMIN_DEFAULT]
+[REST-OP j_decide]
+POST {{BACK_URL}}/api/return/{{J_ID}}/authorize
+Content-Type: application/json
+Body: {""items"": [{""lineItemId"": ""{{J_LA}}"", ""approvedQuantity"": 1}]}
+[REST-EXEC j_decide]
+[WAIT seconds=25]
+[REST-OP journal]
+POST {{BACK_URL}}/api/notifications/journal
+Content-Type: application/json
+Body: {""objectIds"": [""{{J_ID}}""], ""objectType"": ""Return"", ""take"": 50}
+[REST-EXEC journal]
+[REST-OP off]
+POST {{BACK_URL}}/api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values
+Content-Type: application/json
+Body: {""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST-EXEC off]
+[REST-OP off_reset]
+POST {{BACK_URL}}/api/platform-cache/reset
+[REST-EXEC off_reset]","[ERRORS label=settings_before] HTTP 200 {OBSERVED}
+[ERRORS label=on] HTTP 204 {OBSERVED}
+[ERRORS label=on_reset] HTTP 204 {OBSERVED}
+[ERRORS label=j_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=j_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=j_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=j_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=j_decide] HTTP 200 {OBSERVED}
+[DATA label=j_decide] body.status = Approved {SPEC} (VCST-5883)
+[ERRORS label=journal] HTTP 200 {OBSERVED}
+[COUNT label=journal] body.results[*?notificationType=ReturnRegisteredEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=journal] body.results[*?notificationType=ReturnApprovedEmailNotification].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=journal] body.results[*?to={{buyer_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[COUNT label=journal] body.results[*?to={{org_email}}].length = 2 {HYPOTHESIS} (AC-4 is unratified, ticket comment 110487; real when the PO ratifies the organization copy)
+[ERRORS label=off] HTTP 204 {OBSERVED}
+[ERRORS label=off_reset] HTTP 204 {OBSERVED}","[EVIDENCE] settings_before records the stored value of Return.NotifyOrganizationEmail (a dotted key cannot be addressed by the runner path grammar, so the judgment is by effect: the copy rows); the return is read from its own journal, so a copy that follows the wrong organization or doubles is visible","the organization address receives nothing, or a type twice, for what the buyer was told (fewer or more than two rows of Registered or Approved, or no row to the organization address); the buyer's own rows change in number when the setting is ON; the setting is left ON after the case","[AUTH role=ADMIN_DEFAULT]
+[REST POST /api/platform/settings/v2/tenant/Store/{{STORE_ID}}/values]
+{""Return.NotifyOrganizationEmail"": {{orig_notify_org}}}
+[REST POST /api/platform-cache/reset]","VCST-5884 · Archetype:LIFECYCLE · Technique:FLOW · Purpose:FUNC · Behavior:ret.agent.notify | Split: 2026-10-12 (the NotifyOrganizationEmail ON → journal leg moved out of the storefront organization journey, which no longer writes the shared setting)",Draft
