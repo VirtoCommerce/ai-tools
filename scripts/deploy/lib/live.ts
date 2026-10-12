@@ -4,7 +4,8 @@
 import type { EnvCoords } from './env.ts';
 
 export type ProbeStatus = number | 'network' | 'no-back-url';
-export interface LiveModule { id: string; version: string; projectUrl?: string }
+/** `isInstalled` absent ⇒ treated as installed (older platforms omit it); `loadErrors` ← `validationErrors`. */
+export interface LiveModule { id: string; version: string; projectUrl?: string; isInstalled?: boolean; loadErrors: string[] }
 
 // ── live verify (/api/platform/modules) ─────────────────────────────────────────
 /** Admin token plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
@@ -29,7 +30,12 @@ export async function probeLiveModules(c: EnvCoords, token: string): Promise<{ o
     const modules: LiveModule[] = [];
     for (const m of Array.isArray(mods) ? mods : []) {
       if (!m?.id) continue;
-      modules.push({ id: String(m.id), version: String(m.version ?? ''), ...(m.projectUrl ? { projectUrl: String(m.projectUrl) } : {}) });
+      modules.push({
+        id: String(m.id), version: String(m.version ?? ''),
+        ...(m.projectUrl ? { projectUrl: String(m.projectUrl) } : {}),
+        ...(typeof m.isInstalled === 'boolean' ? { isInstalled: m.isInstalled } : {}),
+        loadErrors: Array.isArray(m.validationErrors) ? m.validationErrors.map(String) : [],
+      });
     }
     return { ok: true, modules };
   } catch { return { ok: false, status: 'network' }; }
