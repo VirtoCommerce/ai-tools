@@ -116,7 +116,7 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
   let deployed: EnvFacts["deployed"];
   const tok = await probeAdminToken(c);
   if (!tok.token) {
-    deployed = U(`token: ${tok.status}`);
+    deployed = U(tok.status === "no-back-url" ? "no-back-url" : `token: ${tok.status}`);
   } else {
     const live = await probeLiveModules(c, tok.token);
     if (!live.ok) deployed = U(`modules: ${live.status}`);
@@ -132,9 +132,12 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
 
   let storefrontVisible: EnvFacts["storefrontVisible"] = null;
   if (opts.storefront) {
+    let domain: string | null = null;
+    try { domain = frontUrl ? new URL(frontUrl).host : null; } catch { domain = null; }
     if (!c.backUrl || !frontUrl) storefrontVisible = U("no-back-or-front-url");
+    else if (!domain) storefrontVisible = U("front-url-unparsable");
     else {
-      const sf = await probeStorefrontModules({ backUrl: c.backUrl, domain: new URL(frontUrl).host, root: REPO_ROOT });
+      const sf = await probeStorefrontModules({ backUrl: c.backUrl, domain, root: REPO_ROOT });
       storefrontVisible = sf.ok
         ? { versionsHidden: sf.versionsHidden, modules: Object.fromEntries(sf.modules.map((m: { moduleId: string; version: string }) => [m.moduleId.toLowerCase(), m.version])) }
         : U(sf.reason);
@@ -146,10 +149,13 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
     ? U(isUnknown(declared) ? "declared-unknown" : "deployed-unknown")
     : computeDrift(declared.modules, deployedMods);
 
-  const ledgerDoc = readLedger();
+  let ledgerDoc: Ledger | null = null;
+  let ledgerError: string | null = null;
+  try { ledgerDoc = readLedger(); } catch (e) { ledgerError = (e as Error).message; }
   const components = resolveComponentRepos(opts.components ?? [], ledgerDoc, deployedMods);
   const repos = components.map((x) => x.repo).filter((r): r is string => !!r);
-  const ledger: EnvFacts["ledger"] = ledgerDoc ? computeLedgerFacts(ledgerDoc, deployedMods, repos, now) : U("ledger-file-absent");
+  const ledger: EnvFacts["ledger"] = ledgerError !== null ? U(`ledger: ${ledgerError}`)
+    : ledgerDoc ? computeLedgerFacts(ledgerDoc, deployedMods, repos, now) : U("ledger-file-absent");
 
   return { env, observedAt: now.toISOString(), backUrl: c.backUrl, frontUrl, config: { missing }, health, declared, deployed, storefrontVisible, drift, ledger, components };
 }
