@@ -96,7 +96,7 @@ step 2's level-3 rows under `mcp`, `verdict` combined per step 4, and `kbHits`, 
 **means** for the consumer (a `breaking:*` or `not-deployed:*` row, for instance) is the consumer's own
 rule, stated in the consumer — not here. One id is defined here because it is easy to misread:
 `unknown-deployed:*` = the ledger released it but no live source reports the deployed version
-(Platform, the storefront theme). It is **not** `not-deployed:*` — confirm the version, never assume either way.
+(the storefront theme; Platform only when the Admin page gave no version). It is **not** `not-deployed:*` — confirm the version, never assume either way.
 
 ## Not this skill
 

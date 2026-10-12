@@ -41,6 +41,23 @@ export async function liveModules(c: EnvCoords, token: string): Promise<Record<s
   for (const m of r.modules) out[m.id.toLowerCase()] = m.version;
   return out;
 }
+/** The running platform version as the Admin SPA's root page embeds it: `ng-init="platformVersion ='3.1078.0'"`. */
+export function parsePlatformVersion(html: string): string | null {
+  return /platformVersion\s*=\s*['"](\d[^'"]*)['"]/.exec(html)?.[1] ?? null;
+}
+/**
+ * The only live, anonymous source of the platform version (kb KB-B858E12A): the modules API carries
+ * modules only and /api/platform/version is 404. Read-only GET of the Admin root.
+ */
+export async function probePlatformVersion(c: EnvCoords): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-version-in-page' }> {
+  if (!c.backUrl) return { ok: false, status: 'no-back-url' };
+  try {
+    const r = await fetch(`${c.backUrl}/`);
+    if (r.status !== 200) return { ok: false, status: r.status };
+    const version = parsePlatformVersion(await r.text());
+    return version ? { ok: true, version } : { ok: false, status: 'no-version-in-page' };
+  } catch { return { ok: false, status: 'network' }; }
+}
 export async function platformHealthy(c: EnvCoords): Promise<boolean> {
   try { return (await fetch(`${c.backUrl}/health`, { redirect: 'manual' })).status === 200; } catch { return false; }
 }

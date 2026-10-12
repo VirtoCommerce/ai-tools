@@ -9,7 +9,7 @@
     "playwright-chrome": { "scope": "project", "toolSearch": "+playwright-chrome browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
     "playwright-edge":   { "scope": "project", "toolSearch": "+playwright-edge browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
     "playwright-firefox":{ "scope": "project", "toolSearch": "+playwright-firefox browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
-    "chrome-devtools":   { "scope": "user",    "toolSearch": "+Chrome_DevTools take_snapshot", "fallback": null, "mcpKeys": ["Chrome DevTools"] },
+    "chrome-devtools":   { "scope": "user",    "toolSearch": "select:mcp__Chrome_DevTools__take_snapshot", "fallback": null, "mcpKeys": ["Chrome DevTools"] },
     "azure":             { "scope": "user",    "toolSearch": "+azure-mcp applicationinsights", "fallback": "APPINSIGHTS_APP_ID_* + APPINSIGHTS_API_KEY_*", "mcpKeys": ["azure-mcp"] }
   },
   "consumers": {

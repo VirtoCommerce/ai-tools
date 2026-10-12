@@ -131,7 +131,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    remedy and `/preflight` asks before running it. Store the block as `summary.json.preflight`.
    **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
    is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
-   `UNKNOWN` stays `UNKNOWN`, never filled from `declared`): `build.deployed.platform` = `"UNKNOWN (no-live-source)"`,
+   `UNKNOWN` stays `UNKNOWN`, never filled from `declared`): `build.deployed.platform` = `facts.deployed.platform` (the live version from the Admin page, or `"UNKNOWN (<reason>)"`),
    `build.deployed.relevant_modules` = `{Id: version}` from `facts.deployed.modules` for the run's components (`UNKNOWN`
    when `deployed` is) · `build.theme` = `facts.declared.theme`, labelled declared · `build.releasedThrough` ← `facts.ledger`
    (the Δ vs `deployed`: `.behind[]` ← `facts.ledger.releasedNotDeployed[]`, `.breaking[]` ← `facts.ledger.breaking[]`;
