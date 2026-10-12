@@ -21,10 +21,9 @@ import { join } from 'node:path';
 
 import { openBase } from './core/base.mjs';
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
-import { buildRow, claimHash, RESOLUTIONS } from './core/index-build.mjs';
-import { reindex } from './core/verbs.mjs';
+import { buildRow, claimHash, isInvestigation, RESOLUTIONS } from './core/index-build.mjs';
+import { reindex, standName } from './core/verbs.mjs';
 import { appendObservation, applyResolution, clusters, disputeState, dossier, exposure, hints, priority } from './core/disputes.mjs';
-import { canonicalStand } from './core/canonical.mjs';
 import { normalizeConditions, repairConditions } from './core/conditions.mjs';
 import { undoMsysRewrite } from './core/anchors.mjs';
 import { queueDir, hasSessionId, sessionId } from './core/queue.mjs';
@@ -93,18 +92,31 @@ function pendingOf(id, by) {
   return out;
 }
 
+const git = (base, ...args) => execFileSync('git', ['-C', base, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+
 /**
- * The entry's body as `main` holds it -- at the branch's merge base with `<ref>`, which is what the
- * judge's edit started from. `null` when the entry is new on the branch (a split child); `undefined`
- * when git cannot say (not a checkout, no such ref).
+ * Bring `<remote>/<branch>` up to date when `ref` names one: both reads below are of `main` as it is
+ * NOW, and a ref last fetched before the judge's run is the very staleness they exist to avoid. A
+ * failed fetch (offline, no such remote) is said, not fatal.
  */
-function mainBody(base, path, ref) {
-  const git = (...args) => execFileSync('git', ['-C', base, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+function refresh(base, ref) {
+  const slash = ref.indexOf('/');
+  if (slash < 1) return;
+  const remote = ref.slice(0, slash);
+  try { if (!git(base, 'remote').split('\n').includes(remote)) return; } catch { return; }
+  try { git(base, 'fetch', '--quiet', remote, ref.slice(slash + 1)); } catch { console.error(`warning: could not fetch ${ref}; reading it as last fetched`); }
+}
+
+/**
+ * One entry as `main` holds it: `{ base }` -- its text at the branch's merge base with `ref`, which is
+ * what the judge's edit started from -- and `{ tip }` -- its text at `ref` now. Each is `null` when the
+ * entry is not there (a split child, new on the branch) and `undefined` when git cannot say.
+ */
+function onMain(base, path, ref) {
+  const show = (rev) => { try { return parseEntry(git(base, 'show', `${rev}:${path}`), path); } catch { return null; } };
   let mb;
-  try { mb = git('merge-base', 'HEAD', ref).trim(); } catch { return undefined; }
-  let text;
-  try { text = git('show', `${mb}:${path}`); } catch { return null; }
-  try { return parseEntry(text, path).body; } catch { return undefined; }
+  try { mb = git(base, 'merge-base', 'HEAD', ref).trim(); } catch { return { base: undefined, tip: undefined }; }
+  return { base: show(mb), tip: show(ref) };
 }
 
 /** Rows of index.json whose counts differ from what the entry's own evidence gives, as lines. */
@@ -176,7 +188,7 @@ async function main() {
     const cond = normalizeConditions(a.flags.conditions);
     if (cond.problem) { console.error(`refused: --conditions ${cond.problem}`); return 1; }
     const r = appendObservation(entry.data, {
-      deployment: canonicalStand(String(a.flags.deployment ?? '')), conditions: cond.value, note: a.flags.note,
+      deployment: standName(String(a.flags.deployment ?? '')), conditions: cond.value, note: a.flags.note,
       session: judgeSession(), who: cachedWho({ dir: queueDir(process.env), env: process.env }), body: entry.body,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
@@ -191,21 +203,28 @@ async function main() {
     const entry = byId.get(a.id);
     if (!entry) throw new Error(`${a.id} is not in ${a.flags.base}`);
     const session = judgeSession();
+    const ref = a.flags.main ?? 'origin/main';
+    refresh(a.flags.base, ref);
+    const main = onMain(a.flags.base, entry.path, ref);
+    if (main.tip === undefined) console.error(`warning: git could not read ${ref}; the party check sees this checkout and the queues only`);
     // claim-amended: what the verdict corrects is the body `main` holds. Unchanged here means the
     // body was never edited (Step 6.1), and the verdict would claim a correction that is not there.
     let amendedFrom = null;
     if (a.flags.verdict === 'claim-amended') {
-      const ref = a.flags.main ?? 'origin/main';
-      const before = mainBody(a.flags.base, entry.path, ref);
-      if (before === undefined) console.error(`warning: git could not show ${entry.path} at ${ref}; the amendment is dated, not hashed`);
-      else if (before !== null) {
-        if (claimHash(before) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
-        amendedFrom = claimHash(before);
+      if (main.base === undefined) console.error(`warning: git could not show ${entry.path} at ${ref}; the amendment is dated, not hashed`);
+      else if (main.base !== null) {
+        if (claimHash(main.base.body) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
+        amendedFrom = claimHash(main.base.body);
       }
     }
+    // The judging session's own evidence the checkout does not hold: still queued, or pushed to
+    // `main` after this branch was cut. Its investigation items are its own and exempt as ever.
+    const by = session ? `session:${session}` : null;
+    const fromMain = by && main.tip ? (main.tip.data.evidence ?? []).filter((e) => e.by === by && !isInvestigation(e)
+      && !(entry.data.evidence ?? []).some((x) => x.at === e.at && x.by === e.by)) : [];
     const r = applyResolution(entry.data, {
       at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session,
-      pending: session ? pendingOf(a.id, `session:${session}`) : [], amendedFrom,
+      pending: by ? [...pendingOf(a.id, by), ...fromMain] : [], amendedFrom,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);

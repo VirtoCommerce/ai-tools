@@ -19,7 +19,7 @@ import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neigh
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, entryPath, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -47,7 +47,9 @@ export function trustOf(evidence = []) {
   // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
   // sessions and operators printed beside the count are the ones the count is made of.
   const amendments = amendmentsOf(evidence);
-  const supporting = evidence.filter((e) => !e.contradicts && attestsCurrentClaim(e, amendments));
+  // Exactly the items the count is made of (`supportOf`), so the sessions, anonymous and operator
+  // numbers printed beside it describe the same set: a duplicate or a judge's third stand is not counted.
+  const supporting = supportOf(evidence);
   const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
@@ -311,7 +313,7 @@ const stand = (deployment) => {
   return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
 };
 /** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
-const standName = (deployment) => stand(deployment).deployment ?? deployment;
+export const standName = (deployment) => stand(deployment).deployment ?? deployment;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -1234,12 +1236,23 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     };
   }
 
+  // WHICH BODY THIS SESSION IS CONFIRMING OR DISPUTING, hashed now -- not when the queue is pushed.
+  // Stamped at push, a confirmation of the old wording that waited in a queue until a judge's
+  // `claim-amended` merged was hashed against the CORRECTED body and counted as its support
+  // (`attestsCurrentClaim`, index-build.mjs). An unreadable body leaves it to push's stamp.
+  let bodyHash = null;
+  try {
+    const read = await opened.reader.readEntry(row.path);
+    if (read?.ok) bodyHash = claimHash(parseEntry(read.text, row.path).body);
+  } catch { /* push stamps it */ }
+
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
     ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
+    ...(bodyHash ? { bodyHash } : {}),
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),

@@ -399,9 +399,9 @@ export function appendEvidence(text, item, where) {
   if ((data.evidence ?? []).some((e) => sameEvidence(e, item))) return { text, data, already: true };
   // A handed-off item (`mergedFrom`) from a session this entry already counts is the same observer
   // twice: flagged, kept for provenance, not counted (as sync-base / merge-entries do).
-  // WHICH BODY IT WAS APPLIED TO (VCST-6179). A judge's `claim-amended` names the body it corrected
-  // (`amendedFrom`); a confirmation that lands on `main` while that PR is in review carries the OLD
-  // body's hash, and so stops counting once the correction merges (`attestsCurrentClaim`).
+  // WHICH BODY IT WAS APPLIED TO (VCST-6179) -- a FALLBACK. The door stamps `bodyHash` when the
+  // session confirms (verbs.mjs `appendEvidence`); only an item queued by an older client, or one whose
+  // body the door could not read, arrives without it and is stamped here, against the body it lands on.
   const stamped = item.bodyHash ? item : { ...item, bodyHash: claimHash(body) };
   const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), stamped]) };
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };

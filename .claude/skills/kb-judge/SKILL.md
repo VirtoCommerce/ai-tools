@@ -133,13 +133,14 @@ second branch opened alongside the first must be brought up to date by hand.
    It writes the verdict onto that entry's copies of the dispute, rebuilds `index.json`, and
    **refuses** a session that confirmed or disputed the entry itself, before or after the dispute — a
    party never judges its own case. Only your own `observe` items after the dispute do not disqualify
-   you, so never `kb_confirm` / `kb_dispute` an entry you are judging — a queued one counts too, even
-   under a held queue. If two different disputes share
-   one `at`, it refuses until `--by <that dispute's by>` names one. A party is a session, not a
-   person: when the dispute carries your own `who` it says so, and the PR must too. Both `observe` and
-   `resolve` run the push's secret gate over what they write and refuse on a hit. `claim-amended`
-   records the hash of the body `main` holds (`--main <ref>`, default `origin/main`) and refuses while
-   the body is still that one — edit the claim first.
+   you, so never `kb_confirm` / `kb_dispute` an entry you are judging — a queued one counts too (even
+   under a held queue), and so does one pushed to `main` after you branched (`resolve` fetches it). If
+   two different disputes share one `at`, it refuses until `--by <that dispute's by>` names one. A
+   party is a session, not a person: when the dispute carries your own `who` it says so, and the PR
+   must too. Both `observe` and `resolve` run the push's secret gate over what they write and refuse on
+   a hit. `resolve` takes only an active entry (a retired one is judged on its successors).
+   `claim-amended` records the hash of the body `main` holds (`--main <ref>`, default `origin/main`)
+   and refuses while the body is still that one — edit the claim first.
 4. After body edits, `npm run kb -- reindex --base <base>`, then `git -C <base> diff` — every change
    must be one a verdict explains.
 

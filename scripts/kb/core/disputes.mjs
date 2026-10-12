@@ -257,9 +257,10 @@ export const RESOLUTION_MAX = 600;
  * Code every process mints its own key, so every run would be "independent" of everyone, and the
  * caller passes null instead. The dossier prints `who` beside `by` so a reviewer sees the person.
  *
- * `pending` is the judging session's OWN evidence on this entry that is still in a queue -- a
- * `kb_confirm` / `kb_dispute` not yet pushed (a held queue keeps it there for the whole run). The
- * checkout cannot show it, and without it a party could close the dispute it had just taken a side in.
+ * `pending` is the judging session's OWN evidence on this entry that this checkout does not hold:
+ * a `kb_confirm` / `kb_dispute` still in a queue (a held queue keeps it there for the whole run), or
+ * one already pushed to `main` after the judge's branch was cut. Without it a party could close the
+ * dispute it had just taken a side in.
  *
  * `amendedFrom` (with `claim-amended`) is the hash of the body the verdict corrects, as `main` holds
  * it; it is written on the resolution so confirmations of that body stop counting even when they
@@ -272,6 +273,8 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
   if (reason.length > RESOLUTION_MAX) return { problem: `--why is over ${RESOLUTION_MAX} characters; the argument belongs in the PR, the conclusion here` };
   if (!String(ref ?? '').trim()) return { problem: '--in is required: the PR (or branch) that carries the decision' };
   if (!session) return { problem: 'no session key: run inside a Claude Code session' };
+  // A retired entry counts for nothing: its disputes live on in its successor(s), and are judged there.
+  if (String(data.status ?? 'active') !== 'active') return { problem: `${data.id} is ${data.status}; resolve the dispute on its successor(s) (supersededBy)` };
   const items = Array.isArray(data.evidence) ? data.evidence : [];
   // Every open item with this `at` is the SAME dispute: a schema-2 split or a merge can carry one
   // dispute into an entry twice (KB-59E4B5FC held two copies), and closing only the first left the
@@ -286,7 +289,7 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
   const by = `session:${session}`;
   const party = items.some((e) => e.by === by && !(isInvestigation(e) && !atOrBefore(e.at, at)));
   if (party) return { problem: `${by} confirmed or disputed ${data.id} itself: a party to a dispute never judges it (only its own \`observe\` items after the dispute are exempt)` };
-  if (pending.length) return { problem: `${by} has ${pending.length} queued confirm/dispute of ${data.id} not yet in the base: a party to a dispute never judges it` };
+  if (pending.length) return { problem: `${by} has ${pending.length} confirm/dispute of ${data.id} this checkout does not hold (queued, or on main since the branch was cut): a party to a dispute never judges it` };
   const evidence = items.map((e) => (!targets.has(e) ? e : {
     ...e,
     resolved: verdict,

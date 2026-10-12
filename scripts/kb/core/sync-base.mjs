@@ -157,6 +157,12 @@ export function syncEvidence({ changed, branch }) {
           found += 1;
           const mine = resolutionOf(x);
           if (same(mine, to)) return x;
+          // A correction of the claim does not travel into a split: each child states its own part,
+          // and an amendment of the parent would stop every child's earlier support from counting.
+          if (h !== p.path && (to.resolved === 'claim-amended' || from.resolved === 'claim-amended')) {
+            problems.push(`${p.id}: main's claim-amended on the dispute at ${item.at} cannot be carried into ${h}, a successor the branch split it into; judge it on the child by hand`);
+            return x;
+          }
           if (same(mine, from)) return withResolution(x, to);
           problems.push(`${p.id}: main changed the dispute at ${item.at} from ${said(from)} to ${said(to)}, the branch's copy in ${h} says ${said(mine)}`);
           return x;
