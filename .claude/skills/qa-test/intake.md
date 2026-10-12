@@ -1,11 +1,11 @@
-# Steps 1a–1b — fetch, classify, route, and the two pre-flight waves
+# Steps 1a–1b — intake: fetch, route, the two I/O waves
 
 Split out of [`../../commands/qa-test.md`](../../commands/qa-test.md), which keeps the ordered list and the
 gate and cites this file for the detail. Read it when you are running `1a`/`1b`, or changing what the
 pipeline establishes before it dispatches anything.
 
-**The env/build pre-flight itself is [`/preflight`](../preflight/SKILL.md)** — this file is the
-`1a`–`1b` orchestration around it: fetch, routing, the opening status hop, the axes and `2-map`.
+**The env/build pre-flight is [`/preflight`](../preflight/SKILL.md), and only that** — this file is the
+intake around it: fetch, routing, the opening status hop, the two I/O waves, the axes and `2-map`.
 
 **Everything downstream depends on this step and nothing here is optional.** `1a` decides which pipeline
 runs at all; `1b` establishes what build it runs against and derives the six axes. A wrong answer here is
@@ -96,16 +96,17 @@ verified, not new cases authored. The run ends at the verify-fix verdict.
 `verify-fix` has nothing to prove RED→GREEN against → fall back to the `feature-test` FAST path and note
 the missing repro basis, rather than forcing an empty verification.
 
-## 1b — Pre-flight, sprint resolution & duplicate check
+## 1b — Pre-flight (`/preflight`), the I/O waves and the six axes
 
-Per `.claude/templates/agent-dispatch.md`.
+**TWO I/O waves** — the round-trip is the unit being saved ([`sequencing.md`](sequencing.md) §Concurrency).
+This table is the one statement of the structure; `commands/qa-test.md` and `sequencing.md` cite it.
 
-**Run this as TWO I/O waves.** Before them, derive **2g** (`domain_map`) — it needs only `1a`'s slug and
-one frontmatter read, and `2-map` in wave A reads in the order it sets. **Wave A, one message:**
-[`/preflight`](../preflight/SKILL.md) `ticket` (env health, `declared`/`deployed`, the ledger Δ, sprint,
-duplicate, MCP) · `2-map` · 2b's local reads. Then derive **2b, 2c, 2d, 2e, 2f** from what came back —
-pure computation. **Wave B, one message:** `2d`'s two refreshers, `2e`'s `tc:scope` scan and `2f`'s
-`td:validate` check — the items gated on a derived token. `2d` costs ~8.6 s; `tc:scope` ~1 s.
+| Wave | Issue in ONE message |
+|---|---|
+| *(before A)* | **2g `domain_map`** — the slug from `1a` + one frontmatter read; no other input, so it derives first, and `2-map` in wave A reads in the order it sets |
+| **A** | **`/preflight ticket …`** (item 1) — env health, `declared`/`deployed`, the `2-release` ledger Δ, sprint, duplicate check and MCP availability in one call · **2-map** · 2b's local reads |
+| *(no I/O)* | derive the other **five** axes (2b–2f) from what wave A returned — pure computation |
+| **B** | 2d's two refreshers **and** 2e's `tc:scope` scan (scope + risk terms only) **and** 2f's `td:validate` resolution check, concurrently — the items gated on a derived token. `2d` costs ~8.6 s; `tc:scope` ~1 s |
 
 **The SCAN is all that happens here.** Disposing its hits is the `2a` phase of Artifact A at Step 3 — one
 agent, `test-management-specialist`, disposes and then authors ([`coverage-triage.md`](coverage-triage.md)
@@ -122,9 +123,12 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 1. **`/preflight ticket --ticket <KEY> --components <…> [--expect <PR module@version>] [--storefront]`**
    — one call for env health, `declared` vs `deployed` (a failed probe is `UNKNOWN`, never `declared`),
    the release-ledger Δ, `{SPRINT}`, the duplicate check and MCP availability, in one output form with
-   a remediation loop ([`../preflight/SKILL.md`](../preflight/SKILL.md)). Its `breaking:*` rows **force
-   FULL**, feed `1d` a third leg, and its `not-deployed:*` / `expect` rows are BLOCKED-on-deploy —
-   never a FAIL, never a filed bug, never `{DOC}`. Store the block as `summary.json.preflight`.
+   a remediation loop ([`../preflight/SKILL.md`](../preflight/SKILL.md)). **What `/preflight` returns is a
+   fact; what it means here is this command's:** a `breaking:*` row in the component under test **forces
+   FULL** and is a third leg for `1d`'s AC↔implementation check; a `not-deployed:*` or `expect` row is
+   BLOCKED-on-deploy — never a FAIL, never a filed bug, never `{DOC}`. **PR testing:** `--expect` is the
+   linked PR's module and version (`module@version`); a NOT READY `expect` row carries the `/qa-deploy-pr`
+   remedy and `/preflight` asks before running it. Store the block as `summary.json.preflight`.
    **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
    is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
    `UNKNOWN` stays `UNKNOWN`, never filled from `declared`): `build.deployed.platform` = `"UNKNOWN (no-live-source)"`,
@@ -178,7 +182,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
 
 ## 2-map — read what already exists on this surface (MANDATORY, both paths)
 
-Item **2-map** of wave A above. `commands/qa-test.md` names it in the wave table and cites this section
+Item **2-map** of wave A above. `commands/qa-test.md` names it in its `1b` summary and cites this section
 for the rest. It is the step that decides whether the run starts from what is already known or
 re-derives it, so its two reads happen **in this order**, and the order is the point: **the DOMAIN
 MAP first, then the per-ticket prior art.**

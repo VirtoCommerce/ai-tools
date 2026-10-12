@@ -74,10 +74,7 @@ This is the harness's own guidance applied per step, not a new mechanism.
 
 | Wave | Contains | Consumes |
 |---|---|---|
-| *(before A)* | derive **2g** `domain_map` — needs only `1a`'s slug and one frontmatter read; `2-map` in Wave A reads in the order it sets | `1a`'s fetch |
-| **A** — one message | **`/preflight ticket`** (env health, `declared`/`deployed`, ledger Δ, sprint, duplicate, MCP) · **2-map** · item 2b's local reads (suite manifest, repo-router) | only `1a`'s fetch + 2g |
-| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface`, **2d** `contract_surface`, **2e** `coverage_surface` and **2f** `data_surface` — pure computation over what Wave A returned | Wave A |
-| **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope`, **scope + risk terms ONLY** ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
+| **`1b`'s waves** (*before A* · **A** · *no I/O* · **B**) | the wave table is stated once, in [`intake.md`](intake.md) §1b — [`contract-refresh.md`](contract-refresh.md) §2 and [`coverage-triage.md`](coverage-triage.md) §4 own what wave B's refreshers and `tc:scope` do | `1a`'s fetch + 2g; wave B consumes `2b`'s token |
 
 **Wave B's scan takes no `--cases`/`--also-ids`** — neither exists yet, and passing them would mark every
 future Draft row `FILTERED_OUT`, the failure the `2a` phase exists to prevent (§4). Wave B **scans only** —

@@ -90,8 +90,8 @@ Then ask the one question: **fix what you can · find the cause first · proceed
 ## Step 6 — return one block to the consumer
 
 `{ verdict, facts, checks, mcp (with level-3 rows), kbHits, docs, remediations }`. What a fact
-**means** for the consumer is the consumer's rule, not this skill's — e.g. a `breaking:*` row makes
-`/qa-test` run FULL; a `not-deployed:*` row is BLOCKED-on-deploy, never a FAIL and never a filed bug.
+**means** for the consumer (a `breaking:*` or `not-deployed:*` row, for instance) is the consumer's own
+rule, stated in the consumer — not here.
 
 ## Not this skill
 

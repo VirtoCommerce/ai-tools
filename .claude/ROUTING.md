@@ -99,7 +99,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/qa-domain-map` (command) — Build or refresh `domain/<slug>.md`: the persistent, feature-scoped answer to "what is this and where are its surfaces"; freshness `npm run domain:check`
 - `/qa-test-mind-map` — The behaviour graph of a domain (`domain/<name>.mind-map.json`): behaviours, branches, states, data needs, evidence, stable ids. Cases link to it with `Behavior:` stamps; `npm run models:check -- --json` derives coverage and the suspect-case list
 - `/qa-review-tests` — 11-dimension quality review; `--triangulate` (Dim 11) checks whether a provenance tag is *true*, not merely present
-- `/qa-test` (skill) — the methodology behind the `/qa-test` command, one supporting file per step (`preflight.md`, `axes.md`, `coverage-triage.md`, `authoring.md`, `modes.md`, `close-out.md`, …); `/qa-test-fast` (skill) is the same for `/qa-test-fast`
+- `/qa-test` (skill) — the methodology behind the `/qa-test` command, one supporting file per step (`intake.md`, `axes.md`, `coverage-triage.md`, `authoring.md`, `modes.md`, `close-out.md`, …); `/qa-test-fast` (skill) is the same for `/qa-test-fast`
 - `/qa-test-model` — a ticket's Test Model (fault model): the method, the gate and the prior-model rules; `/qa-test` FULL Step 1e invokes it
 
 ### Test Data (Skills)
