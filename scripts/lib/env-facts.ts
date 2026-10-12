@@ -4,7 +4,7 @@
 import { basename } from "node:path";
 import { CORE_REQUIRED_VARS, promoteEnvSuffix } from "./env-core.js";
 import { resolveTestEnv } from "./resolve-test-env.js";
-import { loadEnvFiles, resolveEnvCoords, REPO_ROOT } from "../deploy/lib/env.ts";
+import { loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
 import { fetchFile, setToken } from "../deploy/lib/github.ts";
 import { platformHealthy, probeAdminToken, probeLiveModules } from "../deploy/lib/live.ts";
 import { listPinnedModules, THEME_URL_RE } from "../deploy/lib/manifest.ts";
@@ -99,13 +99,30 @@ export function resolveComponentRepos(inputs: string[], ledger: Ledger | null, d
   });
 }
 
+/**
+ * Coordinates for the live probe. Deploy coordinates (repo, branch, paths) come from
+ * resolveEnvCoords; the connection identity comes from the LAYERED process.env this module just
+ * loaded for `env` — config.js precedence, so a .env.local ADMIN/BACK_URL override is paired with
+ * the .env.local password instead of the committed .env.<env> values. resolveEnvCoords itself stays
+ * file-first because vc-deploy resolves envs other than the loaded one.
+ */
+export function probeCoords(env: string): EnvCoords {
+  const c = resolveEnvCoords(env);
+  return {
+    ...c,
+    backUrl: (process.env.BACK_URL || c.backUrl).replace(/\/$/, ""),
+    admin: process.env.ADMIN || c.admin,
+    password: process.env.ADMIN_PASSWORD || c.password,
+  };
+}
+
 export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts> {
   const env = opts.env ?? resolveTestEnv("vcst");
   const now = opts.now ?? new Date();
   loadEnvFiles(env);
   promoteEnvSuffix(env);
   setToken(process.env.GIT_TOKEN || process.env.GITHUB_TOKEN || process.env.GITHUB_PERSONAL_ACCESS_TOKEN);
-  const c = resolveEnvCoords(env);
+  const c = probeCoords(env);
   const frontUrl = (process.env.FRONT_URL || "").replace(/\/$/, "");
   const missing = CORE_REQUIRED_VARS.filter((v) => !process.env[v]);
   if (!c.backUrl && !missing.includes("BACK_URL")) missing.push("BACK_URL");
