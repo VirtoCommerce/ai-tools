@@ -84,6 +84,7 @@ Offer, in one line per row, what you can do and what only the user can — the `
 Never type, substitute or switch a password or token; on a failed credential, hand over the text.
 Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.** "Fix what you can" covers `me` rows; when there are `me, with OK` rows, that option names them (e.g. "fix what you can, including `ledger` — runs `releases:refresh` and commits"), and choosing it is the explicit yes for exactly those rows. Never a second question.
 
+- No answer, or no option chosen, is **stop**: nothing is fixed or diagnosed, and step 6 returns `NOT READY` with `remediations: []`.
 - "Find the cause" runs the row's `diagnose[]` recipe (read-only) and reports the cause.
 - After any fix, **re-run the whole step 1**, not the one check — a fix can move another fact.
 - At most **two** rounds; then hand over with what was tried.
