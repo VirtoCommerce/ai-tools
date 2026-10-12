@@ -6,7 +6,7 @@ import { CORE_REQUIRED_VARS, promoteEnvSuffix } from "./env-core.js";
 import { resolveTestEnv } from "./resolve-test-env.js";
 import { loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
 import { fetchFile, setToken } from "../deploy/lib/github.ts";
-import { platformHealthy, probeAdminToken, probeLiveModules } from "../deploy/lib/live.ts";
+import { platformHealthy, probeAdminToken, probeLiveModules, probePlatformVersion } from "../deploy/lib/live.ts";
 import { listPinnedModules, THEME_URL_RE } from "../deploy/lib/manifest.ts";
 import { probeStorefrontModules } from "./storefront-caps.mjs";
 import { readLedger, type Ledger, type LedgerRow } from "./release-ledger-read.ts";
@@ -21,7 +21,7 @@ export interface DeployedModule { version: string; repo: string | null; repoGues
 export interface DriftRow { id: string; declared: string | null; deployed: string | null }
 export interface ReleasedNotDeployed { component: string; repo: string; released: string; deployed: string | null; feature: string }
 /** `releasedNotDeployed` is UNKNOWN when `deployed` is — "released, not deployed" cannot be told from "not probed". */
-/** A released component whose deployed version no live source reports (vc-platform, vc-frontend): unknown, never "not deployed". */
+/** A released component whose deployed version no live source reports (vc-frontend; vc-platform when the Admin page gave no version): unknown, never "not deployed". */
 export interface NoLiveSource { component: string; repo: string; released: string }
 export interface LedgerFacts { generated: string | null; stale: boolean | null; releasedNotDeployed: ReleasedNotDeployed[] | Unknown; noLiveSource: NoLiveSource[]; breaking: LedgerRow[] }
 export interface EnvFacts {
@@ -29,7 +29,7 @@ export interface EnvFacts {
   config: { missing: string[] };
   health: "UP" | "DOWN" | Unknown;
   declared: { platform: string | null; theme: string | null; modules: Record<string, string> } | Unknown;
-  deployed: { platform: Unknown; modules: Record<string, DeployedModule> } | Unknown;
+  deployed: { platform: string | Unknown; modules: Record<string, DeployedModule> } | Unknown;
   storefrontVisible: { versionsHidden: boolean; modules: Record<string, string> } | Unknown | null;
   drift: DriftRow[] | Unknown;
   ledger: LedgerFacts | Unknown;
@@ -39,6 +39,12 @@ export interface EnvFactsOptions { env?: string; components?: string[]; storefro
 
 /** The base version a PR / prerelease build is built from: 3.1006.0-pr-21-8964 → 3.1006.0. */
 export const baseOf = (v: string) => v.split("-")[0];
+
+/** Platform drift on BASE versions: a PR image tag (3.1057.0-pr-3095-…) and its live string match. */
+export function platformDrift(declared: string | null, deployed: string | null): DriftRow | null {
+  if (!declared || !deployed || baseOf(declared) === baseOf(deployed)) return null;
+  return { id: "platform", declared, deployed };
+}
 
 export function computeDrift(declared: Record<string, string>, deployed: Record<string, DeployedModule>): DriftRow[] {
   const ids = [...new Set([...Object.keys(declared), ...Object.keys(deployed)])].sort();
@@ -51,14 +57,17 @@ export function computeDrift(declared: Record<string, string>, deployed: Record<
   return rows;
 }
 
-export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, DeployedModule> | null, repos: string[], now: Date): LedgerFacts | Unknown {
+export function computeLedgerFacts(ledger: Ledger, deployed: Record<string, DeployedModule> | null, repos: string[], now: Date, platformVersion: string | null = null): LedgerFacts | Unknown {
   // Neither §1 nor §2 parsed ⇒ the headings drifted from the reader, not "nothing shipped".
   if (ledger.latest.length === 0 && ledger.rows.length === 0) return U("ledger-unparsed");
   const wanted = new Set(repos);
   const deployedByRepo = new Map<string, string>();
   for (const m of Object.values(deployed ?? {})) if (m.repo) deployedByRepo.set(m.repo, m.version);
-  // /api/platform/modules reports modules only: vc-platform and vc-frontend have no live version, so their
-  // releases are UNKNOWN against the stand — never "not deployed" (spec §4: UNKNOWN is never upgraded).
+  // The platform's live version comes from the Admin page, not the modules API (probePlatformVersion).
+  if (platformVersion) deployedByRepo.set("vc-platform", platformVersion);
+  // /api/platform/modules reports modules only: vc-frontend (and vc-platform when the Admin page gave no
+  // version) have no live version, so their releases are UNKNOWN against the stand — never "not deployed"
+  // (spec §4: UNKNOWN is never upgraded).
   const hasLiveSource = (repo: string) => /^vc-module-/.test(repo) || deployedByRepo.has(repo);
   const noLive = new Map<string, NoLiveSource>();
   for (const row of ledger.rows) {
@@ -146,7 +155,10 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
     declared = U(`vc-deploy-dev: ${(e as Error).message}`);
   }
 
-  // deployed — the only ground truth; platform has no live source
+  // deployed — the only ground truth. Modules from /api/platform/modules (token); the platform from the
+  // anonymous Admin page (kb KB-B858E12A), so its version is known even when it is not in the modules API.
+  const pv = await probePlatformVersion(c);
+  const livePlatform: string | Unknown = pv.ok ? pv.version : U(`admin-page: ${pv.status}`);
   let deployed: EnvFacts["deployed"];
   const tok = await probeAdminToken(c);
   if (!tok.token) {
@@ -160,7 +172,7 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
         const fromUrl = repoFromProjectUrl(m.projectUrl);
         modules[m.id.toLowerCase()] = { version: m.version, repo: fromUrl ?? moduleIdToRepoGuess(m.id), repoGuessed: !fromUrl };
       }
-      deployed = { platform: U("no-live-source"), modules };
+      deployed = { platform: livePlatform, modules };
     }
   }
 
@@ -179,9 +191,13 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
   }
 
   const deployedMods = isUnknown(deployed) ? null : deployed.modules;
-  const drift: EnvFacts["drift"] = isUnknown(declared) || !deployedMods
-    ? U(isUnknown(declared) ? "declared-unknown" : "deployed-unknown")
-    : computeDrift(declared.modules, deployedMods);
+  const platformVersion = isUnknown(livePlatform) ? null : livePlatform;
+  let drift: EnvFacts["drift"];
+  if (isUnknown(declared) || !deployedMods) drift = U(isUnknown(declared) ? "declared-unknown" : "deployed-unknown");
+  else {
+    const pd = platformDrift(declared.platform, platformVersion);
+    drift = [...(pd ? [pd] : []), ...computeDrift(declared.modules, deployedMods)];
+  }
 
   let ledgerDoc: Ledger | null = null;
   let ledgerError: string | null = null;
@@ -189,7 +205,7 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
   const components = resolveComponentRepos(opts.components ?? [], ledgerDoc, deployedMods);
   const repos = components.map((x) => x.repo).filter((r): r is string => !!r);
   const ledger: EnvFacts["ledger"] = ledgerError !== null ? U(`ledger: ${ledgerError}`)
-    : ledgerDoc ? computeLedgerFacts(ledgerDoc, deployedMods, repos, now) : U("ledger-file-absent");
+    : ledgerDoc ? computeLedgerFacts(ledgerDoc, deployedMods, repos, now, platformVersion) : U("ledger-file-absent");
 
   return { env, observedAt: now.toISOString(), backUrl: c.backUrl, frontUrl, config: { missing }, health, declared, deployed, storefrontVisible, drift, ledger, components };
 }
