@@ -13,7 +13,7 @@ export const CHANGE_FOR: readonly ChangeFor[] = ["ticket", "ticket-fast", "explo
 export type Status = "OK" | "WARN" | "BLOCK" | "UNKNOWN";
 export type Who = "me" | "me, with OK" | "you";
 export interface Check { id: string; status: Status; found: string; who: Who | null; do: string | null; diagnose: string[] }
-export interface Duplicate { path: string; ageMinutes: number; verdict: string | null; priorBuild: string | null }
+export interface Duplicate { path: string; ageMinutes: number; verdict: string | null; priorBuild: string | null; priorPlatform: string | null }
 export interface PolicyInput {
   for: ChangeFor; ticket?: string; domain?: string; expect?: { module: string; version: string };
   facts: EnvFacts; mcp: { servers: McpStatic[]; liveLanes: number; lanes: { min: number; want: number }; jsonError?: string | null };
@@ -36,9 +36,9 @@ export function resolveSprint(root: string): string | null {
 }
 
 /**
- * A comparable id for the deployed build: `modules:<12 hex of sha1 over the sorted "id@version" lines>`.
- * The platform has no live version source, so the module set IS the build; two runs are on the same
- * build iff their fingerprints are equal strings.
+ * A comparable id for the deployed MODULE set: `modules:<12 hex of sha1 over the sorted "id@version" lines>`.
+ * The platform version is compared beside it (`priorPlatformOf`), not hashed in, so a summary written
+ * before the platform was probed still compares by modules alone.
  */
 export function buildFingerprint(modules: Record<string, { version: string } | string>): string {
   const lines = Object.entries(modules).map(([id, m]) => `${id.toLowerCase()}@${typeof m === "string" ? m : m?.version}`).sort();
@@ -51,6 +51,12 @@ function priorBuildOf(json: any): string | null {
   if (mods && typeof mods === "object") return buildFingerprint(mods);
   const legacy = json?.build?.deployed?.platform ?? json?.build?.platform;
   return typeof legacy === "string" && !/UNKNOWN/i.test(legacy) ? legacy : null;
+}
+
+/** The prior run's live platform version, when its stored pre-flight had one; else null (unknown). */
+function priorPlatformOf(json: any): string | null {
+  const p = json?.preflight?.facts?.deployed?.platform;
+  return typeof p === "string" ? p : null;
 }
 
 /** A prerelease `--expect` (a PR build) must be exactly that build; a release is met by any build of that base or later. */
@@ -97,14 +103,14 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
     try {
       const ageMinutes = Math.round((opts.now.getTime() - statSync(p).mtimeMs) / 60_000);
       if (ageMinutes > windowMin) continue;
-      let verdict: string | null = null, priorBuild: string | null = null;
+      let verdict: string | null = null, priorBuild: string | null = null, priorPlatform: string | null = null;
       if (p.endsWith(".json")) {
-        try { const j = JSON.parse(readFileSync(p, "utf8")); verdict = typeof j.verdict === "string" ? j.verdict : null; priorBuild = priorBuildOf(j); } catch { /* unreadable ⇒ nulls */ }
+        try { const j = JSON.parse(readFileSync(p, "utf8")); verdict = typeof j.verdict === "string" ? j.verdict : null; priorBuild = priorBuildOf(j); priorPlatform = priorPlatformOf(j); } catch { /* unreadable ⇒ nulls */ }
         // No verdict ⇒ a run still in progress (e.g. the current one, which may already have written
         // its 1a status hop) — not a completed prior run.
         if (verdict === null) continue;
       }
-      if (!best || ageMinutes < best.ageMinutes) best = { path: p.replace(root, "").replace(/^[\\/]/, "").replace(/\\/g, "/"), ageMinutes, verdict, priorBuild };
+      if (!best || ageMinutes < best.ageMinutes) best = { path: p.replace(root, "").replace(/^[\\/]/, "").replace(/\\/g, "/"), ageMinutes, verdict, priorBuild, priorPlatform };
     } catch { /* file deleted or unreadable ⇒ skip */ }
   }
   return best;
@@ -217,7 +223,12 @@ export function buildChecks(i: PolicyInput): Check[] {
   if (i.duplicate) {
     const prior = i.duplicate.priorBuild;
     const current = isUnknown(f.deployed) ? null : buildFingerprint(f.deployed.modules);
-    const build = !prior ? "" : prior.startsWith("modules:") && current ? (prior === current ? ", same build" : ", different build") : `, build ${prior}`;
+    // The platform counts only when both runs read it live; an older summary compares by modules alone.
+    const nowPlatform = !isUnknown(f.deployed) && typeof f.deployed.platform === "string" ? f.deployed.platform : null;
+    const platformMoved = !!i.duplicate.priorPlatform && !!nowPlatform && i.duplicate.priorPlatform !== nowPlatform;
+    const build = !prior ? "" : prior.startsWith("modules:") && current
+      ? (prior === current && !platformMoved ? ", same build" : `, different build${platformMoved ? ` (platform ${i.duplicate.priorPlatform}→${nowPlatform})` : ""}`)
+      : `, build ${prior}`;
     checks.push({ id: "duplicate", status: "WARN",
       found: `ran ${i.duplicate.ageMinutes} min ago${build}${i.duplicate.verdict ? `, verdict ${i.duplicate.verdict}` : ""}`,
       who: "you", do: `re-run overwrites ${i.duplicate.path} — commit it first if uncommitted`, diagnose: [] });

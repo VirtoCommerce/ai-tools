@@ -14,9 +14,16 @@ function formatPlatformTheme(declared: any, label: string): string {
   return `${label} ${declared[label.toLowerCase()]} (declared)`;
 }
 
+/** The live platform version when the Admin page gave one; else the declared one, labelled as such. */
+function formatPlatform(f: EnvFacts): string {
+  const live = isUnknown(f.deployed) ? null : f.deployed.platform;
+  if (typeof live === "string") return `Platform ${live} (deployed)`;
+  return formatPlatformTheme(isUnknown(f.declared) ? null : f.declared, "Platform");
+}
+
 function buildLine(f: EnvFacts): string {
   const d = isUnknown(f.declared) ? null : f.declared;
-  const platform = formatPlatformTheme(d, "Platform");
+  const platform = formatPlatform(f);
   const theme = formatPlatformTheme(d, "Theme");
   const drift = isUnknown(f.drift) ? "drift: UNKNOWN" : `drift: ${f.drift.length ? plural(f.drift.length, "module") : "none"}`;
   const ledger = isUnknown(f.ledger) ? "ledger: UNKNOWN" : f.ledger.stale === null ? "ledger: UNKNOWN" : `ledger: ${f.ledger.stale ? "stale" : "fresh"}`;
@@ -32,7 +39,7 @@ export function renderHuman(meta: { env: string; for: string; ticket?: string; a
   const d = isUnknown(facts.declared) ? null : facts.declared;
 
   if (block + warn + unknown === 0) {
-    const platform = formatPlatformTheme(d, "Platform");
+    const platform = formatPlatform(facts);
     const theme = formatPlatformTheme(d, "Theme");
     return `Preflight · ${meta.env} · ${scope} · ${platform} · ${theme} · READY (${plural(okN, "check")} OK)\n`;
   }

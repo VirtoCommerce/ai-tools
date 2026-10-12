@@ -147,9 +147,10 @@ Commands that test the QA environment SHOULD verify what build is deployed befor
 `/preflight` does it: `declared` from `vc-deploy-dev` (branch per `TEST_ENV`), `deployed` from
 `GET {{BACK_URL}}/api/platform/modules`, the storefront-visible modules from the anonymous
 `InitializeApplication` probe, and the ledger Δ — code in `scripts/lib/env-facts.ts`. **A failed
-probe is `UNKNOWN`, never `declared`.** The Platform version has **no live source** (no Platform
-entry in the modules API; `/api/platform/version` is 404), so `deployed.platform` is always
-`UNKNOWN` and a report labels `declared` as declared. The sections below — which source answers
+probe is `UNKNOWN`, never `declared`.** The Platform version is not in the modules API and
+`/api/platform/version` is 404; its live source is the anonymous Admin root page
+(`ng-init="platformVersion ='…'"`, kb `KB-B858E12A`), which `/preflight` reads as `deployed.platform`.
+When that page gives no version, `deployed.platform` is `UNKNOWN` and a report labels `declared` as declared. The sections below — which source answers
 which question, and what a disagreement means — are unchanged and still normative.
 
 ### Precedence — four sources, routed by QUESTION not by rank
