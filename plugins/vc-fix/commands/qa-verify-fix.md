@@ -315,26 +315,12 @@ replaces the old "Ask the user before transitioning", **and** requires `qaRoleSt
 before treating any of these QA-side transitions as `auto`/`confirm-once`. Skip entirely if the tracker
 is not configured, and note it in the report.
 
-**Tracker comment for VERIFIED (`testing` → `tested`):**
-```
-QA PASSED — Fix verified.
-STR: Passed 3/3 runs
-Regression: [X] adjacent checks — all passed
-Console: No new errors
-Side effects: None
-Evidence: reports/tickets/{SPRINT}/<ticket-key>/
-Business rules verified: [BL-* list or "N/A"]
-```
-
-**Tracker comment for REOPEN (`testing` → `reopen`):**
-```
-QA FAILED — Reopening.
-Issue: [what still fails or what new issue was found]
-STR result: [X/3 passed]
-Evidence: reports/tickets/{SPRINT}/<ticket-key>/
-Build: [version/commit tested]
-Environment: [URL]
-```
+**Tracker comment — every verdict:** write `verification-summary.json` first (Step 7's shape, incl.
+`before_after[]`), then hand it to `/vc-fix:qa-report reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json --kind fix --confirmed --lede "<what was broken, what the fix changed, whether anything near it moved>"`.
+It renders the before/after comment within its template budget, embeds the screenshots inline for a UI bug,
+and posts or amends the ONE comment (`tracker-ops.md` §0). Template: `skills/qa-report/templates/comment-fix.md`.
+Never type the comment by hand: if the Skill tool refuses `/vc-fix:qa-report`, the install predates the skill —
+tell the user to run `/plugin update` and stop the report step.
 
 ---
 
@@ -342,22 +328,17 @@ Environment: [URL]
 
 For a **VERIFIED / VERIFIED-WITH-NOTES / NEW-REGRESSION** verdict, assemble ONE self-contained HTML evidence page from the Phase A/B captures. **Load the `artifact-design` skill first**; utilitarian/technical treatment (theme-aware light+dark, semantic PASS/stale coloring, no flashy hero).
 
-**Always include:** verdict badge · build/env strip (platform, module/theme, PR) · the bug + root cause (2–3 lines) · a **before → after table** (Phase A RED vs Phase B GREEN) · the run tally · the checklist · footer notes (any temporary deploy-repin to revert, evidence file paths).
+The page is `qa-report`'s (`skills/qa-report/templates/page.html`, filled from the same
+`verification-summary.json`), so it carries the before → after table, the build strip and the evidence. **Where it goes**
+— the publish gate (native ⇒ Artifact after asking; client ⇒ local `evidence.html`, never for client-owned code) — is
+`skills/qa-report/reference.md` §Publish gate. **Always** redact secrets before Step 7 writes the pair.
 
-**Layer-scoped snippet — the core of the page:**
+**What to capture in Phase A/B (feeds `before_after[]`):**
 
-| Bug layer | Snippet to embed |
+| Bug layer | Snippet to capture |
 |---|---|
 | **xAPI / REST-API / module** | The real **request & response**: the trigger call, the GraphQL/REST **request**, the **fixed-build response** (fresh values highlighted), and the **same request's pre-fix response** for contrast (stale values). Use the payloads the QA agent captured in Phase A/B — **never hand-write them**. Optionally append the fix diff (PR files via the code host) as a secondary snippet. |
-| **Storefront / Admin-SPA / visual** | Before/after screenshots (embed as data URIs) + the corrected computed style / DOM value. |
-
-**Where it goes — profile-aware, containment-first (this is what matters on a client deployment):**
-
-- **Default = a LOCAL file.** Write the page to `reports/tickets/{SPRINT}/<ticket-key>/evidence.html` and link that path from the tracker comment + summary. Nothing leaves the project — always safe, and the normal outcome.
-- **Publishing it as a hosted Claude Artifact uploads the content to an external host**, so it is **opt-in and gated by project type** (`profile.projectType`):
-  - **Native-platform project** (`projectType` ≠ `client`, or no profile): the defect is VirtoCommerce's own on public repos → you MAY publish, after asking the operator.
-  - **Client project** (`projectType === "client"`): do **NOT** auto-publish — the reproduction carries the client's endpoints, identifiers, and data. Publish **only** if the operator explicitly asks **and** the page is scrubbed of every client host / path / identifier / datum / secret — and **NEVER** for a **client-owned-code** bug (quality-gates §2a: client code and data never leave the client's project). When unsure, keep it local.
-- **Always** redact secrets (Authorization / token / password / PAN) regardless of destination.
+| **Storefront / Admin-SPA / visual** | Before/after screenshots + the corrected computed style / DOM value. |
 
 Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published**. If you did publish, note in your output that hosted artifacts are private until the operator shares them.
 
@@ -381,6 +362,10 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
   "agent_used": "qa-frontend-expert",
   "str_result": "3/3",
   "baseline_reproduction": "RED (pre-fix, live) | from-qa-bug | pinned-build",
+  "before_after": [
+    {"check": "<what was compared — a value, a status, a screen>", "before": "<Phase A RED observation>", "after": "<Phase B GREEN observation>",
+     "before_shot": "screenshots/<file>.png", "after_shot": "screenshots/<file>.png"}
+  ],
   "checklist_total": 10,
   "checklist_passed": 10,
   "checklist_failed": 0,
@@ -394,6 +379,8 @@ Write `reports/tickets/{SPRINT}/<ticket-key>/verification-summary.json`:
   "artifacts": "reports/tickets/{SPRINT}/<ticket-key>/"
 }
 ```
+`before_after[]` is required for VERIFIED / VERIFIED_WITH_NOTES / NEW_REGRESSION (one row per Step 2A RED→GREEN pair, from the captured payloads, never hand-written). The `*_shot` fields are only for UI-layer bugs.
+
 (`tracker_transition.role` is the lifecycle role applied; `state` is the resolved destination status —
 Jira `TESTED`, Azure `roleStates["tested"]` e.g. `Tested on QA`. `evidence` is the always-written local
 page; `evidence_artifact` stays `null` unless a hosted Artifact was actually published per Step 6A's gate.)

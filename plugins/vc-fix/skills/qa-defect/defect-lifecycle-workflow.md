@@ -156,26 +156,12 @@ Test scope: [STR + regression checks]
 ### 3.2 TESTING → TESTED (Finish test)
 
 **Precondition:** Original STR passes 3 consecutive times, no regressions found.
-**Required comment:**
-```
-QA PASSED — Fix verified.
-STR: Passed 3/3 runs
-Regression: [X adjacent checks] — all passed
-Console: No new errors
-Evidence: [screenshot/HAR path]
-```
+**Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`skills/qa-report/templates/comment-fix.md`) — never typed here.
 
 ### 3.3 TESTING → REOPEN (Need fixes)
 
 **Precondition:** STR still fails OR new issue introduced by fix.
-**Required comment:**
-```
-QA FAILED — Reopening.
-Issue: [what still fails or what new issue was found]
-STR: [updated steps if different from original]
-Evidence: [screenshot/HAR path]
-Build: [version/commit tested]
-```
+**Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`skills/qa-report/templates/comment-fix.md`) — never typed here.
 
 ### 3.4 TESTED → DONE (Move to done)
 
