@@ -282,9 +282,9 @@ before this record existed, a skipped transition left no trace in any artifact, 
 
 #### 1b — Pre-flight (`/preflight`), the I/O waves and the six axes *(both paths)*
 
-**2g first; then wave A in ONE message — `/preflight ticket` · 2-map (below) · 2b's local reads; derive
-2b–2f from what came back; then wave B — the derived-token checks (2d's refreshers, 2e's `tc:scope`, 2f's
-`td:validate`).** The wave table, the `/preflight` call and flags, what its rows mean for this run and the
+**2g first; wave A in ONE message — `/preflight ticket` · 2-map · 2b's reads; derive 2b–2f; wave B — 2d's
+refreshers, 2e's `tc:scope`, 2f's `td:validate`.** Wave table, `/preflight` call, what its rows mean
+(`breaking:*` forces FULL; `not-deployed:*`/`expect` is BLOCKED-on-deploy, never a FAIL or a filed bug) and
 `summary.json.build` mapping: [`intake.md`](../skills/qa-test/intake.md) §1b.
 
 **2-map — read what already exists on this surface. MANDATORY, both paths.** Two reads, in this order, and

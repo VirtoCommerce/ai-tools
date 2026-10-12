@@ -124,7 +124,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    — one call for env health, `declared` vs `deployed` (a failed probe is `UNKNOWN`, never `declared`),
    the release-ledger Δ, `{SPRINT}`, the duplicate check and MCP availability, in one output form with
    a remediation loop ([`../preflight/SKILL.md`](../preflight/SKILL.md)). **What `/preflight` returns is a
-   fact; what it means here is this command's:** a `breaking:*` row in the component under test **forces
+   fact; what it means here is `/qa-test`'s:** a `breaking:*` row in the component under test **forces
    FULL** and is a third leg for `1d`'s AC↔implementation check; a `not-deployed:*` or `expect` row is
    BLOCKED-on-deploy — never a FAIL, never a filed bug, never `{DOC}`. **PR testing:** `--expect` is the
    linked PR's module and version (`module@version`); a NOT READY `expect` row carries the `/qa-deploy-pr`

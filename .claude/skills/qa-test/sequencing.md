@@ -70,7 +70,7 @@ ceiling for this kind of win. Two things actually cost:
 **So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
 This is the harness's own guidance applied per step, not a new mechanism.
 
-### `1b` is two I/O waves, not nine steps
+### `1b` is two I/O waves, not nine steps (stated in `intake.md` §1b)
 
 | Wave | Contains | Consumes |
 |---|---|---|
