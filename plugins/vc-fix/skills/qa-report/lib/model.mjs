@@ -209,7 +209,7 @@ export function requireLede(m, ledeMax) {
 
 export function templateData(m, dialect = "markdown") {
   return {
-    ICON: m.icon, VERDICT_LABEL: m.verdictLabel, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
+    ICON: m.icon, VERDICT_LABEL: m.verdictLabel, LEDE: m.lede, TICKET: m.ticket ?? "", RUN_ID: m.runLabel ?? "",
     ENV: m.env ?? "", BUILD: m.build ?? "", DATE: m.date ?? "",
     TOTAL: m.counts.total, PASSED: m.counts.passed, FAILED: m.counts.failed, BLOCKED: m.counts.blocked, NOT_RUN: m.counts.notRun,
     ...m.lines,
