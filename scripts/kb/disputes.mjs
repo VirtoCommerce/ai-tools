@@ -32,7 +32,7 @@ import { cachedWho } from './core/who.mjs';
 const USAGE = `usage: npm run kb:disputes -- list --base <checkout> [--json]
        npm run kb:disputes -- dossier <KB-id> --base <checkout>
        npm run kb:disputes -- cluster <KB-id> --base <checkout>
-       npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" --note "<...>" --base <checkout>
+       npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" --note "<...>" [--main <ref>] --base <checkout>
        npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> [--main <ref>] --base <checkout>`;
 
 function parseArgs(argv) {
@@ -123,6 +123,17 @@ function onMain(base, path, ref) {
   return { base: show(mb), tip: show(ref) };
 }
 
+/**
+ * The judging session's own confirm / dispute of `entry` that this checkout does not hold: still in a
+ * queue, or pushed to `main` (`tip`) after the branch was cut. Its investigation items are exempt.
+ */
+function outsideEvidence(entry, id, by, tip) {
+  if (!by) return [];
+  const fromMain = tip ? (tip.data.evidence ?? []).filter((e) => e.by === by && !isInvestigation(e)
+    && !(entry.data.evidence ?? []).some((x) => x.at === e.at && x.by === e.by)) : [];
+  return [...pendingOf(id, by), ...fromMain];
+}
+
 /** Rows of index.json whose counts differ from what the entry's own evidence gives, as lines. */
 function indexDrift(base, entries) {
   let rows;
@@ -194,9 +205,15 @@ async function main() {
     if (!entry) throw new Error(`${a.id} is not in ${a.flags.base}`);
     const cond = normalizeConditions(a.flags.conditions);
     if (cond.problem) { console.error(`refused: --conditions ${cond.problem}`); return 1; }
+    const session = judgeSession();
+    const ref = a.flags.main ?? 'origin/main';
+    refresh(a.flags.base, ref);
+    const { tip } = onMain(a.flags.base, entry.path, ref);
+    if (tip === undefined) console.error(`warning: git could not read ${ref}; the party check sees this checkout and the queues only`);
     const r = appendObservation(entry.data, {
       deployment: standName(String(a.flags.deployment ?? '')), conditions: cond.value, note: a.flags.note,
-      session: judgeSession(), who: cachedWho({ dir: queueDir(process.env), env: process.env }), body: entry.body,
+      session, who: cachedWho({ dir: queueDir(process.env), env: process.env }), body: entry.body,
+      pending: outsideEvidence(entry, a.id, session ? `session:${session}` : null, tip),
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([r.item.deployment, r.item.conditions, r.item.note]);
@@ -218,20 +235,25 @@ async function main() {
     // body was never edited (Step 6.1), and the verdict would claim a correction that is not there.
     let amendedFrom = null;
     if (a.flags.verdict === 'claim-amended') {
-      if (main.base === undefined) console.error(`warning: git could not show ${entry.path} at ${ref}; the amendment is dated, not hashed`);
-      else if (main.base !== null) {
-        if (claimHash(main.base.body) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
-        amendedFrom = claimHash(main.base.body);
+      // A SPLIT CHILD is new on the branch, so main never held its body -- main held its PARENT's, and
+      // that is the wording confirmations kept landing on while the PR was open (push hands them to the
+      // child, hashed against the parent). So the parent's body is what this amendment replaced.
+      let before = main.base;
+      let from = entry.path;
+      if (before === null) {
+        const parents = [...new Set((entry.data.evidence ?? []).map((e) => e.splitFrom).filter(Boolean))];
+        if (parents.length === 1) { from = `entries/${parents[0]}.md`; before = onMain(a.flags.base, from, ref).base; }
+        else console.error(`warning: ${a.id} is not on ${ref} and names ${parents.length || 'no'} split parent(s); the amendment is dated, not hashed`);
+      }
+      if (before === undefined) console.error(`warning: git could not show ${from} at ${ref}; the amendment is dated, not hashed`);
+      else if (before) {
+        if (claimHash(before.body) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
+        amendedFrom = claimHash(before.body);
       }
     }
-    // The judging session's own evidence the checkout does not hold: still queued, or pushed to
-    // `main` after this branch was cut. Its investigation items are its own and exempt as ever.
-    const by = session ? `session:${session}` : null;
-    const fromMain = by && main.tip ? (main.tip.data.evidence ?? []).filter((e) => e.by === by && !isInvestigation(e)
-      && !(entry.data.evidence ?? []).some((x) => x.at === e.at && x.by === e.by)) : [];
     const r = applyResolution(entry.data, {
       at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session,
-      pending: by ? [...pendingOf(a.id, by), ...fromMain] : [], amendedFrom,
+      pending: outsideEvidence(entry, a.id, session ? `session:${session}` : null, main.tip), amendedFrom,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);

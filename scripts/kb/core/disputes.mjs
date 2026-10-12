@@ -218,7 +218,7 @@ export function dossier(entry, { exp = null, state = null } = {}) {
  * confirmation that bypassed the door and its gates -- and it is marked `investigation: true`, the
  * one thing that lets `applyResolution` tell the judge's own work from a session taking a side.
  */
-export function appendObservation(data, { deployment, conditions, note, session, who = null, body = null, now = new Date() }) {
+export function appendObservation(data, { deployment, conditions, note, session, who = null, body = null, pending = [], now = new Date() }) {
   if (!String(deployment ?? '').trim()) return { problem: '--deployment is required' };
   if (!conditions) return { problem: '--conditions is required: an investigation records what the stand ran' };
   if (!String(note ?? '').trim()) return { problem: '--note is required: what was observed, under these conditions' };
@@ -231,6 +231,8 @@ export function appendObservation(data, { deployment, conditions, note, session,
   if ((Array.isArray(data.evidence) ? data.evidence : []).some((e) => e.by === `session:${session}` && !isInvestigation(e))) {
     return { problem: `session:${session} confirmed or disputed ${data.id} itself: a party to a dispute does not investigate it` };
   }
+  // ...including evidence this checkout does not hold yet (`pending`, as in `applyResolution`).
+  if (pending.length) return { problem: `session:${session} has ${pending.length} confirm/dispute of ${data.id} this checkout does not hold (queued, or on main since the branch was cut): a party to a dispute does not investigate it` };
   if (!hasOpenDispute(data)) return { problem: `${data.id} is not an active entry with an open dispute; an observation of any other entry goes through the door (kb_confirm / kb_dispute)` };
   const item = {
     method: 'observation',
