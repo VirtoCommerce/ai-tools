@@ -44,7 +44,11 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
 
 ### Step 0 — Pre-Flight
 
-1. **VirtoOZ MCP first** — ground the target scope against the matching topic-scoped tool (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales). Use Context7 (`/virtocommerce/vc-docs`, `tokens: 8000`) only as fallback. Build understanding of current module architecture and **Virto's published terminology/voice** before analyzing code.
+1. **`/preflight ba --components <scope>`** ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md))
+   — MCP availability (VirtoOZ is `REQ`: with neither VirtoOZ nor Context7 there is nothing to ground in)
+   and kb → VirtoOZ grounding. Then query the topic-scoped VirtoOZ tool for the target scope
+   (`PlatformUserGuide` / `StorefrontUserGuide` / `PlatformDeveloperGuide` / `VirtoCommerce` for sales)
+   to build Virto's published terminology and voice before analyzing code.
 2. **If the run will produce docs** (scope `docs`, `full`, or anything that reaches `ba-doc-writer`): read `knowledge/ba/virto-doc-style.md` so you can verify each generated doc matches its audience skeleton. The BA team framework is `knowledge/agents/ba/shared-instructions.md`.
 2a. **On `docs release`, read `summary.json` FIRST — before any MCP call.** If
    `release.refusal` is non-null, or `layer` is null, **stop and report the refusal**: there is no
@@ -60,7 +64,6 @@ You coordinate three specialist subagents in sequence, then synthesize their fin
    document the run's passing paths, omit the failing ones, and carry the mandatory `Not documented`
    line and the verbatim verdict (`virto-doc-style.md` §10.4). There is likewise **no `no-version`
    refusal** in this mode: a how-to does not quote a build number (`virto-doc-style.md` §10).
-3. Confirm GitHub MCP and browser MCP servers are available (needed for sub-agents).
 3. **`npm run bl:extract -- --domain <d>`**: its `Included:` line lists existing `BL-DOMAIN-NNN` IDs. You will pass this list to `ba-system-analyzer` as `existing_bl_ids` so it can (a) avoid re-proposing known invariants and (b) pick the next available number per domain when drafting new ones.
 
 ### Step 1 — Greet & Confirm Scope

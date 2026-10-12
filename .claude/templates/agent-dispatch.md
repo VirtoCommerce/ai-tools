@@ -76,32 +76,9 @@ Each agent MUST be assigned an explicit browser server. If the primary browser f
 
 ## Context7 Pre-Flight
 
-Commands that test or analyze VC behavior SHOULD query Context7 before dispatching agents:
-
-```
-1. Resolve library: mcp__context7__resolve-library-id with libraryName: "virtocommerce"
-   → canonical ID: /virtocommerce/vc-docs
-2. Query: mcp__context7__query-docs with libraryId: "/virtocommerce/vc-docs",
-   query: "{domain-relevant topic}", tokens: 8000
-3. Pass findings to sub-agents as part of their prompt context
-```
-
-### Sample Queries by Domain
-
-| Domain | Sample Queries |
-|--------|---------------|
-| Cart / Checkout | `"cart mutations xAPI"`, `"checkout workflow order creation"` |
-| Orders | `"order processing workflow"`, `"order status transitions"` |
-| Payment | `"payment gateway integration"`, `"CyberSource Skyflow configuration"` |
-| Catalog | `"catalog properties categories"`, `"product variations configurable"` |
-| Search | `"search indexing elasticsearch"`, `"search suggestions autocomplete"` |
-| Auth / Security | `"authentication OAuth2 tokens"`, `"security roles permissions"` |
-| B2B / Customers | `"B2B organizations members"`, `"company roles purchasing"` |
-| Marketing | `"promotions coupons pricing"`, `"dynamic content marketing"` |
-| CMS | `"content pages builder menus"`, `"blog articles publishing"` |
-| Platform | `"platform modules configuration"`, `"dynamic properties settings"` |
-| GraphQL xAPI | `"xAPI storefront queries mutations"`, `"GraphQL schema extensions"` |
-| Inventory | `"inventory fulfillment centers"`, `"stock availability tracking"` |
+Superseded by [`/preflight`](../skills/preflight/SKILL.md) step 3: **kb first, VirtoOZ second, Context7
+only as VirtoOZ's fallback** ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
+Querying Context7 first contradicted that order.
 
 ## Duplicate Detection Guard
 
@@ -110,13 +87,13 @@ Before starting a run, check for recent duplicate runs to avoid waste:
 | Command Type | Check | Timeframe | Action |
 |-------------|-------|-----------|--------|
 | Smoke test | Same-day smoke run exists | 24h | Warn user, ask to proceed |
-| Ticket test | Same ticket tested recently | 2h | Warn user, show previous results |
 | Regression | Same suite selection running | Active | Block — wait for current run |
 | Bug report | Same title/component filed | 48h | Warn user, show existing bug |
-| Exploratory | Same domain explored | 24h | Warn user, ask to proceed |
 | Verify fix | Same ticket verified | 4h | Warn user, show previous result |
 | Coverage gen | Same scope generated | 7d | Warn user, show previous report |
-| Sync tests | Same source synced | 24h | Warn user, show previous sync |
+
+`/qa-test`, `/qa-test-fast`, `/qa-exploratory` and `/qa-test-lifecycle` run the duplicate check through
+[`/preflight`](../skills/preflight/SKILL.md), whose windows live in `scripts/preflight/policy.ts`.
 
 **How to check:** Read `reports/` directory for recent `{RUN_ID}` files matching the scope. For JIRA-based checks, query Atlassian MCP for recent comments on the ticket.
 
@@ -157,70 +134,23 @@ Commands that transition JIRA tickets (`/qa-test`, `/qa-verify-fix`, `/qa-bug`) 
 
 ## Pre-Flight Checklist
 
-Every command that uses a browser SHOULD run these checks before dispatching agents:
-
-1. **Environment health** — invoke `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`)
-2. **Build & version verification** — fetch the `declared`, `deployed` **and** `released-through` state (see Build Verification below)
-3. **Recent-release check** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope and record the Δ vs `deployed`. This is the step that turns "a test failed" into "a test failed on a surface that changed three weeks ago". Fall back to a Context7 query for module behaviour only where the ledger is silent or >45 days stale
-4. **Duplicate check** — scan reports/ for recent runs matching scope
-5. If any pre-flight fails → warn user with specific failure, ask whether to proceed
+Run [`/preflight`](../skills/preflight/SKILL.md) — env health, `declared`/`deployed`/released-through,
+duplicate, MCP availability, one output form and the remediation loop. `/qa-regression` and
+`/qa-smoke` keep their own Step 0 until phase 2 (`regression:plan --preflight`).
 
 ## Build Verification
 
 Commands that test the QA environment SHOULD verify what build is deployed before running tests. This prevents testing against stale deployments, undeployed PRs, or unexpected module versions.
 
-### How to Fetch Deployed Versions
+### How to fetch and record it
 
-Use **GitHub MCP** (`get_file_contents`) against the deploy repo:
-
-```
-owner: "VirtoCommerce"
-repo: "vc-deploy-dev"
-branch: "vcst-qa"   # default for TEST_ENV=vcst; use the branch matching TEST_ENV (e.g. vcptcore, virtostart) for other envs
-```
-
-> The deploy branch is env-specific: it tracks the active `TEST_ENV`. Never hardcode `vcst-qa` for runs against another environment — read the branch matching `TEST_ENV`.
-
-| File | Contains |
-|------|----------|
-| `backend/packages.json` | `PlatformVersion` + all module IDs with versions |
-| `theme/artifact.json` | Theme package URL with version (e.g., `vc-theme-b2b-vue-2.45.0-pr-2204-de06-de06c786`) |
-
-**That is the `declared` state — what git says SHOULD be on the env, not what is running.** Also probe
-the live platform:
-
-```
-GET {{BACK_URL}}/api/platform/modules      (bearer token; the same call scripts/maintenance/refresh-sitemap.mjs makes)
-```
-
-It returns every installed module with its `id` and `version` — the `deployed` state, and the only
-ground truth. The two disagree routinely: a deploy in flight, a failed deploy, or a partially applied
-one. That gap is exactly what `/qa-hotfix-check` exists to wait on.
-
-**For storefront-facing scope there is a third vantage, and it needs no token:** `npm run store:caps`
-replays vc-frontend's own anonymous app-boot query (`InitializeApplication`) and prints which modules
-the STOREFRONT can see, at which version, with their public flags. It is not a cheaper `deployed` probe
-— it is the answer to a different question. A module installed and healthy at the platform level can
-still expose no capability the storefront sees, and then the platform manifest calls the env green while
-the feature's button never renders. When the scope is a storefront feature, record this alongside
-`deployed`; `--settings` also reads the effective feature-flag state without an Admin SPA round-trip.
-Reader contract, the `ReturnModuleVersion` trap and what absence does and does not mean:
-`.claude/knowledge/domain/store-settings.md` §The storefront capability manifest.
-
-**If the probe fails, record `deployed: UNKNOWN` and say so. NEVER fall back to `declared`.** A null
-`deployed` leg collapses the released-vs-deployed distinction this section exists to preserve, and the
-tempting fallback is the wrong value.
-
-### What to Record
-
-Extract and include in reports/agent prompts — four rows, not one:
-
-```
-declared (git)      : Platform {PlatformVersion}, Theme {version}, {scope-relevant modules}
-deployed (probed)   : Platform {live version}, {scope-relevant modules}   | or UNKNOWN + reason
-released-through    : Platform {ledger §1}, {scope-relevant components}   | .claude/knowledge/domain/release-ledger.md
-Δ behind upstream   : {components where deployed < released, with both versions}
-```
+`/preflight` does it: `declared` from `vc-deploy-dev` (branch per `TEST_ENV`), `deployed` from
+`GET {{BACK_URL}}/api/platform/modules`, the storefront-visible modules from the anonymous
+`InitializeApplication` probe, and the ledger Δ — code in `scripts/lib/env-facts.ts`. **A failed
+probe is `UNKNOWN`, never `declared`.** The Platform version has **no live source** (no Platform
+entry in the modules API; `/api/platform/version` is 404), so `deployed.platform` is always
+`UNKNOWN` and a report labels `declared` as declared. The sections below — which source answers
+which question, and what a disagreement means — are unchanged and still normative.
 
 ### Precedence — four sources, routed by QUESTION not by rank
 

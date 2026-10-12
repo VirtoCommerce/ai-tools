@@ -212,7 +212,7 @@ reporting all consume `gap-inventory.json`; none of them re-reads the suites.
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__DeploymentGuide` — deployment, infra, Azure, Docker, Kubernetes
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__PlatformBackendSourceCode` / `…__PlatformFrontendSourceCode` / `…__FrontendSourceCode` — source-code lookup
    - `mcp__claude_ai_VirtoOZ_for_virtocommerce_com_docs__VirtoCommerce` — general fallback (product/architecture/case-study questions)
-   - All tools accept `{ query, top_k: 3-5 }`. See `agent-dispatch.md` § "Sample Queries by Domain" for query stems and full routing rules in `skills/vc-docs/SKILL.md`.
+   - All tools accept `{ query, top_k: 3-5 }`. Query stems and full routing rules: `skills/vc-docs/SKILL.md`.
    - **Context7 fallback** — if VirtoOZ returns thin/off-topic chunks: `mcp__context7__resolve-library-id { libraryName: "virtocommerce" }` → `/virtocommerce/vc-docs`, then `mcp__context7__query-docs { libraryId, query, tokens: 8000 }`.
    - Flag features documented in VC docs but absent from current regression coverage.
 
