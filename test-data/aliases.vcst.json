@@ -3090,5 +3090,123 @@
     "lineBSku": "55557702",
     "lineBOrderedQuantity": 25,
     "seededAt": "2026-10-12T10:40:40.696Z"
+  },
+  "RETURNS_ORDER_A_HAPPY": {
+    "id": "429cdcb5-e076-4e16-9be9-581ee965432d",
+    "number": "AGENT-TEST-ORD-RET-A",
+    "lineXItemId": "b92f3462-c27b-4340-8228-171e92ad148b",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_A2_PARTIAL_DELIVERY": {
+    "id": "72f611a0-aabc-42b5-9f14-f7faf357ec12",
+    "number": "AGENT-TEST-ORD-RET-A2",
+    "lineXItemId": "0eec0bfa-994f-47b7-9ecb-1ed36afb254a",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_B_OUTSIDE_WINDOW": {
+    "id": "0af6c4e3-0bc9-4fab-a5e1-f9f06e949272",
+    "number": "AGENT-TEST-ORD-RET-B",
+    "lineXItemId": "92e8a146-b961-463d-b598-1c11262f0a49",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-09-02T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_C_NOT_DELIVERED": {
+    "id": "d5744da6-c2ec-4ae5-84d1-8dddeaa6b0ff",
+    "number": "AGENT-TEST-ORD-RET-C",
+    "lineXItemId": "7588d228-f370-4e96-a185-d08c68071c64",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": null
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_D_STATUS_NOT_ALLOWED": {
+    "id": "57129097-5592-49ab-b5ab-49c667dddc9e",
+    "number": "AGENT-TEST-ORD-RET-D",
+    "lineXItemId": "6c57f81e-b517-417e-bfce-b26568e5713c",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_E_SPLIT_DELIVERY": {
+    "id": "880d9a76-e4ff-461c-b681-1322ed295430",
+    "number": "AGENT-TEST-ORD-RET-E",
+    "lineXItemId": "5d7a53cb-b130-4fc3-939a-f074ecfc6e19",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-09-02T11:18:05.279Z",
+      "S2": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_F_CANCELLED_LINE": {
+    "id": "f5f02979-99cb-494b-8a08-359949d68bb1",
+    "number": "AGENT-TEST-ORD-RET-F",
+    "lineXItemId": "7f76ea61-902c-479f-b476-7a51a64d1f14",
+    "cancelledLineItemId": "429320e9-909e-470d-a7a0-7e78de70c1b4",
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES": {
+    "id": "dd3445b1-6ae3-4a6b-a56a-b578b7f49a18",
+    "number": "AGENT-TEST-ORD-RET-G",
+    "lineXItemId": "bb96409f-9cd5-47e8-9fe8-f76dceee7c6d",
+    "lineAItemId": "bb96409f-9cd5-47e8-9fe8-f76dceee7c6d",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 5,
+    "lineADeliveredQuantity": 5,
+    "lineBItemId": "221fd963-fb82-4c81-af2a-c2ea10c67cae",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 3,
+    "lineBDeliveredQuantity": 3,
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_ORDER_ADMIN_073": {
+    "id": "d3dec5d7-f7a0-4c92-b856-67d3162eb2f1",
+    "number": "AGENT-TEST-ORD-RET-ADM073",
+    "lineXItemId": "ea2cb696-f11e-4d29-805f-4923fbaa8087",
+    "lineAItemId": "ea2cb696-f11e-4d29-805f-4923fbaa8087",
+    "lineASku": "566903892",
+    "lineAOrderedQuantity": 20,
+    "lineADeliveredQuantity": 20,
+    "lineBItemId": "cb6603a0-ebaf-49b2-9448-f279b5055035",
+    "lineBSku": "568171770",
+    "lineBOrderedQuantity": 25,
+    "lineBDeliveredQuantity": 25,
+    "seededAt": "2026-10-12T11:18:05.279Z",
+    "deliveryDates": {
+      "S1": "2026-10-12T11:18:05.279Z"
+    },
+    "windowDaysAtSeed": 30
+  },
+  "RETURNS_LINE_X": {
+    "productId": "08c33cfc9f664426a52fac8882da2df0",
+    "sku": "566903892",
+    "name": "Canon Imageclass WiFi MF232W Monochrome Laser Printer/Scanner/Copier",
+    "cancelledProductId": "4b729fae613046448aaba7c265bb4f2d",
+    "cancelledSku": "55557702",
+    "lineYProductId": "ca255c81f8254865956c1d714f2ef457",
+    "lineYSku": "568171770",
+    "seededAt": "2026-10-12T11:18:05.279Z"
   }
 }

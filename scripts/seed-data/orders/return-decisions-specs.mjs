@@ -27,7 +27,10 @@
  */
 import {
   LINE_ROLE_X, LINE_ROLE_Y, RETURN_ORDER_MARK, RETURN_ALLOWED_STATUS, stripFixtureMeta,
+  recipientEmailsOf, forceRecipientEmails,
 } from './orders-specs.mjs';
+
+export { recipientEmailsOf, forceRecipientEmails };
 
 /** Order-number prefix. Distinct from step 1's `AGENT-TEST-ORD-RET-<A..G>` so neither teardown sweeps the other. */
 export const DECISION_ORDER_MARK = `${RETURN_ORDER_MARK}-DEC`;
@@ -243,28 +246,6 @@ export function shapeDecisionTemplate(spec, template) {
   forceRecipientEmails(body, DECISION_BUYER.email);
   for (const a of body.addresses || []) a.email = DECISION_BUYER.email;
   return body;
-}
-
-const isEmailKey = (k) => /e-?mail/i.test(k) && !k.startsWith('_');
-
-/** Every email-bearing value in an order body with its path (PURE): any non-metadata key named *email*, any depth. */
-export function recipientEmailsOf(node, path = '$') {
-  if (Array.isArray(node)) return node.flatMap((x, i) => recipientEmailsOf(x, `${path}[${i}]`));
-  if (!node || typeof node !== 'object') return [];
-  return Object.entries(node).flatMap(([k, v]) => (isEmailKey(k) && (typeof v === 'string' || v == null)
-    ? [{ path: `${path}.${k}`, email: v ?? null }]
-    : recipientEmailsOf(v, `${path}.${k}`)));
-}
-
-/** Set every email-bearing field of `node` to `email`, in place (PURE on its argument). */
-export function forceRecipientEmails(node, email) {
-  if (Array.isArray(node)) { node.forEach((x) => forceRecipientEmails(x, email)); return node; }
-  if (!node || typeof node !== 'object') return node;
-  for (const [k, v] of Object.entries(node)) {
-    if (isEmailKey(k) && (typeof v === 'string' || v == null)) node[k] = email;
-    else forceRecipientEmails(v, email);
-  }
-  return node;
 }
 
 /** The recipients of a shaped order that are NOT the dedicated fixture mailbox (PURE) — must be []. */

@@ -148,6 +148,58 @@ export function resolveTokens(fixtureObj, env = {}) {
   return { obj: walk(structuredClone(fixtureObj)), unresolved: [...unresolved] };
 }
 
+/*
+ * NOTIFICATION RECIPIENTS. A buyer's order/return email goes to the ORDER ADDRESS email first, then the
+ * contact's, then the account's (KB-33E0A778), and the returns templates carry {{USER_EMAIL}} — on an env
+ * that can be a real person's mailbox (vcst 2026-10-09: an OrderCreateEmailNotification reached one). So
+ * every seeded returns order has its recipient fields forced to a dedicated AGENT-TEST yopmail mailbox
+ * before the POST, and the seeder refuses to POST otherwise. The BUYER ACCOUNT is not changed here.
+ */
+/** Dedicated mailbox for the VCST-5628 returns orders (RETURN_ORDER_FIXTURES). Registered as RETURNS_ORDER_RECIPIENT. */
+export const RETURN_ORDER_RECIPIENT = 'agent-test-ret-orders@yopmail.com';
+export const RETURN_ORDER_RECIPIENT_ALIAS = 'RETURNS_ORDER_RECIPIENT';
+
+const isEmailKey = (k) => /e-?mail/i.test(k) && !k.startsWith('_');
+
+/** Every email-bearing value in an order body with its path (PURE): any non-metadata key named *email*, any depth. */
+export function recipientEmailsOf(node, path = '$') {
+  if (Array.isArray(node)) return node.flatMap((x, i) => recipientEmailsOf(x, `${path}[${i}]`));
+  if (!node || typeof node !== 'object') return [];
+  return Object.entries(node).flatMap(([k, v]) => (isEmailKey(k) && (typeof v === 'string' || v == null)
+    ? [{ path: `${path}.${k}`, email: v ?? null }]
+    : recipientEmailsOf(v, `${path}.${k}`)));
+}
+
+/** Set every email-bearing field of `node` to `email`, in place; returns `node`. */
+export function forceRecipientEmails(node, email) {
+  if (Array.isArray(node)) { node.forEach((x) => forceRecipientEmails(x, email)); return node; }
+  if (!node || typeof node !== 'object') return node;
+  for (const [k, v] of Object.entries(node)) {
+    if (isEmailKey(k) && (typeof v === 'string' || v == null)) node[k] = email;
+    else forceRecipientEmails(v, email);
+  }
+  return node;
+}
+
+/** Recipients of a body that are NOT `mailbox` (case-insensitive), plus addresses carrying no email (PURE). */
+export function recipientProblems(body, mailbox) {
+  const want = String(mailbox).toLowerCase();
+  return [
+    ...recipientEmailsOf(body).filter((r) => String(r.email || '').toLowerCase() !== want),
+    ...(body?.addresses || []).map((a, i) => (a.email ? null : { path: `$.addresses[${i}].email`, email: null, missing: a.addressType || i })).filter(Boolean),
+  ].filter((r, i, all) => all.findIndex((x) => x.path === r.path) === i);
+}
+
+/** Copy of a returns order body with every recipient forced to RETURN_ORDER_RECIPIENT (PURE). */
+export function shapeReturnOrderRecipients(body) {
+  const out = forceRecipientEmails(structuredClone(body), RETURN_ORDER_RECIPIENT);
+  for (const a of out.addresses || []) a.email = RETURN_ORDER_RECIPIENT;
+  return out;
+}
+
+/** Mask an address for logs and errors: abc***@domain (PURE). */
+export const maskEmail = (e) => (e ? String(e).replace(/^(.{3})[^@]*(@.*)$/, '$1***$2') : 'null');
+
 /** Deep-walk a fixture object and return the JSON paths whose string value is a bare GUID. */
 export function findGuidLeaks(obj, path = '') {
   const leaks = [];

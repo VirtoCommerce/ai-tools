@@ -27,6 +27,7 @@ import {
   validateReturnFixtureSet, validateReturnFixtureShape,
   suiteRowsConsuming, orderedFor, LINE_ROLE_X, LINE_ROLE_Y,
   resolveTokens, finalizeReturnOrderBody,
+  RETURN_ORDER_RECIPIENT, RETURN_ORDER_RECIPIENT_ALIAS, shapeReturnOrderRecipients, recipientProblems, applyReturnCatalogItems,
 } from './orders-specs.mjs';
 import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
@@ -255,6 +256,27 @@ console.log('\n[8b] Return-decision orders — every notification recipient is t
     if (leaks.length) leaks.forEach((l) => fail(`decision order recipient is not ${DECISION_BUYER.email}: ${l}`));
     else ok(`${RETURN_DECISION_FIXTURES.length} shaped decision orders — every recipient field is ${DECISION_BUYER.email}, even with a hostile env`);
   }
+}
+console.log('\n[8c] Returns orders (VCST-5628, seed:returns) — every notification recipient is the dedicated fixture mailbox');
+{
+  // Same hostile-env check as [8b], over every RETURN_ORDER_FIXTURES template (a…g + adm073), shaped and
+  // finalized the way seed-return-orders.mjs does. The buyer ACCOUNT is out of scope (still the env persona).
+  const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+  const leaks = [];
+  if (!/^agent-test-[a-z0-9-]+@yopmail\.com$/.test(RETURN_ORDER_RECIPIENT)) leaks.push(`RETURN_ORDER_RECIPIENT ${RETURN_ORDER_RECIPIENT} is not an AGENT-TEST yopmail address`);
+  if (RETURN_ORDER_RECIPIENT === DECISION_BUYER.email) leaks.push('RETURN_ORDER_RECIPIENT is the VCST-5883 decision buyer\'s mailbox — the two fixture sets would share one inbox');
+  const reg = aliases[RETURN_ORDER_RECIPIENT_ALIAS];
+  if (reg?.email !== RETURN_ORDER_RECIPIENT || !reg?.fields?.email) leaks.push(`${RETURN_ORDER_RECIPIENT_ALIAS} must be registered in aliases.json with email "${RETURN_ORDER_RECIPIENT}" (has "${reg?.email}")`);
+  for (const spec of RETURN_ORDER_FIXTURES) {
+    const rel = `test-data/${spec.fixtureFile}`;
+    if (!existsSync(join(ROOT, rel))) { leaks.push(`${spec.key}: ${rel} missing`); continue; }
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const body = finalizeReturnOrderBody(spec, applyReturnCatalogItems(shapeReturnOrderRecipients(obj), {}), { customerId: 'c', customerName: 'n' });
+    for (const r of recipientProblems(body, RETURN_ORDER_RECIPIENT)) leaks.push(`${spec.key} ${r.path}=${r.missing !== undefined ? `missing (${r.missing})` : r.email}`);
+    if (!(body.addresses || []).length) leaks.push(`${spec.key}: no address at all — the check would pass vacuously`);
+  }
+  if (leaks.length) leaks.forEach((l) => fail(`returns order recipient: ${l}`));
+  else ok(`${RETURN_ORDER_FIXTURES.length} shaped returns orders (${RETURN_ORDER_FIXTURES.map((s) => s.key).join(', ')}) — every recipient field is ${RETURN_ORDER_RECIPIENT}, even with a hostile env`);
 }
 console.log(`\n[9] Return-decision aliases — registered _inline with no committed value; seeded state on ${TARGET_ENV}`);
 {
