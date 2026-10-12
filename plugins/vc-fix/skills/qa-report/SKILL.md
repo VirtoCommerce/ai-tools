@@ -60,7 +60,7 @@ Load the `artifact-design` skill, then:
   (icon `checklist`), then tell the user in one line to set **Share → Anyone at Virto Commerce** — a private
   page reaches no one. Re-run §2 with `--page-url <url>` so the comment carries the link.
 - **Client project**: do **not** publish. Kind `fix` ⇒ re-render with `--images ref` into the ticket folder as
-  `evidence.html` (reports-policy.md §1a). Other kinds ⇒ no page; the comment stands alone. The page stays
+  `evidence.html`. Other kinds ⇒ no page; the comment stands alone. The page stays
   inside the client's own tracker by going on the post as `--attach-file` (§5), which works only in the
   ai-tools repo. Publish an Artifact only on the operator's explicit request, after scrubbing every client
   host / path / identifier.
@@ -80,8 +80,8 @@ post a second comment for the same round. `--artifact` = the `artifact` field of
   (+ `--attach <shot>` per screenshot when `wiki`; + `--attach-file <page.html>` for a client-project page;
   `--amend <id>` when an id is already recorded). Never upload with raw REST — both flags dedupe, which makes a retry safe.
 - **Plugin-only install, Jira:** Atlassian MCP `addCommentToJiraIssue` (pass `commentId` to amend);
-  screenshots per `.claude/knowledge/execution/tracker-ops.md` §5c (ai-tools repo copy). **Azure:** `ado.mjs comment --id <n> --text-file <comment.html>`.
-- Read the posted comment back; a UI claim's images must render ([`../../.claude/rules/reports.md`](../../.claude/rules/reports.md) §5.0).
+  screenshots attach-then-wiki per [`reference.md`](reference.md) §Dialects. **Azure:** `ado.mjs comment --id <n> --text-file <comment.html>`.
+- Read the posted comment back; a UI claim's images must render ([`../../.claude/rules/reports.md`](../../.claude/rules/reports.md) §5).
 
 ## 6. Finish
 

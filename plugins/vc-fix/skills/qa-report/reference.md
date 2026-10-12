@@ -58,9 +58,11 @@ with `--verdict`, because a run folder records none.
 
 | Tracker | `--dialect` | Why |
 |---|---|---|
-| Jira | `markdown` | The default; the Atlassian MCP and the REST v2 comment path render it. |
-| Jira, with screenshots | `wiki` | Inline images need attach-then-`!file.png!` wiki markup (tracker-ops §5c) — a Markdown image path renders as nothing at `200 OK`. |
-| Azure Boards | `html` | Work-item comments are HTML (tracker-ops §5a). |
+| Jira | `markdown` | A Jira comment body is Markdown. |
+| Jira, with screenshots | `wiki` | A screenshot shows inline only if the file is attached to the issue first and then referenced as `!name.png\|width=700!` through the Jira **v2** comment API, which makes the whole body wiki markup. A Markdown image path posts `200 OK` and renders nothing. |
+| Azure Boards | `html` | An Azure Boards work-item comment body is HTML. |
+
+Fuller treatment in the ai-tools repo: `.claude/knowledge/execution/tracker-ops.md` §5a / §5c.
 
 ## Publish gate
 
