@@ -114,6 +114,7 @@
     "returns:org:verify": "node scripts/seed-data/orders/seed-org-returns.mjs --verify",
     "seed:returns:org:isolated": "node scripts/seed-data/orders/seed-org-returns.mjs --isolated-only",
     "seed:returns:org:isolated:teardown": "node scripts/seed-data/orders/seed-org-returns.mjs --isolated-only --teardown",
+    "seed:returns:org:orgs": "node scripts/seed-data/orders/seed-org-returns.mjs --orgs-only",
     "returns:decisions:check": "node scripts/seed-data/orders/check-return-decisions.mjs",
     "seed:products:teardown": "node scripts/seed-data/products/seed-standard-products.mjs --teardown",
     "seed:configurable:teardown": "node scripts/seed-data/products/seed-configurable.mjs --teardown",

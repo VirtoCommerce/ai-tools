@@ -2,7 +2,8 @@
  * validate-org-returns-data.mjs — STATIC drift guard for the VCST-5884 organization-returns fixture
  * set (npm run td:validate:returns-org). STATIC by default: no network, no env — safe in CI. `--live`
  * (npm run td:validate:returns-org:live) adds the probes [L1]-[L4] of the ISOLATED sets' seeded state
- * (zero returns in ORG_RET_EMPTY_ORG, one member per isolated org, ORG_RET_RENAME_ORG not left renamed).
+ * (zero returns in ORG_RET_EMPTY_ORG, one member per isolated org, ORG_RET_RENAME_ORG not left renamed) and
+ * [L5] every organization still matching its spec (status/description/name/emails/org-level roles).
  * Shares org-returns-specs.mjs with the seeder, so the spec, the seeder and this guard cannot disagree.
  *
  *   [1] the spec is DISCRIMINATING (validateOrgReturnsFixtureSet): the three grant sources isolated,
@@ -24,7 +25,7 @@ import { fileURLToPath } from 'node:url';
 import {
   ROLES, ORGS, PERSONAS, OTHER_RETURN, OWNED_ALIASES, FIXTURE_GAPS, SEED_SCRIPT, PASSWORD_TOKEN, BASE_ROLE,
   emailOf, accountEmailOf, authUsernameOf, orgEmailOf, upperVariant, fullNameOf, orgOrderNumber, validateOrgReturnsFixtureSet,
-  spareOrderKeys, spareField, SPARE_FIELDS, RETURNABLE_LINE_FLOOR, declaredLineCapacity, ISOLATED_ORG_KEYS,
+  spareOrderKeys, spareField, SPARE_FIELDS, RETURNABLE_LINE_FLOOR, declaredLineCapacity, ISOLATED_ORG_KEYS, orgDrift, ORG_STATUS,
 } from './org-returns-specs.mjs';
 import { GUID_RE } from './orders-specs.mjs';
 
@@ -181,6 +182,16 @@ async function live() {
       else ok(`[L4] ${org.alias}: name is the original "${org.name}", status Approved`);
     }
   }
+  // [L5] every organization still matches its spec (name, emails, status, description, org-level roles).
+  // A case that writes an org with a partial PUT /api/organizations nulls status + description silently.
+  const drifted = [];
+  for (const org of ORGS) {
+    const id = orgId[org.key];
+    const live = id ? await api('GET', `/api/organizations/${id}`, null, { expectStatus: [200, 204, 404] }).catch(() => null) : null;
+    const d = orgDrift(org, live);
+    if (d.length) { drifted.push(org.alias); fail(`[L5] ${org.alias} (${id}) deviates from the spec: ${d.join('; ')} — repair: TEST_ENV=${TARGET_ENV} npm run seed:returns:org:orgs`); }
+  }
+  if (!drifted.length) ok(`[L5] all ${ORGS.length} organizations match the spec (name, emails, status ${ORG_STATUS}, description, org-level roles)`);
 }
 
 if (problems.length) { console.log(`\nFAILED — ${problems.length} problem(s).`); process.exit(1); }

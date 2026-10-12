@@ -90,6 +90,10 @@ export const ORGS = Object.freeze([
     renamedName: 'AGENT-TEST-Org-RetRename-RENAMED',
     purpose: 'The organization RET-ORG-028 RENAMES per run (and restores in Cleanup): its only member is ORG_RET_RENAME_BUYER, so a rename disturbs no other case.' },
 ]);
+/** The declared organization status and description — what a seed creates and what a repair restores (PURE). */
+export const ORG_STATUS = 'Approved';
+export const orgDescriptionOf = (o) => `AGENT-TEST VCST-5884 organization returns fixture (${o.key})`;
+
 /** Organizations whose single member no other persona or case shares (PURE). */
 export const ISOLATED_ORG_KEYS = Object.freeze(ORGS.filter((o) => o.isolated).map((o) => o.key));
 const orgByKey = Object.fromEntries(ORGS.map((o) => [o.key, o]));
@@ -193,6 +197,18 @@ export const authUsernameOf = (p) => p.login;
 export const orgEmailOf = (o) => (o.emailOfPersona ? emailOf(personaByKey[o.emailOfPersona]) : o.email);
 /** Mixed-case variant of an address (local part upper-cased) — same mailbox, different letters. */
 export const upperVariant = (address) => (address ? address.replace(/^[^@]+/, (s) => s.toUpperCase()) : null);
+
+/**
+ * How a LIVE organization deviates from its spec (PURE) — name, emails, status, description, org-level roles.
+ * [] = matches. Shared by the --orgs-only repair and td:validate:returns-org:live [L5].
+ */
+export function orgDrift(o, live) {
+  if (!live) return ['missing'];
+  const email = orgEmailOf(o);
+  const want = { name: o.name, emails: email ? [email] : [], status: ORG_STATUS, description: orgDescriptionOf(o), orgRoles: o.orgRoles.map((k) => roleByKey[k].id).sort() };
+  const have = { name: live.name, emails: live.emails || [], status: live.status ?? null, description: live.description ?? null, orgRoles: (live.roles || []).map((r) => r.roleId).sort() };
+  return Object.keys(want).filter((k) => JSON.stringify(want[k]) !== JSON.stringify(have[k])).map((k) => `${k} ${JSON.stringify(have[k])} != ${JSON.stringify(want[k])}`);
+}
 
 export const orgOrderKey = (key) => `ORG-${key.replace(/_/g, '-')}`;
 

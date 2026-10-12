@@ -115,8 +115,11 @@ rules:
       kind: manual
       ref: User is org-maintainer in X, org-employee in Y. Switch to X → decode JWT → maintainer set present, employee-only set absent. Switch to Y → only employee set. For each org, `GetPageContext` → `user.permissions` matches the decoded JWT for that org.
     violation_signal: JWT carries another org's permissions; `pageContext.user.permissions` diverges from the JWT (BUG-A condition — pageContext returned `[]` while the JWT held 8 maintainer perms).
-    status: SUSPECT
-    suspect_reason: "[case] RET-ORG-022 failed in REG-2026-10-08-1840"
+    status: ACTIVE
+    verified:
+      date: 2026-10-12
+      version: Customer 3.1029.0
+      by: ORACLE-REVIEW-2026-10-12
   - id: BL-B2B-008
     title: Org-scoped role change mutates only the target org's membership
     rule: Changing a member's role in org X (`changeOrganizationContactRole(memberId, roleIds)` or REST `PUT /api/customer/organization-memberships/{id}`) MUST update only the (userId, orgX) `OrganizationMembership.Roles`. Other orgs' membership records and the global `ApplicationUser.Roles` MUST be unchanged. (VCST-5028 — guards against the old handler that replaced global roles.)

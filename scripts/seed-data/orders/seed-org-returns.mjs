@@ -18,6 +18,9 @@
  *          and ORG_RET_RENAME_*. Roles are READ and verified, never written; the shared organizations, their
  *          members, the main/spare orders and every return on them are never read for write. The RENAME order
  *          takes its two products from ORG_RET_BUYER's LIVE main order, so no catalog discovery runs.)
+ *        · --orgs-only (REPAIR the existing organizations to the spec — name, emails, status, description — by
+ *          GET → merge → full PUT, and nothing else: no role, persona, membership, order, return, store setting
+ *          or overlay is written; a missing org or an org-level-role drift is reported as an error, never written)
  * Usage: TEST_ENV=vcst npm run seed:returns:org   ·   TEST_ENV=vcst npm run seed:returns:org:teardown
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -34,13 +37,14 @@ import {
 import {
   ROLES, ORGS, PERSONAS, FIXTURE_GAPS, OTHER_RETURN, OTHER_RETURN_REF, BASE_ROLE, PASSWORD_VAR, ORDER_TEMPLATE_FIXTURE,
   VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
-  expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField,
+  expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField, ORG_STATUS, orgDescriptionOf, orgDrift,
 } from './org-returns-specs.mjs';
 
 const FRESH = process.argv.includes('--fresh');
 const VERIFY_ONLY = process.argv.includes('--verify');
 const SPARES_ONLY = process.argv.includes('--spares-only');
 const ISOLATED_ONLY = process.argv.includes('--isolated-only');
+const ORGS_ONLY = process.argv.includes('--orgs-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const template = JSON.parse(readFileSync(join(ROOT, 'test-data', ORDER_TEMPLATE_FIXTURE), 'utf8'));
 const roleByKey = Object.fromEntries(ROLES.map((r) => [r.key, r]));
@@ -120,13 +124,21 @@ async function findOrg(spec, knownId) {
   return null;
 }
 
-async function ensureOrg(spec, knownId) {
+/**
+ * Find-or-create one organization and reconcile it to the spec: name, emails, org-level roles, status and
+ * description. PUT /api/organizations is a FULL replace (vcst 2026-10-12): a body carrying only
+ * id/memberType/name/emails nulls status and description, so every write here is GET → merge → PUT whole.
+ * `repairOnly` (--orgs-only): never create, and never change an org-level role — a missing org or a role
+ * drift is an error to report, not a write.
+ */
+async function ensureOrg(spec, knownId, { repairOnly = false } = {}) {
   const email = orgEmailOf(spec);
+  const description = orgDescriptionOf(spec);
   let org = await findOrg(spec, knownId);
   if (!org) {
+    if (repairOnly) throw new Error(`org ${spec.alias} (${knownId || 'no overlay id'}) not found live — --orgs-only never creates; run the seeder that owns it`);
     const created = await api('POST', '/api/members', {
-      memberType: 'Organization', name: spec.name, emails: email ? [email] : [], status: 'Approved',
-      description: `AGENT-TEST VCST-5884 organization returns fixture (${spec.key})`,
+      memberType: 'Organization', name: spec.name, emails: email ? [email] : [], status: ORG_STATUS, description,
     });
     log(`  ✓ create org ${spec.name} (${created?.id})`);
     if (DRY_RUN) return { id: `dry-${spec.key}`, name: spec.name };
@@ -134,28 +146,49 @@ async function ensureOrg(spec, knownId) {
   }
   const wantRoles = spec.orgRoles.map((k) => ({ organizationId: org.id, ...roleRef(k) }));
   const haveRoleIds = (org.roles || []).map((r) => r.roleId).sort();
+  const rolesDrift = JSON.stringify(haveRoleIds) !== JSON.stringify(wantRoles.map((r) => r.roleId).sort());
+  if (repairOnly && rolesDrift) throw new Error(`org ${spec.alias}: org-level roles [${haveRoleIds}] != spec [${wantRoles.map((r) => r.roleId)}] — --orgs-only never changes a role; nothing written for this org`);
   const wantEmails = email ? [email] : [];
-  const dirty = JSON.stringify(haveRoleIds) !== JSON.stringify(wantRoles.map((r) => r.roleId).sort())
-    || JSON.stringify(org.emails || []) !== JSON.stringify(wantEmails) || org.name !== spec.name || org.status !== 'Approved';
-  if (dirty) {
-    // PUT /api/organizations is a FULL replace: a case body carrying only id/memberType/name/emails nulls
-    // status and description (vcst 2026-10-12), so the restore re-sends both, not just the name.
-    const renamed = org.name !== spec.name ? ` name restored from "${org.name}"` : '';
-    const restored = org.status !== 'Approved' ? `, status restored from ${org.status}` : '';
-    await api('PUT', '/api/organizations', {
-      ...org, name: spec.name, emails: wantEmails, roles: wantRoles, status: 'Approved',
-      description: org.description || `AGENT-TEST VCST-5884 organization returns fixture (${spec.key})`,
-    }, { expectStatus: [200, 204] });
-    log(`  ↻ org ${spec.name}: emails [${wantEmails}] org-level roles [${wantRoles.map((r) => r.roleId)}]${renamed}${restored}`);
+  const drift = [
+    rolesDrift && `org-level roles [${haveRoleIds}]`,
+    JSON.stringify(org.emails || []) !== JSON.stringify(wantEmails) && `emails ${JSON.stringify(org.emails || [])}`,
+    org.name !== spec.name && `name '${org.name}'`,
+    org.status !== ORG_STATUS && `status ${org.status}`,
+    org.description !== description && `description ${JSON.stringify(org.description)}`,
+  ].filter(Boolean);
+  if (drift.length) {
+    // Merge the spec fields onto the LIVE object, so every field the spec does not own (addresses, phones,
+    // groups, seo, dynamic properties…) is sent back unchanged.
+    await api('PUT', '/api/organizations', { ...org, name: spec.name, emails: wantEmails, roles: wantRoles, status: ORG_STATUS, description }, { expectStatus: [200, 204] });
+    log(`  ${DRY_RUN ? '[DRY] would restore' : '↻ restored'} org ${spec.alias} (${org.id}) from ${drift.join(', ')}`);
     if (!DRY_RUN) {
       const back = await api('GET', `/api/organizations/${org.id}`);
-      if (back.name !== spec.name || back.status !== 'Approved') throw new Error(`org ${spec.name}: name/status did not take (${back.name}, ${back.status})`);
-      if (JSON.stringify((back.roles || []).map((r) => r.roleId).sort()) !== JSON.stringify(wantRoles.map((r) => r.roleId).sort())) throw new Error(`org ${spec.name}: org-level roles did not take (${JSON.stringify(back.roles)})`);
-      if (JSON.stringify(back.emails || []) !== JSON.stringify(wantEmails)) throw new Error(`org ${spec.name}: emails did not take (${JSON.stringify(back.emails)})`);
+      const got = { name: back.name, status: back.status, description: back.description, emails: back.emails || [], roles: (back.roles || []).map((r) => r.roleId).sort() };
+      const want = { name: spec.name, status: ORG_STATUS, description, emails: wantEmails, roles: wantRoles.map((r) => r.roleId).sort() };
+      if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`org ${spec.alias} read back ${JSON.stringify(got)} != ${JSON.stringify(want)}`);
       org = back;
     }
   } else verbose(`reuse org ${spec.name}`);
   return org;
+}
+
+/**
+ * --orgs-only: every declared organization, found by its overlay id (or by either name), reconciled in
+ * repair-only mode. A failure on one org is reported and the rest still run; the exit code is non-zero.
+ */
+async function repairOrgsOnly() {
+  const ov = overlay();
+  let repaired = 0; let failed = 0;
+  log(`ORGS-ONLY repair — ${ORGS.length} organization(s), nothing else is read for write`);
+  for (const o of ORGS) {
+    try {
+      const drift = orgDrift(o, await findOrg(o, ov[o.alias]?.id));
+      const org = await ensureOrg(o, ov[o.alias]?.id, { repairOnly: true }); // logs the restore, or throws
+      if (drift.length) repaired += 1; else log(`  ✓ ${o.alias} (${org.id}) matches the spec`);
+    } catch (e) { failed += 1; log(`  ✗ ${o.alias}: ${e.message}`); }
+  }
+  log(`${DRY_RUN ? 'DRY RUN — would restore' : 'Restored'} ${repaired} organization(s); ${failed} refused.`);
+  if (failed) process.exitCode = 1;
 }
 
 /* ── accounts, contacts, memberships ─────────────────────────────────────────────────────────── */
@@ -560,6 +593,10 @@ async function main() {
   const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY);
   if (ONLY && !personas.length && ONLY !== OTHER_RETURN.alias) throw new Error(`--only ${ONLY} matches no persona`);
   if (ISOLATED_ONLY && (ONLY || SPARES_ONLY || FRESH)) throw new Error('--isolated-only cannot be combined with --only / --spares-only / --fresh');
+  if (ORGS_ONLY) {
+    if (ONLY || SPARES_ONLY || FRESH || ISOLATED_ONLY || TEARDOWN || VERIFY_ONLY) throw new Error('--orgs-only stands alone (no --only / --spares-only / --fresh / --isolated-only / --teardown / --verify)');
+    await repairOrgsOnly(); return;
+  }
   if (TEARDOWN && ISOLATED_ONLY) { await teardown(PERSONAS.filter((p) => p.isolated), { orgs: ORGS.filter((o) => o.isolated), roles: [], wide: true }); return; }
   if (TEARDOWN) { await teardown(personas); return; }
 
