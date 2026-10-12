@@ -35,7 +35,7 @@ import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
 import { findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, entryPath } from './index-build.mjs';
+import { buildIndex, buildRow, claimHash, entryPath } from './index-build.mjs';
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
@@ -399,7 +399,11 @@ export function appendEvidence(text, item, where) {
   if ((data.evidence ?? []).some((e) => sameEvidence(e, item))) return { text, data, already: true };
   // A handed-off item (`mergedFrom`) from a session this entry already counts is the same observer
   // twice: flagged, kept for provenance, not counted (as sync-base / merge-entries do).
-  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), item]) };
+  // WHICH BODY IT WAS APPLIED TO (VCST-6179). A judge's `claim-amended` names the body it corrected
+  // (`amendedFrom`); a confirmation that lands on `main` while that PR is in review carries the OLD
+  // body's hash, and so stops counting once the correction merges (`attestsCurrentClaim`).
+  const stamped = item.bodyHash ? item : { ...item, bodyHash: claimHash(body) };
+  const next = { ...data, evidence: flagDuplicateSessions([...(data.evidence ?? []), stamped]) };
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 

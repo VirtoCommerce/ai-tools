@@ -19,7 +19,7 @@ import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neigh
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { amendedAt, attestsCurrentClaim, buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -46,9 +46,9 @@ export function trustOf(evidence = []) {
   // Support of the claim AS IT STANDS: after a judge's `claim-amended`, confirmations of the old
   // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
   // sessions and operators printed beside the count are the ones the count is made of.
-  const cut = amendedAt(evidence);
-  const supporting = evidence.filter((e) => !e.contradicts && attestsCurrentClaim(e, cut));
-  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, cut)).length;
+  const amendments = amendmentsOf(evidence);
+  const supporting = evidence.filter((e) => !e.contradicts && attestsCurrentClaim(e, amendments));
+  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
   const { trust: confirmations, disputed, resolved } = countEvidence(evidence);

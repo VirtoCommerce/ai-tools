@@ -120,7 +120,8 @@ second branch opened alongside the first must be brought up to date by hand.
 
    `observe` takes only an active entry with an open dispute, so record before you resolve. It marks
    the item as the investigation's: it does not count in the queue, and after `claim-amended` it is
-   what the entry's trust is made of — confirmations of the old wording stop counting.
+   what the entry's trust is made of — confirmations of the old wording stop counting. One judging
+   session counts as ONE confirmation however many stands it observed.
 3. **Close each dispute you have a verdict for, on each entry that holds it** — after a split, run
    `resolve` once per child (the verdict may differ between children):
 
@@ -132,10 +133,13 @@ second branch opened alongside the first must be brought up to date by hand.
    It writes the verdict onto that entry's copies of the dispute, rebuilds `index.json`, and
    **refuses** a session that confirmed or disputed the entry itself, before or after the dispute — a
    party never judges its own case. Only your own `observe` items after the dispute do not disqualify
-   you, so never `kb_confirm` / `kb_dispute` an entry you are judging. If two different disputes share
+   you, so never `kb_confirm` / `kb_dispute` an entry you are judging — a queued one counts too, even
+   under a held queue. If two different disputes share
    one `at`, it refuses until `--by <that dispute's by>` names one. A party is a session, not a
    person: when the dispute carries your own `who` it says so, and the PR must too. Both `observe` and
-   `resolve` run the push's secret gate over what they write and refuse on a hit.
+   `resolve` run the push's secret gate over what they write and refuse on a hit. `claim-amended`
+   records the hash of the body `main` holds (`--main <ref>`, default `origin/main`) and refuses while
+   the body is still that one — edit the claim first.
 4. After body edits, `npm run kb -- reindex --base <base>`, then `git -C <base> diff` — every change
    must be one a verdict explains.
 

@@ -10,7 +10,7 @@
 // declared. The hints are hypotheses for the judge to test live, never a verdict: a dispute is
 // settled by a fresh investigation (stands, storefront, Admin, docs, source), not from the papers.
 
-import { amendedAt, attestsCurrentClaim, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, claimHash, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
 
 export { isInvestigation };
 import { parseConditions } from './conditions.mjs';
@@ -22,22 +22,27 @@ const idsIn = (v) => (Array.isArray(v) ? v : v ? [v] : []).map((x) => (typeof x 
 const counted = (evidence) => (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
 
 /**
- * Two evidence / log stamps compared by TIME. A string comparison of ISO stamps is wrong when only
- * one carries milliseconds (`…:00Z` sorts after `…:00.000Z`), and legacy items were written both
- * ways. Unparsable stamps fall back to the string order rather than to "never".
+ * Evidence / log stamps compared by TIME. A string comparison of ISO stamps is wrong when only one
+ * carries milliseconds (`…:00Z` sorts after `…:00.000Z`), and legacy items were written both ways.
+ *
+ * `cmpAt` is a TOTAL order, so a sort over a mix is consistent: every parseable stamp by time, then
+ * the unparsable ones by text. The two predicates never guess from text: a stamp that does not parse
+ * cannot be placed, so it is never "after" anything (no exposure, no "confirmed since"), and it is
+ * always "at or before" (the party check errs toward refusing).
  */
+const ms = (a) => Date.parse(String(a ?? ''));
 const cmpAt = (a, b) => {
-  const x = Date.parse(String(a ?? ''));
-  const y = Date.parse(String(b ?? ''));
+  const x = ms(a);
+  const y = ms(b);
   if (Number.isFinite(x) && Number.isFinite(y)) return x - y;
+  if (Number.isFinite(x) !== Number.isFinite(y)) return Number.isFinite(x) ? -1 : 1;
   return String(a ?? '').localeCompare(String(b ?? ''));
 };
-const atOrBefore = (a, b) => cmpAt(a, b) <= 0;
-const after = (a, b) => cmpAt(a, b) > 0;
+const atOrBefore = (a, b) => !(Number.isFinite(ms(a)) && Number.isFinite(ms(b))) || ms(a) <= ms(b);
+const after = (a, b) => Number.isFinite(ms(a)) && Number.isFinite(ms(b)) && ms(a) > ms(b);
 
-/** An entry a judge may still work on: active, with at least one open dispute. */
-const hasOpenDispute = (data) => String(data?.status ?? 'active') === 'active'
-  && (Array.isArray(data?.evidence) ? data.evidence : []).some((e) => e.contradicts && !isResolved(e));
+/** An entry a judge may still work on -- exactly the entries the queue lists (`disputeState`). */
+const hasOpenDispute = (data) => disputeState({ data, path: null }) !== null;
 
 /**
  * Build strings a note names in prose: `3.1007.27`, `2.59.0-pr-2476-31b5`, `pr-141`. Exactly three
@@ -66,8 +71,8 @@ export function disputeState(entry) {
   // What the queue weighs against the dispute: confirmations of the claim as it stands, NOT the
   // judge's own investigation. Counted as support, a judge's `observe` raised `confirmations`, lit the
   // "dispute wrong?" hint and dropped the entry down the queue before any verdict was given.
-  const cut = amendedAt(items);
-  const support = items.filter((e) => !e.contradicts && !isInvestigation(e) && attestsCurrentClaim(e, cut));
+  const amendments = amendmentsOf(items);
+  const support = items.filter((e) => !e.contradicts && !isInvestigation(e) && attestsCurrentClaim(e, amendments));
   const firstOpenAt = open.map((e) => String(e.at ?? '')).sort(cmpAt)[0];
   const sessionsOf = (xs) => new Set(xs.map((e) => e.by).filter(Boolean));
   const supportSessions = sessionsOf(support);
@@ -104,17 +109,22 @@ export function hints(s) {
   return out;
 }
 
-/** How often an entry was put in front of agents since its first open dispute (from the logs). */
+/**
+ * How often an entry was put in front of agents since its first open dispute (from the logs). Only
+ * deliveries count: an ask that ANSWERED or listed it (`answer` / `ambiguous`), a show that served its
+ * body (`answer`). A miss, an unreachable base or a failed read put nothing in front of anyone.
+ */
+const DELIVERED_ASK = new Set(['answer', 'ambiguous']);
 export function exposure(lines, states) {
   const since = new Map(states.map((s) => [s.id, s.firstOpenAt]));
   const out = new Map(states.map((s) => [s.id, { asks: 0, shows: 0 }]));
   for (const l of lines) {
     if (l.synthetic === true) continue;
-    if (l.kind === 'ask') {
+    if (l.kind === 'ask' && (l.state == null || DELIVERED_ASK.has(l.state))) {
       for (const id of new Set([...idsIn(l.shown), ...idsIn(l.matched)])) {
         if (since.has(id) && after(l.at, since.get(id))) out.get(id).asks += 1;
       }
-    } else if (l.kind === 'show' && since.has(l.id) && after(l.at, since.get(l.id))) {
+    } else if (l.kind === 'show' && (l.state == null || l.state === 'answer') && since.has(l.id) && after(l.at, since.get(l.id))) {
       out.get(l.id).shows += 1;
     }
   }
@@ -171,11 +181,11 @@ export function dossier(entry, { exp = null, state = null } = {}) {
   ];
   if (exp) lines.push(`- served since the first open dispute: ${exp.asks} ask(s), ${exp.shows} show(s)`);
   if (state) for (const h of hints(state)) lines.push(`- hint: ${h}`);
-  const cut = amendedAt(items);
+  const amendments = amendmentsOf(items);
   lines.push('', '| # | side | stand | conditions | builds in note | at | by | resolution |', '|---|---|---|---|---|---|---|---|');
   items.forEach((e, i) => {
     const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation'
-      : attestsCurrentClaim(e, cut) ? 'confirm' : 'confirm (pre-amendment)';
+      : attestsCurrentClaim(e, amendments) ? 'confirm' : 'confirm (pre-amendment)';
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => `${k}=${v}`).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
     const res = e.contradicts ? (isResolved(e) ? `${e.resolved}` : e.resolved ? `INVALID ${e.resolved}` : 'open') : '';
@@ -205,7 +215,7 @@ export function dossier(entry, { exp = null, state = null } = {}) {
  * confirmation that bypassed the door and its gates -- and it is marked `investigation: true`, the
  * one thing that lets `applyResolution` tell the judge's own work from a session taking a side.
  */
-export function appendObservation(data, { deployment, conditions, note, session, who = null, now = new Date() }) {
+export function appendObservation(data, { deployment, conditions, note, session, who = null, body = null, now = new Date() }) {
   if (!String(deployment ?? '').trim()) return { problem: '--deployment is required' };
   if (!conditions) return { problem: '--conditions is required: an investigation records what the stand ran' };
   if (!String(note ?? '').trim()) return { problem: '--note is required: what was observed, under these conditions' };
@@ -222,6 +232,8 @@ export function appendObservation(data, { deployment, conditions, note, session,
     ...(who ? { who } : {}),
     note: String(note).trim(),
     investigation: true,
+    // The body observed -- after Step 6.1's edits, the corrected one (`attestsCurrentClaim`).
+    ...(body != null ? { bodyHash: claimHash(body) } : {}),
   };
   return { data: { ...data, evidence: [...(Array.isArray(data.evidence) ? data.evidence : []), item] }, item };
 }
@@ -244,8 +256,16 @@ export const RESOLUTION_MAX = 600;
  * in the CLI holds two keys. `session` must be a real session key (`hasSessionId`); outside Claude
  * Code every process mints its own key, so every run would be "independent" of everyone, and the
  * caller passes null instead. The dossier prints `who` beside `by` so a reviewer sees the person.
+ *
+ * `pending` is the judging session's OWN evidence on this entry that is still in a queue -- a
+ * `kb_confirm` / `kb_dispute` not yet pushed (a held queue keeps it there for the whole run). The
+ * checkout cannot show it, and without it a party could close the dispute it had just taken a side in.
+ *
+ * `amendedFrom` (with `claim-amended`) is the hash of the body the verdict corrects, as `main` holds
+ * it; it is written on the resolution so confirmations of that body stop counting even when they
+ * reach `main` after this resolution (`attestsCurrentClaim`, index-build.mjs).
  */
-export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, now = new Date() }) {
+export function applyResolution(data, { at, by: disputedBy = null, verdict, why, ref, session, pending = [], amendedFrom = null, now = new Date() }) {
   if (!RESOLUTIONS.includes(verdict)) return { problem: `--verdict must be one of: ${RESOLUTIONS.join(', ')}` };
   const reason = String(why ?? '').trim();
   if (!reason) return { problem: '--why is required: one sentence a reader of the entry can check' };
@@ -266,6 +286,7 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
   const by = `session:${session}`;
   const party = items.some((e) => e.by === by && !(isInvestigation(e) && !atOrBefore(e.at, at)));
   if (party) return { problem: `${by} confirmed or disputed ${data.id} itself: a party to a dispute never judges it (only its own \`observe\` items after the dispute are exempt)` };
+  if (pending.length) return { problem: `${by} has ${pending.length} queued confirm/dispute of ${data.id} not yet in the base: a party to a dispute never judges it` };
   const evidence = items.map((e) => (!targets.has(e) ? e : {
     ...e,
     resolved: verdict,
@@ -273,6 +294,7 @@ export function applyResolution(data, { at, by: disputedBy = null, verdict, why,
     resolvedBy: by,
     resolvedIn: String(ref).trim(),
     resolution: reason,
+    ...(verdict === 'claim-amended' && amendedFrom ? { amendedFrom } : {}),
   }));
   return { data: { ...data, evidence } };
 }

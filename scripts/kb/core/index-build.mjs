@@ -12,6 +12,8 @@
 // (PLAN §12 rule 5): a declared count is a second copy of something that already has a home, and
 // the second copy is the one that goes stale.
 
+import { createHash } from 'node:crypto';
+
 import { idList, normalizeScope, textList } from './index-load.mjs';
 
 /**
@@ -32,36 +34,74 @@ export function countEvidence(evidence = []) {
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
-  const cut = amendedAt(items);
-  return { trust: items.filter((e) => !e?.contradicts && attestsCurrentClaim(e, cut)).length, disputed: contradicting.length - resolved, resolved };
+  return { trust: supportOf(items).length, disputed: contradicting.length - resolved, resolved };
 }
 
 /** The judge's own observation (`kb:disputes observe`): made of the behaviour the verdict settles. */
 export const isInvestigation = (e) => e?.investigation === true && !e?.contradicts;
 
 /**
- * When a judge last CORRECTED the entry's claim (`claim-amended`), as epoch ms, or null.
- *
- * A confirmation made before that confirmed the OLD wording -- the one the judge found wrong -- so it
- * stays on the entry as history and stops counting as support (VCST-6179 review): an amended entry
- * would otherwise read "well attested" by sessions that never saw the behaviour it now states. The
- * other verdicts do not reset it: under `version-scoped` / `conditions-scoped` / `split` the earlier
- * confirmations saw one true half of what the entry now says.
+ * The body an evidence item was applied to, as a short hash (`bodyHash` on the item, `amendedFrom` on
+ * a `claim-amended` resolution). Line endings and surrounding whitespace do not change a claim.
  */
-export function amendedAt(evidence = []) {
-  const stamps = (Array.isArray(evidence) ? evidence : [])
+export const claimHash = (body) => createHash('sha256').update(String(body ?? '').replace(/\r\n/g, '\n').trim()).digest('hex').slice(0, 12);
+
+/**
+ * Every time a judge CORRECTED the entry's claim (`claim-amended`): when it was resolved, when the
+ * dispute it closed was filed, and -- when the resolution recorded it -- the hash of the body it
+ * corrected. Copies of one dispute (a split or merge) give one amendment each; harmless.
+ */
+export function amendmentsOf(evidence = []) {
+  return (Array.isArray(evidence) ? evidence : [])
     .filter((e) => isResolved(e) && e.resolved === 'claim-amended')
-    .map((e) => Date.parse(String(e.resolvedAt ?? '')))
-    .filter(Number.isFinite);
-  return stamps.length ? Math.max(...stamps) : null;
+    .map((e) => ({ at: Date.parse(String(e.resolvedAt ?? '')), disputeAt: Date.parse(String(e.at ?? '')), from: e.amendedFrom ?? null }));
 }
 
 /**
- * Does a supporting item attest the claim as it stands? Always, until a `claim-amended`; after one,
- * only the judge's investigation (written before the resolution, of the corrected behaviour) and
- * what was observed after it. An item whose `at` does not parse cannot be placed after, so it does not.
+ * Does a supporting item attest the claim AS IT STANDS? A confirmation of the wording a judge later
+ * corrected stays on the entry as history and stops counting (VCST-6179 review): an amended entry
+ * would otherwise read "well attested" by sessions that never saw the behaviour it now states. The
+ * other verdicts do not reset support: under `version-scoped` / `conditions-scoped` / `split` the
+ * earlier confirmations saw one true half of what the entry now says.
+ *
+ * An item PREDATES an amendment when either is true:
+ *   - TIME: it was made before the resolution -- or, for the judge's own investigation, which is
+ *     written before `resolve` and observes the corrected behaviour, before the dispute it settles
+ *     (so the investigation of an EARLIER round does not carry over a later correction);
+ *   - BODY: it was applied to the body the amendment corrected (`bodyHash` = `amendedFrom`). This is
+ *     what catches a confirmation that reached `main` while the judge's PR was in review: made after
+ *     the resolution, of the old wording. `push` stamps `bodyHash` on every item it applies.
+ * An item whose `at` does not parse cannot be placed after anything, so it predates.
  */
-export const attestsCurrentClaim = (e, cut) => cut == null || isInvestigation(e) || Date.parse(String(e?.at ?? '')) > cut;
+export function attestsCurrentClaim(e, amendments = []) {
+  if (!amendments.length) return true;
+  const t = Date.parse(String(e?.at ?? ''));
+  return !amendments.some((a) => {
+    if (a.from && e?.bodyHash && e.bodyHash === a.from) return true;
+    if (!Number.isFinite(t)) return true;
+    const edge = isInvestigation(e) ? a.disputeAt : a.at;
+    return Number.isFinite(edge) && t <= edge;
+  });
+}
+
+/**
+ * The items that count as support: not contradicting, not a duplicate, attesting the current claim --
+ * and the judge's investigation ONCE PER SESSION. One judge checking three stands is one run, not
+ * three corroborations: counted per item, a single `/kb-judge` session made an amended entry
+ * "well attested" on its own (VCST-6179 review).
+ */
+export function supportOf(evidence = []) {
+  const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
+  const amendments = amendmentsOf(items);
+  const investigators = new Set();
+  return items.filter((e) => {
+    if (e?.contradicts || !attestsCurrentClaim(e, amendments)) return false;
+    if (!isInvestigation(e) || !e.by) return true;
+    if (investigators.has(e.by)) return false;
+    investigators.add(e.by);
+    return true;
+  });
+}
 
 /**
  * How a judge closed a dispute (VCST-6179, `/kb-judge`). Written ON the contradicting evidence item,
@@ -80,7 +120,7 @@ export const RESOLUTIONS = Object.freeze(['claim-amended', 'version-scoped', 'co
 export const isResolved = (e) => Boolean(e?.contradicts) && RESOLUTIONS.includes(e?.resolved);
 
 /** The fields a resolution writes onto a contradicting item -- the only in-place edit an item ever gets. */
-export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution']);
+export const RESOLUTION_FIELDS = Object.freeze(['resolved', 'resolvedAt', 'resolvedBy', 'resolvedIn', 'resolution', 'amendedFrom']);
 
 /** An anchor is `{coordinate}` or a bare string; both name one place. Rows carry it as written. */
 const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? '').trim();

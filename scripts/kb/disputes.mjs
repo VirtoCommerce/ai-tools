@@ -7,18 +7,22 @@
 //   observe <KB-id> --deployment <stand> --conditions "k=v; k=v" --note "<what was seen>"
 //                                the investigation's observation of a disputed entry, on the judge's branch
 //   resolve <KB-id> --at <iso> [--by <session:...>] --verdict <v> --why "<one sentence>" --in <PR or branch>
-//                                close ONE dispute on the entry, in place, and rebuild index.json
+//           [--main <ref>]       close ONE dispute on the entry, in place, and rebuild the index (`kb reindex`);
+//                                `claim-amended` records the hash of the body `main` (default origin/main) holds
 //
 // Reads a LOCAL checkout of the base (entries + logs). `resolve` writes only to that checkout and
 // never commits or pushes: the decision goes to the public base as a reviewed PR, and a human merges
 // it. The `/kb-judge` skill is the only intended caller of `resolve`.
 
 import '../lib/sync-stdio.mjs'; // before any output: a piped stdout must not lose its tail to process.exit()
+import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { openBase } from './core/base.mjs';
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
-import { buildIndex, buildRow, RESOLUTIONS } from './core/index-build.mjs';
+import { buildRow, claimHash, RESOLUTIONS } from './core/index-build.mjs';
+import { reindex } from './core/verbs.mjs';
 import { appendObservation, applyResolution, clusters, disputeState, dossier, exposure, hints, priority } from './core/disputes.mjs';
 import { canonicalStand } from './core/canonical.mjs';
 import { normalizeConditions, repairConditions } from './core/conditions.mjs';
@@ -31,7 +35,7 @@ const USAGE = `usage: npm run kb:disputes -- list --base <checkout> [--json]
        npm run kb:disputes -- dossier <KB-id> --base <checkout>
        npm run kb:disputes -- cluster <KB-id> --base <checkout>
        npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" --note "<...>" --base <checkout>
-       npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> --base <checkout>`;
+       npm run kb:disputes -- resolve <KB-id> --at <iso> [--by <dispute's by>] --verdict <${RESOLUTIONS.join('|')}> --why "<...>" --in <PR> [--main <ref>] --base <checkout>`;
 
 function parseArgs(argv) {
   const a = { verb: argv[0], id: null, flags: {} };
@@ -50,11 +54,57 @@ function parseArgs(argv) {
   return a;
 }
 
+/**
+ * Every entry that parses, and every one that does not. One broken file used to throw out of the
+ * whole command; now the reading verbs say which and go on, and the writing verbs refuse -- a rebuilt
+ * index would silently drop the broken entry's row (`kb reindex` reports that as "removed").
+ */
 function readEntries(base) {
-  return readdirSync(join(base, 'entries')).filter((n) => n.endsWith('.md')).map((n) => {
+  const entries = [];
+  const broken = [];
+  for (const n of readdirSync(join(base, 'entries')).filter((x) => x.endsWith('.md'))) {
     const path = `entries/${n}`;
-    return { path, ...parseEntry(readFileSync(join(base, path), 'utf8'), path) };
-  });
+    try { entries.push({ path, ...parseEntry(readFileSync(join(base, path), 'utf8'), path) }); } catch (err) { broken.push({ path, why: err.message }); }
+  }
+  return { entries, broken };
+}
+
+/**
+ * The judging session's own confirm / dispute of `id` still sitting in a queue: the run-private one
+ * (`KB_QUEUE_DIR`) and the shared one the MCP server writes. Not in the checkout yet, so the party
+ * check cannot see it there (`applyResolution`, `pending`).
+ */
+function pendingOf(id, by) {
+  const dirs = new Set([queueDir(process.env), queueDir({ ...process.env, KB_QUEUE_DIR: '' })]);
+  const out = [];
+  for (const dir of dirs) {
+    let names = [];
+    try { names = readdirSync(dir).filter((n) => n.endsWith('.jsonl')); } catch { continue; }
+    for (const n of names) {
+      let text = '';
+      try { text = readFileSync(join(dir, n), 'utf8'); } catch { continue; }
+      for (const raw of text.split('\n')) {
+        let l;
+        try { l = raw.trim() ? JSON.parse(raw) : null; } catch { l = null; }
+        if (l && (l.kind === 'confirm' || l.kind === 'dispute') && String(l.id ?? '').toUpperCase() === id && l.payload?.item?.by === by) out.push(l);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * The entry's body as `main` holds it -- at the branch's merge base with `<ref>`, which is what the
+ * judge's edit started from. `null` when the entry is new on the branch (a split child); `undefined`
+ * when git cannot say (not a checkout, no such ref).
+ */
+function mainBody(base, path, ref) {
+  const git = (...args) => execFileSync('git', ['-C', base, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+  let mb;
+  try { mb = git('merge-base', 'HEAD', ref).trim(); } catch { return undefined; }
+  let text;
+  try { text = git('show', `${mb}:${path}`); } catch { return null; }
+  try { return parseEntry(text, path).body; } catch { return undefined; }
 }
 
 /** Rows of index.json whose counts differ from what the entry's own evidence gives, as lines. */
@@ -98,19 +148,26 @@ const unshell = (v) => (typeof v === 'string' ? undoMsysRewrite(v, process.env, 
 /** A real session key or none: outside Claude Code each process mints its own, which would make every run "independent". */
 const judgeSession = () => (hasSessionId(process.env) ? sessionId(process.env) : null);
 
-function main() {
+async function main() {
   const a = parseArgs(process.argv.slice(2));
   for (const f of ['note', 'why', 'in']) a.flags[f] = unshell(a.flags[f]);
   a.flags.conditions = repairConditions(a.flags.conditions, process.env);
-  const entries = readEntries(a.flags.base);
+  const { entries, broken } = readEntries(a.flags.base);
   const byId = new Map(entries.map((e) => [String(e.data.id).toUpperCase(), e]));
+  const writing = a.verb === 'observe' || a.verb === 'resolve';
+  if (broken.length) {
+    for (const b of broken) console.error(`! ${b.path} does not parse: ${b.why}`);
+    if (writing) { console.error('refused: rebuilding the index now would drop the broken entr(ies); fix them first'); return 1; }
+  }
 
-  // One entry rewritten byte-stably, then the index rebuilt with the builder every writer uses.
-  const write = (entry, data) => {
+  // One entry rewritten byte-stably, then the index rebuilt by `kb reindex` itself -- the one
+  // implementation that honours the plane -> index map in kb.json.
+  const write = async (entry, data) => {
     writeFileSync(join(a.flags.base, entry.path), `${stringifyFrontmatter(data)}\n${entry.body}`);
-    const rows = readEntries(a.flags.base).map((e) => buildRow(e.data, e.path));
-    writeFileSync(join(a.flags.base, 'index.json'), `${JSON.stringify(buildIndex(rows), null, 2)}\n`);
-    return rows.find((x) => x.id === data.id);
+    const r = await reindex(openBase({ baseArg: a.flags.base }), { write: true });
+    if (r.state !== 'answer') console.error(`warning: the entry was written but the index was not rebuilt (${r.state}${r.why ? `: ${r.why}` : ''}); run \`npm run kb -- reindex --base ${a.flags.base}\``);
+    for (const p of r.problems ?? []) console.error(`! ${p.path} -- ${p.why}`);
+    return buildRow(data, entry.path);
   };
 
   if (a.verb === 'observe') {
@@ -120,12 +177,12 @@ function main() {
     if (cond.problem) { console.error(`refused: --conditions ${cond.problem}`); return 1; }
     const r = appendObservation(entry.data, {
       deployment: canonicalStand(String(a.flags.deployment ?? '')), conditions: cond.value, note: a.flags.note,
-      session: judgeSession(), who: cachedWho({ dir: queueDir(process.env), env: process.env }),
+      session: judgeSession(), who: cachedWho({ dir: queueDir(process.env), env: process.env }), body: entry.body,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([r.item.deployment, r.item.conditions, r.item.note]);
     if (blocked) { console.error(blocked); return 1; }
-    const row = write(entry, r.data);
+    const row = await write(entry, r.data);
     console.log(`observed on ${a.id} at ${r.item.at} (${r.item.deployment}); ${row.trust} confirmation(s), ${row.disputed} open dispute(s). Nothing was committed.`);
     return 0;
   }
@@ -133,8 +190,22 @@ function main() {
   if (a.verb === 'resolve') {
     const entry = byId.get(a.id);
     if (!entry) throw new Error(`${a.id} is not in ${a.flags.base}`);
+    const session = judgeSession();
+    // claim-amended: what the verdict corrects is the body `main` holds. Unchanged here means the
+    // body was never edited (Step 6.1), and the verdict would claim a correction that is not there.
+    let amendedFrom = null;
+    if (a.flags.verdict === 'claim-amended') {
+      const ref = a.flags.main ?? 'origin/main';
+      const before = mainBody(a.flags.base, entry.path, ref);
+      if (before === undefined) console.error(`warning: git could not show ${entry.path} at ${ref}; the amendment is dated, not hashed`);
+      else if (before !== null) {
+        if (claimHash(before) === claimHash(entry.body)) { console.error(`refused: claim-amended, but the body of ${a.id} is the one ${ref} holds -- edit the claim first`); return 1; }
+        amendedFrom = claimHash(before);
+      }
+    }
     const r = applyResolution(entry.data, {
-      at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session: judgeSession(),
+      at: a.flags.at, by: a.flags.by ?? null, verdict: a.flags.verdict, why: a.flags.why, ref: a.flags.in, session,
+      pending: session ? pendingOf(a.id, `session:${session}`) : [], amendedFrom,
     });
     if (r.problem) { console.error(`refused: ${r.problem}`); return 1; }
     const blocked = gated([a.flags.why, a.flags.in]);
@@ -144,9 +215,9 @@ function main() {
     const filedBy = (entry.data.evidence ?? []).filter((e) => e.contradicts && String(e.at) === String(a.flags.at)
       && (!a.flags.by || e.by === a.flags.by)).map((e) => e.who).filter(Boolean);
     if (me && filedBy.includes(me)) console.error(`note: this dispute was filed by the same operator (${me}) in another session -- say so in the PR`);
-    const row = write(entry, r.data);
+    const row = await write(entry, r.data);
     console.log(`resolved the dispute at ${a.flags.at} on ${a.id} as ${a.flags.verdict}; ${row.disputed} open, ${row.resolved ?? 0} resolved`);
-    console.log('index.json rebuilt. Review with `git diff`, commit on the cluster branch, open the PR. Nothing was committed.');
+    console.log('index rebuilt. Review with `git diff`, commit on the cluster branch, open the PR. Nothing was committed.');
     return 0;
   }
 
@@ -200,4 +271,4 @@ function main() {
   return 0;
 }
 
-try { process.exitCode = main(); } catch (err) { console.error(err.message); process.exitCode = 3; }
+try { process.exitCode = await main(); } catch (err) { console.error(err.message); process.exitCode = 3; }
