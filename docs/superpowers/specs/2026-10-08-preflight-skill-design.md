@@ -324,6 +324,7 @@ action}}`. The agreed starting set (normative once it is in code):
 - `commands/qa-regression.md` Step 0 and `commands/qa-smoke.md` Step 0 → skill (build-scoped entry);
   smoke's Context7 item becomes the kb → VirtoOZ order.
 - Delete `reports/deploy-state-cache.json` and its references.
+- **Done** in this PR — decisions in §14; plan `docs/superpowers/plans/2026-10-12-preflight-phase-2.md`.
 
 ## 10. Out of scope
 

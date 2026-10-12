@@ -217,10 +217,7 @@ For `/qa-test PR #NNN` and `/qa-verify-fix`:
 
 ### Caching
 
-Store the fetched deploy state in `reports/deploy-state-cache.json` with a timestamp — all four rows
-(`declared`, `deployed`, `released-through`, `Δ`) in the same file, since a consumer that reads one
-without the others is exactly how the released-vs-deployed distinction gets lost. Reuse within the same
-hour to avoid redundant GitHub API calls and platform probes. Invalidate if the user says a new
-deployment happened. The `released-through` row is a local file read (no API), so it is cheap to
-refresh — but the ledger's own `generated:` date is what bounds its freshness, not this cache's
-timestamp.
+The per-env comparison point is `reports/regression/baseline.<env>.json`, written by `regression:close`
+for a completed run (`scripts/regression/baseline.ts`); `reports/deploy-state-cache.json` is retired.
+The `released-through` row is a local file read (no API), so it is cheap to refresh — the ledger's own
+`generated:` date is what bounds its freshness.

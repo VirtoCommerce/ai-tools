@@ -29,14 +29,12 @@ You are the smoke test orchestrator running in the main context. Spawn sub-agent
 
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Environment health** — run `/qa-env-check endpoints` (or inline: `curl -sk {BACK_URL}/health`). If unhealthy, warn user and ask whether to proceed.
-2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
-   - Record platform version and theme version — include in the smoke report header (Step 4)
-3. **Gate integrity** — run `npm run suites:gates`. The checklists are the verdict gate, so a case with no checklist item cannot fail the run: on 2026-07-27, suite 042 had grown to SMK-034 while `SMOKE-CHECKLIST.md` still declared `SMK-001 – SMK-033`, leaving the Critical saved-card revenue-path guard (SMK-034) unable to produce a NO-GO. **Non-zero exit ⇒ reconcile the checklist against the CSV before trusting the verdict** (or run and report the verdict as provisional, naming the unmapped cases).
-4. **Duplicate check** — scan `reports/regression/` for a `SMOKE-*` run from today. If found, warn user and show previous verdict.
-5. **Context7 query** — resolve `/virtocommerce/vc-docs`, query `"storefront cart checkout smoke"` with `tokens: 8000`. Check for recent module behavior changes that could affect smoke tests.
-6. **What the smoke path was OBSERVED to do** — `mcp__kb__kb_ask`, with the coordinate in the question (the page path, the GraphQL operation). This is the source item 5 cannot be: a doc describes a module change, the base holds what somebody actually saw on a named deployment, which is the class that turns a red smoke case into *known behaviour* rather than *new regression* before anybody re-runs it. A miss (exit 1) is not a blocker — it means the step is unrecorded, and what this run then establishes is worth a `kb_capture` ([`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules → *Product context*).
+1. **[`/preflight`](../skills/preflight/SKILL.md) `smoke smoke`** — env health, the deployed
+   build (recorded in the smoke report header, Step 4), the active-run lock, drift, smoke **gate
+   integrity** (`suites:gates`: a non-zero exit is a WARN — reconcile the checklist against the CSV, or
+   report the verdict as provisional, naming the unmapped cases), today's `SMOKE-*` duplicate, MCP, and
+   kb → VirtoOZ grounding for the smoke path's coordinates (a red smoke case that the base already
+   records is *known behaviour*, not a new regression).
 
 ### Step 1 — Read Suite & Prepare Run
 

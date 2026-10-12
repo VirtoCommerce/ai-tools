@@ -56,13 +56,13 @@ Suite selection (one of): `smoke` (042 + the four 078 siblings), `critical` (smo
 Run **one command** and follow its output:
 
 ```bash
-npm run regression:plan -- <selection> --json
+npm run regression:plan -- <selection> --preflight --json --preflight-out reports/regression/{RUN_ID}/preflight.json
 ```
 
 It returns, per lane, the suites to run in **dispatch order**, each with its case count, estimate,
 timeout, and any browser constraint. Exit code 1 means the selection cannot run as-is (unknown
 suite id, missing CSV, no executor, or a cap that would guarantee truncation) — **stop and report,
-do not improvise around it**.
+do not improvise around it**. Exit 2 means the pre-flight is NOT READY, exit 3 that it could not run — stop and report.
 
 **Why a command instead of doing this yourself.** Every part of this used to be hand-derived, and
 each part was got wrong at least once on the record:
@@ -382,9 +382,16 @@ did NOT run, because a scoped run's silence is otherwise unreadable:
 (per-suite test case results from JSON files)
 ```
 
-Update `test-run-status.json` to `status: "completed"` (set `finishedAt`). The background watcher launched in Step 1 detects this, writes the final static HTML (auto-refresh removed), and exits on its own.
+Close the run with **one command** — it appends `history.json`, flips `test-run-status.json` to
+`completed` (the watcher then writes the final HTML and exits), and writes this env's baseline from
+`preflight.json`:
 
-**You are the only writer of that flip — nothing deterministic does it for you.** If you end the run without it (crash, abort, hand-off), the file stays `in_progress`: the watcher never settles and `/qa-regression` Step 0's duplicate check blocks every future run. So flip it on EVERY exit path, including an aborted or partially-failed run (`completed` with the failures recorded — the run finished, the tests didn't). The backstop for the case where you can't is `npm run regression:reap` / `:apply`, which marks a provably-silent run `stalled` — that is a reclaimed orphan, not a clean close-out, and it leaves a `stalledReason` in the record.
+    npm run regression:close -- --run-id {RUN_ID} --env <TEST_ENV>
+
+Close on EVERY exit path, including an aborted or partially-failed run (`completed` with the failures
+recorded). If it refuses because suites are still open on an aborted run, flip `test-run-status.json`
+to `completed` by hand (set `finishedAt`) — an abandoned `in_progress` blocks every future run; the
+backstop when you cannot is `npm run regression:reap` / `:apply`.
 
 **Guarantee the HTML report** regardless of the watcher: run `npm run report:regression -- --run-id {RUN_ID}` once. It writes `reports/regression/{RUN_ID}/regression-report.html` from the `suite-*-results.json` files and is idempotent with the watcher.
 
