@@ -966,3 +966,807 @@ NOT DECIDABLE HERE, stated: the inverse fixture — a variations parent whose mi
 [MATH] verify whether the Differences readout can call two products equal on price when their real prices differ: it compares a MINIMUM against an ACTUAL, so equality on this row = @td(PROD_CMP_VARIATIONS.minVariationPrice) equal to the plain product's price, which is not the same claim as the two products being equally priced {HYPOTHESIS}","[NETWORK] no 4xx/5xx on /graphql
 [CONSOLE] no TypeError or JS error on the page under test
 [STATE] no cart line is created from either column — nothing in the price row is a purchase control","The variations column showing @td(PROD_CMP_VARIATIONS.price), a minimum rendered with no from-price treatment, the price row disappearing under 'Differences', the readout comparing a value other than the one the cell shows, both columns reported as equal on price while their cells differ, an identical-valued row surviving the Differences filter",Clear the compare list through the UI: 'Clear all' confirmed with 'OK',VCST-5735 · Archetype:MONEY · Technique:EP,Draft
+CMP-036,"[JOURNEY] Compare table — one native table whose every value cell resolves to its product column and attribute row, through pin, Differences and add to cart",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1) > [JOURNEY],Critical,"BL-A11Y-002, BL-A11Y-004, BL-CART-007",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+The cart holds NO line for @td(PROD_CMP_A.sku) at case start; anything else may be in it — the case reads the cart line COUNT before and after, never an absolute total.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart page renders
+[CAPTURE] record the number of cart lines rendered as CART_BASE
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+--- SCREEN: Compare page, first paint (All) ---
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] from that tree record: the number of table nodes; every columnheader name in order; for every body row its rowheader name and the text of each cell in order; the cells of the 'Price per unit' row in order
+[ASSERT] the tree holds exactly one table node before the journey continues
+--- SCREEN: Compare page, after pinning a row ---
+[CAPTURE] choose a characteristic row that is not 'Price per unit' or 'Availability'; record its label as PIN_LABEL and its cells in order as PIN_CELLS
+[ACT] click the pin control in the header cell of that row
+[WAIT] that row moves into the pinned block at the top of the body and its pin control reports aria-pressed 'true'
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[ASSERT] the pinned row is the first body row and the tree still holds exactly one table node
+--- SCREEN: Compare page, Differences ---
+[ACT] click 'Differences'
+[WAIT] the row list re-renders
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[ASSERT] the pinned row is still rendered and the 'Price per unit' row is still rendered
+--- SCREEN: Compare page, add to cart from a header cell ---
+[ACT] click 'Add to cart' in the header cell of the column for @td(PROD_CMP_A.name)
+[WAIT] the add-to-cart notification for @td(PROD_CMP_A.name) appears
+[ACT] click 'Add to cart' in the header cell of the column for @td(PROD_CMP_A.name) a second time
+[WAIT] the add-to-cart notification appears again
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[ASSERT] the table structure is unchanged after the two adds
+--- SCREEN: Cart ---
+[NAV] {{FRONT_URL}}/cart
+[WAIT] the cart line list renders
+[CAPTURE] record the number of cart lines, the line for @td(PROD_CMP_A.name) and its quantity; record the value the compare page showed in the 'Min. order qty' cell of the @td(PROD_CMP_A.name) column as MOQ_A","[MATH] table nodes in the browser accessibility tree of /compare = 1 at all four reads (first paint, after the pin, under Differences, after the adds) {SPEC} (VCST-5880 Expected)
+[MATH] columnheader nodes inside that table = 3 at every read {SPEC} (VCST-5880 Expected)
+[REL] each columnheader exposes the product name alone as its accessible name — @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name) in the order added — at every read {BL} (BL-A11Y-002)
+[REL] every body row exposes exactly 1 rowheader followed by 3 cells, so the cell count equals the columnheader count, at every read {SPEC} (VCST-5880 Expected)
+[REL] in the 'Price per unit' row the cell at position 1 contains @td(PROD_CMP_A.price), position 2 contains @td(PROD_CMP_B.price) and position 3 contains @td(PROD_CMP_FILL_1.price): the price under each columnheader is THAT product's price, at every read {SPEC} (VCST-5880 Expected)
+[REL] after the pin the cells of the pinned row equal PIN_CELLS in the same column order, and under Differences they are unchanged again {SPEC} (VCST-5880 Expected)
+[REL] the cart holds exactly CART_BASE + 1 lines after two adds from the header cell, the added line is @td(PROD_CMP_A.name), and its quantity is 2 x MOQ_A — a re-add merges into the one line instead of creating a second {BL} (BL-CART-007)","[API] the addItem mutation returns HTTP 200 with an empty errors[] — the VERDICT is the rendered cart line, never the response (VC-CART-004)
+[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A second table node appears after the pin or after Differences, the columnheader count drops after Differences or after the compact swap, the price under the first columnheader changes after the pin, the pinned row exposes fewer cells than columnheaders, the cart gains 2 lines instead of 1 after the double add, the cart line renders after a 200 that carried errors[] (VC-CART-004), spinner visible >5s, 4xx/5xx on /graphql",Remove @td(PROD_CMP_A.sku) from the cart; Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:FLOW · Purpose:FUNC,Draft
+CMP-037,"Compare table — Firefox exposes table, columnheader, rowheader and cell roles despite block/flex section styling",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-A11Y-004, BL-A11Y-002",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+LANE: Firefox (Gecko). The native accessibility tree is read in the Firefox Accessibility Inspector (DevTools > Accessibility), never through page.accessibility or ariaSnapshot — the first is absent in the Playwright build used by 3x and the second is DOM-derived. 3x (playwright-firefox, Firefox 151) could not reach the native tree from an agent lane, so on an agent lane the assertion step is BLOCKED, never PASS, and the read is a manual pass until a Gecko AX read exists.
+The premise under test: the section elements compute to display:block (table, thead, tbody) and display:flex (tr, th, td), and the PR adds NO explicit ARIA roles, so the table roles survive only if the engine keeps the implicit mapping under those display values. Chromium keeps it (CMP-036); Gecko has a different mapper.
+Pointer clicks stalled on this lane during 3x, so adding products by keyboard (Tab to the control, Enter) is acceptable; the steps below name the control, not the input method.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] read getComputedStyle(...).display for the compare table, its thead, its tbody, one body tr, one header-row th and one body td
+[ASSERT] table, thead and tbody compute to 'block' and tr, th and td compute to 'flex' — the premise of the risk; if they compute to table-* values record that and stop, because the case no longer tests what it was written for
+[ACT] MANUAL — open the Firefox Accessibility Inspector on the compare table
+[CAPTURE] record from the Inspector the role of the table, of its header row, of every header-row child and, for every body row, of its children in order
+[CAPTURE] record, from the Inspector, the accessible name of each columnheader and the text of each cell of the 'Price per unit' row in order","[MATH] nodes with role 'table' in the Gecko accessibility tree for the compare table = 1 {SPEC} (VCST-5880 Expected)
+[MATH] 'columnheader' nodes in the header row = 3, each named by the product alone — @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name) {BL} (BL-A11Y-002)
+[REL] every body row exposes 1 'rowheader' followed by 3 'cell' nodes, the same count as the columnheaders {SPEC} (VCST-5880 Expected)
+[REL] in the 'Price per unit' row the cell at position k contains the price of the product named by the columnheader at position k: @td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price) {SPEC} (VCST-5880 Expected)
+[REL] the set of table, columnheader, rowheader and cell roles Gecko exposes equals the set Chromium exposes for the same page (CMP-036's first read) — a role present in Chromium and absent in Gecko is the defect the ticket reports, on another engine {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Gecko exposes no table role (the values read as undifferentiated block text), columnheader or rowheader nodes absent, cells exposed as generic or text nodes, a role set smaller than Chromium's, the Accessibility Inspector reachable on no lane (record BLOCKED, never PASS)",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:PARITY · Technique:EP · Purpose:FUNC,Manual
+CMP-038,"Compare table — five products overflowing, every body row has exactly one cell per product in header order, including rows where a product has no value",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Critical,BL-A11Y-002,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+Five entries fill Group A to its limit and make the body overflow its scroller, so the last columns sit off-screen — the shape in which an index-mapped cell goes unnoticed.
+@td(PROD_CMP_A.name) carries a characteristic that the other four fixtures do not (AgentTestCompareOnlyOnAlpha, per the fixture notes): that row is the nearest reachable shape of 'a product has no value here'. 3x measured that a product lacking a property renders a placeholder cell of its own, so a row of 5 products always holds 5 cells. A row whose values ARRAY is shorter than the products list (the code path that would shift every later cell one column left) cannot be produced from these fixtures and stays a hypothesis; this case guards the reachable shape and the per-row cell count.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_fill_2_sku=@td(PROD_CMP_FILL_2.sku), prod_cmp_fill_2_name=@td(PROD_CMP_FILL_2.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price), prod_cmp_fill_2_price=@td(PROD_CMP_FILL_2.price), prod_longname_price=@td(PROD_LONGNAME.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders five product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] from that tree record every columnheader name in order, and for every body row its rowheader name and its cells in order, with the text of each cell
+[CAPTURE] record the row whose cell under @td(PROD_CMP_A.name) holds a value while the other four cells show the placeholder, and the row's label","[MATH] columnheader nodes = 5 and every body row exposes exactly 5 cells after its rowheader — including the row where four products have no value {SPEC} (VCST-5880 Expected)
+[REL] the columnheader names in order are @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name), @td(PROD_CMP_FILL_2.name), @td(PROD_LONGNAME.name) {BL} (BL-A11Y-002)
+[REL] in the 'Price per unit' row the cell at position 1 contains @td(PROD_CMP_A.price), position 2 @td(PROD_CMP_B.price), position 3 @td(PROD_CMP_FILL_1.price), position 4 @td(PROD_CMP_FILL_2.price), position 5 @td(PROD_LONGNAME.price) — five pairwise-distinct prices, so a one-column shift in any row fails this line {SPEC} (VCST-5880 Expected)
+[REL] in the row where only @td(PROD_CMP_A.name) has a value, the value sits in cell position 1 (under the first columnheader) and positions 2 to 5 carry the placeholder — the value did not move to another column {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A row exposes 4 or 6 cells for 5 products, the price at position 2 equals the price of the product at position 3, the only-on-Alpha value appears under the second columnheader, a placeholder cell exposed with no content or as a columnheader, console.error with TypeError, 4xx/5xx on /graphql",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC,Draft
+CMP-039,"Compare table at 375 px — header row is an empty corner cell plus one columnheader per product, tabs outside the table, mapping unchanged",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-UI-004, BL-A11Y-004",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+Below the md breakpoint the All / Differences switches and Clear category are teleported out of the sticky corner into a bar above the table, which leaves the corner cell EMPTY: the header row is then [empty cell, columnheader x N]. The corner must stay in the header row, because it holds the position of the row-header column — drop it and every columnheader sits one position left of its values.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price)","[VIEWPORT] 375
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[REFLOW]
+[PROBE:OVERFLOW]
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] from that tree record the children of the header row in order with their roles and names, the number of table nodes, and for every body row its rowheader name and its cells in order; record the ancestors of the 'All' and 'Differences' switches
+[VIEWPORT] 1280x900
+[WAIT] the page re-renders at the desktop layout
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the children of the header row in order with their roles","[MATH] table nodes at 375 px = 1 {SPEC} (VCST-5880 Expected)
+[REL] the header row at 375 px has exactly 4 children in order: one cell with no accessible name (the corner), then 3 columnheader nodes named @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name) {SPEC} (VCST-5880 model C6)
+[REL] the header row has the same child count (1 + 3) at 1280 px as at 375 px, so the corner position does not change with the breakpoint {SPEC} (VCST-5880 model C6)
+[REL] at 375 px, every body row exposes 1 rowheader then 3 cells, and in the 'Price per unit' row position 1 contains @td(PROD_CMP_A.price), position 2 @td(PROD_CMP_B.price), position 3 @td(PROD_CMP_FILL_1.price) {SPEC} (VCST-5880 Expected)
+[DOM] the 'All' and 'Differences' switches are not descendants of the table node at 375 px — they sit in the bar above it, so no control shifts the cell positions inside the header row {SPEC} (VCST-5880 model C6)
+[OVERFLOW] horizontal == false {BL} (BL-UI-004)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Header row has 3 or 5 children at 375 px, the corner cell missing or exposed as a columnheader, a columnheader named by the tab label, the price under the first columnheader is the second product's price, the table duplicated by the mobile bar, the document scrolls sideways",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:ST · Purpose:FUNC,Draft
+CMP-040,Compare table — compact sticky header keeps one columnheader per product with product names after the header subtree is re-created,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-A11Y-001, BL-A11Y-004, BL-A11Y-002",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+Desktop width only: below md the header row sticks but never compacts. Once the page is scrolled until the header row meets the app header, the swap from the full to the compact cell is a v-if/v-else that DESTROYS and re-creates every product header cell and the Clear category control, so name, scope and focus must all be rebuilt each time.
+The page must be taller than the viewport for the compact state to be reachable; with three entries at 1280x900 it is.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the header-row children with roles and names (full header) as HEADER_FULL, and each columnheader's scope attribute
+[KEY] Tab until the keyboard focus is on the 'Add to cart' control in the header cell of the column for @td(PROD_CMP_B.name)
+[ASSERT] document.activeElement is that control and it lies inside the header row
+[SCROLL] scroll the page down with the mouse wheel until the product header row sticks flush below the app header and swaps to its compact layout
+[WAIT] the compact header renders (each product shows a small image and its title)
+[CAPTURE] record document.activeElement (tag, accessible name, whether it is inside the compare table) — an observation, compared against the baseline at triage, non-blocking
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the header-row children with roles and names (compact header) as HEADER_COMPACT, and each columnheader's scope attribute
+[SCROLL] scroll the page back to the top until the full header returns
+[WAIT] the full header renders
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the header-row children with roles and names as HEADER_BACK","[MATH] columnheader nodes = 3 in the full header, in the compact header and after returning to the full header {SPEC} (VCST-5880 Expected)
+[REL] HEADER_COMPACT equals HEADER_FULL in child count (1 corner cell + 3 columnheader), order and columnheader names: @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name), and HEADER_BACK equals HEADER_FULL {BL} (BL-A11Y-002)
+[REL] every columnheader carries scope 'col' in both layouts {SPEC} (VCST-5880 Expected)
+[REL] in the 'Price per unit' row the cell at position k still contains the price of the product named by the columnheader at position k in the compact layout: @td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price) {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Compact header exposes fewer or more columnheader nodes than the full one, a columnheader named by its Customize or Add to cart button text, scope missing after the swap, the compact header has no corner cell so the prices sit one position off, the page stops rendering at the compact threshold (a PRE-EXISTING scroll oscillation exists on the baseline — record separately, never attribute here)",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:LIFECYCLE · Technique:ST · Purpose:FUNC,Draft
+CMP-041,"Compare table — header and body scroll in step in both directions with five products overflowing, columns stay aligned",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Critical,"BL-UI-005, BL-UI-004",ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+The thead and the tbody are two SEPARATE horizontal scrollers inside one table, kept in step by useHorizontalScrollSync, whose listeners attach only when both refs exist at mount. If they never attach, every scroll leaves the headings over the wrong values and nothing errors. The PR's own unit test covers body-to-header only; this case drives BOTH directions.
+Five entries make the body overflow at 1280 px and at 800 px. Guard the premise before measuring: the body block must be wider than it is visible, otherwise there is nothing to scroll and the case records BLOCKED rather than PASS.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_fill_2_sku=@td(PROD_CMP_FILL_2.sku), prod_cmp_fill_2_name=@td(PROD_CMP_FILL_2.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_longname_price=@td(PROD_LONGNAME.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders five product columns
+[ASSERT] the body block scrollWidth is greater than its clientWidth — the guard; if it is not, record BLOCKED and stop
+[REFLOW]
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] .compare-table__product
+[SCROLL] scroll the body block to the right with the mouse wheel until it stops (the last column is fully visible)
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] read scrollLeft of the table's header block (table > thead) and body block (table > tbody); read getBoundingClientRect().left of every columnheader and of the cell of the 'Price per unit' row under it
+[SCROLL] scroll the body block back to the far left
+[KEY] Tab until the keyboard focus is on the 'Add to cart' control in the header cell of the column for @td(PROD_LONGNAME.name), the last column
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] read scrollLeft of the table's header block (table > thead) and body block (table > tbody); read the left edge of every columnheader and of the cell of the 'Price per unit' row under it
+[VIEWPORT] 800x900
+[WAIT] the page re-renders
+[SCROLL] scroll the body block to the right with the mouse wheel until it stops
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] read scrollLeft of the table's header block (table > thead) and body block (table > tbody); read the left edge of every columnheader and of the cell of the 'Price per unit' row under it
+[SCROLL] scroll the body block back to the far left
+[KEY] Tab until the keyboard focus is on the 'Add to cart' control in the header cell of the column for @td(PROD_LONGNAME.name)
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] read scrollLeft of the table's header block (table > thead) and body block (table > tbody); read the left edge of every columnheader and of the cell of the 'Price per unit' row under it","[REL] after the wheel scroll of the body, thead.scrollLeft equals tbody.scrollLeft (within 1 px) at 1280 px and at 800 px {SPEC} (VCST-5880 sticky header must keep working under one table)
+[REL] after Tab moves focus to an off-screen header control, tbody.scrollLeft equals thead.scrollLeft (within 1 px) at both widths — the sync holds when the HEADER scrolls, not only the body {SPEC} (VCST-5880 sticky header must keep working under one table)
+[REL] at every read, the left edge of each columnheader equals the left edge of the cell of the 'Price per unit' row under it (within 1 px) for all 5 columns, so the heading over a price is the heading of THAT price: @td(PROD_CMP_A.price) under @td(PROD_CMP_A.name), @td(PROD_LONGNAME.price) under @td(PROD_LONGNAME.name) {SPEC} (VCST-5880 Expected)
+[ALIGN] heightDrift <= 1 {BL} (BL-UI-005)
+[OVERFLOW] horizontal == false {BL} (BL-UI-004)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","thead.scrollLeft and tbody.scrollLeft differ after any scroll, every header sits one column off its values after a keyboard-driven scroll, the sync works in one direction only, the header never scrolls at all (listeners not attached), the document scrolls sideways, the guard premise absent (body not wider than visible)",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:SILENT · Technique:ST · Purpose:FUNC,Draft
+CMP-042,Compare table — a long unbroken product name never widens its column or paints over the neighbouring column at 1920 and 600 px,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-UI-004, BL-UI-005",ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+@td(PROD_LONGNAME.name) carries a 62-character UNBROKEN alphanumeric run, so there is no space for the browser to wrap at: contain:inline-size stops such a token WIDENING its column but adds no overflow:hidden, so the token can paint OVER the neighbouring column (VC-UI-006; VCST-6029, the same file and class).
+SCOPE OF THIS CASE: the HEADER-cell half only. The value-cell half of the shape (a long unbroken token inside a body cell) is a FIXTURE-GAP: no seeded fixture carries one, so it is not asserted here and is not covered by this case.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name), prod_longname_price=@td(PROD_LONGNAME.price)","[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[REFLOW]
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] read getBoundingClientRect() of each columnheader, of the product title text inside the columnheader for @td(PROD_LONGNAME.name), and of the cell of the 'Price per unit' row under each columnheader; read scrollWidth and clientWidth of the @td(PROD_LONGNAME.name) columnheader
+[VIEWPORT] 600x900
+[WAIT] the page re-renders
+[REFLOW]
+[PROBE:OVERFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] read the same rects, scrollWidth and clientWidth at 600 px","[REL] at both widths the @td(PROD_LONGNAME.name) columnheader is as wide as its sibling columnheaders (within 1 px): the long token did not widen its column {BL} (BL-UI-004)
+[REL] at both widths the right edge of the long title text is not beyond the right edge of its own columnheader: the token wraps, is truncated with an ellipsis, or scrolls inside the header, and never paints over the next column {BL} (BL-UI-004)
+[REL] at both widths the left edge of the @td(PROD_LONGNAME.name) columnheader equals the left edge of the cell of the 'Price per unit' row under it, so @td(PROD_LONGNAME.price) is still under its own product {SPEC} (VCST-5880 Expected)
+[OVERFLOW] horizontal == false {BL} (BL-UI-004)
+[ALIGN] heightDrift <= 1 {BL} (BL-UI-005)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The long-name column wider than its siblings, the title text extending past its columnheader over the next product's column, the sibling product's price hidden under the overflowing text, the document scrolls sideways at 600 px, a columnheader whose scrollWidth exceeds its clientWidth with no ellipsis",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:EG · Purpose:VISUAL,Draft
+CMP-043,"Compare table — after pinning a row and switching to Differences, each row header's description is its own row's explanation",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,BL-A11Y-004,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+Two rows carry an explanation (an info icon with a tooltip): 'Price per unit' and 'Min. order qty' (the label the existing CMP-001 reads; the 3x session called it MOQ). The row header points at its own icon through aria-describedby with an id built from the VISIBLE row index, so pinning and the Differences filter, which re-order and drop rows, re-assign every id.
+Reading an AX description: it is the text the browser derives from the element aria-describedby names. The sighted equivalent is the tooltip text revealed on hover of the same row's info icon; the two must agree (WCAG 1.3.1 programmatic equivalence).","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] for every rowheader record its name, its description and whether it carries an aria-describedby; record every aria-describedby id and the id of the element it resolves to
+[ACT] hover the 'information-circle' icon in the header cell of the 'Price per unit' row
+[CAPTURE] record the tooltip text as TIP_PRICE
+[ACT] hover the 'information-circle' icon in the header cell of the 'Min. order qty' row
+[CAPTURE] record the tooltip text as TIP_MOQ
+[ACT] click the pin control in the header cell of the 'Min. order qty' row
+[WAIT] that row moves into the pinned block at the top of the body
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] repeat the per-rowheader record (name, description, aria-describedby, resolved element) after the pin
+[ACT] click 'Differences'
+[WAIT] the row list re-renders
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] repeat the per-rowheader record under Differences","[REL] at all three reads, every aria-describedby on a rowheader resolves to exactly ONE element in the document, and that element lies inside the SAME row's header cell {BL} (BL-A11Y-004)
+[REL] at all three reads, the rowheader description equals the tooltip text recorded for that same row (TIP_PRICE, TIP_MOQ) — after the pin and under Differences a row does not read another row's explanation {SPEC} (VCST-5880 Expected)
+[REL] every id referenced by an aria-describedby on the page is unique: no two rows share one {BL} (BL-A11Y-004)
+[REL] a rowheader whose row has no info icon carries no aria-describedby and exposes an empty description {BL} (BL-A11Y-004)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A rowheader's description reads another row's explanation after the pin, two rows resolve their aria-describedby to one element, an aria-describedby naming an id that no longer exists (the id was re-assigned by the re-order), a described row losing its description under Differences, duplicate-label rows (VCST-5876) sharing an id",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:STALE · Technique:ST · Purpose:FUNC,Draft
+CMP-044,Compare table — row headers are named by the attribute label and described by its explanation; rows without one carry no description,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,"BL-A11Y-002, BL-A11Y-004",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+The row header cell holds the label, an optional info icon and a pin control; its aria-label is set to the label alone, which REPLACES the content-derived name, so the pin button text must not appear in the name. At 375 px the pin control is hidden but the info icon stays visible (measured in 3x), so the description must still be exposed there.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name)","[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders both product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] for every rowheader record its accessible name, its accessible description, and the visible label text shown in its cell; record which rows have an info icon
+[VIEWPORT] 375
+[WAIT] the page re-renders at the mobile layout
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] repeat the per-rowheader record at 375 px","[REL] at both widths, every rowheader accessible name equals the visible label text of its row alone — no pin-button text, no tooltip text and no icon text is glued onto it {BL} (BL-A11Y-002)
+[REL] at both widths, a row that has an info icon exposes a non-empty accessible description, and a row without one exposes an empty description and no aria-describedby {BL} (BL-A11Y-004)
+[REL] the set of rows that expose a description at 375 px equals the set at 1920 px — the description does not depend on the pin control, which is hidden at 375 {BL} (BL-A11Y-004)
+[REL] no two rowheaders expose the same accessible name unless their visible labels are identical {BL} (BL-A11Y-002)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A rowheader announced as the label followed by 'Pin' or the pin tooltip, an empty name on any rowheader, a described row exposing no description at 375 px because its icon target is not resolvable, a rowheader description present on a row with no info icon",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+CMP-045,"Compare table — plain, configurable and variations products in one tab each expose a columnheader named by the product alone with operable controls inside",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,BL-A11Y-002,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+Three kinds of header cell: plain (@td(PROD_CMP_A.name) — an 'Add to cart' button), variations parent (@td(PROD_CMP_VARIATIONS.name) — a variations link, no add-to-cart), configurable (@td(CFG_LAPTOP.name) — a Customize link). The plain product and the variations parent share the 'Compare Fixtures > Group A' tab; the configurable product is in its own category tab, so the case reads two tabs. The aria-label override replaces the content-derived name on every kind, so each must be named by the product alone and the control inside must keep its own name.
+3x could not add the variations or configurable fixtures from a keyboard-only lane; the search-card control is the entry point used by CMP-012 and CMP-034 and is used here.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_variations_sku=@td(PROD_CMP_VARIATIONS.sku), prod_cmp_variations_name=@td(PROD_CMP_VARIATIONS.name), cfg_laptop_name=@td(CFG_LAPTOP.name)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_VARIATIONS.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_VARIATIONS.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_VARIATIONS.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(CFG_LAPTOP.name)
+[WAIT] the results grid renders a card for @td(CFG_LAPTOP.name)
+[ACT] click the 'Add to Compare' control on the card for @td(CFG_LAPTOP.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders
+[ACT] click the category tab carrying @td(PROD_CMP_A.name)
+[WAIT] the compare table renders two product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] for each columnheader record its accessible name, and every control inside its cell with that control's accessible name, role and enabled or disabled state
+[ACT] click the category tab that holds @td(CFG_LAPTOP.name)
+[WAIT] the compare table renders the product column for @td(CFG_LAPTOP.name)
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the columnheader name and the controls inside its cell with their names, roles and enabled state","[REL] each columnheader exposes the product name alone as its accessible name: @td(PROD_CMP_A.name), @td(PROD_CMP_VARIATIONS.name) and @td(CFG_LAPTOP.name) — never the text of the button or link inside its cell {BL} (BL-A11Y-002)
+[REL] the @td(PROD_CMP_A.name) cell holds an enabled 'Add to cart' button with that accessible name, the @td(PROD_CMP_VARIATIONS.name) cell holds a variations link and NO 'Add to cart' button, and the @td(CFG_LAPTOP.name) cell holds a Customize link and NO 'Add to cart' button {BL} (BL-A11Y-002)
+[REL] every control inside a header cell exposes a non-empty accessible name different from the product name, so a control is never announced as the column heading {BL} (BL-A11Y-002)
+[REL] each tab renders exactly one table node and 1 + N header-row children for its N products (2 in Group A, 1 in the configurable tab) {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A configurable or variations column announced by its link text instead of its product name, an add-to-cart button rendered in a variations or configurable column, a Customize or Variations link with no accessible name or unreachable, the configurable product rendered under the Group A tab, the header-row child count off by one in either tab",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC,Draft
+CMP-046,Compare table — switching category tab or removing a product leaves exactly one columnheader and one cell per remaining product,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,"BL-A11Y-004, BL-A11Y-001",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+@td(PROD_CMP_A.name) and @td(PROD_CMP_B.name) sit in 'Compare Fixtures > Group A'; @td(PROD_CMP_C.name) sits in 'Compare Fixtures > Group C', so the page shows two category tabs. One table is now re-rendered for both sections on a tab switch and on a removal, so a stale header or cell left behind gives N headers over N plus or minus one cells.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_c_sku=@td(PROD_CMP_C.sku), prod_cmp_c_name=@td(PROD_CMP_C.name), prod_cmp_a_price=@td(PROD_CMP_A.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_C.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_C.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_C.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the category tab strip renders
+[ACT] click the category tab that holds @td(PROD_CMP_A.name)
+[WAIT] the compare table renders two product columns
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the columnheader names, and the cells of every body row, in order (READ_A)
+[ACT] click the category tab that holds @td(PROD_CMP_C.name)
+[WAIT] the compare table renders one product column
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the columnheader names, the cells of every body row, and whether the names or prices of the other tab's products appear anywhere in the tree (READ_C)
+[ACT] click the category tab that holds @td(PROD_CMP_A.name)
+[WAIT] the compare table renders two product columns
+[ACT] click the remove control in the header cell of the column for @td(PROD_CMP_A.name)
+[WAIT] the compare table re-renders with one product column
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the columnheader names, the cells of every body row, and the focused element (READ_AFTER_REMOVE) — the focused element is an observation, compared against the baseline at triage, non-blocking","[REL] READ_A: 2 columnheaders named @td(PROD_CMP_A.name) and @td(PROD_CMP_B.name), and every body row exposes exactly 2 cells {SPEC} (VCST-5880 Expected)
+[REL] READ_C: exactly 1 columnheader named @td(PROD_CMP_C.name), every body row exposes exactly 1 cell, and neither @td(PROD_CMP_A.name) nor @td(PROD_CMP_B.name) nor their prices appear anywhere in the table {SPEC} (VCST-5880 Expected)
+[REL] READ_AFTER_REMOVE: exactly 1 columnheader named @td(PROD_CMP_B.name), every body row exposes exactly 1 cell, and @td(PROD_CMP_A.name) and @td(PROD_CMP_A.price) appear nowhere in the table {SPEC} (VCST-5880 Expected)
+[MATH] table nodes = 1 at every read, and the columnheader count equals the cell count of each body row at every read {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A removed product's heading or value lingering in the tree, a header-row child count that does not equal the cell count of a body row after a tab switch, the other tab's products visible in the active tab, a second table node after the switch",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:STALE · Technique:ST · Purpose:FUNC,Draft
+CMP-047,Compare page — axe-core finds no Critical or Serious violation on desktop and mobile after the table restructure,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-A11Y-004, BL-A11Y-003",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+axe-core is injected through the canonical axeRunSnippet() of scripts/lib/axe-runner.ts (WCAG A/AA tags only, awaited); do not hand-roll the injection. If axeAvailable is false (CSP blocked the load) the result is INCONCLUSIVE, never clean.
+The restructure adds tabindex on the thead, an empty corner cell and aria-label overrides on th: each is the surface of a distinct axe rule (td-headers-attr, th-has-data-cells, scope-attr-valid, aria-allowed-attr, empty-table-header, aria-valid-attr-value).
+The PR reports one PRE-EXISTING desktop contrast finding on the inactive 'Differences' tab. It is RECORDED, never attributed to this ticket and never used to relax the structure assertions below.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name)","[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[ACT] run axeRunSnippet() from scripts/lib/axe-runner.ts via evaluate_script (or browser_evaluate), awaiting its Promise
+[CAPTURE] record every violation by rule id, impact and the selector of each node
+[VIEWPORT] 375
+[WAIT] the page re-renders at the mobile layout
+[ACT] run axeRunSnippet() again, awaiting its Promise
+[CAPTURE] record every violation by rule id, impact and the selector of each node","[MATH] axe-core Critical violations + Serious violations, for every rule other than color-contrast, at 1920 px and at 375 px = 0 {BL} (BL-A11Y-004)
+[REL] axe-core reports none of td-headers-attr, th-has-data-cells, scope-attr-valid, aria-allowed-attr, empty-table-header or aria-valid-attr-value on any node inside the compare table, at either width {BL} (BL-A11Y-004)
+[REL] any color-contrast violation lies outside the compare table body and header cells; one on the inactive tab is recorded as PRE-EXISTING and not attributed to VCST-5880 {BL} (BL-A11Y-003)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","axeAvailable false (INCONCLUSIVE, not a pass), a td-headers-attr or th-has-data-cells violation on the table, aria-allowed-attr on the thead tabindex, an empty-table-header violation on the corner cell, a Critical or Serious node inside .compare-table",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:EG · Purpose:FUNC,Draft
+CMP-048,"Compare table — column edges, row heights, sticky offset and pinned corner unchanged at 1920, 1280, 768 and 375 px, light and dark",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,"BL-UI-001, BL-UI-003, BL-UI-004, BL-UI-005",ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+This case asserts the layout invariants the ticket must not break; each is stated against the page itself, so it needs no reference build. When a build without PR #2518 is still reachable, a side-by-side read of the same measurements is evidence for ATTRIBUTING a difference to this ticket, never an oracle: the baseline is an observation, not a source.
+The header row became w-fit min-w-full inside a sticky thead, the corner became sticky with its own background, and value cells gained contain: inline-size: each can move column edges, row heights, the sticky offset below the app header, or the pinned corner and row labels. Dark mode is checked at 1280 and 375 only (it has no structural branch).
+Five entries make the body overflow so the end-of-scroll state is reachable at every width.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_fill_2_sku=@td(PROD_CMP_FILL_2.sku), prod_cmp_fill_2_name=@td(PROD_CMP_FILL_2.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name)","[VIEWPORT] 1920x1080
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders five product columns
+[PROBE:CLS]
+[REFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] GEOMETRY at 1920 (light): the left edge of every columnheader and of the cell of the 'Price per unit' row under it; the height of every body row; the top of the header block and the bottom of the app header after scrolling the page until the header block sticks; the left edge of the corner cell and of the first rowheader after scrolling the body block to its end; the computed background-color of the corner cell and of a rowheader
+[VIEWPORT] 1280x900
+[WAIT] the page re-renders
+[REFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] GEOMETRY at 1280 (light), the same reads
+[ACT] switch the storefront theme preset to a dark preset
+[WAIT] the page re-renders under the dark preset
+[CAPTURE] GEOMETRY at 1280 (dark), the same reads
+[ACT] switch the storefront theme preset back to the default preset
+[WAIT] the page re-renders under the default preset
+[VIEWPORT] 768x1024
+[WAIT] the page re-renders
+[REFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] GEOMETRY at 768 (light), the same reads
+[VIEWPORT] 375
+[WAIT] the page re-renders at the mobile layout
+[REFLOW]
+[PROBE:ALIGN] .compare-table__product
+[CAPTURE] GEOMETRY at 375 (light), the same reads
+[ACT] switch the storefront theme preset to a dark preset
+[WAIT] the page re-renders under the dark preset
+[CAPTURE] GEOMETRY at 375 (dark), the same reads","[REL] in every GEOMETRY read the left edge of each columnheader equals the left edge of the cell below it (within 1 px) for all 5 columns, at the start and at the end of the horizontal scroll {SPEC} (VCST-5880 sticky header must keep working under one table)
+[ALIGN] heightDrift <= 1 {BL} (BL-UI-005)
+[REL] every body row has one height: the cells of a row share it to within 1 px, at all four widths {BL} (BL-UI-005)
+[REL] after the page scroll the top of the header block equals the bottom of the app header (within 1 px) at every width, light and dark: the header sticks flush below the app header and never under it {SPEC} (VCST-5880 sticky header must keep working under one table)
+[REL] at the end of the body scroll the left edge of the corner cell and of the first rowheader still equals the left edge of the scroller (within 1 px): the corner and the row labels stay pinned {SPEC} (VCST-5880 sticky header must keep working under one table)
+[REL] the computed background-color of the corner cell and of a rowheader has alpha 1 in light and in dark, so scrolled values never show through a pinned cell {SPEC} (VCST-5880 sticky header must keep working under one table)
+[CLS] value <= 0.1 {BL} (BL-UI-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Header column edges drifting from body column edges at the end of a scroll, the header block sliding under the app header, the corner or the row labels scrolling away with the body, a pinned cell with a transparent background in dark mode, row heights that differ within a row, a layout shift while the page loads, the document scrolls sideways",Restore the default theme preset; Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:ST · Purpose:VISUAL,Draft
+CMP-049,Compare table at 200% and 400% browser zoom — still one table with the same header-to-cell mapping and nothing clipped,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,"BL-UI-004, BL-A11Y-004",ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+UIP-VIEW. Zoom crosses the md breakpoint: a desktop session at 200% is 640 CSS px wide and at 400% is 320 CSS px, so the page switches to the mobile layout mid-session — the corner empties and the tabs teleport out. Where the lane cannot drive browser zoom, set the viewport to 640x450 and 320x225 instead: it is the CSS width crossing md that is under test, and the steps name the zoom level.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price), prod_cmp_b_price=@td(PROD_CMP_B.price), prod_cmp_fill_1_price=@td(PROD_CMP_FILL_1.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders three product columns
+[CAPTURE] record the header-row child count and the controls present at 100% zoom
+[ACT] set the browser zoom to 200%
+[WAIT] the page reflows
+[PROBE:OVERFLOW]
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the number of table nodes, the header-row children in order with roles, the cells of every body row, the cells of the 'Price per unit' row in order, and any text clipped by its container
+[ACT] set the browser zoom to 400%
+[WAIT] the page reflows
+[PROBE:OVERFLOW]
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the same reads at 400%","[MATH] table nodes = 1 at 200% and at 400% {SPEC} (VCST-5880 Expected)
+[REL] at 200% and at 400% the header row has 1 + 3 children (the corner cell, then 3 columnheader nodes named @td(PROD_CMP_A.name), @td(PROD_CMP_B.name), @td(PROD_CMP_FILL_1.name)) and every body row exposes 1 rowheader and 3 cells {SPEC} (VCST-5880 Expected)
+[REL] at 200% and at 400% in the 'Price per unit' row position 1 contains @td(PROD_CMP_A.price), position 2 @td(PROD_CMP_B.price), position 3 @td(PROD_CMP_FILL_1.price) {SPEC} (VCST-5880 Expected)
+[OVERFLOW] horizontal == false {BL} (BL-UI-004)
+[DOM] no product name, price or control is clipped by its container at 400%: nothing is hidden by overflow:hidden without an ellipsis {BL} (BL-UI-004)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The mobile layout at zoom drops the corner cell so the header row has 3 children, the table duplicated or split when the md breakpoint is crossed, the price under a columnheader changes between 100% and 400%, the document scrolls sideways at 200%, a clipped product name, a control that exists at 100% and is absent at 400%",Reset the browser zoom to 100%; Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:RENDER · Technique:ST · Purpose:FUNC,Draft
+CMP-050,"Compare table — keyboard Tab order runs header then body, focus stays visible and an off-screen column scrolls into view, thead is not a Tab stop",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),High,BL-A11Y-001,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+A focus trail is recorded with ACTIVE_ELEMENT_SNIPPET from scripts/lib/axe-runner.ts after every Tab press. The thead carries tabindex -1 so it can receive programmatic focus (after a removal or a compact swap) without becoming a Tab stop; the header scroller hides its scrollbar and uses scroll padding to keep a focused control clear of the pinned corner.
+Five entries make the last columns sit off-screen at 1280 px, so a forward Tab into the later header cells must scroll them into view.
+Observation from 3x, not an assertion: before any input, document.activeElement is the THEAD (tabindex -1). It was not compared with the baseline and is recorded only.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_fill_2_sku=@td(PROD_CMP_FILL_2.sku), prod_cmp_fill_2_name=@td(PROD_CMP_FILL_2.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_2.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_2.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_2.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders five product columns
+[CAPTURE] record document.activeElement before any key press
+[KEY] Tab
+[CAPTURE] record the focus trail: after every Tab press record document.activeElement (tag, accessible name, whether it is inside the header row, inside the body, or outside the table), its focus indicator (computed outline-style and box-shadow), its bounding rect and the visible rect of its scroller; repeat until focus has left the compare table or 80 presses have been made","[REL] in the trail every control inside the header row is focused before the first control inside the body: header then body, in DOM order {BL} (BL-A11Y-001)
+[REL] no Tab press ever lands on the THEAD, the TBODY or the TABLE element itself: the thead is not a Tab stop {BL} (BL-A11Y-001)
+[REL] every focused control shows a focus indicator: computed outline-style is not none, or a box-shadow is present {BL} (BL-A11Y-001)
+[REL] every focused header control lies inside the visible rect of its scroller and to the right of the sticky corner cell: a control in an off-screen column is scrolled into view by the Tab that focused it {BL} (BL-A11Y-001)
+[REL] focus leaves the compare table to an element outside it within 80 presses: there is no keyboard trap {BL} (BL-A11Y-001)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A Tab stop on the thead, focus on a control in an off-screen column with the scroller not moved, a header control focused with no visible ring, a body control focused before a header control, more than 80 presses with focus still inside the table, a Tab press that moves focus backwards",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:BOUNDARY · Technique:ST · Purpose:FUNC,Draft
+CMP-051,Compare table — one product renders one columnheader and one cell per row; an empty list exposes no table,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,BL-A11Y-004,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+Structure and naming are read from the browser's NATIVE accessibility tree (the [CAPTURE] step names the call), never from the Playwright snapshot: that one is built from the DOM and would report roles the browser does not expose, which is exactly the defect this ticket is about. Columns are in the order the products were added.
+With ONE entry the Differences switch is disabled (the comparison has nothing to differ against), so the table is read under All only (the disabled switch itself is asserted by CMP-006 and is not repeated here). With NO entry the page shows its empty state: an empty list must not expose a header-only or orphan table.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_a_price=@td(PROD_CMP_A.price)","[VIEWPORT] 1280x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders one product column
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the number of table nodes, the header-row children with roles and names, the cells of every body row, the cell of 'Price per unit'
+[ACT] click 'Clear all'
+[WAIT] the confirmation dialog renders
+[ACT] click 'OK'
+[WAIT] the empty compare state renders
+[CAPTURE] read the BROWSER accessibility tree of the page via CDP Accessibility.getFullAXTree (Chromium: browser_run_code_unsafe with context.newCDPSession(page), or the Chrome DevTools MCP take_snapshot, which is built from the same tree) — NOT browser_snapshot or ariaSnapshot, which are DOM-derived and are not the evidence for structure or naming
+[CAPTURE] record the number of table, columnheader, rowheader and cell nodes in the tree","[MATH] with one product: table nodes = 1, columnheader nodes = 1 named @td(PROD_CMP_A.name), and every body row exposes exactly 1 rowheader and 1 cell {SPEC} (VCST-5880 Expected)
+[REL] with one product the cell of 'Price per unit' contains @td(PROD_CMP_A.price) {SPEC} (VCST-5880 Expected)
+[MATH] in the empty state, table nodes + columnheader nodes + cell nodes in the tree = 0: no header-only or orphan table is exposed {SPEC} (VCST-5880 Expected)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A header-only table left in the tree after 'Clear all', a one-product table with 2 cells per row, a columnheader with no name, an empty-state page that still exposes a table role",The compare list is already empty; restore the viewport to 1280x900,VCST-5880 · Archetype:BOUNDARY · Technique:BVA · Purpose:FUNC,Draft
+CMP-052,"Compare table — header and body stay in step when keyboard focus moves from a scrolled header control into the body and back, through pin and unpin",Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Critical,"BL-UI-005, BL-A11Y-001",ECL-7.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+KNOWN AT AUTHORING (3x, Firefox 151, PR head ee98adbd, 4 entries, 800 px): Tab from the last header control onto the first body-row pin left thead.scrollLeft at 258 and tbody.scrollLeft at 0 for more than 1.5 s, so every heading sat one column to the right of its values and the first price sat under the second product. Wheel scroll of the body (150/150) and Tab into an off-screen header control (258/258) both held. The baseline held 258/258 in the same sequence. Chromium has NOT been run. These assertions are EXPECTED TO FAIL on Firefox on that build; they state the required behaviour — do NOT invert them to match the build.
+Run it on Chromium AND Gecko and record the engine with the verdict: the desync is an engine-dependent focus-scroll interaction, so a PASS on one engine says nothing about the other. Provenance outside the PR build is unknown.
+The two scrollers (thead and tbody) are kept in step by useHorizontalScrollSync. Focus moving INTO the body scrolls tbody in a way the sync must mirror back to thead (and the reverse), through pin and unpin, which re-order the rows that hold the focus.
+Four entries overflow the body at 800 px. The column order is the order added, so @td(PROD_CMP_A.price) belongs under @td(PROD_CMP_A.name), the first column.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name), prod_cmp_a_price=@td(PROD_CMP_A.price)","[VIEWPORT] 800x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders four product columns
+[ASSERT] the body block scrollWidth is greater than its clientWidth — the guard; if it is not, record BLOCKED and stop
+[KEY] Tab until the keyboard focus is on the 'Add to cart' control in the header cell of the column for @td(PROD_CMP_FILL_1.name), the last column
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] READ_1: thead.scrollLeft and tbody.scrollLeft; the left edge of every columnheader and of the cell of the 'Price per unit' row under it
+[KEY] Tab
+[ASSERT] document.activeElement is the pin control in the first body row
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] READ_2 (focus moved header to body): thead.scrollLeft and tbody.scrollLeft; the left edge of every columnheader and of the cell of the 'Price per unit' row under it; the text of the columnheader above the cell that contains @td(PROD_CMP_A.price)
+[KEY] Enter
+[WAIT] the row moves into the pinned block and the scroll settles for 1.5 s
+[CAPTURE] READ_3 (after pin): the same reads
+[KEY] Shift+Tab until the keyboard focus is on the 'Differences' switch, then Enter
+[WAIT] the row list re-renders and the scroll settles for 1.5 s
+[CAPTURE] READ_4 (under Differences): the same reads
+[KEY] Tab until the keyboard focus is on the pin control of the pinned row, then Enter to unpin
+[WAIT] the row list re-renders and the scroll settles for 1.5 s
+[CAPTURE] READ_5 (after unpin): the same reads
+[KEY] Shift+Tab until the keyboard focus is back on a control in the header row
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] READ_6 (focus moved body to header): the same reads","[REL] at READ_1 to READ_6, thead.scrollLeft equals tbody.scrollLeft (within 1 px) — in particular at READ_2, after Tab moves focus from the last header control into the first body row {SPEC} (VCST-5880 sticky header must keep working under one table)
+[REL] at READ_1 to READ_6, the left edge of every columnheader equals the left edge of the cell of the 'Price per unit' row under it (within 1 px) for all 4 columns {SPEC} (VCST-5880 Expected)
+[REL] at READ_1 to READ_6, the columnheader above the cell that contains @td(PROD_CMP_A.price) is named @td(PROD_CMP_A.name): after a focus move the price is not under another product's heading {SPEC} (VCST-5880 Expected)
+[REL] the equalities hold 1.5 s after each focus move, not only at the instant of the move — a state that corrects itself later is reported with its duration {SPEC} (VCST-5880 sticky header must keep working under one table)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","thead.scrollLeft and tbody.scrollLeft differ after Tab from the last header control onto the body pin (mid-journey), every heading one column off its values after pin or unpin, the price of the first product under the second product's heading, a desync that persists beyond 1.5 s, the guard premise absent (body not wider than visible), spinner visible >5s",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:SILENT · Technique:ST · Purpose:FUNC,Draft
+CMP-053,Compare table — a control focused by Shift+Tab in a scrolled column is not hidden under the sticky corner,Catalog > Product Compare v2 > Table semantics (WCAG 1.3.1),Medium,BL-A11Y-001,ECL-15.1,"Guest session on {{FRONT_URL}} — compare is anonymous-capable, no sign-in needed.
+The storefront under test serves the single-table compare-table.vue of vc-frontend PR #2518 (VCST-5880). Confirm the footer theme version before reading any structure: on a build without it the page still renders the OLD two-table DOM and every table-count assertion here fails for that reason, not a product one.
+The compare list is EMPTY at case start. It lives in the localStorage key 'compareProducts', per ORIGIN and shared per browser profile, so never assume it is already empty: clear it THROUGH THE UI — open {{FRONT_URL}}/compare, click 'Clear all', confirm with 'OK' (when the page already shows the empty state there is nothing to clear). A console or eval write to localStorage is refused by the real-user interaction rule, so a console instruction cannot be followed.
+Compare fixtures seeded on the env (test-data/compare/compare-products.csv), tab 'Compare Fixtures > Group A'. Theme setting product_compare_limit = 5, enforced PER CATEGORY. The Group A fixtures carry PAIRWISE-DISTINCT prices (@td(PROD_CMP_A.price), @td(PROD_CMP_B.price), @td(PROD_CMP_FILL_1.price), @td(PROD_CMP_FILL_2.price), @td(PROD_LONGNAME.price)): that is what makes a one-column shift decidable, because a shifted mapping puts a DIFFERENT product's price under a header, where equal prices would hide it (.claude/rules/test-data.md SECOND RULE).
+KNOWN AT AUTHORING (3x, Firefox 151, PR head ee98adbd, 4 entries, 800 px, scrolled 258 px): Shift+Tab back to the product link in column 2 focused it at x=211 while the sticky corner ended at x=265, so about 45% of the control sat under the corner, and the scroller did not move. Provenance on a build without PR #2518 was NOT measured. Chromium has NOT been run. The second assertion states the required behaviour; do NOT weaken it to match the build.
+Two thresholds, deliberately kept apart: WCAG 2.4.11 (Focus Not Obscured, Minimum, AA) fails only when the focused control is ENTIRELY hidden; the stricter bar (no part under the corner, scrolled clear of it) is the PR #2518 scroll-padding intent (scroll-ps-60 / scroll-ps-28 on the header scroller), asserted as {SPEC}, not as WCAG 2.4.7 or BL-A11Y-001.","url={{FRONT_URL}}, prod_cmp_a_sku=@td(PROD_CMP_A.sku), prod_cmp_a_name=@td(PROD_CMP_A.name), prod_cmp_b_sku=@td(PROD_CMP_B.sku), prod_cmp_b_name=@td(PROD_CMP_B.name), prod_longname_sku=@td(PROD_LONGNAME.sku), prod_longname_name=@td(PROD_LONGNAME.name), prod_cmp_fill_1_sku=@td(PROD_CMP_FILL_1.sku), prod_cmp_fill_1_name=@td(PROD_CMP_FILL_1.name)","[VIEWPORT] 800x900
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare page renders
+[ACT] if the compare page shows a table, click 'Clear all'
+[WAIT] the confirmation dialog renders, or the empty compare state is already shown
+[ACT] if the confirmation dialog is open, click 'OK'
+[WAIT] the empty compare state renders
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_A.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_A.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_A.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_B.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_B.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_B.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_LONGNAME.sku)
+[WAIT] the results grid renders a card for @td(PROD_LONGNAME.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_LONGNAME.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/search?q=@td(PROD_CMP_FILL_1.sku)
+[WAIT] the results grid renders a card for @td(PROD_CMP_FILL_1.name)
+[ACT] click the 'Add to Compare' control on the card for @td(PROD_CMP_FILL_1.name)
+[WAIT] that control's aria-pressed attribute becomes 'true'
+[NAV] {{FRONT_URL}}/compare
+[WAIT] the compare table renders four product columns
+[ASSERT] the body block scrollWidth is greater than its clientWidth — the guard; if it is not, record BLOCKED and stop
+[KEY] Tab until the keyboard focus is on the 'Add to cart' control in the header cell of the column for @td(PROD_CMP_FILL_1.name), the last column
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] record the header block scrollLeft and the right edge of the sticky corner cell
+[KEY] Shift+Tab until the keyboard focus is on the product link in the header cell of the column for @td(PROD_CMP_B.name)
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] record the left and right edges of the focused element, the right edge of the sticky corner cell, the header block scrollLeft before and after that Shift+Tab, and the focused element's focus indicator
+[KEY] Shift+Tab
+[WAIT] the scroll settles for 1.5 s
+[CAPTURE] record the same reads for the next control reached (the first control of the column for @td(PROD_CMP_B.name))","[REL] at each read the focused control is not ENTIRELY under the sticky corner: its right edge is greater than the right edge of the corner cell {BL} (BL-A11Y-001, WCAG 2.4.11 — the AA bar: not entirely hidden)
+[REL] at each read the focused control's left edge is at or beyond the right edge of the sticky corner cell (within 1 px): no part of the focus indicator sits under the corner, and the scroller moved to bring the control clear {SPEC} (PR #2518 scroll-padding intent: scroll-ps-60 / scroll-ps-28 on the header scroller)
+[REL] the focused control shows a focus indicator (computed outline-style is not none, or a box-shadow is present) and that indicator is not covered by the corner {SPEC} (PR #2518 scroll-padding intent: scroll-ps-60 / scroll-ps-28 on the header scroller)","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The focused control about half under the sticky corner with the scroller unmoved, the focus ring hidden behind the corner cell, a Shift+Tab that lands on a control that is entirely covered, header scrollLeft unchanged after a reverse Tab into an off-screen column",Clear the compare list through the UI: 'Clear all' confirmed with 'OK'; restore the viewport to 1280x900,VCST-5880 · Archetype:BOUNDARY · Technique:ST · Purpose:FUNC,Draft
