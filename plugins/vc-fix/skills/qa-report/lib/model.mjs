@@ -98,7 +98,7 @@ export function fromVerifyFix(path) {
       BL: (s.business_rules_verified ?? []).join(", ") || "none",
     },
     beforeAfter: pairs, shots,
-    issues: [...(s.regression_issues ?? []), ...(s.side_effects ?? [])].map(x => typeof x === "string" ? x : JSON.stringify(x)),
+    issues: [...(s.regression_issues ?? []), ...(s.side_effects ?? [])].map(x => typeof x === "string" ? x : (x?.summary ?? x?.title ?? x?.check ?? "(unspecified)")),
     bugs: (s.bugs_filed ?? []).map(b => typeof b === "string" ? { key: b, severity: "", relation: "" }
       : { key: b.key ?? "", severity: b.severity ?? "", relation: b.relationship ?? "" }),
     evidence: s.artifacts ?? "", imageRoot: dirname(path), pageUrl: s.evidence_artifact ?? null,
@@ -154,7 +154,7 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
     }
     for (const k of Object.keys(c)) counts[k] += c[k];
     counts.total += s.cases.length;
-    return { id: s.id, text: s.name, result: c.failed ? "FAIL" : c.blocked ? "BLOCKED" : "PASS", evidence: `${c.passed}/${s.cases.length}` };
+    return { id: s.id, text: s.name, result: c.failed ? "FAIL" : c.blocked ? "BLOCKED" : c.passed > 0 ? "PASS" : "NOT_RUN", evidence: `${c.passed}/${s.cases.length}` };
   });
   const evaluated = counts.total - counts.notRun;
   const runLabel = basename(runDir.replace(/[\\/]+$/, ""));
