@@ -46,7 +46,7 @@ loads it and skips the ad-hoc charter authoring in "Exploration Charter" below.
    suites need them.
 4. `lane` is any of the three Playwright lanes — `playwright-firefox` is click-capable since 2026-09-08
    (`.claude/rules/agents.md` §Parallel Execution). If all three are busy, QUEUE.
-5. Still run Steps 0.1–0.5 below (env health, build versions, 24 h duplicate check, docs, coverage map)
+5. Still run Steps 0.1–0.5 (item 1 is `/preflight`) below (env health, build versions, 24 h duplicate check, docs, coverage map)
    — the charter says *what* to explore, pre-flight establishes *against what build*.
 
 Rationale + the C1–C4 / D1–D3 derivation: `.claude/skills/qa-sbtm/sprint-charter-selection.md`.
@@ -76,25 +76,25 @@ Step 0a: the charter is **received, not authored**.
    authors that case **in the same run**, not in a later sprint — so name the scenario precisely enough to
    author from.
 5. **File nothing.** Bugs go back to the caller; `/qa-test` `5-triage` grades them, `5-file` files them.
-   Everything else in Steps 0.1–0.5 below still runs — the charter says *what* to explore, pre-flight
+   Everything else in Steps 0.1–0.5 (item 1 is `/preflight`) below still runs — the charter says *what* to explore, pre-flight
    establishes *against what build*.
 
 Rationale, the charter derivation table and the record: [`exploratory-lane.md`](../skills/qa-test/exploratory-lane.md).
 
 ### Step 0 — Pre-Flight (per `.claude/templates/agent-dispatch.md`)
 
-1. **Environment health** — run `/qa-env-check endpoints`. If unhealthy, warn user.
-2. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
-   - Record platform version and theme version — include in the session report header
-3. **Duplicate check** — scan `reports/exploratory/` for an `SBTM-*` session on the same domain in the last 24 hours. If found, warn user and show previous findings.
+1. **`/preflight exploratory --domain <slug> --components <domain's components> [--storefront]`**
+   ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the **deployed**
+   build, the release-ledger Δ, the 24 h duplicate check for this domain and MCP availability, in one
+   output form. Record the block in the session report header.
 3a. **What shipped recently** — read `.claude/knowledge/domain/release-ledger.md` §1–§2 for the components in scope (map domain → component via [module-suite-map.md](../knowledge/execution/module-suite-map.md)). Carry the newest 1–2 months' features into Step 5's coverage map.
 
    **This is the strongest C1 signal this pre-flight can compute.** A feature that shipped last month is in *neither* of Step 5's subtract-lists **by construction**: no suite asserts it (nobody has authored one yet) and `vc-bug-catalog.md` has never recorded a failure in it (nobody has run it here). It is not *probably* uncovered — it is **provably** uncovered. A **⚠ BREAKING** row is stronger still: it names a surface whose contract moved, i.e. C4 latent blast radius with a date on it.
 
-   Two boundaries: the ledger says what was **released upstream**, not what is **deployed** on this env — cross it against the `deployed` probe from item 2 and drop anything `NOT_DEPLOYED`, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
+   Two boundaries: the ledger says what was **released upstream**, not what is **deployed** — `/preflight`
+   already crossed the two; drop every `not-deployed:*` row, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
 
-4. **Docs query (VirtoOZ MCP)** — via the `/vc-docs` skill, query the target domain against the topic-scoped VirtoOZ tools (`StorefrontUserGuide` for storefront flows, `StorefrontDeveloperGuide` / `FrontendSourceCode` for behavior, `B2BExperts` for B2B) — e.g. `"checkout workflow"`, `"B2B organizations members"`, `"catalog product properties"`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
+4. **Docs query** — done inside `/preflight` step 3 (kb first, then VirtoOZ via `/vc-docs`). For a feature from item 3a, add the targeted VirtoOZ query below. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 
    **VirtoOZ answers "how is it meant to work", never "what is new".** Its release corpus stops at Platform 3.917.1 while production is past 3.1050, so for a feature from item 3a it will typically return the *pre-existing* page for that area and nothing about the change. That is not a miss to retry — it is the division of labour: 3a supplies what is new, this step supplies the intended behaviour where docs exist, and where they do not the session is on the `{OBSERVED}` axis (see `agents/qa/shared-instructions.md` §Live-Verification).
 5. **Coverage map** — for the target domain, identify what's *already covered*:

@@ -93,13 +93,12 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 
 Before starting the pipeline:
 
-1. **Build & version verification** — fetch deployed versions per `agent-dispatch.md § Build Verification`:
-   - Use GitHub MCP to read `backend/packages.json` and `theme/artifact.json` from `VirtoCommerce/vc-deploy-dev` (branch `vcst-qa` by default; use the branch matching `TEST_ENV` for other envs)
-   - Record platform version, theme version, and modules relevant to the target scope
-   - Include version info in the lifecycle report header (Phase 6)
-2. **Duplicate check** — scan `reports/test-lifecycle/` for a `TLC-*` run on the same scope in the last 24 hours. If found, warn user and show previous verdict.
-3. **Context7 query** — resolve `/virtocommerce/vc-docs`, query the target domain(s) with `tokens: 8000`. Pass findings to `test-management-specialist`.
-4. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):
+1. **`/preflight lifecycle --domain <scope> --components <scope components>`**
+   ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the deployed build,
+   the release-ledger Δ, the 24 h duplicate check and MCP availability, then kb → VirtoOZ grounding.
+   Include its block in the lifecycle report header (Phase 6) and pass its kb/doc hits to
+   `test-management-specialist`.
+2. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):
    - Run `npm run schema:refresh` to introspect the live GraphQL endpoint and update `knowledge/api/graphql-schema.md`
    - Pass `graphql-schema.md` as a reference to `test-management-specialist` in the delegation payload
 
@@ -469,7 +468,7 @@ Phase 3 `blProposals.new[]`. **None ⇒ no-op.** A whole domain is standalone `/
 
 **Runs when:** Not skipped by `--skip-verify` or `--ci`. Dispatch `qa-testing-expert` with `playwright-firefox` (fallback: `playwright-edge`).
 
-**Pre-flight:** `/qa-env-check endpoints` — if environment unhealthy, skip with warning.
+**Pre-flight:** re-run `/preflight lifecycle --domain <scope>` — a `health` row that is not OK (a WARN for lifecycle) ⇒ skip with warning.
 
 **Verification checks:**
 1. **Page reachability** — navigate to each unique URL (max 20 pages)
@@ -973,6 +972,6 @@ Output: per-case verification:
 - **Environment issues != test case defects** — BROKEN/BLOCKED from Phase 5 may be env problems. Flag for investigation, don't auto-fix blindly.
 - **Quality gate is advisory** — deliver the verdict but the user makes the final go/no-go
 - **Report always written** — even with `--report-only`, produce the full report
-- **Build verification before pipeline** — always run pre-flight build verification and include version info in report
+- **Pre-flight before pipeline** — always run `/preflight lifecycle` and include its block in the report
 - **GraphQL schema refresh** — when scope includes GraphQL suites, run `npm run schema:refresh` in Pre-Flight and validate all queries/mutations against `graphql-schema.md`
 - **BL updates run through Phase 4c (`/qa-review-bl`), automatically**, scoped to the `BL-*` this run surfaced (none ⇒ no-op). Only a **human source** (AC, docs, Jira resolution) writes a rule; a contradicted rule goes `SUSPECT` with its bug; code + live never changes a rule; no proposals file — see Phase 4c. Records are env-agnostic.

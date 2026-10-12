@@ -15,7 +15,7 @@ definitions have since been corrected to the opposite rule (**"never judge its s
 arrives: treat the snapshot as UNKNOWN age and report every field name taken from it as **unverified**.
 That is correct and it is also the cost — an unrefreshed run loses its GraphQL grounding rather than
 guessing at it, which is precisely why the refresh belongs to the caller. The
-sibling pipeline already does this properly: `/qa-test-lifecycle` Pre-Flight step 4 runs the refresh for
+sibling pipeline already does this properly: `/qa-test-lifecycle` Pre-Flight step 2 runs the refresh for
 a GraphQL scope and passes the file into the delegation payload. `/qa-test` was the outlier.
 
 Two properties of the tooling make *"if it looks stale"* unworkable rather than merely loose:
