@@ -90,10 +90,8 @@ Two more waves follow the same test, and both were serial for no reason anyone h
 | **Step 1c/1d + 2-load** — one message | `1c` ‖ `1d` ‖ **`1r` reachability** (FULL, ~5 min) ‖ **`1c-map`** (only when 2g says `ABSENT` + all-layer, FULL) ‖ **the domain-keyed oracle text** (`BL-*` / `ECL-*` / `E2E-*` / `VC-*` / the UI + a11y set) | only `1a`'s domains + `1b`'s tokens — **nothing `1c` returns**, which is why waiting a full dispatch wave to open a markdown file was pure latency. `1c-map` is domain-scoped where `1c` is ticket-scoped: they share prior art and consume nothing of each other's, so the map costs the run a lane, not a wave. Only `2-topup` (the VirtoOZ gap fill) is genuinely downstream |
 | **Step 3** — one message | `3a` test-data ‖ **`3x` discovery** ‖ `B` checklist | `1e` + Step 2. `3a` is browserless, `3x` takes exactly one lane, `B` is pure authoring — mutually independent. **Artifact A alone waits on all three** |
 
-Items 3 → 4 stay ordered inside Wave A as the command states. They are both local globs costing
-milliseconds, so splitting them buys nothing — **and that is the general test: parallelise where the
-operations are independent *and* the cost is real.** Reordering something free to look concurrent is
-churn.
+**The general test: parallelise where the operations are independent *and* the cost is real.**
+Reordering something free to look concurrent is churn.
 
 ### What must NOT be parallelised — each for a reason the repo paid for
 

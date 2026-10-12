@@ -94,7 +94,7 @@ Rationale, the charter derivation table and the record: [`exploratory-lane.md`](
    Two boundaries: the ledger says what was **released upstream**, not what is **deployed** — `/preflight`
    already crossed the two; drop every `not-deployed:*` row, since a session cannot explore what isn't there. And it carries **no behaviour**, so it tells you *where* to look, never *what correct looks like* — that is item 4 and §5a's BL axis.
 
-4. **Docs query** — done inside `/preflight` step 3 (kb first, then VirtoOZ via `/vc-docs`). For a feature from item 3a, add the targeted VirtoOZ query below. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
+4. **Docs query** — done inside `/preflight` step 3 (kb first, then VirtoOZ via `/vc-docs`). For an item-3a feature, query VirtoOZ after `/preflight`. Extract feature inventory to guide exploration — ensure the agent covers all documented features, not just obvious ones. Context7 (`/virtocommerce/vc-docs`) is a fallback only if VirtoOZ is unavailable.
 
    **VirtoOZ answers "how is it meant to work", never "what is new".** Its release corpus stops at Platform 3.917.1 while production is past 3.1050, so for a feature from item 3a it will typically return the *pre-existing* page for that area and nothing about the change. That is not a miss to retry — it is the division of labour: 3a supplies what is new, this step supplies the intended behaviour where docs exist, and where they do not the session is on the `{OBSERVED}` axis (see `agents/qa/shared-instructions.md` §Live-Verification).
 5. **Coverage map** — for the target domain, identify what's *already covered*:

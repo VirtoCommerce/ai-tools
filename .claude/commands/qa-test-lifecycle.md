@@ -80,7 +80,7 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 | Phase | Agent | Browser | Purpose |
 |---|---|---|---|
 | 1. Scope | Orchestrator (you) | Not needed | Parse input, resolve affected suites, build change inventory |
-| 2. Sync & Update | `test-management-specialist` | Not needed | Assess staleness via Context7, update stale/broken cases |
+| 2. Sync & Update | `test-management-specialist` | Not needed | Assess staleness via VirtoOZ (Context7 fallback), update stale/broken cases |
 | 3. Analyze & Generate | `test-management-specialist` | Not needed | Coverage gap detection, data-prep via `/qa-generate-data` (combination design + gap fixtures), test case creation |
 | 4. Review & Fix | `test-management-specialist` | Not needed | `/qa-review-tests` static dimensions (1–7, 9, 10), auto-fix, manual items |
 | 5. Verify | `qa-testing-expert` | `playwright-firefox` | Live environment browser verification |
@@ -148,7 +148,7 @@ These inputs trigger Phase 2 (Sync) automatically — code changed, so existing 
 
 **Module (`module <name>`):**
 1. Match `<name>` against module names in `knowledge/execution/module-suite-map.md`
-2. Query Context7 (`/virtocommerce/vc-docs`) for the module's latest documentation
+2. Query VirtoOZ (`/vc-docs`; Context7 fallback) for the module's current docs
 3. If a specific version is known: check GitHub releases via `gh api repos/VirtoCommerce/vc-module-<name>/releases/latest`
 
 **Diff (`diff`) — detect deployed platform + theme changes:**
@@ -244,9 +244,9 @@ For each affected suite, identify specific cases referencing changed areas and c
 | `NEW_NEEDED` | New feature/endpoint with no test coverage |
 | `UNAFFECTED` | Case in an affected suite but doesn't reference changed areas |
 
-#### 2b. Assess via Context7
+#### 2b. Assess via VirtoOZ
 
-Query Context7 (`/virtocommerce/vc-docs`) for each changed module's current behavior:
+Query VirtoOZ (`/vc-docs`; Context7 fallback) for each changed module's current behavior:
 - API response schemas, required fields, validation rules
 - GraphQL query/mutation signatures
 - Module configuration options
@@ -267,7 +267,7 @@ Reclassify each case:
 **For STALE cases:**
 1. Read current test case from suite CSV
    - **KB:** `mcp__kb__kb_ask` "<coordinate> …" (CLI: `npm run kb -- ask`) before asserting behaviour; confirm/dispute/capture after (`CLAUDE.md` §Product context).
-2. Query Context7 for correct current behavior
+2. Query VirtoOZ (Context7 fallback) for current behavior
 3. Update Steps and Assertions to match new behavior
 4. Preserve: case ID, Title (update if feature name changed), Section, Priority, Business_Rule, Edge_Case_Refs
 5. **Leave `Automation_Status` alone.** The legal values are exactly `Draft` | `Reviewed` | `Automated` |
@@ -324,7 +324,7 @@ Dispatch `test-management-specialist` (continuing from Phase 2 delegation).
    - ECL-* patterns from `e-commerce-edge-cases-library.md`
    - Expected coverage from `feature-domain-map.md`
    - Product types and test data from `products.md`
-3. Query Context7 (`/virtocommerce/vc-docs`) for domain-relevant topics with `tokens: 8000`
+3. Query VirtoOZ (`/vc-docs`; Context7 fallback) for domain-relevant topics
 4. Identify gaps:
    - Checklist items with no corresponding test case
    - BL-* invariants with no test case mapping
@@ -360,7 +360,7 @@ Before authoring any case, prepare the data each gap needs so cases reference *p
 
 1. **Deduplication pre-check** — read target suite CSV and related suites. Skip if existing case covers the gap.
    - For each gap, author one case (or case group) **per Combo ID** from 3b; set the `Test_Data` column to `@td(COMBO_ALIAS.field)` — never hardcode the prepared values (`.claude/rules/test-data.md`).
-2. **Query Context7** for domain-specific details: API field names, validation rules, GraphQL signatures
+2. **Query VirtoOZ** (Context7 fallback): API field names, validation rules, GraphQL signatures
 3. Generate test cases in enriched 15-column CSV format (1-3 cases per gap)
 4. Apply **minimum effective set** principle: clear bug hypothesis, happy path + most likely negative + known edge cases
 5. Use layer-specific tags from `test-case-template.md`
@@ -398,7 +398,7 @@ Also run, per the skill's Step 3/3.5: `npx tsx scripts/test-data/validate-td-ref
 
 #### 4a-bis. Behavior rewrites go through the Dimension-11 evidence bar
 
-Phase 2 reclassifies a case as STALE/BROKEN from **one** axis (the change inventory + Context7 docs).
+Phase 2 reclassifies a case as STALE/BROKEN from **one** axis (the change inventory + the docs).
 That is enough to justify a *mechanical* update (renamed selector, moved URL, added field), but **not
 enough to rewrite what a case asserts happens** — the skill's Dimension 11 requires an agreeing
 evidence tuple from every applicable axis (**docs + live + source**) before a DRIFT rewrite lands, and
@@ -713,7 +713,7 @@ Source: `reports/tickets/{SPRINT}/VCST-XXXX/test-cases.csv` — N authored, M pr
 
 Manifest: `config/test-suites.json` testCount updated for [suite ids]; `suites:lint` green.
 
-## Context7 Documentation Findings
+## Documentation Findings
 | Module | Topic Queried | Behavior Change Detected | Cases Influenced |
 
 ## Quality Gates
@@ -867,7 +867,7 @@ Input:
     - skills/qa-checklist/graphql-checklist.md
     - skills/qa-coverage-gap/feature-domain-map.md
     - knowledge/api/graphql-schema.md (for GraphQL scopes)
-  - context7: query `/virtocommerce/vc-docs` for domain-specific module behavior
+  - VirtoOZ (`/vc-docs`; Context7 fallback): domain-specific module behavior
 
 Output: structured JSON with:
   - syncResults: [{caseId, classification, action, before, after}]

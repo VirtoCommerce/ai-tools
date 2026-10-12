@@ -39,8 +39,8 @@ behind every step, the rationalization table and the red flags are in
    `/qa-hotfix-check`, `/qa-test`).
 2. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
    `ticket-fast --ticket <KEY> --components <…> [--expect <PR module@version>]`. It returns env health,
-   the deployed build, `{SPRINT}`, the duplicate check (with the prior run's build, so "same build" is
-   read from it) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
+   the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
    `expect` row is BLOCKED-on-deploy, never a FAIL.
 3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.

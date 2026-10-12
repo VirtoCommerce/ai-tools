@@ -67,6 +67,7 @@ level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, a
 - `READY` with `UNKNOWN` rows only (no BLOCK, no WARN) ⇒ list each `UNKNOWN` row with its `Who`/`Do`, never as OK, and do not ask.
 - `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
 - A level-3 BLOCK from step 2 alone also makes the run `NOT READY` and routes to step 5; the verdict returned in step 6 is the combined one (CLI verdict, downgraded by any level-3 BLOCK).
+- A non-interactive caller (`--ci`, or this skill running inside a subagent) asks no question: it returns `NOT READY` with the rows to its caller (step 6) and performs no remediation.
 
 ## Step 5 — remediation: diagnose → fix → re-check
 
