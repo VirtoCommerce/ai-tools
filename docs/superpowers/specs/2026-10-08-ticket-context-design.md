@@ -14,7 +14,7 @@ The fetch-and-analyse rules that prevent this already exist, but only in one pip
 
 | Where | What it does today |
 |---|---|
-| `.claude/skills/qa-test/preflight.md` §1a | fetch rules: comments always, attachments opened, an unreadable one is a noted gap |
+| `.claude/skills/qa-test/intake.md` §1a | fetch rules: comments always, attachments opened, an unreadable one is a noted gap |
 | `.claude/skills/qa-test/context-wave.md` §1c, §1c-map, §1d | FULL-path context gathering + story review |
 | `.claude/skills/qa-test-fast/context-wave.md` Wave 1 + Join 1 | three parallel dispatches (ticket · PRs · domain map) joined into a "context bundle" |
 | `.claude/skills/qa-test/technical-change.md` §2.1 | the measured four-rung ladder for finding a ticket's PRs |
@@ -276,7 +276,7 @@ The schema is the contract; the sketch is illustrative.
 | Consumer | Today | Phases 1–4 (skill in `.claude/`) | Phase 5 (skill in plugin) |
 |---|---|---|---|
 | `/qa-test-fast` Stage 1 Wave 1 + Join 1 | its own A/B/C dispatches | calls `/ticket-context`; keeps Wave 2+ | `vc-fix:ticket-context` |
-| `/qa-test` FULL 1a fetch rules, 1c, 1d | prose in `preflight.md` / `context-wave.md` | 1a routing stays; fetch + 1c become the skill call; 1d reads the bundle | `vc-fix:ticket-context` |
+| `/qa-test` FULL 1a fetch rules, 1c, 1d | prose in `intake.md` / `context-wave.md` | 1a routing stays; fetch + 1c become the skill call; 1d reads the bundle | `vc-fix:ticket-context` |
 | `/qa-test-model` | `--context <file>` | unchanged — the bundle is the file | unchanged |
 | `ba-analyze`, `qa-test-plan`, `qa-test-lifecycle`, `qa-hotfix` | own fetch | read the bundle where they work per ticket | `vc-fix:ticket-context` |
 | `vc-fix:qa-bug`, `qa-fix`, `qa-verify-fix`, `qa-investigate` | own fetch | **unchanged** (M3) | read the bundle |
@@ -294,7 +294,7 @@ Each migrated file **cites** the skill and deletes its restated rules, so the ru
    "deployment unverified" (D3).
 3. **Phase 2 — validation (§10).** Proceed only if it beats the current Stage 1.
 4. **Phase 3 — `/qa-test` FULL**, then the BA/planning commands in this repo.
-5. **Phase 4 — delete the restated rules** from `preflight.md` and both `context-wave.md` files.
+5. **Phase 4 — delete the restated rules** from `intake.md` and both `context-wave.md` files.
 6. **Phase 5 — move to `vc-fix`.** Trigger: Phase 2 passed **and** a client deployment needs it (the
    first `vc-fix` command that would consume it). Steps: copy the tree (§4) into the plugin, delete the
    `.claude/` copies in the same commit, switch §8 consumers to `vc-fix:ticket-context`, migrate the
