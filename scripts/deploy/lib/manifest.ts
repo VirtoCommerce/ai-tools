@@ -29,6 +29,18 @@ export function pinnedModule(json: any, id: string): { version: string; source: 
   }
   return null;
 }
+/** Every pinned module, by the same two rules `pinnedModule` applies to one Id. */
+export function listPinnedModules(json: any): { id: string; version: string; source: string }[] {
+  const out: { id: string; version: string; source: string }[] = [];
+  for (const s of json?.Sources ?? []) for (const m of s?.Modules ?? []) {
+    if (m?.Id) { out.push({ id: String(m.Id), version: String(m.Version), source: String(s.Name ?? '') }); continue; }
+    if (typeof m?.BlobName === 'string') {
+      const bm = m.BlobName.match(/^(.+)_(\d.*)\.zip$/i);
+      if (bm) out.push({ id: bm[1], version: bm[2], source: String(s.Name ?? 'AzureBlob') });
+    }
+  }
+  return out;
+}
 /** Pin a module as a pre-release AzureBlob item (and drop it from GithubReleases). Mutates `json`. */
 export function applyModule(json: any, id: string, version: string, blobName: string): void {
   json.Sources ||= [];
