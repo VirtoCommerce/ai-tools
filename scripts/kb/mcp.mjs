@@ -53,7 +53,7 @@ import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
-import { DEPLOYMENT_SOURCE } from './core/contract.mjs';
+import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { resolveWho } from './core/who.mjs';
@@ -195,6 +195,7 @@ export const TOOLS = Object.freeze([
           + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
         method: str('How it was established. Default "observation".'),
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['subject', 'question', 'claim', 'deployment', 'anchors', 'scope'],
@@ -212,6 +213,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['id', 'deployment'],
@@ -229,6 +231,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str(`Where you observed the contradiction: ${DEPLOYMENT_SOURCE}.`),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
+        conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
       required: ['id', 'deployment', 'saw'],
@@ -359,7 +362,7 @@ async function callTool(name, args, ctx) {
     case 'kb_capture': {
       const r = await capture({
         subject: args?.subject, question: args?.question, claim: args?.claim,
-        deployment: args?.deployment, method: args?.method,
+        deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
         anchors: asList(args?.anchors), scope: asList(args?.scope),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
@@ -372,6 +375,7 @@ async function callTool(name, args, ctx) {
       const fn = verb === 'confirm' ? confirm : dispute;
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
+        conditions: asList(args?.conditions),
       }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }

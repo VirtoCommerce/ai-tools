@@ -56,6 +56,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Map a domain (actors, value chain, surfaces per layer, coverage shape)** | `/qa-domain-map <domain-slug> [--refresh]` | Command |
 | **Ask what the platform was OBSERVED to do** | `mcp__kb__kb_ask` (fallback `npm run kb -- ask "<q>"`) — rule: `CLAUDE.md` §Essential Rules → *Product context* | MCP / CLI |
 | **Report on the knowledge base itself** (what was asked, what it could not answer) | `/kb-report` | Skill |
+| **Settle a disputed knowledge-base entry** (live investigation, verdict as a reviewed PR on the base) | `/kb-judge <KB-id> \| cluster <KB-id> \| next` | Skill |
 | **Build a ticket's test model (fault model) on its own** | `/qa-test-model <ticket-key> [--context <file>]` | Skill |
 | **Model how a domain behaves (behaviour graph, stable ids, evidence)** | `/qa-test-mind-map build \| update \| audit <domain-slug>` | Skill |
 | **Declare the data state each behaviour needs / seed one profile** | `/qa-test-data-model build \| update \| audit <domain-slug>` · `/qa-seed-data --profile <id>` | Skill |
@@ -144,6 +145,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/prompt-review` — Review / heal / improve this repo's own skill, command and agent prompts (gated by `context:check`)
 - `/preflight` — Read-only environment + build pre-flight at the start of a `/qa-test`-family or BA run: one result, one output form, then a diagnose → fix → re-check loop on what is not READY
 - `/kb-report` — The observed-behaviour knowledge base's own report: what agents asked, what it could not answer, which answers were useless
+- `/kb-judge` — Settle disputed knowledge-base entries: dossier, full live investigation, a verdict per dispute as a reviewed PR on the base (`npm run kb:disputes`)
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 
 ### VC Knowledge (Skill — auto-invocable)
