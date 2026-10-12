@@ -61,3 +61,9 @@ Repo `vc-module-return` (module). Record whether a return was ever submitted (a 
 returns that never were, in both `ReturnSearchService` and `ReturnAccessService`; add a cancelled-draft case to `ReturnAccessServiceTests`.
 Not a breaking change. **If the PO instead decides cancelled drafts ARE visible,** the module guide and PR note need that sentence and
 cases `RET-ORG-006` / `RET-ORG-019` (held at `Draft`) change their expectation — a decision, not a test edit.
+
+## Resolution
+- **Fixed in:** VirtoCommerce.Return 3.1005.0-pr-28-fb4f (vc-module-return #28 @ fb4fc43, commit d9233ee — write-once SubmittedDate gates the organization list, return(id) and files). PR still open at verification.
+- **Tracker:** VCST-6226 → Tested (2026-10-12); comment 111910.
+- **Verified:** 2026-10-12 on vcst by /qa-verify-fix — steps to reproduce passed 3/3 on the storefront and 3/3 through the API, 11/11 checklist items; RED baseline from 2026-10-08 (pr-28-62f9).
+- **Evidence:** reports/tickets/Sprint26-20/VCST-6226/ (evidence.html, verification-checklist.md, vf-B-green-request-response.json).
