@@ -574,7 +574,11 @@ async function main() {
       const section_ids = Object.fromEntries((spec?.sections || [])
         .map((sec, i) => [sec.key, (s.sections || []).find(x => x.displayOrder === i + 1 && x.name === sec.name)?.id])
         .filter(([, v]) => v));
-      byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections), section_ids };
+      // file_section_id: scalar id of the spec's ONLY File section (emitted only when unambiguous, like
+      // sectionOptionIds) — for aliases that name one File section, e.g. CFG_FILE_HOODIE.fileSectionId.
+      const fileKeys = (spec?.sections || []).filter(sec => sec.type === 'File').map(sec => sec.key);
+      const file_section_id = fileKeys.length === 1 ? section_ids[fileKeys[0]] : undefined;
+      byKey[s.csvId] = { product_id_guid: s.parentId, configuration_id: s.configurationId, ...sectionOptionIds(s.sections), section_ids, ...(file_section_id ? { file_section_id } : {}) };
     }
     syncEnvAliases('products/configurable-products', byKey); // → aliases.{env}.json (all envs)
   }
