@@ -87,7 +87,8 @@ rules:
       kind: manual
       ref: Create product in physical catalog only (not in store's virtual catalog) → storefront search returns nothing → add to virtual catalog category → product appears on storefront.
     violation_signal: Product visible on storefront without virtual catalog assignment; product appears in wrong store's catalog; physical-only product accessible via search.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-111 failed in REG-2026-10-08-0812"
   - id: BL-CAT-006
     title: Configurable product requires all sections filled
     rule: A configurable product (product with required configuration sections/options) cannot be added to cart until all required configuration sections are completed by the customer. The "Add to Cart" button must remain disabled until every required section has a selection. Optional sections may be left empty.

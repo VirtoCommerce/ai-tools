@@ -610,7 +610,7 @@ SR-CO-038,Sales Rep Customer-Orders Date Filter — Out-of-Span Value Clamps to 
 [NETWORK] no 4xx/5xx on /graphql","grid strands on an out-of-span date with no recovery path, or silently accepts one that later produces a zero-row/confusing result, console.error with TypeError, 4xx/5xx on /graphql",none,VCST-5097 · Archetype:CONFIG · Technique:EP | Behavior:sr.customer-orders.date-range,Draft
 SR-CO-039,[JOURNEY] Custom date range picked in the calendar filters the cross-customer orders grid and discloses the range as two chips in the input format,Sales Rep > Customer Orders > Storefront,High,BL-SR-012,,"[PRE:CLEAR_SESSION]
 [PRE:SIGNIN_AS:SR_REP_PRIMARY]
-SR_REP_PRIMARY serves customers whose orders (seeded AGENT-TEST-SRO-TZ-VCPTCORE-* fixtures) were created on at least three distinct local days. The three days and the in-window count are LIVE-DISCOVERED, never typed from memory. At least one served order must fall OUTSIDE the chosen window, otherwise a filter that does nothing would pass (the data must be able to tell the right implementation from the wrong one). Viewport 1920 (split layout), locale en-US, so the input format is MM/DD/YYYY.","rep=@td(SR_REP_PRIMARY.email), password={{SR_REP_PASSWORD}}","--- SCREEN: Cross-Customer Orders List ---
+SR_REP_PRIMARY serves customers whose orders (seeded AGENT-TEST-SRO-TZ-VCPTCORE-* fixtures) were created on at least three distinct local days. The three days and the in-window count are LIVE-DISCOVERED, never typed from memory. At least one served order must fall OUTSIDE the chosen window, otherwise a filter that does nothing would pass (the data must be able to tell the right implementation from the wrong one). Viewport 1920 (split layout), locale en-US, so the input format is MM/DD/YYYY.","rep=@td(SR_REP_PRIMARY.email), password={{TEST_USER_PASSWORD}}","--- SCREEN: Cross-Customer Orders List ---
 [VIEWPORT] 1920x1080
 [NAV] {{FRONT_URL}}/company/customer-orders
 [WAIT] the orders grid has rendered at least one row
@@ -863,6 +863,7 @@ Locale en-US. No filter applied. The breakpoint under test is 640px: below it th
 [ACT] select the Created date preset 'Custom date' if it is not already selected
 [KEY] record the visible label of the date control, the count of date text fields, the count of calendar-trigger buttons, and aria-haspopup on the fields and on the button (COMBINED_375)
 [PROBE:TOUCH] the Created date control
+[KEY] record each Start/End text input's rect and the distance from its centre to the centre of the nearest other target (TOUCH_SPACING)
 [VIEWPORT] 639
 [KEY] record the same observations (COMBINED_639)
 [VIEWPORT] 640
@@ -877,7 +878,7 @@ Locale en-US. No filter applied. The breakpoint under test is 640px: below it th
 [VIEWPORT] 640
 [KEY] record the values shown in the Start date and End date inputs (DRAFT_AFTER_640)","[DOM] at 375 and at 639 the control is ONE text field whose visible label is 'Date range' and which has one 'Open calendar' button; at 640 and above it is TWO fields (Start date, End date) {SPEC}
 [DOM] in the combined layout aria-haspopup=""dialog"" is on the single 'Open calendar' button and not on the text field; in the split layout it is on both inputs {OBSERVED}
-[TOUCH] belowAA == 0 for the date control and its calendar button at 375 {BL}
+[TOUCH] at 375 the 'Open calendar' button measures at least 24x24, and each Start/End text input either measures at least 24px high or passes the WCAG 2.5.8 spacing exception (TOUCH_SPACING >= 24, i.e. a 24px circle centred on it meets no other target's circle) -- the bordered 44px field box forwards no click, so the inputs themselves are the targets {BL}
 [REL] DRAFT_AFTER_639 shows COMMIT_START and COMMIT_END, and DRAFT_AFTER_640 shows the same two values -- a committed draft survives crossing the breakpoint in both directions {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
 [NETWORK] no 4xx/5xx on /graphql","Two stacked unlabelled fields below 640px
 The label 'Date range' missing in the combined layout

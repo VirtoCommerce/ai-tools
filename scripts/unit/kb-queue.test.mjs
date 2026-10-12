@@ -9,10 +9,10 @@
 // capture/confirm/dispute only QUEUE.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, TRANSCRIPT_MEMORY, kbDisabled, log, metaTranscripts, pendingMutations, queuePath, readMeta, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
+import { KEY_LEN, LOGGED, MUTATIONS, RUN_MAX, TRANSCRIPT_MEMORY, kbDisabled, log, loopPath, metaTranscripts, pendingMutations, queueDir, queuePath, readMeta, readQueue, hasSessionId, hookEnv, processKey, runOf, sessionId, shortSession } from '../kb/core/queue.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { captureLines, evidenceLines } from '../kb/core/render.mjs';
 import { ask, askAbout, capture, confirm, dispute, show, stat, toLogLine } from '../kb/core/verbs.mjs';
@@ -23,6 +23,15 @@ const PROCESS_KEY = /^p\d+-[0-9a-f]{4}$/;
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
 const opened = () => ({ reader: localReader(FIXTURE), locator: FIXTURE, how: 'test', why: null });
 const envIn = (dir) => ({ KB_QUEUE_DIR: dir, CLAUDE_CODE_HOST_SESSION_ID: 'testsess' });
+
+// The confirm gate (VCST-6191) wants an entry OPENED before it is confirmed or disputed. These tests
+// are about what a confirm writes, not about the gate, so the journal records the open directly --
+// a `show` would add a queue line the counts below do not expect.
+const opens = (env, ...ids) => {
+  mkdirSync(queueDir(env), { recursive: true });
+  for (const id of ids) appendFileSync(loopPath(env), `${JSON.stringify({ at: new Date().toISOString(), kind: 'show', state: 'answer', id })}
+`);
+};
 
 async function withQueue(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'kb-queue-'));
@@ -321,6 +330,7 @@ test('the PUBLIC log line is the queue line minus the payload', () => withQueue(
 }));
 
 test('confirm and dispute queue evidence; a dispute is marked as contradicting', () => withQueue(async (dir, env) => {
+  opens(env, 'KB-55C8E448', 'KB-06664A3A');
   await confirm('KB-55C8E448', { deployment: 'vcptcore_stable', note: 'same on stable' }, opened(), { env });
   await dispute('KB-06664A3A', { deployment: 'virtostart', saw: 'sort was monotonic here' }, opened(), { env });
 
@@ -340,12 +350,14 @@ test('confirm and dispute refuse an id the base does not hold, and log nothing e
 }));
 
 test('dispute without --saw is refused: a contradiction with no observation is not evidence', () => withQueue(async (dir, env) => {
+  opens(env, 'KB-06664A3A');
   const r = await dispute('KB-06664A3A', { deployment: 'qa' }, opened(), { env });
   assert.equal(r.state, 'invalid');
   assert.match(r.why, /--saw/);
 }));
 
 test('dispute --saw and confirm --note are repaired from a Git Bash rewrite — both land on a public entry (VCST-6102)', () => withQueue(async (dir, env) => {
+  opens(env, 'KB-06664A3A');
   const d = await dispute('KB-06664A3A', { deployment: 'qa', saw: 'C:/Program Files/Git/search sorted by the displayed price here' }, opened(), { env });
   assert.equal(d.state, 'queued');
   assert.equal(d.repaired, 'msys');
@@ -435,6 +447,7 @@ test('every kind written is a declared kind, and the mutations are the three wri
   await ask('cart totals', opened(), { env });
   await show('KB-27B4CD10', opened(), { env });
   await capture(CAPTURE, opened(), { env });
+  opens(env, 'KB-55C8E448', 'KB-06664A3A');
   await confirm('KB-55C8E448', { deployment: 'qa' }, opened(), { env });
   await dispute('KB-06664A3A', { deployment: 'qa', saw: 'otherwise' }, opened(), { env });
 

@@ -1,0 +1,969 @@
+{
+ "about": "VCST-6191 live set (2026-10-07): every real ask logged on base main from 2026-10-06T00:00Z to f11d658 (62; synthetic lines excluded; 2 operator CLI replays removed, listed in removed[]). Candidates per question = verdict top 10 + floor-1 top 3 + BM25 top 8 over bodies (label-packets.mjs, seeds 1 and 2) on main@f11d658, the base the entries were labelled against. Labelled exhaustively by two independent Claude passes (48/60 agreed); the 12 disagreements adjudicated by a third. 59 targets (11 partial), 1 controls, 0 contested. Every row is split test. CAVEAT: the same sessions that asked these questions captured and confirmed entries on that day, so many targets are answered by entries written after the ask (the base caught up) -- this set measures choice among close entries, not coverage.",
+ "snapshot": "vc-knowledge main@f11d658",
+ "targets": [
+  {
+   "id": "N-001",
+   "q": "changeWishlist sharedWithId legacy INVALID_OPERATION; SharingSettingType.targets order in write response vs wishlist read",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:19:27.705Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "42230B0A states write-vs-read target order and legacy sharedWithId INVALID_OPERATION on multi-target list; B4377884 states the legacy sharedWithId refusal only",
+   "expect": [
+    "KB-42230B0A",
+    "KB-B4377884"
+   ]
+  },
+  {
+   "id": "N-002",
+   "q": "changeWishlist legacy sharedWithId targets order mutation response vs wishlist read INVALID_OPERATION",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:21:00.408Z",
+   "askedBy": "main",
+   "askedUnder": "floor-1",
+   "note": "42230B0A states response vs read order and legacy sharedWithId INVALID_OPERATION; B4377884 states legacy sharedWithId on 2-target list refused INVALID_OPERATION",
+   "expect": [
+    "KB-42230B0A",
+    "KB-B4377884"
+   ]
+  },
+  {
+   "id": "N-003",
+   "q": "changeWishlist addSharedWithIds removeSharedWithIds without scope ignored silently no error",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:24:32.627Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "B4377884: add/removeSharedWithIds without scope returns 200, no errors, writes nothing",
+   "expect": [
+    "KB-B4377884"
+   ]
+  },
+  {
+   "id": "N-004",
+   "q": "wishlist sharingSetting.targets deleted organization target name null id kept ordering",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:26:18.453Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "49D2315C: deleted org target keeps id, name null, id-ascending order; 8F61528A: deleted org target keeps id with name/subtitle/imageUrl null",
+   "expect": [
+    "KB-49D2315C",
+    "KB-8F61528A"
+   ]
+  },
+  {
+   "id": "N-005",
+   "q": "Mutation.sendCustomerCommunication with organizationIds — recipients, initiator exclusion, dedup of a member of several organizations, push and email delivery",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T00:49:48.983Z",
+   "askedBy": "main",
+   "askedUnder": "floor-1",
+   "note": "4C919BA6 states recipients union, dedup, rep excluded, one push/one email per contact; 50D03D62 dedup+rep excluded; 20F8350F and 5F164230 state initiator exclusion.",
+   "expect": [
+    "KB-4C919BA6",
+    "KB-50D03D62",
+    "KB-20F8350F",
+    "KB-5F164230"
+   ]
+  },
+  {
+   "id": "N-006",
+   "q": "changeWishlist addSharedWithIds message Customer scope — which recipients get notified (push/email) when a sales rep shares a list with specific customers",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:49:49.188Z",
+   "askedBy": "main",
+   "askedUnder": "floor-1",
+   "note": "EFD1A7FD/5AB85ADC: only newly-added orgs notified; 4C919BA6/50D03D62: distinct contacts of those orgs get one push+email, rep excluded",
+   "expect": [
+    "KB-EFD1A7FD",
+    "KB-5AB85ADC",
+    "KB-4C919BA6",
+    "KB-50D03D62"
+   ]
+  },
+  {
+   "id": "N-007",
+   "q": "Mutation.sendCustomerCommunication from storefront list share (changeWishlist sharingSetting) — which organizationIds are notified on save, message-only edit",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:52:26.751Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "floor-1",
+   "note": "EFD1A7FD: only orgs added in that save notified, message-only edit sends nothing; 5AB85ADC: per newly added org",
+   "expect": [
+    "KB-EFD1A7FD",
+    "KB-5AB85ADC"
+   ]
+  },
+  {
+   "id": "N-008",
+   "q": "Mutation.sendCustomerCommunication /graphql/sales-rep multiple organizationIds recipients dedup NoRecipients EmailNoRecipients push message memberIds",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:52:27.509Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "4C919BA6 dedup + memberIds; 50D03D62 dedup; 20F8350F NoRecipients; 3D0750BD EmailNoRecipients - together cover all asks",
+   "expect": [
+    "KB-4C919BA6",
+    "KB-50D03D62",
+    "KB-20F8350F",
+    "KB-3D0750BD"
+   ]
+  },
+  {
+   "id": "N-009",
+   "q": "sendCustomerCommunication contact member of two targeted organizations receives one push and one SalesRepMessageEmailNotification (dedup)",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:52:34.072Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "Both state a contact in two targeted orgs gets one push and one SalesRepMessageEmailNotification",
+   "expect": [
+    "KB-4C919BA6",
+    "KB-50D03D62"
+   ]
+  },
+  {
+   "id": "N-010",
+   "q": "removeSharedWithIds after sales rep unassigned from organization — changeWishlist revoke allowed, addSharedWithIds of unserved org Access denied",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:54:16.599Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "51888868 and 8F61528A: removal of unserved org allowed, re-add Access denied; B4377884: adding unserved org Access denied",
+   "expect": [
+    "KB-51888868",
+    "KB-8F61528A",
+    "KB-B4377884"
+   ]
+  },
+  {
+   "id": "N-011",
+   "q": "sharedWishlist(sharingKey) after organization removed from targets returns Access denied immediately; non-owner reader sees targets [] sharedWithId null access Read isOwner false",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:54:16.628Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "2F64A447 reader sees targets [] sharedWithId null Read isOwner false, removed org /403; D7F08A26/8F61528A removed org gets Access denied; 24B83B02 reader fields",
+   "expect": [
+    "KB-2F64A447",
+    "KB-D7F08A26",
+    "KB-8F61528A",
+    "KB-24B83B02"
+   ]
+  },
+  {
+   "id": "N-012",
+   "q": "Mutation.changeWishlist removeSharedWithIds organization the sales rep no longer serves",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:54:21.106Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "Both state removeSharedWithIds of an org the rep no longer serves succeeds",
+   "expect": [
+    "KB-51888868",
+    "KB-8F61528A"
+   ]
+  },
+  {
+   "id": "N-013",
+   "q": "Query.sharedWishlist non-owner targets sharedWithId access isOwner",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:54:21.391Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "2F64A447: non-owner gets targets [], sharedWithId null, Read, isOwner false; 24B83B02 same sans targets; 032FBB96 access/isOwner per caller",
+   "expect": [
+    "KB-2F64A447",
+    "KB-24B83B02",
+    "KB-032FBB96"
+   ]
+  },
+  {
+   "id": "N-014",
+   "q": "PUT /api/sales-rep update served organizations invalidates the sales rep's existing access token (Unauthorized)",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T00:58:45.602Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "1B066196: PUT /api/sales-rep makes rep's existing token anonymous/Unauthorized; 51888868 notes rep needs a fresh token",
+   "expect": [
+    "KB-1B066196",
+    "KB-51888868"
+   ]
+  },
+  {
+   "id": "N-015",
+   "q": "/company/my-customers Send email envelope and customer profile quick action Send a message modal — sendCustomerCommunication payload, no-recipients toast",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:06:22.498Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "floor-1",
+   "note": "5F164230: modal sends organizationIds=[org], channels, title omitted when blank; rep-only org shows 'This organization has no contacts to notify.'",
+   "expect": [
+    "KB-5F164230"
+   ]
+  },
+  {
+   "id": "N-016",
+   "q": "What does Query.wishlists(scope:) return for each scope value (Private, Organization, Customer, AnyoneAnonymous, unknown string) — which lists does the scope argument narrow to?",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:15:40.821Z",
+   "askedBy": "main",
+   "askedUnder": "floor-1",
+   "note": "KB-FFC67575 states what wishlists(scope) returns for Private, Organization, Customer, AnyoneAnonymous and unknown values.",
+   "expect": [
+    "KB-FFC67575"
+   ]
+  },
+  {
+   "id": "N-017",
+   "q": "Who can read a wishlist via Query.wishlist(listId) and Query.sharedWishlist(sharingKey) under Organization, AnyoneAnonymous and Customer sharing scopes; can an organization member read another member's unshared list?",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:15:41.120Z",
+   "askedBy": "main",
+   "askedUnder": "floor-1",
+   "note": "Customer reads (2F64A447, 50D03D62), Org reads (6E56FB4B, 5FA94169), anon per scope (7A12CF52, BE7DF8DA), org-mate denied on unshared list (91FDB560, FFC67575); no single entry covers all.",
+   "expect": [
+    "KB-2F64A447",
+    "KB-6E56FB4B",
+    "KB-7A12CF52",
+    "KB-5FA94169",
+    "KB-BE7DF8DA",
+    "KB-91FDB560",
+    "KB-FFC67575",
+    "KB-50D03D62"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-018",
+   "q": "Query.wishlists scope argument narrowing per sharing scope (Private, Organization, Customer, AnyoneAnonymous) and changeWishlist scope refusal for AnyoneAuthorized / User / unknown scope",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:17:30.654Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "FFC67575 covers wishlists(scope) narrowing; EA7D6125 covers changeWishlist INVALID_OPERATION refusal for AnyoneAuthorized/User/unknown. Together whole.",
+   "expect": [
+    "KB-FFC67575",
+    "KB-EA7D6125"
+   ]
+  },
+  {
+   "id": "N-019",
+   "q": "Query.wishlist sharingSetting.id changes on every read for a list created by createWishlist without scope (no persisted sharing setting)",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:22:08.288Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "Both state a scope-less/never-shared list returns a new random sharingSetting.id on every read and that key resolves nothing.",
+   "expect": [
+    "KB-91FDB560",
+    "KB-E8234FA0"
+   ]
+  },
+  {
+   "id": "N-020",
+   "q": "Mutation.changeWishlist addSharedWithIds without scope argument ignored silently; unsupported scope refusal error code INVALID_OPERATION message",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T01:22:08.566Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "floor-1",
+   "note": "B4377884: addSharedWithIds without scope silently ignored + generic INVALID_OPERATION text; EA7D6125: unsupported scope refusal INVALID_OPERATION with generic message.",
+   "expect": [
+    "KB-B4377884",
+    "KB-EA7D6125"
+   ]
+  },
+  {
+   "id": "N-021",
+   "q": "/company/my-customers/{orgId} sales rep customer profile Top sellers widget salesRepTopSellers columns layout",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T07:58:56.009Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "floor-1",
+   "note": "KB-7C6D6C33 states Top sellers columns (#, Product, Units, Revenue) nowrap/wrap behaviour and 2-column layout from 1280px.",
+   "expect": [
+    "KB-7C6D6C33"
+   ]
+  },
+  {
+   "id": "N-022",
+   "q": "sendCustomerCommunication organizationIds sales rep send message modal: what request does the storefront send and which recipients get the push",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T11:19:23.917Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "5F164230 states the modal request (organizationIds=[org]) and members get push, rep not; 4C919BA6/20F8350F/50D03D62 state the recipient set minus the sending rep.",
+   "expect": [
+    "KB-5F164230",
+    "KB-4C919BA6",
+    "KB-20F8350F",
+    "KB-50D03D62"
+   ]
+  },
+  {
+   "id": "N-023",
+   "q": "/account/returns Returns menu visibility on B2B-store: when is the Returns entry shown in the account sidebar and when does the route 404",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T11:33:12.197Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "D61EEFF8 observes no Returns entry and /account/returns 404 on vcptcore_qa B2B-store but says the cause/condition was not established.",
+   "expect": [
+    "KB-D61EEFF8"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-024",
+   "q": "/sales-rep customer orders page SalesRepCustomerOrders status filter chip label localization",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T11:50:23.803Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "F8BF115A states status facet labels localized from Order.Status translations and the chip keeping the localized label at zero matches.",
+   "expect": [
+    "KB-F8BF115A"
+   ]
+  },
+  {
+   "id": "N-025",
+   "q": "how are order status display labels (statusDisplayValue, term_facets status label) localized — where are Order.Status translations stored and which REST endpoint writes them (/api/platform/localizable-settings)",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T11:56:22.983Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "74D9B9B0: Order.Status translations stored as PlatformLocalizedItem, written via POST localizable-settings/{name}/dictionary-items; F8BF115A: term_facets labels use them. statusDisplayValue not covered.",
+   "expect": [
+    "KB-74D9B9B0",
+    "KB-F8BF115A"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-026",
+   "q": "changeWishlist sharingSetting message max length vs sendCustomerCommunication message limit 1000 — what happens when a list share message longer than 250 is reopened in the storefront Share dialog",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T12:05:20.583Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "8646D07D/0CE38D75: over-250 stored message pre-filled with red counter; A98E467C: share 1024 vs send 1000; 0BC18481: 1024 cap.",
+   "expect": [
+    "KB-8646D07D",
+    "KB-0CE38D75",
+    "KB-A98E467C",
+    "KB-0BC18481"
+   ]
+  },
+  {
+   "id": "N-027",
+   "q": "changeWishlist Customer scope sharingSetting.message max length 1024 and sendCustomerCommunication message max 1000 — list share message limits",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T12:11:19.651Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "A98E467C states both limits (share message 1024, sendCustomerCommunication 1000); 0BC18481 the 1024 cap; 8646D07D the 1000 refusal.",
+   "expect": [
+    "KB-A98E467C",
+    "KB-0BC18481",
+    "KB-8646D07D"
+   ]
+  },
+  {
+   "id": "N-028",
+   "q": "/account/orders Created date filter presets Last week Last month range createddate filter",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T12:36:47.663Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "17E74050 states /account/orders Last week/Last month createddate ranges (and TZ shift); 350797F5 states the /account/orders Last week range too.",
+   "expect": [
+    "KB-17E74050",
+    "KB-350797F5"
+   ]
+  },
+  {
+   "id": "N-029",
+   "q": "/company/customer-orders date range filter VcDateRangePicker sales rep customer orders",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T14:17:21.493Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "Vague topic ask; every entry stating /company/customer-orders date filter behaviour counts: ranges, chips, focus, picker Clear, and the Created date combobox i18n-key bugs.",
+   "expect": [
+    "KB-350797F5",
+    "KB-B75AAE47",
+    "KB-21C241D2",
+    "KB-09CEE315",
+    "KB-F9D75EA0",
+    "KB-23CBD97B",
+    "KB-BE19E49D"
+   ]
+  },
+  {
+   "id": "N-030",
+   "q": "VcDateRangePicker split combined layout /account/orders date filter accessible names Open calendar",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T14:17:21.782Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "F9D75EA0 states split vs combined layouts and the accessible names 'Open calendar: Start date'/'End date' vs 'Open calendar'.",
+   "expect": [
+    "KB-F9D75EA0"
+   ]
+  },
+  {
+   "id": "N-031",
+   "q": "salesRepCustomerOrders createdDate filter timezone date parsing",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T14:17:22.115Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "09CEE315 custom range = local day bounds sent as UTC; 350797F5 preset local window, no tz shift; B75AAE47 also shows local-bound createddate for salesRepCustomerOrders.",
+   "expect": [
+    "KB-09CEE315",
+    "KB-350797F5",
+    "KB-B75AAE47"
+   ]
+  },
+  {
+   "id": "N-032",
+   "q": "/company/customer-orders sales rep orders filter date range chip removal createddate filter salesRepCustomerOrders",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T14:38:39.802Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "09CEE315: removing one chip re-queries with that bound dropped; B75AAE47: removing a preset's Start chip sends createddate:[TO ...] and the drawer still shows the preset",
+   "expect": [
+    "KB-09CEE315",
+    "KB-B75AAE47"
+   ]
+  },
+  {
+   "id": "N-033",
+   "q": "/company/customer-orders sales rep orders filter Custom date range picker chips Apply disabled inverted range aria-invalid",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T14:58:49.694Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "09CEE315: custom range chips 'Start:/End: MM/DD/YYYY'; an inverted range marks both inputs aria-invalid, shows a message and keeps Apply disabled",
+   "expect": [
+    "KB-09CEE315"
+   ]
+  },
+  {
+   "id": "N-034",
+   "q": "/account/orders Filters popover date picker: 'Open calendar' button, dual-month calendar, keyboard navigation and Escape closing behaviour",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T14:58:54.463Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "A8573767: /account/orders calendar arrows, Enter, Escape and focus return; F9D75EA0: Open calendar trigger names. Dual-month calendar not stated",
+   "expect": [
+    "KB-A8573767",
+    "KB-F9D75EA0"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-035",
+   "q": "SalesRepCustomerOrders zero results status chip shows raw term \"Processing\" instead of localized label under de-DE on /company/my-customers/<org>/orders — term_facets empty",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T15:06:52.130Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "F8BF115A: zero matches returns term_facets []; the PR build chip keeps the remembered localized label; raw English term appears when translations are missing",
+   "expect": [
+    "KB-F8BF115A"
+   ]
+  },
+  {
+   "id": "N-036",
+   "q": "/company/customer-orders keyboard: where does focus go after Reset filters chip-row button, and after a calendar day is picked in the Start date picker (input vs Open calendar button)?",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T15:09:48.578Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "21C241D2: picking a day moves focus to the Start date input, not the Open calendar button; Enter on Reset filters drops focus to body",
+   "expect": [
+    "KB-21C241D2"
+   ]
+  },
+  {
+   "id": "N-038",
+   "q": "productConfiguration query section isRequired dependsOnSectionId on PDP; Add to cart disabled configurable product required sections /products-with-options/",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T16:07:25.640Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "79949FFE: required Text section plus dependsOnSectionId reveal, Add to cart stays disabled; 0C163966: a required section blocks adding. productConfiguration field shape is not stated",
+   "expect": [
+    "KB-79949FFE",
+    "KB-0C163966"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-039",
+   "q": "configurable PDP /products-with-options edit cart line lineItemId SaveChangesModal Add to cart vs Update button",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T16:19:26.903Z",
+   "askedBy": "qa-testing-expert",
+   "askedUnder": "verdict-1",
+   "note": "F78ED1CC: configurable PDP Add to cart appends ?lineItemId. Edit-mode Update button and SaveChangesModal are not stated",
+   "expect": [
+    "KB-F78ED1CC"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-040",
+   "q": "POST /api/catalog/products/configurations — which body field holds sections, does it save isActive, and how are Text section predefined options (text values) stored?",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T16:20:14.050Z",
+   "askedBy": "test-data-engineer",
+   "askedUnder": "verdict-1",
+   "note": "CD451F5C field 'sections', isActive; 7AB0B13E POST saves isActive false; 6161BC89 deactivated config persists; A1498A0F option has Text field. Text option storage only thinly stated.",
+   "expect": [
+    "KB-CD451F5C",
+    "KB-7AB0B13E",
+    "KB-6161BC89",
+    "KB-A1498A0F"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-041",
+   "q": "productConfiguration GraphQL — order of options within a configuration section and auto-selection of first option for required Product section without default",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T16:20:14.344Z",
+   "askedBy": "test-data-engineer",
+   "askedUnder": "verdict-1",
+   "note": "A1498A0F: option order follows neither sent nor creation order; there is no displayOrder field. Storefront auto-select of the first option is only mentioned as a caution, not observed",
+   "expect": [
+    "KB-A1498A0F"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-042",
+   "q": "/company/customer-orders sales-rep date range filter locale strings Custom date picker validation",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T16:33:47.618Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "09CEE315 inverted-range validation (aria-invalid, message, Apply disabled); 23CBD97B/BE19E49D raw custom_date i18n key in non-en locales. Together cover both asks.",
+   "expect": [
+    "KB-09CEE315",
+    "KB-23CBD97B",
+    "KB-BE19E49D"
+   ]
+  },
+  {
+   "id": "N-043",
+   "q": "configurable product PDP /products-with-options: does Add to cart stay disabled until every required configuration section has a value, and how long after the last required value does it become enabled?",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T16:39:44.412Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "79949FFE: Add to cart stays disabled while a required Text section is empty; 0C163966: a required section blocks adding. Enable timing is not stated",
+   "expect": [
+    "KB-79949FFE",
+    "KB-0C163966"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-044",
+   "q": "POST /api/assets/folder folder name validation rules and Page Builder Designer asset library picker behaviour (multi-select, new folder)",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T16:46:15.611Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "verdict-1",
+   "note": "F3D79CBD folder name rules; D007247C picker root and single-select (multiple:false); 4F18D0C7 New folder hidden without asset:create. Together cover all asks.",
+   "expect": [
+    "KB-F3D79CBD",
+    "KB-D007247C",
+    "KB-4F18D0C7"
+   ]
+  },
+  {
+   "id": "N-045",
+   "q": "/account/returns storefront returns pages: how is dark mode enabled on the vc-frontend storefront and what route does the return details page use",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T16:52:18.586Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "29A75D95 dark mode only via dark preset (html.dark); the other four state the return details route /account/returns/{id}. Together cover both asks.",
+   "expect": [
+    "KB-29A75D95",
+    "KB-6CDB7E6F",
+    "KB-7CC25D4A",
+    "KB-ED76FF4B",
+    "KB-21E70170"
+   ]
+  },
+  {
+   "id": "N-046",
+   "q": "configurable product /products-with-options PDP: does whitespace-only text in a required Text section reveal a dependent section (dependsOnSectionId)?",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T18:08:10.872Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "79949FFE: whitespace-only text reveals the dependent section while the Text section stays required and Add to cart disabled.",
+   "expect": [
+    "KB-79949FFE"
+   ]
+  },
+  {
+   "id": "N-047",
+   "q": "Page Builder asset library picker POST /api/assets upload permission platform:asset:create for non-admin user",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T19:31:32.243Z",
+   "askedBy": "qa-backend-expert",
+   "askedUnder": "verdict-1",
+   "note": "4F18D0C7: non-admin without platform:asset:create still sees Upload in the Designer picker; POST /api/assets then fails 403.",
+   "expect": [
+    "KB-4F18D0C7"
+   ]
+  },
+  {
+   "id": "N-048",
+   "q": "POST /api/return/{id}/authorize — which return status results from approving all, some, or no lines, and what quantity is released back to returnableItems",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T20:35:41.145Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "97A675C1: decision gives Approved/PartiallyApproved/Rejected; 809EA119 and F97CFAF6: returnable = ordered - approved, so unapproved units are released.",
+   "expect": [
+    "KB-97A675C1",
+    "KB-809EA119",
+    "KB-F97CFAF6"
+   ]
+  },
+  {
+   "id": "N-049",
+   "q": "returnableItems ineligibilityReason — when is an order line returnable (order status Completed, delivery date, WindowDays, held quantity)",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T20:35:41.411Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "4E1FF232 status Completed, DeliveryDate, WindowDays; A14FC761 window reason and held qty; 06CFE625/1F2EBF83/F97CFAF6/809EA119 state how held quantity reduces returnable.",
+   "expect": [
+    "KB-4E1FF232",
+    "KB-A14FC761",
+    "KB-06CFE625",
+    "KB-1F2EBF83",
+    "KB-F97CFAF6",
+    "KB-809EA119"
+   ]
+  },
+  {
+   "id": "N-050",
+   "q": "GET /api/return/{id}/available-statuses and cancelReturn — which return statuses can follow Requested, Cancelled, Approved; is Cancelled terminal",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T20:35:41.663Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "21F4F161 per-status available list (Cancelled->[Canceled,Cancelled]); DF9F415E Requested->Requested; 657521DF cancel WRONG_STATUS; 93804F07/58A94337 decided/Cancelled cannot move.",
+   "expect": [
+    "KB-21F4F161",
+    "KB-DF9F415E",
+    "KB-657521DF",
+    "KB-93804F07",
+    "KB-58A94337"
+   ]
+  },
+  {
+   "id": "N-051",
+   "q": "return status change notifications — ReturnStatusChangedEvent email and push, Return.SendNotifications setting, LanguageCode culture fallback",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T20:35:41.913Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "17555498: one email and one push per status change, SendNotifications write not honoured, languageCode with null->store default; C6BB1914: culture source.",
+   "expect": [
+    "KB-17555498",
+    "KB-C6BB1914",
+    "KB-97A675C1",
+    "KB-22E1D313"
+   ]
+  },
+  {
+   "id": "N-052",
+   "q": "Return module available-statuses per status, can agent cancel a Requested return, GET /api/return available statuses",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T21:54:23.310Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "21F4F161: per-status available-statuses, Requested->[Requested] so no agent cancel; DF9F415E: Requested dropdown offers only Requested.",
+   "expect": [
+    "KB-21F4F161",
+    "KB-DF9F415E"
+   ]
+  },
+  {
+   "id": "N-053",
+   "q": "returns authorize endpoint return:authorize permission approve decline",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T21:54:23.546Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "700E5D52: authorize endpoint requires return:authorize, update alone gets 403; DF9F415E: UI hides Approve / decline without it.",
+   "expect": [
+    "KB-700E5D52",
+    "KB-DF9F415E"
+   ]
+  },
+  {
+   "id": "N-054",
+   "q": "returns notifications email push per status change store settings switch",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T21:54:23.806Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "17555498: one email and one push per status change, Return.SendNotifications store setting write did not take effect; 97A675C1/22E1D313: decision email and push.",
+   "expect": [
+    "KB-17555498",
+    "KB-97A675C1",
+    "KB-22E1D313"
+   ]
+  },
+  {
+   "id": "N-055",
+   "q": "storefront /account/returns page returns wizard createReturn over-limit quantity",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T21:54:24.046Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "F97CFAF6: createReturn accepts an over-limit Draft and submitReturn refuses it; wizard clamps the quantity (2073D7AD, 6323ED21, 6CDB7E6F).",
+   "expect": [
+    "KB-F97CFAF6",
+    "KB-2073D7AD",
+    "KB-6323ED21",
+    "KB-6CDB7E6F"
+   ]
+  },
+  {
+   "id": "N-056",
+   "q": "/account/returns/{id}/edit wizard: attachments required per line, flag shown when a line lacks a photo; bulk apply reason; quantity clamp",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T22:29:24.672Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "93FFCC74 'line(s) still need a photo' flag on /edit; 2073D7AD/6CDB7E6F quantity clamp on /edit. Bulk apply reason not stated anywhere.",
+   "expect": [
+    "KB-93FFCC74",
+    "KB-2073D7AD",
+    "KB-6CDB7E6F"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-057",
+   "q": "GET /api/return/{id}/available-statuses for a Requested return; can an admin cancel a Requested return in the Admin SPA status dropdown",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T22:29:24.956Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "21F4F161: Requested->[Requested], admin dropdown shows the same list, so no cancel; DF9F415E: Requested dropdown offers only Requested.",
+   "expect": [
+    "KB-21F4F161",
+    "KB-DF9F415E"
+   ]
+  },
+  {
+   "id": "N-058",
+   "q": "GET /api/return/{id}/available-statuses and POST /api/return/{id}/authorize behaviour for Requested, Completed and decided returns; notification journal and push for return status change",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T22:30:00.660Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "21F4F161: statuses incl. Requested/Completed/decided; 17555498: journal and push per change. Authorize on Completed or decided returns not stated.",
+   "expect": [
+    "KB-21F4F161",
+    "KB-17555498",
+    "KB-97A675C1",
+    "KB-22E1D313"
+   ],
+   "partial": true
+  },
+  {
+   "id": "N-059",
+   "q": "Query.returnReasons localizedName with cultureName en-US ru-RU de-DE: translated or equal to code? returnableItems quantities",
+   "source": "live",
+   "split": "test",
+   "labelled": "adjudicated",
+   "asked": "2026-10-06T22:30:20.052Z",
+   "askedBy": "ba-system-analyzer",
+   "askedUnder": "verdict-1",
+   "note": "F98049F1 localizedName translated per culture, code fallback (de-DE = code); A14FC761/8A2F58EA/4E1FF232/06CFE625 state returnableItems quantities.",
+   "expect": [
+    "KB-F98049F1",
+    "KB-A14FC761",
+    "KB-8A2F58EA",
+    "KB-4E1FF232",
+    "KB-06CFE625"
+   ]
+  },
+  {
+   "id": "N-062",
+   "q": "returns notifications email push per status change",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-07T06:14:46.789Z",
+   "askedBy": "main",
+   "askedUnder": "verdict-1",
+   "note": "17555498: one email and one push per return status change via Hangfire; 97A675C1: decision email; 22E1D313: buyer push texts.",
+   "expect": [
+    "KB-17555498",
+    "KB-97A675C1",
+    "KB-22E1D313"
+   ]
+  }
+ ],
+ "controls": [
+  {
+   "id": "N-037",
+   "q": "configurable product PDP /products-with-options/wedding-cakes price and delivery widget checklist sections visibility anonymous vs signed-in",
+   "source": "live",
+   "split": "test",
+   "labelled": "agreed",
+   "asked": "2026-10-06T16:07:23.704Z",
+   "askedBy": "qa-frontend-expert",
+   "askedUnder": "verdict-1",
+   "note": "No candidate covers wedding-cakes Price and delivery widget or checklist section visibility for anonymous vs signed-in users",
+   "expect": []
+  }
+ ],
+ "contested": [],
+ "removed": [
+  {
+   "id": "N-060",
+   "q": "POST /api/assets upload permission platform:asset:create for non-admin user",
+   "why": "operator replay of an agent ask (CLI, same day), not an agent question"
+  },
+  {
+   "id": "N-061",
+   "q": "GET /api/return/{id}/available-statuses for a Requested return",
+   "why": "operator replay of an agent ask (CLI, same day), not an agent question"
+  }
+ ]
+}

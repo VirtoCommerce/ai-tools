@@ -24,6 +24,7 @@ You are executing {TASK_DESCRIPTION} for run {RUN_ID}.
 
 **Observed behaviour:** before your first live check of each page path / GraphQL operation / endpoint
 in scope, ask the base yourself — `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`).
+Then close each list by its handle (`kb_show`/`kb_none`).
 On a scripted suite run, ask instead on each deviation (FAIL, BLOCKED, unexpected result, incidental
 observation) and before every capture.
 At close-out, for each platform behaviour you report: matched ⇒ `kb_confirm`, contradicted ⇒

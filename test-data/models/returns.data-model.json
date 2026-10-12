@@ -1,0 +1,1024 @@
+{
+  "$schema": "../../.claude/templates/test-data-model.schema.json",
+  "schema_version": "1.0",
+  "domain_slug": "ret",
+  "generated": "2026-10-07",
+  "metadata": {
+    "scope": "The data states the ret mind map's behaviours need. Orders and undecided returns are SCENARIO: seeded per run with dates relative to the run, because the return window expires on its own and every decision consumes the line (FIFTH RULE q1 + q2).",
+    "mind_map": ".claude/knowledge/domain/returns.mind-map.json",
+    "how_to_run": "Right before every returns run: `npm run seed:returns && npm run seed:returns:decisions` (both self-heal: an aged or consumed fixture is rebuilt with dates relative to that moment), or `/qa-seed-data --profile <id>` for one behaviour.",
+    "known_limit": "Per-case (STEP) order creation needs a runner primitive for run-relative dates and unique values (the same blocker as 050d PRF-GQL-039/040); until it exists the run is the unit of freshness."
+  },
+  "requirements": [
+    {
+      "id": "data.ret.store.returns-on",
+      "entity": "Store",
+      "purpose": "The store has the Return module on, with the window, allowed order statuses and attachment rule every returns behaviour reads.",
+      "required_state": {
+        "Return.ReturnEnabled": true,
+        "Return.WindowDays": 30,
+        "Return.AllowedOrderStatuses": "Completed",
+        "Return.AttachmentsRequired": true
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "Return.ReturnEnabled": false
+        },
+        "transition": "Operator setting in Admin → Stores → Settings → Return; each suite's PRE-FLIGHT row (RET-*-000, ORD-RET-000) BLOCKS when it is off"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "limits": "No seeder sets the store's Return settings — the module default is ReturnEnabled=false. seed-return-orders refuses to seed when the live window differs from RETURN_WINDOW_DAYS_ASSUMED.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "domain-map:ret@rev2 §2c",
+          "note": "B2B-store overrides ReturnEnabled=true, AttachmentsRequired=true, ReasonsRequiringComment=FaultyOnArrival",
+          "date": "2026-10-06"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.store.returns-off",
+      "entity": "Store",
+      "purpose": "The store with the Return module switched off, for the switch-off branch.",
+      "required_state": {
+        "Return.ReturnEnabled": false
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "toggled from it and restored"
+        }
+      ],
+      "lifecycle": "STEP",
+      "acquisition": {
+        "strategy": "TRANSITION",
+        "executor": "case",
+        "from_state": {
+          "Return.ReturnEnabled": true
+        },
+        "transition": "the case writes Return.ReturnEnabled=false, resets the platform cache, polls returnPolicy, and restores true in Cleanup"
+      },
+      "cleanup": {
+        "required": true,
+        "via": "the case's own Cleanup restores Return.ReturnEnabled=true (RET-GQL-028)"
+      },
+      "discriminates": "returnPolicy.isEnabled flips true → false on the same store, so RETURNS_DISABLED is attributable to the switch and nothing else.",
+      "limits": "A store-wide toggle: every returns suite (050o, 014c, 073, 073a, 073b) running at the same time on this store reads it. Serialise RET-GQL-028 against them.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5628",
+          "note": "RET-GQL-028"
+        },
+        {
+          "class": "DOC",
+          "ref": "vc-module-return@3.1004.0 ReturnEligibilityService",
+          "note": "Return.ReturnEnabled off yields RETURNS_DISABLED"
+        },
+        {
+          "class": "DOC",
+          "ref": "domain-map:ret@rev2 §2b",
+          "note": "the storefront module registers only when Return.ReturnEnabled is on"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.delivered-in-window",
+      "entity": "CustomerOrder",
+      "purpose": "A Completed order whose only line was delivered at seed time: fully returnable.",
+      "required_state": {
+        "status": "Completed",
+        "shipment": "Delivered, DeliveryDate = seed time",
+        "ordered_equals_delivered": true
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_A_HAPPY.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Returnable vs not: the same shape as B and C with only the delivery date changed, so isReturnable=true is attributable to the date.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07",
+          "note": "fixture A returnable; window ends 30 days after the seed",
+          "date": "2026-10-07"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.partially-delivered",
+      "entity": "CustomerOrder",
+      "purpose": "Ordered 10, delivered 4: the returnable quantity is capped by what was delivered.",
+      "required_state": {
+        "status": "Completed",
+        "ordered": 10,
+        "delivered": 4
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_A2_PARTIAL_DELIVERY.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "ordered (10) and delivered (4) differ, so a cap computed from the wrong one is visible.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.outside-window",
+      "entity": "CustomerOrder",
+      "purpose": "A delivered order whose delivery is 40 days before the seed — outside a 30-day window.",
+      "required_state": {
+        "status": "Completed",
+        "shipment": "Delivered, DeliveryDate = seed time − 40 days"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_B_OUTSIDE_WINDOW.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Differs from A only by the delivery date, 10 days past the window.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07",
+          "note": "returnableQuantity stays 5 while isReturnable=false",
+          "date": "2026-10-07"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.not-delivered",
+      "entity": "CustomerOrder",
+      "purpose": "A Completed order whose shipment has no delivery date.",
+      "required_state": {
+        "status": "Completed",
+        "shipment": "Sent, no DeliveryDate"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_C_NOT_DELIVERED.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Differs from A only by the missing DeliveryDate → NOT_DELIVERED.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.status-not-allowed",
+      "entity": "CustomerOrder",
+      "purpose": "A delivered order in a status outside AllowedOrderStatuses.",
+      "required_state": {
+        "status": "Processing",
+        "shipment": "Delivered, DeliveryDate = seed time"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_D_STATUS_NOT_ALLOWED.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Differs from A only by the order status → ORDER_STATUS_NOT_ALLOWED.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.split-delivery",
+      "entity": "CustomerOrder",
+      "purpose": "One line delivered in two shipments straddling the window.",
+      "required_state": {
+        "status": "Completed",
+        "shipments": "S1 at seed − 40 days, S2 at seed time, same line"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_E_SPLIT_DELIVERY.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "The two deliveries sit on both sides of the window, so 'latest delivery wins' and 'quantities sum' are both decidable.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.cancelled-line",
+      "entity": "CustomerOrder",
+      "purpose": "A live line next to a cancelled one in one order.",
+      "required_state": {
+        "status": "Completed",
+        "lines": "one live line delivered at seed time + one cancelled line"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_F_CANCELLED_LINE.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Live and cancelled lines differ only in the cancellation, so LINE_CANCELLED is attributable.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.two-eligible-lines",
+      "entity": "CustomerOrder",
+      "purpose": "Two lines eligible at the same time.",
+      "required_state": {
+        "status": "Completed",
+        "lines": "two products, quantities 5 and 3, delivered at seed time"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_G_TWO_ELIGIBLE_LINES.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Different products and different quantities, so a per-line mix-up shows.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.admin-disposable",
+      "entity": "CustomerOrder",
+      "purpose": "The dedicated disposable order of the legacy admin suite 073.",
+      "required_state": {
+        "status": "Completed",
+        "holds": "no return holds units on it"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns",
+      "td_alias": "RETURNS_ORDER_ADMIN_073.id",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:teardown — AGENT-TEST-ORD-RET-* orders and the returns made against them"
+      },
+      "discriminates": "Rebuilt whenever a previous run left a holding return, so the picker offers the full spec quantity.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-orders.mjs",
+          "note": "header: dates derived from offsetDays relative to seed time; idempotent find-or-create with self-heal (ensureOrder rebuilds an aged or exhausted order)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-partial",
+      "entity": "Return",
+      "purpose": "An undecided return for a partial decision inside one line.",
+      "required_state": {
+        "status": "Requested",
+        "lines": "A: 240 of 500, B: 12"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_PARTIAL_LINE.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "Ordered 500 > requested 240 > the approved 200 the case sets, so 'released = requested − approved' differs from 'ordered − approved'.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-mixed",
+      "entity": "Return",
+      "purpose": "An undecided two-line return for approve-one, decline-one.",
+      "required_state": {
+        "status": "Requested",
+        "lines": "8/5 and 6/4 ordered/requested"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_MIXED.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "Ordered > requested on both lines, so a full approval is distinguishable from 'approve everything ordered'.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-reject",
+      "entity": "Return",
+      "purpose": "An undecided return for declining every line.",
+      "required_state": {
+        "status": "Requested",
+        "lines": "7 of 9, 3 of 4"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_REJECT.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "Both lines requested partially, so 'release the requested quantity' differs from 'release the whole line'.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-single",
+      "entity": "Return",
+      "purpose": "The minimal return: one line, quantity 1.",
+      "required_state": {
+        "status": "Requested",
+        "lines": "one line, 1 of 1"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_SINGLE.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "With one unit, all-zero and partial cannot both hold, so Rejected vs PartiallyApproved is decidable.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-fr",
+      "entity": "Return",
+      "purpose": "A return created in fr-FR on a de-DE order.",
+      "required_state": {
+        "status": "Requested",
+        "order_language": "de-DE",
+        "return_culture": "fr-FR"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_FR.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "The two candidate language sources disagree, so the notification's language names its own source.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-two-returns",
+      "entity": "Return",
+      "purpose": "Two undecided returns on the same line.",
+      "required_state": {
+        "status": "Requested ×2",
+        "lines": "6 + 4 of the same ordered 10"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_TWO_RETURNS.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "Together they hold the whole line, so deciding one must not release the other's units.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.requested-dup-line",
+      "entity": "Return",
+      "purpose": "An undecided return used to probe a duplicate-line PUT.",
+      "required_state": {
+        "status": "Requested"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_DUP_LINE.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "A second line for the same order line would push approval above the ordered quantity, which only the duplicate guard prevents.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.order.journey",
+      "entity": "CustomerOrder",
+      "purpose": "The order the decision journey starts from: the case itself submits the return the agent then decides.",
+      "required_state": {
+        "status": "Completed",
+        "lines": "two lines delivered at seed time, no return yet"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_JOURNEY.orderId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "No return exists on it at seed time, so everything the Admin shows comes from what the case submitted.",
+      "limits": "Seeded per RUN by seed:returns with dates relative to the seed run; the seeder rebuilds an order whose window has closed or whose units are held. Never run a returns suite on a seed older than the shortest window margin (RET-GQL-031: 60-day widening vs a -40d delivery).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.admin-new",
+      "entity": "Return",
+      "purpose": "An admin-created New return that never went through submit.",
+      "required_state": {
+        "status": "New",
+        "via": "PUT /api/return without id"
+      },
+      "relationships": [
+        {
+          "requirement": "data.ret.store.returns-on",
+          "required": true,
+          "note": "seed:returns:decisions builds its own Completed + delivered order for each fixture"
+        }
+      ],
+      "lifecycle": "SCENARIO",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_AUTH_NEW_ADMIN.returnId",
+      "cleanup": {
+        "required": true,
+        "via": "seed:returns:decisions:teardown"
+      },
+      "discriminates": "Its status is New, not Requested, so 'decide a return that skipped submit' is decidable.",
+      "limits": "One fixture per decision outcome; a decided return is terminal, so the next run's seed rebuilds it. Two suites deciding the same fixture in one run collide (073a and 073b share none by design — keep it that way).",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.buyer.colleague",
+      "entity": "Contact",
+      "purpose": "A second buyer in the owner's organization who owns no returns.",
+      "required_state": {
+        "organization": "same as the returns owner",
+        "owns_returns": false
+      },
+      "lifecycle": "FIXTURE",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:returns:decisions",
+      "td_alias": "RETURNS_COLLEAGUE.userName",
+      "cleanup": {
+        "required": false
+      },
+      "shared_state": "Read-only for every case; it must never create a return, or 'the colleague sees nothing' stops being decidable.",
+      "discriminates": "Same organization as the owner, different contact: ownership vs organization scoping is the only difference.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "DOC",
+          "ref": "scripts/seed-data/orders/seed-return-decisions.mjs",
+          "note": "header: the seeder never decides a return; a decided fixture is rebuilt on the next run (re-seedable per run, --fresh forces it)"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07",
+          "note": "colleague: order(id) resolves, returnableItems [], return(id) null",
+          "date": "2026-10-07"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.agent.no-authorize",
+      "entity": "User",
+      "purpose": "A back-office user with return access/read/update and without return:authorize.",
+      "required_state": {
+        "permissions": "return:access, return:read, return:update",
+        "lacks": "return:authorize"
+      },
+      "lifecycle": "STATIC",
+      "acquisition": {
+        "strategy": "CREATE"
+      },
+      "seed_capability": "seed:rbac",
+      "cleanup": {
+        "required": false
+      },
+      "limits": "Not found on vcptcore_qa1 on 2026-10-07 (domain map G9); run `npm run seed:rbac -- --only RETURNS_AGENT_NO_AUTHORIZE` before 073a RET-AUTH-016 / 073b RET-ADM-008.",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07 RET-ADM-000",
+          "note": "keyword search found no such user",
+          "date": "2026-10-07"
+        }
+      ]
+    },
+    {
+      "id": "data.ret.return.partially-approved",
+      "entity": "Return",
+      "purpose": "A return the case itself decided partially, whose released units the buyer can request again.",
+      "required_state": {
+        "status": "PartiallyApproved",
+        "released": "requested − approved units back in returnableItems"
+      },
+      "lifecycle": "DERIVED",
+      "acquisition": {
+        "strategy": "DERIVE",
+        "executor": "case"
+      },
+      "source": {
+        "produced_by": "ret.agent.authorize.partial-in-line",
+        "requirement": "data.ret.return.requested-partial",
+        "field": "returnId"
+      },
+      "cleanup": {
+        "required": false
+      },
+      "discriminates": "Released units are returnable again only if the decision released them — the re-request then succeeds up to exactly that number.",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "TCA-2026-10-07",
+          "note": "returnable 260 of 500 on a partially approved order",
+          "date": "2026-10-07"
+        }
+      ]
+    }
+  ],
+  "profiles": [
+    {
+      "id": "profile.ret.eligibility-delivered-in-window",
+      "behavior": "ret.buyer.eligibility.delivered-in-window",
+      "purpose": "returnableItems on the delivered-in-window order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.delivered-in-window"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-capped-by-delivered",
+      "behavior": "ret.buyer.eligibility.capped-by-delivered",
+      "purpose": "returnableItems on the partially-delivered order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.partially-delivered"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-split-delivery",
+      "behavior": "ret.buyer.eligibility.split-delivery",
+      "purpose": "returnableItems on the split-delivery order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.split-delivery"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-outside-window",
+      "behavior": "ret.buyer.eligibility.outside-window",
+      "purpose": "returnableItems on the outside-window order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.outside-window"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-not-delivered",
+      "behavior": "ret.buyer.eligibility.not-delivered",
+      "purpose": "returnableItems on the not-delivered order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.not-delivered"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-order-status-not-allowed",
+      "behavior": "ret.buyer.eligibility.order-status-not-allowed",
+      "purpose": "returnableItems on the status-not-allowed order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.status-not-allowed"
+      ]
+    },
+    {
+      "id": "profile.ret.eligibility-line-cancelled",
+      "behavior": "ret.buyer.eligibility.line-cancelled",
+      "purpose": "returnableItems on the cancelled-line order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.cancelled-line"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-full",
+      "behavior": "ret.agent.authorize.all-approved",
+      "purpose": "Approve every line in full on a return the case submits.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.journey"
+      ]
+    },
+    {
+      "id": "profile.ret.returns-off",
+      "behavior": "ret.buyer.eligibility.returns-off",
+      "purpose": "The Return switch off on the store under test.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.store.returns-off",
+        "data.ret.order.delivered-in-window"
+      ]
+    },
+    {
+      "id": "profile.ret.draft",
+      "behavior": "ret.buyer.draft",
+      "purpose": "Build and edit a draft on a returnable order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.delivered-in-window"
+      ]
+    },
+    {
+      "id": "profile.ret.attach-per-line",
+      "behavior": "ret.buyer.attach",
+      "purpose": "Attachments are scoped per line: two eligible lines in one return.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.two-eligible-lines"
+      ]
+    },
+    {
+      "id": "profile.ret.colleague",
+      "behavior": "ret.buyer.read.org-colleague",
+      "purpose": "A colleague reads the owner's return.",
+      "requirements": [
+        "data.ret.buyer.colleague"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-partial",
+      "behavior": "ret.agent.authorize.partial-in-line",
+      "purpose": "Approve fewer than requested on one line.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-partial"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-mixed",
+      "behavior": "ret.agent.authorize.mixed",
+      "purpose": "Approve one line, decline the other.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-mixed"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-reject",
+      "behavior": "ret.agent.authorize.all-declined",
+      "purpose": "Decline every line.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-reject"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-single",
+      "behavior": "ret.agent.authorize.single-unit-declined",
+      "purpose": "Decline a single-unit return.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-single"
+      ]
+    },
+    {
+      "id": "profile.ret.decide-admin-new",
+      "behavior": "ret.agent.authorize.admin-created",
+      "purpose": "Decide an admin-created New return.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.admin-new"
+      ]
+    },
+    {
+      "id": "profile.ret.re-request",
+      "behavior": "ret.buyer.read.re-request-released",
+      "purpose": "Request again the units a partial decision released.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-partial",
+        "data.ret.return.partially-approved"
+      ]
+    },
+    {
+      "id": "profile.ret.admin-create",
+      "behavior": "ret.admin.create",
+      "purpose": "Create a legacy return from the dedicated disposable order.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.order.admin-disposable"
+      ]
+    },
+    {
+      "id": "profile.ret.no-authorize",
+      "behavior": "ret.agent.authorize.no-permission",
+      "purpose": "A back-office user without return:authorize tries to decide.",
+      "requirements": [
+        "data.ret.store.returns-on",
+        "data.ret.return.requested-mixed",
+        "data.ret.agent.no-authorize"
+      ]
+    }
+  ]
+}

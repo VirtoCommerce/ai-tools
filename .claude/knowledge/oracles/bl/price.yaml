@@ -25,6 +25,9 @@ rules:
       ref: "`cart.items[].placedPrice` reflects the stacked discount. Coupon savings are calculated on the post-tier price, not the list price."
     violation_signal: Cart total higher than expected; coupon discount amount equals percentage of list price instead of sale/tier price.
     status: ACTIVE
+    verified:
+      date: 2026-10-06
+      by: REG-2026-10-06-1857
   - id: BL-PRICE-002
     title: Tax calculation position
     rule: Tax is always calculated AFTER all discounts are applied. Tax base = (line total after discounts), not the pre-discount subtotal. Tax rate depends on the shipping address (destination-based).
@@ -106,7 +109,8 @@ rules:
       kind: manual
       ref: Delete a price list → storefront products show "Unavailable" (not $0) → existing orders in Admin still display original prices → re-creating a price list with same products restores storefront availability.
     violation_signal: Product shows $0.00 after price list deletion; "Add to Cart" remains enabled; historical order prices change retroactively.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-087 failed in REG-2026-10-08-0812"
   - id: BL-PRICE-007
     title: Organization-specific (contract) pricing
     rule: When an organization has a dedicated price list assigned, its members see contract prices that override the store default. Contract pricing takes precedence over catalog sale prices but is still subject to tier pricing within the contract list. Users not in the organization never see contract prices.

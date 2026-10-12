@@ -10,6 +10,7 @@ rationale: |
   was cleaned (no prior rev existed to carry forward — this is `rev: 1`, not a refresh).
 generated: 2026-09-16
 rev: 1
+amended: 2026-10-06
 stale_after_days: 60
 expires_after_days: 120
 sources:
@@ -118,6 +119,10 @@ from the brief).
 | Sibling/option links | Product-type option rows link to **`/product/<guid>`** (the underlying variant/option product), a **different route shape** than the parent — see D2 |
 | Section rendering | Accordion, one collapsible block per section; required sections marked `*` and block "Add to cart" until filled; optional sections say "(optional)" or a fill-prompt |
 | File section dropzone copy | **`AGENT-TEST-Req-File-Child-20260519` → "ID Proof" (required):** *"Drag and drop file here or Browse your files. The files available for upload are in DOC, RTF, DOCX, TXT, PDF, XLS, XLSX, JPG, PNG, ODT formats. Each file should not exceed 9.5MB. Maximum 5 files allowed."* | `CONFIRMED` live 2026-09-16 — see D1, this **contradicts** the "any formats / 1MB" claim this map was briefed to expect |
+| Configuration checklist — Price and delivery widget | `CONFIRMED` 2026-10-06 (VCST-6027), live on the vc-frontend PR #2527 build only — **not yet deployed to a shared env**: one row per VISIBLE section in page order (hidden dependents have none); done / `— required` / `— optional`; links "Fill it in" (Text), "Upload a file" (File), "Check it out" (Product), "Review" (optional) expand + scroll + focus the section header, URL unchanged; Text/File done rows show the name only (VCST-6188) |
+| Mobile host of the checklist | `CONFIRMED` 2026-10-06 (VCST-6027, same build): at 375 px the checklist renders in the "Share & Actions" widget; Add to cart is a separate sticky bottom bar |
+| Section anchors | `CONFIRMED` 2026-10-06 (VCST-6027, same build): each section carries id `product-configuration-section-<sectionId>`; a cold deep link to it scrolls to and focuses the header but does not expand it |
+| Required Product section preselection | `CONFIRMED` 2026-10-06 (VCST-6027; logic unchanged by that PR): a ROOT required Product section with no default arrives with its first option selected; a required Product section revealed later by a user choice arrives unselected (CFG-029, CFG-027) |
 
 ### 3a. `AGENT-TEST-Wedding-Cake-Cond-20260519` — a named File-section fixture that did not show one
 
@@ -177,7 +182,7 @@ cart line (this is the shape of G2, not yet exercised as a probe).
 |---|---|---|
 | **D1** | **The PDP File dropzone copy this map was briefed to expect ("any formats… 1MB… max 5 files") does NOT reproduce on vcptcore-qa1, 2026-09-16.** The live copy instead states the **exact** extension allowlist (`DOC, RTF, DOCX, TXT, PDF, XLS, XLSX, JPG, PNG, ODT`) — which matches the server-enforced allowlist byte-for-byte — plus **9.5MB** (not 1MB) and **max 5 files** (this part matched). The 2026-03-16 BA report independently measured "~9.5MB" on a different env (vcst-qa), which is consistent with this pass's 9.5MB, not with the brief's 1MB. | `CONFIRMED` live 2026-09-16, **contradicts the brief's stated known-disagreement**. Read as: either the copy was already fixed to match the allowlist by the time of this build, or the "any formats/1MB" text belongs to a different product/section/env than the one checked here. Whoever supplied that established fact should re-source it — this map cannot confirm it as currently true anywhere it looked |
 | **D2** | **Two different product-detail route shapes coexist on one PDP.** The configurable parent resolves at `/<slug>` (SEO-friendly); every Product-type option/sibling link observed resolves at `/product/<guid>` (raw GUID, no slug). A customer clicking an option's own product name leaves the configured-parent context for a differently-shaped URL | `CONFIRMED` live 2026-09-16, on two independent products (`AGENT-TEST-Req-File-Child`, `AGENT-TEST-Wedding-Cake-Cond`) |
-| **D3** | **A fixture named as carrying a File section did not render one live**, and a follow-on section only reachable after a specific sibling selection was not confirmed to exist. Established facts (session pre-flight) name `AGENT-TEST-Wedding-Cake-Cond-20260519` as one of four File-bearing configurable products; live, its second section ("Creme") is Product-type, and no File/Image section appeared without a successful Creme selection (which this pass could not force through the UI — see G5) | `UNVERIFIED`, not asserted as drift — see §3a |
+| **D3** | **A fixture named as carrying a File section did not render one live**, and a follow-on section only reachable after a specific sibling selection was not confirmed to exist. Established facts (session pre-flight) name `AGENT-TEST-Wedding-Cake-Cond-20260519` as one of four File-bearing configurable products; live, its second section ("Creme") is Product-type, and no File/Image section appeared without a successful Creme selection (which this pass could not force through the UI — see G5) | `UNVERIFIED`, not asserted as drift — see §3a  → **RESOLVED 2026-10-06 (VCST-6027, live)**: the File section exists — `Image` (File, optional) appears together with `Custom text required` (Text, REQUIRED) only after Creme and then Message have values; the earlier miss was the conditional chain, not a missing section |
 | **D4** | **The catalog inventory this map was briefed with is smaller than what Admin shows live.** Established facts describe "16 configurable products… dated 20260519" across implied catalogs; Admin's catalog root live-lists a fourth configuration-fixture catalog, `SEED-20260527-Configurables-Default`, dated eight days later and named nowhere in the brief | `CONFIRMED` to exist (catalog-list row observed); contents `UNVERIFIED` (G4) |
 
 **No published-guide comparison could be attempted** — VirtoOZ MCP required authorization this session
@@ -235,7 +240,7 @@ Found by grepping for "onfigurable" across untagged suites (case-insensitive, co
 | **G2** | Does `addItem`'s `configurationSections.fileUrls` validate that the URL was produced by `POST /api/files/product-configuration` (vs. an arbitrary/foreign URL)? | **OPEN.** Not probed this pass; a write-path trust boundary worth a dedicated case |
 | **G3** | Is there ANY reverse edge for an attached configuration file — detach, delete, replace without re-adding the whole line? | **OPEN.** No forward-only assumption should be filed as a defect without first confirming absence via source, not just UI absence |
 | **G4** | Contents and purpose of catalog `SEED-20260527-Configurables-Default`, found live but unnamed in this run's brief | **OPEN.** Needs a live drill-down or the seeder script that created it |
-| **G5** | Does `AGENT-TEST-Wedding-Cake-Cond-20260519` carry a conditional File/Image section reachable only after a specific Creme selection? | **OPEN.** UI click to select a non-`None` Creme option did not register in this session; needs a retry with a different interaction path (e.g. the visible label/link rather than the radio input) |
+| **G5** | Does `AGENT-TEST-Wedding-Cake-Cond-20260519` carry a conditional File/Image section reachable only after a specific Creme selection? | **CLOSED 2026-10-06 (VCST-6027)** — yes: Creme → Message reveals `Image` (File, optional) + `Custom text required` (Text, REQUIRED); observed live on chrome and firefox. _Was:_ **OPEN.** UI click to select a non-`None` Creme option did not register in this session; needs a retry with a different interaction path (e.g. the visible label/link rather than the radio input) |
 | **G6** | Where do the storefront's file-upload constraint numbers (9.5MB / 5 files, and the allowlist string) come from — theme `settings_data.json`, a module constant, or hardcoded copy? | **OPEN, carried from the brief.** No GitHub MCP access this session to search `vc-frontend`/module source; no local match in `.claude/knowledge/automation/storefront-config-flags.md` |
 | **G7** | Live Admin SPA drill-down into a specific product's Configuration widget (sections list, option grid, edit forms) | **OPEN.** Session navigated to the Catalog root and one candidate catalog but did not reach a product edit blade before this pass's time budget closed |
 | **G8** | Every published-guide cross-reference this map's methodology calls for (§3's highest-value shape) | **OPEN.** VirtoOZ MCP requires OAuth authorization not available this session; Context7 fallback also listed as requiring authorization. No doc-vs-build row exists in §3 as a result — this is a methodology gap, not a "guides agree" finding |
@@ -265,3 +270,13 @@ carried into §1 link 6 and §7 G9. Its own note stands: **"NO `BL-*` invariant 
 itself… every rule above is borrowed"** — for THIS domain, `BL-CAT-006` is the one load-bearing invariant
 identified, and PROPOSED-BL-CAT-013..019 from that model were never minted into the BL oracle
 (current highest is `BL-CAT-012`) — they remain proposals, not oracles, and this map does not promote them.
+
+---
+
+## Amendments (domain-map.md §7)
+
+Written by `/qa-test` `5-docs-map`, append-only.
+
+| Date | By | What moved |
+|---|---|---|
+| 2026-10-06 | VCST-6027 | §3 +4 rows (`CONFIRMED`: checklist, mobile host, section anchors, required-Product preselection) · `D3` → RESOLVED live · `G5` `CLOSED` |

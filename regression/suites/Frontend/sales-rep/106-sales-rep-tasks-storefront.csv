@@ -1,0 +1,721 @@
+ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
+SR-TK-001,"[JOURNEY] Tasks page: create a task for another day, complete it from its row, reopen it, counts and calendar follow",Sales Rep > Tasks > Storefront,Critical,BL-SR-011,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US, browser timezone at the lane default. NEW_DAY is today plus the FIRST offset in {{empty_offsets}} days: a day on which the fixture holds no task, so the new task is alone on it and every count change is attributable to it. Tasks are private per rep; this case creates its own task (title prefixed AGENT-TEST-TASK) and removes it in Cleanup.","rep=@td(SR_REP_PRIMARY.email), groups=@td(SR_TASK_GROUPS.total), empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets)","--- SCREEN: Hub Dashboard ---
+[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the Tasks widget has rendered
+[ASSERT] the Tasks widget carries an 'All tasks' link
+[ACT] click 'All tasks'
+[WAIT] the browser navigates to the Tasks page
+--- SCREEN: Tasks, Today scope ---
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the badge values of the Today, All, Upcoming, Overdue and Completed chips (TODAY0, ALL0, UP0, OVER0, DONE0) and the URL path (TASKS_PATH)
+[ASSERT] TASKS_PATH ends with /company/tasks and ALL0 equals {{groups}} before any write
+[ACT] click 'New task'
+[WAIT] the New task modal opens
+--- SCREEN: New task modal ---
+[WAIT] the New task modal is open
+[ACT] fill 'Title' with a random AGENT-TEST-TASK title (NEW_TITLE)
+[ACT] set 'Due date' to NEW_DAY
+[ACT] click 'Save'
+[WAIT] the modal closes and the list, badges and calendar refetch
+--- SCREEN: Tasks, new task on its own day ---
+[ACT] click the NEW_DAY cell in the Due dates calendar
+[WAIT] a date chip for NEW_DAY appears and the list shows that day's heading
+[KEY] record the row for NEW_TITLE: its status chip text (CHIP_NEW), its action label (ACTION_NEW), the badge values (ALL1, UP1, DONE1) and the NEW_DAY cell's marker (MARK_NEW)
+[ASSERT] the NEW_DAY list holds exactly one row, NEW_TITLE
+[ACT] click the row action of NEW_TITLE
+[WAIT] the row, badges and calendar refetch
+--- SCREEN: Tasks, task completed ---
+[KEY] record the row's chip text (CHIP_DONE), its action label (ACTION_DONE), whether its title is struck through (STRUCK_DONE), the badge values (ALL2, UP2, DONE2) and the NEW_DAY cell's marker (MARK_DONE)
+[ACT] click the row action of NEW_TITLE
+[WAIT] the row, badges and calendar refetch
+--- SCREEN: Tasks, task reopened ---
+[KEY] record the row's chip text (CHIP_REOPEN), action label (ACTION_REOPEN), strike-through (STRUCK_REOPEN), badge values (ALL3, UP3, DONE3) and the cell marker (MARK_REOPEN)
+[ACT] click the close (x) control of the date chip
+[WAIT] the view returns to a scope without the chip","[MATH] ALL1 = ALL0 + 1 and UP1 = UP0 + 1 and DONE1 = DONE0 -- the new future task is open, counted once in All and Upcoming and nowhere else {SPEC}
+[DOM] CHIP_NEW is 'Upcoming' and ACTION_NEW is 'Mark as complete'; MARK_NEW shows exactly one marker of the upcoming kind {SPEC}
+[MATH] after completing: UP2 = UP1 - 1 and DONE2 = DONE1 + 1 and ALL2 = ALL1 -- the task left Upcoming and entered Completed without a reload {SPEC}
+[DOM] CHIP_DONE is 'Completed', ACTION_DONE is 'Reopen', STRUCK_DONE is true, and MARK_DONE is a marker of the completed kind, different from MARK_NEW {SPEC}
+[MATH] after reopening: UP3 = UP1 and DONE3 = DONE1 and ALL3 = ALL1 -- reopen restores the exact counts {SPEC}
+[DOM] CHIP_REOPEN is 'Upcoming', ACTION_REOPEN is 'Mark as complete', STRUCK_REOPEN is false and MARK_REOPEN equals MARK_NEW {SPEC}
+[STATE] closing the date chip leaves a valid scope with the Tasks page still rendered {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Mid-journey: after Mark as complete the row still shows 'Upcoming' or the badges keep the pre-write numbers
+Mid-journey: the new task is missing from its day, or the calendar cell for NEW_DAY shows no marker
+Mid-journey: after Reopen the task stays Completed or its title stays struck
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open NEW_TITLE through its title, click 'Delete' in the Edit task modal and confirm
+[ASSERT] NEW_TITLE is no longer listed and the All badge equals ALL0
+If the case aborted midway, locate NEW_TITLE by its AGENT-TEST-TASK prefix under All and delete it; the seeded tasks are untouched by this case.","VCST-6077 · Archetype:LIFECYCLE · Technique:FLOW · Behavior:sr.tasks · Catches: the rep completes a task and it stays under Upcoming, or badges and markers keep old numbers until reload",Draft
+SR-TK-002,"Rename: Tasks nav, dashboard All tasks link and direct route reach /company/tasks; old /company/calendar is a 404",Sales Rep > Tasks > Storefront,High,BL-SR-011,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Viewport 1440, locale en-US. The route, route name, nav id and four locale keys were renamed with no redirect, so the old /company/calendar is expected to be gone. No task data is needed.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/dashboard
+[WAIT] the Tasks widget has rendered
+[KEY] record the href of the dashboard 'All tasks' link (DASH_HREF) and its text (DASH_LINK_TEXT)
+[KEY] record the label and href of the sidebar Tasks item (NAV_LABEL, NAV_HREF)
+[ACT] click the sidebar Tasks item
+[WAIT] the Tasks page has rendered
+[KEY] record the URL path (NAV_PATH), the page H1 (H1_TEXT) and the breadcrumb texts (CRUMBS)
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the URL path after a direct load (DIRECT_PATH) and the H1 (DIRECT_H1)
+[NAV] {{FRONT_URL}}/company/calendar
+[WAIT] the page has settled
+[KEY] record the visible page heading or message (OLD_ROUTE_TEXT)
+[NAV] {{FRONT_URL}}/company/dashboard
+[KEY] count the links on the page and in the sidebar whose href contains /company/calendar (STALE_LINKS)","[REL] DASH_HREF and NAV_HREF both end with /company/tasks and NAV_PATH = DIRECT_PATH = /company/tasks {SPEC}
+[DOM] NAV_LABEL, DASH_LINK_TEXT, H1_TEXT, DIRECT_H1 and the last breadcrumb contain 'Tasks' and none contains 'Calendar' or 'Full calendar' {SPEC}
+[STATE] OLD_ROUTE_TEXT reads a Page not found message and the Tasks page is NOT shown at /company/calendar -- the rename left no redirect by design {SPEC}
+[COUNT] STALE_LINKS = 0 {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Sidebar or dashboard link still points at /company/calendar
+H1 or breadcrumb still reads Calendar
+/company/calendar renders the Tasks page (a silent alias nobody decided on)
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:FALLBACK · Technique:EP · Behavior:sr.tasks.nav-visibility · Catches: a leftover Calendar link lands the rep on a 404, or the page still reads Calendar",Draft
+SR-TK-003,"Overdue tab lists only open tasks due before local midnight today, with the danger chip and glyph",Sales Rep > Tasks > Storefront,High,BL-SR-009,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The fixture holds exactly {{overdue}} open past-due tasks (Zulu, Mike), plus a completed past task (Echo) and a past-due canceled task that must NOT count as overdue. That divergence between open-overdue and past-due-in-any-status is what makes the case discriminating.","overdue=@td(SR_TASK_GROUPS.open_overdue), zulu=@td(SR_TASK_OVERDUE_ZULU.name), echo=@td(SR_TASK_DONE_ECHO.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the Overdue chip badge (OVER_BADGE)
+[ACT] click the 'Overdue' chip
+[WAIT] the list refetches
+[KEY] record every row title under Overdue (OVER_ROWS), and for each row its status chip text, chip colour, chip variant class and whether a glyph is present (CHIP_STYLE)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the status chip text of the rows {{zulu}}, {{echo}} and of the past-due canceled row (CHIP_ZULU, CHIP_ECHO, CHIP_CANCELED)","[MATH] OVER_BADGE = {{overdue}} and the number of OVER_ROWS = OVER_BADGE {SPEC}
+[SET] OVER_ROWS contains {{zulu}} and does NOT contain {{echo}} nor the past-due canceled task {SPEC}
+[DOM] every row under Overdue has a chip reading 'Overdue' in the danger colour with a glyph; the chip variant is the same for all of them {SPEC}
+[REL] CHIP_ZULU = 'Overdue', CHIP_ECHO = 'Completed', CHIP_CANCELED = 'Canceled' -- the chip for each row agrees with the tab it is, or is not, listed under {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A completed past-due task is listed under Overdue
+A canceled past-due task is listed under Overdue or carries an Overdue chip
+Overdue badge differs from the number of listed rows
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:PARITY · Technique:EP · Catches: a completed past task or a canceled task shows as overdue, inflating what the rep believes slipped",Draft
+SR-TK-004,Day boundary: a task due exactly 00:00 local today is Upcoming and in Today; one due 23:30 local today is in Today,Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US, browser timezone = the zone the fixture was seeded for (the seeder prints it). {{golf}} is due at exactly 00:00 local today and {{papa}} at 23:30 local today; both are open. The two bound the local day, so a window built on the UTC day instead of the local day puts one of them on the wrong side. Expectation source: the PR text says a 00:00-today task is upcoming; the product owner has not confirmed it in writing, so the Overdue exclusion is asserted from the PR text only.","golf=@td(SR_TASK_EDGE_GOLF.name), papa=@td(SR_TASK_EDGE_PAPA.name), overdue=@td(SR_TASK_GROUPS.open_overdue)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record whether {{golf}} and {{papa}} are listed under Today (GOLF_TODAY, PAPA_TODAY)
+[ACT] click the 'Overdue' chip
+[WAIT] the list refetches
+[KEY] record whether {{golf}} and {{papa}} are listed under Overdue (GOLF_OVER, PAPA_OVER) and the Overdue badge (OVER_BADGE)
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches
+[KEY] record whether {{golf}} and {{papa}} are listed under Upcoming (GOLF_UP, PAPA_UP)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the status chip text of the rows {{golf}} and {{papa}} (CHIP_GOLF, CHIP_PAPA)
+[KEY] record the 'today' and period bounds of the most recent tasks list request (TODAY_ARG, PERIOD_FROM, PERIOD_TO)","[REL] GOLF_TODAY and PAPA_TODAY are both true -- the Today window is the local day, 00:00 inclusive to 23:59:59.999 {SPEC}
+[REL] GOLF_OVER and PAPA_OVER are both false and OVER_BADGE = {{overdue}} -- a task due 00:00 today is not past due {SPEC}
+[REL] GOLF_UP and PAPA_UP are both true and CHIP_GOLF = CHIP_PAPA = 'Upcoming' {SPEC}
+[REL] PERIOD_FROM is the instant of local midnight today and PERIOD_TO is 24 hours minus 1 ms later, both expressed in UTC through the browser's own offset; TODAY_ARG equals PERIOD_FROM {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The 00:00-today task is under Overdue or has an Overdue chip
+The 23:30-today task is missing from Today
+Period bounds fall on the UTC calendar day instead of the local day
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:BOUNDARY · Technique:BVA · Catches: a task due at midnight today is shown overdue, or a late-evening task drops out of today's list",Draft
+SR-TK-005,"Completion outranks date: a completed task due today is in Today and Completed, never in Upcoming, and its title is struck",Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{tango}} is completed and due today; {{foxtrot}} is completed and due in the future. Completion must outrank the due date, so neither may appear under Upcoming. Both rows sit in the today-or-later half of the calendar, so a classifier that reads the date first puts them under Upcoming and this case fails.","tango=@td(SR_TASK_DONE_TANGO.name), foxtrot=@td(SR_TASK_DONE_FOXTROT.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record whether {{tango}} is listed under Today (TANGO_TODAY)
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches
+[KEY] record whether {{tango}} and {{foxtrot}} are listed under Upcoming (TANGO_UP, FOXTROT_UP)
+[ACT] click the 'Completed' chip
+[WAIT] the list refetches
+[KEY] record whether {{tango}} and {{foxtrot}} are listed under Completed (TANGO_DONE, FOXTROT_DONE), their title text-decoration (TANGO_DECOR, FOXTROT_DECOR) and their action labels (TANGO_ACT, FOXTROT_ACT)","[REL] TANGO_TODAY is true -- the Today scope includes completed tasks due today {SPEC}
+[REL] TANGO_UP and FOXTROT_UP are both false -- a completed task never appears under Upcoming {SPEC}
+[REL] TANGO_DONE and FOXTROT_DONE are both true {SPEC}
+[DOM] TANGO_DECOR and FOXTROT_DECOR contain line-through and TANGO_ACT = FOXTROT_ACT = 'Reopen' {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A completed task due today or later is listed under Upcoming
+A completed task due today is missing from Today
+Completed title is not struck through
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:PARITY · Technique:DT · Catches:VCST-5732,Draft
+SR-TK-006,"Canceled task: neutral chip, no action button, no calendar dot, never listed under a status tab",Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{kilo}} (canceled, past due) and {{hotel}} (canceled, future) exist only because the task was closed in the admin app; the storefront has no cancel path. Canceled is a client-only status, so the server tab filters do not know it and the case reads the client rendering.","kilo=@td(SR_TASK_CANCELED_KILO.name), hotel=@td(SR_TASK_CANCELED_HOTEL.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] for the rows {{kilo}} and {{hotel}} record the status chip text, the chip classes (neutral or coloured), the number of buttons inside the Actions cell and the row's bounding height next to that of a neighbouring open row (CHIP, CLASSES, ACTION_COUNT, ROW_HEIGHT, NEIGHBOUR_HEIGHT)
+[KEY] record the calendar marker kinds on the due day of each canceled task (MARKERS_KILO, MARKERS_HOTEL), paging the calendar where needed
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches
+[KEY] record whether {{kilo}} or {{hotel}} is listed under Upcoming (IN_UP)
+[ACT] click the 'Overdue' chip
+[WAIT] the list refetches
+[KEY] record whether either is listed under Overdue (IN_OVER)
+[ACT] click the 'Completed' chip
+[WAIT] the list refetches
+[KEY] record whether either is listed under Completed (IN_DONE)","[DOM] each canceled row's chip reads 'Canceled' with the neutral variant, not a danger, success or primary colour {SPEC}
+[COUNT] ACTION_COUNT = 0 for both canceled rows -- no Mark as complete and no Reopen {SPEC}
+[REL] ROW_HEIGHT of a canceled row equals NEIGHBOUR_HEIGHT within 2px -- the empty Actions cell does not collapse the layout {SPEC}
+[COUNT] MARKERS_KILO and MARKERS_HOTEL contain no coloured marker for the canceled task (canceled has no dot) {SPEC}
+[REL] IN_TABS is empty -- a canceled task is listed under no status tab {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A canceled row offers Mark as complete or Reopen
+A canceled task appears under Upcoming, Overdue or Completed
+A canceled task paints a calendar dot
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a rep is offered Mark as complete on a task the admin closed, or the empty Actions cell breaks the row layout",Draft
+SR-TK-007,"Dateless and canceled tasks against the arithmetic: every badge matches its fixture group, and the All remainder and the dateless chip are recorded",Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. OPEN PRODUCT-OWNER QUESTION, NOT ASSERTED: whether All is meant to equal Upcoming + Overdue + Completed. The mockup implies it does; the PR code leaves a dateless and a canceled task in All only. Until the PO answers, this case asserts only the badge values the fixture derives and RECORDS the remainder, the dateless row's chip and action, its position and its Upcoming-tab membership without a verdict tag; it does NOT assert All = U + O + C, and a failure of that equality is not a verdict here. {{india}} is dateless (admin-created); {{rest}} is the count of tasks in All that sit in no dated tab (dateless plus canceled).","india=@td(SR_TASK_NODATE_INDIA.name), all=@td(SR_TASK_GROUPS.chip_all), rest=@td(SR_TASK_GROUPS.all_minus_tabs), up=@td(SR_TASK_GROUPS.chip_upcoming), over=@td(SR_TASK_GROUPS.chip_overdue), done=@td(SR_TASK_GROUPS.chip_completed)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the All, Upcoming, Overdue and Completed badge values (ALL_B, UP_B, OVER_B, DONE_B)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] RECORD ONLY, no verdict: compute the remainder ALL_B - (UP_B + OVER_B + DONE_B) (REMAINDER) and note whether it equals {{rest}}
+[KEY] RECORD ONLY, no verdict: record the position of {{india}} in the list (INDIA_POS), its status chip text (INDIA_CHIP), its action label (INDIA_ACTION) and its subline text (INDIA_SUB)
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches
+[KEY] record the Upcoming list header count (UP_HEADER)
+[KEY] RECORD ONLY, no verdict: record whether {{india}} is listed under Upcoming (INDIA_IN_UP)","[MATH] ALL_B = {{all}}, UP_B = {{up}}, OVER_B = {{over}} and DONE_B = {{done}} {SPEC}
+[MATH] UP_HEADER = UP_B -- the Upcoming list header agrees with its badge {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Any badge differs from its seeded group value
+Recorded for the product owner, not judged: the remainder, the dateless row's chip and action, its position and its absence from the Upcoming tab
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:PARITY · Technique:DT · Catches: the rep sees All larger than the three tabs combined with no explanation, and a task labelled Upcoming that the Upcoming tab does not list",Draft
+SR-TK-008,"Every badge equals the length of the list it opens (Today, All, Upcoming, Overdue, Completed)",Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. Each chip is a pair (badge from the single SalesRepTaskCounts request, list from its own tasks request); the two come from different queries, so equality between them is the discriminating check. The fixture group sizes all differ (Today {{today_b}} plus {{canc_today}} canceled, All {{groups}}, Upcoming {{up}}, Overdue {{over}}, Completed {{done}}), so a mis-wired alias cannot pass by coincidence.","groups=@td(SR_TASK_GROUPS.total), today_b=@td(SR_TASK_GROUPS.today_scope_excl_canceled), canc_today=@td(SR_TASK_GROUPS.canceled_due_today), up=@td(SR_TASK_GROUPS.chip_upcoming), over=@td(SR_TASK_GROUPS.chip_overdue), done=@td(SR_TASK_GROUPS.chip_completed)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the number of salesRepTaskCounts requests issued by the page load (COUNTS_REQ_LOAD)
+[KEY] for each chip in the order Today, All, Upcoming, Overdue, Completed: record its badge value, click it, wait for the list to refetch, then record the list header count text ('N tasks') and the number of rows across every page (BADGE_n, HEADER_n, ROWS_n)
+[KEY] record the total number of salesRepTaskCounts requests after the five clicks (COUNTS_REQ_END)","[MATH] for every chip, BADGE_n = HEADER_n = ROWS_n -- the badge, the list header and the rows agree {SPEC}
+[MATH] the Today list holds {{today_b}} open-or-completed rows plus {{canc_today}} canceled row(s) or {{today_b}} alone (the open question Q3 is not asserted) and the All badge = {{groups}} {SPEC}
+[MATH] the Upcoming, Overdue and Completed badges = {{up}}, {{over}} and {{done}} respectively {SPEC}
+[COUNT] COUNTS_REQ_LOAD = 1 and COUNTS_REQ_END = COUNTS_REQ_LOAD -- counts are resolved once per page and clicking a chip alone does not re-request them {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A badge disagrees with the length of its list
+All badge is zero or undefined (alias mis-wired)
+Chips show a count of 0 while rows are listed
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:SILENT · Technique:EP · Catches: a badge promises N tasks while the list it opens shows a different number,Draft
+SR-TK-009,Counts refresh after a write made from the All view without a page reload,Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The write is made from the All view on purpose: the counts refetch only through refreshAll() after a write, and All is the one scope with no status filter of its own to hide a stale badge. {{bravo}} is open and due in three days.","bravo=@td(SR_TASK_FUTURE_BRAVO.name), groups=@td(SR_TASK_GROUPS.total), up=@td(SR_TASK_GROUPS.chip_upcoming), done=@td(SR_TASK_GROUPS.chip_completed)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the Upcoming, Completed and All badge values (UP0, DONE0, ALL0) and the count of salesRepTaskCounts requests so far (CNT0)
+[ACT] click the row action of {{bravo}}
+[WAIT] the write settles
+[KEY] record the Upcoming, Completed and All badge values immediately, with no reload (UP1, DONE1, ALL1), and the count of salesRepTaskCounts requests (CNT1)
+[ACT] click the row action of {{bravo}} again (Reopen)
+[WAIT] the write settles
+[KEY] record the three badge values (UP2, DONE2, ALL2)","[MATH] UP0 = {{up}}, DONE0 = {{done}} and ALL0 = {{groups}} before the write {SPEC}
+[MATH] UP1 = UP0 - 1 and DONE1 = DONE0 + 1 and ALL1 = ALL0 with no page reload {SPEC}
+[COUNT] CNT1 - CNT0 >= 1 -- the write triggered a counts refetch {SPEC}
+[MATH] UP2 = UP0 and DONE2 = DONE0 and ALL2 = ALL0 after the reopen {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Badges keep their pre-write numbers after the action
+Counts change only after a manual reload
+Reopen does not restore the original numbers
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] if {{bravo}} is left Completed, click its Reopen action so the fixture returns to its seeded state; re-seed if the state cannot be restored",VCST-6077 · Archetype:STALE · Technique:ST · Catches: badges keep stale numbers after the rep completes a task until a reload,Draft
+SR-TK-010,Today chip clears the active status tab and the filter query and returns the calendar to the current month,Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The case starts from a deliberately displaced state (the Overdue tab selected and the calendar paged away from the current month) so that a Today that resets nothing is visible; the current month is M0.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the month shown in the Due dates calendar heading (M0)
+[ACT] click the 'Overdue' chip
+[WAIT] the list refetches
+[ACT] click the next-month control of the Due dates calendar twice
+[WAIT] the calendar re-renders
+[KEY] record the month heading (M2), the selected chip and the URL query (SEL_BEFORE, QUERY_BEFORE)
+[ACT] click the 'Today' chip
+[WAIT] the list refetches
+[KEY] record the selected chip, the URL query, the month heading and the selected day in the calendar (SEL_AFTER, QUERY_AFTER, M_AFTER, DAY_AFTER)","[REL] M2 differs from M0 and SEL_BEFORE is 'Overdue' with a filter query containing overdue -- the displaced state exists {SPEC}
+[REL] SEL_AFTER is 'Today' and QUERY_AFTER carries no filter token -- Today clears the active status tab and the filter query {SPEC}
+[REL] M_AFTER = M0 and DAY_AFTER is today's cell -- Today returns the grid to the current month {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Today leaves the Overdue chip selected or the filter query in the URL
+Calendar stays on the paged month after Today
+The selected day in the calendar is not today
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:LIFECYCLE · Technique:ST · Catches: the rep clicks Today and still sees last month's grid or an Overdue-filtered list,Draft
+SR-TK-011,"Date chip lifecycle: opens on a non-today pick, moves on another pick, restores day and month on click, and both close fallbacks",Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The date chip is a state machine with view-dependent close rules; the case walks every edge once. Picking a day makes that day the view (the scope chip loses its pressed state and ?filter is cleared), so the 'close under All / under a tab' edges are reached by picking the day FIRST and then clicking the scope chip; picking a day while All or a tab is on screen and then closing is the 'day on screen' edge, which falls back to Today. SHARED_DAY is today plus {{shared}} days (a day with two fixture tasks, one of them {{romeo}}); OTHER_DAY is today plus the first offset in {{empty_offsets}} days.","romeo=@td(SR_TASK_FUTURE_ROMEO.name), shared=@td(SR_TASK_GROUPS.shared_day_offset), empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record whether a date chip is present while today is selected (CHIP_TODAY_PRESENT)
+[ACT] click the SHARED_DAY cell in the Due dates calendar
+[WAIT] the list refetches
+[KEY] record the date chip label (CHIP_LABEL), the list day heading (HEAD_1) and whether {{romeo}} is listed (ROMEO_1)
+[ACT] click the OTHER_DAY cell
+[WAIT] the list refetches
+[KEY] record the date chip label and the day heading (CHIP_LABEL_2, HEAD_2) and the number of date chips present (CHIPS_COUNT)
+[ACT] click the next-month control once
+[WAIT] the calendar re-renders
+[ACT] click the date chip
+[WAIT] the list refetches
+[KEY] record the month heading, the selected day and the day heading (MONTH_BACK, DAY_BACK, HEAD_BACK)
+--- BLOCK: close fallbacks ---
+[ACT] click the close (x) control of the date chip while its day is on screen
+[WAIT] the view settles
+[KEY] record the selected chip, the month heading and the accessible name of document.activeElement (SEL_X1, MONTH_X1, FOCUS_X1)
+[ACT] click the SHARED_DAY cell
+[WAIT] the date chip appears
+[ACT] click the 'All' chip
+[WAIT] the list refetches with the date chip still shown
+[ACT] click the close (x) control of the date chip
+[WAIT] the view settles
+[KEY] record the selected chip, the month heading and the focus target (SEL_X2, MONTH_X2, FOCUS_X2)
+[ACT] click the SHARED_DAY cell
+[WAIT] the date chip appears
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches with the date chip still shown and the URL carries the tab's filter token
+[ACT] click the close (x) control of the date chip
+[WAIT] the view settles
+[KEY] record the selected chip, the URL query and the focus target (SEL_X3, QUERY_X3, FOCUS_X3)
+[ACT] click the SHARED_DAY cell
+[WAIT] the date chip appears
+[ACT] click the next-month control twice
+[WAIT] the calendar re-renders
+[ACT] click the close (x) control of the date chip
+[WAIT] the view settles
+[KEY] record the selected chip, the month heading and the focus target (SEL_X4, MONTH_X4, FOCUS_X4)","[REL] CHIP_TODAY_PRESENT is false; after the SHARED_DAY pick CHIP_LABEL names SHARED_DAY, HEAD_1 names the same day and ROMEO_1 is true -- the chip opens on a non-today pick {SPEC}
+[REL] after the second pick CHIPS_COUNT = 1 and CHIP_LABEL_2 and HEAD_2 name OTHER_DAY -- the chip moves, it does not stack {SPEC}
+[REL] MONTH_BACK shows OTHER_DAY's month, DAY_BACK = OTHER_DAY and HEAD_BACK names it -- clicking the chip restores both day and month {SPEC}
+[REL] SEL_X1 is 'Today', MONTH_X1 is the current month and FOCUS_X1 is the Today chip -- closing with its day on screen falls back to Today {SPEC}
+[REL] SEL_X2 stays 'All' with MONTH_X2 unchanged and FOCUS_X2 is the Today chip -- closing under All keeps the view {SPEC}
+[REL] SEL_X3 stays 'Upcoming' and QUERY_X3 still carries the tab's filter token -- closing under a tab keeps the tab {SPEC}
+[REL] SEL_X4 is 'Today' and MONTH_X4 is the current month -- closing with the day off screen falls back to Today {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The chip opens on today or stacks a second chip
+Clicking the chip leaves the month on the wrong page
+Closing the chip lands on a different view than the spec states
+Focus drops to the document body after closing
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:LIFECYCLE · Technique:ST · Catches: closing the date chip drops the rep onto the wrong list or month, or keyboard focus is lost",Draft
+SR-TK-012,"Mark as complete acts on its own row exactly once, and a failed write leaves the row unchanged with an error",Sales Rep > Tasks > Storefront,High,BL-SR-030,ECL-7.3,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{yankee}} is open and due tomorrow and its neighbours in the All list are other open tasks, so a wrong-row write is visible. Network capture of /graphql is available; failure injection uses request interception on changeSalesRepTaskStatus.",yankee=@td(SR_TASK_FUTURE_YANKEE.name),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the status chip of the row {{yankee}} and of the two rows around it (CHIPS_BEFORE), and the count of changeSalesRepTaskStatus requests so far (REQ0)
+[ACT] double-click the row action of {{yankee}} within 100 ms
+[WAIT] the write settles
+[KEY] record the count of changeSalesRepTaskStatus requests (REQ1), the id and completed value of each (PAYLOADS) and the chips of {{yankee}} and its neighbours (CHIPS_AFTER)
+[ACT] click the row action of {{yankee}} (Reopen) to restore it
+[WAIT] the write settles
+--- BLOCK: failed write ---
+[ACT] intercept changeSalesRepTaskStatus requests
+[ACT] respond to the intercepted request with a server error
+[ACT] click the row action of {{yankee}}
+[WAIT] the request settles
+[KEY] record the chip and action label of {{yankee}} (CHIP_FAIL, ACTION_FAIL), any visible error message or toast (ERR_TEXT) and the badge values (BADGES_FAIL)
+[ACT] remove the interception","[COUNT] REQ1 - REQ0 = 1 -- a double-click sends exactly one mutation {BL}
+[REL] PAYLOADS names the id of {{yankee}} only, with completed = true {BL}
+[REL] CHIPS_AFTER differs from CHIPS_BEFORE only in the row {{yankee}} (Upcoming becomes Completed); both neighbours are unchanged {SPEC}
+[REL] CHIP_FAIL is still 'Upcoming' and ACTION_FAIL is still 'Mark as complete' -- a failed write leaves the row unchanged {SPEC}
+[STATE] ERR_TEXT is a non-empty error message shown to the rep and BADGES_FAIL equal the pre-write badge values {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Two mutations are sent for one double-click
+The task ends up reopened after a double-click
+A neighbouring row changes status
+A failed write flips the row anyway or shows no error
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql other than the injected failure","[ACT] remove any request interception; if {{yankee}} is left Completed, click its Reopen action; re-seed if the state cannot be restored","VCST-6077 · Archetype:RACE · Technique:EG · Catches: a fast double-click completes and immediately reopens the task, or completes the neighbouring row",Draft
+SR-TK-013,Reopen a past-due completed task lands it in Overdue; reopen a future one lands it in Upcoming; strike-through removed,Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{echo}} is completed and past due; {{foxtrot}} is completed and due in the future. Both are reopened and must land in different tabs; the two different dates are what makes the case discriminating.","echo=@td(SR_TASK_DONE_ECHO.name), foxtrot=@td(SR_TASK_DONE_FOXTROT.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'Completed' chip
+[WAIT] the list refetches
+[KEY] record the Overdue and Upcoming badge values (OVER0, UP0)
+[ACT] click the row action of {{echo}} (Reopen)
+[WAIT] the write settles
+[ACT] click the 'Overdue' chip
+[WAIT] the list refetches
+[KEY] record whether {{echo}} is listed under Overdue (ECHO_OVER), its chip text, title text-decoration and action label (ECHO_CHIP, ECHO_DECOR, ECHO_ACT) and the badge values (OVER1, UP1)
+[ACT] click the 'Completed' chip
+[WAIT] the list refetches
+[ACT] click the row action of {{foxtrot}} (Reopen)
+[WAIT] the write settles
+[ACT] click the 'Upcoming' chip
+[WAIT] the list refetches
+[KEY] record whether {{foxtrot}} is listed under Upcoming (FOX_UP), its chip text, title text-decoration and action label (FOX_CHIP, FOX_DECOR, FOX_ACT) and the badge values (OVER2, UP2)","[REL] ECHO_OVER is true and ECHO_CHIP = 'Overdue' -- a reopened past-due task is late, not upcoming {SPEC}
+[REL] FOX_UP is true and FOX_CHIP = 'Upcoming' {SPEC}
+[DOM] ECHO_DECOR and FOX_DECOR do not contain line-through, and ECHO_ACT = FOX_ACT = 'Mark as complete' -- the strike-through is removed {SPEC}
+[MATH] OVER1 = OVER0 + 1 and UP1 = UP0; OVER2 = OVER1 and UP2 = UP1 + 1 -- each reopen moves exactly one badge {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A reopened past-due task is chipped or listed as Upcoming
+The title stays struck after Reopen
+A badge does not move after the reopen
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",[ACT] click the Mark as complete action of {{echo}} and of {{foxtrot}} so both return to Completed; re-seed if the state cannot be restored,VCST-6077 · Archetype:LIFECYCLE · Technique:DT · Catches:VCST-5732,Draft
+SR-TK-014,Overdue deep link selects Overdue; an unknown filter value falls back to a non-empty baseline; picking a day clears the filter query,Sales Rep > Tasks > Storefront,Medium,BL-SR-009,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. ORACLE NOTE: the platform rule BL-SR-009 (an unknown rule name fails closed) governs the server xAPI; the Tasks page normalises an unknown ?filter token on the client. The two differ in kind, so this case asserts the page's own contract (a non-empty baseline, a cleaned URL) and does not assert the BL rule. Whether the page should fail closed instead is a product decision not made here.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks?filter=overdue
+[WAIT] the Tasks page has rendered
+[KEY] record the selected chip, the URL after load and the rows listed (SEL_DEEP, URL_DEEP, ROWS_DEEP)
+[NAV] {{FRONT_URL}}/company/tasks?filter=zzz
+[WAIT] the Tasks page has rendered
+[KEY] record the selected chip, the URL after load, the rows listed and the Today badge (SEL_UNKNOWN, URL_UNKNOWN, ROWS_UNKNOWN, TODAY_B)
+[NAV] {{FRONT_URL}}/company/tasks?filter=upcoming
+[WAIT] the Tasks page has rendered
+[ACT] click a day cell in the Due dates calendar that is not today
+[WAIT] the list refetches
+[KEY] record the selected chip, the URL query and the date chip label (SEL_DAY, QUERY_DAY, CHIP_DAY)
+[ACT] click the browser Back button
+[WAIT] the page settles
+[KEY] record the selected chip and the URL query (SEL_BACK, QUERY_BACK)","[REL] SEL_DEEP is 'Overdue', URL_DEEP carries filter=overdue and ROWS_DEEP lists the open past-due tasks only {SPEC}
+[REL] a defined chip is selected in SEL_UNKNOWN, ROWS_UNKNOWN is non-empty whenever TODAY_B > 0, and URL_UNKNOWN no longer carries filter=zzz {OBSERVED}
+[REL] picking a day while on a tab leaves QUERY_DAY free of the stale filter token and CHIP_DAY names the picked day {SPEC}
+[STATE] SEL_BACK and QUERY_BACK are a valid scope (a defined chip, a known filter token or none) -- Back never leaves an empty or crashed page {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Overdue deep link opens the Today view
+An unknown filter token shows an empty list while Today holds tasks
+A stale filter token stays in the URL after a day pick
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a dashboard Overdue link opens the Today view, or a stale link shows the rep an empty list",Draft
+SR-TK-015,Title opens Edit task by click and keyboard; saving a new due date keeps every other field and the day view follows the task,Sales Rep > Tasks > Storefront,High,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{charlie}} carries a type, priority and notes from the fixture (read and recorded, never typed); updateSalesRepTask is a full replace, so a form that fails to carry a field wipes it. NEW_DATE is today plus the FIRST offset in {{empty_offsets}} days, a day on which no other task exists. The first Edit is opened with the keyboard only (no pointer after the page has loaded).","charlie=@td(SR_TASK_FUTURE_CHARLIE.name), empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record whether the title of {{charlie}} is a button element (TITLE_IS_BUTTON)
+[ACT] press Tab until the title of {{charlie}} has focus
+[ACT] press Enter
+[WAIT] the Edit task modal is open
+[KEY] record the modal's Title, Notes, Type, Priority and Due date values (TITLE_0, DESC_0, TYPE_0, PRIO_0, DATE_0)
+[ACT] press Escape
+[WAIT] the modal closes
+[ACT] click the 'Today' chip
+[WAIT] the list refetches
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the title of {{charlie}}
+[WAIT] the Edit task modal is open
+[ACT] set 'Due date' to NEW_DATE
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[ACT] click the NEW_DATE cell in the Due dates calendar
+[WAIT] the page has settled
+[KEY] record the day heading and the date chip label (HEAD_AFTER, CHIP_AFTER)
+[ACT] click the title of {{charlie}}
+[WAIT] the Edit task modal is open
+[KEY] record Title, Notes, Type, Priority and Due date (TITLE_1, DESC_1, TYPE_1, PRIO_1, DATE_1) and the updateSalesRepTask payload fields of the last write (PAYLOAD)
+[ACT] press Escape","[STATE] TITLE_IS_BUTTON is true and Enter on the focused title opens the Edit task modal {SPEC}
+[REL] TITLE_1 = TITLE_0, DESC_1 = DESC_0, TYPE_1 = TYPE_0 and PRIO_1 = PRIO_0 -- changing the date wipes no other field {SPEC}
+[REL] DATE_1 is NEW_DATE and PAYLOAD carries the original description, type and priority alongside the new dueDate {SPEC}
+[REL] HEAD_AFTER and CHIP_AFTER name NEW_DATE and {{charlie}} is listed under it {SPEC}
+[ERRORS] the errors[] of every updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The title is not reachable or operable by keyboard
+The Notes, Type or Priority is empty after a date-only edit
+The re-dated task is not on its new day
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open {{charlie}} again, set Due date back to DATE_0 and Save; re-seed if the date cannot be restored",VCST-6077 · Archetype:SILENT · Technique:DT · Catches:VCST-5732,Draft
+SR-TK-016,Dateless task opened in Edit task and dismissed: it stays listed under All and loses no data; how the form handles the empty date is recorded,Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{india}} is dateless (admin-created); the storefront create form cannot produce one, so the Edit form is the only place this state is met. This case reads what the Edit form does on open and when the date is left empty; the save path is its own case, SR-TK-026. Whether the form should force a date is not specified by PR #2536, so it is recorded, never asserted.","rep=@td(SR_REP_PRIMARY.email), india=@td(SR_TASK_NODATE_INDIA.name)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the All badge (ALL0)
+[ACT] click the title of {{india}}
+[WAIT] the Edit task modal is open
+[KEY] record the Title, Type and Priority field values (TITLE_0, TYPE_0, PRIO_0)
+[KEY] RECORD ONLY, no verdict: record the Due date field value (DATE_EMPTY) and the Save button enabled state (SAVE_ON_OPEN)
+[ACT] change the 'Priority' field
+[ACT] set the 'Priority' field back to its original value
+[KEY] RECORD ONLY, no verdict: record the validation text under Due date (REQ_MSG) and the Save enabled state (SAVE_AFTER)
+[ACT] press Escape
+[WAIT] the modal closes
+[KEY] record whether {{india}} is still listed under All (INDIA_LISTED) and the All badge (ALL1)
+[ACT] click the title of {{india}}
+[WAIT] the Edit task modal is open
+[KEY] record the Title, Type and Priority field values (TITLE_1, TYPE_1, PRIO_1)
+[ACT] press Escape
+[WAIT] the modal closes","[REL] INDIA_LISTED is true and ALL1 = ALL0 -- abandoning an edit loses nothing {SPEC}
+[REL] TITLE_1 = TITLE_0, TYPE_1 = TYPE_0 and PRIO_1 = PRIO_0 -- a dismissed edit changes no stored field {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The dateless task disappears from All after the modal closes
+A field of the task differs after the edit was dismissed
+Recorded for the product owner, not judged: whether the form pre-fills a date, requires one, and when Save is enabled
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (the modal is closed without saving),VCST-6077 · Archetype:FALLBACK · Technique:EG · Catches: the rep edits an admin-created task and it vanishes from every list,Draft
+SR-TK-017,"Due dates calendar: one dot per kind, a two-task day announces 2, empty days carry nothing, today ringed, no selection in All",Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. SHARED_DAY is today plus {{shared}} days and holds two open tasks; EMPTY_DAYS are today plus each offset in {{empty}} and hold none. Today holds open, completed and canceled tasks. The set contains a two-task day and truly empty days, which is what lets a wrong marker or a wrong count be told apart from a right one.","shared=@td(SR_TASK_GROUPS.shared_day_offset), empty=@td(SR_TASK_GROUPS.empty_day_offsets)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] for the SHARED_DAY cell, one EMPTY_DAYS cell, today's cell and a cell holding only a completed task, record the marker classes, the number of markers and the accessible description (DESC_SHARED, DESC_EMPTY, DESC_TODAY, DESC_DONE, MARKS_SHARED, MARKS_EMPTY, MARKS_DONE)
+[KEY] record whether today's cell carries the today ring and whether any other cell does (TODAY_RING, OTHER_RING)
+[KEY] record the number of day cells in a selected state (SELECTED_TODAY)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the number of day cells in a selected state again (SELECTED_ALL)","[REL] DESC_SHARED announces 2 tasks and MARKS_SHARED has one marker per task kind present on that day {SPEC}
+[REL] DESC_EMPTY carries no task count and MARKS_EMPTY has no marker -- an empty day is not described as busy {SPEC}
+[DOM] TODAY_RING is true for today's cell and OTHER_RING is false {SPEC}
+[STATE] MARKS_DONE is a marker of the completed kind, distinct from the upcoming kind in MARKS_SHARED {SPEC}
+[COUNT] SELECTED_ALL = 0 -- with All selected the calendar shows no selected day {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A day with two tasks reads as empty or as one task
+An empty day carries a marker or a task count
+Today's cell has no ring or another cell is ringed
+A day cell is selected while All is active
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:RENDER · Technique:BVA · Catches: the calendar shows a busy day as empty, or a canceled task as a coloured dot",Draft
+SR-TK-018,Browser west of UTC: a task due 23:30 local today is on today's calendar cell and in Today,Sales Rep > Tasks > Storefront,Medium,,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+Browser timezone: set the browser context timezoneId to America/New_York BEFORE the first navigation (UTC-4 or UTC-5 depending on the date, always west of the lane default). If the lane cannot set a browser timezone, record SKIPPED with reason 'no timezone emulation on this lane' and stop; do not pass on the machine's own zone. Viewport 1440, locale en-US. The task fixture is wall-clock relative and decays at local midnight: re-seed immediately before the case with `TEST_ENV=vcst BROWSER_TZ=America/New_York npm run seed:sales-rep-tasks`; the seeder then writes SR_TASK_GROUPS_NY for that zone, and only those values are used here, never the lane-default SR_TASK_GROUPS. {{quebec}} is due at 23:30 New York time today; in a CEST lane that instant is already tomorrow, so a UTC-bucketed or machine-zone window puts it on the wrong day.","rep=@td(SR_REP_PRIMARY.email), quebec=@td(SR_TASK_EDGE_QUEBEC.name), papa=@td(SR_TASK_EDGE_PAPA.name), ny_today=@td(SR_TASK_GROUPS_NY.open_today), ny_total=@td(SR_TASK_GROUPS_NY.total)","[ACT] set the browser context timezoneId to America/New_York
+[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the New York calendar date of now (NY_TODAY), the month shown in the Due dates calendar (MONTH_NY) and the Today badge (TODAY_NY)
+[KEY] record whether {{quebec}} is listed under Today (QUEBEC_TODAY) and its status chip text (QUEBEC_CHIP)
+[KEY] record the marker kinds on today's calendar cell (MARKS_TODAY) and on the cell of the following day (MARKS_TOMORROW)
+[KEY] record the 'today' and period bounds of the most recent tasks list request (TODAY_ARG, PERIOD_FROM, PERIOD_TO)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the All badge (ALL_NY)","[REL] QUEBEC_TODAY is true -- the 23:30 New York task is in Today for a New York browser {SPEC}
+[REL] MARKS_TODAY contains the marker for {{quebec}} and MARKS_TOMORROW does not -- the marker is bucketed by the local date, not by the UTC date {SPEC}
+[REL] PERIOD_FROM is the instant of local New York midnight on NY_TODAY, PERIOD_TO is 24 hours minus 1 ms later (the zone's UTC offset on that day), and TODAY_ARG equals PERIOD_FROM {SPEC}
+[MATH] ALL_NY = {{ny_total}} and TODAY_NY includes the {{ny_today}} open tasks of SR_TASK_GROUPS_NY {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The 23:30 New York task is listed under tomorrow or under Overdue
+The marker for the task sits on the next calendar cell
+Period bounds are built from the UTC day or the lane default zone
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the browser timezone to the lane default; re-seed with the default zone before the next suite that reads SR_TASK_GROUPS.,VCST-6077 · Archetype:BOUNDARY · Technique:BVA · Catches: a rep in the Americas sees tonight's task under tomorrow,Draft
+SR-TK-019,"Desktop 1440 layout matches the spec: zebra rows, one Due dates title, rail width, chip recipe, action glyph colours, completed-title colour",Sales Rep > Tasks > Storefront,Medium,"BL-UI-001, BL-UI-005",,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440x1080, locale en-US, coffee light theme. DECLARED DIVERGENCES, kept as the spec says and not rewritten to the build: the ticket states a rail width of 272px (the PR sets 17.5rem = 280px, the mockup is about 300px); the mockup greys completed titles while the PR keeps the link colour; the mockup draws outlined chips with a dot while the PR uses the tonal variant. The spec values below are the ticket and mockup values, so a difference on those points is reported as a divergence from the spec, not as a pass. Computed styles are read in the page, never estimated from a screenshot.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[PROBE:ALIGN] read the computed background colour of the first four list rows (ROW_BG_1, ROW_BG_2, ROW_BG_3, ROW_BG_4)
+[KEY] count the elements whose text is 'Due dates' on the page (DUE_TITLES)
+[KEY] read the rendered width in px of the Tasks <aside> (ASIDE_W)
+[KEY] read the computed colour, background, border and variant class of the status chips of one open, one overdue and one completed row (CHIP_OPEN, CHIP_OVERDUE, CHIP_DONE)
+[KEY] read the computed colour of the action glyph of one open row and of one completed row (GLYPH_OPEN, GLYPH_DONE)
+[KEY] read the computed colour and text-decoration of a completed row's title (DONE_TITLE_COLOR, DONE_TITLE_DECOR) and the computed colour of an open row's title (OPEN_TITLE_COLOR)","[REL] ROW_BG_1 = ROW_BG_3, ROW_BG_2 = ROW_BG_4 and ROW_BG_1 differs from ROW_BG_2 -- alternating zebra rows {SPEC}
+[COUNT] DUE_TITLES = 1 -- one Due dates title {SPEC}
+[REL] ASIDE_W is 272 px within 1 px (ticket value); the 280 px of the PR is a known divergence and fails this check as a spec difference {SPEC}
+[STATE] each status chip uses the outlined-with-dot recipe of the mockup (transparent background, 1px border, a leading dot), not the tonal variant {SPEC}
+[REL] DONE_TITLE_COLOR is the grey of the mockup and differs from OPEN_TITLE_COLOR; DONE_TITLE_DECOR contains line-through {SPEC}
+[REL] GLYPH_OPEN and GLYPH_DONE use the action colours of the mockup legend and differ from each other {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Rail width differs from the spec
+Completed title is the link colour instead of grey
+Chip recipe differs from the mockup
+Row backgrounds do not alternate
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:RENDER · Technique:EP · Catches: the page ships visibly different from the approved design (rail width, grey versus link-coloured completed titles)",Draft
+SR-TK-020,"Mobile 375 and lg card layout: each card carries its action, the date chip does not overflow, no horizontal scroll",Sales Rep > Tasks > Storefront,Medium,BL-UI-004,ECL-7.4,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Locale en-US. Two layouts are read: 375x812 (phone) and 1000x800 (the card layout below 1024px). The row action is one component shared by the desktop cell and the mobile card with a negative inline margin; VCST-6133 declares that margin a known issue, so the clipping check is the discriminating one.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 375x812
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[PROBE:OVERFLOW] read document scrollWidth and clientWidth (SW_375, CW_375)
+[KEY] for the first open-task card and the first completed-task card read the bounding box of the card and of its action button (CARD_BOX, ACTION_BOX) and the action label (ACTION_LABEL_375)
+[KEY] record whether the chip row wraps onto more than one line (CHIPS_WRAP)
+[ACT] pick a non-today day in the Due dates calendar
+[WAIT] the date chip appears
+[PROBE:OVERFLOW] read scrollWidth and clientWidth again and the date chip's bounding box (SW_CHIP, CW_CHIP, CHIP_BOX)
+[VIEWPORT] 1000x800
+[KEY] record whether cards (not a table) render, and for the first card its action box and the document scrollWidth against clientWidth (SW_LG, CW_LG, ACTION_BOX_LG, CARD_BOX_LG)","[REL] SW_375 <= CW_375 and SW_CHIP <= CW_CHIP and SW_LG <= CW_LG -- no horizontal scroll at any width {BL}
+[REL] ACTION_BOX lies inside CARD_BOX and inside the viewport (left >= 0, right <= 375) for open and completed cards, and ACTION_LABEL_375 is 'Mark as complete' or 'Reopen' {BL}
+[REL] CHIP_BOX lies inside the viewport -- the date chip does not overflow {BL}
+[STATE] at 1000px cards render, each with its own action, and ACTION_BOX_LG lies inside CARD_BOX_LG {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Horizontal scroll appears at 375px
+The action button is clipped by the card or the viewport edge
+The date chip overflows the viewport
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the viewport to 1920x1080.,VCST-6077 · Archetype:RENDER · Technique:EP · Catches: a rep on a phone cannot complete a task because the action is clipped off-screen (VCST-6133 negative margin),Draft
+SR-TK-021,"Keyboard and contrast: close target at least 24px and operable, action name starts with its visible label, dark presets meet 4.5:1 outside the declared hover case",Sales Rep > Tasks > Storefront,Medium,"BL-A11Y-001, BL-A11Y-002, BL-A11Y-003",ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. DECLARED KNOWN ISSUE VCST-6134: link-coloured titles on a hovered row fall below 4.5:1 in the red-dark and coffee-dark presets; that single pair (hovered row title) is excluded from the contrast assertion and every other text/background pair is held to 4.5:1. Theme presets are switched through the storefront's own theme control, never by editing CSS.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] pick a non-today day in the Due dates calendar
+[WAIT] the date chip appears
+[KEY] read the bounding box of the date chip's close (x) control (CLOSE_BOX) and its accessible name (CLOSE_NAME)
+[ACT] press Tab until the close control of the date chip has focus
+[ACT] press Enter
+[WAIT] the view settles
+[KEY] record whether the chip closed (CLOSED_BY_KEY) and the focus target (FOCUS_AFTER_CLOSE)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] for one open row and one completed row read the accessible name of the row action (ACTION_NAME) and its visible label text (ACTION_LABEL)
+--- BLOCK: dark presets ---
+[ACT] switch to the coffee-dark preset
+[KEY] compute the contrast ratio of the row title, row subline, chip text, badge text and action label against their backgrounds, excluding the hovered-row title (CONTRAST_COFFEE_DARK)
+[ACT] switch to the red-dark preset
+[KEY] compute the same ratios (CONTRAST_RED_DARK)","[REL] CLOSE_BOX width and height are each at least 24px {BL}
+[STATE] CLOSE_NAME is non-empty and names the closing of the day filter; CLOSED_BY_KEY is true with Tab then Enter {BL}
+[REL] FOCUS_AFTER_CLOSE is an element on the page (the Today chip per the close rule), not the document body {BL}
+[REL] ACTION_NAME begins with ACTION_LABEL for every row (WCAG 2.5.3 label in name) {BL}
+[REL] every ratio in CONTRAST_COFFEE_DARK and CONTRAST_RED_DARK is at least 4.5, excluding the declared VCST-6134 hovered-row case {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The close control is smaller than 24px or not reachable by Tab
+The action's accessible name does not start with its visible label
+A contrast ratio below 4.5 outside the declared VCST-6134 case
+Focus drops to the body after closing the chip
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the default theme preset.,VCST-6077 · Archetype:RENDER · Technique:EG · Catches: a keyboard or screen-reader user cannot close the date chip or hears an action name that does not match the button,Draft
+SR-TK-022,"Long locales (es, pt, ru): every new Tasks string is translated, no raw key, month heading readable in the rail",Sales Rep > Tasks > Storefront,Low,BL-SR-013,ECL-12.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440. Run the Steps once per culture es, pt and ru (the longest strings), selecting the culture through the storefront language control. Keys were removed and added across every locale file, so a culture where a new key is missing shows the raw key or the English text. KNOWN, OUT OF SCOPE: in ru the dated heading and the date chip render the US date format, which is storefront-wide and not a change of this PR.",rep=@td(SR_REP_PRIMARY.email),"[VIEWPORT] 1440x1080
+[ACT] select the culture es in the language control
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the text of the H1, the five scope chips, the table header cells including the Actions header, the action labels of one open and one completed row, the 'New task' control and the Due dates title (TEXTS_es)
+[KEY] record any text on the page that matches ^tasks\. or ^sales_rep\. (RAW_KEYS_es)
+[KEY] read whether the Due dates month heading is truncated (HEADING_CLIPPED_es)
+[ACT] repeat the three KEY steps for the culture pt (TEXTS_pt, RAW_KEYS_pt, HEADING_CLIPPED_pt)
+[ACT] repeat the three KEY steps for the culture ru (TEXTS_ru, RAW_KEYS_ru, HEADING_CLIPPED_ru)
+[ACT] select en-US again","[COUNT] RAW_KEYS_es, RAW_KEYS_pt and RAW_KEYS_ru are all empty -- no raw key surfaces {BL}
+[REL] in each culture the H1, chips, Actions header, both action labels, the New task control and the Due dates title differ from their English wording -- the new keys are translated {BL}
+[STATE] HEADING_CLIPPED_es, HEADING_CLIPPED_pt and HEADING_CLIPPED_ru are false -- the month heading is readable; a truncation is the declared month-ellipsis known issue of the PR and is reported as a divergence, not a pass {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A raw i18n key is shown in any culture
+A new string is left in English in es, pt or ru
+The month heading is clipped
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",Restore the culture to en-US.,VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a Spanish-speaking rep sees a raw key such as tasks.table.mark_complete instead of a label,Draft
+SR-TK-023,"Empty states with zero tasks: the day scopes (Today, a picked day) share one message, All has its own, badges read 0, chips stay enabled",Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_NOCUSTOMERS]
+Viewport 1440, locale en-US. SR_REP_NOCUSTOMERS owns no tasks (tasks are private per rep), so every scope is genuinely empty; the seeded primary rep is deliberately not used. No re-seed is needed. Today is a day view, so it shares the day-scope empty message (two copies exist: day scope and list scope). Which scope chips render for a rep with no tasks is an open PO question (observed: only Today and All, KB-A915AA45); the case records CHIP_LABELS and does not assert the set.",rep=@td(SR_REP_NOCUSTOMERS.email),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the empty-state title, copy and icon for the Today scope (EMPTY_TODAY), the label and badge value of every rendered scope chip (CHIP_LABELS, BADGES) and the enabled state of each chip (CHIPS_ENABLED)
+[ACT] click a non-today day in the Due dates calendar
+[WAIT] the list refetches
+[KEY] record the empty-state title and copy for the day scope (EMPTY_DAY)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the empty-state title and copy for All (EMPTY_ALL) and whether an error toast is visible (TOAST)","[COUNT] every value in BADGES (one per rendered scope chip) is 0 {BL}
+[REL] EMPTY_TODAY and EMPTY_DAY carry the same day-scope message and EMPTY_ALL carries a different, list-scope message; none reads as an error or contains a raw key {OBSERVED}
+[DOM] every chip in CHIPS_ENABLED is enabled -- an empty scope can still be switched away from {SPEC}
+[STATE] TOAST is false and the page renders the New task control {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A generic error replaces the empty state
+The All empty-state copy is identical to the day-scope copy
+A chip is disabled because it has no tasks
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),VCST-6077 · Archetype:FALLBACK · Technique:EP · Catches: a new rep sees a generic error instead of an empty Tasks page,Draft
+SR-TK-024,"Keyboard: after Mark as complete or Reopen via Enter, focus stays on that row action instead of dropping to the page",Sales Rep > Tasks > Storefront,Medium,BL-A11Y-001,ECL-15.1,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. KEYBOARD ONLY after the page has loaded: no pointer clicks. The expected behaviour is the CORRECT one (WCAG 2.4.3, BL-A11Y-001): after the action, focus stays on the row's action. The build under test is known to drop focus to the document root, so this case is EXPECTED TO FAIL on that build; its assertions are not to be rewritten to match the build. {{sierra}} is open and due today.",sierra=@td(SR_TASK_TODAY_SIERRA.name),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] press Tab until the row action of {{sierra}} has focus
+[ACT] press Enter
+[WAIT] the write settles and the list refetches
+[KEY] record document.activeElement: its tag, its accessible name and whether it is inside the Tasks list (FOCUS_1_TAG, FOCUS_1_NAME, FOCUS_1_IN_LIST)
+[KEY] record the row action label now shown for {{sierra}} (ACTION_NAME_1)
+[ACT] press Tab once
+[KEY] record the element that receives focus and whether it is the first focusable control of the page (TAB_AFTER_1, TAB_IS_PAGE_START)
+--- BLOCK: Reopen ---
+[ACT] press Tab or Shift+Tab until the row action of {{sierra}} has focus again
+[ACT] press Enter
+[WAIT] the write settles and the list refetches
+[KEY] record document.activeElement: its tag, accessible name and whether it is inside the Tasks list (FOCUS_2_TAG, FOCUS_2_NAME, FOCUS_2_IN_LIST) and the row action label now shown (ACTION_NAME_2)","[STATE] FOCUS_1_TAG is not BODY or HTML and FOCUS_1_IN_LIST is true -- focus remains in the list after Mark as complete {BL}
+[REL] FOCUS_1_NAME equals ACTION_NAME_1, the row's own new action -- focus stays on that row action {BL}
+[REL] TAB_IS_PAGE_START is false -- the next Tab moves on from the row, not from the top of the page {BL}
+[STATE] after Reopen FOCUS_2_TAG is not BODY or HTML, FOCUS_2_IN_LIST is true and FOCUS_2_NAME equals ACTION_NAME_2 {BL}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","Focus drops to the document root after the action
+The next Tab starts from the top of the page
+Focus lands on a different row's control
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] if {{sierra}} is left Completed, press its Reopen action so it returns to its seeded state; re-seed if the state cannot be restored","VCST-6077 · Archetype:RENDER · Technique:EG · Catches: unfiled defect, focus lost to the document root after Mark as complete or Reopen (exploratory session SBTM-VCST-6077-2026-10-07, Bug 1)",Draft
+SR-TK-025,Editing a canceled task: unchanged save and a re-date both keep it canceled with no row action,Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{kilo}} is canceled and past due; updateSalesRepTask is a full replace and the edit form carries no status control, so a payload that omits isActive can reopen the task. The only storefront write path on a canceled row is Edit task. NEW_DATE is today plus 20 days.",kilo=@td(SR_TASK_CANCELED_KILO.name),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the status chip and the number of row actions of {{kilo}} (CHIP_0, ACTIONS_0) and its Due date value once the modal is open (DATE_0)
+[ACT] click the title of {{kilo}}
+[WAIT] the Edit task modal is open
+[KEY] record whether every field is editable and Save is enabled (EDITABLE, SAVE_ON), and its Due date (DATE_0)
+[ACT] click 'Save' without changing anything
+[WAIT] the modal closes and the list refetches
+[KEY] record the errors of the updateSalesRepTask response (ERR_1), the chip and action count of {{kilo}} (CHIP_1, ACTIONS_1) and its listing under each of Upcoming, Overdue and Completed (TABS_1)
+[ACT] click the title of {{kilo}}
+[WAIT] the Edit task modal is open
+[ACT] set 'Due date' to NEW_DATE
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[KEY] record the chip and action count (CHIP_2, ACTIONS_2) and the tabs listing it (TABS_2)","[STATE] EDITABLE and SAVE_ON are true -- a canceled task can be opened for edit {OBSERVED}
+[REL] ERR_1 is empty, CHIP_1 = CHIP_0 = 'Canceled' and ACTIONS_1 = ACTIONS_0 = 0 -- an unchanged save keeps the task canceled {SPEC}
+[REL] TABS_1 is empty -- the save did not move the task into a status tab {SPEC}
+[REL] CHIP_2 = 'Canceled', ACTIONS_2 = 0 and TABS_2 is empty -- re-dating does not reopen it either {SPEC}
+[ERRORS] the errors[] of every updateSalesRepTask response in this case is empty and the response succeeds {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The canceled task becomes Upcoming, Overdue or Completed after a save
+A row action appears on the task after a save
+Save is refused with an error for a canceled task
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] open {{kilo}} again, set Due date back to DATE_0 and Save; re-seed if the date cannot be restored",VCST-6077 · Archetype:LIFECYCLE · Technique:ST · Catches: saving a canceled task from the storefront silently reopens work the admin closed,Draft
+SR-TK-026,"Editing a dateless task: the save path (required date, saved instant, Today and Upcoming membership, chip) is recorded and the update returns no errors",Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US, browser timezone left at the seed zone. {{india}} is dateless. OPEN PRODUCT-OWNER QUESTION: nothing in the PR says that forcing a due date on a dateless task is intended; the page requires it today. Only the absence of errors is asserted; everything else is recorded without a verdict tag, as nothing in the PR #2536 description states it. TODAY_DATE is today's date in the browser zone.",india=@td(SR_TASK_NODATE_INDIA.name),"[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] record the Today and Upcoming badges (TODAY0, UP0)
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[ACT] click the title of {{india}}
+[WAIT] the Edit task modal is open
+[ACT] change the 'Priority' field
+[ACT] set the 'Priority' field back to its original value
+[KEY] RECORD ONLY, no verdict: record the required-field message and the Save enabled state (REQ_MSG, SAVE_EMPTY)
+[ACT] set 'Due date' to TODAY_DATE
+[KEY] RECORD ONLY, no verdict: record the Save enabled state (SAVE_DATED)
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[KEY] RECORD ONLY, no verdict: record the dueDate sent in the last updateSalesRepTask request (DUE_SENT), the Today and Upcoming badges (TODAY1, UP1), the chip of {{india}} (CHIP_INDIA) and whether it is listed under All and under Today (IN_ALL, IN_TODAY)
+[KEY] record whether the Edit task modal closed after Save and whether {{india}} is listed under All (MODAL_CLOSED, IN_ALL_AFTER)","[ERRORS] the errors[] of every updateSalesRepTask response in this case is empty and the response succeeds {SPEC}
+[REL] MODAL_CLOSED is true and IN_ALL_AFTER is true -- a saved task is not lost from All {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","updateSalesRepTask returns errors[] for a dateless task given a date
+Recorded for the product owner, not judged: whether a date is forced, the saved instant, Today and Upcoming membership and the chip
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","Nothing in the storefront can clear a due date, so this case leaves {{india}} dated: re-seed with `TEST_ENV=vcst npm run seed:sales-rep-tasks` after the case so the task is dateless again.",VCST-6077 · Archetype:FALLBACK · Technique:EG · Catches: an admin-created undated task cannot be saved or vanishes after editing,Draft
+SR-TK-027,"Calendar day with only canceled tasks carries no marker; the day text, the mixed-day count and the canceled-only day list are recorded pending the product owner",Sales Rep > Tasks > Storefront,Low,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{kilo}} (due {{kilo_due}}) and {{hotel}} (due {{hotel_due}}) are canceled and each sits on a day with no other task; today is a MIXED day (open tasks plus one canceled task). OPEN PRODUCT-OWNER QUESTION Q1, NOT ASSERTED: whether a canceled-only day should announce or mark its tasks, and whether canceled counts toward a day's task count at all. The build marks nothing on a canceled-only day and counts the canceled task on a mixed day. This case asserts only the marker rule the PR states (canceled has no dot) and records the day text, the mixed-day count and the canceled-only day list without a verdict tag; it asserts neither side of Q1.","kilo=@td(SR_TASK_CANCELED_KILO.name), hotel=@td(SR_TASK_CANCELED_HOTEL.name), kilo_due=@td(SR_TASK_CANCELED_KILO.due_date), hotel_due=@td(SR_TASK_CANCELED_HOTEL.due_date)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[KEY] RECORD ONLY, no verdict: read the accessible description and the marker classes of the day cell of {{kilo_due}} (DESC_KILO, MARKS_KILO) and of the day cell of {{hotel_due}} (DESC_HOTEL, MARKS_HOTEL), paging the calendar to the right month where needed
+[KEY] RECORD ONLY, no verdict: read the accessible description and the marker classes of today's cell, which holds open tasks and a canceled task (DESC_MIXED, MARKS_MIXED)
+[ACT] click the day cell of {{kilo_due}}
+[WAIT] the list refetches
+[KEY] RECORD ONLY, no verdict: record the rows listed and the list header count (ROWS_KILO_DAY, HEADER_KILO_DAY)","[COUNT] MARKS_KILO and MARKS_HOTEL contain no marker of any kind -- canceled has no dot {SPEC}
+[REL] MARKS_MIXED contains markers only for the open task kinds present and none for the canceled task {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","A canceled-only day shows a coloured dot
+A mixed day's marker set includes a canceled kind
+Recorded for the product owner, not judged (Q1): the day text of canceled-only and mixed days and whether clicking a canceled-only day lists the task
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:RENDER · Technique:DT · Catches: the rep sees an empty day that actually holds tasks, or a dot for work that was cancelled",Draft
+SR-TK-028,Today badge and Today list agree on whether a canceled task due today is included,Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. {{lima}} is canceled and due today; the other today tasks are open or completed. OPEN PRODUCT-OWNER QUESTION Q3, NOT ASSERTED: whether a canceled task due today should count in Today at all. This case asserts the PARITY the spec does require (the badge equals the list it opens) and records, without asserting, whether {{lima}} is included. A badge of {{today_b}} + {{canc_today}} or of {{today_b}} alone is each consistent; a badge that differs from its own list is not.","lima=@td(SR_TASK_CANCELED_LIMA.name), groups=@td(SR_TASK_GROUPS.total), today_b=@td(SR_TASK_GROUPS.today_scope_excl_canceled), canc_today=@td(SR_TASK_GROUPS.canceled_due_today)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered with the Today chip selected
+[KEY] record the Today badge (TODAY_B), the list header count (TODAY_HEADER), the number of rows across every page (TODAY_ROWS) and whether {{lima}} is listed (LIMA_LISTED)
+[ACT] click the cell for today in the Due dates calendar
+[WAIT] the list refetches
+[KEY] record the day-view list header count and rows (DAY_HEADER, DAY_ROWS) and whether {{lima}} is listed (LIMA_DAY)","[MATH] TODAY_B = TODAY_HEADER = TODAY_ROWS -- the Today badge, the list header and the rows agree {SPEC}
+[REL] LIMA_LISTED = LIMA_DAY -- Today and today's day view treat the canceled task the same way {SPEC}
+[REL] TODAY_B is either {{today_b}} or {{today_b}} + {{canc_today}}; it is recorded together with LIMA_LISTED as the baseline pending Q3 {OBSERVED}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The Today badge differs from the number of rows in the Today list
+Today and today's day view disagree about the canceled task
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql",none (read-only),"VCST-6077 · Archetype:PARITY · Technique:EP · Catches: the Today badge counts a task the Today list does not show, or the reverse",Draft
+SR-TK-029,"Delete a task from Edit task: the row, its calendar marker and every badge update without reload",Sales Rep > Tasks > Storefront,Medium,,,"[PRE:CLEAR_SESSION]
+[PRE:SIGNIN_AS:SR_REP_PRIMARY]
+The task fixture is wall-clock relative and decays at local midnight: re-seed the same local day with `TEST_ENV=vcst npm run seed:sales-rep-tasks` immediately before this case and treat the SR_TASK_GROUPS values as valid only for that day. If the seed is older than today (local), record BLOCKED with reason 'task fixture stale' and stop. Viewport 1440, locale en-US. The case creates its own task on a day that holds no fixture task, so the delete empties that day and the marker, the date chip and the counts must all follow; it never deletes a seeded row. NEW_DAY is today plus the FIRST offset in {{empty_offsets}} days.","rep=@td(SR_REP_PRIMARY.email), empty_offsets=@td(SR_TASK_GROUPS.empty_day_offsets)","[VIEWPORT] 1440x1080
+[NAV] {{FRONT_URL}}/company/tasks
+[WAIT] the Tasks page has rendered
+[ACT] click the 'All' chip
+[WAIT] the list refetches
+[KEY] record the All and Upcoming badges (ALL0, UP0)
+[ACT] click 'New task'
+[WAIT] the New task modal is open
+[ACT] fill 'Title' with a random AGENT-TEST-TASK title (NEW_TITLE)
+[ACT] set 'Due date' to NEW_DAY
+[ACT] click 'Save'
+[WAIT] the modal closes and the list refetches
+[ACT] click the NEW_DAY cell in the Due dates calendar
+[WAIT] the date chip for NEW_DAY appears
+[KEY] record the NEW_DAY cell marker (MARK_BEFORE), the All and Upcoming badges (ALL1, UP1) and whether NEW_TITLE is listed
+[ACT] click the title of NEW_TITLE
+[WAIT] the Edit task modal is open
+[ACT] click 'Delete' in the Edit task modal
+[WAIT] the page has settled
+[ACT] click the confirm control of the delete dialog
+[WAIT] the modal closes and the list, badges and calendar refetch
+[KEY] record whether NEW_TITLE is listed (STILL_LISTED), the NEW_DAY cell marker (MARK_AFTER), the All and Upcoming badges (ALL2, UP2), the selected chip and whether a date chip is present (SEL_AFTER, CHIP_AFTER) and the empty state or list shown (VIEW_AFTER)","[REL] ALL1 = ALL0 + 1 and UP1 = UP0 + 1 and MARK_BEFORE shows one marker -- the task existed everywhere before the delete {SPEC}
+[REL] STILL_LISTED is false and MARK_AFTER shows no marker -- the row and its dot are gone without a reload {SPEC}
+[MATH] ALL2 = ALL0 and UP2 = UP0 -- the counts return to their pre-create values {SPEC}
+[STATE] VIEW_AFTER shows the day's empty state or a valid fallback view and SEL_AFTER and CHIP_AFTER describe a defined scope -- the page is not left blank {SPEC}","[CONSOLE] no TypeError or JS error on the page under test
+[NETWORK] no 4xx/5xx on /graphql","The deleted task is still listed
+The calendar cell keeps its marker
+A badge keeps the inflated number
+The page is left blank after deleting the chip day's only task
+Spinner visible >5s, console.error with TypeError, 4xx/5xx on /graphql","[ACT] if NEW_TITLE is still listed, locate it by its AGENT-TEST-TASK prefix under All and delete it from Edit task","VCST-6077 · Archetype:STALE · Technique:ST · Catches: a deleted task lingers as a ghost row, a stale marker or inflated counts",Draft
