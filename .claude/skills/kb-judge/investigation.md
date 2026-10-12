@@ -34,9 +34,9 @@ lists them — but a setting is almost never recorded. So the investigation re-e
 by **reproducing on the stands the evidence names**, now, and treats a stand whose build has moved
 since the dispute as a different condition, not the same stand.
 
-## 3. Re-observe every disputed clause — five sources
+## 3. Re-observe every disputed clause — six sources
 
-For each disputed clause, all five. A source that cannot be reached is recorded as such; it is
+For each disputed clause, all six. A source that cannot be reached is recorded as such; it is
 never substituted by inference.
 
 | Source | Who | What it answers |
@@ -46,6 +46,13 @@ never substituted by inference.
 | Docs | `/vc-docs` (VirtoOZ) | the documented MECHANISM. A doc never decides a UI string, a count or a layout — those are observed (`.claude/knowledge/agents/qa/shared-instructions.md` §What VirtoOZ is authoritative FOR) |
 | Source code | GitHub, at the **deployed** version of each stand, not `main` | the mechanism, and — through the history of the file — WHEN it changed and in which PR. A behaviour change between two stands' builds is proven here |
 | The base | `mcp__kb__kb_ask` on the clause's coordinates | other entries at the same coordinates — a sibling that already states the other half, or an entry this one duplicates |
+| Oracles | the judge: `.claude/knowledge/oracles/bl/*.yaml` and `e-commerce-edge-cases-library.md`, searched by the cluster's coordinates and concepts | what the platform SHOULD do, from human sources (AC, docs, Jira). A hypothesis for the specialists' brief, never a verdict |
+
+**An oracle never settles a dispute.** The base records what the platform does; a `BL-*` rule records
+what it should do. A rule that agrees with one side is a hypothesis to re-observe, not a reason to
+pick that side. When the verdict contradicts a rule, that is a finding: the PR names the rule and why,
+and the operator hands it to `/qa-review-oracles bl` (MARK-SUSPECT, its `bl-audit-criteria.md`). The
+judge never edits a `BL-*` or `ECL-*` record; a rule changes only from a human source.
 
 Rules for the live part:
 

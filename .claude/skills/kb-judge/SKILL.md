@@ -1,6 +1,6 @@
 ---
 name: kb-judge
-description: "[KB] Settle disputed knowledge-base entries. Takes one disputed entry or its cluster, builds the dossier of both sides, runs a FULL live investigation (every stand involved, storefront, Admin/REST, VirtoOZ docs, source at the deployed version) that establishes the build and settings each observation was made under, and proposes a verdict per dispute as a reviewed PR on the base. A human merges; nothing is decided from the papers and nothing is auto-resolved."
+description: "[KB] Settle disputed knowledge-base entries. Takes one disputed entry or its cluster, builds the dossier of both sides, runs a FULL live investigation (every stand involved, storefront, Admin/REST, VirtoOZ docs, source at the deployed version, BL/ECL oracles as hypotheses) that establishes the build and settings each observation was made under, and proposes a verdict per dispute as a reviewed PR on the base. A human merges; nothing is decided from the papers and nothing is auto-resolved."
 argument-hint: "[<KB-id> | cluster <KB-id> | next] --base <local vc-knowledge checkout>"
 ---
 
@@ -46,8 +46,12 @@ Read the dossier's **hints** as hypotheses to test, never as findings.
   already states the other half, a duplicate. Rule: `CLAUDE.md` §Essential Rules → *Product context*.
 - **VirtoOZ, for the documented mechanism** (`/vc-docs`) — what the platform is supposed to do. A doc
   decides a mechanism, never a UI string, a count or a layout.
+- **The oracles, for the intended behaviour:** the `BL-*` rules (`.claude/knowledge/oracles/bl/*.yaml`)
+  and `ECL-*` sections at the cluster's coordinates and concepts — what the platform should do,
+  from human sources. Each matching rule goes into the specialists' brief as a hypothesis.
 
-Neither settles a dispute. Both shape the investigation.
+None of the three settles a dispute. All three shape the investigation. A verdict that contradicts a
+rule is a finding, not a tie-break: [`investigation.md`](investigation.md) §3.
 
 ## Step 4 — Investigate, live and in full
 
@@ -157,6 +161,8 @@ the judgement, in English, readable without this session:
 - per dispute: its `at`, the verdict or "open — <what is missing>", and the observations behind it —
   stand, conditions, date, the ids of the evidence the investigation banked;
 - the sources: the VirtoOZ page, the source file at the deployed version, the PR that changed it;
+- the oracles: each `BL-*` / `ECL-*` the cluster touches, and whether the verdict agrees with it — a
+  contradiction is listed for `/qa-review-oracles bl`, never fixed in the rule;
 - the before/after count from `npm run kb:disputes -- list`.
 
 No screenshots, no client names, no credentials, no emails: the base and its PRs are public. **The
@@ -165,7 +171,8 @@ operator merges.** If they reject a verdict, fix the branch; never push to `main
 ## Step 8 — Report
 
 Tell the operator, in their language: the cluster, the PR link, how many disputes got a verdict
-and which, which stayed open and why, and the ids banked during the investigation.
+and which, which stayed open and why, the ids banked during the investigation, and every `BL-*`
+the verdicts contradict (to run through `/qa-review-oracles bl`).
 
 ## Where things live
 
