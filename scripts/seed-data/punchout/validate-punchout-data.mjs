@@ -65,6 +65,19 @@ for (const m of MAPPING_SPECS) {
   if (!m.externalId.startsWith(SEED_PREFIX)) fail(`${m.alias}: externalId lacks ${SEED_PREFIX}`);
 }
 if (new Set(MAPPING_SPECS.map((m) => m.externalId)).size !== MAPPING_SPECS.length) fail('mapping externalIds are not unique (DB index is unique)');
+// SECOND RULE: DEFAULT (single org) and MULTI_ORG (≥2 orgs) must not be able to coincide, or the
+// org-resolution cases cannot tell "one org → that org" from "several → current/default".
+{
+  const single = MAPPING_SPECS.find((m) => m.alias === 'PUNCHOUT_MAPPING_DEFAULT');
+  const multi = MAPPING_SPECS.find((m) => m.alias === 'PUNCHOUT_MAPPING_MULTI_ORG');
+  if (!single?.maxOrganizations || !multi?.minOrganizations || single.maxOrganizations >= multi.minOrganizations) {
+    fail(`DEFAULT maxOrganizations (${single?.maxOrganizations}) must be < MULTI_ORG minOrganizations (${multi?.minOrganizations}) — the single/multi-org pair would not diverge`);
+  }
+  if (single && multi && single.personaEmailVar === multi.personaEmailVar) fail('DEFAULT and MULTI_ORG map the same persona var');
+}
+for (const name of [...CONFIG_SPECS, ...MAPPING_SPECS, ...BACKOFFICE_SPECS].map((x) => x.alias)) {
+  if (aliases[name] && aliases[name].seed !== 'seed:punchout') fail(`${name}.seed must be "seed:punchout" (td:validate prints it as the seed command for an unseeded env)`);
+}
 if ([...PROTECTED_EXTERNAL_IDS].some((x) => MAPPING_SPECS.find((m) => m.externalId === x)?.owned)) fail('a protected externalId is marked owned');
 for (const s of BACKOFFICE_SPECS) {
   const a = aliases[s.alias];
@@ -177,6 +190,7 @@ for (const env of Object.keys(DEPLOYED_CONFIGS)) {
     const o = ov[m.alias] || {};
     if (!o.id) { note(`${env}: ${m.alias} not provisioned (empty id) — seed it before the cases run`); continue; }
     for (const f of ['id', 'userId', 'memberId']) if (!GUID_RE.test(o[f] || '')) fail(`${env} overlay ${m.alias}.${f} is not a GUID`);
+    if (m.maxOrganizations && !(o.organizationCount >= 1 && o.organizationCount <= m.maxOrganizations)) fail(`${env} overlay ${m.alias}.organizationCount=${o.organizationCount} outside 1..${m.maxOrganizations}`);
     if (m.minOrganizations) {
       if (!(o.organizationCount >= m.minOrganizations)) fail(`${env} overlay ${m.alias}.organizationCount=${o.organizationCount} < ${m.minOrganizations}`);
       if (!o.currentOrganizationId || !o.otherOrganizationId || o.currentOrganizationId === o.otherOrganizationId) fail(`${env} overlay ${m.alias}: current and other organization must be two different ids (the org-switch case needs a target)`);
