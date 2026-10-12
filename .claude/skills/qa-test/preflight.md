@@ -128,7 +128,7 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
    is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
    `UNKNOWN` stays `UNKNOWN`, never filled from `declared`) · `build.releasedThrough` ← `facts.ledger` (the Δ
-   vs `deployed`; its `breaking[]`/`behind[]` are what consumers read). `{SPRINT}` is the `sprint` fact; if it
+   vs `deployed`: `build.releasedThrough.behind[]` ← `facts.ledger.releasedNotDeployed[]`, `build.releasedThrough.breaking[]` ← `facts.ledger.breaking[]`). `{SPRINT}` is the `sprint` fact; if it
    is null, create `reports/tickets/<sprint>/` once the sprint name is known (the `sprint` row's remedy).
 2b–2g. **Derive the SIX PRE-FLIGHT AXES — one mechanism, six instances.** Pure computation over
     what wave A returned; no operator input. Single source of truth for the contract they share and the
