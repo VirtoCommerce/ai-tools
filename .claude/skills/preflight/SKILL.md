@@ -1,7 +1,7 @@
 ---
 name: preflight
 description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--preflight-out <run-folder>/preflight.json] [--ci]"
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--run-id <RUN_ID>] [--preflight-out <run-folder>/preflight.json] [--accept drift:<id>,…] [--ci]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -28,11 +28,11 @@ Keep the JSON; the consumer stores it as the `preflight` block of its `summary.j
 
 **Build-scoped (`regression`, `smoke`)** runs the regression planner instead:
 
-    npm run regression:plan -- <selection> --preflight --json [--preflight-out reports/regression/<RUN_ID>/preflight.json]
+    npm run regression:plan -- <selection> --preflight --json [--run-id <RUN_ID>] [--preflight-out reports/regression/<RUN_ID>/preflight.json] [--accept drift:<id>,…]
 
 Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
 Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
-could not run. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
+could not run (also `1`: an `--accept` id that is not `drift:*`). `--run-id` makes that run's own `test-run-status.json` no lock. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
 `NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. For step 4, run the same command without `--json`.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
@@ -93,6 +93,7 @@ Offer, in one line per row, what you can do and what only the user can — the `
 Never type, substitute or switch a password or token; on a failed credential, hand over the text.
 Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.** "Fix what you can" covers `me` rows; when there are `me, with OK` rows, that option names them (e.g. "fix what you can, including `ledger` — runs `releases:refresh` and commits"), and choosing it is the explicit yes for exactly those rows. Never a second question.
 
+- Build-scoped: "proceed as is" on `drift:*` BLOCK rows means the consumer re-runs the plan with `--accept <those drift ids>`, which turns exactly those rows into WARN `(accepted)`; no other row can be accepted.
 - No answer, or no option chosen, is **stop**: nothing is fixed or diagnosed, and step 6 returns `NOT READY` with `remediations: []`.
 - "Find the cause" runs the row's `diagnose[]` recipe (read-only) and reports the cause.
 - After any fix, **re-run the whole step 1**, not the one check — a fix can move another fact.

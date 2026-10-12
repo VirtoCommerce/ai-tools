@@ -46,23 +46,24 @@ Suite selection (one of): `smoke` (042 + the four 078 siblings), `critical` (smo
 2. Resolve selection → ordered list of suite IDs (sort: P0 > P1 > P2)
 3. Generate run ID: `REG-YYYY-MM-DD-HHMM`
 4. Create output: `reports/regression/{RUN_ID}/`
-5. Write `reports/regression/test-run-status.json` with initial state (all suites `pending`, run-level status `in_progress`)
-6. **Launch the live HTML dashboard in the background:** run `npm run report:regression:watch -- --run-id {RUN_ID}` **detached** (do not block). It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately and self-refreshes (reading `test-run-status.json`) as suites complete, settling into the final static report and exiting when you flip status to `completed` (Step 6). This is a Node script, not a browser action — it does not trip the real-user hook.
+5. **Get the plan (Step 1.5) now** — before the status write, whose fresh `in_progress` the pre-flight lock check would read as an active run
+6. Write `reports/regression/test-run-status.json` from the plan (run-level `in_progress`): dispatch-order suites `pending`, `preflight.gating.gated` suites `not_deployed` (terminal — `regression:close` does not count it as open)
+7. **Launch the live HTML dashboard in the background:** run `npm run report:regression:watch -- --run-id {RUN_ID}` **detached**, never blocking. It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately and self-refreshes (reading `test-run-status.json`) as suites complete, settling into the final static report and exiting when you flip status to `completed` (Step 6). A Node script, not a browser action: it does not trip the real-user hook.
 
-   > **⚠ WATCHER OWNERSHIP — do NOT own the watcher if you are a dispatched sub-agent.** A sub-agent's background processes are reaped the moment its turn ends, but the run outlives it — so a watcher launched here dies mid-run and the dashboard freezes (stale HTML while `suite-*-results.json` keep updating). **The watcher must be owned by the PERSISTENT session that spans the whole run.** So: if you were dispatched via the Task tool by a top-level `/qa-regression` session, that session owns the watcher (per `commands/qa-regression.md` Step 3) — **do not launch it here** (a duplicate that will just die). Launch it here **only** when you ARE the top-level/persistent session (invoked directly, not as a sub-agent). Either way the owner must **self-heal**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale, relaunch the watcher (or one-shot `npm run report:regression -- --run-id {RUN_ID}`).
+   > **⚠ WATCHER OWNERSHIP — do NOT own the watcher if you are a dispatched sub-agent.** A sub-agent's background processes die with its turn while the run outlives it, so a watcher launched here freezes the dashboard mid-run. **The PERSISTENT session that spans the run owns it:** if a top-level `/qa-regression` session dispatched you, it owns the watcher (`commands/qa-regression.md` Step 3) — **do not launch a duplicate here**. Launch it here **only** when you ARE the top-level/persistent session (invoked directly, not as a sub-agent). Either way the owner must **self-heal**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale, relaunch the watcher (or one-shot `npm run report:regression -- --run-id {RUN_ID}`).
 
 ### Step 1.5: Get the run plan (do NOT derive it by hand)
 
 Run **one command** and follow its output:
 
 ```bash
-npm run regression:plan -- <selection> --preflight --json --preflight-out reports/regression/{RUN_ID}/preflight.json
+npm run regression:plan -- <selection> --preflight --json --run-id {RUN_ID} --preflight-out reports/regression/{RUN_ID}/preflight.json [--accept drift:<id>,… when the user chose "proceed as is" at `/qa-regression` Step 0]
 ```
 
 It returns, per lane, the suites to run in **dispatch order**, each with its case count, estimate,
-timeout, and any browser constraint. Exit code 1 means the selection cannot run as-is (unknown
-suite id, missing CSV, no executor, or a cap that would guarantee truncation) — **stop and report,
-do not improvise around it**. Exit 2 means the pre-flight is NOT READY, exit 3 that it could not run — stop and report.
+timeout, and any browser constraint. Exit 1 = the selection cannot run as-is (unknown suite id,
+missing CSV, no executor, or a cap that would guarantee truncation), 2 = pre-flight NOT READY, 3 = it
+could not run — on any, **stop and report, never improvise around it**.
 
 **Why a command instead of doing this yourself.** Every part of this used to be hand-derived, and
 each part was got wrong at least once on the record:
@@ -72,14 +73,11 @@ each part was got wrong at least once on the record:
   is runner-native and a GraphQL-only grep misses it). Step 3 then splits a mixed suite's cases
   with `suites:lanes`, so `050d`'s 46 runner-native rows no longer ride a browser slot on account
   of its other 3.
-- The firefox rule, which lived as prose in three files. It is now ONE data switch:
-  `defaults.firefoxClickOk` in the manifest, read through `browserDenyListFor`
-  (`ci/lib/suite-manifest.ts`). **It is `true` since 2026-09-08** — the click timeouts were a covered
-  window stopping `requestAnimationFrame`, fixed by the occlusion pref in the firefox MCP config, so
-  every suite may take the firefox slot and the browser lane is genuinely three wide. Flip it to
-  `false` to bring the `NOT ON playwright-firefox` marking back for click-driven suites. `clickDriven`
-  is still derived per suite and still correct — note `[ACT]` alone does not mean clicking, suite
-  `049`'s 37 `[ACT]` lines are all REST calls.
+- The firefox rule, once prose in three files, now ONE switch: `defaults.firefoxClickOk`, read
+  through `browserDenyListFor` (`ci/lib/suite-manifest.ts`). **`true` since 2026-09-08** (root cause:
+  `knowledge/automation/browser-quirks.md` §Firefox), so the browser lane is three wide; `false` brings
+  `NOT ON playwright-firefox` back for click-driven suites. `[ACT]` alone does not mean clicking —
+  `049`'s 37 `[ACT]` lines are REST calls.
 - Dispatch order, which was arbitrary.
 
 Record each suite's lane in `test-run-status.json` as `lane: "browser" | "fastpath" | "deterministic"`.
@@ -376,6 +374,8 @@ did NOT run, because a scoped run's silence is otherwise unreadable:
 | Suite | Name | Browser | Tests | Pass | Fail | Rate | Attempts |
 ## Bugs Found
 | Bug ID | Suite | Severity | Title | Test Case |
+## NOT_DEPLOYED — the gated suites with their module and state (BLOCKED-on-deploy, never FAIL)
+| Suite | Module | State |
 ## Retry Log
 | Suite | Attempt | Browser | Outcome | Error |
 ## Suite Details
