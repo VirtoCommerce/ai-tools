@@ -5,7 +5,20 @@
   "tracker": {
     "kind": "jira",
     "comment_id": "111899",
-    "subtask_comment_ids": [],
+    "subtask_comment_ids": [
+      {
+        "key": "VCST-6226",
+        "comment_id": "111900"
+      },
+      {
+        "key": "VCST-6261",
+        "comment_id": "111901"
+      },
+      {
+        "key": "VCST-6262",
+        "comment_id": "111902"
+      }
+    ],
     "documentation_comment_id": "111899",
     "amended": false,
     "previous_round_comment_id": "111713"
@@ -164,7 +177,31 @@
       "by": "qa-lead (inline orchestrator)",
       "confirmed": true,
       "result": "skipped",
-      "reason": "fix verified this round (A1, B1, RET-ORG-042/-048/-006/-019) but the sub-task close-out belongs to /vc-fix:qa-verify-fix (operator decision)"
+      "reason": "fix verified on the PR build, but ticket-status-transitions.md §5a: a bug moves to Tested only once its fix has SHIPPED (PR #28 still unmerged); evidence comment 111900"
+    },
+    {
+      "at": "5-status",
+      "hop": "skip",
+      "ticket": "VCST-6261",
+      "from": "To do",
+      "to": null,
+      "transition": null,
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "result": "skipped",
+      "reason": "not fixed (return.vue:175-176 unchanged) and not reproducible without a letter-case fixture; evidence comment 111901"
+    },
+    {
+      "at": "5-status",
+      "hop": "skip",
+      "ticket": "VCST-6262",
+      "from": "To do",
+      "to": null,
+      "transition": null,
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "result": "skipped",
+      "reason": "still reproduces on 4263715a (lower-case status=draft sent to the server, empty list); evidence comment 111902"
     }
   ],
   "agents_dispatched": [
