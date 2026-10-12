@@ -109,11 +109,11 @@ export function toWiki(md) {
 
 /** Markdown subset → the HTML an Azure Boards comment field renders (azure-html-format.md). */
 export function toHtml(md) {
-  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const inline = s => esc(s)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => /^https?:\/\//.test(url) ? `<a href="${url}">${text}</a>` : text);
   const lines = md.split("\n");
   const out = [];
   let list = false, table = false;
