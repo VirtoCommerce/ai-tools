@@ -94,7 +94,9 @@ Then ask the one question: **fix what you can · find the cause first · proceed
 Step 1's JSON with every top-level key the CLI printed (consumers read `sprint` and `facts` from it), plus
 step 2's level-3 rows under `mcp`, `verdict` combined per step 4, and `kbHits`, `docs`, `remediations`. What a fact
 **means** for the consumer (a `breaking:*` or `not-deployed:*` row, for instance) is the consumer's own
-rule, stated in the consumer — not here.
+rule, stated in the consumer — not here. One id is defined here because it is easy to misread:
+`unknown-deployed:*` = the ledger released it but no live source reports the deployed version
+(Platform, the storefront theme). It is **not** `not-deployed:*` — confirm the version, never assume either way.
 
 ## Not this skill
 

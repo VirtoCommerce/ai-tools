@@ -181,8 +181,10 @@ export function buildChecks(i: PolicyInput): Check[] {
         checks.push({ id: `not-deployed:${r.repo}`, status: "WARN", found: `${r.component} ${r.released} released, deployed ${r.deployed ?? "none"}`, who: "me",
           do: "do not test it on this stand; report it as not deployed", diagnose: [] });
     }
+    // Its own id: "the deployed version cannot be read" is not "it is not deployed", and consumers
+    // treat not-deployed:* as BLOCKED-on-deploy — an UNKNOWN must never be filtered in with it.
     for (const r of f.ledger.noLiveSource ?? [])
-      checks.push({ id: `not-deployed:${r.repo}`, status: "UNKNOWN", found: `${r.component} ${r.released} released; no live source reports the deployed ${r.repo} version`, who: "you",
+      checks.push({ id: `unknown-deployed:${r.repo}`, status: "UNKNOWN", found: `${r.component} ${r.released} released; no live source reports the deployed ${r.repo} version`, who: "you",
         do: `confirm the deployed ${r.component} version on the stand before testing what ${r.released} ships`, diagnose: [] });
   }
 
