@@ -2122,6 +2122,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [case] CMP-047 failed in REG-2026-10-12-1832
 
 ---
 
@@ -2422,7 +2423,7 @@ ticket or a docs page disputes (`status`).
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |
@@ -2430,4 +2431,4 @@ ticket or a docs page disputes (`status`).
 | Analytics & Tracking | BL-GA4-001–004 | 4 | 0 | 4 | 0 | 3 | 0 |
 | Push Messages | — | 0 | 0 | 0 | 0 | 0 | 0 |
 | Returns | — | 0 | 0 | 0 | 0 | 0 | 0 |
-| **Total** | | **223** | **60** | **125** | **38** | **114** | **36** |
+| **Total** | | **223** | **60** | **125** | **38** | **114** | **37** |
