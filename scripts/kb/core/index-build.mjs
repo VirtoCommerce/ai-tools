@@ -29,12 +29,31 @@ export function countEvidence(evidence = []) {
   // (`duplicateSession`, merge-entries.mjs) is kept for provenance and not counted: one agent seeing
   // one fact once, filed twice, is one observation, not a corroboration.
   const items = (Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession);
-  const contradicting = items.filter((e) => e?.contradicts);
+  const contradicting = distinctDisputes(items);
   // `disputed` counts the OPEN disputes only. A dispute a judge resolved stays on the entry -- it is
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
   return { trust: supportOf(items).length, disputed: contradicting.length - resolved, resolved };
+}
+
+/**
+ * The contradicting items, ONE PER DISPUTE. A split followed by a merge can carry one dispute into an
+ * entry twice -- same `by`, same `at`, each copy stamped with a different `mergedFrom` -- and counted
+ * per item, KB-2F64A447 showed 8 open disputes where four sessions had disputed it (vc-knowledge@main,
+ * 2026-10-12). `applyResolution` already closes every copy of one dispute together; this counts them
+ * together. A dispute stays OPEN while any copy is open, so a half-closed pair is never hidden. An
+ * item without `by` or `at` cannot be matched to another and counts on its own.
+ */
+export function distinctDisputes(items = []) {
+  const byKey = new Map();
+  (Array.isArray(items) ? items : []).forEach((e, i) => {
+    if (!e?.contradicts) return;
+    const key = e.by && e.at != null ? `${e.by}|${e.at}` : `#${i}`;
+    const kept = byKey.get(key);
+    if (!kept || (isResolved(kept) && !isResolved(e))) byKey.set(key, e);
+  });
+  return [...byKey.values()];
 }
 
 /** The judge's own observation (`kb:disputes observe`): made of the behaviour the verdict settles. */
