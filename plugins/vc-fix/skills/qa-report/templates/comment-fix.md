@@ -2,7 +2,7 @@
 kind: fix
 budget: 1200
 lede_max: 280
-trim: [BEFORE_AFTER, ISSUES, BUGS]
+trim: "[BEFORE_AFTER, ISSUES, BUGS]"
 ---
 ## {{ICON}} Fix {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}

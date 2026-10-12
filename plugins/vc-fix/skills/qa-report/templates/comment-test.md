@@ -2,7 +2,7 @@
 kind: test
 budget: 1500
 lede_max: 320
-trim: [BUGS, NOT_FILED]
+trim: "[BUGS, NOT_FILED]"
 ---
 ## {{ICON}} QA {{VERDICT_LABEL}} — {{TICKET}}
 {{LEDE}}

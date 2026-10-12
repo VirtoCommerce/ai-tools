@@ -20,7 +20,9 @@ export function parseTemplate(text) {
   for (const line of m[1].split(/\r?\n/)) {
     const kv = /^(\w+):\s*(.*)$/.exec(line.trim());
     if (!kv) continue;
-    const v = kv[2].trim();
+    const raw = kv[2].trim();
+    // A quoted value is the YAML-safe spelling of the same one (a bare `[` fails the frontmatter guard).
+    const v = raw.length >= 2 && (raw[0] === '"' || raw[0] === "'") && raw.at(-1) === raw[0] ? raw.slice(1, -1) : raw;
     meta[kv[1]] = v.startsWith("[") ? v.slice(1, -1).split(",").map(s => s.trim()).filter(Boolean)
       : /^\d+$/.test(v) ? Number(v) : v;
   }

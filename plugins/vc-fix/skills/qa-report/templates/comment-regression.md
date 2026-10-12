@@ -2,7 +2,7 @@
 kind: regression
 budget: 1500
 lede_max: 280
-trim: [FAILURES, BUGS]
+trim: "[FAILURES, BUGS]"
 ---
 ## {{ICON}} Regression {{VERDICT_LABEL}} — {{RUN_ID}}
 {{LEDE}}

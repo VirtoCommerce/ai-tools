@@ -2,7 +2,7 @@
 kind: smoke
 budget: 900
 lede_max: 200
-trim: [FAILURES, BUGS]
+trim: "[FAILURES, BUGS]"
 ---
 ## {{ICON}} Smoke {{VERDICT_LABEL}} — {{RUN_ID}}
 {{LEDE}}
