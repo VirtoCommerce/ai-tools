@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 import { resolveTestEnv } from './scripts/lib/resolve-test-env.js';
 import { loadProjectProfile } from './scripts/lib/project-profile.mjs';
+import { CORE_REQUIRED_VARS, promoteEnvSuffix } from './scripts/lib/env-core.js';
 
 // Layered env loader. Precedence (later overrides earlier):
 //   1. .env.defaults       — cross-env constants (sandbox cards, builder.io URL)
@@ -32,15 +33,8 @@ config({ path: '.env.defaults', quiet: true });
 config({ path: `.env.${TEST_ENV}`, override: true, quiet: true });
 config({ path: '.env.local', override: true, quiet: true });
 
-// Per-env override promotion: any key ending in `_${TEST_ENV.toUpperCase()}`
-// is promoted to its base name. Lets `.env.local` carry per-env password
-// variants (e.g. USER_PASSWORD_VIRTOSTART) without leaking into committed files.
-const ENV_SUFFIX = `_${TEST_ENV.toUpperCase()}`;
-for (const [key, value] of Object.entries(process.env)) {
-    if (key.endsWith(ENV_SUFFIX) && value) {
-        process.env[key.slice(0, -ENV_SUFFIX.length)] = value;
-    }
-}
+// Per-env override promotion — rule lives in scripts/lib/env-core.js.
+promoteEnvSuffix(TEST_ENV);
 
 // ENV_RISK: safety-by-config (not by env name). Production-risk envs block
 // admin-write suites by default; opt-in via --allow-admin-writes-on-prod.
@@ -66,18 +60,7 @@ if (ENV_RISK === 'production') {
 // stance forced customers who don't use Figma or Postman to set placeholder
 // keys just to run env:check. Splitting unblocks the smoke flow.
 
-const coreRequiredVars = [
-    // URLs (both surfaces)
-    'FRONT_URL',
-    'BACK_URL',
-    // Credentials (both surfaces)
-    'ADMIN',
-    'ADMIN_PASSWORD',
-    'USER_EMAIL',
-    'USER_PASSWORD',
-    // Store context
-    'STORE_ID',
-];
+const coreRequiredVars = CORE_REQUIRED_VARS; // single source: scripts/lib/env-core.js
 
 // Feature-gated: required ONLY when the corresponding skill/suite runs.
 // The orchestrator/skill checks at dispatch time; env:check just warns here.

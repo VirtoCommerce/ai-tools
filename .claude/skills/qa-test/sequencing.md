@@ -70,13 +70,11 @@ ceiling for this kind of win. Two things actually cost:
 **So the rule is: independent operations go out in ONE message; dependent ones state what they consume.**
 This is the harness's own guidance applied per step, not a new mechanism.
 
-### `1b` is two I/O waves, not nine steps
+### `1b` is two I/O waves, not nine steps (stated in `intake.md` §1b)
 
 | Wave | Contains | Consumes |
 |---|---|---|
-| **A** — one message | item 1 env health · item 2 build/version (both GitHub reads + the `/api/platform/modules` probe) · item 2-release release-ledger read · item 2b's local reads (suite manifest, repo-router) · item 3 sprint resolve → item 4 duplicate check | only `1a`'s fetch |
-| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface` and **2e** `coverage_surface` — pure computation over what Wave A returned | Wave A |
-| **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope`, **scope + risk terms ONLY** ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
+| **`1b`'s waves** (*before A* · **A** · *no I/O* · **B**) | the wave table is stated once, in [`intake.md`](intake.md) §1b — [`contract-refresh.md`](contract-refresh.md) §2 and [`coverage-triage.md`](coverage-triage.md) §4 own what wave B's refreshers and `tc:scope` do | `1a`'s fetch + 2g; wave B consumes `2b`'s token |
 
 **Wave B's scan takes no `--cases`/`--also-ids`** — neither exists yet, and passing them would mark every
 future Draft row `FILTERED_OUT`, the failure the `2a` phase exists to prevent (§4). Wave B **scans only** —
@@ -89,10 +87,8 @@ Two more waves follow the same test, and both were serial for no reason anyone h
 | **Step 1c/1d + 2-load** — one message | `1c` ‖ `1d` ‖ **`1r` reachability** (FULL, ~5 min) ‖ **`1c-map`** (only when 2g says `ABSENT` + all-layer, FULL) ‖ **the domain-keyed oracle text** (`BL-*` / `ECL-*` / `E2E-*` / `VC-*` / the UI + a11y set) | only `1a`'s domains + `1b`'s tokens — **nothing `1c` returns**, which is why waiting a full dispatch wave to open a markdown file was pure latency. `1c-map` is domain-scoped where `1c` is ticket-scoped: they share prior art and consume nothing of each other's, so the map costs the run a lane, not a wave. Only `2-topup` (the VirtoOZ gap fill) is genuinely downstream |
 | **Step 3** — one message | `3a` test-data ‖ **`3x` discovery** ‖ `B` checklist | `1e` + Step 2. `3a` is browserless, `3x` takes exactly one lane, `B` is pure authoring — mutually independent. **Artifact A alone waits on all three** |
 
-Items 3 → 4 stay ordered inside Wave A as the command states. They are both local globs costing
-milliseconds, so splitting them buys nothing — **and that is the general test: parallelise where the
-operations are independent *and* the cost is real.** Reordering something free to look concurrent is
-churn.
+**The general test: parallelise where the operations are independent *and* the cost is real.**
+Reordering something free to look concurrent is churn.
 
 ### What must NOT be parallelised — each for a reason the repo paid for
 
