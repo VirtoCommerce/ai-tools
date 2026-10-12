@@ -157,11 +157,13 @@ Test scope: [STR + regression checks]
 
 **Precondition:** Original STR passes 3 consecutive times, no regressions found.
 **Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`skills/qa-report/templates/comment-fix.md`) — never typed here.
+The call needs `--lede` (one to three sentences saying what happened; no machine record supplies it) — full invocation in `commands/qa-verify-fix.md` Step 6. If the Skill tool refuses `vc-fix:qa-report`, the install predates it: run `/plugin update` and stop the report step — never type the comment by hand.
 
 ### 3.3 TESTING → REOPEN (Need fixes)
 
 **Precondition:** STR still fails OR new issue introduced by fix.
 **Required comment:** rendered by `/vc-fix:qa-report --kind fix` (`skills/qa-report/templates/comment-fix.md`) — never typed here.
+The call needs `--lede` (one to three sentences saying what happened; no machine record supplies it) — full invocation in `commands/qa-verify-fix.md` Step 6. If the Skill tool refuses `vc-fix:qa-report`, the install predates it: run `/plugin update` and stop the report step — never type the comment by hand.
 
 ### 3.4 TESTED → DONE (Move to done)
 
