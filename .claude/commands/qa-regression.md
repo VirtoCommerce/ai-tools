@@ -270,11 +270,11 @@ look inside the run folder):
 
 Then flip `reports/regression/test-run-status.json` to `status: "completed"` (set `finishedAt`). The Step 3 live watcher detects this, emits the final static HTML (auto-refresh removed), and exits.
 
-**Guarantee the HTML report** (belt-and-suspenders, in case the watcher never started or was killed): run the one-shot generator once —
+**Guarantee the HTML report** (in case the watcher never started): run the one-shot generator once —
 ```
 npm run report:regression -- --run-id {RUN_ID}
 ```
-This writes `reports/regression/{RUN_ID}/regression-report.html` from the same `suite-*-results.json` files.
+Writes `reports/regression/{RUN_ID}/regression-report.html` from the `suite-*-results.json` files.
 
 ### Step 6.5 — Post-run promotion (`Draft → Automated`)
 
@@ -335,7 +335,7 @@ Output the verdict, pass rate, bugs, **the Step-6.5 promotion line** (`N promota
 delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`
 (`regression-YYYY-MM-DD.md`, `regression-report.html`). Then `/vc-fix:qa-report {RUN_ID} --verdict <Step 6 Quality
 Gate verdict> --lede "<is the sweep clean, and if not do the failures share a cause>"` (+ `--ticket <KEY> --bugs <keys>` when the run
-belongs to a ticket) — comment + page.
+belongs to a ticket) — comment + page. Skill refused ⇒ `/plugin update`, stop the report step.
 
 ---
 

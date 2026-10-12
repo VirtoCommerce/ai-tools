@@ -115,7 +115,7 @@ or path that returns becomes the finding's proposed route. They are handed to th
 
 ## HTML page
 
-Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment.
+Write the page's extras to `<scratchpad>/extra.json` from `verdict.md`: `lede` = the one sentence — **mandatory**, and it is what satisfies D7 for this caller; `rows` = the AC table (`id`, `text`, `result`, `evidence`); `notTested`; `context` = the Data and Context-used lines as `{label, value}`; `shots` ≤ 4. Then run `/vc-fix:qa-report reports/tickets/{SPRINT}/<TICKET>/summary.json --kind test --extra <scratchpad>/extra.json`. It loads `artifact-design`, publishes the page, renders the comment with its link, and asks the one question in §Tracker comment. Skill refused ⇒ the install predates it: `/plugin update`, stop the report step — never type the page or comment by hand.
 
 **Audience: Anyone at Virto Commerce.** The page is read by the ticket's developers and PO through the
 tracker comment's link, so it is shared org-wide, not kept to its author. The Artifact tool publishes

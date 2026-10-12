@@ -172,7 +172,7 @@ Output verdict, pass rate, bugs found, and report path to the user.
 
 Then `/vc-fix:qa-report {RUN_ID} --verdict <GO|CONDITIONAL_GO|NO_GO> --lede "<is the build safe to go on with, and what is the one
 blocker when it is not>" --set GATES="<the Step 4 gate lines>"` (+ `--ticket <KEY>` when the smoke gates a ticket or release)
-for the brief comment and the shareable page. Skill refused ⇒ `/plugin update`.
+for the brief comment and the shareable page. Skill refused ⇒ `/plugin update`, stop the report step.
 
 ---
 

@@ -121,10 +121,10 @@ Triage, the verdict rules, the report shapes and the tracker comment:
    §5-verdict.2.
 4. **Write the ticket folder:** `summary.json`, `verdict.md`, and the updated `testing-checklist.md`.
    Then run `npm run summary:validate`.
-5. **HTML page and comment.** Build the page and the comment through `/vc-fix:qa-report` ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page).
-6. **Ask once:** "Post the verdict comment to <TICKET>?" Yes ⇒ post it per [`verdict.md`](../skills/qa-test-fast/verdict.md) §Tracker
-   comment, and write the returned id into `summary.json.tracker.comment_id` — a same-build re-run amends that id
-   (Step 0.3); a new build posts a new comment. No status transition.
+5. **HTML page and comment — ONE `/vc-fix:qa-report` call** ([`verdict.md`](../skills/qa-test-fast/verdict.md) §HTML page). It builds the page and the comment. Skill refused ⇒ `/plugin update`, stop the report step.
+6. **The post.** `qa-report` asks the one question (never ask it again here); on yes, write the returned id into
+   `summary.json.tracker.comment_id` — a same-build re-run amends that id (Step 0.3); a new build posts a new
+   comment. No status transition.
 7. **Bank what the run established.** For each platform behaviour the verdict states: matched ⇒
    `kb_confirm`, contradicted ⇒ `kb_dispute`, base held nothing ⇒ `kb_capture`
    (`.claude/knowledge/execution/kb-capture-contract.md`). Public base — nothing client-specific. List the ids in
