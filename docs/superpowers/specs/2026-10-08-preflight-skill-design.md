@@ -114,10 +114,10 @@ plan. Imports `ci/lib/manifest-preflight.ts`, `ci/lib/suite-manifest.ts` — mod
 | 1 | env alive | core `health` | DOWN ⇒ BLOCK |
 | 2 | every suite has a CSV and an executor | `preflightManifest()` (existing) | BLOCK, all problems at once |
 | 3 | no active run | `regression:reap` classification | ACTIVE ⇒ BLOCK · STALLED ⇒ BLOCK naming `regression:reap:apply` (never applies it itself) |
-| 4 | **module gating derived, not configured** | `requiresModules` × `deployed`; plus `storefrontVisible` for `layer: frontend` suites | missing ⇒ suite removed from the schedule as `NOT_DEPLOYED` (BLOCKED-on-deploy, never FAIL). `deployed: UNKNOWN` ⇒ no gating, WARN (fail-open). `MODULES_ENABLED`, when set, still applies (existing behaviour) and is recorded |
+| 4 | **module gating derived, not configured** | `requiresModules` × `deployed` (entry → module id per §14); plus `storefrontVisible` for `layer: frontend` suites | missing ⇒ suite removed from the schedule as `NOT_DEPLOYED` (BLOCKED-on-deploy, never FAIL). `deployed: UNKNOWN` ⇒ no gating, WARN (fail-open). An entry that resolves to no module id ⇒ UNKNOWN `unmapped-requires:<entry>` row naming its suites; the suite runs (fail-open). `MODULES_ENABLED`, when set, still applies (existing behaviour) and is recorded |
 | 5 | **what moved since the baseline** | `deployed` now vs `reports/regression/baseline.<env>.json` | `changedSince[]` → the suites requiring them are named "false-failure risk" in the report header. No baseline ⇒ `baseline: UNKNOWN`, no Δ, not an error |
 | 6 | ⚠ BREAKING in the selected suites' components | core `ledger` | WARN, false-failure risk (replaces `qa-regression` Step 0.4 prose) |
-| 7 | drift on the selected suites' modules | core `drift` | WARN; one question to the user |
+| 7 | drift on the selected suites' modules | core `drift` | **BLOCK** (one question: wait · proceed as is · stop — §8a rule 7). Drift only on modules no selected suite requires ⇒ WARN, no question (§14) |
 | 8 | smoke gate integrity | `npm run suites:gates` | `smoke` only; unmapped cases ⇒ verdict provisional |
 | 9 | browser lanes | `mcp[]` levels 1–2 (§7) | pool = live lanes; WARN with the projected duration when fewer than 3 |
 
@@ -324,6 +324,7 @@ action}}`. The agreed starting set (normative once it is in code):
 - `commands/qa-regression.md` Step 0 and `commands/qa-smoke.md` Step 0 → skill (build-scoped entry);
   smoke's Context7 item becomes the kb → VirtoOZ order.
 - Delete `reports/deploy-state-cache.json` and its references.
+- **Done** in this PR — decisions in §14; plan `docs/superpowers/plans/2026-10-12-preflight-phase-2.md`.
 
 ## 10. Out of scope
 
@@ -349,7 +350,8 @@ Plan: `docs/superpowers/plans/2026-10-08-preflight-phase-1.md`.
 - **Module id ↔ repo:** the `projectUrl` that `/api/platform/modules` already returns, via
   `repoFromProjectUrl()`; `moduleIdToRepoGuess()` only when it is absent, flagged `repoGuessed`.
   Both are imported from `plugins/vc-fix/skills/qa-fix-routing/module-registry.ts` — no new table.
-  The `requiresModules` slug mapping is phase 2's (`resolveSuiteSource()` already owns it).
+  The `requiresModules` mapping is phase 2's — decided in §14 (`resolveSuiteSource()` does **not** own
+  it: it deliberately refuses to turn a slug into a repo).
 - **`probe-store-capabilities.mjs`** stays a CLI, as a thin wrapper over `scripts/lib/storefront-caps.mjs`.
 - **`mcp-requirements.json`** is validated by its loader, failing loud on a malformed file. No schema
   file and no new gate.
@@ -376,3 +378,46 @@ only (D1). `/ticket-context` plans to move to the `vc-fix` plugin (its Phase 5),
 reference the repo root's `scripts/lib/`. When that move happens, either the core is copied into the
 plugin deliberately (as `knowledge/` already is) or D1 is revisited and the core moves to the plugin.
 Not blocking: Phase 5 is triggered only when a client deployment needs it. Decide then, in both specs.
+
+## 14. Phase-2 design decisions (2026-10-12)
+
+Settled before the phase-2 plan, from what phase 1 and its first live runs showed.
+
+**D9 — drift on a selected suite's module is a BLOCK.** §6 row 7 said "WARN; one question", which
+contradicts §8a rule 7 (a question arises only from a BLOCK). Drift is `declared ≠ deployed`: a deploy
+in flight, failed or partial. Mid-regression a landing deploy restarts the platform and fails dozens of
+suites falsely, which costs hours of run. So drift on a module that a **selected** suite requires is a
+BLOCK with the one question (wait · proceed as is · stop); "proceed as is" covers a permanent drift (a
+hand-pinned module) where waiting is pointless. Drift on modules no selected suite requires stays a WARN
+and asks nothing. Platform drift (§4) counts as touching every suite.
+
+**D10 — `requiresModules` resolves to a module id by one rule; the manifest carries exact ids where the
+rule cannot.** Measured on `main` 2026-10-12: 30 distinct values across 72 of 154 suites, in two
+vocabularies — 25 short names (`sales-rep`) and 5 full ids (`VirtoCommerce.UCP`).
+
+- **Rule:** an entry that is a full id (`VirtoCommerce.*`) is used as is (case-insensitive); otherwise
+  `VirtoCommerce.` + PascalCase(entry) (`sales-rep` → `VirtoCommerce.SalesRep`). That resolves 26 of 30.
+- **No fuzzy matching, ever.** "Contains" resolves `cms` to `VirtoCommerce.XCms`, but the `cms` suites
+  (059, 060, 060b) are Page Builder: gating on it would drop or keep suites on someone else's module.
+- **The four the rule cannot resolve get exact ids in `config/test-suites.json`** (11 suites):
+
+  | Entry | Suites | Module id | Why the rule fails |
+  |---|---|---|---|
+  | `returns` | 014c, 050o, 073, 073a, 073b | `VirtoCommerce.Return` | plural |
+  | `cms` | 059, 060, 060b | `VirtoCommerce.PageBuilderModule` | the area name, not the module |
+  | `import-export` | 064, 064b | `VirtoCommerce.CatalogCsvImportModule` | three modules fit the name; tags `csv`, `catalog` |
+  | `channels` | 076 | `VirtoCommerce.CatalogPublishing` | no module of that name (`/api/channels/`) |
+
+  The plan confirms each id against the suite's own steps before writing it. This is not a transcribed
+  constant: it records the suite author's declaration in the form that has a source of truth (the
+  `module.manifest` id). A side table `slug → id` was rejected as a second vocabulary that drifts.
+- **Unresolvable entry ⇒** an UNKNOWN `unmapped-requires:<entry>` row naming its suites; the suite runs.
+- **Risk recorded, not fixed (D7):** `ci/lib/suite-manifest.ts` compares `requiresModules` to
+  `MODULES_ENABLED` as strings. With `MODULES_ENABLED` unset (the default) nothing changes; a CI run that
+  sets it to short names would skip the 11 suites above. Whoever next sets `MODULES_ENABLED` uses ids for
+  those entries.
+- The schema description of `requiresModules` in `config/test-suites.schema.json` says it holds "VC
+  modules … e.g. ['cms', …]"; the plan updates it to the rule above.
+
+**D11 — the platform version is live** (amended §4, PR #424): `deployed.platform` comes from the Admin
+page, so the platform takes part in drift (D9) and in the release-ledger Δ like any module.

@@ -6,7 +6,7 @@ import { CORE_REQUIRED_VARS, promoteEnvSuffix } from "./env-core.js";
 import { resolveTestEnv } from "./resolve-test-env.js";
 import { loadEnvFiles, resolveEnvCoords, REPO_ROOT, type EnvCoords } from "../deploy/lib/env.ts";
 import { fetchFile, setToken } from "../deploy/lib/github.ts";
-import { platformHealthy, probeAdminToken, probeLiveModules, probePlatformVersion } from "../deploy/lib/live.ts";
+import { platformHealthy, probeAdminToken, probeLiveModules, probePlatformVersion, type LiveModule } from "../deploy/lib/live.ts";
 import { listPinnedModules, THEME_URL_RE } from "../deploy/lib/manifest.ts";
 import { probeStorefrontModules } from "./storefront-caps.mjs";
 import { readLedger, type Ledger, type LedgerRow } from "./release-ledger-read.ts";
@@ -17,7 +17,18 @@ export interface Unknown { unknown: string }
 export const isUnknown = (v: unknown): v is Unknown => typeof v === "object" && v !== null && "unknown" in v;
 const U = (reason: string): Unknown => ({ unknown: reason });
 
-export interface DeployedModule { version: string; repo: string | null; repoGuessed: boolean }
+export interface DeployedModule { version: string; repo: string | null; repoGuessed: boolean; loadErrors: string[] }
+
+/** The deployed module map: lower-cased id → module. A module the API lists as not installed is not deployed. */
+export function toDeployedModules(list: LiveModule[]): Record<string, DeployedModule> {
+  const modules: Record<string, DeployedModule> = {};
+  for (const m of list) {
+    if (m.isInstalled === false) continue;
+    const fromUrl = repoFromProjectUrl(m.projectUrl);
+    modules[m.id.toLowerCase()] = { version: m.version, repo: fromUrl ?? moduleIdToRepoGuess(m.id), repoGuessed: !fromUrl, loadErrors: m.loadErrors };
+  }
+  return modules;
+}
 export interface DriftRow { id: string; declared: string | null; deployed: string | null }
 export interface ReleasedNotDeployed { component: string; repo: string; released: string; deployed: string | null; feature: string }
 /** `releasedNotDeployed` is UNKNOWN when `deployed` is — "released, not deployed" cannot be told from "not probed". */
@@ -167,12 +178,7 @@ export async function getEnvFacts(opts: EnvFactsOptions = {}): Promise<EnvFacts>
     const live = await probeLiveModules(c, tok.token);
     if (!live.ok) deployed = U(`modules: ${live.status}`);
     else {
-      const modules: Record<string, DeployedModule> = {};
-      for (const m of live.modules) {
-        const fromUrl = repoFromProjectUrl(m.projectUrl);
-        modules[m.id.toLowerCase()] = { version: m.version, repo: fromUrl ?? moduleIdToRepoGuess(m.id), repoGuessed: !fromUrl };
-      }
-      deployed = { platform: livePlatform, modules };
+      deployed = { platform: livePlatform, modules: toDeployedModules(live.modules) };
     }
   }
 
