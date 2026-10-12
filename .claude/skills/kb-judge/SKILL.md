@@ -141,8 +141,9 @@ second branch opened alongside the first must be brought up to date by hand.
    a hit. `resolve` takes only an active entry (a retired one is judged on its successors).
    `claim-amended` records the hash of the body `main` holds (`--main <ref>`, default `origin/main`)
    and refuses while the body is still that one — edit the claim first.
-4. After body edits, `npm run kb -- reindex --base <base>`, then `git -C <base> diff` — every change
-   must be one a verdict explains.
+4. `git -C <base> diff` — every change must be one a verdict explains. `observe` and `resolve` rewrite
+   only the touched entry's index row; never run `kb reindex` on a judge branch, which also rewrites
+   every stale row in the base (`list` names them; they are repaired by a separate reindex PR).
 
 ## Step 7 — Open the PR, never merge it
 

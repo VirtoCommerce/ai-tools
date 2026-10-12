@@ -7,7 +7,7 @@
 //   observe <KB-id> --deployment <stand> --conditions "k=v; k=v" --note "<what was seen>"
 //                                the investigation's observation of a disputed entry, on the judge's branch
 //   resolve <KB-id> --at <iso> [--by <session:...>] --verdict <v> --why "<one sentence>" --in <PR or branch>
-//           [--main <ref>]       close ONE dispute on the entry, in place, and rebuild the index (`kb reindex`);
+//           [--main <ref>]       close ONE dispute on the entry, in place, and rewrite that entry's index row;
 //                                `claim-amended` records the hash of the body `main` (default origin/main) holds
 //
 // Reads a LOCAL checkout of the base (entries + logs). `resolve` writes only to that checkout and
@@ -19,10 +19,9 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { openBase } from './core/base.mjs';
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
-import { buildRow, claimHash, isInvestigation, RESOLUTIONS } from './core/index-build.mjs';
-import { reindex, standName } from './core/verbs.mjs';
+import { buildIndex, buildRow, claimHash, isInvestigation, RESOLUTIONS } from './core/index-build.mjs';
+import { standName } from './core/verbs.mjs';
 import { appendObservation, applyResolution, clusters, disputeState, dossier, exposure, hints, priority } from './core/disputes.mjs';
 import { normalizeConditions, repairConditions } from './core/conditions.mjs';
 import { undoMsysRewrite } from './core/anchors.mjs';
@@ -55,8 +54,7 @@ function parseArgs(argv) {
 
 /**
  * Every entry that parses, and every one that does not. One broken file used to throw out of the
- * whole command; now the reading verbs say which and go on, and the writing verbs refuse -- a rebuilt
- * index would silently drop the broken entry's row (`kb reindex` reports that as "removed").
+ * whole command; now every verb says which and goes on (a write touches one entry and its own row).
  */
 function readEntries(base) {
   const entries = [];
@@ -166,20 +164,23 @@ async function main() {
   a.flags.conditions = repairConditions(a.flags.conditions, process.env);
   const { entries, broken } = readEntries(a.flags.base);
   const byId = new Map(entries.map((e) => [String(e.data.id).toUpperCase(), e]));
-  const writing = a.verb === 'observe' || a.verb === 'resolve';
-  if (broken.length) {
-    for (const b of broken) console.error(`! ${b.path} does not parse: ${b.why}`);
-    if (writing) { console.error('refused: rebuilding the index now would drop the broken entr(ies); fix them first'); return 1; }
-  }
+  for (const b of broken) console.error(`! ${b.path} does not parse: ${b.why}`);
 
-  // One entry rewritten byte-stably, then the index rebuilt by `kb reindex` itself -- the one
-  // implementation that honours the plane -> index map in kb.json.
+  // One entry rewritten byte-stably, then ONLY ITS ROW in the index its plane maps to (kb.json).
+  // Not `kb reindex`: that rewrites every stale row in the base too, and a judge's diff must hold
+  // nothing a verdict does not explain (/kb-judge Step 6). `list` names the stale rows; repairing
+  // them is a separate `kb reindex`, reviewed on its own. Rows are kept as written, as push keeps them.
   const write = async (entry, data) => {
+    const manifestPath = join(a.flags.base, 'kb.json');
+    const indexes = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')).indexes ?? {} : { experiential: 'index.json' };
+    const file = indexes[String(data.plane ?? 'experiential')];
+    if (!file) throw new Error(`plane "${data.plane}" of ${data.id} is not in kb.json indexes; nothing was written`);
+    const indexPath = join(a.flags.base, file);
+    const rows = existsSync(indexPath) ? JSON.parse(readFileSync(indexPath, 'utf8')).entries ?? [] : [];
+    const row = buildRow(data, entry.path);
     writeFileSync(join(a.flags.base, entry.path), `${stringifyFrontmatter(data)}\n${entry.body}`);
-    const r = await reindex(openBase({ baseArg: a.flags.base }), { write: true });
-    if (r.state !== 'answer') console.error(`warning: the entry was written but the index was not rebuilt (${r.state}${r.why ? `: ${r.why}` : ''}); run \`npm run kb -- reindex --base ${a.flags.base}\``);
-    for (const p of r.problems ?? []) console.error(`! ${p.path} -- ${p.why}`);
-    return buildRow(data, entry.path);
+    writeFileSync(indexPath, `${JSON.stringify(buildIndex([...rows.filter((r) => String(r.id).toUpperCase() !== row.id.toUpperCase()), row]), null, 2)}\n`);
+    return row;
   };
 
   if (a.verb === 'observe') {
@@ -236,7 +237,7 @@ async function main() {
     if (me && filedBy.includes(me)) console.error(`note: this dispute was filed by the same operator (${me}) in another session -- say so in the PR`);
     const row = await write(entry, r.data);
     console.log(`resolved the dispute at ${a.flags.at} on ${a.id} as ${a.flags.verdict}; ${row.disputed} open, ${row.resolved ?? 0} resolved`);
-    console.log('index rebuilt. Review with `git diff`, commit on the cluster branch, open the PR. Nothing was committed.');
+    console.log('its index row rewritten. Review with `git diff`, commit on the cluster branch, open the PR. Nothing was committed.');
     return 0;
   }
 
