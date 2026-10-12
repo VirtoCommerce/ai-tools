@@ -169,8 +169,11 @@ async function main(argv) {
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);
-    if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
-    else out(`index     ${r.state} — ${r.why}`);
+    if (r.state === 'answer') {
+      out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
+      const d = r.disputes;
+      out(`disputes  ${d.open} open on ${d.openEntries} entr(ies) · ${d.resolved} resolved on ${d.resolvedEntries}`);
+    } else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
   }
 

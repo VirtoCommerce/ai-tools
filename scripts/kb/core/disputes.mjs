@@ -10,7 +10,7 @@
 // declared. The hints are hypotheses for the judge to test live, never a verdict: a dispute is
 // settled by a fresh investigation (stands, storefront, Admin, docs, source), not from the papers.
 
-import { amendmentsOf, attestsCurrentClaim, claimHash, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, claimHash, distinctDisputes, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
 
 export { isInvestigation };
 import { parseConditions } from './conditions.mjs';
@@ -66,7 +66,8 @@ export function disputeState(entry) {
   const d = entry.data;
   if (String(d.status ?? 'active') !== 'active') return null;
   const items = counted(d.evidence);
-  const open = items.filter((e) => e.contradicts && !isResolved(e));
+  const disputes = distinctDisputes(items);
+  const open = disputes.filter((e) => !isResolved(e));
   if (!open.length) return null;
   // What the queue weighs against the dispute: confirmations of the claim as it stands, NOT the
   // judge's own investigation. Counted as support, a judge's `observe` raised `confirmations`, lit the
@@ -83,7 +84,7 @@ export function disputeState(entry) {
     subject: String(d.subject ?? ''),
     confirmations: support.length,
     open: open.length,
-    resolved: items.filter(isResolved).length,
+    resolved: disputes.filter(isResolved).length,
     invalidResolutions: items.filter((e) => e.contradicts && e.resolved && !isResolved(e)).length,
     firstOpenAt,
     concepts: idsIn(d.concepts),
