@@ -19,11 +19,12 @@ You do NOT execute tests yourself. You delegate to specialist sub-agents via the
 
 ## Inputs
 
-Suite selection (one of): `smoke` (042 + the four 078 siblings), `critical` (smoke + 039,044,049), `sprint` (plan-driven), `full` (119 — every manifest suite minus its excludes), `frontend` (all Frontend/ suites), `backend` (all Backend/ suites), or comma-separated IDs (e.g., `042,039,001`). Default: `smoke`. **Never expand a selection by hand — Step 1.5 does it.**
+Suite selection: a manifest `selections` name (`smoke`, `critical`, `sprint` — plan-driven, `full`, `frontend`, `backend`, …) or comma-separated IDs (e.g., `042,039,001`). Default: `smoke`. **Never expand a selection by hand — Step 1.5 does it.**
 
 **Optional flags:**
 - `--seed=<profile>` — Pre-seed test data before regression (profiles: `minimal`, `catalog`, `b2b`, `pricing`, `full`). See Step 0.5.
 - `--teardown` — After report is written, remove all `AGENT-TEST-*` entities. See Step 6.5.
+- `--run-id <RUN_ID>` (+ `--accept drift:…`) — given by `/qa-regression`; Step 1 item 3.
 
 **Always read `config/test-suites.json` as source of truth** — the manifest is authoritative for suite definitions and selection groups.
 
@@ -44,13 +45,13 @@ Suite selection (one of): `smoke` (042 + the four 078 siblings), `critical` (smo
 
 1. Read `config/test-suites.json` — suite definitions, browser pool, selection groups
 2. Resolve selection → ordered list of suite IDs (sort: P0 > P1 > P2)
-3. Generate run ID: `REG-YYYY-MM-DD-HHMM`
+3. Generate run ID: `REG-YYYY-MM-DD-HHMM` — **unless the brief gives one: use it, skip items 4, 6 and 7, and pass it (and the brief's `--accept`) to Step 1.5**; a minted id blocks on the parent's own status file
 4. Create output: `reports/regression/{RUN_ID}/`
 5. **Get the plan (Step 1.5) now** — before the status write, whose fresh `in_progress` the pre-flight lock check would read as an active run
 6. Write `reports/regression/test-run-status.json` from the plan (run-level `in_progress`): dispatch-order suites `pending`, `preflight.gating.gated` suites `not_deployed` (terminal — `regression:close` does not count it as open)
 7. **Launch the live HTML dashboard in the background:** run `npm run report:regression:watch -- --run-id {RUN_ID}` **detached**, never blocking. It opens `reports/regression/{RUN_ID}/regression-report.html` in the browser immediately and self-refreshes (reading `test-run-status.json`) as suites complete, settling into the final static report and exiting when you flip status to `completed` (Step 6). A Node script, not a browser action: it does not trip the real-user hook.
 
-   > **⚠ WATCHER OWNERSHIP — do NOT own the watcher if you are a dispatched sub-agent.** A sub-agent's background processes die with its turn while the run outlives it, so a watcher launched here freezes the dashboard mid-run. **The PERSISTENT session that spans the run owns it:** if a top-level `/qa-regression` session dispatched you, it owns the watcher (`commands/qa-regression.md` Step 3) — **do not launch a duplicate here**. Launch it here **only** when you ARE the top-level/persistent session (invoked directly, not as a sub-agent). Either way the owner must **self-heal**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale, relaunch the watcher (or one-shot `npm run report:regression -- --run-id {RUN_ID}`).
+   > **⚠ WATCHER OWNERSHIP — do NOT own the watcher if you are a dispatched sub-agent.** A sub-agent's background processes die with its turn while the run outlives it, so a watcher launched here freezes the dashboard mid-run. **The PERSISTENT session that spans the run owns it:** dispatched by `/qa-regression` (a RUN_ID in the brief), you skip this item; launch it **only** when invoked directly. Either way the owner must **self-heal**: while the run is `in_progress`, if `regression-report.html` mtime is >~60s stale, relaunch the watcher (or one-shot `npm run report:regression -- --run-id {RUN_ID}`).
 
 ### Step 1.5: Get the run plan (do NOT derive it by hand)
 
