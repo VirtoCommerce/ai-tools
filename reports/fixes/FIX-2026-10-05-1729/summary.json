@@ -9,8 +9,8 @@
     "G1": "PASS",
     "G2": "RED",
     "G3": "GREEN",
-    "G4": "APPROVE",
-    "G5": "GREEN",
+    "G4": "APPROVE (commit 3: REQUEST_CHANGES on TZ restore in test -> fixed)",
+    "G5": "PENDING (7105bd2)",
     "G6": "N/A",
     "G7": "STOP"
   },
@@ -30,7 +30,8 @@
   "confidence": "HIGH",
   "commits": [
     "bd703eb",
-    "710ab0f"
+    "710ab0f",
+    "7105bd2"
   ],
-  "scope": "Last week + Last month presets (Last month added to the ticket and PR on user request 2026-10-05)"
+  "scope": "Last week + Last month + time-zone shift east of UTC (F1 found in live verification 2026-10-06, added on user request)"
 }

@@ -1,18 +1,19 @@
 {
- "runId": "REG-2026-10-05-1752",
- "status": "completed",
- "selection": "returns re-run (--ids ORD-009/010/037/038/039/040)",
- "env": "vcst",
- "startedAt": "2026-10-05T14:52:00Z",
- "finishedAt": "2026-10-05T15:24:12.435Z",
- "suites": [
-  {
-   "id": "014",
-   "status": "done"
-  },
-  {
-   "id": "014b",
-   "status": "done"
-  }
- ]
+  "runId": "REG-2026-10-07-2248",
+  "status": "completed",
+  "selection": "066b (VCST-5989 SEO explain, new Draft suite)",
+  "env": "vcptcore_qa1",
+  "startedAt": "2026-10-07T19:48:00Z",
+  "finishedAt": "2026-10-07T19:55:52.518Z",
+  "suites": [
+    {
+      "id": "066b",
+      "status": "done",
+      "browser": "playwright-edge",
+      "lane": "browser",
+      "pass": 9,
+      "fail": 0,
+      "blocked": 0
+    }
+  ]
 }

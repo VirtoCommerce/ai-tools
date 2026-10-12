@@ -34,3 +34,16 @@ the same PR (vc-frontend #2540).
 
 ## Fix Routing
 - **Repo:** vc-frontend · **Kind:** frontend
+
+## Blocked 2026-10-06
+Verification on vcptcore-qa1 deferred: env runs theme pr-2541 (VCST-6175), not the fix build pr-2540-710a. No transition.
+
+## Same ticket — one-day shift east of UTC (2026-10-06)
+At UTC+3 every preset was applied one day early (Last week Sun–Sun, Last month from Aug 31). Observed live on vcptcore-qa1 during verification; fixed in the same PR (commit 7105bd2).
+
+## Resolution
+- **Fixed in:** vc-frontend PR #2540 (commits bd703eb, 710ab0f, 7105bd2), approved 2026-10-07; merge pending.
+- **Tracker:** VCST-6173 → Tested (2026-10-09).
+- **Verified:** 2026-10-06 on vcptcore-qa1, theme 2.59.0-pr-2540-7105, browser UTC+3 with clock override — Last week 3/3, Last month 3/3, all presets on local days. Report: reports/tickets/Sprint26-20/VCST-6173/verification-report-round2.md
+
+## Status: FIXED

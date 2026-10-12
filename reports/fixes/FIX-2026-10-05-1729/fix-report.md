@@ -19,3 +19,5 @@
 **Second commit `710ab0f` (user request):** "Last month" on the 29th–31st after a shorter month collapsed to an empty range (`setMonth` before `setDate(1)`). Fixed by swapping the two calls; 4 new test cases (2 RED before the fix), 7/7 GREEN in 4 TZ. Ticket description, PR title and PR body updated; Jira comment 111363 amended.
 
 **Env notes:** `yarn` not on PATH and repo pins Node 22 — pre-commit hook ran via a scratch shim (cached Yarn 4.17.0 + portable Node 22.23.3). No `gh` — push via askpass, PR via REST.
+
+**Third commit `7105bd2` (user request, 2026-10-06):** live verification on vcptcore-qa1 (UTC+3 browser) showed every preset applied one day early — presets were `toISOString()` of local midnight cut to the UTC date. Presets now emit `toLocalDateOnly()`. RED at TZ=Europe/Kyiv (Sep 20 / Aug 31), GREEN 9/9 in 4 TZ; 45 existing related tests unmodified and green. Gate 4: reviewer asked to restore `process.env.TZ` correctly when unset — fixed. PR title/body, ticket summary/description updated; comment 111363 amended.

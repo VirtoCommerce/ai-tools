@@ -84,3 +84,6 @@ HTTP 200 throughout; **zero console errors** for the whole session.
   return.
 - Only the **status** chip is affected. Date chips localize correctly in the identical zero-match
   state, which rules out a page-wide i18n failure.
+
+## Verification 2026-10-06
+PASS on vcptcore-qa1 with the PR build (theme 2.59.0-pr-2541-38b2): STR 3/3, checklist 9/9. The ticket is in Testing; it moves to fixed/ after the PR is merged. Report: reports/tickets/Sprint26-20/VCST-6175/verification-report.md
