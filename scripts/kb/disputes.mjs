@@ -57,6 +57,22 @@ function readEntries(base) {
   });
 }
 
+/** Rows of index.json whose counts differ from what the entry's own evidence gives, as lines. */
+function indexDrift(base, entries) {
+  let rows;
+  try { rows = JSON.parse(readFileSync(join(base, 'index.json'), 'utf8')).entries ?? []; } catch { return []; }
+  const byId = new Map(rows.map((r) => [String(r.id).toUpperCase(), r]));
+  const out = [];
+  for (const e of entries) {
+    const row = byId.get(String(e.data.id).toUpperCase());
+    if (!row) continue;
+    const want = buildRow(e.data, e.path);
+    const pairs = ['trust', 'disputed', 'resolved'].filter((k) => (row[k] ?? 0) !== (want[k] ?? 0));
+    if (pairs.length) out.push(`${want.id}  ${pairs.map((k) => `${k} ${row[k] ?? 0} -> ${want[k] ?? 0}`).join(', ')}`);
+  }
+  return out;
+}
+
 function readLogs(base) {
   const dir = join(base, 'log');
   if (!existsSync(dir)) return [];
@@ -161,9 +177,18 @@ function main() {
     console.log(JSON.stringify(groups.map((g) => g.map((s) => ({ ...s, exposure: exp.get(s.id), hints: hints(s) }))), null, 2));
     return 0;
   }
-  const active = entries.filter((e) => String(e.data.status ?? 'active') === 'active').length;
-  const resolvedEntries = entries.filter((e) => buildRow(e.data, e.path).resolved).length;
-  console.log(`${states.length} of ${active} active entries hold an open dispute, in ${groups.length} cluster(s); ${resolvedEntries} entr(ies) carry a resolved one`);
+  // Active entries only, as `/kb-report` panel 5 counts them, so the two numbers agree.
+  const live = entries.filter((e) => String(e.data.status ?? 'active') === 'active');
+  const resolvedEntries = live.filter((e) => buildRow(e.data, e.path).resolved).length;
+  console.log(`${states.length} of ${live.length} active entries hold an open dispute, in ${groups.length} cluster(s); ${resolvedEntries} entr(ies) carry a resolved one`);
+  // ROWS THE INDEX GOT WRONG. A client older than VCST-6179 rebuilds the row of any entry it writes
+  // with resolved disputes counted as open, and nothing else notices: `ask` compares only `trust`.
+  // The entries are the truth and are already read here, so say which rows disagree and the repair.
+  const drift = indexDrift(a.flags.base, entries);
+  if (drift.length) {
+    console.log(`\n! index.json disagrees with ${drift.length} entr(ies) on trust/disputed/resolved (stale rows: an older client rebuilt them, or the counting rule changed); repair with \`npm run kb -- reindex --base ${a.flags.base}\` and commit index.json`);
+    for (const d of drift.slice(0, 20)) console.log(`   ${d}`);
+  }
   groups.forEach((g, i) => {
     const concepts = [...new Set(g.flatMap((s) => s.concepts))].slice(0, 4).join(', ') || g[0].anchors[0] || '—';
     console.log(`\n${i + 1}. ${concepts}  (${g.length})`);

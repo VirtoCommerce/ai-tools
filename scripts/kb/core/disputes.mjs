@@ -10,7 +10,9 @@
 // declared. The hints are hypotheses for the judge to test live, never a verdict: a dispute is
 // settled by a fresh investigation (stands, storefront, Admin, docs, source), not from the papers.
 
-import { isResolved, RESOLUTIONS } from './index-build.mjs';
+import { amendedAt, attestsCurrentClaim, isInvestigation, isResolved, RESOLUTIONS } from './index-build.mjs';
+
+export { isInvestigation };
 import { parseConditions } from './conditions.mjs';
 import { NOTE_MAX } from './verbs.mjs';
 
@@ -32,9 +34,6 @@ const cmpAt = (a, b) => {
 };
 const atOrBefore = (a, b) => cmpAt(a, b) <= 0;
 const after = (a, b) => cmpAt(a, b) > 0;
-
-/** The investigation's own observation (`appendObservation`): the one item that does not make its session a party. */
-export const isInvestigation = (e) => e?.investigation === true && !e?.contradicts;
 
 /** An entry a judge may still work on: active, with at least one open dispute. */
 const hasOpenDispute = (data) => String(data?.status ?? 'active') === 'active'
@@ -64,7 +63,11 @@ export function disputeState(entry) {
   const items = counted(d.evidence);
   const open = items.filter((e) => e.contradicts && !isResolved(e));
   if (!open.length) return null;
-  const support = items.filter((e) => !e.contradicts);
+  // What the queue weighs against the dispute: confirmations of the claim as it stands, NOT the
+  // judge's own investigation. Counted as support, a judge's `observe` raised `confirmations`, lit the
+  // "dispute wrong?" hint and dropped the entry down the queue before any verdict was given.
+  const cut = amendedAt(items);
+  const support = items.filter((e) => !e.contradicts && !isInvestigation(e) && attestsCurrentClaim(e, cut));
   const firstOpenAt = open.map((e) => String(e.at ?? '')).sort(cmpAt)[0];
   const sessionsOf = (xs) => new Set(xs.map((e) => e.by).filter(Boolean));
   const supportSessions = sessionsOf(support);
@@ -168,9 +171,11 @@ export function dossier(entry, { exp = null, state = null } = {}) {
   ];
   if (exp) lines.push(`- served since the first open dispute: ${exp.asks} ask(s), ${exp.shows} show(s)`);
   if (state) for (const h of hints(state)) lines.push(`- hint: ${h}`);
+  const cut = amendedAt(items);
   lines.push('', '| # | side | stand | conditions | builds in note | at | by | resolution |', '|---|---|---|---|---|---|---|---|');
   items.forEach((e, i) => {
-    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation' : 'confirm';
+    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation'
+      : attestsCurrentClaim(e, cut) ? 'confirm' : 'confirm (pre-amendment)';
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => `${k}=${v}`).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
     const res = e.contradicts ? (isResolved(e) ? `${e.resolved}` : e.resolved ? `INVALID ${e.resolved}` : 'open') : '';

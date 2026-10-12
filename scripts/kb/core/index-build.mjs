@@ -32,8 +32,36 @@ export function countEvidence(evidence = []) {
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
-  return { trust: items.length - contradicting.length, disputed: contradicting.length - resolved, resolved };
+  const cut = amendedAt(items);
+  return { trust: items.filter((e) => !e?.contradicts && attestsCurrentClaim(e, cut)).length, disputed: contradicting.length - resolved, resolved };
 }
+
+/** The judge's own observation (`kb:disputes observe`): made of the behaviour the verdict settles. */
+export const isInvestigation = (e) => e?.investigation === true && !e?.contradicts;
+
+/**
+ * When a judge last CORRECTED the entry's claim (`claim-amended`), as epoch ms, or null.
+ *
+ * A confirmation made before that confirmed the OLD wording -- the one the judge found wrong -- so it
+ * stays on the entry as history and stops counting as support (VCST-6179 review): an amended entry
+ * would otherwise read "well attested" by sessions that never saw the behaviour it now states. The
+ * other verdicts do not reset it: under `version-scoped` / `conditions-scoped` / `split` the earlier
+ * confirmations saw one true half of what the entry now says.
+ */
+export function amendedAt(evidence = []) {
+  const stamps = (Array.isArray(evidence) ? evidence : [])
+    .filter((e) => isResolved(e) && e.resolved === 'claim-amended')
+    .map((e) => Date.parse(String(e.resolvedAt ?? '')))
+    .filter(Number.isFinite);
+  return stamps.length ? Math.max(...stamps) : null;
+}
+
+/**
+ * Does a supporting item attest the claim as it stands? Always, until a `claim-amended`; after one,
+ * only the judge's investigation (written before the resolution, of the corrected behaviour) and
+ * what was observed after it. An item whose `at` does not parse cannot be placed after, so it does not.
+ */
+export const attestsCurrentClaim = (e, cut) => cut == null || isInvestigation(e) || Date.parse(String(e?.at ?? '')) > cut;
 
 /**
  * How a judge closed a dispute (VCST-6179, `/kb-judge`). Written ON the contradicting evidence item,

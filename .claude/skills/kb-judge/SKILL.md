@@ -103,10 +103,15 @@ second branch opened alongside the first must be brought up to date by hand.
 **Run every `kb:disputes` write inside this Claude Code session.** Outside one there is no session key:
 `observe` and `resolve` refuse, because the party check would have nothing to compare.
 
-1. **Record the investigation's observations of each disputed entry**, one per stand and build —
-   **after** any split in item 2, on the child the observation concerns: a split copies every item of
-   the parent to every child, an observation included, and it would count as a confirmation of the
-   sibling it never looked at:
+1. **Edit the entries** the verdicts require: the claim in the body, the build range or condition the
+   entry now holds under, `appliesTo` for a closed axis. Change the **subject** only when it states
+   the clause that was wrong — the id stays the one minted from the old subject, and a later capture
+   of the new one is refused by subject, not by id. A split goes through a `split` plan and
+   `npm run kb:migrate-schema2` (its header has the shape); it copies every evidence item, open
+   disputes included, to **every** child.
+2. **Record the investigation's observations of each disputed entry**, one per stand and build, on the
+   entry (after a split: the child) the observation concerns — never before a split, which would copy
+   it to a sibling it never looked at:
 
    ```bash
    npm run kb:disputes -- observe <KB-id> --deployment <stand> --conditions "<k=v; k=v>" \
@@ -114,19 +119,17 @@ second branch opened alongside the first must be brought up to date by hand.
    ```
 
    `observe` takes only an active entry with an open dispute, so record before you resolve. It marks
-   the item as the investigation's; an observation of any other entry goes through the door.
-
-2. **Edit the entries** the verdicts require: the claim in the body (and subject when it states the
-   clause), the build range or condition the entry now holds under, `appliesTo` for a closed axis. A
-   split goes through a `split` plan and `npm run kb:migrate-schema2` (its header has the shape).
-3. **Close each dispute you have a verdict for:**
+   the item as the investigation's: it does not count in the queue, and after `claim-amended` it is
+   what the entry's trust is made of — confirmations of the old wording stop counting.
+3. **Close each dispute you have a verdict for, on each entry that holds it** — after a split, run
+   `resolve` once per child (the verdict may differ between children):
 
    ```bash
    npm run kb:disputes -- resolve <KB-id> --at <dispute at> --verdict <verdict> \
      --why "<one checkable sentence>" --in <branch or PR> --base <base>
    ```
 
-   It writes the verdict onto that evidence item (every copy of it), rebuilds `index.json`, and
+   It writes the verdict onto that entry's copies of the dispute, rebuilds `index.json`, and
    **refuses** a session that confirmed or disputed the entry itself, before or after the dispute — a
    party never judges its own case. Only your own `observe` items after the dispute do not disqualify
    you, so never `kb_confirm` / `kb_dispute` an entry you are judging. If two different disputes share

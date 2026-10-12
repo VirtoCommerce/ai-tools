@@ -38,6 +38,7 @@ export function hitLines(hit) {
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
     + `${hit.trust.resolved ? `, ${hit.trust.resolved} dispute(s) resolved` : ''}`
+    + `${hit.trust.beforeAmendment ? `, ${hit.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
     // SESSIONS, NOT "INDEPENDENT PARTIES". `by` holds a session key and never held a person, so the
     // old wording promised independence of JUDGEMENT and delivered independence of RUN. Measured the
     // day it was noticed: all 125 commits in the base are one author, so every "5 independent
@@ -178,7 +179,9 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   const lines = [
     `${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
       + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}`
-      + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}   status: ${r.entry.status}`,
+      + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}`
+      + `${r.trust.beforeAmendment ? `, ${r.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
+      + `   status: ${r.entry.status}`,
     `${r.entry.subject}`,
     `question: ${r.entry.question ?? '—'}`,
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,

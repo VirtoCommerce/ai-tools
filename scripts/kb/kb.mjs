@@ -75,8 +75,8 @@ const USAGE = `kb — the knowledge base (PLAN v1)
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
   npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" --conditions "<k=v; k=v>" [--topic "<...>"]
-                        conditions: the build and settings the behaviour may depend on (contract: ${CONTRACT})
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        conditions: optional, expected on a dispute -- the build and settings the behaviour may depend on
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]

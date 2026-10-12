@@ -18,8 +18,8 @@ import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
-import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
+import { amendedAt, attestsCurrentClaim, buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -43,7 +43,12 @@ import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 // The thresholds are a starting point, not a finding. The log will say whether they are the right
 // places to cut.
 export function trustOf(evidence = []) {
-  const supporting = evidence.filter((e) => !e.contradicts);
+  // Support of the claim AS IT STANDS: after a judge's `claim-amended`, confirmations of the old
+  // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
+  // sessions and operators printed beside the count are the ones the count is made of.
+  const cut = amendedAt(evidence);
+  const supporting = evidence.filter((e) => !e.contradicts && attestsCurrentClaim(e, cut));
+  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, cut)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
   const { trust: confirmations, disputed, resolved } = countEvidence(evidence);
@@ -96,7 +101,7 @@ export function trustOf(evidence = []) {
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, resolved, sessions, anonymous, operators, operatorsUnknown };
+  return { label, confirmations, disputed, resolved, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -1039,9 +1044,16 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
   // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
-  const holder = cat.rows.find((r) => r.id === id);
+  //
+  // BY SUBJECT TOO, not only by the id it hashes to. An id is minted from the subject at BIRTH and
+  // never changes, while the subject can be corrected later (`/kb-judge`, a hand edit): measured
+  // 2026-10-12, 26 active entries on the base's main and 50 on a judge branch no longer hash to their
+  // id. A capture of the corrected subject then minted a fresh id, found no holder, and wrote the
+  // same fact a second time at other coordinates (VCST-6179 review).
+  const holder = cat.rows.find((r) => r.id === id)
+    ?? cat.rows.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(input.subject));
   if (holder) {
-    const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
+    const sameSubject = claimKey(holder.subject) === claimKey(input.subject);
     await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',

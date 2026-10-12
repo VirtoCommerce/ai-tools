@@ -112,6 +112,9 @@ PR on the base. The resolution is written ON the contradicting evidence item (`r
 `RESOLUTIONS` in [`scripts/kb/core/index-build.mjs`](../../../scripts/kb/core/index-build.mjs),
 `resolvedAt`, `resolvedBy`, `resolvedIn`, `resolution`). A resolved dispute stays on the entry and
 is printed with its verdict, but it no longer marks the entry DISPUTED. No agent tool writes it.
+After a `claim-amended` verdict the confirmations made before it confirmed the old wording: they stay
+on the entry and stop counting toward its trust, which is then made of the judge's investigation and
+what was confirmed later (`attestsCurrentClaim` in the same file).
 
 ## At the end of a turn
 
