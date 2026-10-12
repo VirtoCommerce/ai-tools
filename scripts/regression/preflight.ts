@@ -18,7 +18,7 @@ export interface RegressionPolicyInput {
   manifestProblems: { suiteId: string; kind: string; detail: string }[];
   lock: Classification | null; gating: GatingResult; suiteIds: string[];
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null;
-  smokeGates: { ok: boolean; output: string } | null; smokeDuplicate: string | null;
+  smokeGates: { ok: boolean; output: string; spawnError?: string } | null; smokeDuplicate: string | null;
 }
 export interface RegressionPreflight {
   for: BuildFor; selection: string; facts: EnvFacts; mcp: Mcp; gating: GatingResult;
@@ -89,7 +89,10 @@ export function buildRegressionChecks(i: RegressionPolicyInput): Check[] {
       who: "me", do: "name the risk suites in the report header; a failure there is checked against the change first", diagnose: [] });
   } else checks.push(ok("baseline", `no change since ${i.baselineRunId}`));
 
-  if (i.for === "smoke" && i.smokeGates && !i.smokeGates.ok)
+  if (i.for === "smoke" && i.smokeGates?.spawnError)
+    checks.push({ id: "smoke-gates", status: "UNKNOWN", found: `could not run the checker: ${(i.smokeGates.spawnError.split(/\r?\n/)[0] ?? "").slice(0, 120)}`, who: "me",
+      do: "run npm run suites:gates yourself and read its result", diagnose: ["npm run suites:gates"] });
+  else if (i.for === "smoke" && i.smokeGates && !i.smokeGates.ok)
     checks.push({ id: "smoke-gates", status: "WARN", found: `suites:gates failed: ${i.smokeGates.output.split(/\r?\n/).find((l) => l.trim()) ?? "see output"}`, who: "me, with OK",
       do: "reconcile the checklist with the CSV, or report the verdict as provisional", diagnose: ["npm run suites:gates"] });
   if (i.for === "smoke" && i.smokeDuplicate)
@@ -106,9 +109,15 @@ function smokeDuplicateToday(root: string, now: Date): string | null {
   return readdirSync(dir).filter((n) => n.startsWith(`SMOKE-${day}`)).sort().at(-1) ?? null;
 }
 
-function runSmokeGates(root: string): { ok: boolean; output: string } {
-  const r = spawnSync("npx", ["tsx", "scripts/test-cases/check-smoke-gates.ts"], { cwd: root, encoding: "utf8", shell: true });
-  return { ok: r.status === 0, output: `${r.stdout ?? ""}${r.stderr ?? ""}` };
+function runSmokeGates(root: string): { ok: boolean; output: string; spawnError?: string } {
+  const r = spawnSync("npx", ["tsx", "scripts/test-cases/check-smoke-gates.ts"], { cwd: root, encoding: "utf8", shell: true, timeout: 60_000 });
+  const output = `${r.stdout ?? ""}${r.stderr ?? ""}`;
+  const spawnError = r.error ? String(r.error.message ?? r.error)
+    : r.status === null ? `checker killed or timed out (${r.signal ?? "no signal"})`
+    : r.status === 127 ? "command not found (exit 127)"
+    : /is not recognized|command not found|Cannot find module/i.test(output) ? (output.split(/\r?\n/).find((l) => l.trim()) ?? "checker could not start")
+    : undefined;
+  return { ok: r.status === 0 && !spawnError, output, ...(spawnError ? { spawnError } : {}) };
 }
 
 export async function runRegressionPreflight(o: {
