@@ -1334,13 +1334,30 @@ export async function stat(opened, { env = process.env } = {}) {
   };
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') return { ...out, state: cat.state, why: cat.why };
+  const live = retrievable(cat.rows);
   return {
     ...out,
     state: 'answer',
     indexes: cat.indexes,
     entries: cat.rows.length,
-    active: retrievable(cat.rows).length,
+    active: live.length,
+    disputes: disputeTotals(live),
     schema: cat.manifest.schema ?? null,
+  };
+}
+
+/**
+ * What is left to judge and what has been judged, over the ACTIVE entries. A retired entry's
+ * disputes live on in its successor and are judged there, so counting them here would count them
+ * twice. A verdict still in a PR is not in the index yet: until it merges, its dispute is open.
+ */
+export function disputeTotals(rows = []) {
+  const sum = (k) => rows.reduce((n, r) => n + (Number(r[k]) || 0), 0);
+  return {
+    open: sum('disputed'),
+    openEntries: rows.filter((r) => r.disputed > 0).length,
+    resolved: sum('resolved'),
+    resolvedEntries: rows.filter((r) => r.resolved > 0).length,
   };
 }
 
