@@ -116,7 +116,9 @@ shorter **round delta** into that same comment instead — round 1 posts it, lat
 template amend it ([`modes.md`](modes.md) §5-loop §The round-delta comment) — the full
 template every round buries the ticket under near-identical comments, while posting nothing leaves a
 prerelease deployed to the shared test env with no trace. The delta carries the same mandatory
-`Not filed` accounting.
+`Not filed` accounting. **A round-1 comment that is already a full verdict** (the loop was entered after a
+run without `--iterate`) is never amended by the exit template — it posts as a new comment
+([`modes.md`](modes.md) §The round-delta comment).
 
 ### 3. Persist `summary.json`
 

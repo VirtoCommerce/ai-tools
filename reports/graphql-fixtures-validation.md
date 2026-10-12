@@ -1,10 +1,10 @@
 # GraphQL Fixtures Validation
 
-**Validated at:** 2026-09-29T10:14:18.700Z
+**Validated at:** 2026-10-07T11:20:42.597Z
 **Schema source:** https://vcst-qa.govirto.com/graphql
-**Total:** 76 fixtures — 76 passed, 0 failed
+**Total:** 86 fixtures — 86 passed, 0 failed
 
-## ✅ Passed Fixtures (76)
+## ✅ Passed Fixtures (86)
 
 | Name | Kind | Role | Category | Required Vars | Last Validated | Known Issues |
 |------|------|------|----------|---------------|----------------|--------------|
@@ -19,6 +19,7 @@
 | addWishlistItem | mutation | ORG_USER | wishlist | LIST_ID (String), PRODUCT_ID (String) | 2026-08-27 | 1 noted |
 | brand | query | PUBLIC or ORG_USER | catalog | STORE_ID (String), BRAND_ID (String) | 2026-08-27 | 1 noted |
 | brands | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-08-27 | 1 noted |
+| cancelReturn | mutation | ORG_USER | returns | RETURN_ID (String) | 2026-09-25 | 1 noted |
 | cart | query | ORG_USER (authenticated) or PUBLIC (anonymous cart) | cart | STORE_ID (String), CURRENCY_CODE (String) | 2026-08-27 | 1 noted |
 | cartPickupLocations | query | ORG_USER | pickup | CART_ID (String), STORE_ID (String) | 2026-08-27 | 2 noted |
 | carts | query | ORG_USER | cart | (none) | 2026-08-27 | 1 noted |
@@ -34,6 +35,7 @@
 | createConfiguredLineItem | mutation | PUBLIC or ORG_USER | configurable-products | STORE_ID (String — passed inline in command), CONFIGURABLE_PRODUCT_ID (String) | 2026-08-27 | 1 noted |
 | createOrderFromCart | mutation | ORG_USER | order | CART_ID (String — capture from earlier cart query/mutation) | 2026-08-27 | 1 noted |
 | createOrganization | mutation | ORG_USER or higher (any authenticated user per observed behavior) | organization | ORG_NAME (String) | 2026-08-27 | 1 noted |
+| createReturn | mutation | ORG_USER | returns | ORDER_ID (String), ORDER_LINE_ITEM_ID (String), QUANTITY via $qty variable (Int) | 2026-09-25 | 1 noted |
 | createWishlist | mutation | ORG_USER | wishlist | STORE_ID (String), USER_ID (String), LIST_NAME (String) | 2026-08-27 | 1 noted |
 | currentCustomerAddresses | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
 | currentOrganizationAddresses | query | ORG_USER | profile | (none) | 2026-08-27 | 1 noted |
@@ -65,6 +67,12 @@
 | removeConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
 | removeCoupon | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String), COUPON_CODE (String) | 2026-08-27 | 1 noted |
 | removeWishlist | mutation | ORG_USER (owner) | wishlist | LIST_ID (String) | 2026-08-27 | 1 noted |
+| return | query | ORG_USER | returns | RETURN_ID (String) | 2026-09-25 | 1 noted |
+| returnableItems | query | ORG_USER | returns | ORDER_ID (String) | 2026-09-25 | 1 noted |
+| returnPolicy | query | ORG_USER | returns | STORE_ID (String) | 2026-09-25 | 1 noted |
+| returnReasons | query | ORG_USER | returns | STORE_ID (String) | 2026-09-25 | 1 noted |
+| returns | query | ORG_USER | returns | STORE_ID (String) | 2026-09-25 | 1 noted |
+| returnStatuses | query | ORG_USER | returns | (none) | 2026-09-25 | 1 noted |
 | salesRepCustomer | query | SALES_REP | sales-rep | ORGANIZATION_ID (String — a served org id; source @td(ORG_ACME.id) or captured from salesRepCustomers[0].organizationId) | 2026-08-27 | 1 noted |
 | salesRepCustomers | query | SALES_REP | sales-rep | (none) | 2026-08-27 | 1 noted |
 | salesRepOrderFilterRules | query | SALES_REP | sales-rep | (none) | 2026-08-27 | 1 noted |
@@ -74,6 +82,7 @@
 | selectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
 | selectCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
 | slugInfo | query | PUBLIC or ORG_USER | catalog | STORE_ID (String) | 2026-08-27 | 1 noted |
+| submitReturn | mutation | ORG_USER | returns | RETURN_ID (String) | 2026-09-25 | 1 noted |
 | unSelectAllCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 2 noted |
 | unSelectAllCartItems | mutation | ORG_USER | cart | STORE_ID (String), USER_ID (String) | 2026-08-27 | 1 noted |
 | unSelectCartConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
@@ -82,6 +91,7 @@
 | updateConfigurationItems | mutation | ORG_USER | configurable-products | STORE_ID (String), USER_ID (String), LINE_ITEM_ID (String) | 2026-08-27 | 1 noted |
 | updateContact | mutation | ORG_USER | profile | CONTACT_ID (String), FIRST_NAME (String), LAST_NAME (String) | 2026-08-27 | 2 noted |
 | updateMemberAddresses | mutation | ORG_USER (the member being updated, or admin) | profile | MEMBER_ID (String), CITY (String), COUNTRY_CODE (String), LINE1 (String), POSTAL_CODE (String) | 2026-08-27 | 2 noted |
+| updateReturn | mutation | ORG_USER | returns | RETURN_ID (String) | 2026-09-25 | 1 noted |
 | wishlist | query | ORG_USER | wishlist | LIST_ID (String) | 2026-08-27 | 1 noted |
 | wishlists | query | ORG_USER | wishlist | (none) | 2026-08-27 | 1 noted |
 
@@ -119,6 +129,9 @@
 
 **brands**:
 - The brands query uses "keyword" arg (not "query" like products)
+
+**cancelReturn**:
+- (none)
 
 **cart**:
 - (none)
@@ -164,6 +177,9 @@
 - Creates a real order in the system; no easy teardown via runner — use sparingly or against disposable accounts.
 
 **createOrganization**:
+- (none)
+
+**createReturn**:
 - (none)
 
 **createWishlist**:
@@ -267,6 +283,24 @@
 **removeWishlist**:
 - (none)
 
+**return**:
+- (none)
+
+**returnableItems**:
+- (none)
+
+**returnPolicy**:
+- (none)
+
+**returnReasons**:
+- localizedName == code (PascalCase) -- not yet localized, root cause not diagnosed
+
+**returns**:
+- (none)
+
+**returnStatuses**:
+- vocabulary set differs from ReturnStatus.cs (AwaitingDelivery/Received exist in source,
+
 **salesRepCustomer**:
 - (none)
 
@@ -295,6 +329,9 @@
 **slugInfo**:
 - (none)
 
+**submitReturn**:
+- (none)
+
 **unSelectAllCartConfigurationItems**:
 - Selection toggle triggers UpdateConfiguredLineItemPrice ONLY when an actual flag flips (no-change short-circuit). Selection state filters which placements sum into items.listPrice.
 - Scoped to lineItemId only — other configured lineItems in cart are NOT affected.
@@ -321,6 +358,9 @@
 **updateMemberAddresses**:
 - BL: EnableNoHtmlTagsValidation applies to city/line1/line2 (XSS rejected)
 - Semantics are REPLACE (pass full desired list each call)
+
+**updateReturn**:
+- (none)
 
 **wishlist**:
 - (none)

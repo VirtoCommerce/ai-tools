@@ -66,6 +66,7 @@ test('startOfUtcDay truncates to UTC midnight regardless of the time of day', ()
 test('groupSizes counts live rows whose completed is null the same as a spec whose completed is false', () => {
   const live = TASK_SPECS.map((s) => ({
     completed: s.completed ? true : null,          // the shape the API actually returns
+    isActive: !s.canceled,                         // canceled = closed without completing (VCST-6077)
     dueDate: dueDate(s, NOW),
   }));
   assert.deepEqual(groupSizes(live, NOW), groupSizes(TASK_SPECS, NOW));
@@ -171,5 +172,5 @@ test('gate fires when priority or type starts correlating with the date group', 
 
 test('gate fires on duplicate keys, names and a broken creationOrder permutation', () => {
   fires(mutate('OD2', { label: TASK_SPECS[0].label }), /duplicate task name/);
-  fires(mutate('OD2', { creationOrder: 7 }), /creationOrder must be a 1\.\.14 permutation/);
+  fires(mutate('OD2', { creationOrder: 7 }), /creationOrder must be a 1\.\.\d+ permutation/);
 });
