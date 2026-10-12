@@ -2,7 +2,14 @@
   "ticket": "VCST-5884",
   "ticket_type": "Story",
   "flow": "feature-test",
-  "tracker": { "kind": "jira", "comment_id": "111713", "subtask_comment_ids": [], "documentation_comment_id": null, "amended": false },
+  "tracker": {
+    "kind": "jira",
+    "comment_id": "111899",
+    "subtask_comment_ids": [],
+    "documentation_comment_id": "111899",
+    "amended": false,
+    "previous_round_comment_id": "111713"
+  },
   "path": "full",
   "path_route": {
     "decided_at": "1a",
@@ -16,7 +23,14 @@
       "reach": "exceeds diff: shared access service and shared list page"
     },
     "escalated_reason": "ticket-routing.md 5b: layer is cross-layer; chain_shape adds net-new links. Story default FULL.",
-    "basis": "ticket-routing.md 5 / 5b, confirmed at end of 1b"
+    "basis": "ticket-routing.md 5 / 5b, unchanged from round 2 (cross-layer, adds chain links); confirmed at end of 1b",
+    "round": {
+      "number": 3,
+      "of": 3,
+      "flag_written": "--iteration=3",
+      "flag_resolved": "round-3 retest (operator chose), not --iterate",
+      "strategy": "reports/tickets/Sprint26-20/VCST-5884/test-strategy.md (Hybrid authoring + C1, operator decision)"
+    }
   },
   "shape_class": {
     "value": "feature",
@@ -37,226 +51,488 @@
     "built_in_run": false,
     "mind_map": ".claude/knowledge/domain/returns.mind-map.json",
     "amended_in_run": false,
-    "amend_outcome": "not-attempted",
-    "amend_skipped_reason": "deferred to the operator: 13 surfaces added by PR #28/#2523 are missing from the map and AC-2's location is an open PO question; a /qa-domain-map ret --refresh after the PRs settle is cleaner than a write-back now",
+    "amend_outcome": "deferred",
+    "amend_skipped_reason": "the map itself holds G17 OPEN \"re-open this map when it deploys\"; PR #28 and #2523 are still unmerged and the release gate is CONDITIONAL on them merging unchanged, so PR-build surfaces are not written into a map other tickets cite. Route: /qa-domain-map ret --refresh after merge (the 4 new unmapped_surfaces and 3 mind_map_findings are the input)",
     "unmapped_surfaces": [
       "Query.organizationReturns",
       "ReturnType.customerId/customerName/organizationId/organizationName",
       "permissions xapi:my_organization:return:view and :submit",
       "setting Return.NotifyOrganizationEmail (map says 10 settings, live 11)",
-      "REST search criteria organizationId/excludeDrafts",
       "Admin Return list Organization column",
       "storefront ?scope=organization tab, Buyer name, Requested by",
       "Return.OrganizationId/Name + index + backfill",
       "account-state guard on every return operation",
       "colleague attachment-read path",
-      "org-copy Hangfire path"
+      "org-copy Hangfire path",
+      "REST search criteria organizationId/submittedOnly (excludeDrafts removed, silently ignored)",
+      "Return.SubmittedDate: REST/Admin-only, write-once, stamped by ReturnService.RecordSubmit, backfilled by migration ReturnSubmittedDate; not in xAPI ReturnType",
+      "storefront org tab: no Draft filter; page<1 -> page 1; cards below 1024 px",
+      "Admin Return list: Modify date / Created by hidden by default"
     ],
     "mind_map_findings": [
-      "ret.buyer.read.org-colleague (CONFIRMED: cannot read a buyer's return) is true for non-holders only: DRIFT for holders",
-      "no node for organizationReturns, the permission, the organization copy, the account-state guard",
-      "domain map excludes: mis-attributes VCST-5884 as orderless returns",
-      "V9 sizing: of 11 store-less returns only 3 carry an organization"
-    ]
+      "ret.state.cancelled must split three ways: submitted-then-cancelled (visible), never-submitted (hidden), cancelled before 3.1005.0 (hidden, indeterminate)",
+      "ret.buyer.read.org-colleague: DRIFT for holders (unchanged from round 2)",
+      "no node for the SubmittedDate stamp, the migration backfill, organizationReturns, the permission, the organization copy"
+    ],
+    "mind_map_build": "n/a — returns.mind-map.json exists; findings handed back for /qa-test-mind-map update"
   },
-  "verdict": "FAIL",
-  "date": "2026-10-08",
+  "verdict": "PASS WITH NOTES",
+  "date": "2026-10-12",
   "timing": {
-    "started_at": null,
-    "test_window_start": "2026-10-08T16:39:43Z",
-    "finished_at": null,
-    "time_to_first_test_minutes": null,
-    "reachability_minutes": 5,
-    "agent_dispatches": 14,
-    "note": "started_at and time_to_first_test were not captured at 1a. 3x ran 21 of 60 min; BS shared-setting window 46 s; C1 57 min serial."
+    "started_at": "2026-10-12T08:11:36Z",
+    "test_window_start": "2026-10-12T08:40:25Z",
+    "finished_at": "2026-10-12T10:20:37Z",
+    "time_to_first_test_minutes": 29,
+    "first_evidence_minutes": 46,
+    "reachability_minutes": 3,
+    "agent_dispatches": 17,
+    "regression_minutes": {
+      "predicted": null,
+      "actual": 35,
+      "note": "C1 REG-2026-10-12-1119 09:19Z-09:54Z on chrome + edge"
+    },
+    "note": "3x ran 15 of 30 min (firefox click stall cut it short); Coffee preset window 9 min (09:02:29Z-09:11:29Z); 3-cases verifier: REJECT then APPROVE after one fix round"
   },
-  "environment": "vcst (https://vcst-qa.govirto.com / https://vcst-qa-storefront.govirto.com), store B2B-store, ENV_RISK=test",
+  "environment": "vcst (FRONT_URL / BACK_URL from config.js), store B2B-store, ENV_RISK=test",
   "build": {
-    "platform": "3.1076.0",
-    "theme": "vc-theme-b2b-vue 2.60.0-pr-2523-9e4e-9e4e67ef",
-    "relevant_modules": { "VirtoCommerce.Return": "3.1005.0-pr-28-62f9" },
+    "platform": "3.1078.0",
+    "theme": "vc-theme-b2b-vue 2.60.0-pr-2523-4263-4263715a",
+    "relevant_modules": {
+      "VirtoCommerce.Return": "3.1005.0-pr-28-fb4f"
+    },
+    "pr_heads": {
+      "vc-module-return#28": "fb4fc43",
+      "vc-frontend#2523": "4263715"
+    },
     "deployed": {
-      "platform": "3.1076.0",
+      "platform": "3.1078.0",
       "relevant_modules": {
-        "VirtoCommerce.Return": "3.1005.0-pr-28-62f9",
+        "VirtoCommerce.Return": "3.1005.0-pr-28-fb4f",
         "VirtoCommerce.Customer": "3.1029.0",
-        "VirtoCommerce.Xapi": "3.1026.0",
+        "VirtoCommerce.Xapi": "3.1027.0",
+        "VirtoCommerce.XOrder": "3.1015.0",
         "VirtoCommerce.Notifications": "3.1018.0",
         "VirtoCommerce.Orders": "3.1018.0"
       }
     },
-    "releasedThrough": { "ledger_generated": null, "components": {}, "behind": [], "breaking": [], "note": "release ledger has no Returns row" }
+    "redeployed_mid_run": [
+      {
+        "at": "2026-10-12T08:19:53Z",
+        "change": "VirtoCommerce.Xapi 3.1026.0 -> 3.1027.0 (cleared the storefront 'incompatible backend' banner seen at 1r)"
+      },
+      {
+        "at": "2026-10-12T08:35:17Z",
+        "change": "Platform 3.1076.0 -> 3.1078.0; several PR module builds reset to releases (XOrder pr-53 -> 3.1015.0, XCart, Quote, PageBuilder, FileExperienceApi). Return and theme unchanged; 3x conclusions re-observed after it by lane B"
+      }
+    ],
+    "releasedThrough": {
+      "ledger_generated": null,
+      "components": {},
+      "behind": [],
+      "breaking": [],
+      "note": "release ledger has no Returns row"
+    }
   },
   "status_transitions": [
-    { "at": "1a", "hop": "opening", "from": "Ready for test", "to": "Testing", "transition": "On QA (id 4)", "by": "qa-lead (inline orchestrator)", "confirmed": false, "result": "done" },
-    { "at": "5-status", "hop": "closing", "from": "Testing", "to": "Reopen", "transition": "Need fixes (id 7), re-resolved live from Testing", "by": "qa-lead (inline orchestrator)", "confirmed": true, "result": "done" }
-  ],
-  "agents_dispatched": [
-    "qa-frontend-expert (1r, 4a lane A)",
-    "ba-system-analyzer (1c)",
-    "ba-story-writer (1d)",
-    "test-data-engineer (3a + LEAVER top-up)",
-    "qa-testing-expert (3x)",
-    "test-management-specialist (Artifact B; Artifact A + fix round)",
-    "qa-backend-expert (4a lane B; BS)",
-    "ui-ux-expert (4v)",
-    "qa-lead-orchestrator (3-cases verifier, 2 rounds)",
-    "regression-orchestrator (C1)",
-    "general-purpose (5 Low drafts)"
-  ],
-  "epic": { "key": "VCST-5626", "summary": "Returns", "status": "Draft", "done_siblings": ["VCST-5628", "VCST-5883"], "note": "seams: draft/cancel/submit semantics, notification handlers, status vocabulary" },
-  "ac_analysis": {
-    "story_acs": 3,
-    "weak_acs": 4,
-    "gap_acs_added": 28,
-    "impl_coverage": { "SATISFIED": 9, "DRIFT": 4, "NOT-FOUND": 1, "CONTRADICTS": 1 },
-    "conditions_total": 35,
-    "conditions_with_evidence": 32,
-    "conditions_satisfied_live": 24,
-    "ac_coverage_pct": 91.4,
-    "ac_met": "24 of 35 conditions satisfied live (68.6%); 7 observed without an oracle; 1 CONTRADICTS live (3.d); 3 untested (3.g, 4.e, 4.h). AC-4 is an unratified proposal (comment 110487).",
-    "dod": "none declared",
-    "dod_pct": null
-  },
-  "total_cases": 35,
-  "passed": 24,
-  "failed": 1,
-  "blocked": 3,
-  "iterations": null,
-  "new_cases_authored": 40,
-  "promotion": { "ran": false, "reason": "--no-promote; 38 Draft + 2 Manual, none promoted (route: /qa-test-lifecycle 6P)" },
-  "regression": {
-    "c1": {
-      "run_id": "REG-2026-10-08-1840",
-      "suites": ["073a", "073b", "073", "050o", "014c"],
-      "ids": 46,
-      "passed": 25,
-      "failed": 10,
-      "blocked": 11,
-      "pass_rate": 0.543,
-      "wall_clock_minutes": 57,
-      "compute_metrics": "NOT EVALUATED: run absent from reports/regression/history.json (agent-run)"
-    },
-    "feature_release_gate": "NO-GO (automatic on FAIL); change-scoped regression criterion not-assessed",
-    "bl_fresh": "regression Step 6.6 rewrote 6 records in 4 .claude/knowledge/oracles/bl/*.yaml (+ business-logic.md and its plugin mirror): BL-B2B-007 and BL-NOTIF-001 ACTIVE to SUSPECT from case defects (spurious: clear at lifecycle 4c); BL-UI-004 ACTIVE to SUSPECT from real findings; BL-B2B-012/013 and BL-GQL-001 re-verified"
-  },
-  "regression_triage": {
-    "RET-ORG-006": "real: draft cancelled before submit listed and readable (VCST-6226, IN-SCOPE, Medium)",
-    "RET-ORG-019": "real: same defect, storefront (VCST-6226)",
-    "RET-ORG-041": "real: Low, Admin header clipped (BL-UI-004, IN-SCOPE; draft)",
-    "RET-ORG-027": "real: Low, mid-word breaks at 768/799 px (BL-UI-004 arguable; draft)",
-    "RET-ORG-022": "hypothesis leg only: breadcrumb drops ?scope (expectation unratified; case to hold)",
-    "RET-ORG-035/036/039": "test-defect ASSERTION_DEFECT: [COUNT ?to=<email>] evaluates to NaN (path splitter splits the dotted value); behaviour confirmed by the BS lane",
-    "RET-ORG-037": "test-defect ASSERTION_DEFECT: expects HTTP 200, the organization PUT answers 204",
-    "RET-ORG-038": "test-defect TEST_DATA_DEFECT: @td(ORG_RET_BUYER_NOEMAIL.email) has no value; runner leaves the ON window open on abort",
-    "RET-ORG-011": "test-defect TEST_STEPS_DEFECT: the other-store PUT recipe answered 400",
-    "RET-ORG-030/031/032": "test-defect TEST_STEPS_DEFECT: sweep rows unreachable with real-user tools; empty-org leg order-coupled",
-    "RET-021": "STALE_TEST: RE-BASE resolved by the run, the grid has nine columns (re-base via /qa-review-tests --fix)",
-    "RET-AUTH-009/028..031, RET-ADM-010": "ENV/TEST_DATA: inline aliases RETURNS_AUTH_* have no values on vcst (pre-existing); not a product signal"
-  },
-  "bugs_filed": [
     {
-      "key": "VCST-6226",
-      "url": "https://virtocommerce.atlassian.net/browse/VCST-6226",
-      "title": "[Returns] Organization returns: a draft cancelled before it was ever submitted is listed to organization holders, who can read its comment and line reasons",
-      "severity": "Medium",
-      "provenance": "IN-SCOPE",
-      "relationship": "sub-task-of VCST-5884",
-      "labels": ["found-by-agent", "found-in-testing"],
-      "autofix_labels": "withheld: the operator approved filing only; add vc-fix + qa-autofix by hand if auto-fix is wanted",
-      "report": "reports/bugs/open/medium/BUG-organization-returns-cancelled-draft-visible-to-holders-VCST-5884.md",
-      "inline_images_rendered": 2
+      "at": "1a",
+      "hop": "opening",
+      "from": "Ready for test",
+      "to": "Testing",
+      "transition": "On QA (id 4)",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": false,
+      "result": "done"
+    },
+    {
+      "at": "5-status",
+      "hop": "closing",
+      "from": "Testing",
+      "to": "Tested",
+      "transition": "Finish test (id 8), re-resolved live from Testing",
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "result": "done"
+    },
+    {
+      "at": "5-status",
+      "hop": "skip",
+      "ticket": "VCST-6226",
+      "from": "Ready for test",
+      "to": null,
+      "transition": null,
+      "by": "qa-lead (inline orchestrator)",
+      "confirmed": true,
+      "result": "skipped",
+      "reason": "fix verified this round (A1, B1, RET-ORG-042/-048/-006/-019) but the sub-task close-out belongs to /vc-fix:qa-verify-fix (operator decision)"
     }
   ],
+  "agents_dispatched": [
+    "qa-frontend-expert (1r; 4a lane A)",
+    "ba-system-analyzer (1c)",
+    "ba-story-writer (1d)",
+    "qa-testing-expert (3x)",
+    "test-data-engineer (3a + capacity top-up)",
+    "test-management-specialist (Artifact A: 2a + authoring; 3-cases fix round; Phase-5 fixes)",
+    "qa-backend-expert (4a lane B; Phase-4 repro)",
+    "ui-ux-expert (4v: DevTools attempt STOPPED on auth; re-run on playwright-chrome under Coffee)",
+    "qa-lead-orchestrator (3-cases verifier, 2 rounds; 5-report ratification)",
+    "regression-orchestrator (C1)",
+    "general-purpose (3 triage classifiers)"
+  ],
+  "epic": {
+    "key": "VCST-5626",
+    "summary": "Returns",
+    "status": "Draft",
+    "done_siblings": [
+      "VCST-5628",
+      "VCST-5883"
+    ],
+    "note": "seams: draft/cancel/submit semantics, notification handlers, status vocabulary"
+  },
+  "ac_analysis": {
+    "story_acs": 3,
+    "weak_acs": 3,
+    "gap_acs_added": 13,
+    "ac4_status": "unratified (comment 110487)",
+    "impl_coverage": {
+      "SATISFIED": 30,
+      "DRIFT": 4,
+      "NOT-FOUND": 2,
+      "CONTRADICTS": 0
+    },
+    "conditions_total": 46,
+    "conditions_with_evidence": 36,
+    "conditions_satisfied_live": 30,
+    "ac_coverage_pct": 78.3,
+    "ac_met": "30 of 46 satisfied live (65.2%); 0 FAIL/CONTRADICTS; 6 recorded for the PO (1.f, 1.g NOT-FOUND, 2.b, G.5, G.8, G.13); 2 untested (3.g no FileUpload scope, G.6 store-less legacy FIXTURE-GAP); 8 not re-executed (4.b-4.i: AC-4 unratified, handler diff = comments only, shared-setting rule)",
+    "dod": "none declared",
+    "dod_pct": null,
+    "verdict_basis": "0 conditions FAIL/CONTRADICTS live; AC-2 placement carried as a PO note (operator decision, consistent with rounds 1-2); no in-scope P0/P1; VCST-6261 (Medium) open, tracked separately",
+    "checklist": {
+      "rows": 29,
+      "pass": 25,
+      "fail": 1,
+      "unspec": 2,
+      "skipped": 1,
+      "fail_note": "A2: checklist wording assumed a Draft option the vcst status dictionary lacks (ASSERTION_DEFECT)"
+    }
+  },
+  "total_cases": 29,
+  "passed": 25,
+  "failed": 1,
+  "blocked": 0,
+  "iterations": null,
+  "new_cases_authored": 11,
+  "promotion": {
+    "ran": false,
+    "reason": "--no-promote; 11 Draft (RET-ORG-042..052) stay Draft; route: /qa-test-lifecycle 6P"
+  },
+  "regression": {
+    "c1": {
+      "run_id": "REG-2026-10-12-1119",
+      "suites": [
+        "050o",
+        "014c",
+        "073",
+        "073a",
+        "073b"
+      ],
+      "ids": 56,
+      "passed": 37,
+      "failed": 7,
+      "blocked": 9,
+      "skipped": 3,
+      "pass_rate": 0.841,
+      "wall_clock_minutes": 35,
+      "scope": "11 new + 3 REPAIR + 7 RE-BASE + 4 spelling-at-risk + 31 R7 (round-2 C1 set, operator Hybrid decision)",
+      "exclusions": [
+        "RET-AUTH-009, -028..-031, RET-ADM-010: RETURNS_AUTH_* not seeded on vcst (operator decision)",
+        "RET-ORG-035..-039: shared-setting writes (run rule 4)",
+        "RET-ORG-023/-024: Manual"
+      ],
+      "compute_metrics": "feature gate GO with --blocked-triaged 9 (CANNOT EVALUATE before triage: 16.07% BLOCKED > 10%)"
+    },
+    "feature_release_gate": "CONDITIONAL GO (ratified with a qualitative downgrade by the 5-report verifier: compute-metrics GO, 84.09% on REG-2026-10-12-1119, 0 P0 / 0 P1, 9 BLOCKED triaged; conditions: unmerged PR builds, VCST-6261 Medium open, AC-2/AC-4/G.5/G.13 awaiting PO, change-scoped regression / smoke / NFR telemetry not assessed)",
+    "change_scoped_regression": "not-assessed (no release-scoped sweep)",
+    "bl_fresh": "regression Step 6.6 re-verified BL-B2B-012, BL-B2B-013, BL-GQL-001 (verified-date bumps only; no status change)",
+    "scoping_note": "RET-ORG-016 writes Return.NotifyOrganizationEmail and should have been excluded by run rule 4; nothing was written (admin token refused)"
+  },
+  "regression_triage": {
+    "report": "reports/regression/REG-2026-10-12-1119/triage-report.md",
+    "ticket_report": "reports/tickets/Sprint26-20/VCST-5884/triage-report.md",
+    "counts": {
+      "real_bug": 1,
+      "test_defect": 11,
+      "dismissed": 7,
+      "fixes_applied": 3,
+      "fixes_recommended": 8
+    },
+    "RET-006..-010": "ENV: vcst Return.Status holds 5 of 10 default statuses (Canceled only); RE-BASE resolved as keep 'Cancelled' (KB-18D61DE9, KB-21F4F161)",
+    "RET-021": "STALE_TEST -> re-based (7 default columns; relative dates are the platform convention, KB-AFF6282A) — applied",
+    "RET-ORG-011": "ASSERTION_DEFECT -> unratified store rule now an [EVIDENCE] record (G.5) — applied",
+    "RET-ORG-049": "ASSERTION_DEFECT -> options bound to Query.returnStatuses — applied",
+    "RET-ORG-016/-028/-030/-031": "TEST_STEPS_DEFECT (shared writes / lane capability) — recommended",
+    "RET-ORG-032, RET-AUTH-017/-025, RET-ADM-006/-007": "TEST_DATA_DEFECT — recommended; RET-ADM-007 premise needs a PO decision",
+    "RET-ORG-025": "ENV (lane policy refused the admin token)",
+    "RET-ORG-010": "KNOWN_ISSUE (Manual)",
+    "incidental": "REAL_BUG Low PRE-EXISTING: Admin return blade Modified date stale after Save (reproduced 2/2)",
+    "verified_fixed": [
+      {
+        "key": "VCST-6226",
+        "severity": "Medium",
+        "evidence": "4a A1 + B1, C1 RET-ORG-042/-048/-006/-019",
+        "report": "reports/bugs/fixed/BUG-organization-returns-cancelled-draft-visible-to-holders-VCST-5884.md"
+      },
+      {
+        "key": null,
+        "severity": "Low",
+        "title": "5 round-2 Low drafts (Admin header clipped, mid-word wrap, Requested-by contrast, negative page, refetch warning)",
+        "report": "reports/bugs/fixed/ (5 files)"
+      }
+    ],
+    "open_from_previous_rounds": [
+      {
+        "key": "VCST-6261",
+        "severity": "Medium",
+        "note": "not triggered this round (needs a customerId letter-case mismatch); code unchanged at return.vue:175-176"
+      },
+      {
+        "key": "VCST-6262",
+        "severity": "Low",
+        "note": "lower-case status=draft not dropped (observed again)"
+      }
+    ]
+  },
+  "bugs_filed": [],
   "bugs_not_filed": [
-    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884.md" },
-    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-table-breaks-words-mid-word-at-768-960px-VCST-5884.md" },
-    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-colleague-return-requested-by-label-fails-contrast-VCST-5884.md" },
-    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-negative-page-parameter-shows-sql-error-as-no-returns-VCST-5884.md" },
-    { "severity": "Low", "draft": "reports/bugs/open/low/BUG-org-returns-refetch-queries-names-unmounted-query-apollo-warning-VCST-5884.md" }
+    {
+      "severity": "Low",
+      "draft": "reports/bugs/open/low/BUG-admin-return-details-modified-date-stale-after-save-VCST-5884.md",
+      "provenance": "PRE-EXISTING"
+    }
   ],
   "discovery": {
     "ran": true,
-    "lane": "playwright-chrome",
-    "session": "reports/exploratory/SBTM-VCST-5884-2026-10-08.md",
-    "minutes": 21,
-    "charter_items_covered": "all five sources covered or explained; unreached legs named (PartiallyApproved copy, CC/BCC, buyer without e-mail, expired/deleted accounts, holder view of legacy returns)",
-    "hypotheses_grounded": 8,
-    "model_amendments": 6,
-    "promoted_scenarios": 3,
-    "note": "a real e-mail reached a team member's mailbox through a cloned fixture order; Return.NotifyOrganizationEmail restored to explicit false"
+    "lane": "playwright-firefox",
+    "session": "reports/exploratory/SBTM-VCST-5884-2026-10-12.md",
+    "minutes": 15,
+    "charter_items_covered": "S26, S28, S29, S31, S32 covered; S27 except the e-mail leg; S30 partial; Admin grid, 1.f, G.5 NOT REACHED (firefox click stall) -> carried to 4a",
+    "hypotheses_grounded": 4,
+    "model_amendments": 5,
+    "promoted_scenarios": 0,
+    "note": "3 net-new scenarios: 2 declined (stand defect / PO question), 1 duplicate of RET-ORG-017"
   },
   "visual": {
     "surface": true,
-    "surface_source": [".vue + locales in PR #2523", "derived layer storefront + admin-spa", "target suite layer frontend"],
-    "ran": true,
-    "report": "reports/tickets/Sprint26-20/VCST-5884/design-report.md",
-    "vs_design": "SKIPPED: the ticket names no design project",
-    "axes": { "a11y": "FAIL (1 new in-scope finding; platform chrome pre-existing)", "design-system": "PASS with WARN", "vs_design": "SKIPPED" },
-    "fails": [
-      "BL-UI-004 V6 Admin header clipped (invariant_failure)",
-      "BL-UI-004 V5 mid-word wrap, arguable (invariant_failure)",
-      "BL-A11Y-003 V12 'Requested by' 2.52:1 on the default preset (a11y_finding, standalone, non-blocking)"
+    "surface_source": [
+      ".vue + locales in PR #2523",
+      "derived layer storefront + admin-spa",
+      "target suite layer frontend"
     ],
-    "theme_served": "default preset, not Coffee/Red (BL-A11Y-003 gate not reached)"
+    "ran": true,
+    "browser": "playwright-chrome",
+    "report": "reports/tickets/Sprint26-20/VCST-5884/design-report.md",
+    "theme_served": "coffee (B2B-store switched Mercury -> coffee 09:02:29Z, restored to Mercury 09:11:29Z and read back; operator approved)",
+    "vs_design": "SKIPPED: the ticket names no design project",
+    "axes": {
+      "invariant": "PASS (BL-UI-004)",
+      "design-system": "PASS",
+      "a11y": "PASS (BL-A11Y-003 reached under Coffee; Requested by 7.81:1; axe 0 violations)",
+      "vs_design": "SKIPPED"
+    },
+    "fails": [],
+    "advisory": [
+      "F1 Low: shared account sidebar mid-word 768-1279 (VCST-6265 family, KB-3320D7D3)",
+      "F2 buyer name wraps mid-word in 128 px column (contained)",
+      "F3 tab border 1.2:1 (selected state carried by other cues)",
+      "F4 Admin grid cell ellipsis"
+    ],
+    "first_attempt": "Chrome DevTools lane STOPPED: profile signed out and the brief named no auth path (orchestrator's brief defect)"
   },
   "contract": {
     "surface": true,
-    "surface_source": ["PR #28 adds Query.organizationReturns and four ReturnType fields", "refreshed graphql-schema.md"],
+    "surface_source": [
+      "PR #28 renames REST ReturnSearchCriteria.ExcludeDrafts -> SubmittedOnly",
+      "GraphQL ReturnType unchanged (submittedDate not on xAPI)"
+    ],
     "ran": true,
-    "snapshot": "graphql-schema.md refreshed 2026-10-08 from vcst (120 queries, 148 mutations); graphql:fixtures:validate:refresh 86/86 pass"
+    "snapshot": "graphql-schema.md refreshed 2026-10-12 from vcst; no GraphQL drift vs 2026-10-08; graphql:fixtures:validate:refresh 86/86 pass"
   },
   "coverage_triage": {
     "surface": true,
-    "surface_source": ["domains ret, b2b, notif", "target suites 014b 014c 050o 073 073a 073b", "observables the change moves: Organization column, Return|Notifications group, buyer name"],
+    "surface_source": [
+      "domain returns",
+      "suites 014b 014c 050o 073 073a 073b",
+      "observables excludeDrafts, submittedOnly, Draft, Modified date, Created by, Item count, page=, Requested by"
+    ],
     "ran": true,
-    "hits": 83,
-    "dispositions": { "CONFIRMED": 79, "REPAIR": 0, "RE-BASE": 4, "SUPERSEDED": 0 },
-    "record": "testing-checklist.md section F",
-    "note": "79 CONFIRMED includes 5 flagged SEAM (RET-AUTH-009/028..031)"
+    "hits": 61,
+    "dispositions": {
+      "CONFIRMED": 51,
+      "REPAIR": 3,
+      "RE-BASE": 7,
+      "SUPERSEDED": 0
+    },
+    "extra_rows_added_to_c1": [
+      "RET-007",
+      "RET-009",
+      "RET-AUTH-017",
+      "RET-ADM-007"
+    ],
+    "record": "Artifact A return (claims file verified at 3-cases)",
+    "note": "term 'Cancelled' was missing from the scan; the 4 rows it would have found were added by judgment (verifier: not material)"
   },
   "test_data": {
     "surface": true,
-    "surface_source": ["no role held the permission; no returns fixtures on vcst", "value chain needs a holder and a colleague in ONE org, an org with and without an address"],
+    "surface_source": [
+      "every case creates its returns in-case (FIFTH RULE)",
+      "returnable capacity on ORG_RET_BUYER was 2 lines"
+    ],
     "dispatched": true,
-    "fixtures_covering": ["@td(ORG_RET_*): 27 aliases, scripts/seed-data/orders/seed-org-returns.mjs"],
+    "fixtures_covering": [
+      "@td(ORG_RET_*): 27 aliases live",
+      "ORG_RET_BUYER spares 1-7 (16 returnable lines), other buyers 4 lines each"
+    ],
     "divergence_resolved": true,
     "td_validate": "green",
-    "seed_run": "seeded on vcst; teardown pending (npm run seed:returns:org:teardown), AGENT-TEST entities remain"
+    "seed_run": "seed:returns:org --spares-only (no round-2 data removed); teardown pending: npm run seed:returns:org:teardown (AGENT-TEST entities remain)",
+    "not_seeded": "RETURNS_AUTH_* (VCST-5883 fixtures) — operator decision",
+    "live_probe_writes_outside_cases": "RET261012-00003 moved to store Electronics (0 lines, cancelled), RET261012-00019, -00022 (cancelled) — Artifact A diagnosis of RET-ORG-011"
   },
-  "business_rules_verified": ["BL-B2B-012", "BL-B2B-013", "BL-GQL-001", "BL-B2B-005", "BL-B2B-007", "BL-UI-004 (violated)", "BL-A11Y-003 (gate not reached)"],
+  "business_rules_verified": [
+    "BL-B2B-005",
+    "BL-B2B-007",
+    "BL-B2B-012",
+    "BL-B2B-013",
+    "BL-GQL-001",
+    "BL-UI-004",
+    "BL-A11Y-003"
+  ],
   "appinsights": {
     "checked": false,
     "layers": [],
     "window_minutes": 0,
-    "signals": { "real_bug": 0, "needs_review": 0, "dismissed": 0 },
+    "signals": {
+      "real_bug": 0,
+      "needs_review": 0,
+      "dismissed": 0
+    },
     "correlated_failures": [],
-    "skipped_reason": "APPINSIGHTS_API_KEY_* are empty in this checkout and the Azure MCP applicationinsights tool cannot query logs"
+    "skipped_reason": "APPINSIGHTS_API_KEY_* are empty in this checkout"
   },
   "screenshots": "reports/tickets/Sprint26-20/VCST-5884/screenshots/",
   "report": {
     "page_url": null,
     "verdict_md": null,
     "kb": {
-      "read": ["KB-9E0ED0F4", "KB-5B2E99AB", "KB-657521DF", "KB-40BBC91A", "KB-1F2EBF83", "KB-06CFE625"],
-      "confirmed": ["KB-9E0ED0F4", "KB-5B2E99AB", "KB-17232A1F", "KB-40BBC91A", "KB-25682485", "KB-890E6A04", "KB-735C7B46", "KB-2C4FA5E9", "KB-4E9C8D27", "KB-49F6B6EF"],
-      "disputed": ["KB-ED01C2A4"],
-      "captured": ["KB-4E9C8D27", "KB-890E6A04", "KB-74682777", "KB-735C7B46", "KB-EC27E231", "KB-D4914072", "KB-9EAB5507", "KB-79B30FDE", "KB-94700769", "KB-6897B86A", "KB-33E0A778", "KB-16A03137", "KB-B36F3F94"]
+      "read": [
+        "KB-17232A1F",
+        "KB-09C378C0",
+        "KB-7AEB4AAD",
+        "KB-BFD13716",
+        "KB-22E486F9",
+        "KB-13838BF5",
+        "KB-16A03137",
+        "KB-18D61DE9",
+        "KB-21F4F161",
+        "KB-890E6A04",
+        "KB-29A75D95",
+        "KB-E50C6246",
+        "KB-3712D4C4",
+        "KB-AFF6282A"
+      ],
+      "confirmed": [
+        "KB-BFD13716",
+        "KB-7AEB4AAD",
+        "KB-AC128A86",
+        "KB-13838BF5",
+        "KB-16A03137",
+        "KB-62BF1335",
+        "KB-890E6A04",
+        "KB-18D61DE9",
+        "KB-2C4FA5E9",
+        "KB-85EA02F6",
+        "KB-F3A9F204",
+        "KB-5B2E99AB",
+        "KB-E50C6246",
+        "KB-735C7B46",
+        "KB-4E1FF232",
+        "KB-8A2F58EA",
+        "KB-22E486F9"
+      ],
+      "disputed": [
+        "KB-09C378C0",
+        "KB-3712D4C4"
+      ],
+      "captured": [
+        "KB-85EA02F6",
+        "KB-52A684A6",
+        "KB-6A7DA439",
+        "KB-3951B671",
+        "KB-4A717175",
+        "KB-88DFA29B",
+        "KB-78DC2D91",
+        "KB-3320D7D3",
+        "KB-50E37D3B",
+        "KB-18D61DE9"
+      ]
     }
   },
   "release": {
-    "layers": ["storefront", "module"],
-    "layer_source": ["PR #28 (vc-module-return)", "PR #2523 (vc-frontend)"],
+    "layers": [
+      "storefront",
+      "module"
+    ],
+    "layer_source": [
+      "PR #28 (vc-module-return)",
+      "PR #2523 (vc-frontend)"
+    ],
     "layers_conflict": false,
-    "audience": [],
-    "component_versions": { "VirtoCommerce.Return": "3.1005.0-pr-28-62f9", "vc-theme-b2b-vue": "2.60.0-pr-2523-9e4e-9e4e67ef" },
-    "platform_version": "3.1076.0",
+    "audience": [
+      "customer",
+      "developer"
+    ],
+    "audience_source": "virto-doc-style.md §9.1 cross-layer: outermost surface storefront -> customer; contract moved (REST submittedOnly, permission, setting) -> developer",
+    "component_versions": {
+      "VirtoCommerce.Return": "3.1005.0-pr-28-fb4f",
+      "vc-theme-b2b-vue": "2.60.0-pr-2523-4263-4263715a"
+    },
+    "platform_version": "3.1078.0",
     "breaking": false,
-    "breaking_source": null,
+    "breaking_source": "ExcludeDrafts -> SubmittedOnly renames a criterion introduced in the same unreleased PR; no released contract changes",
     "user_visible": true,
     "fragment": null,
-    "refusal": "verdict-not-pass",
+    "refusal": null,
     "aggregated_into": null
   },
-  "documentation": null
+  "documentation": {
+    "published": true,
+    "audiences": [
+      "customer",
+      "admin",
+      "developer"
+    ],
+    "files": [
+      "reports/ba/vcst-5884-organization-returns-guide.md"
+    ],
+    "amended": [],
+    "comment_posted": true,
+    "refusal": null,
+    "comment_id": "111899",
+    "images_rendered": 4,
+    "not_documented": [
+      "AC-4 organization e-mail copy (unratified, not re-run)",
+      ":submit permission (unused)",
+      "AC-2 placement (PO)",
+      "returns cancelled before the module upgrade hidden (PO)",
+      "ordering by created date (PO)",
+      "store not compared on return(id) (PO)",
+      "admin non-member refused (PO to ratify)",
+      "Draft in My returns filter (absent on vcst dictionary)",
+      "org-tab sorting / buyer-name search / date filter (no PASS row this round)",
+      "attachments (no upload scope)",
+      "legacy store-less holder (fixture gap)"
+    ]
+  }
 }

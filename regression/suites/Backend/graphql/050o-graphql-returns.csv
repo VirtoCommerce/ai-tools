@@ -2005,19 +2005,19 @@ mutation { cancelReturn(command: { returnId: ""{{DR_ID}}"" }) { id status } }
 [DATA label=owner_check_draft] data.return.customerComment = AGENT-TEST VCST-5884 owner draft {SPEC} (VCST-5884 AC-3: the colleague's edit did not persist)
 [ERRORS label=cleanup_own] errors[] empty {SPEC} (VCST-5628)
 [ERRORS label=cleanup_dr] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] owner_check_req and owner_check_draft are read as the OWNER after each refused attempt: the refusals were genuine no-ops, not partial mutations that merely failed to return a payload",any holder call answers errors[] empty (a colleague acted on the return); the owner's status or comment changed; the :submit holder changes anything; the holder sees an available action on a colleague's return; a return appears on the owner's order that the owner did not create,cancelReturn on OWN_ID and DR_ID as ORG_RET_BUYER (inline). Aborted before that: a Requested return holds one unit of line A (40 ordered) and a Draft holds none; re-seed with --fresh when it runs low.,VCST-5884 · Archetype:SILENT · Technique:DT · Behavior:ret.buyer.cancel.not-owner,Draft
-RET-ORG-010,organizationReturns filter and REST search — a legacy return with a backfilled organization and no store is dropped by the store filter,GraphQL xAPI — Returns > Organization returns (step 3),High,,,"HELD and MANUAL. FIXTURE-GAP: the platform API cannot create a return without a store, and the three organizations that carry a store-less return on vcst (observed through REST search, 3x 2026-10-08: 1 row each for organizationId + excludeDrafts, 0 once storeId=B2B-store is added) are SHARED, non-AGENT-TEST organizations, so no holder can be provisioned there. The xAPI holder view of those rows is not reachable; no alias is invented for it. The REST leg is a manual probe: as the administrator, POST /api/return/search {""organizationId"": <an organization that carries a store-less return>, ""excludeDrafts"": true, ""take"": 100} with and without ""storeId"": ""B2B-store"" and record both row counts. The expectation is the SPEC/DOC one (the migration note and the module guide say the organization of an existing return was ""filled in"", so it belongs in the organization's list): the filtered query returns the same row, and the case stays Draft/Manual while the PO has not stated whether legacy returns belong in the list. Would make it real: a store-less return in an AGENT-TEST organization (a seeder that can write a return row) or the PO's rule.",admin={{ADMIN_USER}},"[AUTH role=ADMIN_DEFAULT]
+RET-ORG-010,organizationReturns filter and REST search — a legacy return with a backfilled organization and no store is dropped by the store filter,GraphQL xAPI — Returns > Organization returns (step 3),High,,,"HELD and MANUAL. FIXTURE-GAP: the platform API cannot create a return without a store, and the three organizations that carry a store-less return on vcst (observed through REST search, 3x 2026-10-08: 1 row each for organizationId + the then-named excludeDrafts, 0 once storeId=B2B-store is added) are SHARED, non-AGENT-TEST organizations, so no holder can be provisioned there. The xAPI holder view of those rows is not reachable; no alias is invented for it. The REST leg is a manual probe: as the administrator, POST /api/return/search {""organizationId"": <an organization that carries a store-less return>, ""submittedOnly"": true, ""take"": 100} with and without ""storeId"": ""B2B-store"" and record both row counts. The expectation is the SPEC/DOC one (the migration note and the module guide say the organization of an existing return was ""filled in"", so it belongs in the organization's list): the filtered query returns the same row, and the case stays Draft/Manual while the PO has not stated whether legacy returns belong in the list. Would make it real: a store-less return in an AGENT-TEST organization (a seeder that can write a return row) or the PO's rule.",admin={{ADMIN_USER}},"[AUTH role=ADMIN_DEFAULT]
 [REST-OP legacy_unfiltered]
 POST {{BACK_URL}}/api/return/search
 Content-Type: application/json
-Body: {""organizationId"": ""<id of an organization that carries a store-less return>"", ""excludeDrafts"": true, ""take"": 100}
+Body: {""organizationId"": ""<id of an organization that carries a store-less return>"", ""submittedOnly"": true, ""take"": 100}
 [REST-EXEC legacy_unfiltered]
 [REST-OP legacy_store_filtered]
 POST {{BACK_URL}}/api/return/search
 Content-Type: application/json
-Body: {""organizationId"": ""<the same organization>"", ""excludeDrafts"": true, ""storeId"": ""{{STORE_ID}}"", ""take"": 100}
-[REST-EXEC legacy_store_filtered]","[REL] the number of rows POST /api/return/search returns for the legacy organization with excludeDrafts equals the number it returns with storeId added {DOC} (PR #28 Database: the organization of an existing return is filled in; HELD: 3x observed 1 row without the store filter and 0 with it)
-[EVIDENCE] once a holder fixture exists, organizationReturns for that organization lists the legacy return {DOC} (PR #28 Database)",[EVIDENCE] the row counts of the two REST calls are the evidence; nothing is written,the storeId-filtered REST search returns fewer rows than the unfiltered one for the same organization (a legacy return never reaches the organization list although the upgrade note says its organization was filled in); the holder-side list omits a legacy return the REST search shows for the same organization,none -- read-only,VCST-5884 · Archetype:FALLBACK · Technique:EP,Manual
-RET-ORG-011,return(id) and organizationReturns — a holder reading a return created in another store gets the rule the PO states,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} createReturn has NO storeId: the store of a return comes from its ORDER, so a buyer cannot create an other-store return through the xAPI (execution lane B, corrects the plan). The per-run setup is therefore an administrator PUT /api/return that moves the AGENT-TEST return to store Electronics, built from the scalar fields read from the return itself (GET /api/return/{id}); the first live run confirms the PUT keeps the return's lines (execution lane B moved a return this way on vcst). The store is restored to the order's store BEFORE the buyer cancels, and the return is cancelled in Cleanup if the case aborts. Observed (3x, lane B): the store is NOT compared on return(id), and the list's storeId argument matches case-insensitively. The expectation is the consistent one (a by-id read agrees with the list), kept as a {HYPOTHESIS} that stays Draft until the PO states the store rule: a red holder_read is a candidate finding for the PO, not a certified defect and not inverted to the build.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
+Body: {""organizationId"": ""<the same organization>"", ""submittedOnly"": true, ""storeId"": ""{{STORE_ID}}"", ""take"": 100}
+[REST-EXEC legacy_store_filtered]","[REL] the number of rows POST /api/return/search returns for the legacy organization with submittedOnly equals the number it returns with storeId added {DOC} (PR #28 Database: the organization of an existing return is filled in; HELD: 3x observed 1 row without the store filter and 0 with it)
+[EVIDENCE] once a holder fixture exists, organizationReturns for that organization lists the legacy return {DOC} (PR #28 Database)",[EVIDENCE] the row counts of the two REST calls are the evidence; nothing is written,the storeId-filtered REST search returns fewer rows than the unfiltered one for the same organization (a legacy return never reaches the organization list although the upgrade note says its organization was filled in); the holder-side list omits a legacy return the REST search shows for the same organization,none -- read-only,VCST-5884 · Archetype:FALLBACK · Technique:EP | Repaired: 2026-10-12 (VCST-5884 r3: REST criterion excludeDrafts is now submittedOnly; the old name is silently ignored),Manual
+RET-ORG-011,return(id) and organizationReturns — a holder reading a return created in another store gets the rule the PO states,GraphQL xAPI — Returns > Organization returns (step 3),Medium,,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. {HYPOTHESIS} createReturn has NO storeId: the store of a return comes from its ORDER, so a buyer cannot create an other-store return through the xAPI (execution lane B, corrects the plan). The per-run setup is therefore an administrator PUT /api/return that moves the AGENT-TEST return to store Electronics, built from the scalar fields read from the return itself (GET /api/return/{id}) plus its one line (returnId, orderLineItemId, quantity, reasonCode): a body without lineItems is refused 400 ""A return needs at least one line."" (round 2 ended BLOCKED on exactly that), and a line sent without returnId is dropped (both observed 2026-10-12); fields the body omits, such as customerComment, are cleared by the PUT and not asserted here. The store is restored to the order's store BEFORE the buyer cancels, and the return is cancelled in Cleanup if the case aborts. Observed (3x, lane B): the store is NOT compared on return(id), and the list's storeId argument matches case-insensitively. The expectation is the consistent one (a by-id read agrees with the list), kept as a {HYPOTHESIS} that stays Draft until the PO states the store rule: a red holder_read is a candidate finding for the PO, not a certified defect and not inverted to the build.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
 [GQL-OP x_create]
 mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
 [GQL-EXEC x_create]
@@ -2041,7 +2041,7 @@ GET {{BACK_URL}}/api/return/{{X_ID}}
 [REST-OP move]
 PUT {{BACK_URL}}/api/return
 Content-Type: application/json
-Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""Electronics"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}
+Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""Electronics"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}"", ""lineItems"": [{""returnId"": ""{{X_ID}}"", ""orderLineItemId"": ""{{b_line}}"", ""quantity"": 1, ""reasonCode"": ""NoLongerNeeded""}]}
 [REST-EXEC move]
 [REST-OP moved_state]
 GET {{BACK_URL}}/api/return/{{X_ID}}
@@ -2060,7 +2060,7 @@ query { organizationReturns(storeId: ""Electronics"", organizationId: ""{{viewer
 [REST-OP restore]
 PUT {{BACK_URL}}/api/return
 Content-Type: application/json
-Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}
+Body: {""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}"", ""lineItems"": [{""returnId"": ""{{X_ID}}"", ""orderLineItemId"": ""{{b_line}}"", ""quantity"": 1, ""reasonCode"": ""NoLongerNeeded""}]}
 [REST-EXEC restore]
 [AUTH role=ORG_RET_BUYER]
 [GQL-OP cleanup_x]
@@ -2074,14 +2074,14 @@ mutation { cancelReturn(command: { returnId: ""{{X_ID}}"" }) { id status } }
 [ERRORS label=moved_state] HTTP 200 {OBSERVED}
 [DATA label=moved_state] body.storeId = Electronics {OBSERVED} (the per-run return really sits in another store before the holder reads it)
 [ERRORS label=holder_read] errors[] empty {HYPOTHESIS} (the store rule is unstated; real when the PO states it)
-[NULL label=holder_read] data.return {HYPOTHESIS} (the store rule is unstated; the organization list filters StoreId, so a by-id read of a return the list would not show should agree with it; real when the PO states the rule. 3x and lane B observed: store NOT compared, the return opens)
+[EVIDENCE] holder_read: whether data.return is returned or null, recorded for PO question G.5 (KB-890E6A04; developer comment 111790 says the store is not compared by design) {HYPOTHESIS} (the store rule is unstated; recorded only, it gates nothing)
 [ERRORS label=list_home_store] errors[] empty {HYPOTHESIS} (the store rule is unstated; real when the PO states it)
 [NULL label=list_home_store] data.organizationReturns.items[?number={{X_NO}}] {SPEC} (PR #28 Behaviour: the list filters the store of the request; the return now belongs to another store)
 [ERRORS label=list_other_store] errors[] empty {OBSERVED} (the storeId argument matches case-insensitively; no expectation on the other store's own list)
 [ERRORS label=restore] HTTP 200 {OBSERVED}
 [ERRORS label=cleanup_x] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] moved_state reads the store of the return as the administrator after the PUT, so the holder's read is made against a known StoreId; the buyer owns the return throughout","a holder reads, by id, a return of a store other than the one the list shows (the by-id read and the list disagree about the same return); the PUT dropped the return's lines or customer (BLOCKED: the setup, not the product); the store is left on Electronics","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/return]
-{""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}""}",VCST-5884 · Archetype:SCOPE · Technique:EG,Draft
+{""id"": ""{{X_ID}}"", ""number"": ""{{X_NUMBER}}"", ""orderId"": ""{{X_ORDERID}}"", ""orderNumber"": ""{{X_ORDERNUMBER}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{X_CUSTOMERID}}"", ""customerName"": ""{{X_CUSTOMERNAME}}"", ""organizationId"": ""{{X_ORGANIZATIONID}}"", ""organizationName"": ""{{X_ORGANIZATIONNAME}}"", ""status"": ""{{X_STATUS}}"", ""lineItems"": [{""returnId"": ""{{X_ID}}"", ""orderLineItemId"": ""{{b_line}}"", ""quantity"": 1, ""reasonCode"": ""NoLongerNeeded""}]}",VCST-5884 · Archetype:SCOPE · Technique:EG | Corrected: 2026-10-12 (triage: unratified hypothesis no longer gates) | Repaired: 2026-10-12 (VCST-5884 r3: the other-store PUT recipe now carries lineItems; the lineless body answered 400),Draft
 RET-ORG-012,organizationReturns — a permission revoked mid-session is refused on the next call while the old token is still valid,GraphQL xAPI — Returns > Organization returns (step 3),High,BL-GQL-004,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED return a case created, never a total: other lanes submit returns into the same organization at the same time. The same access token is used for before_revoke, after_revoke and after_regrant: the runner caches one token per role for the run, and the whole case signs the holder in once. The holder's membership role is removed and re-granted through the platform API. Do NOT cite VC-B2B-002 (""without re-login""): it contradicts BL-B2B-005 and the docs, which say the server applies the change at once and only the signed-in session is stale. SHARED STATE: this writes the membership of ORG_RET_HOLDER_MEMBERSHIP, which other cases use as their holder: run this case alone and let it restore the role before anything else signs that holder in (the checklist's revoke row names ORG_RET_HOLDER_ORGROLE, whose grant is an organization-level role and cannot be written without sending a whole organization object through this grammar). The role id and name are read from the membership itself. The REST body mirrors seed-org-returns.mjs; the first live run settles anything the platform rejects.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); b_order=@td(ORG_RET_BUYER.orderId); b_line=@td(ORG_RET_BUYER.lineAItemId),"[AUTH role=ORG_RET_BUYER]
 [GQL-OP b_create]
 mutation { createReturn(command: { orderId: ""{{b_order}}"", customerComment: ""AGENT-TEST VCST-5884"", items: [{ orderLineItemId: ""{{b_line}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884"" }] }) { id number status } }
@@ -2370,3 +2370,207 @@ mutation { cancelReturn(command: { returnId: ""{{M_ID}}"" }) { id status } }
 [ERRORS label=cleanup_m] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] org_state reads the organization back after the rename, so the observation is made with the new name really in place; the two returns are compared by their own numbers","the organization name on the returns differs from what the PO decides (stale on existing returns, or on the one created after the rename); the rename or its restore fails (BLOCKED: ORG_RET_OTHER_ORG left renamed)","[AUTH role=ADMIN_DEFAULT]
 [REST PUT /api/organizations]
 {""id"": ""@td(ORG_RET_OTHER_ORG.id)"", ""memberType"": ""Organization"", ""name"": ""@td(ORG_RET_OTHER_ORG.name)"", ""emails"": [""@td(ORG_RET_OTHER_ORG.email)""]}",VCST-5884 · Archetype:STALE · Technique:ST,Draft
+RET-ORG-042,"organizationReturns + return(id) — of three per-run returns in one organization, the draft cancelled before submit is hidden while the submitted-then-cancelled and the submitted one are listed",GraphQL xAPI — Returns > Organization returns (step 3),Critical,"BL-B2B-007, BL-GQL-001",,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED returns a case created, never a total: other lanes submit returns into the same organization at the same time. FIFTH RULE: the three returns are created IN the case, not seeded: what the organization list shows of a cancelled return depends on whether it was ever submitted, and a seeded row cannot be trusted to still be what it was (the pre-upgrade rows of a stand all carry a null stamp and cannot tell the two apart; that is RET-ORG-043's subject). The returns differ only by what happened to them: (a) created and cancelled, never submitted; (b) submitted and then cancelled, so it ends in the SAME status Cancelled as (a); (c) submitted. The lines come from the spare orders 1 to 3 of ORG_RET_BUYER (spare orders 4 to 7 belong to the other lanes); every return asks for one unit of a line of 40. BLOCKED, never FAIL, when a create answers RETURN_QUANTITY_UNAVAILABLE or no returnable line is left (re-seed: TEST_ENV=<env> npm run seed:returns:org -- --spares-only). The keyword queries and return(id) are asked as the holder ORG_RET_HOLDER_GLOBAL; own_a and own_kw_a are the owner's controls: the draft really exists when the holder is refused.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); s1_order=@td(ORG_RET_BUYER.spare1OrderId); s1_la=@td(ORG_RET_BUYER.spare1LineAItemId); s1_lb=@td(ORG_RET_BUYER.spare1LineBItemId); s2_order=@td(ORG_RET_BUYER.spare2OrderId); s2_la=@td(ORG_RET_BUYER.spare2LineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP a_create]
+mutation { createReturn(command: { orderId: ""{{s1_order}}"", customerComment: ""AGENT-TEST VCST-5884 042 never sent"", items: [{ orderLineItemId: ""{{s1_la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 042 never sent"" }] }) { id number status } }
+[GQL-EXEC a_create]
+[GQL-CAPTURE a_create.data.createReturn.id → A_ID]
+[GQL-CAPTURE a_create.data.createReturn.number → A_NO]
+[GQL-OP a_cancel]
+mutation { cancelReturn(command: { returnId: ""{{A_ID}}"" }) { id status } }
+[GQL-EXEC a_cancel]
+[GQL-OP b_create]
+mutation { createReturn(command: { orderId: ""{{s1_order}}"", customerComment: ""AGENT-TEST VCST-5884 042 sent then cancelled"", items: [{ orderLineItemId: ""{{s1_lb}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 042 sent then cancelled"" }] }) { id number status } }
+[GQL-EXEC b_create]
+[GQL-CAPTURE b_create.data.createReturn.id → B_ID]
+[GQL-CAPTURE b_create.data.createReturn.number → B_NO]
+[GQL-OP b_submit]
+mutation { submitReturn(command: { returnId: ""{{B_ID}}"" }) { id number status } }
+[GQL-EXEC b_submit]
+[GQL-OP b_cancel]
+mutation { cancelReturn(command: { returnId: ""{{B_ID}}"" }) { id status } }
+[GQL-EXEC b_cancel]
+[GQL-OP c_create]
+mutation { createReturn(command: { orderId: ""{{s2_order}}"", customerComment: ""AGENT-TEST VCST-5884 042 sent"", items: [{ orderLineItemId: ""{{s2_la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 042 sent"" }] }) { id number status } }
+[GQL-EXEC c_create]
+[GQL-CAPTURE c_create.data.createReturn.id → C_ID]
+[GQL-CAPTURE c_create.data.createReturn.number → C_NO]
+[GQL-OP c_submit]
+mutation { submitReturn(command: { returnId: ""{{C_ID}}"" }) { id number status } }
+[GQL-EXEC c_submit]
+[GQL-OP own_a]
+query { return(id: ""{{A_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC own_a]
+[GQL-OP own_kw_a]
+query { returns(storeId: ""{{STORE_ID}}"", first: 10, keyword: ""{{A_NO}}"") { totalCount items { id number status } } }
+[GQL-EXEC own_kw_a]
+[AUTH role=ORG_RET_HOLDER_GLOBAL]
+[GQL-OP kw_a]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{A_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC kw_a]
+[GQL-OP kw_b]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{B_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC kw_b]
+[GQL-OP kw_c]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{C_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC kw_c]
+[GQL-OP read_a]
+query { return(id: ""{{A_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC read_a]
+[GQL-OP read_b]
+query { return(id: ""{{B_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC read_b]
+[GQL-OP read_c]
+query { return(id: ""{{C_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC read_c]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_c]
+mutation { cancelReturn(command: { returnId: ""{{C_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_c]","[ERRORS label=a_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=a_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=a_cancel] errors[] empty {SPEC} (VCST-5628)
+[DATA label=a_cancel] data.cancelReturn.status = Cancelled {SPEC} (VCST-5628)
+[ERRORS label=b_create] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=b_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=b_cancel] errors[] empty {SPEC} (VCST-5628)
+[DATA label=b_cancel] data.cancelReturn.status = Cancelled {SPEC} (VCST-5628: (a) and (b) end in the same status; only the submit separates them)
+[ERRORS label=c_create] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=c_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=c_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=own_a] errors[] empty {SPEC} (VCST-5628)
+[DATA label=own_a] data.return.number = {{A_NO}} {DOC} (module guide @fb4fc43: a draft its buyer cancels before submitting stays in their own list; control: the draft exists)
+[ERRORS label=own_kw_a] errors[] empty {SPEC} (VCST-5628)
+[COUNT label=own_kw_a] data.returns.items[*?number={{A_NO}}].length = 1 {DOC} (module guide @fb4fc43: the owner's own list keeps the cancelled draft)
+[ERRORS label=kw_a] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=kw_a] data.organizationReturns.items.length = 0 {DOC} (module guide @fb4fc43: a draft its buyer cancels before submitting is not in the organization's list; VCST-6226 Expected)
+[NULL label=kw_a] data.organizationReturns.items[?number={{A_NO}}] {DOC} (module guide @fb4fc43, same rule)
+[ERRORS label=read_a] errors[] empty {SPEC} (VCST-5884 AC-3)
+[NULL label=read_a] data.return {DOC} (module guide @fb4fc43: the abandoned draft and its comment are not readable by a holder; VCST-6226 Expected)
+[ERRORS label=kw_b] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=kw_b] data.organizationReturns.items[*?number={{B_NO}}].length = 1 {SPEC} (VCST-6226 Expected: a return submitted and then cancelled stays in the organization's list)
+[DATA label=kw_b] data.organizationReturns.items[?number={{B_NO}}].status = Cancelled {SPEC} (VCST-6226 Expected)
+[ERRORS label=read_b] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=read_b] data.return.number = {{B_NO}} {SPEC} (VCST-6226 Expected: the holder reads the submitted-then-cancelled return)
+[DATA label=read_b] data.return.status = Cancelled {SPEC} (VCST-6226 Expected)
+[ERRORS label=kw_c] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=kw_c] data.organizationReturns.items[?number={{C_NO}}].status = Requested {SPEC} (VCST-5884 AC-3: the organization's returns, everyone's)
+[ERRORS label=read_c] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=read_c] data.return.number = {{C_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=cleanup_c] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] own_a and own_kw_a show the draft exists and is still the owner's after the cancel, so the holder's refusal is the gate and not a missing row; a and b end in the same status Cancelled, so the only thing the holder's list can react to is whether a submit ever happened
+[REST] POST /api/return/search as the administrator with organizationId and submittedOnly true lists b and c and not a (RET-ORG-047 asserts the parity)","the holder finds a (its RMA keyword returns a row, or return(id) opens it): the abandoned draft and its comment leak to the organization; b or c is missing for the holder (a submitted-then-cancelled return vanished: the stamp was lost on cancel); b is listed with a status other than Cancelled; the owner no longer lists a",cancelReturn on C_ID as ORG_RET_BUYER (inline as cleanup_c); a and b are already cancelled,VCST-5884 · Archetype:LIFECYCLE · Technique:ST · Purpose:FUNC · Catches:VCST-6226 · Behavior:ret.state.cancelled,Draft
+RET-ORG-043,organizationReturns + return(id) — a return cancelled before the 3.1005.0 upgrade is absent for the organization holder but still in its owner's own list,GraphQL xAPI — Returns > Organization returns (step 3),High,BL-B2B-007,,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED returns a case created, never a total: other lanes submit returns into the same organization at the same time. DATA STATE, discovered live and never created: no API can write a pre-upgrade return, so the case needs two rows the 3.1005.0 upgrade left behind. P is the OLDEST Approved return of ORG_RET_BUYER in the organization; it counts as pre-upgrade only if its submittedDate equals its createdDate, which is what the upgrade wrote for every return that was neither a draft nor cancelled (an Approved return submitted after the upgrade is always dated later than it was created). Q is the OLDEST Cancelled return of ORG_RET_BUYER created at or before P's createdDate, so it is older than a row that predates the upgrade and therefore predates it too; its submittedDate is null because the upgrade could not tell whether it was ever submitted. The REST statuses filter finds either spelling of cancelled. BLOCKED, never FAIL, when no such pair exists on the stand (a stand installed after 3.1005.0 has none): the guards on p_search and q_search say so, and nothing is created, changed or cancelled by this case. ORG_RET_BUYER is the owner of both, so the owner controls can be asked with its own token.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); buyer_user=@td(ORG_RET_BUYER.userId),"[AUTH role=ADMIN_DEFAULT]
+[REST-OP p_search]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""{{viewer_org}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{buyer_user}}"", ""statuses"": [""Approved""], ""sort"": ""createdDate:asc"", ""take"": 1}
+[REST-EXEC p_search]
+[REST-CAPTURE p_search.body.results.0.id → P_ID]
+[REST-CAPTURE p_search.body.results.0.number → P_NO]
+[REST-CAPTURE p_search.body.results.0.createdDate → P_CREATED]
+[REST-OP q_search]
+POST {{BACK_URL}}/api/return/search
+Content-Type: application/json
+Body: {""organizationId"": ""{{viewer_org}}"", ""storeId"": ""{{STORE_ID}}"", ""customerId"": ""{{buyer_user}}"", ""statuses"": [""Cancelled""], ""endDate"": ""{{P_CREATED}}"", ""sort"": ""createdDate:asc"", ""take"": 1}
+[REST-EXEC q_search]
+[REST-CAPTURE q_search.body.results.0.id → Q_ID]
+[REST-CAPTURE q_search.body.results.0.number → Q_NO]
+[AUTH role=ORG_RET_HOLDER_GLOBAL]
+[GQL-OP kw_q]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{Q_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC kw_q]
+[GQL-OP kw_p]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{P_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC kw_p]
+[GQL-OP read_q]
+query { return(id: ""{{Q_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC read_q]
+[GQL-OP read_p]
+query { return(id: ""{{P_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC read_p]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP own_q]
+query { return(id: ""{{Q_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC own_q]
+[GQL-OP own_kw_q]
+query { returns(storeId: ""{{STORE_ID}}"", first: 10, keyword: ""{{Q_NO}}"") { totalCount items { id number status } } }
+[GQL-EXEC own_kw_q]","[ERRORS label=p_search] HTTP 200 {OBSERVED}
+[COUNT label=p_search] body.results.length = 1 {OBSERVED} (BLOCKED guard: the stand holds an Approved return of ORG_RET_BUYER)
+[DATA label=p_search] body.results.0.submittedDate = {{P_CREATED}} {OBSERVED} (BLOCKED guard: the oldest Approved return was dated by the upgrade, submittedDate = createdDate)
+[ERRORS label=q_search] HTTP 200 {OBSERVED}
+[COUNT label=q_search] body.results.length = 1 {OBSERVED} (BLOCKED guard: a Cancelled return of ORG_RET_BUYER older than P exists)
+[NULL label=q_search] body.results.0.submittedDate {OBSERVED} (BLOCKED guard: a return cancelled before the upgrade carries no stamp)
+[ERRORS label=kw_q] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=kw_q] data.organizationReturns.items.length = 0 {DOC} (module guide @fb4fc43: a return cancelled before version 3.1005.0 stays out of the organization's list)
+[ERRORS label=read_q] errors[] empty {SPEC} (VCST-5884 AC-3)
+[NULL label=read_q] data.return {DOC} (module guide @fb4fc43: a return cancelled before version 3.1005.0 stays out, whether it had been submitted was not recorded)
+[ERRORS label=kw_p] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=kw_p] data.organizationReturns.items[?number={{P_NO}}].status = Approved {SPEC} (VCST-5884 AC-3: the organization keeps listing a submitted return it could already see after the upgrade)
+[ERRORS label=read_p] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=read_p] data.return.number = {{P_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=own_q] errors[] empty {SPEC} (VCST-5628)
+[DATA label=own_q] data.return.number = {{Q_NO}} {DOC} (module guide @fb4fc43: only the organization's list drops it; the owner's own list is not narrowed)
+[ERRORS label=own_kw_q] errors[] empty {SPEC} (VCST-5628)
+[COUNT label=own_kw_q] data.returns.items[*?number={{Q_NO}}].length = 1 {DOC} (module guide @fb4fc43, same rule)","[EVIDENCE] p_search and q_search are the evidence that the pair is a pre-upgrade pair (an Approved row dated by the backfill and an older Cancelled row with no stamp); the holder is refused q and served p although both predate the upgrade
+[EVIDENCE] whether the organization should see a pre-upgrade cancelled return is the PO's question (ABSENT IN PRODUCT: the upgrade lost the submitted/never-submitted distinction irreversibly); the case asserts only what the guide states",the holder finds q (a pre-upgrade cancelled return is listed or readable); the holder no longer finds p (the upgrade hid a return the organization could already see); the owner no longer lists q in their own list,"none -- read-only: the case creates, changes and cancels nothing",VCST-5884 · Archetype:FALLBACK · Technique:EP · Purpose:FUNC · Behavior:ret.state.cancelled,Draft
+RET-ORG-044,organizationReturns — the holder of a membership-scoped role sees the same submitted/never-submitted split as a global-role holder,GraphQL xAPI — Returns > Organization returns (step 3),High,"BL-B2B-005, BL-B2B-007",,"Runner-native. No browser. Fixtures are the 3a ORG_RET_* personas (organization AGENT-TEST-Org-RetViewer). Every return a case creates is PER-RUN and is cancelled inline; Return.AttachmentsRequired must be at its default false (else the submit step is BLOCKED, KB-84773559). Assert the NAMED returns a case created, never a total: other lanes submit returns into the same organization at the same time. The permission reaches ORG_RET_HOLDER_MEMBERSHIP through a MEMBERSHIP role (agent-test-org-ret-viewer, no global role) and ORG_RET_HOLDER_GLOBAL through a global role; the organization gate rebuilds permissions from the roles on its own branch, separate from the token, so the two holders must agree on the SubmittedDate gate and each is asked about the same two returns. FIFTH RULE: both returns are created IN the case: (a) created and cancelled, never submitted; (b) submitted. The lines are spare order 2 line B and spare order 3 line A of ORG_RET_BUYER (spare orders 4 to 7 belong to the other lanes). BLOCKED, never FAIL, when a create answers RETURN_QUANTITY_UNAVAILABLE or no returnable line is left.",viewer_org=@td(ORG_RET_VIEWER_ORG.id); s2_order=@td(ORG_RET_BUYER.spare2OrderId); s2_lb=@td(ORG_RET_BUYER.spare2LineBItemId); s3_order=@td(ORG_RET_BUYER.spare3OrderId); s3_la=@td(ORG_RET_BUYER.spare3LineAItemId),"[AUTH role=ORG_RET_BUYER]
+[GQL-OP d_create]
+mutation { createReturn(command: { orderId: ""{{s2_order}}"", customerComment: ""AGENT-TEST VCST-5884 044 never sent"", items: [{ orderLineItemId: ""{{s2_lb}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 044 never sent"" }] }) { id number status } }
+[GQL-EXEC d_create]
+[GQL-CAPTURE d_create.data.createReturn.id → D_ID]
+[GQL-CAPTURE d_create.data.createReturn.number → D_NO]
+[GQL-OP d_cancel]
+mutation { cancelReturn(command: { returnId: ""{{D_ID}}"" }) { id status } }
+[GQL-EXEC d_cancel]
+[GQL-OP s_create]
+mutation { createReturn(command: { orderId: ""{{s3_order}}"", customerComment: ""AGENT-TEST VCST-5884 044 sent"", items: [{ orderLineItemId: ""{{s3_la}}"", quantity: 1, reasonCode: ""NoLongerNeeded"", reasonComment: ""AGENT-TEST VCST-5884 044 sent"" }] }) { id number status } }
+[GQL-EXEC s_create]
+[GQL-CAPTURE s_create.data.createReturn.id → S_ID]
+[GQL-CAPTURE s_create.data.createReturn.number → S_NO]
+[GQL-OP s_submit]
+mutation { submitReturn(command: { returnId: ""{{S_ID}}"" }) { id number status } }
+[GQL-EXEC s_submit]
+[AUTH role=ORG_RET_HOLDER_MEMBERSHIP]
+[GQL-OP m_kw_d]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{D_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC m_kw_d]
+[GQL-OP m_kw_s]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{S_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC m_kw_s]
+[GQL-OP m_read_d]
+query { return(id: ""{{D_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC m_read_d]
+[GQL-OP m_read_s]
+query { return(id: ""{{S_ID}}"") { id number status customerComment items { reasonComment } } }
+[GQL-EXEC m_read_s]
+[AUTH role=ORG_RET_HOLDER_GLOBAL]
+[GQL-OP g_kw_d]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{D_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC g_kw_d]
+[GQL-OP g_kw_s]
+query { organizationReturns(storeId: ""{{STORE_ID}}"", organizationId: ""{{viewer_org}}"", first: 10, keyword: ""{{S_NO}}"") { totalCount items { id number status customerName } } }
+[GQL-EXEC g_kw_s]
+[AUTH role=ORG_RET_BUYER]
+[GQL-OP cleanup_s]
+mutation { cancelReturn(command: { returnId: ""{{S_ID}}"" }) { id status } }
+[GQL-EXEC cleanup_s]","[ERRORS label=d_create] errors[] empty {SPEC} (VCST-5628)
+[DATA label=d_create] data.createReturn.status = Draft {SPEC} (VCST-5628)
+[ERRORS label=d_cancel] errors[] empty {SPEC} (VCST-5628)
+[DATA label=d_cancel] data.cancelReturn.status = Cancelled {SPEC} (VCST-5628)
+[ERRORS label=s_create] errors[] empty {SPEC} (VCST-5628)
+[ERRORS label=s_submit] errors[] empty {SPEC} (VCST-5628)
+[DATA label=s_submit] data.submitReturn.status = Requested {SPEC} (VCST-5628)
+[ERRORS label=m_kw_d] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=m_kw_d] data.organizationReturns.items.length = 0 {DOC} (module guide @fb4fc43: a draft its buyer cancels before submitting is not in the organization's list, whichever role the holder's permission comes from)
+[ERRORS label=m_read_d] errors[] empty {SPEC} (VCST-5884 AC-3)
+[NULL label=m_read_d] data.return {DOC} (module guide @fb4fc43, same rule)
+[ERRORS label=m_kw_s] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=m_kw_s] data.organizationReturns.items[?number={{S_NO}}].status = Requested {SPEC} (VCST-5884 AC-3: the organization's returns, everyone's)
+[ERRORS label=m_read_s] errors[] empty {SPEC} (VCST-5884 AC-3)
+[DATA label=m_read_s] data.return.number = {{S_NO}} {SPEC} (VCST-5884 AC-3)
+[ERRORS label=g_kw_d] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=g_kw_d] data.organizationReturns.items.length = 0 {DOC} (module guide @fb4fc43: the global-role holder agrees with the membership-role holder)
+[ERRORS label=g_kw_s] errors[] empty {SPEC} (VCST-5884 AC-3)
+[COUNT label=g_kw_s] data.organizationReturns.items[*?number={{S_NO}}].length = 1 {SPEC} (VCST-5884 AC-3: the two holders see the same submitted return)
+[ERRORS label=cleanup_s] errors[] empty {SPEC} (VCST-5628)","[EVIDENCE] the same two returns are asked of both holders in one run, so a difference between the two answers can only come from where the permission is held
+[REST] RET-ORG-042 asserts the same split for the global-role holder with all three kinds of return",the membership-role holder finds d or opens it while the global-role holder does not (the gate was added on one permission branch only); the membership-role holder does not find s; the two holders disagree on s,cancelReturn on S_ID as ORG_RET_BUYER (inline as cleanup_s); d is already cancelled,VCST-5884 · Archetype:SCOPE · Technique:EP · Purpose:FUNC · Behavior:ret.state.cancelled,Draft

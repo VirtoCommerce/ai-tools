@@ -11,7 +11,9 @@
  *       `seed: seed:returns:org`, a `_notes` with STATED LIMITS, a {{VAR}} password, and NO runtime GUID;
  *       no FIXTURE-GAP alias is registered (a case citing one must fail, not resolve to "");
  *   [4] seeded state on TEST_ENV's overlay (default vcst): the runtime ids exist, orders are attributed
- *       to the organization the spec says, and the grant sources did not collapse onto one org.
+ *       to the organization the spec says, and the grant sources did not collapse onto one org; every
+ *       declared spare order (RETURNABLE_LINE_FLOOR capacity) is registered in fields{} and seeded, and
+ *       no spare resolves to its persona's main order or to another spare.
  */
 import "../../lib/sync-stdio.mjs";
 import { readFileSync, existsSync } from 'node:fs';
@@ -20,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 import {
   ROLES, ORGS, PERSONAS, OTHER_RETURN, OWNED_ALIASES, FIXTURE_GAPS, SEED_SCRIPT, PASSWORD_TOKEN, BASE_ROLE,
   emailOf, accountEmailOf, authUsernameOf, orgEmailOf, upperVariant, fullNameOf, orgOrderNumber, validateOrgReturnsFixtureSet,
+  spareOrderKeys, spareField, SPARE_FIELDS, RETURNABLE_LINE_FLOOR, declaredLineCapacity,
 } from './org-returns-specs.mjs';
 import { GUID_RE } from './orders-specs.mjs';
 
@@ -36,7 +39,7 @@ const pkg = readJson('package.json');
 console.log('\n[1] Fixture set is discriminating (SECOND RULE)');
 const sharedRoleIds = readFileSync(join(ROOT, 'test-data/b2b/roles.csv'), 'utf8').split(/\r?\n/).slice(1).map((l) => l.split(',')[0]).filter(Boolean);
 const v = validateOrgReturnsFixtureSet({ sharedRoleIds });
-if (v.ok) ok(`${PERSONAS.length} personas, ${ORGS.length} organizations, ${ROLES.length} roles — every distinction under test holds`);
+if (v.ok) ok(`${PERSONAS.length} personas, ${ORGS.length} organizations, ${ROLES.length} roles — every distinction under test holds; returnable-line capacity ${Object.entries(RETURNABLE_LINE_FLOOR).map(([k, f]) => `${k} ${declaredLineCapacity(PERSONAS.find((p) => p.key === k))}/${f}`).join(', ')}`);
 else v.problems.forEach(fail);
 
 console.log('\n[2] Dedicated roles never collide with a shared role');
@@ -77,6 +80,8 @@ for (const alias of OWNED_ALIASES) {
   }
   if (a.password !== undefined && !/^\{\{[A-Z0-9_]+\}\}$/.test(a.password)) bad.push('password is not a {{VAR}} token');
   scanGuid(a, alias, alias);
+  const persona = PERSONAS.find((p) => p.alias === alias);
+  for (let i = 1; i <= (persona?.spares || 0); i++) for (const f of SPARE_FIELDS) if (!a.fields?.[spareField(i, f)]) bad.push(`spare field ${spareField(i, f)} not declared in fields{}`);
   if (bad.length) bad.forEach((b) => fail(`${alias}: ${b}`)); else ok(`${alias}`);
 }
 for (const g of FIXTURE_GAPS) if (aliases[g.alias]) fail(`${g.alias} is a declared FIXTURE-GAP but is registered — a case citing it would resolve instead of failing`);
@@ -100,6 +105,15 @@ else {
     const home = p.memberships[p.memberships.length === 1 ? 0 : 1];
     if (r.organizationId !== orgId[home.org]) fail(`${p.alias}: organizationId ${r.organizationId} != ${home.org}`);
     if (p.order && r.lineAOrderedQuantity === r.lineBOrderedQuantity) fail(`${p.alias}: both lines ordered ${r.lineAOrderedQuantity}`);
+    const spareIds = [];
+    spareOrderKeys(p).forEach((k, n) => {
+      const i = n + 1;
+      const gone = SPARE_FIELDS.filter((f) => f !== 'SeededAt' && !r[spareField(i, f)]);
+      if (gone.length) { fail(`${p.alias}: spare ${i} missing ${gone.map((f) => spareField(i, f)).join(', ')} on ${TARGET_ENV} — run: TEST_ENV=${TARGET_ENV} npm run ${SEED_SCRIPT} -- --spares-only`); return; }
+      if (r[spareField(i, 'OrderNumber')] !== orgOrderNumber(k)) fail(`${p.alias}: spare ${i} orderNumber ${r[spareField(i, 'OrderNumber')]} != ${orgOrderNumber(k)}`);
+      spareIds.push(r[spareField(i, 'OrderId')]);
+    });
+    if (new Set([r.orderId, ...spareIds]).size !== 1 + spareIds.length) fail(`${p.alias}: a spare order resolves to the main order or to another spare — the line capacity collapsed`);
   }
   const userIds = PERSONAS.map((p) => ov[p.alias]?.userId).filter(Boolean);
   if (new Set(userIds).size !== userIds.length) fail('two personas resolve to ONE account — viewer and buyer would be the same person');

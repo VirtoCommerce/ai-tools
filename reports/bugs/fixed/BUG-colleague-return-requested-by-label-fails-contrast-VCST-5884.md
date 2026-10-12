@@ -1,6 +1,9 @@
 # Return details of a colleague's return: the new "Requested by" label fails colour contrast (2.52:1) — **P3**
 
-## Status: CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+## Status: FIXED — verified in VCST-5884 round 3, 2026-10-12, vcst: Return 3.1005.0-pr-28-fb4f, theme 2.60.0-pr-2523-4263-4263715a
+**Fixed by:** vc-frontend #2523 8dfc514 (text-neutral-400 → -600). Verified: 4v V3 under the Coffee preset — 7.81:1, axe 0 violations — screenshot r3-4v-coffee-colleague-return-1920.png
+**Was:** CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+**Evidence note:** 3 round-2 screenshot(s) below were never committed (found 2026-10-12); the links are kept as a record of what was captured. The round-3 verification evidence named under Fixed by is current.
 **Found by:** agent — testing VCST-5884
 **Tracker:** none (below the 5-file floor Critical/High/Medium); named in the VCST-5884 QA-Complete comment under "Not filed (below severity floor)"
 **Oracle:** WCAG 1.4.3 (>= 4.5:1); `BL-A11Y-003`. **Classification:** a `BL-A11Y-003` finding on a FEATURE ticket is filed as its own
@@ -27,9 +30,9 @@ Contrast >= 4.5:1 for the label text.
 ## Actual
 `#a3a3a3` on white, 14 px = **2.52:1** (axe: serious, color-contrast). In dark mode rgb(90,94,104) also fails.
 
-![Colleague return details, 1280 px](../../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V13-colleague-details-1280.png)
-![Dark mode, 1280 px](../../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V12-colleague-details-dark-1280.png)
-![375 px](../../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V18-colleague-details-375.png)
+![Colleague return details, 1280 px](../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V13-colleague-details-1280.png)
+![Dark mode, 1280 px](../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V12-colleague-details-dark-1280.png)
+![375 px](../screenshots/colleague-return-requested-by-label-fails-contrast-VCST-5884/V18-colleague-details-375.png)
 
 ## Layer Validation
 | Layer | Result | Evidence |

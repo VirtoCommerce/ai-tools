@@ -1,6 +1,9 @@
 # Organization returns: `?page=-1` sends `after:"-20"`, the SQL error is shown as "There are no returns yet" — **P3**
 
-## Status: CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+## Status: FIXED — verified in VCST-5884 round 3, 2026-10-12, vcst: Return 3.1005.0-pr-28-fb4f, theme 2.60.0-pr-2523-4263-4263715a
+**Fixed by:** vc-frontend #2523 59a78b5 (page < 1 → page 1). Verified: 4a A3 + C1 RET-ORG-050 (page -1, 0, abc → page 1, never the empty state). The server still accepts a negative offset (X-API, not in this change)
+**Was:** CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+**Evidence note:** 1 round-2 screenshot(s) below were never committed (found 2026-10-12); the links are kept as a record of what was captured. The round-3 verification evidence named under Fixed by is current.
 **Found by:** agent — testing VCST-5884
 **Tracker:** none (below the 5-file floor Critical/High/Medium); named in the VCST-5884 QA-Complete comment under "Not filed (below severity floor)"
 **Oracle:** none written. Discovery finding: an input error must not be presented as an empty result, and a database error must not surface.
@@ -24,7 +27,7 @@ The request sends `after:"-20"`; the response is `errors[0].extensions.code:"SQL
 empty state "There are no returns yet" plus a generic toast "Something went wrong. Please try again later." — a database error
 presented as an empty result.
 
-![page=-1: SQL error shown as an empty result](../../screenshots/org-returns-negative-page-parameter-shows-sql-error-as-no-returns-VCST-5884/A15-org-tab-page-minus1-sql-error-shown-as-no-match.png)
+![page=-1: SQL error shown as an empty result](../screenshots/org-returns-negative-page-parameter-shows-sql-error-as-no-returns-VCST-5884/A15-org-tab-page-minus1-sql-error-shown-as-no-match.png)
 
 ## Layer Validation
 | Layer | Result | Evidence |

@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.62",
+    "version": "1.5.64",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -64,7 +64,9 @@
     "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
     "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases.",
     "changelog_1_5_61": "VCST-5884 organization returns fixture set (seed:returns:org): 2 dedicated AGENT-TEST roles (view; view+submit), 7 AGENT-TEST organizations, 16 personas isolating the three grant sources (global / organization-level / membership) and the four blocking memberships, one submitted other-organization return. FIXTURE-GAPs (no alias registered): RETURNS_LEGACY_STORELESS, ORG_RET_OTHER_STORE_RETURN — reasons in org-returns-specs.mjs FIXTURE_GAPS.",
-    "changelog_1_5_62": "VCST-5884 top-up: ORG_RET_LEAVER — a separate non-holder buyer in ORG_RET_VIEWER_ORG whose membership the S21 cases remove and restore per run."
+    "changelog_1_5_62": "VCST-5884 top-up: ORG_RET_LEAVER — a separate non-holder buyer in ORG_RET_VIEWER_ORG whose membership the S21 cases remove and restore per run.",
+    "changelog_1_5_63": "VCST-5884 round 3 returnable capacity: spare orders (spare<N>* fields) on ORG_RET_BUYER (3), ORG_RET_ORGROLE_BUYER, ORG_RET_OTHER_BUYER, ORG_RET_LONG_NAME_BUYER (1 each) — RETURNABLE_LINE_FLOOR in org-returns-specs.mjs, guarded by td:validate:returns-org.",
+    "changelog_1_5_64": "VCST-5884 round 3 top-up: ORG_RET_BUYER spares 3 -> 7 (spare4..7 fields), RETURNABLE_LINE_FLOOR.BUYER 8 -> 16."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -9800,9 +9802,44 @@
       "lineBItemId": "lineBItemId",
       "lineBSku": "lineBSku",
       "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "seededAt": "seededAt"
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt",
+      "spare2OrderId": "spare2OrderId",
+      "spare2OrderNumber": "spare2OrderNumber",
+      "spare2LineAItemId": "spare2LineAItemId",
+      "spare2LineBItemId": "spare2LineBItemId",
+      "spare2SeededAt": "spare2SeededAt",
+      "spare3OrderId": "spare3OrderId",
+      "spare3OrderNumber": "spare3OrderNumber",
+      "spare3LineAItemId": "spare3LineAItemId",
+      "spare3LineBItemId": "spare3LineBItemId",
+      "spare3SeededAt": "spare3SeededAt",
+      "spare4OrderId": "spare4OrderId",
+      "spare4OrderNumber": "spare4OrderNumber",
+      "spare4LineAItemId": "spare4LineAItemId",
+      "spare4LineBItemId": "spare4LineBItemId",
+      "spare4SeededAt": "spare4SeededAt",
+      "spare5OrderId": "spare5OrderId",
+      "spare5OrderNumber": "spare5OrderNumber",
+      "spare5LineAItemId": "spare5LineAItemId",
+      "spare5LineBItemId": "spare5LineBItemId",
+      "spare5SeededAt": "spare5SeededAt",
+      "spare6OrderId": "spare6OrderId",
+      "spare6OrderNumber": "spare6OrderNumber",
+      "spare6LineAItemId": "spare6LineAItemId",
+      "spare6LineBItemId": "spare6LineBItemId",
+      "spare6SeededAt": "spare6SeededAt",
+      "spare7OrderId": "spare7OrderId",
+      "spare7OrderNumber": "spare7OrderNumber",
+      "spare7LineAItemId": "spare7LineAItemId",
+      "spare7LineBItemId": "spare7LineBItemId",
+      "spare7SeededAt": "spare7SeededAt"
     },
-    "_notes": "VCST-5884 — The returns OWNER in the viewer organization. A NON-holder (org-employee only), so its own token never opens the org tab. STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Its order address email = its account email ≠ ORG_RET_VIEWER_ORG.email. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+    "_notes": "VCST-5884 — The returns OWNER in the viewer organization. A NON-holder (org-employee only), so its own token never opens the org tab. STATED LIMITS: Memberships — VIEWER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Its order address email = its account email ≠ ORG_RET_VIEWER_ORG.email. RETURNABLE CAPACITY (round 3): 7 SPARE order(s) AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-1, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-2, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-3, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-4, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-5, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-6, AGENT-TEST-ORD-RET-ORG-BUYER-SPARE-7 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 16 independent returnable lines in all (floor 16: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..7); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
   "ORG_RET_HOLDER_GLOBAL": {
     "_inline": true,
@@ -10077,9 +10114,14 @@
       "lineBItemId": "lineBItemId",
       "lineBSku": "lineBSku",
       "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "seededAt": "seededAt"
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
     },
-    "_notes": "VCST-5884 — The colleague whose return HOLDER_ORGROLE reads. It inherits the org-level role too (every member does) — irrelevant to what it is used for. STATED LIMITS: Memberships — ORGROLE: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+    "_notes": "VCST-5884 — The colleague whose return HOLDER_ORGROLE reads. It inherits the org-level role too (every member does) — irrelevant to what it is used for. STATED LIMITS: Memberships — ORGROLE: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-ORGROLE-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
   "ORG_RET_OTHER_BUYER": {
     "_inline": true,
@@ -10108,9 +10150,14 @@
       "lineBItemId": "lineBItemId",
       "lineBSku": "lineBSku",
       "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "seededAt": "seededAt"
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
     },
-    "_notes": "VCST-5884 — Owner of ORG_RET_OTHER_ORG_RETURN in the other organization. STATED LIMITS: Memberships — OTHER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-OTHER-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+    "_notes": "VCST-5884 — Owner of ORG_RET_OTHER_ORG_RETURN in the other organization. STATED LIMITS: Memberships — OTHER: membership roles [org-employee], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-OTHER-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-OTHER-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
   "ORG_RET_SAME_ADDRESS_BUYER": {
     "_inline": true,
@@ -10201,9 +10248,14 @@
       "lineBItemId": "lineBItemId",
       "lineBSku": "lineBSku",
       "lineBOrderedQuantity": "lineBOrderedQuantity",
-      "seededAt": "seededAt"
+      "seededAt": "seededAt",
+      "spare1OrderId": "spare1OrderId",
+      "spare1OrderNumber": "spare1OrderNumber",
+      "spare1LineAItemId": "spare1LineAItemId",
+      "spare1LineBItemId": "spare1LineBItemId",
+      "spare1SeededAt": "spare1SeededAt"
     },
-    "_notes": "VCST-5884 — A holder (membership view role) in the 60-character organization whose order customerName is a 32-character unbroken string: its own returns fill the org tab's Buyer name column. STATED LIMITS: Memberships — LONG_NAME: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Name is 32 letters with NO hyphen or space (the AGENT-TEST prefix is written AGENTTEST because a hyphen is a line-break opportunity). It is a holder, so it sees its own returns in the org tab; the order customerName carries the 32-char value, which is what a return snapshots. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
+    "_notes": "VCST-5884 — A holder (membership view role) in the 60-character organization whose order customerName is a 32-character unbroken string: its own returns fill the org tab's Buyer name column. STATED LIMITS: Memberships — LONG_NAME: membership roles [agent-test-org-ret-viewer], status Approved; global roles [none]; isAdministrator false. Order AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER: Completed, ONE shipment delivered on the seed day, lineA ordered 40 / lineB 25 (different products, live-discovered). Returnable until the delivery ages out of Return.WindowDays (30 on vcst) — re-seed after that (the seeder rebuilds a stale order, which DELETES the returns on it). Every return a case creates on it is PER-RUN and TERMINAL once submitted/decided/cancelled; an APPROVED return keeps holding units, so after many runs re-seed with --fresh. Name is 32 letters with NO hyphen or space (the AGENT-TEST prefix is written AGENTTEST because a hyphen is a line-break opportunity). It is a holder, so it sees its own returns in the org tab; the order customerName carries the 32-char value, which is what a return snapshots. RETURNABLE CAPACITY (round 3): 1 SPARE order(s) AGENT-TEST-ORD-RET-ORG-LONG-NAME-BUYER-SPARE-1 — same organization, same two products, lineA 40 / lineB 25, delivered on their seed day — 4 independent returnable lines in all (floor 3: a storefront return defaults to a line's FULL quantity, so plan one line per return). Fields spare<N>OrderId / spare<N>OrderNumber / spare<N>LineAItemId / spare<N>LineBItemId (N = 1..1); lineA/lineB SKUs equal lineASku/lineBSku. Spares are ensured without touching the main order: `TEST_ENV=<env> npm run seed:returns:org -- --spares-only`. Password {{DEFAULT_TEST_PASSWORD}} (layered env, never a literal). Seeded by `TEST_ENV=<env> npm run seed:returns:org` (scripts/seed-data/orders/seed-org-returns.mjs; spec org-returns-specs.mjs; guard npm run td:validate:returns-org). Runtime GUIDs land in aliases.<env>.json only. AGENT-TEST- prefix; `npm run seed:returns:org:teardown` removes it with zero residue."
   },
   "ORG_RET_OTHER_ORG_RETURN": {
     "_inline": true,

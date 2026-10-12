@@ -12,6 +12,8 @@
  * the Return.* settings of the store are READ and printed so a run can record them.
  *
  * Flags: --dry-run · --verbose · --teardown · --only <PERSONA_KEY|ALIAS> · --fresh (rebuild orders) · --verify (read-only probe)
+ *        · --spares-only (ensure ONLY the personas' spare orders: reads the main order for its products and never
+ *          touches roles, organizations, accounts, memberships, or the main orders and the returns on them)
  * Usage: TEST_ENV=vcst npm run seed:returns:org   ·   TEST_ENV=vcst npm run seed:returns:org:teardown
  */
 import "../../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
@@ -28,11 +30,12 @@ import {
 import {
   ROLES, ORGS, PERSONAS, FIXTURE_GAPS, OTHER_RETURN, OTHER_RETURN_REF, BASE_ROLE, PASSWORD_VAR, ORDER_TEMPLATE_FIXTURE,
   VIEW_PERMISSION, fullNameOf, emailOf, accountEmailOf, orgEmailOf, upperVariant, orgOrderNumber, toOrderSpec, shapeOrgOrder,
-  expectedCanView, validateOrgReturnsFixtureSet,
+  expectedCanView, validateOrgReturnsFixtureSet, spareOrderKeys, orderKeysOf, spareField,
 } from './org-returns-specs.mjs';
 
 const FRESH = process.argv.includes('--fresh');
 const VERIFY_ONLY = process.argv.includes('--verify');
+const SPARES_ONLY = process.argv.includes('--spares-only');
 const TEST_ENV = process.env.TEST_ENV || 'vcst';
 const template = JSON.parse(readFileSync(join(ROOT, 'test-data', ORDER_TEMPLATE_FIXTURE), 'utf8'));
 const roleByKey = Object.fromEntries(ROLES.map((r) => [r.key, r]));
@@ -299,6 +302,54 @@ const lineMaps = (order, rolesBySku) => {
   return byRole;
 };
 
+/** Ensure a persona's spare orders (same shape and organization as its main order); returns write-back fields. */
+async function ensureSpares(p, owner, org, ctx) {
+  const rec = {};
+  const keys = spareOrderKeys(p);
+  for (let i = 1; i <= keys.length; i++) {
+    const { order, rebuilt } = await ensureOrder(keys[i - 1], owner, org, ctx);
+    if (!order) continue;
+    const byRole = lineMaps(order, ctx.rolesBySku);
+    Object.assign(rec, {
+      [spareField(i, 'OrderId')]: order.id, [spareField(i, 'OrderNumber')]: order.number,
+      [spareField(i, 'LineAItemId')]: byRole[LINE_ROLE_X]?.id, [spareField(i, 'LineBItemId')]: byRole[LINE_ROLE_Y]?.id,
+      ...(rebuilt ? { [spareField(i, 'SeededAt')]: ctx.now.toISOString() } : {}),
+    });
+  }
+  return rec;
+}
+
+/**
+ * --spares-only. The products come from the persona's LIVE main order, not from a fresh catalog
+ * discovery, so a spare carries the same two SKUs and the main order is never re-diagnosed: a drifted
+ * discovery would otherwise rebuild it and DELETE every return on it (the pre-upgrade Cancelled rows the
+ * VCST-5884 migration check reads live there).
+ */
+async function seedSparesOnly(personas, windowDays) {
+  const ov = overlay();
+  const writeback = {};
+  const now = new Date();
+  for (const p of personas.filter((x) => x.spares)) {
+    const rec = ov[p.alias] || {};
+    log(`\n${p.alias} — spares only (${spareOrderKeys(p).map(orgOrderNumber).join(', ')})`);
+    const orgId = ov[orgByKey[p.order].alias]?.id;
+    if (!rec.userId || !rec.orderId || !orgId) throw new Error(`${p.alias}: no userId/orderId/organization id in aliases.${TEST_ENV}.json — run the full seed first`);
+    const user = await api('GET', `/api/platform/security/users/id/${rec.userId}`, null, { expectStatus: [200, 204, 404] }).catch(() => null);
+    if (!user?.id || String(user.userName).toLowerCase() !== p.login.toLowerCase()) throw new Error(`${p.alias}: userId ${rec.userId} is not ${p.login} live`);
+    const org = await api('GET', `/api/organizations/${orgId}`);
+    if (org?.name !== orgByKey[p.order].name) throw new Error(`${p.alias}: organization ${orgId} is not ${orgByKey[p.order].name}`);
+    const main = await api('GET', `/api/order/customerOrders/${rec.orderId}`);
+    const rolesBySku = { [rec.lineASku]: LINE_ROLE_X, [rec.lineBSku]: LINE_ROLE_Y };
+    const productsByRole = {};
+    for (const li of main?.items || []) if (rolesBySku[li.sku]) productsByRole[rolesBySku[li.sku]] = { id: li.productId, sku: li.sku, name: li.name, catalogId: li.catalogId };
+    if (!productsByRole[LINE_ROLE_X] || !productsByRole[LINE_ROLE_Y]) throw new Error(`${p.alias}: main order ${main?.number} does not carry lineA ${rec.lineASku} + lineB ${rec.lineBSku}`);
+    const ctx = { productsByRole, rolesBySku, windowDays, now };
+    writeback[p.alias] = await ensureSpares(p, { customerId: rec.userId, customerName: fullNameOf(p), email: emailOf(p) }, org, ctx);
+  }
+  writeEnvAliasOverride(writeback);
+  log(DRY_RUN ? 'DRY RUN complete (no writes).' : `\nSpare orders ensured — ${Object.keys(writeback).length} alias(es) updated in aliases.${TEST_ENV}.json.`);
+}
+
 async function ensureOtherReturn(order, buyer, password, ctx) {
   const live = await returnsOnOrder(order.id);
   const mine = live.filter((r) => r.customerReference === OTHER_RETURN_REF);
@@ -344,7 +395,7 @@ async function verifyPersonas(password, orgIdByKey, personas) {
 async function teardown(personas) {
   log(`TEARDOWN — ${personas.length} persona(s)${ONLY ? ` (--only ${ONLY})` : ''}, their orders/returns${ONLY ? '' : ', every return snapshotting a seeded organization, the organizations and the two roles'}`);
   const idsBefore = Object.fromEntries(ORGS.map((o) => [o.alias, overlay()[o.alias]?.id]));
-  const orderKeys = personas.filter((p) => p.order).map((p) => p.key);
+  const orderKeys = personas.flatMap(orderKeysOf); // main + spare orders
   for (const k of orderKeys) for (const o of await findOrdersByExactNumber(api, orgOrderNumber(k))) log(`  ✗ ${o.number} + ${await deleteOrderTree(o)} return(s)`);
   // Order-less returns (the legacy shape, or anything a case left) still snapshot one of OUR
   // organizations — every return whose organizationId is an AGENT-TEST org of this seeder is ours.
@@ -425,6 +476,7 @@ async function main() {
   }
   if (setting('Return.ReturnEnabled') !== true) throw new Error(`returns are disabled on ${STORE_ID}`);
   const windowDays = Number(setting('Return.WindowDays')) || RETURN_WINDOW_DAYS_ASSUMED;
+  if (SPARES_ONLY) { await seedSparesOnly(personas, windowDays); return; }
 
   for (const r of ROLES) await ensureRole(r);
   const ov = overlay();
@@ -472,6 +524,7 @@ async function main() {
         });
         ids[p.key] = { order, login: p.login };
       }
+      Object.assign(rec, await ensureSpares(p, owner, orgs[p.order], ctx));
     }
     writeback[p.alias] = rec;
   }

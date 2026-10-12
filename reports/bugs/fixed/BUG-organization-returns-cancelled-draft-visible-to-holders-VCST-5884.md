@@ -1,6 +1,9 @@
 # Organization returns: a draft cancelled before it was ever submitted is listed to organization holders, who can read its comment and line reasons — **P2**
 
-## Status: CONFIRMED — filed as VCST-6226 (Sub-task of VCST-5884)
+## Status: FIXED — verified in VCST-5884 round 3, 2026-10-12, vcst: Return 3.1005.0-pr-28-fb4f, theme 2.60.0-pr-2523-4263-4263715a
+**Fixed by:** vc-module-return #28 d9233ee (write-once SubmittedDate gates the organization list, return(id) and files). Verified: 4a A1 + B1 (both holder placements), C1 RET-ORG-042/-048 (new) and RET-ORG-006/-019 (round-2 reds, now PASS) — VCST-6226
+**Was:** CONFIRMED — filed as VCST-6226 (Sub-task of VCST-5884)
+**Evidence note:** 2 round-2 screenshot(s) below were never committed (found 2026-10-12); the links are kept as a record of what was captured. The round-3 verification evidence named under Fixed by is current.
 **Found by:** agent — testing VCST-5884
 **Tracker:** [VCST-6226](https://virtocommerce.atlassian.net/browse/VCST-6226), Sub-task of VCST-5884 (IN-SCOPE) · labels `found-by-agent`, `found-in-testing`
 **Oracle:** `{DOC}` vc-module-return PR #28 description — *"Drafts are never listed, the caller's own included"*; module guide
@@ -30,8 +33,8 @@ Not listed, and `return(id)` is `null` — exactly what a live **Draft** does (h
 Listed as **Cancelled**; the details open read-only and expose the buyer's `customerComment`, `items[0].reasonCode` and `reasonComment`
 (e.g. comment *"AGENT-TEST VCST-5884 abandoned draft"*, reason `DamagedInTransit`). The deep link works.
 
-![Organization tab lists the never-submitted, cancelled draft](../../screenshots/organization-returns-cancelled-draft-visible-to-holders-VCST-5884/A1-A9-org-tab-holder-global-lists-cancelled-draft-00022.png)
-![A holder reads the buyer's private comment and line reason](../../screenshots/organization-returns-cancelled-draft-visible-to-holders-VCST-5884/A9-holder-opens-never-submitted-draft-00022-private-comment-readable.png)
+![Organization tab lists the never-submitted, cancelled draft](../screenshots/organization-returns-cancelled-draft-visible-to-holders-VCST-5884/A1-A9-org-tab-holder-global-lists-cancelled-draft-00022.png)
+![A holder reads the buyer's private comment and line reason](../screenshots/organization-returns-cancelled-draft-visible-to-holders-VCST-5884/A9-holder-opens-never-submitted-draft-00022-private-comment-readable.png)
 
 Supporting: `RET-ORG-019-FAIL-draft-listed.png`, `RET-ORG-019-FAIL-draft-details-readable.png` (same folder); C1 evidence
 `reports/regression/REG-2026-10-08-1840/graphql-evidence/RET-ORG-006-*.json` (assertions `holder_list`, `holder_read`).

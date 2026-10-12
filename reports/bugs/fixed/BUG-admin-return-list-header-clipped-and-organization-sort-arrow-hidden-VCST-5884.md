@@ -1,6 +1,9 @@
 # Admin Return list: "Item count" header clipped by the grid-options button and the Organization sort arrow is hidden — **P3**
 
-## Status: CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+## Status: FIXED — verified in VCST-5884 round 3, 2026-10-12, vcst: Return 3.1005.0-pr-28-fb4f, theme 2.60.0-pr-2523-4263-4263715a
+**Fixed by:** vc-module-return #28 9bcdf23 (minWidth per column; audit columns hidden by default). Verified: 4a B5 + 4v V4 (7 columns, every header whole, Item count clear of the menu button) — screenshot r3-4a-B-B5-return-list-default-1920.png
+**Was:** CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+**Evidence note:** 3 round-2 screenshot(s) below were never committed (found 2026-10-12); the links are kept as a record of what was captured. The round-3 verification evidence named under Fixed by is current.
 **Found by:** agent — testing VCST-5884
 **Tracker:** none (below the 5-file floor Critical/High/Medium); named in the VCST-5884 QA-Complete comment under "Not filed (below severity floor)"
 **Oracle:** `BL-UI-004` (content boundary: text must not be clipped by `overflow:hidden` without an ellipsis, and a control must not cover content).
@@ -25,10 +28,10 @@ Every header is readable and a visible sort glyph shows the sort direction.
 - The Organization sort arrow (`ui-grid-icon-up-dir`, 20 px at x 665-685) sits inside a header whose content is `overflow:hidden` at x 670, so only ~5 px of it shows. `aria-sort=ascending` is present.
 - All nine data columns are exactly 100 px wide; most headers are ellipsized ("Return num...", "Organizatio...", "Return statu...").
 
-![Return list at 1920 px, nine columns, clipped headers](../../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/V6-admin-returns-1920.png)
-![Sorted by Organization: the sort arrow is almost fully hidden](../../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/V6-admin-organization-sorted-1920.png)
-![Nine-column grid, Organization sorted](../../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/X1-admin-return-grid-9-columns-organization-sorted.png)
-![C1 RET-ORG-041: Item count header clipped](../../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/RET-ORG-041-FAIL-item-count-header-clipped-1920.png)
+![Return list at 1920 px, nine columns, clipped headers](../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/V6-admin-returns-1920.png)
+![Sorted by Organization: the sort arrow is almost fully hidden](../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/V6-admin-organization-sorted-1920.png)
+![Nine-column grid, Organization sorted](../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/X1-admin-return-grid-9-columns-organization-sorted.png)
+![C1 RET-ORG-041: Item count header clipped](../screenshots/admin-return-list-header-clipped-and-organization-sort-arrow-hidden-VCST-5884/RET-ORG-041-FAIL-item-count-header-clipped-1920.png)
 
 ## Layer Validation
 | Layer | Result | Evidence |

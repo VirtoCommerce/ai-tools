@@ -276,8 +276,8 @@ rules:
     violation_signal: Declining removes the membership row or strips the contact's organization association (a later re-invite then has nothing to reactivate, and a "still a member?" assertion silently inverts); a `Deleted` status is treated as row removal by a search consumer; re-invite succeeds against an `Invited` membership (duplicating the pending invite) or fails against a `Rejected`/`Deleted` one (declining becomes irreversible).
     status: ACTIVE
     verified:
-      date: 2026-10-08
-      by: REG-2026-10-08-1840
+      date: 2026-10-12
+      by: REG-2026-10-12-1119
   - id: BL-B2B-013
     title: Membership status resolves per-org-first, then contact, then `Approved`
     rule: |-
@@ -303,5 +303,5 @@ rules:
     violation_signal: A contact-level status overrides an explicit membership status (tiers inverted — a per-org block silently ignored, or a healthy org blocked by an unrelated contact status); a null membership status is treated as blocking (or as a fifth state) instead of inheriting; a lock is written into the `Status` field, or a status value is used to express a lock, collapsing the two axes so one cannot be cleared without the other.
     status: ACTIVE
     verified:
-      date: 2026-10-08
-      by: REG-2026-10-08-1840
+      date: 2026-10-12
+      by: REG-2026-10-12-1119

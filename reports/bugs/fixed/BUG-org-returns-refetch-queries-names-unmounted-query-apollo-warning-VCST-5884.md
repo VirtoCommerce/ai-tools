@@ -1,6 +1,8 @@
 # Submit / cancel return logs Apollo error 43: `refetchQueries` names queries that are not mounted — **P3**
 
-## Status: CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
+## Status: FIXED — verified in VCST-5884 round 3, 2026-10-12, vcst: Return 3.1005.0-pr-28-fb4f, theme 2.60.0-pr-2523-4263-4263715a
+**Fixed by:** vc-frontend #2523 49ec6d5 (refetch only mounted queries). Verified: 4a A4 + 4v V5 (no warning on create/submit/cancel; production-bundle caveat) + C1 RET-ORG-051
+**Was:** CONFIRMED — BELOW SEVERITY FLOOR (Low/P3): draft kept, NOT filed in the tracker
 **Found by:** agent — testing VCST-5884
 **Tracker:** none (below the 5-file floor Critical/High/Medium); named in the VCST-5884 QA-Complete comment under "Not filed (below severity floor)"
 **Oracle:** none written — discovery check "a clean console".

@@ -93,7 +93,7 @@ const BUYER = 'BASE';
  */
 export const PERSONAS = Object.freeze([
   { key: 'BUYER', alias: 'ORG_RET_BUYER', login: mail('buyer'), firstName: 'AGENT-TEST-OrgRet', lastName: 'Ketterby',
-    globalRoles: [], memberships: [m('VIEWER', [BUYER])], order: 'VIEWER',
+    globalRoles: [], memberships: [m('VIEWER', [BUYER])], order: 'VIEWER', spares: 7,
     purpose: 'The returns OWNER in the viewer organization. A NON-holder (org-employee only), so its own token never opens the org tab.' },
   { key: 'LEAVER', alias: 'ORG_RET_LEAVER', login: mail('leaver'), firstName: 'AGENT-TEST-OrgRet', lastName: 'Leaver',
     globalRoles: [], memberships: [m('VIEWER', [BUYER])], order: 'VIEWER',
@@ -129,10 +129,10 @@ export const PERSONAS = Object.freeze([
     globalRoles: [], memberships: [m('ORGROLE', [])], order: null,
     purpose: 'Holds the view role ONLY through the ORGANIZATION-LEVEL role of ORG_RET_ORGROLE_ORG (membership carries no role, no global role).' },
   { key: 'ORGROLE_BUYER', alias: 'ORG_RET_ORGROLE_BUYER', login: mail('orgrole-buyer'), firstName: 'AGENT-TEST-OrgRet', lastName: 'OrgRoleBuyer',
-    globalRoles: [], memberships: [m('ORGROLE', [BUYER])], order: 'ORGROLE',
+    globalRoles: [], memberships: [m('ORGROLE', [BUYER])], order: 'ORGROLE', spares: 1,
     purpose: 'The colleague whose return HOLDER_ORGROLE reads. It inherits the org-level role too (every member does) — irrelevant to what it is used for.' },
   { key: 'OTHER_BUYER', alias: 'ORG_RET_OTHER_BUYER', login: mail('other-buyer'), firstName: 'AGENT-TEST-OrgRet', lastName: 'Vasquell',
-    globalRoles: [], memberships: [m('OTHER', [BUYER])], order: 'OTHER',
+    globalRoles: [], memberships: [m('OTHER', [BUYER])], order: 'OTHER', spares: 1,
     purpose: 'Owner of ORG_RET_OTHER_ORG_RETURN in the other organization.' },
   { key: 'SAME_ADDRESS_BUYER', alias: 'ORG_RET_SAME_ADDRESS_BUYER', login: mail('sameaddr-buyer'), firstName: 'AGENT-TEST-OrgRet', lastName: 'SameAddress',
     globalRoles: [], memberships: [m('SAME_ADDRESS', [BUYER])], order: 'SAME_ADDRESS',
@@ -141,7 +141,7 @@ export const PERSONAS = Object.freeze([
     globalRoles: [], memberships: [m('NOEMAIL', [BUYER])], order: 'NOEMAIL',
     purpose: 'A normal buyer (with email) in the organization that has none.' },
   { key: 'LONG_NAME_BUYER', alias: 'ORG_RET_LONG_NAME_BUYER', login: mail('longname-buyer'), fullName: LONG_BUYER_NAME, firstName: LONG_BUYER_NAME, lastName: 'AgentTest',
-    globalRoles: [], memberships: [m('LONG_NAME', ['VIEW'])], order: 'LONG_NAME',
+    globalRoles: [], memberships: [m('LONG_NAME', ['VIEW'])], order: 'LONG_NAME', spares: 1,
     purpose: 'A holder (membership view role) in the 60-character organization whose order customerName is a 32-character unbroken string: its own returns fill the org tab\'s Buyer name column.' },
 ]);
 const personaByKey = Object.fromEntries(PERSONAS.map((p) => [p.key, p]));
@@ -179,6 +179,29 @@ export const orgEmailOf = (o) => (o.emailOfPersona ? emailOf(personaByKey[o.emai
 export const upperVariant = (address) => (address ? address.replace(/^[^@]+/, (s) => s.toUpperCase()) : null);
 
 export const orgOrderKey = (key) => `ORG-${key.replace(/_/g, '-')}`;
+
+/*
+ * RETURNABLE CAPACITY (VCST-5884 round 3). Cases create returns IN THE CASE (FIFTH RULE), and the
+ * storefront picker defaults a line's Quantity to its FULL returnable quantity, so one storefront return
+ * can consume a whole line. A Draft/Requested/Approved return keeps holding what it requested; only a
+ * Cancelled one releases it (orders-specs RETURN_STATUSES_HOLDING_NOTHING). Capacity is therefore counted
+ * in independent order LINES, not units. `spares` on a persona = extra orders of the SAME shape as its
+ * main order (same organization, same two lines 40/25, delivered on the seed day). The floor is what
+ * round 3 needs across parallel lanes: ORG_RET_BUYER carries S26's three-return set per lane, the S27/S30
+ * spares, checklist lane 4a (~6) and the ~10 in-case returns of RET-ORG-042..052 (16); every other owner
+ * one three-return set (3).
+ */
+export const RETURNABLE_LINE_FLOOR = Object.freeze({ BUYER: 16, ORGROLE_BUYER: 3, OTHER_BUYER: 3, LONG_NAME_BUYER: 3 });
+export const LINES_PER_ORDER = 2;
+/** Spare order keys of a persona, 1-based: BUYER → BUYER_SPARE_1 … (PURE). */
+export const spareOrderKeys = (p) => Array.from({ length: p?.spares || 0 }, (_, i) => `${p.key}_SPARE_${i + 1}`);
+/** Every order key a persona owns — main first, then spares (PURE). */
+export const orderKeysOf = (p) => (p?.order ? [p.key, ...spareOrderKeys(p)] : []);
+/** Independent returnable lines a fresh seed gives a persona (PURE). */
+export const declaredLineCapacity = (p) => orderKeysOf(p).length * LINES_PER_ORDER;
+/** Write-back field of spare i (1-based): spare1OrderId, spare1LineAItemId … */
+export const spareField = (i, f) => `spare${i}${f}`;
+export const SPARE_FIELDS = Object.freeze(['OrderId', 'OrderNumber', 'LineAItemId', 'LineBItemId', 'SeededAt']);
 /** Order number — through step 1's returnOrderNumber, so diagnoseSeededOrder recognises it. */
 export const orgOrderNumber = (key) => returnOrderNumber(orgOrderKey(key));
 
@@ -364,5 +387,16 @@ export function validateOrgReturnsFixtureSet({ roles = ROLES, orgs = ORGS, perso
   if (ORDER_LINES[LINE_ROLE_X] === ORDER_LINES[LINE_ROLE_Y]) P('both order lines carry the same quantity — a return landing on the wrong line is invisible');
   for (const [role, q] of Object.entries(OTHER_RETURN.requested)) if (q > ORDER_LINES[role]) P(`${OTHER_RETURN.alias} requests ${q} of ${role}, more than ordered`);
   for (const g of FIXTURE_GAPS) if (OWNED_ALIASES.includes(g.alias)) P(`${g.alias} is both a FIXTURE-GAP and a seeded alias`);
+  // Returnable capacity: the line floor is reachable on a fresh seed, spares only on order owners, and
+  // every order number is distinct (a spare colliding with a main order would be found and reused).
+  if (Object.keys(ORDER_LINES).length !== LINES_PER_ORDER) P(`ORDER_LINES has ${Object.keys(ORDER_LINES).length} lines, LINES_PER_ORDER says ${LINES_PER_ORDER}`);
+  for (const [k, floor] of Object.entries(RETURNABLE_LINE_FLOOR)) {
+    const p = pk[k];
+    if (!p) { P(`RETURNABLE_LINE_FLOOR names unknown persona ${k}`); continue; }
+    if (declaredLineCapacity(p) < floor) P(`${k}: ${declaredLineCapacity(p)} returnable line(s) declared, round 3 needs ${floor} — parallel lanes would exhaust it mid-run`);
+  }
+  for (const p of personas) if (p.spares && !p.order) P(`${p.key}: spares without a main order`);
+  const nums = personas.flatMap((p) => orderKeysOf(p).map(orgOrderNumber));
+  if (new Set(nums).size !== nums.length) P('two seeded orders share one order number');
   return { ok: problems.length === 0, problems };
 }
