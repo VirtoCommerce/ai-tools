@@ -32,18 +32,41 @@ The shopper is told a file is too large without being told the limit.
 Reproduced on every attempt (INVALID_SCOPE 3/3 + 2-file pick + required section; INVALID_SIZE 3/3).
 Console clean; no network error — the response carries the parameter, the UI drops it.
 
-## Root cause (source reading, vc-frontend @ 81f18d01 — not executed)
-- `client-app/shared/files/composables/useFiles.ts` `getErrorMessage()` builds positional parameters
-  (`string[]`; for `INVALID_SIZE` a formatted size) and hands them to the errors translator as
-  `errorParameters: [{ key: "0", value }]`.
-- `client-app/core/composables/useErrorsTranslator.ts` `getErrorParameters()` reduces `errorParameters`
-  into a **named** object `{ "0": value }`.
-- `locales/*.json` use **list** interpolation `{0}`; given a named object instead of a list, vue-i18n
-  resolves `{0}` to an empty string.
-- `useErrorsTranslator.ts` last changed 2025-01-07, so this predates VCST-6081/#2511. Any other caller that
-  passes `errorParameters` to a `{0}` string is likely affected too (not checked).
+## Root cause — HIGH confidence (investigated 2026-10-12, `/vc-fix:qa-investigate`)
+`useFiles.getErrorMessage()` re-keys its positional parameters as `{ "0": value }`. The errors translator is
+named-only by design (`useErrorsTranslator.locales.test.ts` proves it for x-cart's named keys). vue-i18n
+reads `{0}` from a LIST, so it renders `''`.
+- **Storefront-only, proven twice.** The response carries `errorParameter` while the DOM shows `''`, and
+  `INVALID_SIZE` reproduces with **no server request**.
+- **Mechanism executed.** A probe on vue-i18n 9.13.1 · 9.14.1 · 10.0.5 · 11.0.1 · 11.4.6 gives the same
+  result on every version: a named `{"0"}` renders empty and a list `[v]` renders the value.
+- **Reach = `useFiles` only.** Identity errors (`parameter` → list) and cart/loyalty (real named keys)
+  render correctly. Every `file_error.*` string with `{0}` is affected, on every upload scope.
+- **Known in code, not ticketed.** #2511's `useFiles.test.ts` asserts `/^Unknown scope '.*'\.$/`, with a
+  comment calling this pre-existing.
+
+## Regression
+- **Introduced:** vc-frontend `8c911bc7` (**#1262** "refactor: error translator", VCST-1669, merged
+  2024-09-06, theme 2.5.0). Before it, `t(key, [v])` passed a list, which renders on 9.13.1 (probe).
+- **Why:** #1262 made the translator named-only and adapted `useFiles` with index keys, but the `{0}` strings
+  were never migrated. The vue-i18n upgrades are not the cause.
+- **Masked until VCST-6081:** before #2511, a failed configurable upload vanished, so the text never showed.
+- **Fix-forward, not revert** (a revert would undo the translator refactor).
+
+## Fix Routing
+| Owning layer | repoKind | Repo | Where |
+|---|---|---|---|
+| storefront | `frontend` | `VirtoCommerce/vc-frontend` | `client-app/shared/files/composables/useFiles.ts` `getErrorMessage()` (L328–350 @ 81f18d01) |
+
+Two minimal shapes: (1) named placeholders (`{scope}`, `{size}`) in every `locales/*.json` `file_error`
+string, with named keys from `getErrorMessage`; or (2) pass a list for file errors. **Suggested: (2) via the
+translator's existing single-`parameter` path** (`translate({ errorCode, errorMessage, parameter })`), which is
+one file, no locale changes, and the same path identity errors already render through.
+**Auto-fix:** eligible under `/qa-fix` G0, but **declined by the operator 2026-10-12**; left for a developer.
+The suggested change is in the ticket description. Tighten the
+`useFiles.test.ts` regex to `'product-configuration'` and add an `INVALID_SIZE` case that asserts the limit.
 
 ## Evidence
-- `reports/tickets/Sprint26-20/VCST-6081/screenshots/green-3-i1-run1-after3s.png` (INVALID_SCOPE)
-- `reports/tickets/Sprint26-20/VCST-6081/screenshots/green-10-i2-run1-oversize.png` (INVALID_SIZE)
-- `reports/tickets/Sprint26-20/VCST-6081/verification-report.md` (full run)
+- Package: `reports/tickets/Sprint26-20/VCST-6281/evidence-20261012T1500Z/`, containing `evidence-index.md`,
+  `root-cause.md`, `source/findings.md`, the screenshots, the DOM snapshots, and the failing request and response.
+- First sighting: `reports/tickets/Sprint26-20/VCST-6081/screenshots/green-3-…`, `green-10-…`
