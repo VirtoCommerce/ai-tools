@@ -1,5 +1,5 @@
 {
-  "_comment": "Normative MCP minimum requirements per pre-flight consumer (spec §7). REQ = absent ⇒ BLOCK; REQ_FALLBACK = absent ⇒ WARN naming the fallback; OPT = absent ⇒ that lane SKIPPED, never PASS. scope=user servers are invisible to the CLI and resolved by the skill (level 3). toolSearch is the ToolSearch query that finds the server's tools.",
+  "_comment": "Normative MCP minimum requirements per pre-flight consumer (spec §7). REQ = absent ⇒ BLOCK; REQ_FALLBACK = absent ⇒ WARN naming the fallback; OPT = absent ⇒ that lane SKIPPED, never PASS. scope=user servers are invisible to the CLI and resolved by the skill (level 3). toolSearch is the ToolSearch query that finds the server's tools. mcpKeys is an optional array of alternative .mcp.json key names for this server (e.g. chrome-devtools can also be configured as 'Chrome DevTools').",
   "servers": {
     "atlassian":         { "scope": "user",    "toolSearch": "+atlassian getJiraIssue", "fallback": "Jira REST via JIRA_API_TOKEN, else the user pastes the ticket" },
     "github":            { "scope": "project", "toolSearch": "+github get_pull_request", "fallback": "gh CLI / GIT_TOKEN REST" },
@@ -9,8 +9,8 @@
     "playwright-chrome": { "scope": "project", "toolSearch": "+playwright-chrome browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
     "playwright-edge":   { "scope": "project", "toolSearch": "+playwright-edge browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
     "playwright-firefox":{ "scope": "project", "toolSearch": "+playwright-firefox browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
-    "chrome-devtools":   { "scope": "user",    "toolSearch": "+Chrome_DevTools take_snapshot", "fallback": null },
-    "azure":             { "scope": "user",    "toolSearch": "+azure-mcp applicationinsights", "fallback": "APPINSIGHTS_APP_ID_* + APPINSIGHTS_API_KEY_*" }
+    "chrome-devtools":   { "scope": "user",    "toolSearch": "+Chrome_DevTools take_snapshot", "fallback": null, "mcpKeys": ["Chrome DevTools"] },
+    "azure":             { "scope": "user",    "toolSearch": "+azure-mcp applicationinsights", "fallback": "APPINSIGHTS_APP_ID_* + APPINSIGHTS_API_KEY_*", "mcpKeys": ["azure-mcp"] }
   },
   "consumers": {
     "ticket":      { "atlassian": { "class": "REQ_FALLBACK" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" }, "chrome-devtools": { "class": "OPT", "when": "visual_surface" }, "azure": { "class": "OPT" } },

@@ -1,6 +1,8 @@
 // scripts/preflight/mcp-static.ts — MCP availability levels 1–2 (spec §7): CONFIGURED (present in
 // .mcp.json) and READY (no placeholder, env refs resolve, Playwright pinned, firefox occlusion flag).
 // Level 3 — callable in THIS session — is the skill's, never this file's.
+// NOTE: ${VAR} references resolve against process.env, so the caller must load the layered .env first
+// (the CLI does so via getEnvFacts before checkMcpStatic).
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,7 +14,7 @@ export type Consumer = "ticket" | "ticket-fast" | "exploratory" | "lifecycle" | 
 export const CONSUMERS: readonly Consumer[] = ["ticket", "ticket-fast", "exploratory", "lifecycle", "domain-map", "ba", "regression", "smoke"];
 export type ReqClass = "REQ" | "REQ_FALLBACK" | "OPT";
 export interface McpRequirements {
-  servers: Record<string, { scope: "project" | "user"; toolSearch: string; fallback: string | null; lane?: boolean }>;
+  servers: Record<string, { scope: "project" | "user"; toolSearch: string; fallback: string | null; lane?: boolean; mcpKeys?: string[] }>;
   consumers: Record<Consumer, Record<string, { class: ReqClass; when?: string }>>;
   lanes: Record<Consumer, { min: number; want: number }>;
 }
@@ -23,17 +25,35 @@ export interface McpStatic {
 }
 
 export function loadMcpRequirements(root: string = REPO_ROOT): McpRequirements {
-  const raw = JSON.parse(readFileSync(join(root, REQUIREMENTS_PATH), "utf8"));
   const fail = (m: string) => { throw new Error(`${REQUIREMENTS_PATH}: ${m}`); };
-  if (!raw?.servers || !raw?.consumers || !raw?.lanes) fail("needs servers, consumers and lanes");
+  let raw: any;
+  try {
+    raw = JSON.parse(readFileSync(join(root, REQUIREMENTS_PATH), "utf8"));
+  } catch (e) {
+    if (e instanceof SyntaxError) fail(`invalid JSON: ${e.message}`);
+    if ((e as any).code === "ENOENT") fail("file not found");
+    throw e;
+  }
+  if (!raw || typeof raw !== "object") fail("must be a JSON object");
+  if (!raw?.servers || typeof raw.servers !== "object") fail("needs servers (object)");
+  if (!raw?.consumers || typeof raw.consumers !== "object") fail("needs consumers (object)");
+  if (!raw?.lanes || typeof raw.lanes !== "object") fail("needs lanes (object)");
   for (const [name, s] of Object.entries<any>(raw.servers)) {
+    if (!s || typeof s !== "object") fail(`servers.${name} must be an object`);
     if (s.scope !== "project" && s.scope !== "user") fail(`servers.${name}.scope must be project|user`);
     if (typeof s.toolSearch !== "string" || !s.toolSearch) fail(`servers.${name}.toolSearch is required`);
+    if (s.mcpKeys !== undefined) {
+      if (!Array.isArray(s.mcpKeys)) fail(`servers.${name}.mcpKeys must be an array`);
+      for (const k of s.mcpKeys) if (typeof k !== "string" || !k) fail(`servers.${name}.mcpKeys must be non-empty strings`);
+    }
   }
   for (const c of CONSUMERS) {
-    if (!raw.consumers[c]) fail(`consumers.${c} is missing`);
-    if (!raw.lanes[c]) fail(`lanes.${c} is missing`);
+    if (!raw.consumers[c] || typeof raw.consumers[c] !== "object") fail(`consumers.${c} must be an object`);
+    if (!raw.lanes[c] || typeof raw.lanes[c] !== "object") fail(`lanes.${c} must be an object`);
+    if (typeof raw.lanes[c].min !== "number") fail(`lanes.${c}.min must be a number`);
+    if (typeof raw.lanes[c].want !== "number") fail(`lanes.${c}.want must be a number`);
     for (const [s, r] of Object.entries<any>(raw.consumers[c])) {
+      if (!r || typeof r !== "object") fail(`consumers.${c}.${s} must be an object`);
       if (!raw.servers[s]) fail(`consumers.${c}.${s}: unknown server`);
       if (!["REQ", "REQ_FALLBACK", "OPT"].includes(r.class)) fail(`consumers.${c}.${s}.class must be REQ|REQ_FALLBACK|OPT`);
     }
@@ -61,7 +81,7 @@ function readinessProblem(name: string, entry: any, readFile: (p: string) => str
       const i = (entry.args ?? []).indexOf("--config");
       const cfgPath = i >= 0 ? entry.args[i + 1] : null;
       const cfg = cfgPath ? readFile(cfgPath) : null;
-      if (!cfg || !/window_occlusion_tracking/.test(cfg)) return "firefox config lacks widget.windows.window_occlusion_tracking.enabled=false (restart the server after adding it)";
+      if (!cfg || !/window_occlusion_tracking\.enabled"\s*:\s*false/.test(cfg)) return "firefox config lacks widget.windows.window_occlusion_tracking.enabled=false (restart the server after adding it)";
     }
   }
   return null;
@@ -85,9 +105,12 @@ export function checkMcpStatic(consumer: Consumer, reqs: McpRequirements, mcpJso
   for (const [name, r] of Object.entries(wanted)) {
     const s = reqs.servers[name];
     const base = { server: name, scope: s.scope, class: r.class, fallback: s.fallback, ...(r.when ? { when: r.when } : {}) };
-    if (s.scope === "user" && !configured[name]) { servers.push({ ...base, level: "NOT_VISIBLE", problem: null }); continue; }
-    if (!configured[name]) { servers.push({ ...base, level: "ABSENT", problem: null }); continue; }
-    const problem = readinessProblem(name, configured[name], readFile);
+    // Check if server is configured: primary key or any mcpKeys alternative
+    const configuredEntry = configured[name] ?? (s.mcpKeys ? s.mcpKeys.find(k => configured[k]) : undefined);
+    const mcpKey = Object.keys(configured).find(k => k === name || s.mcpKeys?.includes(k));
+    if (s.scope === "user" && !mcpKey) { servers.push({ ...base, level: "NOT_VISIBLE", problem: null }); continue; }
+    if (!mcpKey) { servers.push({ ...base, level: "ABSENT", problem: null }); continue; }
+    const problem = readinessProblem(name, configured[mcpKey], readFile);
     servers.push({ ...base, level: problem ? "CONFIGURED" : "READY", problem });
   }
   const liveLanes = servers.filter((x) => reqs.servers[x.server].lane && x.level === "READY").length;
