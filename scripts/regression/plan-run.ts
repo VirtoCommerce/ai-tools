@@ -30,10 +30,13 @@
  *   npm run regression:plan -- sprint --json     # machine-readable, for an agent to follow
  *   npm run regression:plan -- smoke --preflight                          # + the build-scoped pre-flight; gated suites leave the plan
  *   npm run regression:plan -- smoke --preflight --preflight-out <path>   # also write the RegressionPreflight JSON to <path>
+ *   npm run regression:plan -- smoke --preflight --run-id <RUN_ID>        # this run's own test-run-status.json is not a lock
+ *   npm run regression:plan -- smoke --preflight --accept drift:<id>[,…]  # "proceed as is" on those drift BLOCKs (WARN)
  *
  * Exit codes: 0 planned cleanly · 1 the selection cannot run as-is (unknown id, missing CSV,
  * no executor, or a cap that would guarantee truncation) · 2 --preflight: pre-flight NOT READY ·
- * 3 --preflight: the pre-flight could not run.
+ * 3 --preflight: the pre-flight could not run. A usage error (an --accept id not starting with
+ * `drift:`) is also exit 1.
  */
 import "../lib/sync-stdio.mjs"; // before any output: a piped stdout must not lose its tail to process.exit()
 import { existsSync, mkdirSync, writeFileSync } from "fs";
@@ -57,10 +60,12 @@ function parseArgs(argv: string[]): {
   concurrency: typeof DEFAULT_CONCURRENCY;
   preflight: boolean;
   preflightOut: string | null;
+  runId: string | null;
+  accept: string[];
 } {
   const args = argv.filter((a) => a !== "--");
   const flags = new Set(args.filter((a) => a.startsWith("--")));
-  const valued = new Set(["--preflight-out", "--browsers", "--fastpath", "--deterministic"]);
+  const valued = new Set(["--preflight-out", "--run-id", "--accept", "--browsers", "--fastpath", "--deterministic"]);
   const positional = args.filter((a, i) => !a.startsWith("--") && !valued.has(args[i - 1]));
 
   const numFlag = (name: string, fallback: number): number => {
@@ -70,12 +75,16 @@ function parseArgs(argv: string[]): {
     return Number.isFinite(n) && n > 0 ? n : fallback;
   };
 
+  const valueOf = (name: string): string | null => { const i = args.indexOf(name); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : null; };
+
   return {
     selection: positional[0] || "smoke",
     json: flags.has("--json"),
     verbose: flags.has("--verbose"),
     preflight: flags.has("--preflight"),
-    preflightOut: (() => { const i = args.indexOf("--preflight-out"); return i >= 0 && args[i + 1] && !args[i + 1].startsWith("--") ? args[i + 1] : null; })(),
+    preflightOut: valueOf("--preflight-out"),
+    runId: valueOf("--run-id"),
+    accept: (valueOf("--accept") ?? "").split(",").map((x) => x.trim()).filter(Boolean),
     concurrency: {
       browser: numFlag("browsers", DEFAULT_CONCURRENCY.browser),
       fastpath: numFlag("fastpath", DEFAULT_CONCURRENCY.fastpath),
@@ -85,7 +94,13 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
-  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut } = parseArgs(process.argv.slice(2));
+  const { selection, json, verbose, concurrency, preflight: wantPreflight, preflightOut, runId, accept } = parseArgs(process.argv.slice(2));
+  // D9: only a drift BLOCK can be "proceeded as is"; anything else is a usage error, never a silent no-op.
+  const notDrift = accept.filter((a) => !a.startsWith("drift:"));
+  if (notDrift.length > 0) {
+    console.error(`--accept takes drift:<id> only — not acceptable: ${notDrift.join(", ")}`);
+    process.exit(1);
+  }
   const manifest = loadManifest();
 
   const resolved = resolveSelection(manifest, selection);
@@ -129,7 +144,7 @@ async function main(): Promise<void> {
       for: selection === "smoke" ? "smoke" : "regression", selection,
       suites: suites.map((s) => ({ id: s.id, layer: s.layer, requiresModules: s.requiresModules })),
       manifestProblems: problems.map((p) => ({ suiteId: p.suiteId, kind: p.kind, detail: p.detail })),
-      root: process.cwd(),
+      root: process.cwd(), ...(runId ? { runId } : {}), accept,
     });
     const gated = new Set(pf.gating.gated.map((g) => g.suite));
     toPlan = suites.filter((s) => !gated.has(s.id));

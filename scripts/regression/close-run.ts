@@ -61,6 +61,8 @@ export interface CloseResult {
   /** True only when reports/regression/baseline.<env>.json was written by this close. */
   baselineWritten: boolean;
   baselineSkippedReason?: string;
+  /** The env the baseline was filed under — the pre-flight's `facts.env`, which can differ from `--env`. */
+  baselineEnv?: string;
   warnings: string[];
 }
 
@@ -165,14 +167,18 @@ export function closeRun(
     return { runId, runDir, historyRows, statusWritten: false, statusSkippedReason: "dry run", baselineWritten: false, warnings };
   }
   const flip = markRunClosed(runId, status, nowIso);
-  // Baseline only for a run that actually closed as completed (spec §6): a stalled or refused close
-  // must not become the next run's comparison point.
-  const base = flip.written && status === "completed"
-    ? writeBaselineFromRun(process.cwd(), runDir, env, runId)
-    : { written: false, reason: flip.written ? `status ${status} is not completed` : "status not written" };
+  // Baseline only for a run that actually closed as completed (spec §6): a stalled, refused or
+  // force-closed-while-open run must not become the next run's comparison point.
+  const base: { written: boolean; env?: string; reason?: string; warning?: string } =
+    !flip.written ? { written: false, reason: "status not written" }
+    : status !== "completed" ? { written: false, reason: `status ${status} is not completed` }
+    : opts.force && open.length > 0 ? { written: false, reason: "forced close with open suites" }
+    : writeBaselineFromRun(process.cwd(), runDir, env, runId);
   if (!base.written) warnings.push(`baseline not written: ${base.reason}`);
+  if (base.warning) warnings.push(`baseline: ${base.warning}`);
   return { runId, runDir, historyRows, statusWritten: flip.written, statusSkippedReason: flip.reason,
-    baselineWritten: base.written, ...(base.reason ? { baselineSkippedReason: base.reason } : {}), warnings };
+    baselineWritten: base.written, ...(base.reason ? { baselineSkippedReason: base.reason } : {}),
+    ...(base.env ? { baselineEnv: base.env } : {}), warnings };
 }
 
 // --- CLI -------------------------------------------------------------------
@@ -214,7 +220,7 @@ function main(): void {
     console.log(`Run ${r.runId}`);
     console.log(`  history.json  : +${r.historyRows} per-suite row(s)`);
     console.log(`  status        : ${r.statusWritten ? statusArg : `NOT written — ${r.statusSkippedReason}`}`);
-    console.log(`  baseline      : ${r.baselineWritten ? `reports/regression/baseline.${env}.json` : `not written — ${r.baselineSkippedReason ?? "dry run"}`}`);
+    console.log(`  baseline      : ${r.baselineWritten ? `reports/regression/baseline.${r.baselineEnv ?? env}.json` : `not written — ${r.baselineSkippedReason ?? "dry run"}`}`);
     for (const w of r.warnings) console.log(`  WARNING       : ${w}`);
   }
 

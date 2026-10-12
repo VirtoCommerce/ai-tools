@@ -19,11 +19,15 @@ export interface RegressionPolicyInput {
   lock: Classification | null; gating: GatingResult; suiteIds: string[];
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null;
   smokeGates: { ok: boolean; output: string; spawnError?: string } | null; smokeDuplicate: string | null;
+  /** The status file describes THIS run (`--run-id`): it is the run's own envelope, not a lock. */
+  ownRunId?: string | null;
+  /** `drift:*` ids the user chose to "proceed as is" on (D9): BLOCK → WARN. */
+  accepted?: string[];
 }
 export interface RegressionPreflight {
   for: BuildFor; selection: string; facts: EnvFacts; mcp: Mcp; gating: GatingResult;
   changedSince: ModuleChange[] | Unknown; baselineRunId: string | null; falseFailureRisk: string[];
-  checks: Check[]; verdict: "READY" | "NOT READY";
+  accepted: string[]; checks: Check[]; verdict: "READY" | "NOT READY";
 }
 
 const ok = (id: string, found: string): Check => ({ id, status: "OK", found, who: null, do: null, diagnose: [] });
@@ -43,7 +47,9 @@ export function buildRegressionChecks(i: RegressionPolicyInput): Check[] {
   for (const p of i.manifestProblems)
     checks.push({ id: `manifest:${p.suiteId}`, status: "BLOCK", found: `${p.kind}: ${p.detail}`, who: "me, with OK", do: "fix the suite's entry in config/test-suites.json", diagnose: [] });
 
-  if (i.lock?.liveness === "active")
+  if (i.ownRunId)
+    checks.push(ok("active-run", `this run's own status file (${i.ownRunId})`));
+  else if (i.lock?.liveness === "active")
     checks.push({ id: "active-run", status: "BLOCK", found: `${i.lock.runId} is running: ${i.lock.reason}`, who: "me", do: `wait for ${i.lock.runId} to finish, then re-run`, diagnose: ["npm run regression:reap"] });
   else if (i.lock?.liveness === "stalled")
     checks.push({ id: "active-run", status: "BLOCK", found: `${i.lock.runId} is stalled: ${i.lock.reason}`, who: "me, with OK", do: "npm run regression:reap:apply (marks it stalled), then re-run", diagnose: ["npm run regression:reap"] });
@@ -51,13 +57,15 @@ export function buildRegressionChecks(i: RegressionPolicyInput): Check[] {
 
   // D9: drift on a module a selected suite needs (or the platform) is a BLOCK; elsewhere a WARN.
   if (!isUnknown(f.drift)) {
+    const accepted = new Set(i.accepted ?? []);
     const required = new Set(Object.values(i.gating.requiredBySuite).flat());
     const outside: string[] = [];
     for (const d of f.drift) {
-      if (d.id === "platform" || required.has(d.id))
-        checks.push({ id: `drift:${d.id}`, status: "BLOCK", found: `${d.id} declared ${d.declared ?? "—"}, deployed ${d.deployed ?? "—"}`, who: "me",
+      if (d.id === "platform" || required.has(d.id)) {
+        const yes = accepted.has(`drift:${d.id}`);
+        checks.push({ id: `drift:${d.id}`, status: yes ? "WARN" : "BLOCK", found: `${d.id} declared ${d.declared ?? "—"}, deployed ${d.deployed ?? "—"}${yes ? " (accepted)" : ""}`, who: "me",
           do: "wait for the deploy to settle and re-run, or proceed as is", diagnose: [`gh run list on vc-deploy-dev for the ${f.env} branch`] });
-      else outside.push(`${d.id} ${d.declared ?? "—"}→${d.deployed ?? "—"}`);
+      } else outside.push(`${d.id} ${d.declared ?? "—"}→${d.deployed ?? "—"}`);
     }
     if (outside.length) checks.push({ id: "drift", status: "WARN", found: `${outside.length} module(s) no selected suite requires differ: ${outside.slice(0, 3).join(", ")}`, who: "me", do: "name it in the report header", diagnose: [] });
   }
@@ -77,8 +85,9 @@ export function buildRegressionChecks(i: RegressionPolicyInput): Check[] {
   if (i.gating.gatingOff)
     checks.push({ id: "gating", status: "WARN", found: `no suite gated: ${i.gating.gatingOff}`, who: "me", do: "every suite runs; resolve the deployed check to gate", diagnose: [] });
   for (const u of i.gating.unmapped)
-    checks.push({ id: `unmapped-requires:${u.entry}`, status: "UNKNOWN", found: `resolves to no module (suites ${u.suites.join(", ")} run ungated)`, who: "me, with OK",
-      do: "write the full module id in the suites' requiresModules", diagnose: [] });
+    checks.push({ id: `unmapped-requires:${u.entry}`, status: "UNKNOWN", who: "me, with OK", diagnose: [],
+      found: `${u.module} (by rule): not deployed, not declared on ${f.env}, not in the ledger — a typo cannot be told from an absent module (suites ${u.suites.join(", ")} run ungated)`,
+      do: `check the id; if the module is absent on purpose, expect suites ${u.suites.join(", ")} to fail on this stand` });
 
   if (isUnknown(i.changedSince))
     checks.push({ id: "baseline", status: "UNKNOWN", found: i.changedSince.unknown === "no-baseline" ? "no baseline yet for this env" : `baseline Δ: ${i.changedSince.unknown}`, who: "me",
@@ -120,19 +129,25 @@ function runSmokeGates(root: string): { ok: boolean; output: string; spawnError?
   return { ok: r.status === 0 && !spawnError, output, ...(spawnError ? { spawnError } : {}) };
 }
 
+/** The active-run lock, unless the status file is this run's own envelope (`runId` = `--run-id`). */
+export function readLock(regRoot: string, runId: string | undefined, now: Date): { lock: Classification | null; ownRunId: string | null } {
+  const status = loadStatus(regRoot);
+  if (runId && status?.runId && String(status.runId) === runId) return { lock: null, ownRunId: runId };
+  const lock = status?.runId ? classifyRun(status, gatherActivity(regRoot, String(status.runId)), now.getTime()) : classifyRun(status, { newestActivityMs: null }, now.getTime());
+  return { lock, ownRunId: null };
+}
+
 export async function runRegressionPreflight(o: {
   for: BuildFor; selection: string; suites: SuiteRef[];
   manifestProblems: { suiteId: string; kind: string; detail: string }[];
-  root: string; now?: Date; env?: string;
+  root: string; now?: Date; env?: string; runId?: string; accept?: string[];
 }): Promise<RegressionPreflight> {
   const now = o.now ?? new Date();
   const required = [...new Set(o.suites.flatMap((s) => (s.requiresModules ?? []).map((e) => resolveRequiredModule(e).pascal)))];
   const facts = await getEnvFacts({ env: o.env, components: required, storefront: o.suites.some((s) => s.layer === "frontend"), now });
   const mcpJson = readMcpJson(o.root);   // { json, error } — same construction as scripts/preflight/cli.ts
   const mcp = { ...checkMcpStatic(o.for, loadMcpRequirements(o.root), mcpJson.json), jsonError: mcpJson.error };
-  const regRoot = join(o.root, "reports", "regression");
-  const status = loadStatus(regRoot);
-  const lock = status?.runId ? classifyRun(status, gatherActivity(regRoot, String(status.runId)), now.getTime()) : classifyRun(status, { newestActivityMs: null }, now.getTime());
+  const { lock, ownRunId } = readLock(join(o.root, "reports", "regression"), o.runId, now);
   let ledger = null;
   try { ledger = readLedger(o.root); } catch { ledger = null; }
   const gating = gateSuites(o.suites, facts, ledger);
@@ -140,12 +155,12 @@ export async function runRegressionPreflight(o: {
   const changedSince = baselineDelta(baseline, facts);
   const checks = buildRegressionChecks({
     for: o.for, facts, mcp, manifestProblems: o.manifestProblems, lock, gating, suiteIds: o.suites.map((s) => s.id),
-    changedSince, baselineRunId: baseline?.runId ?? null,
+    changedSince, baselineRunId: baseline?.runId ?? null, ownRunId, accepted: o.accept ?? [],
     smokeGates: o.for === "smoke" ? runSmokeGates(o.root) : null,
     smokeDuplicate: o.for === "smoke" ? smokeDuplicateToday(o.root, now) : null,
   });
   return {
     for: o.for, selection: o.selection, facts, mcp, gating, changedSince, baselineRunId: baseline?.runId ?? null,
-    falseFailureRisk: falseFailureRisk(changedSince, gating), checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
+    falseFailureRisk: falseFailureRisk(changedSince, gating), accepted: o.accept ?? [], checks, verdict: isBlocking(checks) ? "NOT READY" : "READY",
   };
 }

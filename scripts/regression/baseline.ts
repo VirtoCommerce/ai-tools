@@ -37,18 +37,25 @@ export function baselineDelta(b: Baseline | null, f: EnvFacts): ModuleChange[] |
   return changes;
 }
 
-/** Called by regression:close after a COMPLETED close. Reads the run's own preflight.json; never probes. */
-export function writeBaselineFromRun(root: string, runDir: string, env: string, runId: string): { written: boolean; reason?: string } {
+/**
+ * Called by regression:close after a COMPLETED close. Reads the run's own preflight.json; never probes.
+ * The file is named from the env the facts were OBSERVED on (`facts.env`), never from the caller's
+ * `--env`: a mismatch would file one stand's build under another's name. A mismatch still writes,
+ * under `facts.env`, and returns a `warning`.
+ */
+export function writeBaselineFromRun(root: string, runDir: string, env: string, runId: string): { written: boolean; env?: string; reason?: string; warning?: string } {
   const p = join(runDir, "preflight.json");
   if (!existsSync(p)) return { written: false, reason: "no preflight.json in the run folder" };
   let pf: { facts?: EnvFacts };
   try { pf = JSON.parse(readFileSync(p, "utf8")); } catch { return { written: false, reason: "preflight.json does not parse" }; }
-  const b = pf.facts ? baselineFromFacts(pf.facts, env, runId) : null;
+  const factsEnv = pf.facts?.env || env;
+  const b = pf.facts ? baselineFromFacts(pf.facts, factsEnv, runId) : null;
   if (!b) return { written: false, reason: "the run's pre-flight had no deployed module list" };
   try {
-    writeFileSync(baselinePath(root, env), JSON.stringify(b, null, 2) + "\n", "utf8");
+    writeFileSync(baselinePath(root, factsEnv), JSON.stringify(b, null, 2) + "\n", "utf8");
   } catch (e) {
     return { written: false, reason: `could not write baseline: ${(e as Error).message}` };
   }
-  return { written: true };
+  return factsEnv === env ? { written: true, env: factsEnv }
+    : { written: true, env: factsEnv, warning: `--env ${env} but the run's pre-flight observed ${factsEnv}: baseline written as baseline.${factsEnv}.json` };
 }

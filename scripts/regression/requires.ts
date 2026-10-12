@@ -10,7 +10,8 @@ export type ReqState = "deployed" | "load-error" | "not-deployed" | "storefront-
 export interface Gated { suite: string; module: string; state: "load-error" | "not-deployed" | "storefront-invisible" }
 export interface GatingResult {
   gated: Gated[];
-  unmapped: { entry: string; suites: string[] }[];
+  /** `module` is the rule-resolved Pascal id — not deployed, not declared, not in the ledger. */
+  unmapped: { entry: string; module: string; suites: string[] }[];
   requiredBySuite: Record<string, string[]>;
   gatingOff: string | null;
 }
@@ -44,15 +45,15 @@ export function gateSuites(suites: SuiteRef[], facts: EnvFacts, ledger: Ledger |
 
   const ledgerRepos = new Set((ledger?.latest ?? []).map((l) => l.repo));
   const gated: Gated[] = [];
-  const unmappedMap = new Map<string, string[]>();
+  const unmappedMap = new Map<string, { module: string; suites: string[] }>();
   for (const s of suites) {
     for (const entry of s.requiresModules ?? []) {
       const mod = resolveRequiredModule(entry);
       const state = classify(mod, s.layer, facts, ledgerRepos);
       if (state === "deployed") continue;
-      if (state === "unmapped") unmappedMap.set(entry, [...(unmappedMap.get(entry) ?? []), s.id]);
+      if (state === "unmapped") unmappedMap.set(entry, { module: mod.pascal, suites: [...(unmappedMap.get(entry)?.suites ?? []), s.id] });
       else gated.push({ suite: s.id, module: mod.id, state });
     }
   }
-  return { gated, unmapped: [...unmappedMap].map(([entry, ids]) => ({ entry, suites: ids })), requiredBySuite, gatingOff: null };
+  return { gated, unmapped: [...unmappedMap].map(([entry, u]) => ({ entry, module: u.module, suites: u.suites })), requiredBySuite, gatingOff: null };
 }
