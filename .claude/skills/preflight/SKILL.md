@@ -1,7 +1,7 @@
 ---
 name: preflight
 description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront]  |  <regression|smoke> --selection <name|ids> [--out <run-folder>/preflight.json]"
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]  |  <regression|smoke> <selection: name or ids> [--preflight-out <run-folder>/preflight.json] [--ci]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -32,7 +32,7 @@ Keep the JSON; the consumer stores it as the `preflight` block of its `summary.j
 
 Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
 Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
-could not run. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
+could not run. `3` — report its message and STOP, as for the change-scoped CLI. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
 `NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. For step 4, run the same command without `--json`.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
