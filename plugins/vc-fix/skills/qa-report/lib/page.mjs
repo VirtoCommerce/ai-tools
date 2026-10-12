@@ -3,7 +3,7 @@
 // "ref" images = the committed local copy (reports-policy.md §1a: never inline base64 there);
 // "embed" = the published Artifact, which must stand alone.
 import { readFileSync } from "node:fs";
-import { resolve, basename, extname } from "node:path";
+import { resolve, relative, isAbsolute, basename, extname } from "node:path";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -24,6 +24,11 @@ const list = items => items.length ? `    <ul class="rows">\n${items.join("\n")}
 function imgSrc(file, mode, root) {
   if (mode === "ref") return esc(file);
   const abs = resolve(root, file);
+  // Compare RESOLVED paths via relative(): a bare string prefix would let `imgs-evil` pass for root `imgs`.
+  const rel = relative(resolve(root), abs);
+  if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) {
+    throw new Error(`cannot embed ${file}: ${abs} is outside the image root ${resolve(root)}`);
+  }
   const mime = MIME[extname(abs).toLowerCase()];
   if (!mime) throw new Error(`cannot embed ${file}: not an image`);
   const buf = readFileSync(abs);
@@ -75,9 +80,8 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
   }
   parts.push(`  <footer class="foot muted">Evidence folder <code>${esc(m.evidence)}</code></footer>`);
 
-  // Function replacers: a `$&` in any value must never be read as a replacement pattern.
-  return shell
-    .replace("{{TITLE}}", () => esc(`${head} ${m.verdictLabel}`))
-    .replace("{{TONE}}", () => CSS_VERDICT[m.tone])
-    .replace("{{BODY}}", () => parts.join("\n\n"));
+  // ONE pass with a function replacer: a substituted value is never re-scanned as a slot,
+  // and a `$&` in any value is never read as a replacement pattern.
+  const vals = { TITLE: esc(`${head} ${m.verdictLabel}`), TONE: CSS_VERDICT[m.tone], BODY: parts.join("\n\n") };
+  return shell.replace(/\{\{(TITLE|TONE|BODY)\}\}/g, (_, k) => vals[k]);
 }
