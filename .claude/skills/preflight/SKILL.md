@@ -1,7 +1,7 @@
 ---
 name: preflight
-description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]"
+description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze, /qa-regression, /qa-smoke. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront]  |  <regression|smoke> --selection <name|ids> [--out <run-folder>/preflight.json]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -25,6 +25,15 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
 - The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
 
 Keep the JSON; the consumer stores it as the `preflight` block of its `summary.json` or report header. Step 4 re-runs the CLI without `--json` for display (the CLI prints one or the other, never both); if its verdict or rows differ from this run's (a deploy landed), run this step again and store that JSON.
+
+**Build-scoped (`regression`, `smoke`)** runs the regression planner instead:
+
+    npm run regression:plan -- <selection> --preflight --json [--preflight-out reports/regression/<RUN_ID>/preflight.json]
+
+Its JSON carries the pre-flight under `preflight` (same `checks[]`, `verdict`, `facts`) plus the plan.
+Exit `2` NOT READY · `1` the selection itself cannot run (unknown id, missing CSV, no executor) · `3`
+could not run. Gated suites (`preflight.gating.gated`) are already **out** of the plan: report each as
+`NOT_DEPLOYED` (BLOCKED-on-deploy), never FAIL. For step 4, run the same command without `--json`.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
 
@@ -102,5 +111,4 @@ rule, stated in the consumer — not here. One id is defined here because it is 
 ## Not this skill
 
 The `/qa-test` axes 2b–2g and its 2-map read · ticket fetch, classification and routing · the
-per-case `[PRE:*]` tags ([`test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)) ·
-the regression pre-flight (`regression:plan --preflight`, phase 2).
+per-case `[PRE:*]` tags ([`test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)).
