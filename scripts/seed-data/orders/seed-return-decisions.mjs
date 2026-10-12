@@ -38,7 +38,7 @@ import {
 import {
   RETURN_DECISION_FIXTURES, DECISION_TEMPLATE_FIXTURE, DECISION_COLLEAGUE_ALIAS, VIA_XAPI, VIA_ADMIN_PUT,
   decisionOrderNumber, decisionReturnRef, toOrderSpec, shapeDecisionTemplate, buildReturnItems,
-  buildAdminReturnBody, diagnoseSeededReturns, decisionAliasRecord, rolesOf,
+  buildAdminReturnBody, diagnoseSeededReturns, decisionAliasRecord, rolesOf, foreignRecipients,
   DECISION_BUYER, isDedicatedDecisionBuyer,
 } from './return-decisions-specs.mjs';
 import {
@@ -193,6 +193,15 @@ async function buildOrder(spec, buyer, productsByRole, rolesBySku, now) {
   const body = finalizeReturnOrderBody(orderSpec, shaped, {
     customerId: buyer.id, customerName: buyer.name, organizationId: buyer.organizationId, organizationName: buyer.organizationName,
   }, now);
+  // HARD STOP before the first write: the order-created email goes out on this POST, to the order address.
+  // Every recipient-bearing field must be the dedicated fixture mailbox, and every address must carry one
+  // (an address without an email falls through to the contact/account — still the fixture, but say so).
+  const foreign = foreignRecipients(body);
+  const bare = (body.addresses || []).filter((a) => !a.email).map((a) => a.addressType);
+  if (foreign.length || bare.length) {
+    throw new Error(`${body.number}: REFUSING to POST — recipient(s) other than ${DECISION_BUYER.email}: ${foreign.map((r) => `${r.path}=${r.email ? r.email.replace(/^(.{3}).*(@.*)$/, '$1***$2') : 'null'}`).join(', ') || 'none'}${bare.length ? `; address(es) without an email: ${bare.join(', ')}` : ''}`);
+  }
+  log(`    ${body.number}: recipients ${[...new Set((body.addresses || []).map((a) => a.email))].join(', ')} (${(body.addresses || []).length} address(es))`);
   const created = await api('POST', '/api/order/customerOrders', body);
   if (DRY_RUN) return null;
   const full = await api('GET', `/api/order/customerOrders/${created.id}`);

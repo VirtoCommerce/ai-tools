@@ -26,11 +26,13 @@ import {
   RETURN_ORDER_FIXTURES, RETURN_LINE_X_ALIAS, RETURN_WINDOW_DAYS_ASSUMED,
   validateReturnFixtureSet, validateReturnFixtureShape,
   suiteRowsConsuming, orderedFor, LINE_ROLE_X, LINE_ROLE_Y,
+  resolveTokens, finalizeReturnOrderBody,
 } from './orders-specs.mjs';
 import {
   RETURN_DECISION_FIXTURES, DECISION_OWNED_ALIASES, DECISION_TEMPLATE_FIXTURE,
   DECISION_BUYER, DECISION_BUYER_PASSWORD_TOKEN, isDedicatedDecisionBuyer,
   validateDecisionFixtureSet, validateDecisionTemplate,
+  shapeDecisionTemplate, toOrderSpec, foreignRecipients, recipientEmailsOf,
 } from './return-decisions-specs.mjs';
 
 /**
@@ -232,6 +234,26 @@ console.log('\n[8] Return-decision template fixture — shape, no literal date, 
     const t = validateDecisionTemplate(readJson(rel));
     if (t.ok) ok(`${DECISION_TEMPLATE_FIXTURE} valid (lineX + lineY, one shipment delivered today, no date/GUID)`);
     else t.problems.forEach((p) => fail(`${DECISION_TEMPLATE_FIXTURE}: ${p}`));
+  }
+}
+console.log('\n[8b] Return-decision orders — every notification recipient is the dedicated fixture mailbox');
+{
+  // Resolve the template against a HOSTILE env (every {{VAR}} → a non-fixture address), then shape and
+  // finalize it exactly as the seeder does. The order/return emails go to the order address first
+  // (KB-33E0A778); a body still carrying the env's USER_EMAIL would mail a real person on POST.
+  const rel = `test-data/${DECISION_TEMPLATE_FIXTURE}`;
+  if (existsSync(join(ROOT, rel))) {
+    const hostile = new Proxy({}, { get: (_, k) => (typeof k === 'string' ? `not-a-fixture-${k.toLowerCase()}@example.com` : undefined), has: () => true });
+    const { obj } = resolveTokens(readJson(rel), hostile);
+    const leaks = [];
+    for (const spec of RETURN_DECISION_FIXTURES) {
+      const body = finalizeReturnOrderBody(toOrderSpec(spec), shapeDecisionTemplate(spec, obj), { customerId: 'c', customerName: 'n' });
+      for (const r of foreignRecipients(body)) leaks.push(`${spec.key} ${r.path}=${r.email}`);
+      for (const a of body.addresses || []) if (!a.email) leaks.push(`${spec.key} ${a.addressType} address has no email (falls through past the fixture's order address)`);
+      if (!recipientEmailsOf(body).length) leaks.push(`${spec.key}: no recipient field at all — the check would pass vacuously`);
+    }
+    if (leaks.length) leaks.forEach((l) => fail(`decision order recipient is not ${DECISION_BUYER.email}: ${l}`));
+    else ok(`${RETURN_DECISION_FIXTURES.length} shaped decision orders — every recipient field is ${DECISION_BUYER.email}, even with a hostile env`);
   }
 }
 console.log(`\n[9] Return-decision aliases — registered _inline with no committed value; seeded state on ${TARGET_ENV}`);

@@ -235,7 +235,41 @@ export function shapeDecisionTemplate(spec, template) {
     s.trackingNumber = `AGENT-TEST-TRK-${number.replace(/^AGENT-TEST-/, '')}-${k}`;
   }
   (body.inPayments || []).forEach((p, i) => { p.number = `${number}-P${i + 1}`; p.sum = total; });
+  // RECIPIENTS. The buyer's order/return email goes to the ORDER ADDRESS email first (then contact, then
+  // account — KB-33E0A778), and the shared template carries {{USER_EMAIL}}, which on an env can be a real
+  // person's mailbox (vcst 2026-10-09: OrderCreateEmailNotification sent to it). Every email-bearing field,
+  // at any depth (order addresses, a shipment deliveryAddress, a payment billingAddress), is forced to the
+  // dedicated fixture mailbox — the same thing shapeOrgOrder does for VCST-5884.
+  forceRecipientEmails(body, DECISION_BUYER.email);
+  for (const a of body.addresses || []) a.email = DECISION_BUYER.email;
   return body;
+}
+
+const isEmailKey = (k) => /e-?mail/i.test(k) && !k.startsWith('_');
+
+/** Every email-bearing value in an order body with its path (PURE): any non-metadata key named *email*, any depth. */
+export function recipientEmailsOf(node, path = '$') {
+  if (Array.isArray(node)) return node.flatMap((x, i) => recipientEmailsOf(x, `${path}[${i}]`));
+  if (!node || typeof node !== 'object') return [];
+  return Object.entries(node).flatMap(([k, v]) => (isEmailKey(k) && (typeof v === 'string' || v == null)
+    ? [{ path: `${path}.${k}`, email: v ?? null }]
+    : recipientEmailsOf(v, `${path}.${k}`)));
+}
+
+/** Set every email-bearing field of `node` to `email`, in place (PURE on its argument). */
+export function forceRecipientEmails(node, email) {
+  if (Array.isArray(node)) { node.forEach((x) => forceRecipientEmails(x, email)); return node; }
+  if (!node || typeof node !== 'object') return node;
+  for (const [k, v] of Object.entries(node)) {
+    if (isEmailKey(k) && (typeof v === 'string' || v == null)) node[k] = email;
+    else forceRecipientEmails(v, email);
+  }
+  return node;
+}
+
+/** The recipients of a shaped order that are NOT the dedicated fixture mailbox (PURE) — must be []. */
+export function foreignRecipients(body) {
+  return recipientEmailsOf(body).filter((r) => !isDedicatedDecisionBuyer(r.email));
 }
 
 /**
