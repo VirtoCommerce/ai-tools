@@ -23,7 +23,8 @@ rules:
       kind: manual
       ref: 'Delete price list in Admin → storefront product shows "Unavailable" or equivalent, not "$0.00" → "Add to Cart" disabled → xAPI `products` query returns `price: null` or empty price object.'
     violation_signal: Product displays "$0.00" price after price list deletion; "Add to Cart" remains active; order can be placed for $0.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-087, BSM-111 failed in REG-2026-10-08-0812"
   - id: BL-CROSS-002
     title: Catalog change → search lag → cart price mismatch window
     rule: After a product price or availability is changed in Admin, there is a 30-60 second window where the Elasticsearch index still reflects old data. During this window, the storefront may show stale prices. However, the cart/checkout must always use the server-side (current) price — not the cached search index price.
@@ -50,6 +51,9 @@ rules:
       ref: Disable module → its API endpoints return 404 → Admin menu item gone → dependent module shows appropriate fallback (not error screen) → re-enable → everything restored.
     violation_signal: API returns 500 instead of 404; Admin section still visible but broken; dependent module crashes; re-enable doesn't restore functionality.
     status: ACTIVE
+    verified:
+      date: 2026-10-08
+      by: REG-2026-10-08-0812
   - id: BL-CROSS-004
     title: Currency switch triggers multi-system recalculation
     rule: "When a user switches currency on the storefront, the following must all update atomically: (1) product prices switch to the new currency's price list, (2) cart line items recalculate using new prices, (3) shipping rates update for the new currency, (4) tax recalculates if rates differ. Products without prices in the new currency become unavailable."
@@ -90,7 +94,8 @@ rules:
       kind: manual
       ref: 'Toggle `quotesEnabled` OFF in Admin → refresh storefront → "Request Quote" button disappears. Toggle ON → button returns. For module flags: disable module → restart platform → verify effects.'
     violation_signal: Flag change requires restart when it shouldn't; flag change has no effect until cache expires; storefront caches flags beyond one page load.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-010, BSM-061, BSM-077, BSM-078, BSM-086, BSM-092, BSM-100 failed in REG-2026-10-08-0812"
   - id: BL-CROSS-007
     title: Admin entity deletion → cascade cleanup
     rule: "When a top-level entity is deleted in Admin, all dependent data must be cleaned up: (1) delete catalog → products, categories, prices, search index entries removed; (2) delete organization → members disassociated (not deleted), org-specific price lists unlinked; (3) delete store → associated virtual catalog unlinked, orders preserved (historical). No orphaned records should remain in the database."
@@ -101,7 +106,8 @@ rules:
       kind: manual
       ref: "Delete a catalog → its products no longer appear in search, pricing, or any virtual catalog. Delete an org → members can still log in but have no org association. Check xAPI: no references to deleted entities."
     violation_signal: Orphaned products in search after catalog deletion; orphaned prices referencing deleted products; member accounts deleted with org; API returns references to deleted entities.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-085, BSM-086 failed in REG-2026-10-08-0812"
   - id: BL-CROSS-008
     title: Organization switch → full context swap
     rule: "When a B2B user switches organization, ALL of the following must swap atomically: (1) cart — new org's cart loads, (2) addresses — new org's address book, (3) pricing — new org's price list, (4) lists/wish lists — new org's lists, (5) white labeling — new org's theme (if WL enabled), (6) quotes — new org's quotes. Partial swap (e.g., cart changes but prices don't) is a critical bug."
@@ -153,7 +159,8 @@ rules:
       kind: manual
       ref: Simulate each service outage → verify core flow continues or shows meaningful error → no 500 errors, no white screens, no data corruption.
     violation_signal: White screen / 500 error when a dependent service is down; orphan orders created when payment fails; order blocked because email service is down; silent data loss without logging.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-044, BSM-045, BSM-046, BSM-047, BSM-054, BSM-058, BSM-060, BSM-062, BSM-073, BSM-083, BSM-106 failed in REG-2026-10-08-0812"
   - id: BL-CROSS-012
     title: Admin entity deletion never creates $0 products
     rule: No admin action (price list deletion, catalog reorganization, module disable, currency removal) should ever cause a product with **missing/absent** price data to silently fall back to a purchasable $0.00 on the storefront. The safe state for a product without a valid price is "Unavailable" / "Add to Cart disabled" — never $0.00 with an active purchase button. **EXCEPTION:** an *intentional* $0 price is purchasable only where the deployment has overridden the price-policy specifications (`ProductIsBuyableSpecification.CheckPricePolicy` and its catalog counterpart) to allow it; by default a $0-priced product is not buyable and cannot be added to cart. When auditing, confirm the deployment's price-policy override before treating a $0 purchase as a violation.
@@ -170,4 +177,5 @@ rules:
       kind: manual
       ref: Delete price list → check affected products show "Unavailable" not $0. Remove currency → products in that currency become unavailable. Disable pricing module → all products become unpurchasable.
     violation_signal: Any product purchasable at $0.00 due to admin action; "Add to Cart" active when price data is missing; order placed at $0.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] BSM-085 failed in REG-2026-10-08-0812"

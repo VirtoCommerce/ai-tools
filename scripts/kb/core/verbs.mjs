@@ -13,16 +13,19 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
+import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
-import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, entryPath, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
-  log, metaAsks, pendingMutations, queueBacklog, queueDir, readMeta, readPushStatus, readQueue, sessionId,
+  DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
+  readQueue, sessionId,
 } from './queue.mjs';
+import { lastWord, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -40,10 +43,17 @@ import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 // The thresholds are a starting point, not a finding. The log will say whether they are the right
 // places to cut.
 export function trustOf(evidence = []) {
-  const supporting = evidence.filter((e) => !e.contradicts);
+  // Support of the claim AS IT STANDS: after a judge's `claim-amended`, confirmations of the old
+  // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
+  // sessions and operators printed beside the count are the ones the count is made of.
+  const amendments = amendmentsOf(evidence);
+  // Exactly the items the count is made of (`supportOf`), so the sessions, anonymous and operator
+  // numbers printed beside it describe the same set: a duplicate or a judge's third stand is not counted.
+  const supporting = supportOf(evidence);
+  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
-  const { trust: confirmations, disputed } = countEvidence(evidence);
+  const { trust: confirmations, disputed, resolved } = countEvidence(evidence);
   // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
   //
   // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
@@ -93,7 +103,7 @@ export function trustOf(evidence = []) {
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
+  return { label, confirmations, disputed, resolved, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -108,7 +118,7 @@ export function trustOf(evidence = []) {
 export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
   return {
     id: hit.row.id,
@@ -122,11 +132,14 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
     provenance: evidence.map((e) => ({
       method: e.method ?? 'observation',
       deployment: e.deployment ?? null,
+      conditions: e.conditions ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
       who: e.who ?? null,
       contradicts: Boolean(e.contradicts),
       note: e.note ?? null,
+      resolved: e.resolved ?? null,
+      resolution: e.resolution ?? null,
     })),
     indexTrust: hit.row.trust,
     indexDrift: !unavailable && hit.row.trust !== trust.confirmations
@@ -300,7 +313,7 @@ const stand = (deployment) => {
   return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
 };
 /** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
-const standName = (deployment) => stand(deployment).deployment ?? deployment;
+export const standName = (deployment) => stand(deployment).deployment ?? deployment;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -722,10 +735,17 @@ export async function ask(asked, opened, { env = process.env, top = 3, via = nul
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null } = {}) {
+export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
   // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
   // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
-  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() } : {};
+  // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a
+  // choice from any list -- it never pairs with an ask (`loop.mjs` `pointersByAsk`), so the gate's own
+  // advice cannot record a pick. A handle wins over it: a show with `--ask` is a choice by definition.
+  // WITHOUT EITHER, THE PAIRING IS RESOLVED HERE, at the write, as `none()` resolves its target: the
+  // latest list of this session that showed the entry and was not closed by `kb_none` -- logged as an
+  // explicit `after`, or `unpaired` when there is none. Hook and report then read the line, not a rule.
+  const after = typeof handle === 'string' && handle.trim() ? { after: handle.trim() }
+    : verify ? { verify: true } : pairShow(id, env);
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind: 'show', id, state: cat.state, why: cat.why, ...after, ...context({ via, call, topic }) }, { env });
@@ -754,6 +774,22 @@ export async function show(id, opened, { env = process.env, via = null, call = n
   }
   await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
+}
+
+/** The write-time pairing of a handle-less, non-`verify` show (see `show`): `{ after }`, `{ unpaired }`, or `{}` with no session. */
+function pairShow(id, env) {
+  if (!hasSessionId(env)) return {};
+  const journal = readLoop(env);
+  const pointed = pointersByAsk(journal);
+  const want = String(id).toUpperCase();
+  let at = null;
+  for (const r of journal) {
+    if (r.kind !== 'ask' || r.state !== 'ambiguous' || !Array.isArray(r.shown)) continue;
+    if (!r.shown.some((s) => String(s).toUpperCase() === want)) continue;
+    if (lastWord(pointed.get(r.at)).verdict === 'none') continue;
+    if (!at || r.at > at) at = r.at;
+  }
+  return at ? { after: at } : { unpaired: true };
 }
 
 // ── capture ───────────────────────────────────────────────────────────────────────────────────
@@ -868,21 +904,21 @@ const precedingAsk = async ({ env, input }) => askAbout(await sessionAsks({ env 
  * a contradiction is likelier with what was read a minute ago than with what was read at the start.
  */
 async function openedThisSession({ env }) {
+  // QUEUE-SCOPED ON PURPOSE: what capture calls "you read these minutes ago" is since the last flush.
+  // The confirm gate needs the whole session and reads the journal too (`openedEver`). One walk for
+  // both stores -- queue lines and journal records share the shape it reads (`loop.mjs` `openedIds`).
   const { lines } = await readQueue({ env });
-  const out = [];
-  const seen = new Set();
-  for (let i = lines.length - 1; i >= 0; i -= 1) {
-    const l = lines[i];
-    const ids = l.kind === 'ask' ? (l.opened ?? [])
-      : l.kind === 'show' && l.state === 'answer' && l.id ? [l.id]
-        : [];
-    for (const id of ids) {
-      if (typeof id !== 'string' || seen.has(id)) continue;
-      seen.add(id);
-      out.push(id);
-    }
-  }
-  return out;
+  return openedIds(lines);
+}
+
+/**
+ * Every entry the session has opened, upper-cased: its journal, which outlives the queue's flush at
+ * every `Stop`, joined with the queue, which holds what a best-effort journal append may have lost.
+ * The confirm/dispute gate's set (VCST-6191) -- session-wide, unlike capture's `openedThisSession`.
+ */
+async function openedEver({ env, journal = readLoop(env) }) {
+  const ids = [...openedIds(journal), ...(await openedThisSession({ env }))];
+  return new Set(ids.map((id) => String(id).toUpperCase()));
 }
 
 /**
@@ -933,11 +969,13 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
+  // `--conditions "page=/cart"` is rewritten at its first value, not its start (VCST-6179).
+  if (input.conditions !== undefined) out.conditions = repairConditions(input.conditions, env);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = fields.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f]) || out.conditions !== input.conditions
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
@@ -960,6 +998,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
@@ -1006,9 +1046,16 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
   // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
-  const holder = cat.rows.find((r) => r.id === id);
+  //
+  // BY SUBJECT TOO, not only by the id it hashes to. An id is minted from the subject at BIRTH and
+  // never changes, while the subject can be corrected later (`/kb-judge`, a hand edit): measured
+  // 2026-10-12, 26 active entries on the base's main and 50 on a judge branch no longer hash to their
+  // id. A capture of the corrected subject then minted a fresh id, found no holder, and wrote the
+  // same fact a second time at other coordinates (VCST-6179 review).
+  const holder = cat.rows.find((r) => r.id === id)
+    ?? cat.rows.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(input.subject));
   if (holder) {
-    const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
+    const sameSubject = claimKey(holder.subject) === claimKey(input.subject);
     await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
@@ -1030,6 +1077,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     evidence: [{
       method: input.method ?? 'observation',
       deployment: standName(input.deployment),
+      ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -1157,16 +1205,54 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       for (const n of r.supersededBy ?? []) walk(byId.get(String(n).toUpperCase()), seen);
     };
     walk(row);
-    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; ${kind} the one you observed` : ' and has no active successor'}` };
+    return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
+  // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
+  // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
+  // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
+  // it, the list's handle included when a list showed it. The refusal is logged as `<kind>-invalid`
+  // (id + reason code, never prose) so kb:report can count the gate; no evidence is written.
+  // KNOWN LIMITS, both a false refusal cured by one `show` through the same door: after a CLI `/clear`
+  // the MCP server keeps the old session key (`SESSION_ENV`), so an open through one door is not seen
+  // by the other; and a session begun on a client older than VCST-6191 journalled its opens without ids.
+  // Off means off, before the gate: a disabled kb journals nothing, so "open it first" would loop.
+  if (kbDisabled(env)) return { state: 'disabled', why: DISABLED_WHY };
+  // NO SESSION, NO GATE: outside Claude Code every process is its own session (`processKey`), so a
+  // show in one command could never satisfy the confirm in the next. The gate guards agents.
+  const journal = hasSessionId(env) ? readLoop(env) : [];
+  if (hasSessionId(env) && !(await openedEver({ env, journal })).has(row.id.toUpperCase())) {
+    // ALWAYS a `verify` open: the gate cannot know which list, if any, the entry answers, and a handle it
+    // guessed would record a pick on the wrong question (PR #407 review). Closing a list is the agent's
+    // own choice, and the Stop reminder names each one still open with its handle.
+    await log({ kind: `${kind}-invalid`, id: row.id, why: 'not-opened', ...context({ via, call, topic }) }, { env });
+    return {
+      state: 'invalid',
+      why: `${row.id} was not opened in this session -- open it first: kb_show ${row.id} with verify`
+        + `, or \`npm run kb -- show ${row.id} --verify\`; then ${kind} it if ${kind === 'dispute' ? 'what you saw contradicts its body' : 'its body says what you saw'}`,
+    };
+  }
+
+  // WHICH BODY THIS SESSION IS CONFIRMING OR DISPUTING, hashed now -- not when the queue is pushed.
+  // Stamped at push, a confirmation of the old wording that waited in a queue until a judge's
+  // `claim-amended` merged was hashed against the CORRECTED body and counted as its support
+  // (`attestsCurrentClaim`, index-build.mjs). An unreadable body leaves it to push's stamp.
+  let bodyHash = null;
+  try {
+    const read = await opened.reader.readEntry(row.path);
+    if (read?.ok) bodyHash = claimHash(parseEntry(read.text, row.path).body);
+  } catch { /* push stamps it */ }
 
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
+    ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
+    ...(bodyHash ? { bodyHash } : {}),
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),

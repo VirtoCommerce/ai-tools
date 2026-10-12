@@ -2,11 +2,13 @@
 
 Agentic **bug lifecycle** plugin for the Virto Commerce B2B e-commerce platform: project setup,
 bug filing, autonomous bug fixing, fix verification, and online bug monitoring — as a fully
-self-contained Claude Code plugin. **10 agents, 8 commands, 16 skills.**
+self-contained Claude Code plugin. Inventory: [`knowledge/agents/README.md`](knowledge/agents/README.md)
+(`ls agents commands skills` for the counts).
 
 Part of the [`ai-tools`](../../.claude-plugin/marketplace.json) marketplace hosted in
-[`ai-tools`](https://github.com/VirtoCommerce/ai-tools) — currently the
-**only** plugin listed there.
+[`ai-tools`](https://github.com/VirtoCommerce/ai-tools), alongside `vc-perf` (the performance loop,
+which **depends on this plugin** — it reuses `/project-init`, the fix routing and the backend
+developer/reviewer agents) and `vc-secrets` (an independent secrets launcher).
 
 ## Install
 
