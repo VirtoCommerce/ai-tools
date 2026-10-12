@@ -3,6 +3,7 @@
 // "ref" images = the committed local copy (reports-policy.md §1a: never inline base64 there);
 // "embed" = the published Artifact, which must stand alone.
 import { readFileSync } from "node:fs";
+import { SourceError } from "./model.mjs";
 import { resolve, relative, isAbsolute, basename, extname } from "node:path";
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -27,19 +28,19 @@ function imgSrc(file, mode, root) {
   // Compare RESOLVED paths via relative(): a bare string prefix would let `imgs-evil` pass for root `imgs`.
   const rel = relative(resolve(root), abs);
   if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) {
-    throw new Error(`cannot embed ${file}: ${abs} is outside the image root ${resolve(root)}`);
+    throw new SourceError(`cannot embed ${file}: ${abs} is outside the image root ${resolve(root)}`);
   }
   const mime = MIME[extname(abs).toLowerCase()];
-  if (!mime) throw new Error(`cannot embed ${file}: not an image`);
+  if (!mime) throw new SourceError(`cannot embed ${file}: not an image`);
   const buf = readFileSync(abs);
-  if (buf.length > MAX_EMBED_BYTES) throw new Error(`cannot embed ${file}: ${buf.length} bytes > ${MAX_EMBED_BYTES}`);
+  if (buf.length > MAX_EMBED_BYTES) throw new SourceError(`cannot embed ${file}: ${buf.length} bytes > ${MAX_EMBED_BYTES}`);
   return `data:${mime};base64,${buf.toString("base64")}`;
 }
 
 export function renderPage(shell, m, { images = "ref" } = {}) {
-  if (images === "embed" && m.shots.length > MAX_EMBED) {
-    throw new Error(`a published page embeds at most ${MAX_EMBED} screenshots, got ${m.shots.length}`);
-  }
+  // More shots than MAX_EMBED degrades, never refuses: the first MAX_EMBED are embedded, the rest are
+  // referenced by file name (the existing "ref" mode, per image), and the page says so.
+  const spill = images === "embed" ? Math.max(0, m.shots.length - MAX_EMBED) : 0;
   const head = m.ticket || m.runLabel;
   const parts = [`  <header class="band">
     <div class="eyebrow"><span>${esc(head)}</span><span>${esc(m.env)}</span><span>${esc(m.date)}</span></div>
@@ -71,8 +72,9 @@ ${m.lede ? `    <p class="lede">${esc(m.lede)}</p>\n` : ""}    <div class="meta"
       `      <li><span class="grow">${esc(n.item)}</span><span class="muted">${esc(n.reason)}</span></li>`))));
   }
   if (m.shots.length) {
-    parts.push(section("shots", "Evidence", `    <div class="shots">\n${m.shots.map(s =>
-      `      <figure><img src="${imgSrc(s, images, m.imageRoot)}" alt="${esc(basename(s))}"><figcaption>${esc(basename(s))}</figcaption></figure>`).join("\n")}\n    </div>`));
+    const note = spill ? `    <p class="muted">The first ${MAX_EMBED} screenshots are embedded; the remaining ${spill} are referenced by file name and live in the evidence folder.</p>\n` : "";
+    parts.push(section("shots", "Evidence", `${note}    <div class="shots">\n${m.shots.map((s, i) =>
+      `      <figure><img src="${imgSrc(s, i < MAX_EMBED ? images : "ref", m.imageRoot)}" alt="${esc(basename(s))}"><figcaption>${esc(basename(s))}</figcaption></figure>`).join("\n")}\n    </div>`));
   }
   if (m.context.length) {
     parts.push(section("ctx", "Context used", `    <dl class="context">\n${m.context.map(c =>

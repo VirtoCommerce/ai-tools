@@ -97,7 +97,8 @@ function main() {
     };
     console.log(a.json ? JSON.stringify(out, null, 2) : `comment ${commentPath} (${out.chars}/${out.budget} chars)\npage    ${pagePath}`);
   } catch (e) {
-    console.error(`qa-report: ${e.message}`);
+    // Input/source/budget errors are the operator's to fix; anything else is a fault and needs its stack.
+    console.error(`qa-report: ${e instanceof SourceError || e instanceof BudgetError ? e.message : (e.stack ?? e.message)}`);
     process.exitCode = e instanceof BudgetError ? 3 : 2;
   }
 }

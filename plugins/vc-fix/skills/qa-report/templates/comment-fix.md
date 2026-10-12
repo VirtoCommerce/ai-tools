@@ -1,6 +1,6 @@
 ---
 kind: fix
-budget: 1200
+budget: 1600
 lede_max: 280
 trim: "[BEFORE_AFTER, ISSUES, BUGS]"
 ---

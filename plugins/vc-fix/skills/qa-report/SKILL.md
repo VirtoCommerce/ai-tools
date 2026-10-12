@@ -56,9 +56,12 @@ never shorten it by hand (the fix is the template, in a PR).
 ## 3. The page — publish gate
 
 Load the `artifact-design` skill, then:
-- **Native project** (`projectType` ≠ `client`, or no profile): publish `page.html` with the Artifact tool
-  (icon `checklist`), then tell the user in one line to set **Share → Anyone at Virto Commerce** — a private
-  page reaches no one. Re-run §2 with `--page-url <url>` so the comment carries the link.
+- **Native project** (`projectType` ≠ `client`, or no profile): publishing uploads the run's evidence to an
+  external host, so **ask the operator first and publish only if they agree**. `--confirmed` is consent to
+  post the *comment* only — never read it as consent to publish. On agreement publish `page.html` with the
+  Artifact tool (icon `checklist`), then tell the user in one line to set **Share → Anyone at Virto
+  Commerce** — a private page reaches no one — and re-run §2 with `--page-url <url>` so the comment carries
+  the link. A decline keeps the page local and the comment stands alone.
 - **Client project**: do **not** publish. Kind `fix` ⇒ re-render with `--images ref` into the ticket folder as
   `evidence.html`. Other kinds ⇒ no page; the comment stands alone. The page stays
   inside the client's own tracker by going on the post as `--attach-file` (§5), which works only in the
@@ -78,7 +81,7 @@ once: *"Post this to <TICKET>?"* No ticket (a run with no `--ticket`) ⇒ show i
 post a second comment for the same round. `--artifact` = the `artifact` field of the `--json` output.
 - **ai-tools repo:** `npm run tracker:comment -- --ticket <KEY> --artifact "<artifact>" --body-file <comment>`
   (+ `--attach <shot>` per screenshot when `wiki`; + `--attach-file <page.html>` for a client-project page;
-  `--amend <id>` when an id is already recorded). Never upload with raw REST — both flags dedupe, which makes a retry safe.
+  `--amend <id>` when an id is already recorded; an `--iterate` amend is `--amend <id> --artifact "<round build>" --same-round "<reason>"`, or the helper treats it as a new round). Never upload with raw REST — both flags dedupe, which makes a retry safe.
 - **Plugin-only install, Jira:** Atlassian MCP `addCommentToJiraIssue` (pass `commentId` to amend);
   screenshots attach-then-wiki per [`reference.md`](reference.md) §Dialects. **Azure:** `ado.mjs comment --id <n> --text-file <comment.html>`.
 - Read the posted comment back; a UI claim's images must render ([`../../.claude/rules/reports.md`](../../.claude/rules/reports.md) §5).

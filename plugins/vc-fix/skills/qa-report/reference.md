@@ -32,14 +32,14 @@ Four ways a lede fails review:
 `lede_max` (max chars of the lede), `trim` (the lists collapsed to `+N more` first, in order, when over
 budget). Slot syntax: `{{KEY}}` value · `{{#L}}…{{/L}}` per item of list `L` (`{{.}}` the item) ·
 `{{^L}}…{{/L}}` when `L` is empty · `{{?L}}…{{/L}}` when `L` is non-empty · `{{L_MORE}}` the items that
-were collapsed. **A budget is changed in the template, in a PR, never by hand in a run.** Exit 3 means
+were collapsed. The budget governs the rendered body; the posting helper appends its `**Attached:**` line after fitting, so a comment carrying an attachment measures slightly over — deliberate, not a defect. **A budget is changed in the template, in a PR, never by hand in a run.** Exit 3 means
 the comment cannot fit even fully collapsed; the fix is the template.
 
 ## Sources
 
 | Kind | Machine record | Fields read |
 |---|---|---|
-| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `estimates` (AC / DoD), the regression block, business rules verified, `bugs_filed`, `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
+| `test` | `summary.json` | ticket, verdict, environment, build, date, case totals, `ac_analysis.ac_dod_estimate` (AC / DoD), the regression block, business rules verified, `bugs_filed`, `bugs_not_filed`, `release`, `report.page_url`, `screenshots` |
 | `fix` | `verification-summary.json` | ticket, verdict, environment, build, date, checklist totals, STR and baseline results, `before_after[]`, regression / side-effect issues, `bugs_filed`, `evidence_artifact` |
 | `regression`, `smoke` | the run folder `suite-*-results*.json` | per suite: id, name, environment, start / completion, each case's status, id and title. A suite with no `completedAt` is an unconsolidated run — refused |
 
@@ -68,9 +68,11 @@ Fuller treatment in the ai-tools repo: `.claude/knowledge/execution/tracker-ops.
 
 The one source for whether a report page is published (moved here from `/qa-verify-fix` 6A).
 
-- **Native project** (`projectType` other than `client`, or no profile): publish `page.html` as an
-  Artifact; the link goes into the comment and the ticket's machine record. A private page reaches no
-  one, so the operator sets sharing to the organisation.
+- **Native project** (`projectType` other than `client`, or no profile): publishing uploads a run's
+  evidence to an external host, so publish `page.html` as an Artifact **only after the operator agrees**
+  (`--confirmed` covers posting the comment, never this). On agreement the link goes into the comment and
+  the ticket's machine record; a private page reaches no one, so the operator sets sharing to the
+  organisation. A decline keeps the page local and the comment stands alone.
 - **Client project**: nothing is published. The page is a local file (`evidence.html` for a fix, in the
   ticket folder) and may ride on the post as an attachment inside the client's own tracker. An Artifact
   only on the operator's explicit request, after scrubbing every client host, path and identifier.
@@ -84,11 +86,18 @@ The one source for whether a report page is published (moved here from `/qa-veri
 | `title` | string — page title |
 | `lede` | string — the same slot as `--lede`; the flag wins |
 | `rows` | array of `{ id, text, result, evidence }` — the page's case table |
-| `notTested` | array of strings |
-| `context` | array of strings — page-only context lines |
+| `notTested` | array of `{ item, reason }` |
+| `context` | array of `{ label, value }` — page-only context lines |
 | `shots` | array of image paths, appended to the model's own |
 
+An entry that is not an object, in `rows`, `notTested` or `context`, is exit 2 naming the key and shape.
+
 `--set KEY=VALUE` overrides one template line (e.g. `BUILD`) and is for a fact the record lacks.
+
+## Out of scope: the round-delta comment
+
+`/qa-test --iterate` still amends with a hand-typed round-delta block (`.claude/skills/qa-test/modes.md`).
+Deliberately not a `qa-report` kind on this branch: giving it one is a feature, not a fix.
 
 ## Why no hook
 
@@ -101,7 +110,7 @@ skill is the step; `render.mjs` is the deterministic part it calls.
 | Caller | Call |
 |---|---|
 | `/qa-test` 5-report | `qa-report <TICKET> --kind test --lede "…" --confirmed` |
-| `/qa-test-fast` | same, from its own `summary.json` |
+| `/qa-test-fast` | `qa-report <TICKET> --kind test --lede "…"` from its own `summary.json`, **no `--confirmed`**: it hands the question to `qa-report`, which asks once |
 | `/qa-verify-fix` Step 6 | `qa-report <TICKET> --kind fix --lede "…" --confirmed` |
 | `/qa-regression` | `qa-report <RUN_ID> --verdict <v> [--ticket K] --lede "…"` |
 | `/qa-smoke` | `qa-report <RUN_ID> --verdict <v> --lede "…"` |

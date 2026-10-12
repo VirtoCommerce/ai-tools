@@ -22,7 +22,7 @@ const ICON = { pass: "✅", notes: "⚠️", fail: "❌", blocked: "⛔" };
 const EXTRA_KEYS = ["title", "lede", "rows", "notTested", "context", "shots"];
 
 export function readJson(p) {
-  try { return JSON.parse(readFileSync(p, "utf8")); }
+  try { return JSON.parse(readFileSync(p, "utf8").replace(/^\uFEFF/, "")); }
   catch (e) { throw new SourceError(`cannot read ${p}: ${e.message}`); }
 }
 
@@ -173,12 +173,20 @@ export function fromRun(runDir, kind, verdict, ticket = null) {
   };
 }
 
+const SHAPES = { rows: "{ id, text, result, evidence }", notTested: "{ item, reason }", context: "{ label, value }" };
+
 export function applyExtras(m, extra = {}, sets = {}) {
   const unknown = Object.keys(extra).filter(k => !EXTRA_KEYS.includes(k));
   if (unknown.length) throw new SourceError(`--extra: unknown key(s) ${unknown.join(", ")} — allowed: ${EXTRA_KEYS.join(", ")}`);
   const list = k => {
     if (extra[k] == null) return m[k];
     if (!Array.isArray(extra[k])) throw new SourceError(`--extra: "${k}" must be an array`);
+    const shape = SHAPES[k];
+    if (shape) extra[k].forEach((e, i) => {
+      if (e === null || typeof e !== "object" || Array.isArray(e)) {
+        throw new SourceError(`--extra: "${k}"[${i}] must be an object ${shape}, got ${Array.isArray(e) ? "an array" : e === null ? "null" : typeof e}`);
+      }
+    });
     return extra[k];
   };
   const out = { ...m, rows: list("rows"), notTested: list("notTested"), context: list("context"),

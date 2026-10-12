@@ -342,6 +342,8 @@ The page is `qa-report`'s (`skills/qa-report/templates/page.html`, filled from t
 
 Record the result in `verification-summary.json`: `evidence` = the local path (always); `evidence_artifact` = the hosted URL **only when actually published**. If you did publish, note in your output that hosted artifacts are private until the operator shares them.
 
+**Then amend, if a page was published.** Step 6 posted the comment before this page existed, so it carries no page link. Re-run `/vc-fix:qa-report … --kind fix --confirmed --page-url <evidence_artifact>` with the same `--lede` and **amend** the comment Step 6 posted (`qa-report` §5 `--amend <id>`; never a second comment). No page published ⇒ nothing to amend.
+
 ---
 
 ## Step 7 — Deliver Summary
@@ -427,7 +429,7 @@ Details: [`knowledge/diagnostics/skill-expectations.md`](../knowledge/diagnostic
 - Max 3 concurrent browser agents
 - Always reproduce the original bug first before confirming the fix
 - Prove the fix with a **before/after reproduction** — RED baseline (pre-fix, Phase A) → GREEN on the fixed build (Phase B) — not just a lone GREEN. Cite where the RED baseline came from; never fabricate it
-- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`reports/tickets/.../evidence.html`) — nothing leaves the project. Publishing it as a hosted Claude Artifact is **opt-in**: fine for a native-platform bug after asking the operator; on a **client** project it needs operator consent **and** scrubbing of every client host/path/identifier/datum, and is **never** done for a client-owned-code bug (§2a). For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
+- Assemble the RED→GREEN evidence page (Step 6A) and link it from the tracker comment + `verification-summary.json`. **Default is a LOCAL file** (`reports/tickets/.../evidence.html`); whether it is ever published is `skills/qa-report/reference.md` §Publish gate, never restated here. For backend/xAPI/API bugs embed the real request & response the QA agent captured (not hand-written); for UI bugs before/after screenshots. Always redact secrets (Authorization/token/PAN)
 - STR must pass 3 consecutive times — 2/3 is not sufficient (marks as intermittent)
 - Always query Context7 in Step 0 to understand expected post-fix behavior
 - Tracker transitions follow `profile.tracker.azure.transitionPolicy` (`auto` ⇒ silent by role; `confirm-once`/`ask` ⇒ confirm — the Jira / unscanned default), consistent with `/qa-fix` and `/qa-bug` — **but gated additionally on `qaRoleStatesComplete === true`** for this command's QA-side roles (`tracker-ops.md` §Live transition discovery point 4)

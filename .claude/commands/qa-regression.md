@@ -332,9 +332,8 @@ rides the run's PR. [`bl-audit-criteria.md`](../skills/qa-review-oracles/bl-audi
 
 ### Step 8 — Deliver Summary
 Output the verdict, pass rate, bugs, **the Step-6.5 promotion line** (`N promotable, M held`, or `skipped —
-delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`
-(`regression-YYYY-MM-DD.md`, `regression-report.html`). Then `/vc-fix:qa-report {RUN_ID} --verdict <Step 6 Quality
-Gate verdict> --lede "<is the sweep clean, and if not do the failures share a cause>"` (+ `--ticket <KEY> --bugs <keys>` when the run
+delegated run`), the seed profile, whether teardown ran, and both report paths in `reports/regression/{RUN_ID}/`. Then `/vc-fix:qa-report {RUN_ID} --verdict
+<GO|CONDITIONAL_GO|NO_GO, your call from the pass rate and bugs> --lede "<is the sweep clean, and if not do the failures share a cause>"` (+ `--ticket <KEY> --bugs <keys>` when the run
 belongs to a ticket) — comment + page. Skill refused ⇒ `/plugin update`, stop the report step.
 
 ---
