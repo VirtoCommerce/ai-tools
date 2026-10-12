@@ -12,9 +12,11 @@ disable-model-invocation: true
 /qa-env-upgrade vcptcore_qa1         # any env that has a .env.<env> file
 ```
 
-What the operator gets, in order: **questions** only where a pin has no release yet → **one table**
-(nothing written yet; they can stop here) → **one yes/no** → on yes, **a PR link**. A human with merge
-rights on `vc-deploy-dev` merges it; the merge deploys.
+What the operator gets, in order: **two tables** — (1) release → latest release (Component · On env ·
+Latest release), (2) PR/alpha builds and everything to decide (Now · Becomes · Why) — nothing written
+yet, they can stop here → **questions in stages**, one stage per message: ① PR builds that already
+have a release, ② PR/alpha builds with no release, ③ the theme, ④ open the PR with all of the above.
+A human with merge rights on `vc-deploy-dev` merges it; the merge deploys.
 
 Out of scope: adding or removing modules, hotfix delivery (`/qa-hotfix-check`), deploying a ticket's
 PR builds (`/qa-deploy-pr`).
@@ -43,42 +45,60 @@ npm run deploy:upgrade -- --env=<env> --plan-out=<scratchpad>/env-upgrade-<env>.
 Exit 2 → show the error and stop (missing env file, branch not found, token, rate limit).
 `openUpgradePrs` not empty → list them and ask whether to go on (two upgrade PRs on one branch conflict).
 
-## 2. Questions — one per feature group
+## 2. Tables first — before any question
 
-For each entry of `questions` (≤4 per `AskUserQuestion` call): header = the group `key` cut to 12
-chars (the tool's limit — an untracked group's key is a module Id); the question names the full `key`
-and shows every `lines[]` entry verbatim (pins, PR links and state, the release — or, for the theme,
-the green dev alpha — it would become, DOWNGRADE where flagged). Options, the recommended one first
-and labelled *(Recommended)* per the group's `recommended`:
-
-- *Keep the PR/alpha builds* → `"keep"`
-- *Replace with release* (a theme-only group: *Replace with the green dev alpha*) → `"replace"`
-- *Decide per module* — only when `components[]` has more than one entry → one follow-up per
-  `components[]` entry, record `{ "<component>": "keep" | "replace" }`. A `lines[]` entry that reads
-  "stays as is" is shown, never asked: it is not in `components[]` and the script rejects it.
-
-Write the answers to `<scratchpad>/env-upgrade-<env>.decisions.json` as
-`{ "<full key>": "keep" | "replace" | { … } }`. No questions → write `{}` (a group not listed is
-KEEP; steps 3 and 5 always pass `--decisions`).
-
-## 3. Table
+Write `{}` to `<scratchpad>/env-upgrade-<env>.decisions.json` (the defaults: a PR build with a release
+→ release, everything else kept) and run the table command:
 
 ```bash
 npm run deploy:upgrade -- --plan=<plan> --decisions=<decisions>
 ```
 
-Show the output **verbatim** — it is the table, the counts and the check results. A *Replace* the checks
-blocked is marked "you approved → release; blocked: …" (theme: "you approved → green dev alpha;
-blocked: …") in it; say so in one line. An approved downgrade reads "(you approved, DOWNGRADE)" — name it.
+Show the output **verbatim** before asking anything — the operator decides with the whole diff in view.
 
-Exit 2 here means the decisions file is malformed (unknown group, component or value — the error names
-it): show the error, rewrite the file from the step-2 answers, re-run. If the error names the plan
-instead (unreadable, unsupported schema), go back to step 1.
+## 3. Questions in stages
 
-## 4. One yes/no
+```bash
+npm run deploy:upgrade -- --plan=<plan> --stages
+```
 
-"Open a deploy PR into `<branch>` with these N changes? A human merges." The counts line has N.
-`0 to change` → say the env is up to date and stop.
+It prints `stages[]` in asking order; an empty stage is absent, so skip straight to the next one. Ask
+**one stage per `AskUserQuestion` call** and wait for the answer before the next stage:
+
+| `id` | Question (stage number as asked, skipping absent ones) |
+|---|---|
+| `released` | Keep the PR builds whose work is already in a release? |
+| `unreleased` | These PRs are **not merged** — no release contains their work, and replacing removes it from the env. Keep them? |
+| `theme` | Keep the theme PR build, or move to the green dev alpha? |
+
+In the question list every `items[]` entry on its own line — `<component> <now> → <becomes> — <why>`,
+with **⚠ DOWNGRADE** when `downgrade` is true and `keeping blocks: <blocks>` when `blocks[]` is not
+empty — then each `stays[]` line as information (never asked). Never write "no release" for an
+`unreleased` item: a release usually exists, it just does not contain the PR.
+
+**`stale: true`** = the PR build predates the latest release (it lacks that release's changes). Its `why`
+already says so; after the last stage list every kept stale item once as a recommendation —
+"update PR #N (merge dev into it, rebuild) and pin the new build" — the fix is a fresh PR build, not
+the release, and it is outside this command (`/qa-deploy-pr` pins it).
+Options, the stage's `recommended` first and labelled *(Recommended)*:
+
+- *Keep the PR/alpha builds* → `"keep"` for every item
+- *Replace with release* (theme: *Replace with the green dev alpha*) → `"replace"` for every item
+- *Decide per module* — only when `items[]` has more than one entry → one follow-up per item.
+
+Record every answer per component in `<scratchpad>/env-upgrade-<env>.decisions.json`:
+`{ "<component>": "keep" | "replace", … }` (the `component` field verbatim; steps 3 and 5 always pass
+`--decisions`). After the last stage, re-run the table command — **only if** some answer differs from
+the stage's `recommended` — and show the output verbatim. A replace the checks blocked reads
+"blocked: …" — say so in one line; an approved downgrade reads "⚠ DOWNGRADE" — name it.
+
+Exit 2 means the decisions file is malformed (the error names the key): rewrite it from the answers and
+re-run. If the error names the plan (unreadable, unsupported schema), go back to step 1.
+
+## 4. Last stage — open the PR?
+
+"Open a deploy PR into `<branch>` with these N changes? A human merges." N is the counts line of the
+latest table. `0 to change` → say the env is up to date and stop.
 
 ## 5. On yes — apply
 

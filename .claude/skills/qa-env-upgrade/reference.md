@@ -10,8 +10,8 @@ disagree, the code is what runs — fix whichever is wrong, in the same commit.
 | `EQUAL` | release pin == latest release | none (collapsed into one line) |
 | `BEHIND` | release pin < latest release | → latest release |
 | `AHEAD` | pin > latest release (or a theme release ≥ the dev version) | none — never downgrade |
-| `PRERELEASE→RELEASE` | PR/alpha pin, the latest release contains it | → latest release |
-| `PRERELEASE?` | PR/alpha pin, the latest release does not contain it (or would be a downgrade) | asked (feature group) |
+| `PRERELEASE→RELEASE` | PR/alpha pin, the latest release contains it | → latest release unless kept (stage `released`) |
+| `PRERELEASE?` | PR/alpha pin, the latest release does not contain it (or would be a downgrade) | kept unless replaced (stage `unreleased` / `theme`) |
 | `NOT_IN_FEED` | Id absent from `modules_v3.json` (custom, client, private) | none |
 | `NO_RELEASE` | feed holds only alphas / no green theme alpha | none |
 | `DUPLICATE` | Id pinned in both sources | none — fix by hand |
@@ -53,7 +53,10 @@ disagree, the code is what runs — fix whichever is wrong, in the same commit.
   later than its siblings can still be missed.
 - **Checks run on the END STATE, to a fixed point** — after the operator's answers, because a *Replace*
   changes what the end state is. One deploy 404 rolls back the whole install, hence the download check.
-- **Moving only part of a feature to releases breaks it** — hence one question per tracker key, with
-  the theme row and any `NOT_IN_FEED` PR build of the same key shown in the group.
+- **Questions are staged by kind of pin, not by feature** (operator's call, 2026-10-06): proven-released
+  PR builds, then unreleased PR/alpha builds, then the theme — a stage answers "keep or swap" for one
+  kind at a time. Moving only part of a feature to releases can break it, so *Decide per module* exists
+  and the table's Why column names each pin's PR/branch; the per-feature `questions` stay in the plan
+  JSON and a group key is still accepted in `--decisions` (a component key wins over it).
 - **The edit is checked BY VALUE** (`JSON.stringify`): an array compared with `!==` always differs (bc0701f5).
 - **The PR goes into the env branch only:** a contents `PUT` without `branch` writes to the repo's default branch, with no review.

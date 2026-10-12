@@ -4,11 +4,13 @@
  *
  *   --env=<env> --plan-out=<file> [--json]            PLAN  (read-only network; writes the plan JSON)
  *   --plan=<file> [--decisions=<file>] [--json]       TABLE (pure: end state + checks + the table)
+ *   --plan=<file> --stages                            STAGES (pure: the staged questions as JSON)
  *   --plan=<file> [--decisions=<file>] --apply        APPLY (edit, check by value, ONE deploy PR; never merges)
  *       [--trailer=<line>]... [--pr-footer=<text>] [--fork-owner=<login>] [--draft]
  *
- * --decisions: { "<group key>": "keep" | "replace" | { "<component>": "keep" | "replace" } }; a group
- * not listed is KEEP.
+ * --decisions: { "<group key>" | "<component>": "keep" | "replace" | { "<component>": "keep" | "replace" } };
+ * a component key wins over its group. Unanswered: a PRERELEASE? pin is KEPT, a PRERELEASE→RELEASE pin
+ * is REPLACED.
  * Exit: 0 ok (APPLY: PR opened and its files verified) · 1 APPLY did not finish cleanly — nothing to
  * change, stale or unreadable snapshot, or no write path (nothing written), or partial commit / branch pushed without
  * a PR / PR files unverified or wrong (WRITTEN — the message carries the URL) · 2 tool error, STOP or
@@ -27,7 +29,7 @@ import type { ManifestChange } from '../lib/manifest.ts';
 import { DeliverError, deliverPr } from '../lib/deliver.ts';
 import { Exit, fail } from '../lib/exit.ts';
 import { DEFAULT_FEED_URL } from './feed.ts';
-import { buildPlan, finalize, renderCommitMessage, renderPrBody, renderTable } from './plan.ts';
+import { buildPlan, finalize, renderCommitMessage, renderPrBody, renderTable, stagesOf } from './plan.ts';
 import type { Finalized, RepoMap } from './plan.ts';
 import type { Decisions, UpgradePlan } from './types.ts';
 
@@ -79,6 +81,7 @@ export async function runUpgrade(args: string[], deps: { cli?: GhCli; http?: Htt
   let f: Finalized;
   try { f = finalize(plan, decisions); } catch (e: any) { fail(e.message, TAG); }
 
+  if (has('stages')) { console.log(JSON.stringify({ stages: stagesOf(plan) }, null, 2)); throw new Exit(0); }
   if (!has('apply')) {
     console.log(asJson ? JSON.stringify({ accepted: f.accepted, dropped: f.dropped, kept: f.kept.map((r) => r.component), passes: f.passes }, null, 2) : renderTable(plan, f));
     throw new Exit(0);
