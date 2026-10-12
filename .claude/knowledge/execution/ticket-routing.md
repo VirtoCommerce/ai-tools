@@ -372,7 +372,7 @@ exactly this shape and still not be runnable yet:
 
 **A deferral says which flow NOT to take; the type rows still say which one to run.** Fall through to §4 by
 type as if the class had never resolved — a deferral is not a STOP and never leaves a run without a route.
-Where the deferral was *the change is not in the environment*, `1b` item 2 then reaches the same conclusion
+Where the deferral was *the change is not in the environment*, `1b` item 1 (`/preflight`) then reaches the same conclusion
 from the other side: the artifact is not deployed, so the run is **BLOCKED-on-deploy** and offers
 `/qa-deploy-pr`. That is the correct end state, and the redundancy is deliberate — `1a` avoids committing a
 regression to a build that cannot contain the change, and `1b` catches every other reason a change is not

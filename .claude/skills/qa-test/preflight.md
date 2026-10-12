@@ -115,8 +115,7 @@ agent, `test-management-specialist`, disposes and then authors ([`coverage-triag
 will execute, and at wave B neither input exists: Artifact A is authored at Step 3, and the `RE-BASE` ids
 are the *output* of the disposition this very scan feeds. Passing them here would mark every future Draft
 row `FILTERED_OUT` — the exact failure the step exists to prevent. The run-fate prediction is made once the
-inputs exist, at the **Step-3 gate re-run**. Items 3 → 4 stay ordered as written; both are millisecond globs, so splitting them buys
-nothing. Measured rationale and the list of things that must **not** be parallelised — the serial suite
+inputs exist, at the **Step-3 gate re-run**. Measured rationale and the list of things that must **not** be parallelised — the serial suite
 append, one `suites:sync`, no verifier beside its own doer, no two suites on one disposable fixture set:
 [`skills/qa-test/sequencing.md`](sequencing.md) §Concurrency.
 
@@ -126,6 +125,11 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    a remediation loop ([`../preflight/SKILL.md`](../preflight/SKILL.md)). Its `breaking:*` rows **force
    FULL**, feed `1d` a third leg, and its `not-deployed:*` / `expect` rows are BLOCKED-on-deploy —
    never a FAIL, never a filed bug, never `{DOC}`. Store the block as `summary.json.preflight`.
+   **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
+   is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
+   `UNKNOWN` stays `UNKNOWN`, never filled from `declared`) · `build.releasedThrough` ← `facts.ledger` (the Δ
+   vs `deployed`; its `breaking[]`/`behind[]` are what consumers read). `{SPRINT}` is the `sprint` fact; if it
+   is null, create `reports/tickets/<sprint>/` once the sprint name is known (the `sprint` row's remedy).
 2b–2g. **Derive the SIX PRE-FLIGHT AXES — one mechanism, six instances.** Pure computation over
     what wave A returned; no operator input. Single source of truth for the contract they share and the
     ways they differ: [`skills/qa-test/axes.md`](axes.md). **Cite it; do not restate it.**

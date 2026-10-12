@@ -74,8 +74,9 @@ This is the harness's own guidance applied per step, not a new mechanism.
 
 | Wave | Contains | Consumes |
 |---|---|---|
-| **A** — one message | item 1 env health · item 2 build/version (both GitHub reads + the `/api/platform/modules` probe) · item 2-release release-ledger read · item 2b's local reads (suite manifest, repo-router) · item 3 sprint resolve → item 4 duplicate check | only `1a`'s fetch |
-| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface` and **2e** `coverage_surface` — pure computation over what Wave A returned | Wave A |
+| *(before A)* | derive **2g** `domain_map` — needs only `1a`'s slug and one frontmatter read; `2-map` in Wave A reads in the order it sets | `1a`'s fetch |
+| **A** — one message | **`/preflight ticket`** (env health, `declared`/`deployed`, ledger Δ, sprint, duplicate, MCP) · **2-map** · item 2b's local reads (suite manifest, repo-router) | only `1a`'s fetch + 2g |
+| *(no I/O)* | derive **2b** `layer`, then **2c** `visual_surface`, **2d** `contract_surface`, **2e** `coverage_surface` and **2f** `data_surface` — pure computation over what Wave A returned | Wave A |
 | **B** — one message | **2d**'s two refreshers, concurrently ([`contract-refresh.md`](contract-refresh.md) §2) · **2e**'s `npm run tc:scope`, **scope + risk terms ONLY** ([`coverage-triage.md`](coverage-triage.md) §4) | `2b`'s token |
 
 **Wave B's scan takes no `--cases`/`--also-ids`** — neither exists yet, and passing them would mark every
