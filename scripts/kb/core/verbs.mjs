@@ -1350,14 +1350,19 @@ export async function stat(opened, { env = process.env } = {}) {
  * What is left to judge and what has been judged, over the ACTIVE entries. A retired entry's
  * disputes live on in its successor and are judged there, so counting them here would count them
  * twice. A verdict still in a PR is not in the index yet: until it merges, its dispute is open.
+ *
+ * The ENTRY is the unit `stat` reports: how much of the base is in doubt. An entry is `disputed`
+ * while any dispute on it is open, and `settled` once a judge resolved every dispute on it -- one
+ * new dispute moves a settled entry back. The per-dispute counts are what a judge works through,
+ * so they stay in the result for `--json` and `kb:disputes list`.
  */
 export function disputeTotals(rows = []) {
   const sum = (k) => rows.reduce((n, r) => n + (Number(r[k]) || 0), 0);
   return {
+    disputedEntries: rows.filter((r) => r.disputed > 0).length,
+    settledEntries: rows.filter((r) => !(r.disputed > 0) && r.resolved > 0).length,
     open: sum('disputed'),
-    openEntries: rows.filter((r) => r.disputed > 0).length,
     resolved: sum('resolved'),
-    resolvedEntries: rows.filter((r) => r.resolved > 0).length,
   };
 }
 
