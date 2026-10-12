@@ -116,8 +116,11 @@ export function findDuplicate(root: string, f: ChangeFor, opts: { ticket?: strin
   return best;
 }
 
-export function buildChecks(i: PolicyInput): Check[] {
-  const f = i.facts;
+export interface EnvCheckOptions { healthDown: Status; drift: Status | null }   // drift: null = caller handles drift
+export interface EnvCheckResult { checks: Check[]; deployedUnknown: { who: Who; do: string } | null }
+
+/** The environment rows both policies share: config, health, declared, deployed, drift, ledger, components, storefront. */
+export function envChecks(f: EnvFacts, o: EnvCheckOptions): EnvCheckResult {
   const checks: Check[] = [];
 
   // config — a missing CORE var blocks every consumer. Only a URL has a source Claude can read
@@ -132,7 +135,7 @@ export function buildChecks(i: PolicyInput): Check[] {
 
   // health
   if (isUnknown(f.health)) checks.push({ id: "health", status: "UNKNOWN", found: `not probed: ${f.health.unknown}`, who: "you", do: `set BACK_URL in .env.${f.env}`, diagnose: [] });
-  else if (f.health === "DOWN") checks.push({ id: "health", status: isTicket(i.for) ? "BLOCK" : "WARN", found: `${f.backUrl}/health is not 200`, who: "me",
+  else if (f.health === "DOWN") checks.push({ id: "health", status: o.healthDown, found: `${f.backUrl}/health is not 200`, who: "me",
     do: "wait for the deploy and re-run, or switch TEST_ENV", diagnose: ["/health detail", `gh run list on vc-deploy-dev for the ${f.env} branch`] });
   else checks.push(ok("health", "UP"));
 
@@ -163,9 +166,11 @@ export function buildChecks(i: PolicyInput): Check[] {
   } else checks.push(ok("deployed", `${Object.keys(f.deployed.modules).length} modules probed`));
 
   // drift
-  if (!isUnknown(f.drift) && f.drift.length > 0)
-    checks.push({ id: "drift", status: "WARN", found: `${f.drift.length} module(s) differ: ${f.drift.slice(0, 3).map((d) => `${d.id} ${d.declared ?? "—"}→${d.deployed ?? "—"}`).join(", ")}`,
-      who: "me", do: "wait for the deploy to settle and re-run", diagnose: [`gh run list on vc-deploy-dev for the ${f.env} branch`] });
+  if (o.drift !== null) {
+    if (!isUnknown(f.drift) && f.drift.length > 0)
+      checks.push({ id: "drift", status: o.drift, found: `${f.drift.length} module(s) differ: ${f.drift.slice(0, 3).map((d) => `${d.id} ${d.declared ?? "—"}→${d.deployed ?? "—"}`).join(", ")}`,
+        who: "me", do: "wait for the deploy to settle and re-run", diagnose: [`gh run list on vc-deploy-dev for the ${f.env} branch`] });
+  }
 
   // ledger — UNKNOWN (absent, unreadable, unparsed, or freshness undecidable) is a row, never silence
   const ledgerUnknown = isUnknown(f.ledger) ? f.ledger.unknown : f.ledger.stale === null ? `freshness undecidable (generated ${f.ledger.generated ?? "absent"})` : null;
@@ -205,6 +210,37 @@ export function buildChecks(i: PolicyInput): Check[] {
     checks.push({ id: "storefront", status: "UNKNOWN", found: `InitializeApplication not probed: ${f.storefrontVisible.unknown.slice(0, 120)}`, who: r.who, do: r.do, diagnose: [] });
   }
 
+  return { checks, deployedUnknown: deployedUnknownWho && deployedUnknownDo ? { who: deployedUnknownWho, do: deployedUnknownDo } : null };
+}
+
+/** MCP levels 1–2 rows (user-scope servers are the skill's) plus the browser-lane row. */
+export function mcpChecks(mcp: PolicyInput["mcp"]): Check[] {
+  const checks: Check[] = [];
+
+  // .mcp.json that does not parse — its servers count as unconfigured below
+  if (mcp.jsonError) checks.push({ id: "mcp:.mcp.json", status: "UNKNOWN", found: `malformed .mcp.json: ${mcp.jsonError}`, who: "you",
+    do: "fix the JSON in .mcp.json, then restart the session", diagnose: [] });
+
+  // MCP levels 1–2 (user-scope servers are the skill's)
+  for (const s of mcp.servers) {
+    if (s.level === "READY" || s.level === "NOT_VISIBLE" || s.class === "OPT") continue;
+    const id = `mcp:${s.server}`;
+    if (s.class === "REQ") checks.push({ id, status: "BLOCK", found: `${s.level}${s.problem ? `: ${s.problem}` : ""}`, who: "you", do: "configure it in .mcp.json, then restart the session", diagnose: [] });
+    else checks.push({ id, status: "WARN", found: `${s.level}${s.problem ? `: ${s.problem}` : ""} — working via ${s.fallback}`, who: "you",
+      do: s.problem ? "fix the entry in .mcp.json, then restart the session" : "add it to .mcp.json and restart, or keep the fallback", diagnose: [] });
+  }
+  if (mcp.liveLanes < mcp.lanes.min) checks.push({ id: "lanes", status: "BLOCK", found: `${mcp.liveLanes} Playwright lane(s) ready, ${mcp.lanes.min} required`, who: "you", do: "configure a pinned playwright-* server in .mcp.json and restart", diagnose: [] });
+  else if (mcp.liveLanes < mcp.lanes.want) checks.push({ id: "lanes", status: "WARN", found: `${mcp.liveLanes} of ${mcp.lanes.want} lanes ready — the run serialises`, who: "you", do: "proceed serially, or configure the missing lanes", diagnose: [] });
+
+  return checks;
+}
+
+export function buildChecks(i: PolicyInput): Check[] {
+  const f = i.facts;
+  const env = envChecks(f, { healthDown: isTicket(i.for) ? "BLOCK" : "WARN", drift: "WARN" });
+  const checks: Check[] = [...env.checks];
+  const deployedUnknownWho = env.deployedUnknown?.who ?? null, deployedUnknownDo = env.deployedUnknown?.do ?? null;
+
   // expect — is the change under test on the stand; when deployed is UNKNOWN, inherit its who/do but change status for tickets
   if (i.expect) {
     const id = i.expect.module.toLowerCase();
@@ -234,21 +270,7 @@ export function buildChecks(i: PolicyInput): Check[] {
       who: "you", do: `re-run overwrites ${i.duplicate.path} — commit it first if uncommitted`, diagnose: [] });
   }
 
-  // .mcp.json that does not parse — its servers count as unconfigured below
-  if (i.mcp.jsonError) checks.push({ id: "mcp:.mcp.json", status: "UNKNOWN", found: `malformed .mcp.json: ${i.mcp.jsonError}`, who: "you",
-    do: "fix the JSON in .mcp.json, then restart the session", diagnose: [] });
-
-  // MCP levels 1–2 (user-scope servers are the skill's)
-  for (const s of i.mcp.servers) {
-    if (s.level === "READY" || s.level === "NOT_VISIBLE" || s.class === "OPT") continue;
-    const id = `mcp:${s.server}`;
-    if (s.class === "REQ") checks.push({ id, status: "BLOCK", found: `${s.level}${s.problem ? `: ${s.problem}` : ""}`, who: "you", do: "configure it in .mcp.json, then restart the session", diagnose: [] });
-    else checks.push({ id, status: "WARN", found: `${s.level}${s.problem ? `: ${s.problem}` : ""} — working via ${s.fallback}`, who: "you",
-      do: s.problem ? "fix the entry in .mcp.json, then restart the session" : "add it to .mcp.json and restart, or keep the fallback", diagnose: [] });
-  }
-  if (i.mcp.liveLanes < i.mcp.lanes.min) checks.push({ id: "lanes", status: "BLOCK", found: `${i.mcp.liveLanes} Playwright lane(s) ready, ${i.mcp.lanes.min} required`, who: "you", do: "configure a pinned playwright-* server in .mcp.json and restart", diagnose: [] });
-  else if (i.mcp.liveLanes < i.mcp.lanes.want) checks.push({ id: "lanes", status: "WARN", found: `${i.mcp.liveLanes} of ${i.mcp.lanes.want} lanes ready — the run serialises`, who: "you", do: "proceed serially, or configure the missing lanes", diagnose: [] });
-
+  checks.push(...mcpChecks(i.mcp));
   return checks;
 }
 
