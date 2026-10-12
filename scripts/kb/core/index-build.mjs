@@ -70,14 +70,18 @@ export function amendmentsOf(evidence = []) {
  *     (so the investigation of an EARLIER round does not carry over a later correction);
  *   - BODY: it was applied to the body the amendment corrected (`bodyHash` = `amendedFrom`). This is
  *     what catches a confirmation that reached `main` while the judge's PR was in review: made after
- *     the resolution, of the old wording. `push` stamps `bodyHash` on every item it applies.
+ *     the resolution, of the old wording. The door stamps `bodyHash` when the session confirms or
+ *     disputes; push stamps only an item that arrives without one (an older client).
+ *     NOT for the judge's investigation: it observes the BEHAVIOUR the verdict settles, and an
+ *     `observe` recorded before the judge edited the body carries the old body's hash -- dropping it
+ *     would leave the corrected entry unattested. Its round is told by the dispute's time alone.
  * An item whose `at` does not parse cannot be placed after anything, so it predates.
  */
 export function attestsCurrentClaim(e, amendments = []) {
   if (!amendments.length) return true;
   const t = Date.parse(String(e?.at ?? ''));
   return !amendments.some((a) => {
-    if (a.from && e?.bodyHash && e.bodyHash === a.from) return true;
+    if (a.from && e?.bodyHash && e.bodyHash === a.from && !isInvestigation(e)) return true;
     if (!Number.isFinite(t)) return true;
     const edge = isInvestigation(e) ? a.disputeAt : a.at;
     return Number.isFinite(edge) && t <= edge;

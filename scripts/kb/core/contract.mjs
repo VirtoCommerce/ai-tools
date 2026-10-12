@@ -21,4 +21,4 @@ export const CONDITIONS_SOURCE = 'Optional, and expected on a dispute: what the 
   + 'and any setting, store, role or feature flag the behaviour may depend on (setting:Loyalty.LoyaltyBalanceCalculationMode=Organization, '
   + 'role=Organization maintainer). Only what you actually read; never a credential';
 
-export const SCOPE_SOURCE =`at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;
+export const SCOPE_SOURCE = `at least one axis=value, e.g. surface=<${SURFACES.join(' | ')}>`;

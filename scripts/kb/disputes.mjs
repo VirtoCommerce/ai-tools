@@ -111,7 +111,13 @@ function refresh(base, ref) {
  * entry is not there (a split child, new on the branch) and `undefined` when git cannot say.
  */
 function onMain(base, path, ref) {
-  const show = (rev) => { try { return parseEntry(git(base, 'show', `${rev}:${path}`), path); } catch { return null; } };
+  // ABSENT and UNREADABLE are different answers: only a path git does not have at that revision is
+  // "not on main" (a split child). A failed read or an unparsable file is "git cannot say", which the
+  // caller warns about instead of silently skipping the claim-amended checks.
+  const show = (rev) => {
+    try { git(base, 'cat-file', '-e', `${rev}:${path}`); } catch { return null; }
+    try { return parseEntry(git(base, 'show', `${rev}:${path}`), path); } catch { return undefined; }
+  };
   let mb;
   try { mb = git(base, 'merge-base', 'HEAD', ref).trim(); } catch { return { base: undefined, tip: undefined }; }
   return { base: show(mb), tip: show(ref) };

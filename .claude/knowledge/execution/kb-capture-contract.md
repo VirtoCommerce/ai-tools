@@ -112,10 +112,12 @@ PR on the base. The resolution is written ON the contradicting evidence item (`r
 `RESOLUTIONS` in [`scripts/kb/core/index-build.mjs`](../../../scripts/kb/core/index-build.mjs),
 `resolvedAt`, `resolvedBy`, `resolvedIn`, `resolution`). A resolved dispute stays on the entry and
 is printed with its verdict, but it no longer marks the entry DISPUTED. No agent tool writes it.
-After a `claim-amended` verdict the confirmations of the old wording stay on the entry and stop
-counting toward its trust: those made before the verdict, and those applied to the corrected body
-(`push` stamps each item's `bodyHash`; the verdict records `amendedFrom`). Trust is then the judge's
-investigation -- one per judging session -- and what was confirmed of the new body
+After a `claim-amended` verdict, confirmations of the OLD wording stay on the entry and stop counting
+toward its trust: those made before the verdict, and those made of the old body later -- e.g. on
+`main` while the judge's PR was in review. Each confirm / dispute records the hash of the body it was
+made against (`bodyHash`, stamped when it is recorded; push fills it in only for an older client),
+and the verdict records the hash of the body it replaced (`amendedFrom`). Trust is then the judge's
+investigation -- one per judging session -- plus confirmations of the NEW body
 (`attestsCurrentClaim` / `supportOf` in the same file).
 
 ## At the end of a turn

@@ -167,6 +167,9 @@ export function priority(s, exp = { asks: 0, shows: 0 }) {
   return (s.open >= s.confirmations ? 1000 : 0) + (s.open - s.confirmations) * 10 + exp.asks + exp.shows;
 }
 
+/** A table cell: a `|` in a value (`name|sku`) would otherwise shift every column after it. */
+const cell = (v) => String(v).replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+
 /** The dossier of one entry, as Markdown: everything weighed, nothing concluded. */
 export function dossier(entry, { exp = null, state = null } = {}) {
   const d = entry.data;
@@ -186,15 +189,15 @@ export function dossier(entry, { exp = null, state = null } = {}) {
   items.forEach((e, i) => {
     const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation'
       : attestsCurrentClaim(e, amendments) ? 'confirm' : 'confirm (pre-amendment)';
-    const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => `${k}=${v}`).join('<br>') : '—';
+    const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => cell(`${k}=${v}`)).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
     const res = e.contradicts ? (isResolved(e) ? `${e.resolved}` : e.resolved ? `INVALID ${e.resolved}` : 'open') : '';
-    lines.push(`| ${i + 1} | ${side} | ${e.deployment ?? '?'} | ${cond} | ${builds} | ${e.at ?? '?'} | ${e.by ?? '?'}${e.who ? ` (${e.who})` : ''} | ${res} |`);
+    lines.push(`| ${i + 1} | ${side} | ${cell(e.deployment ?? '?')} | ${cond} | ${cell(builds)} | ${cell(e.at ?? '?')} | ${cell(e.by ?? '?')}${e.who ? ` (${cell(e.who)})` : ''} | ${cell(res)} |`);
   });
   const noted = items.map((e, i) => [i + 1, e]).filter(([, e]) => e.note);
   if (noted.length) {
     lines.push('', '### Notes');
-    for (const [n, e] of noted) lines.push('', `**#${n} (${e.contradicts ? 'dispute' : 'confirm'})** ${e.note}`);
+    for (const [n, e] of noted) lines.push('', `**#${n} (${e.contradicts ? 'dispute' : isInvestigation(e) ? 'investigation' : 'confirm'})** ${e.note}`);
   }
   lines.push('', '### Body', '', String(entry.body ?? '').trim());
   return lines.join('\n');
@@ -222,6 +225,12 @@ export function appendObservation(data, { deployment, conditions, note, session,
   // Refused, not cut as the door cuts it: a judge writes this once, by hand, and can shorten it.
   if (String(note).trim().length > NOTE_MAX) return { problem: `--note is over ${NOTE_MAX} characters; the argument belongs in the PR` };
   if (!session) return { problem: 'no session key: run inside a Claude Code session' };
+  // A PARTY DOES NOT INVESTIGATE either: a session that confirmed or disputed this entry itself would
+  // add an investigation item counted beside its own confirmation, and `resolve` would then refuse it
+  // anyway -- with the item already in the PR. Refused here, before anything is written.
+  if ((Array.isArray(data.evidence) ? data.evidence : []).some((e) => e.by === `session:${session}` && !isInvestigation(e))) {
+    return { problem: `session:${session} confirmed or disputed ${data.id} itself: a party to a dispute does not investigate it` };
+  }
   if (!hasOpenDispute(data)) return { problem: `${data.id} is not an active entry with an open dispute; an observation of any other entry goes through the door (kb_confirm / kb_dispute)` };
   const item = {
     method: 'observation',
