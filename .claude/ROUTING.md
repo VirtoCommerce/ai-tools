@@ -48,6 +48,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
+| **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
 | **Run business analysis** | `/ba-analyze [full\|flows\|api\|docs\|stories\|ui\|module <name>]` | Command |
 | **Generate or review user stories** | `/ba-analyze stories <feature> \| stories --review VCST-XXXX` | Command |
 | **Get a test checklist for a domain** | `/qa-checklist domain \| feature \| VCST-XXXX [--from-model] \| new <domain> \| admin <module>` | Skill |
@@ -141,6 +142,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 - `/project-init` — Onboard onto a deployment: tracker + code host + auth per axis, derive client-vs-platform, write `project-profile.json` / `.env.<env>` / `.mcp.json`, verify access
 - `/vc-self-check` — Read this session's telemetry + transcript against `.claude/knowledge/diagnostics/skill-expectations.md`; per-finding verdict + severity; `deliver` contributes a consent-gated GitHub Issue upstream
 - `/prompt-review` — Review / heal / improve this repo's own skill, command and agent prompts (gated by `context:check`)
+- `/preflight` — Read-only environment + build pre-flight at the start of a `/qa-test`-family or BA run: one result, one output form, then a diagnose → fix → re-check loop on what is not READY
 - `/kb-report` — The observed-behaviour knowledge base's own report: what agents asked, what it could not answer, which answers were useless
 - `/qa-teams-watch` (command) — Teams group chats → newly reported bugs → dedup against Jira → a VCST Bug labelled for `/qa-fix`
 

@@ -1,0 +1,96 @@
+---
+name: preflight
+description: "Environment and build pre-flight before work against a stand: env health, declared vs deployed build, storefront-visible modules, release-ledger Δ, duplicate run, MCP availability — one result and one output form for every consumer, then a diagnose → fix → re-check loop on what is not READY. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront]"
+---
+
+# /preflight — is this stand fit for the work, and what does it run?
+
+The facts and the policy are **code**; this skill is only what code cannot do. Design and
+rationale: [`docs/superpowers/specs/2026-10-08-preflight-skill-design.md`](../../../docs/superpowers/specs/2026-10-08-preflight-skill-design.md).
+**Pre-flight is read-only.** It never fixes anything on its own — remediation (step 5) is a separate
+step the user chooses.
+
+## Step 1 — run the CLI for your scope
+
+```bash
+npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] --json
+```
+
+- `--components` — the ticket's components (ledger names, `vc-module-*` repos or `VirtoCommerce.*` ids).
+- `--expect` — the PR artifact under test (`/qa-test`: the linked PR's module + version).
+- `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
+- Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
+- The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
+
+Keep the JSON; the consumer stores it as the `preflight` block of its `summary.json` or report header.
+
+## Step 2 — MCP level 3: what is callable in THIS session
+
+The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys` aliases). For every server the consumer marks `REQ` or
+`REQ_FALLBACK` in [`mcp-requirements.json`](mcp-requirements.json) — and every `OPT` server whose
+`when` condition holds for this run — run `ToolSearch` with the server's `toolSearch` query, then
+**one cheap read** through a returned tool. Record per server
+`{server, level: CONNECTED | ABSENT, via: "mcp" | "fallback:<name>"}`.
+
+- Absent `REQ` ⇒ BLOCK. `virtooz` is `REQ` for `domain-map` / `ba`: BLOCK only when **both** VirtoOZ
+  and Context7 are absent — these commands exist to ground in the published guides. Probe Context7 too
+  for these two consumers: the CLI never reports its level for any consumer.
+- Absent `REQ_FALLBACK` ⇒ WARN naming the fallback, and the run uses it.
+- Absent `OPT` ⇒ that lane is `SKIPPED` in the run's record — never PASS.
+- A server that needs OAuth: Claude cannot start the flow — the user authorises it in `/mcp` or the claude.ai connector settings.
+
+## Step 3 — ask the knowledge base, then the docs
+
+**This step asks the knowledge base before anything else claims how the platform behaves.** The tool
+is **`mcp__kb__kb_ask`** — it is deferred, so load it first:
+`ToolSearch select:mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_none`. Put the coordinate in the
+question — the page path, the GraphQL operation, the endpoint the scope names. Not connected ⇒
+`npm run kb -- ask "<coordinate> <question>"`. Close every returned list by `kb_show` or `kb_none`.
+A miss (exit 1) never blocks; it means what this run establishes is a later `kb_capture`
+([`../../../CLAUDE.md`](../../../CLAUDE.md) §Essential Rules → *Product context*).
+
+Then VirtoOZ through `/vc-docs` for what the platform is MEANT to do; Context7
+(`/virtocommerce/vc-docs`) only as its fallback. Record the kb hit ids and the doc tools used.
+Never Context7 first.
+
+## Step 4 — show the result, in the one form
+
+Print the CLI's human output **verbatim** (run it once more without `--json`, or render the same
+checks), then append — in the same columns — only the rows the CLI cannot see: step 2's
+level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, and never show an
+`UNKNOWN` as OK. Form and rules: spec §8a.
+
+- `READY` with no rows ⇒ one line, proceed.
+- `READY` with warnings ⇒ name each in one line, proceed. A WARN never asks.
+- `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
+
+## Step 5 — remediation: diagnose → fix → re-check
+
+Offer, in one line per row, what you can do and what only the user can — the `Who` column decides:
+
+| `Who` | You may |
+|---|---|
+| `me` | do it now: read-only, or local and reversible |
+| `me, with OK` | do it only after the user says yes: shared env, outward-facing, tracked file |
+| `you` | hand over paste-ready text: which variable, which file, where the value comes from |
+
+Never type, substitute or switch a password or token; on a failed credential, hand over the text.
+Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.**
+
+- "Find the cause" runs the row's `diagnose[]` recipe (read-only) and reports the cause.
+- After any fix, **re-run the whole step 1**, not the one check — a fix can move another fact.
+- At most **two** rounds; then hand over with what was tried.
+- Record every action in `remediations[]`: `{check, found, diagnosis, action, actor, approvedBy, result}`.
+
+## Step 6 — return one block to the consumer
+
+`{ verdict, facts, checks, mcp (with level-3 rows), kbHits, docs, remediations }`. What a fact
+**means** for the consumer is the consumer's rule, not this skill's — e.g. a `breaking:*` row makes
+`/qa-test` run FULL; a `not-deployed:*` row is BLOCKED-on-deploy, never a FAIL and never a filed bug.
+
+## Not this skill
+
+The `/qa-test` axes 2b–2g and its 2-map read · ticket fetch, classification and routing · the
+per-case `[PRE:*]` tags ([`test-execution-preflight.md`](../../knowledge/execution/test-execution-preflight.md)) ·
+the regression pre-flight (`regression:plan --preflight`, phase 2).
