@@ -1,0 +1,30 @@
+{
+  "_comment": "Normative MCP minimum requirements per pre-flight consumer (spec §7). REQ = absent ⇒ BLOCK; REQ_FALLBACK = absent ⇒ WARN naming the fallback; OPT = absent ⇒ that lane SKIPPED, never PASS. scope=user servers are invisible to the CLI and resolved by the skill (level 3). toolSearch is the ToolSearch query that finds the server's tools.",
+  "servers": {
+    "atlassian":         { "scope": "user",    "toolSearch": "+atlassian getJiraIssue", "fallback": "Jira REST via JIRA_API_TOKEN, else the user pastes the ticket" },
+    "github":            { "scope": "project", "toolSearch": "+github get_pull_request", "fallback": "gh CLI / GIT_TOKEN REST" },
+    "kb":                { "scope": "project", "toolSearch": "select:mcp__kb__kb_ask", "fallback": "npm run kb -- ask" },
+    "virtooz":           { "scope": "user",    "toolSearch": "PlatformUserGuide StorefrontUserGuide", "fallback": "Context7 /virtocommerce/vc-docs" },
+    "context7":          { "scope": "project", "toolSearch": "+context7 query-docs", "fallback": null },
+    "playwright-chrome": { "scope": "project", "toolSearch": "+playwright-chrome browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
+    "playwright-edge":   { "scope": "project", "toolSearch": "+playwright-edge browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
+    "playwright-firefox":{ "scope": "project", "toolSearch": "+playwright-firefox browser_navigate", "fallback": "next lane in the fallback chain", "lane": true },
+    "chrome-devtools":   { "scope": "user",    "toolSearch": "+Chrome_DevTools take_snapshot", "fallback": null },
+    "azure":             { "scope": "user",    "toolSearch": "+azure-mcp applicationinsights", "fallback": "APPINSIGHTS_APP_ID_* + APPINSIGHTS_API_KEY_*" }
+  },
+  "consumers": {
+    "ticket":      { "atlassian": { "class": "REQ_FALLBACK" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" }, "chrome-devtools": { "class": "OPT", "when": "visual_surface" }, "azure": { "class": "OPT" } },
+    "ticket-fast": { "atlassian": { "class": "REQ_FALLBACK" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" }, "chrome-devtools": { "class": "OPT", "when": "--visual" }, "azure": { "class": "OPT" } },
+    "exploratory": { "atlassian": { "class": "OPT", "when": "ticket mode" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" } },
+    "lifecycle":   { "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ_FALLBACK" } },
+    "domain-map":  { "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ" }, "playwright-firefox": { "class": "REQ_FALLBACK" } },
+    "ba":          { "atlassian": { "class": "OPT", "when": "docs ticket mode" }, "github": { "class": "REQ_FALLBACK" }, "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "REQ" } },
+    "regression":  { "kb": { "class": "OPT" }, "azure": { "class": "OPT" } },
+    "smoke":       { "kb": { "class": "REQ_FALLBACK" }, "virtooz": { "class": "OPT" }, "azure": { "class": "OPT" } }
+  },
+  "lanes": {
+    "ticket": { "min": 1, "want": 3 }, "ticket-fast": { "min": 1, "want": 1 }, "exploratory": { "min": 1, "want": 1 },
+    "lifecycle": { "min": 0, "want": 1 }, "domain-map": { "min": 0, "want": 1 }, "ba": { "min": 0, "want": 0 },
+    "regression": { "min": 1, "want": 3 }, "smoke": { "min": 1, "want": 1 }
+  }
+}
