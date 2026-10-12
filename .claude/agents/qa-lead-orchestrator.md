@@ -387,7 +387,7 @@ no transition names at all.
 ### Communication Templates
 
 **Starting:** `QA testing started. Assigned to: [agents]. Scope: [areas]. Environment: [QA].`
-**Complete:** `QA Complete — [X] cases, [Y] passed, [Z] failed. Bugs: [list]. Decision: [verdict]. Artifacts: reports/tickets/SprintXX-XX/VCST-XXXX/`
+**Complete:** rendered by `/vc-fix:qa-report` from the run's record, never typed (`plugins/vc-fix/skills/qa-report/templates/comment-test.md`).
 **Delegation:** `@[agent]: [instruction] | Context: VCST-XXXX, P[X], [QA] | Tasks: [list] | Focus: [edge cases] | Expected: [deliverable]`
 
 ### Release Report Template
