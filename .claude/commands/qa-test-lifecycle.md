@@ -93,9 +93,9 @@ You are the **Test Case Lifecycle Orchestrator** for Virto Commerce. This comman
 
 Before starting the pipeline:
 
-1. **`/preflight lifecycle --domain <scope> --components <scope components>`**
-   ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, the deployed build,
-   the release-ledger Δ, the 24 h duplicate check and MCP availability, then kb → VirtoOZ grounding.
+1. **`/preflight lifecycle --domain <scope> --components <scope components> [--ci]`** (`--ci` if this run has it)
+   ([`../skills/preflight/SKILL.md`](../skills/preflight/SKILL.md)) — env health, deployed build,
+   ledger Δ, 24 h duplicate check, MCP, then kb → VirtoOZ grounding.
    Include its block in the lifecycle report header (Phase 6) and pass its kb/doc hits to
    `test-management-specialist`.
 2. **GraphQL schema refresh** (when scope includes GraphQL suites or `--layer graphql`):

@@ -1,7 +1,7 @@
 ---
 name: preflight
-description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. It ends in a diagnose → fix → re-check loop on what is not READY. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
-argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront]"
+description: "Environment and build pre-flight before work against a stand: env health, deployed build, MCP availability, one output form. Use at the start of /qa-test, /qa-test-fast, /qa-exploratory, /qa-test-lifecycle, /qa-domain-map, /ba-analyze. Not for the /qa-test axes 2b–2g, ticket fetching or routing, or per-case [PRE:*] tags."
+argument-hint: "<ticket|ticket-fast|exploratory|lifecycle|domain-map|ba> [--ticket KEY] [--components A,B] [--domain slug] [--expect Module.Id@version] [--storefront] [--ci]"
 ---
 
 # /preflight — is this stand fit for the work, and what does it run?
@@ -20,17 +20,19 @@ npm run preflight -- --for <for> [--ticket KEY] [--components A,B] [--domain slu
 - `--components` — the ticket's components (ledger names, `vc-module-*` repos or `VirtoCommerce.*` ids).
 - `--expect` — the PR artifact under test (`/qa-test`: the linked PR's module + version).
 - `--storefront` — the scope touches the storefront (adds the anonymous `InitializeApplication` probe).
+- `--ci` — this skill's own flag (the caller is non-interactive, step 4); never pass it to the CLI, which rejects an unknown flag with exit `1`.
 - Exit `0` READY (warnings allowed) · `2` NOT READY · `1` usage error — fix the flags · `3` the script could not run: report its message and STOP, never improvise the facts by hand.
 - The verdict counts BLOCKs only: `UNKNOWN` rows are listed and counted but do not by themselves make a run NOT READY. The exception is `ticket` / `ticket-fast`: an `--expect` whose deployed state is `UNKNOWN` is a BLOCK.
 
-Keep the JSON; the consumer stores it as the `preflight` block of its `summary.json` or report header. Step 4 re-runs the CLI for display; if the two runs differ (a deploy landed), the later run's JSON is the one stored.
+Keep the JSON; the consumer stores it as the `preflight` block of its `summary.json` or report header. Step 4 re-runs the CLI without `--json` for display (the CLI prints one or the other, never both); if its verdict or rows differ from this run's (a deploy landed), run this step again and store that JSON.
 
 ## Step 2 — MCP level 3: what is callable in THIS session
 
 The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys` aliases). For every server the consumer marks `REQ` or
-`REQ_FALLBACK` in [`mcp-requirements.json`](mcp-requirements.json) — and every `OPT` server whose
-`when` condition holds for this run (the consumer tells you which hold: `visual_surface`, `--visual`, ticket mode …) — run `ToolSearch` with the server's `toolSearch` query, then
-**one cheap read** through a returned tool. Record per server
+`REQ_FALLBACK` in [`mcp-requirements.json`](mcp-requirements.json) — and every `OPT` server, whatever its
+`when` says (some conditions, like `/qa-test`'s `visual_surface`, are derived only after this skill returns; the consumer applies `when` to the recorded row) — run `ToolSearch` with the server's `toolSearch` query, then
+**one cheap read** through a returned tool: a call that lists or describes and starts nothing. For a browser lane
+(`"lane": true`) the ToolSearch hit is the evidence — any browser read launches a session another agent will need. Record per server
 `{server, level: CONNECTED | ABSENT, via: "mcp" | "fallback:<name>"}`.
 
 - Absent `REQ` ⇒ BLOCK. `virtooz` is `REQ` for `domain-map` / `ba`: BLOCK only when **both** VirtoOZ
@@ -38,7 +40,7 @@ The CLI sees `.mcp.json` only (levels 1–2; it also matches a server's `mcpKeys
   list, so the CLI never reports it — probe it yourself.
 - Absent `REQ_FALLBACK` ⇒ WARN naming the fallback, and the run uses it.
 - Absent `OPT` ⇒ that lane is `SKIPPED` in the run's record — never PASS.
-- Never edit `.mcp.json` and never restart a server: for a missing or broken one, say in one line what to add and that a restart is required (spec §7).
+- Never edit `.mcp.json` and never restart a server: for a missing or broken one, say in one line what to add and that a restart is required (`docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §7).
 - A server that needs OAuth: Claude cannot start the flow — the user authorises it in `/mcp` or the claude.ai connector settings.
 
 ## Step 3 — ask the knowledge base, then the docs
@@ -53,21 +55,21 @@ A miss (exit 1: nobody has written it down) never blocks; what this run establis
 
 Then VirtoOZ through `/vc-docs` for what the platform is MEANT to do; Context7
 (`/virtocommerce/vc-docs`) only as its fallback. Record the kb hit ids and the doc tools used.
-Never Context7 first.
+Never Context7 first: VirtoOZ is the primary docs source and Context7 only its fallback (same `CLAUDE.md` §).
 
 ## Step 4 — show the result, in the one form
 
 Run the CLI once more without `--json` and print its output **verbatim** — the CLI renders it from
 `checks[]`; you do not compose it — then append — in the same columns — only the rows the CLI cannot see: step 2's
 level-3 MCP rows and step 3's misses. Do not reword a row, do not re-grade it, and never show an
-`UNKNOWN` as OK. Form and rules: spec §8a.
+`UNKNOWN` as OK. Form and rules: `docs/superpowers/specs/2026-10-08-preflight-skill-design.md` §8a.
 
 - `READY` with no rows ⇒ one line, proceed.
 - `READY` with warnings ⇒ name each in one line, proceed. A WARN never asks.
 - `READY` with `UNKNOWN` rows only (no BLOCK, no WARN) ⇒ list each `UNKNOWN` row with its `Who`/`Do`, never as OK, and do not ask.
 - `NOT READY` ⇒ go to step 5. **At most one question, and only for a BLOCK.**
 - A level-3 BLOCK from step 2 alone also makes the run `NOT READY` and routes to step 5; the verdict returned in step 6 is the combined one (CLI verdict, downgraded by any level-3 BLOCK).
-- A non-interactive caller (`--ci`, or this skill running inside a subagent) asks no question: it returns `NOT READY` with the rows to its caller (step 6) and performs no remediation.
+- A non-interactive caller (`--ci` passed to this skill, or this skill running inside a subagent) asks no question: it returns `NOT READY` with the rows to its caller (step 6) and performs no remediation.
 
 ## Step 5 — remediation: diagnose → fix → re-check
 
@@ -80,7 +82,7 @@ Offer, in one line per row, what you can do and what only the user can — the `
 | `you` | hand over paste-ready text: which variable, which file, where the value comes from |
 
 Never type, substitute or switch a password or token; on a failed credential, hand over the text.
-Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.** "Fix what you can" covers `me` rows only; `me, with OK` rows are named in the offer and run only after an explicit yes that names them.
+Then ask the one question: **fix what you can · find the cause first · proceed as is · stop.** "Fix what you can" covers `me` rows; when there are `me, with OK` rows, that option names them (e.g. "fix what you can, including `ledger` — runs `releases:refresh` and commits"), and choosing it is the explicit yes for exactly those rows. Never a second question.
 
 - "Find the cause" runs the row's `diagnose[]` recipe (read-only) and reports the cause.
 - After any fix, **re-run the whole step 1**, not the one check — a fix can move another fact.
@@ -89,7 +91,8 @@ Then ask the one question: **fix what you can · find the cause first · proceed
 
 ## Step 6 — return one block to the consumer
 
-`{ verdict, facts, checks, mcp (with level-3 rows), kbHits, docs, remediations }`. What a fact
+Step 1's JSON with every top-level key the CLI printed (consumers read `sprint` and `facts` from it), plus
+step 2's level-3 rows under `mcp`, `verdict` combined per step 4, and `kbHits`, `docs`, `remediations`. What a fact
 **means** for the consumer (a `breaking:*` or `not-deployed:*` row, for instance) is the consumer's own
 rule, stated in the consumer — not here.
 
