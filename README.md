@@ -15,6 +15,8 @@ This repo hosts two things:
      advisory only, never a CI gate.
    - **[`vc-secrets`](plugins/vc-secrets/)** — a launcher that resolves an MCP server's secrets per launch
      from the OS credential store or Azure Key Vault, so no client config holds a token. Independent of the others.
+   - **[`vc-frontend`](plugins/vc-frontend/)** — for teams that keep a fork of the storefront theme: brings
+     upstream vc-frontend into the fork without losing the fork's look. Independent of the others.
 2. **The full `vc-qa` agent crew** (regression, BA analysis, the regression suites, the agent crew) — the source
    `vc-fix` was extracted from. It lives project-scoped under `.claude/` (auto-discovered on any
    clone, no plugin manifest) but is **not marketplace-installable**: not listed in the marketplace,
@@ -61,8 +63,9 @@ Then try:
 
 Full plugin docs: **[`plugins/vc-fix/README.md`](plugins/vc-fix/README.md)** (agent/command/skill
 inventory, self-containment rationale, gate ladder reference). The other plugins install the same way
-(`/plugin install vc-perf@ai-tools`, `/plugin install vc-secrets@ai-tools`); `vc-secrets` is described
-normatively in [`plugins/vc-secrets/README.md`](plugins/vc-secrets/README.md).
+(`/plugin install vc-perf@ai-tools`, `/plugin install vc-secrets@ai-tools`, `/plugin install vc-frontend@ai-tools`);
+`vc-secrets` and `vc-frontend` are described normatively in [`plugins/vc-secrets/README.md`](plugins/vc-secrets/README.md)
+and [`plugins/vc-frontend/README.md`](plugins/vc-frontend/README.md).
 
 ---
 
@@ -210,7 +213,8 @@ ai-tools/
 │   ├── vc-fix/           # self-contained bug-lifecycle plugin (own agents/skills/commands + own copies
 │   │                     #   of knowledge/, .claude/rules/, scripts/, config.js)
 │   ├── vc-perf/          # performance loop (depends on vc-fix)
-│   └── vc-secrets/       # secrets launcher
+│   ├── vc-secrets/       # secrets launcher
+│   └── vc-frontend/      # theme-fork upstream merges
 ├── .claude/              # PROJECT-SCOPED vc-qa surface (auto-discovered — no plugin manifest)
 │   ├── agents/           #   agents, flat *.md (QA / BA) — no subfolders
 │   ├── skills/           #   skills, each skills/<name>/SKILL.md ([Category] tag in the description)
