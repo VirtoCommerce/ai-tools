@@ -272,6 +272,8 @@ fills with ladder PRs first and a companion past the cap is an `over-cap` gap. A
 | tests the PR changed, and changed branches with no test | first targets for testing |
 | fate — reverted, superseded, follow-up fix after merge | avoid testing a dead change |
 | CI state, unresolved review threads | risk signal, never a block |
+| risk hotspots: `{source: <repo>:<path>:<line>, risk}`, ≤12, most important first (*added 2026-10-13, fix wave 2*) | where to test first; a hotspot names a changed line, and its risk is a testable consequence, not a style remark. The baseline Stage 1's strongest output, which the bundle lacked |
+| claims: the PR body's atomic testable statements, `source: pr:<repo>#<n>`, ≤25, always (*added 2026-10-13, fix wave 2*) | the oracle when the ticket has no ACs (VCST-5097). What the author says the change does, never ACs; Step 7 names their count when `acs` is empty |
 
 **Deployed on `TEST_ENV`?** — `lib/deploy.mjs`, after the agents (D3). Not the agent, and not a probe of
 its own.
@@ -340,6 +342,7 @@ The schema (`bundle.schema.json`) is the contract. In outline:
   "change": { "rung": 1, "prs": [{ "repo": "…", "number": 0, "state": "…", "merged": true, "head_sha": "…",
                         "layers": {}, "operations": [], "endpoints": [], "settings": [],
                         "tests_changed": [], "untested": [], "fate": "…", "ci": "…", "open_threads": 0,
+                        "hotspots": [{ "source": "<repo>:<path>:<line>", "risk": "…" }], "claims": [{ "text": "…", "source": "pr:<repo>#<n>" }],
                         "artifact": { "kind": "module", "id": "…", "version": "…" },
                         "deployed": "YES|NO|UNKNOWN", "deployed_reason": "…" }],
               "chain_deployed": "YES|NO|UNKNOWN|NONE",

@@ -150,7 +150,9 @@ read was read scrubbed; no secret value or token shape anywhere in the bundle.
 
 ## Step 7 — return one block
 
-To the caller: the bundle path; counts (ACs · materials finding/GAP · PRs · `chain_deployed`);
+To the caller: the bundle path; counts (ACs · materials finding/GAP · PRs · `chain_deployed`); when
+`acs` is empty, the number of PR claims (`change.prs[].claims`) with the line "no ACs — the oracle is the
+PR body", so the consumer knows its oracle is the author's word;
 `blockers[]` verbatim; the gaps that change what can be tested; and, when `kb.out.json` carries the
 `not-read` row, the line `kb: not read (<reason>)`. Never paste the bundle, a diff or an
 attachment. A `NOT DEPLOYED:` blocker is BLOCKED-on-deploy for the consumer, never a FAIL; a

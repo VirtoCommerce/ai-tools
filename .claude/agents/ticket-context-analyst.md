@@ -1,6 +1,6 @@
 ---
 name: ticket-context-analyst
-description: "Read-only ticket context extractor for /ticket-context. Reads only the files the skill already fetched and scrubbed (prepare.json and the paths in it). Three modes — TICKET (ACs, comment signals, epic/siblings, guesses), MATERIALS (attachments, inline images, linked pages and tickets, design conditions), CHANGE (per PR: layers, operations, settings, tests, fate, hidden behaviour). Every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. No network, no shell, no writes."
+description: "Read-only ticket context extractor for /ticket-context. Reads only the files the skill already fetched and scrubbed (prepare.json and the paths in it). Three modes — TICKET (ACs, comment signals, epic/siblings, guesses), MATERIALS (attachments, inline images, linked pages and tickets, design conditions), CHANGE (per PR: layers, operations, settings, tests, fate, risk hotspots, PR-body claims, hidden behaviour). Every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. No network, no shell, no writes."
 model: inherit
 color: cyan
 applicability: universal
@@ -115,7 +115,15 @@ Read `prepare.json` `prs` and `rung`.
      `threads` one line each for the substantive ones. **`unresolved_threads: null` means "not
      read", never 0.** The schema needs an integer, so when it is `null` or `reviews_path` is
      `null`, set `open_threads: 0` **and** add a gap `{where: "pr:<ref>:threads", reason:
-     "unreadable", detail: "unresolved thread count not read — 0 is not a count"}`.
+     "unreadable", detail: "unresolved thread count not read — 0 is not a count"}`;
+   - **risk hotspots** (`hotspots`, at most 12, most important first): `{source:
+     "<repo>:<path>:<line>", risk}`. A hotspot names **one changed line** of the diff (its line in the
+     new file, from the hunk header), never a whole file. `risk` is one line: what can break and how
+     to see it — a testable consequence, never a code-style remark. No such line ⇒ `hotspots: []`;
+   - **claims** (`claims`, always, at most 25): each atomic, testable statement the PR title or body
+     (`meta_path` `body`) makes about what the change does, as `{text, source: "pr:<repo>#<n>"}`.
+     Claims are what the author says the change does, **never ACs**, whatever the ticket holds: do
+     not number them as ACs or merge them with ACs. A body with no testable statement ⇒ `claims: []`.
 3. **Hidden-behaviour pass.** For every PR's diff, one row per item in `hidden_behaviour`
    (§6 gives the row shape). The items, as the exact `item` strings: `default-values` ·
    `db-migrations` · `feature-flags` · `caching` · `copy-localisation` · `search-indexing` ·
@@ -154,7 +162,8 @@ Every key listed for your mode is **required, even when its list is empty**; not
   conditions [{text, source}]} · `gaps` · `questions` · `embedded_instructions`.
 - **CHANGE:** `prs` [{repo "owner/repo", number, state, merged, head_sha, layers {storefront |
   admin-spa | api | module | platform | test | other: [paths]}, operations, endpoints, settings,
-  tests_changed, untested, fate, ci, open_threads, threads?}] · `hidden_behaviour` [{pr
+  tests_changed, untested, fate, ci, open_threads, threads?, hotspots [{source, risk}], claims
+  [{text, source}]}] · `hidden_behaviour` [{pr
   "<owner/repo>#<n>", item, answer "yes"|"no", source? (only when yes)}], one row per PR per item ·
   `gaps` · `questions` · `embedded_instructions`.
 
