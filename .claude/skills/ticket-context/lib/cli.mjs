@@ -9,7 +9,7 @@ import { loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
-import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
+import { BASE_FIELDS, LINKED_FIELDS, jiraClient, recencyOrder } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaItems, figmaToken } from "./figma.mjs";
@@ -112,10 +112,8 @@ async function prepare() {
   // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
   // The dates cost one search, made only when there is something to drop.
   if (linked.length > CAPS.linkedIssues) {
-    const keys = linked.map((i) => i.key);
-    const updated = new Map((await jira.search(`key in (${keys.join(",")}) ORDER BY updated DESC`, ["updated"], Math.min(keys.length, 100))
-      .catch((e) => { gaps.push(asGap("linked-issues.order", e)); return []; })).map((j) => [j.key, j.fields?.updated ?? ""]));
-    linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), updated });
+    const order = await recencyOrder(jira, linked.map((i) => i.key), gaps);
+    linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), order });
   }
   const linkedJson = new Map();
   for (const [n, it] of linked.entries()) {

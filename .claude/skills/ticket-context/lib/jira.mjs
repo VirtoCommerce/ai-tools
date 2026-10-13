@@ -18,6 +18,12 @@ export function jiraClient(cred, fetchImpl = fetch) {
     const res = await timedFetch(fetchImpl, url, { method, body, headers: { Authorization: cred.auth, Accept: accept, ...(body ? { "Content-Type": "application/json" } : {}) } }, ms, `Jira ${target.pathname}`);
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `Jira ${res.status} on ${target.pathname} — check JIRA_EMAIL / JIRA_API_TOKEN (never retried with another credential)`);
     if (res.status === 404) throw new GapError("deleted", `Jira 404 on ${target.pathname}`);
+    if (res.status === 400) {
+      // A JQL 400 names the keys it rejects (a deleted or moved issue): carry those keys, never the body text.
+      let keys = [];
+      try { keys = [...new Set((await readCapped(res, 16 * 1024, { truncate: true, label: "Jira error body", ms })).buf.toString("utf8").match(/\b[A-Z][A-Z0-9]*-\d+\b/g) ?? [])]; } catch { /* no keys */ }
+      throw Object.assign(new GapError("unreadable", `Jira 400 on ${target.pathname}`), { status: 400, keys });
+    }
     if (!res.ok) throw new GapError("unreadable", `Jira ${res.status} on ${target.pathname}`);
     return res;
   }
@@ -83,4 +89,24 @@ export function jiraClient(cred, fetchImpl = fetch) {
       { label: "attachment download", ms: CAPS.downloadTimeoutMs })).buf,
     confluencePage: (id) => json(`/wiki/api/v2/pages/${encodeURIComponent(id)}?body-format=storage`),
   };
+}
+
+/** D12: the linked issues' recency, as each key's index in one `ORDER BY updated DESC` search (the tracker orders
+ *  the dates; no string comparison of them here). A 400 that names keys of ours (an issue deleted or moved) is
+ *  retried ONCE without them; any other failure, or a second one, leaves the order empty, so the ranking falls back
+ *  to the link groups alone. Any failure is one gap. */
+export async function recencyOrder(jira, keys, gaps) {
+  const ask = async (list) => (await jira.search(`key in (${list.join(",")}) ORDER BY updated DESC`, ["updated"], Math.min(list.length, 100))).map((j) => j.key);
+  let found;
+  try { found = await ask(keys); } catch (e) {
+    const gone = (e?.keys ?? []).filter((k) => keys.includes(k));
+    const rest = keys.filter((k) => !gone.includes(k));
+    let retried = "";
+    if (e?.status === 400 && gone.length && rest.length) {
+      try { found = await ask(rest); retried = `; retried without ${gone.join(", ")}`; } catch { retried = `; the retry without ${gone.join(", ")} failed too`; }
+    }
+    const g = asGap("linked-issues.order", e);
+    gaps.push(gap("linked-issues.order", g.reason, `${g.detail ?? g.reason}${retried}${found ? "" : " — linked issues ranked by link type only"}`));
+  }
+  return new Map((found ?? []).map((k, i) => [k, i]));
 }

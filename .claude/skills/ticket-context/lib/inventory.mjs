@@ -226,12 +226,13 @@ export function linkGroup(item, parentKey, subtaskKeys) {
   return best;
 }
 
-/** Linked-issue items, ordered for the cap: by group, then most recently updated first (`updated`: key → ISO
- *  date; a key without one goes last in its group), then inventory order. Each item gets `link_group`. */
-export function rankLinked(items, { parentKey = null, subtaskKeys = [], updated = new Map() } = {}) {
+/** Linked-issue items, ordered for the cap: by group, then most recently updated first (`order`: key → index in
+ *  the tracker's ORDER BY updated DESC result, jira.mjs recencyOrder; a key without one goes last in its group),
+ *  then inventory order. Each item gets `link_group`. Subtasks rank first only when they are among the items. */
+export function rankLinked(items, { parentKey = null, subtaskKeys = [], order = new Map() } = {}) {
   const subs = new Set(subtaskKeys);
-  return items.map((it, i) => ({ it, i, g: linkGroup(it, parentKey, subs), u: String(updated.get(it.key) ?? "") }))
-    .sort((a, b) => a.g - b.g || b.u.localeCompare(a.u) || a.i - b.i)
+  return items.map((it, i) => ({ it, i, g: linkGroup(it, parentKey, subs), r: order.get(it.key) ?? Infinity }))
+    .sort((a, b) => a.g - b.g || (a.r === b.r ? 0 : a.r < b.r ? -1 : 1) || a.i - b.i)
     .map(({ it, g }) => Object.assign(it, { link_group: GROUP_LABEL[g] }));
 }
 
