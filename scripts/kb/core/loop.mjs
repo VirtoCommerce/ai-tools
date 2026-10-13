@@ -208,7 +208,7 @@ export function reminderText(loops, { contract = CONTRACT } = {}) {
     lines.push('Close each list with the entry you relied on (kb_show) or kb_none -- even if you already wrote about it.');
   }
   if (loops.some((l) => l.why !== 'unresolved')) {
-    lines.push(`If you or a subagent established a question with no answer live, kb_capture it now (contract: ${contract}). `
+    lines.push(`If you or a subagent established a question with no answer -- live, or by reading code (method "source") -- kb_capture it now (contract: ${contract}). `
       + 'If you did not establish it, say so in one line and finish.');
   }
   lines.push('Each question is raised once.');

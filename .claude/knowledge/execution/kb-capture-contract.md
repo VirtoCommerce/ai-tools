@@ -40,7 +40,7 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `anchors` | ≥ 1 coordinate the behaviour lives at | the table below |
 | `scope` | ≥ 1 `axis=value` | `surface=<value>` from `SURFACES` in [`scripts/kb/core/index-load.mjs`](../../../scripts/kb/core/index-load.mjs); an item without `=` is dropped silently, so `surface storefront` ends in a refusal |
 | `deployment` | the stand you observed it on | one token: the stand's name or its `TEST_ENV` / host name — the door maps every alias onto the stand's one name, declared as `KB_STAND` in its `.env.<env>` profile (`scripts/kb/core/stands.mjs`). Prose is refused |
-| `method` | how you established it | optional; `observation` (the default) is the only value the tool description admits — see §Open decision |
+| `method` | how you established it | optional; `observation` (the default) — seen on a live stand — or `source` — read in code, not seen live (§Facts read from source code). Anything else is refused |
 | `conditions` | what the stand was running and how it was set up | optional on `capture` / `confirm`, **expected on `dispute`** — §Conditions |
 
 `confirm` and `dispute` need the entry `id` and `deployment` (`dispute` also `saw`). A superseded id
@@ -79,7 +79,7 @@ prefix (the path is kept), a query string or `#fragment` (dropped), an id segmen
 | an Admin SPA blade | the REST call it sent (HAR / Network) |
 | storefront GraphQL behaviour | `Query.x` / `Mutation.y` |
 | a REST behaviour | `VERB /api/…` |
-| a fact established from source code | a fully qualified dotted type name — but see §Open decision |
+| a fact established from source code | a fully qualified dotted type name, with `method: source` (§Facts read from source code) |
 
 A behaviour that spans two coordinates (a UI action and the mutation it sends) carries both.
 
@@ -127,10 +127,24 @@ after — or a list left unclosed — is raised once, at the end of the turn, by
 ([`../../hooks/kb-remind.mjs`](../../hooks/kb-remind.mjs)): capture what you established, or say in one
 line that you did not establish it. `KB_REMIND=0` turns the hook off on a machine.
 
-## Open decision — `method: source`
+## Facts read from source code
 
-A dotted type name passes the anchor check, so a fact read from source code can be written today, but
-the `kb_capture` description asks for something verified on a live deployment, and `method` is free
-text that nothing validates or weighs. Decided 2026-10-06: source facts will be admitted as their own,
-labelled kind of evidence — tracked in VCST-6186. Until that ships, **capture only what you observed live**;
-a source-only fact goes in your own output, not the base.
+A fact you established by **reading code** — how a type is overridden, which handler a setting reaches,
+what a validator rejects — is captured with `method: source` (VCST-6186). It is its own kind of evidence:
+
+- **`deployment` is the code version you read**, `<repo or module>@<version or commit>`
+  (`vc-platform@3.1078.0`, `VirtoCommerce.XCart@3.1041.0`, `vc-module-order@a1b2c3d`), never a stand: a
+  source fact holds for a version, not for a deployment. Read the version from the tag or commit you
+  actually checked out.
+- **Readers are told.** `kb_ask` / `kb_show` print the item as *from source, not observed live*; an entry
+  whose whole support is source is labelled so and never reaches *corroborated*, however many agents read
+  the same code.
+- **A live check upgrades it.** The first `kb_confirm` with `method: observation` on a live stand makes it
+  an ordinary observed entry. A live `kb_dispute` is a finding — the code you read and the deployment
+  disagree (often a version drift) — and is always a hard dispute: a source item has no build to compare.
+- **Anchor** a source fact at the coordinate the behaviour is reached through (the endpoint, the GraphQL
+  operation, the page) when there is one; a fully qualified dotted type name is accepted when there is
+  not.
+
+Observed it live as well? Then it is an observation: capture with the default method and say in the
+claim what the code showed.

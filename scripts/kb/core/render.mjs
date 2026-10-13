@@ -11,7 +11,7 @@
 // and the server joins them; neither has to guess where the newlines were meant to be.
 
 import { MSYS_REMEDY } from './anchors.mjs';
-import { CONTRACT, DEPLOYMENT_SOURCE, SCOPE_SOURCE } from './contract.mjs';
+import { CONTRACT, DEPLOYMENT_SOURCE, METHOD_SOURCE, SCOPE_SOURCE } from './contract.mjs';
 import { HEADLINE } from './exits.mjs';
 import { isResolved } from './index-build.mjs';
 import { idList } from './index-load.mjs';
@@ -28,9 +28,16 @@ function evidenceLine(e) {
       : ` [unknown resolution "${e.resolved}" — still open]`;
   return `  ${e.contradicts ? (e.contested ? 'contested on another build' : 'contradicted') : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
     + `${e.contested ? ` (${e.contested})` : ''}`
-    + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${e.method ? ` (${e.method})` : ''}`
+    + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${methodText(e.method)}`
     + `${e.note ? ` — ${e.note}` : ''}${verdict}`;
 }
+
+/** How it was established, when that is not the default: a source fact is always said (VCST-6186). */
+const methodText = (m) => {
+  const v = String(m ?? '').trim();
+  if (!v || v.toLowerCase() === 'observation') return '';
+  return v.toLowerCase() === 'source' ? ' (from source, not observed live)' : ` (${v})`;
+};
 
 /**
  * A soft dispute (VCST-6221): somebody saw it differently on another build, and no judge has looked yet.
@@ -46,6 +53,7 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
+    + `${hit.trust.fromSource ? ` (${hit.trust.fromSource} of them read from source, not observed live)` : ''}`
     + contestedText(hit.trust)
     + `${hit.trust.resolved ? `, ${hit.trust.resolved} dispute(s) resolved` : ''}`
     + `${hit.trust.beforeAmendment ? `, ${hit.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
@@ -191,6 +199,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   const lines = [
     `${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
       + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}`
+      + `${r.trust.fromSource ? ` (${r.trust.fromSource} of them read from source, not observed live)` : ''}`
       + contestedText(r.trust)
       + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}`
       + `${r.trust.beforeAmendment ? `, ${r.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
@@ -203,7 +212,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
   const next = idList(r.entry.supersededBy);
   if (next.length) lines.push(`superseded by: ${next.join(', ')}`);
-  for (const e of r.entry.evidence ?? []) lines.push(evidenceLine({ ...e, method: null }));
+  for (const e of r.entry.evidence ?? []) lines.push(evidenceLine(e));
   lines.push('');
   lines.push(r.body);
   return lines;
@@ -226,6 +235,7 @@ export const CONTRACT_CARD = [
   '    --anchor   a route (/account/orders), an endpoint (POST /api/carts) or a GraphQL op (Query.products);',
   '               never a button label, field name or menu path -- those go in --claim',
   `    --deployment  ${DEPLOYMENT_SOURCE}`,
+  `    --method   ${METHOD_SOURCE}`,
   `    --scope    ${SCOPE_SOURCE}`,
   '    fix the payload and retry ONCE with the same --subject; prefer kb_capture (MCP) when it is connected',
 ];

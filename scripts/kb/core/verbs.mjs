@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { mintId } from './canonical.mjs';
 import { profileOf, resolveStand } from './stands.mjs';
 import { buildLabel, softDispute } from './gate.mjs';
+import { codeVersionProblem, isSource, resolveMethod } from './method.mjs';
 import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
@@ -100,14 +101,22 @@ export function trustOf(evidence = []) {
   const named = supporting.filter((e) => e.who).map((e) => e.who);
   const operators = named.length ? new Set(named).size : null;
   const operatorsUnknown = supporting.filter((e) => e.by && !e.who).length;
+  // READ FROM CODE, NEVER SEEN LIVE (VCST-6186): an entry whose whole support is `method: source` is
+  // labelled so and never climbs the observation ladder -- two agents reading the same code are not two
+  // observations of the platform. One live confirmation makes it an ordinary observed entry.
+  // And the ladder counts OBSERVATIONS only: once a live confirm arrives the entry is an ordinary one,
+  // but two code readings plus one live look is a single observation, not "well attested".
+  const fromSource = supporting.filter(isSource).length;
+  const observed = confirmations - fromSource;
   const label = disputed ? 'DISPUTED'
-    : confirmations >= 3 ? 'well attested'
-      : confirmations === 2 ? 'corroborated'
-        : confirmations === 1 ? 'single observation'
-          : 'unattested';
+    : observed <= 0 && fromSource > 0 ? 'from source, not observed live'
+      : observed >= 3 ? 'well attested'
+        : observed === 2 ? 'corroborated'
+          : observed === 1 ? 'single observation'
+            : 'unattested';
   // What a soft dispute was about, for the reader: the build difference the gate computed (core/gate.mjs).
   const contestedOn = (Array.isArray(evidence) ? evidence : []).filter((e) => e?.contradicts && e.contested && !e.resolved).map((e) => e.contested);
-  return { label, confirmations, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
+  return { label, confirmations, fromSource, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -1047,7 +1056,11 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
-  const where = standProblem(input.deployment);
+  // HOW, then WHERE (VCST-6186): a source fact names a code version, not a stand, so the stand rule
+  // (VCST-6189) applies to observations only.
+  const how = resolveMethod(input.method);
+  if (how.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable method: ${how.problem}` }, input), input, door);
+  const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
   if (where) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable deployment: ${where}` }, input), input, door);
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
@@ -1114,7 +1127,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
-  const stamp = await buildStamp(input.deployment, { env, dryRun, builds });
+  const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
     subject: input.subject,
@@ -1127,8 +1140,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     }),
     anchors: input.anchors.map((a) => ({ coordinate: typeof a === 'string' ? a : a.coordinate })),
     evidence: [{
-      method: input.method ?? 'observation',
-      deployment: standName(input.deployment),
+      method: how.value,
+      deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
       ...stamp.item,
       ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
@@ -1264,7 +1277,9 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
-  const where = standProblem(input.deployment);
+  const how = resolveMethod(input.method);
+  if (how.problem) return { state: 'invalid', why: `unusable --method: ${how.problem}` };
+  const where = how.value === 'source' ? codeVersionProblem(input.deployment) : standProblem(input.deployment);
   if (where) return { state: 'invalid', why: `unusable --deployment: ${where}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
   const conditions = normalizeConditions(input.conditions);
@@ -1310,7 +1325,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   const readBody = openedHash([...journal, ...(await readQueue({ env })).lines.map(loopRecordOf).filter(Boolean)], row.id);
   if (readBody) bodyHash = readBody;
 
-  const stamp = await buildStamp(input.deployment, { env, builds });
+  const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, builds });
   // A DISAGREEMENT ON ANOTHER BUILD IS A SOFT DISPUTE (VCST-6221, core/gate.mjs): still a dispute the
   // judge sees, but readers get "contested on another build" instead of DISPUTED. Needs the stamp and the
   // entry; without either it stays a hard dispute -- the gate fails closed.
@@ -1330,8 +1345,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     } catch { contested = null; }
   }
   const item = {
-    method: input.method ?? 'observation',
-    deployment: standName(input.deployment),
+    method: how.value,
+    deployment: how.value === 'source' ? String(input.deployment).trim() : standName(input.deployment),
     ...stamp.item,
     ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
@@ -1353,7 +1368,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     // and not of one verb: `ask` and `confirm` write the same `deployment` key into the same public
     // log, and a bound that only one of them applies is a bound the log does not have. The guard
     // above has already rejected an empty value, so the drop half of `stand()` never fires here.
-    ...stand(input.deployment),
+    ...(how.value === 'source' ? { deployment: String(input.deployment).trim(), method: 'source' } : stand(input.deployment)),
     // A dispute's `saw` used to be HERE, in the public line, and it should not have been. §7 is
     // "ids and subjects only, never prose", and this was hundreds of characters of free text from
     // an agent — found 2026-09-19 by reading a published line rather than the rule. Two reasons it

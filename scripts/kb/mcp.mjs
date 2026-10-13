@@ -53,7 +53,7 @@ import { openBase } from './core/base.mjs';
 import { flush, ownFlushDue, sweepIfDue } from './core/push.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { queueDir } from './core/queue.mjs';
-import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE } from './core/contract.mjs';
+import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE, METHOD_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
 import { liveBuild } from './core/build.mjs';
@@ -177,7 +177,8 @@ export const TOOLS = Object.freeze([
   },
   {
     name: 'kb_capture',
-    description: 'Record a NEW observation about platform behaviour that you verified yourself on a live deployment, '
+    description: 'Record a NEW fact about platform behaviour that you established yourself -- verified on a live deployment, '
+      + 'or read in source code with method "source" (labelled as such, never shown as observed) -- '
       + 'so the next session does not have to re-derive it. Use after kb_ask returned nothing and you then found out. '
       + 'Refused if an entry already states the same subject at the same anchors and scope — open it (kb_show) and confirm that one instead; '
       + 'a different fact at the same coordinates is recorded as its own entry. '
@@ -195,7 +196,7 @@ export const TOOLS = Object.freeze([
         anchors: { type: 'array', items: { type: 'string' }, description: 'Structured coordinates the fact lives at: a route (/company/members), an endpoint (POST /api/carts), a GraphQL operation (Query.products). At least one. '
           + 'Never a button label, field name, menu path or bare /api -- put the label in claim and anchor at the page route or the request it sent.' },
         scope: { type: 'array', items: { type: 'string' }, description: 'axis=value pairs bounding where the fact applies, e.g. surface=storefront-ui. At least one — without scope a storefront fact gets applied to admin.' },
-        method: str('How it was established. Default "observation".'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
@@ -214,6 +215,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str(`Where you observed it: ${DEPLOYMENT_SOURCE}.`),
         note: str('Optional: what you saw, if it adds anything the entry does not already say.'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
@@ -232,6 +234,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         deployment: str(`Where you observed the contradiction: ${DEPLOYMENT_SOURCE}.`),
         saw: str('What you saw instead — required, because a bare "it is wrong" is not evidence.'),
+        method: { type: 'string', enum: ['observation', 'source'], description: METHOD_SOURCE },
         conditions: { type: 'array', items: { type: 'string' }, description: `${CONDITIONS_SOURCE}. One key=value per item.` },
         topic: TOPIC,
       },
