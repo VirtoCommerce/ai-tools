@@ -38,14 +38,15 @@ Use the [`agent-dispatch.md`](../../templates/agent-dispatch.md) structure, **in
 ## Exploratory
 
 Invoke `/qa-exploratory ticket <TICKET>` — the command, never a re-implementation. The charter
-payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and
-its mission is the strategy's `EXPLORE` risks plus the `/qa-test-model` output's item 4 (the unresolved cells, reverse edges, `{HYPOTHESIS}`
-oracles and flagged ACs) plus the mind-map branches the checklist declared as omissions, including
-the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 4).
-- **First or alongside** is the strategy's (D3). A `FIRST` session runs in Wave 3, before any checklist
-  exists, so its charter is the strategy's `EXPLORE` risks, the model's item 4 **and the Wave-2 mind
-  map's `UNVERIFIED` in-scope nodes** — read from the map itself, since the `UNVERIFIED → charter`
-  checklist lines are written only afterwards and no alongside session follows to pick them up.
+payload has the shape of [`../qa-test/exploratory-lane.md`](../qa-test/exploratory-lane.md) §6, and its
+mission is the command's five sources from the `/qa-test-model` output's item 4 (unresolved cells, reverse
+edges, `{HYPOTHESIS}` oracles, flagged ACs, tc:scope at-risk rows) — the command neither re-derives nor
+widens it. The strategy's `EXPLORE` risks reach the session **through** those sources: each one names the
+`{HYPOTHESIS}` oracle or `GAP` cell it rests on (D3 ties `FIRST` to exactly that).
+- **First or alongside** is the strategy's (D3). A `FIRST` session runs in Wave 3, before the checklist.
+  Its mind-map `UNVERIFIED` nodes are then **not** written as `UNVERIFIED → charter` omission lines (no
+  alongside session follows to take them) but as checklist items that observe and record — Result
+  `OBSERVED`, never `PASS` ([`context-wave.md`](context-wave.md) §Wave 4).
 - **The box** is the strategy's, sized per §5 there: 30-minute floor, 60-minute ceiling, stated in the payload.
 - **Read-only by default.** When a charter item needs its own data, it follows §Data with its own pool
   user.
@@ -54,8 +55,9 @@ the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 
   *Not tested, and why* as `candidate case`, for a later `/qa-test-lifecycle` run.
 - **A same-day SBTM file for this ticket already exists** ⇒ pass the prior session as input. The new
   charter covers what that session marked NOT REACHED; it is never a re-run of the old charter.
-- **The strategy skipped it** ⇒ the lane is recorded as `ran: false` with that reason. When the strategy
-  marked it `RUN`, it runs even with no unresolved item left: its charter is still the `EXPLORE` risks. Those are the only legitimate skips besides `--no-explore`, which drops a `FIRST` session too.
+- **The strategy skipped it** ⇒ `ran: false` with that reason. **The strategy marked it `RUN` but the
+  command STOPs** (the model resolved every source) ⇒ `ran: false` with the command's reason **and** a
+  strategy §9 amendment moving those `EXPLORE` risks to checklist items — never a silent drop. Those are the only legitimate skips besides `--no-explore`, which drops a `FIRST` session too.
 
 ## Visual
 

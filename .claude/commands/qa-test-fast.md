@@ -117,8 +117,8 @@ Briefs, the lane split, the data rules and teardown:
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
 2. **Exploratory** — when the strategy marks it `RUN` **alongside** (a `FIRST` session ran in Wave 3
    instead and is not repeated): `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`, in the
-   strategy's box. The charter is the strategy's
-   `EXPLORE` risks plus the model's unresolved items. `--no-explore` drops the lane. A skip is recorded,
+   strategy's box. The charter is the model's unresolved items, which carry the strategy's
+   `EXPLORE` risks ([`execution.md`](../skills/qa-test-fast/execution.md) §Exploratory). `--no-explore` drops the lane. A skip is recorded,
    never silent.
 3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, when F3 or F8 fired (`visual_surface: true`,
    derived from the Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the

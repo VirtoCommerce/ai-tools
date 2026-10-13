@@ -71,7 +71,7 @@ Artifacts table decides every row below; a skipped row keeps the strategy's reas
 
 - **Staleness check — you, inline**, when F5 fired: the four checks of
   [`../qa-test-strategy/floors.md`](../qa-test-strategy/floors.md) §Staleness check over the cases
-  F5 selected (`regression:select --path` ∪ `tc:scope --domain <slug>`). Stale ids → the strategy's Artifacts row and `/qa-test-lifecycle`; the rest
+  F5 selected (`regression:select --path` ∪ the `tc:scope` hits, per [`floors.md`](../qa-test-strategy/floors.md) F5). Stale ids → the strategy's Artifacts row and `/qa-test-lifecycle`; the rest
   is the regression id list for Stage 2.
 
 - **Test model — you, inline.** `/qa-test-model <TICKET> --context <bundle>`. You are the Judge, and
@@ -112,7 +112,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 | In-scope node | Its line in the checklist |
 |---|---|
 | DRIFT | An item that re-observes `drift.observed`, with Expected `drift.expected`. The Result is `DRIFT HOLDS` or `DRIFT RESOLVED`, plus evidence. It decides an AC only when that AC names the behaviour. A HOLDS whose route `TM-018` flags as unfiled is written `FAIL — DRIFT HOLDS (TM-018 unfiled)`, so Stage 3 triage collects it; any other HOLDS stays `DRIFT HOLDS`. |
-| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item. |
+| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item. **When exploratory ran `FIRST`**, no later session takes it: write an item that observes and records instead (Result `OBSERVED`, never `PASS`). |
 | No stamped case | An ordinary item. A PASS on it is a `candidate case` in `verdict.md`. |
 | Integration point (cross-domain edge) | One item that exercises both sides, under the other domain's partition. A PASS is a `candidate case` carrying both stamps. |
 | Linked to a suspect case | No change. The suspect list stays in the bundle for the verdict. |
