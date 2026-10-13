@@ -9,10 +9,10 @@ export interface LiveModule { id: string; version: string; projectUrl?: string; 
 
 // ── live verify (/api/platform/modules) ─────────────────────────────────────────
 /** Admin token plus WHY it failed — pre-flight's diagnosis needs 401 vs 5xx vs no BACK_URL. */
-export async function probeAdminToken(c: EnvCoords): Promise<{ token: string | null; status: ProbeStatus }> {
+export async function probeAdminToken(c: EnvCoords, signal?: AbortSignal): Promise<{ token: string | null; status: ProbeStatus }> {
   if (!c.backUrl) return { token: null, status: 'no-back-url' };
   try {
-    const r = await fetch(`${c.backUrl}/connect/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
+    const r = await fetch(`${c.backUrl}/connect/token`, { signal, method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ grant_type: 'password', username: c.admin, password: c.password }) });
     if (r.status !== 200) return { token: null, status: r.status };
     return { token: (await r.json())?.access_token ?? null, status: 200 };
   } catch { return { token: null, status: 'network' }; }
@@ -21,10 +21,10 @@ export async function getAdminToken(c: EnvCoords): Promise<string | null> {
   return (await probeAdminToken(c)).token;
 }
 /** Installed modules with their original id case and ProjectUrl (the authoritative id → repo link). */
-export async function probeLiveModules(c: EnvCoords, token: string): Promise<{ ok: true; modules: LiveModule[] } | { ok: false; status: ProbeStatus }> {
+export async function probeLiveModules(c: EnvCoords, token: string, signal?: AbortSignal): Promise<{ ok: true; modules: LiveModule[] } | { ok: false; status: ProbeStatus }> {
   if (!c.backUrl) return { ok: false, status: 'no-back-url' };
   try {
-    const r = await fetch(`${c.backUrl}/api/platform/modules`, { headers: { Authorization: `Bearer ${token}` } });
+    const r = await fetch(`${c.backUrl}/api/platform/modules`, { signal, headers: { Authorization: `Bearer ${token}` } });
     if (r.status !== 200) return { ok: false, status: r.status };
     const mods = await r.json();
     const modules: LiveModule[] = [];
@@ -55,13 +55,41 @@ export function parsePlatformVersion(html: string): string | null {
  * The only live, anonymous source of the platform version (kb KB-B858E12A): the modules API carries
  * modules only and /api/platform/version is 404. Read-only GET of the Admin root.
  */
-export async function probePlatformVersion(c: EnvCoords): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-version-in-page' }> {
+export async function probePlatformVersion(c: EnvCoords, signal?: AbortSignal): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-version-in-page' }> {
   if (!c.backUrl) return { ok: false, status: 'no-back-url' };
   try {
-    const r = await fetch(`${c.backUrl}/`);
+    const r = await fetch(`${c.backUrl}/`, { signal });
     if (r.status !== 200) return { ok: false, status: r.status };
     const version = parsePlatformVersion(await r.text());
     return version ? { ok: true, version } : { ok: false, status: 'no-version-in-page' };
+  } catch { return { ok: false, status: 'network' }; }
+}
+/** The storefront's entry script, as its index HTML references it: `/assets/index-<hash>.js`. */
+export function parseThemeEntry(html: string): string | null {
+  return /["'](\/?assets\/index-[\w-]+\.js)["']/.exec(html)?.[1] ?? null;
+}
+/** The theme's package version, which the vc-frontend build inlines as `x="2.60.0-pr-…",y={version:x}`. */
+export function parseThemeVersion(js: string): string | null {
+  const v = /["'](\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)["'],[\w$]+=\{version:[\w$]+\}/.exec(js)?.[1]
+    ?? /\{version:["'](\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)["']\}/.exec(js)?.[1];
+  return v ?? null;
+}
+/**
+ * The live, anonymous source of the storefront theme version: the entry bundle the index HTML loads.
+ * The HTML is cache-busted (kb KB-D9DF8E54: it is served max-age=7200, so a plain GET can name the
+ * previous build). Read-only GETs of FRONT_URL.
+ */
+export async function probeThemeVersion(frontUrl: string): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-front-url' | 'no-entry-script' | 'no-version-in-bundle' }> {
+  if (!frontUrl) return { ok: false, status: 'no-front-url' };
+  try {
+    const page = await fetch(`${frontUrl}/?_preflight=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+    if (page.status !== 200) return { ok: false, status: page.status };
+    const entry = parseThemeEntry(await page.text());
+    if (!entry) return { ok: false, status: 'no-entry-script' };
+    const js = await fetch(new URL(entry, `${frontUrl}/`).href);
+    if (js.status !== 200) return { ok: false, status: js.status };
+    const version = parseThemeVersion(await js.text());
+    return version ? { ok: true, version } : { ok: false, status: 'no-version-in-bundle' };
   } catch { return { ok: false, status: 'network' }; }
 }
 export async function platformHealthy(c: EnvCoords): Promise<boolean> {

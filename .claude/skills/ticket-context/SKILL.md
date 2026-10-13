@@ -123,8 +123,8 @@ Write `<run_dir>/join.out.json`:
 `node "<skill>/lib/cli.mjs" deploy --prepare <prepare_path>`
 
 It resolves each PR to its CI artifact and asks the pre-flight core whether that build is on the stand.
-**Never re-derive, override or re-probe its answer.** A storefront or platform PR is `UNKNOWN`
-(`no-live-source`) by design; an over-cap PR is `UNKNOWN` (not checked). A PR closed without merge is
+**Never re-derive, override or re-probe its answer.** A storefront PR is checked against the live
+storefront bundle's version; a platform PR is `UNKNOWN` (`no-live-source`) by design; an over-cap PR is `UNKNOWN` (not checked). A PR closed without merge is
 shown as `UNKNOWN` (`closed without merge`) and is not counted in `chain_deployed` and gets no blocker.
 
 ## Step 5 — known ground
