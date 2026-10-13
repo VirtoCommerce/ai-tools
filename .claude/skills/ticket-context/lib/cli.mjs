@@ -192,7 +192,8 @@ async function prepare() {
     for (const p of prMeta) {
       const contextOnly = CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
       const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), context_only: contextOnly };
-      if (p.gap) { prs.push({ ...base, gap: p.gap }); if (!contextOnly) product++; continue; }
+      // A PR that could not be read (lookup 404, access denied, network) is no change surface, so it takes no cap slot.
+      if (p.gap) { prs.push({ ...base, gap: p.gap }); continue; }
       if (contextOnly) {
         try { prs.push(collectContextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
         continue;
