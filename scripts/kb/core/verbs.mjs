@@ -13,12 +13,13 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { canonicalStand, mintId } from './canonical.mjs';
+import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
-import { findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { buildIndex, buildRow, countEvidence, entryPath } from './index-build.mjs';
+import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, entryPath, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -42,10 +43,17 @@ import { AMBIGUOUS_TOP, FEATURES, decide } from './verdict.mjs';
 // The thresholds are a starting point, not a finding. The log will say whether they are the right
 // places to cut.
 export function trustOf(evidence = []) {
-  const supporting = evidence.filter((e) => !e.contradicts);
+  // Support of the claim AS IT STANDS: after a judge's `claim-amended`, confirmations of the old
+  // wording are history, not support (`attestsCurrentClaim`, index-build.mjs) -- here too, so the
+  // sessions and operators printed beside the count are the ones the count is made of.
+  const amendments = amendmentsOf(evidence);
+  // Exactly the items the count is made of (`supportOf`), so the sessions, anonymous and operator
+  // numbers printed beside it describe the same set: a duplicate or a judge's third stand is not counted.
+  const supporting = supportOf(evidence);
+  const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
-  const { trust: confirmations, disputed } = countEvidence(evidence);
+  const { trust: confirmations, disputed, resolved } = countEvidence(evidence);
   // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
   //
   // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
@@ -95,7 +103,7 @@ export function trustOf(evidence = []) {
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, sessions, anonymous, operators, operatorsUnknown };
+  return { label, confirmations, disputed, resolved, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -110,7 +118,7 @@ export function trustOf(evidence = []) {
 export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
   return {
     id: hit.row.id,
@@ -124,11 +132,14 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
     provenance: evidence.map((e) => ({
       method: e.method ?? 'observation',
       deployment: e.deployment ?? null,
+      conditions: e.conditions ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
       who: e.who ?? null,
       contradicts: Boolean(e.contradicts),
       note: e.note ?? null,
+      resolved: e.resolved ?? null,
+      resolution: e.resolution ?? null,
     })),
     indexTrust: hit.row.trust,
     indexDrift: !unavailable && hit.row.trust !== trust.confirmations
@@ -302,7 +313,7 @@ const stand = (deployment) => {
   return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
 };
 /** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
-const standName = (deployment) => stand(deployment).deployment ?? deployment;
+export const standName = (deployment) => stand(deployment).deployment ?? deployment;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -958,11 +969,13 @@ function repairShellRewrite(input, env, fields = TEXT_FIELDS) {
   const undo = (v) => (typeof v === 'string' ? undoMsysRewrite(v, env, { wholeArgument: true }) : v);
   const out = { ...input };
   for (const f of fields) out[f] = undo(input[f]);
+  // `--conditions "page=/cart"` is rewritten at its first value, not its start (VCST-6179).
+  if (input.conditions !== undefined) out.conditions = repairConditions(input.conditions, env);
   if (Array.isArray(input.anchors)) {
     out.anchors = input.anchors.map((a) => (typeof a === 'string' ? undo(a)
       : typeof a?.coordinate === 'string' ? { ...a, coordinate: undo(a.coordinate) } : a));
   }
-  const changed = fields.some((f) => out[f] !== input[f])
+  const changed = fields.some((f) => out[f] !== input[f]) || out.conditions !== input.conditions
     || (out.anchors ?? []).some((a, i) => JSON.stringify(a) !== JSON.stringify(input.anchors[i]));
   return { input: out, repair: changed ? { repaired: 'msys' } : {} };
 }
@@ -985,6 +998,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
@@ -1031,9 +1046,16 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // THE SUBJECT IS TAKEN, at other coordinates — the case `findDuplicate` cannot see because it
   // requires the same anchors and scope as well as the claim, while the id is a pure function of the subject. Accepting it
   // as `queued` told the writer it landed and then lost the claim at push (PR #313 review 2).
-  const holder = cat.rows.find((r) => r.id === id);
+  //
+  // BY SUBJECT TOO, not only by the id it hashes to. An id is minted from the subject at BIRTH and
+  // never changes, while the subject can be corrected later (`/kb-judge`, a hand edit): measured
+  // 2026-10-12, 26 active entries on the base's main and 50 on a judge branch no longer hash to their
+  // id. A capture of the corrected subject then minted a fresh id, found no holder, and wrote the
+  // same fact a second time at other coordinates (VCST-6179 review).
+  const holder = cat.rows.find((r) => r.id === id)
+    ?? cat.rows.find((r) => r.status === 'active' && claimKey(r.subject) === claimKey(input.subject));
   if (holder) {
-    const sameSubject = String(holder.subject ?? '').trim() === String(input.subject ?? '').trim();
+    const sameSubject = claimKey(holder.subject) === claimKey(input.subject);
     await note({
       kind: 'capture-refused', dupeOf: holder.id, subject: input.subject,
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
@@ -1055,6 +1077,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     evidence: [{
       method: input.method ?? 'observation',
       deployment: standName(input.deployment),
+      ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
       // THE OPERATOR, beside the session, because `by` is a SESSION and was being counted as a
@@ -1186,6 +1209,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
+  const conditions = normalizeConditions(input.conditions);
+  if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };
   // NO CONFIRM BY EXCERPT (VCST-6191). Evidence raises or lowers the entry's trust for every later
   // reader, so it rests on the whole entry -- its scope, stand and caveats sit below the line an
   // `ambiguous` list prints. An entry this session never opened is refused with the command that opens
@@ -1211,11 +1236,23 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     };
   }
 
+  // WHICH BODY THIS SESSION IS CONFIRMING OR DISPUTING, hashed now -- not when the queue is pushed.
+  // Stamped at push, a confirmation of the old wording that waited in a queue until a judge's
+  // `claim-amended` merged was hashed against the CORRECTED body and counted as its support
+  // (`attestsCurrentClaim`, index-build.mjs). An unreadable body leaves it to push's stamp.
+  let bodyHash = null;
+  try {
+    const read = await opened.reader.readEntry(row.path);
+    if (read?.ok) bodyHash = claimHash(parseEntry(read.text, row.path).body);
+  } catch { /* push stamps it */ }
+
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
+    ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
+    ...(bodyHash ? { bodyHash } : {}),
     // Same reason as `capture`: a confirmation from a second SESSION of the same person is not a
     // second opinion, and until this field existed nothing could tell the two apart.
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
@@ -1297,13 +1334,35 @@ export async function stat(opened, { env = process.env } = {}) {
   };
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') return { ...out, state: cat.state, why: cat.why };
+  const live = retrievable(cat.rows);
   return {
     ...out,
     state: 'answer',
     indexes: cat.indexes,
     entries: cat.rows.length,
-    active: retrievable(cat.rows).length,
+    active: live.length,
+    disputes: disputeTotals(live),
     schema: cat.manifest.schema ?? null,
+  };
+}
+
+/**
+ * What is left to judge and what has been judged, over the ACTIVE entries. A retired entry's
+ * disputes live on in its successor and are judged there, so counting them here would count them
+ * twice. A verdict still in a PR is not in the index yet: until it merges, its dispute is open.
+ *
+ * The ENTRY is the unit `stat` reports: how much of the base is in doubt. An entry is `disputed`
+ * while any dispute on it is open, and `settled` once a judge resolved every dispute on it -- one
+ * new dispute moves a settled entry back. The per-dispute counts are what a judge works through,
+ * so they stay in the result for `--json` and `kb:disputes list`.
+ */
+export function disputeTotals(rows = []) {
+  const sum = (k) => rows.reduce((n, r) => n + (Number(r[k]) || 0), 0);
+  return {
+    disputedEntries: rows.filter((r) => r.disputed > 0).length,
+    settledEntries: rows.filter((r) => !(r.disputed > 0) && r.resolved > 0).length,
+    open: sum('disputed'),
+    resolved: sum('resolved'),
   };
 }
 

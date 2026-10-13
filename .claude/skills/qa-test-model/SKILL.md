@@ -26,7 +26,7 @@ model's header**, never a guess.
 
 | Part | How it is obtained | Rule it follows |
 |---|---|---|
-| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/preflight.md`](../qa-test/preflight.md) §1a |
+| Ticket — ACs as atomic conditions, comments, every attachment opened, epic | tracker fetch **with all fields** — ACs often live in a custom field, so an empty description is never "no ACs" | [`../qa-test/intake.md`](../qa-test/intake.md) §1a |
 | Change surface — changed files, GraphQL operations, endpoints, layers | the four-rung PR ladder, then `gh pr diff`; only **product-repo** PRs are change surface — a deployment-manifest or QA-repo PR is context | [`../qa-test/technical-change.md`](../qa-test/technical-change.md) §2.1 |
 | Domain map state | step 2 below | [`../qa-test/axes.md`](../qa-test/axes.md) §2g |
 | Mind map path, or `null` | step 2 below | `/qa-test-mind-map` |
