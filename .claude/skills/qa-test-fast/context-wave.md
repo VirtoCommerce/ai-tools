@@ -71,7 +71,7 @@ Artifacts table decides every row below; a skipped row keeps the strategy's reas
 
 - **Staleness check — you, inline**, when F5 fired: the four checks of
   [`../qa-test-strategy/floors.md`](../qa-test-strategy/floors.md) §Staleness check over the cases
-  `regression:select` picked. Stale ids → the strategy's Artifacts row and `/qa-test-lifecycle`; the rest
+  F5 selected (`regression:select --path` ∪ `tc:scope --domain <slug>`). Stale ids → the strategy's Artifacts row and `/qa-test-lifecycle`; the rest
   is the regression id list for Stage 2.
 
 - **Test model — you, inline.** `/qa-test-model <TICKET> --context <bundle>`. You are the Judge, and
