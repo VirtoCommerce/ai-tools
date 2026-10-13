@@ -307,9 +307,19 @@ async function ensureMemberships(p, userId, orgIdByKey) {
 
 /* ── orders + the two seeded returns ─────────────────────────────────────────────────────────── */
 
+/** Every return matching the criteria — paged, so a cleanup never stops at the first page. */
+async function searchAllReturns(criteria) {
+  const take = 100;
+  const out = [];
+  for (let skip = 0; ; skip += take) {
+    const page = (await api('POST', '/api/return/search', { ...criteria, skip, take }))?.results || [];
+    out.push(...page);
+    if (page.length < take) return out;
+  }
+}
+
 async function returnsOnOrder(orderId) {
-  const r = await api('POST', '/api/return/search', { orderId, take: 100 });
-  return (r?.results || []).filter((x) => x.orderId === orderId);
+  return (await searchAllReturns({ orderId })).filter((x) => x.orderId === orderId);
 }
 
 async function deleteOrderTree(order) {
@@ -441,7 +451,7 @@ async function seedSparesOnly(personas, windowDays) {
 async function ensureOtherReturn(order, buyer, password, ctx) {
   const live = await returnsOnOrder(order.id);
   const mine = live.filter((r) => r.customerReference === OTHER_RETURN_REF);
-  const keep = mine.find((r) => r.status !== 'Draft');
+  const keep = mine.find((r) => r.status === OTHER_RETURN.returnStatus); // a Draft, Cancelled or otherwise decided return is recreated
   if (keep && mine.length === 1) { verbose(`reuse ${keep.number} (${keep.status})`); return keep; }
   if (mine.length) await api('DELETE', `/api/return?${idsParam(mine.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
   if (DRY_RUN) { log('  [DRY] would submit the other organization\'s return'); return null; }
@@ -532,7 +542,7 @@ async function teardown(personas, { orgs = ORGS, roles = ROLES, wide = !ONLY } =
     const out = [];
     for (const o of orgs) {
       const id = overlay()[o.alias]?.id;
-      if (id) out.push(...(((await api('POST', '/api/return/search', { organizationId: id, take: 100 }))?.results || []).filter((r) => r.organizationId === id)));
+      if (id) out.push(...(await searchAllReturns({ organizationId: id })).filter((r) => r.organizationId === id));
     }
     return out;
   };
@@ -590,7 +600,7 @@ async function main() {
   await auth();
   const password = process.env[PASSWORD_VAR];
   if (!password) throw new Error(`${PASSWORD_VAR} is unset in the layered env — refusing to create accounts with a fallback password`);
-  const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY);
+  const personas = PERSONAS.filter((p) => !ONLY || p.key === ONLY || p.alias === ONLY || (ONLY === OTHER_RETURN.alias && p.key === OTHER_RETURN.persona));
   if (ONLY && !personas.length && ONLY !== OTHER_RETURN.alias) throw new Error(`--only ${ONLY} matches no persona`);
   if (ISOLATED_ONLY && (ONLY || SPARES_ONLY || FRESH)) throw new Error('--isolated-only cannot be combined with --only / --spares-only / --fresh');
   if (ORGS_ONLY) {
