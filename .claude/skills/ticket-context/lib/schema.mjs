@@ -11,7 +11,6 @@ const walked = new WeakSet();
 
 function walkSchema(schema, root, path = "$") {
   if (walked.has(schema)) return;
-  walked.add(schema);
 
   for (const k of Object.keys(schema)) {
     if (!SUPPORTED.has(k)) throw new Error(`schema keyword "${k}" at ${path} is not supported by lib/schema.mjs`);
@@ -42,6 +41,8 @@ function walkSchema(schema, root, path = "$") {
       walkSchema(schema.allOf[i], root, `${path}.allOf[${i}]`);
     }
   }
+
+  walked.add(schema);
 }
 
 export function validate(value, schema, root = schema, path = "$") {

@@ -59,10 +59,10 @@ export function removeRunDir(dir, root = outputRoot()) {
     }
   }
 
-  // Check if path matches <tmpdir>/<ticket-context-*> exactly (one level deep)
+  // Check if path matches <tmpdir>/<ticket-context-*> exactly (one level deep, at least one char after prefix)
   if (resolved.startsWith(tmp + sep)) {
     const rel = relative(tmp, resolved);
-    if (rel.startsWith("ticket-context-") && !rel.includes(sep)) {
+    if (rel.startsWith("ticket-context-") && rel.length > "ticket-context-".length && !rel.includes(sep)) {
       rmSync(resolved, { recursive: true, force: true });
       return;
     }
