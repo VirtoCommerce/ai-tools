@@ -12,15 +12,22 @@ const VERSION_RE = /^[0-9A-Za-z.+_-]+$/;
 
 export function expectFor(artifact, merged) {
   if (!artifact) return { skip: "no CI artifact resolved for this PR" };
-  if (artifact.kind === "theme") return { skip: "no-live-source: the stand does not report the storefront theme version" };
+  if (artifact.kind === "theme") {
+    // The theme zip names its version (vc-theme-b2b-vue-2.60.0-pr-2543-….zip); pre-flight reads the live one from the storefront bundle.
+    const file = decodeURIComponent(String(artifact.themeUrl ?? "").split("/").pop() ?? "");
+    const version = /-(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\.zip$/i.exec(file)?.[1];
+    if (!version || !VERSION_RE.test(version)) return { skip: "theme artifact URL names no version" };
+    return { module: "vc-frontend", version: merged ? baseOf(version) : version };
+  }
   if (artifact.kind === "platform") return { skip: "no-live-source: the pre-flight core's --expect covers modules only" };
   if (!ID_RE.test(String(artifact.id ?? "")) || !VERSION_RE.test(String(artifact.version ?? ""))) return { skip: "artifact id or version has unexpected characters" };
   return { module: artifact.id, version: merged ? baseOf(artifact.version) : artifact.version };
 }
 
-export function deployedFromPreflight(json, error) {
+export function deployedFromPreflight(json, error, theme = false) {
   if (!json) return { deployed: "UNKNOWN", reason: error ? `pre-flight could not run (${error})` : "pre-flight could not run" };
-  const dep = json.facts?.deployed;
+  // The theme's live version comes from the storefront bundle, not the modules API: only its own probe can make it unknown.
+  const dep = theme ? json.facts?.deployedTheme : json.facts?.deployed;
   if (dep && typeof dep === "object" && "unknown" in dep) return { deployed: "UNKNOWN", reason: `deployed state unknown: ${dep.unknown}` };
   const row = (json.checks ?? []).find((c) => c.id === "expect");
   if (!row) return { deployed: "UNKNOWN", reason: "pre-flight returned no expect row" };
@@ -47,7 +54,7 @@ export function artifactsBySource(deployPrJson) {
   const m = new Map();
   for (const t of deployPrJson?.bundle ?? []) {
     const s = /^PR (\S+#\d+)$/.exec(t.source ?? "");
-    if (s) m.set(s[1], { kind: t.kind, id: t.id ?? null, version: t.version ?? null });
+    if (s) m.set(s[1], { kind: t.kind, id: t.id ?? null, version: t.version ?? null, ...(t.themeUrl ? { themeUrl: t.themeUrl } : {}) });
   }
   return m;
 }
@@ -89,7 +96,7 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
     if (!asked.has(id)) {
       const pf = run(root, ["preflight", "--", "--for", "ticket-fast", "--ticket", key, "--expect", id, "--json"]);
       if (pf.error === "npm-cli-not-found") noteToolMissing();
-      asked.set(id, deployedFromPreflight(pf.json, pf.error));
+      asked.set(id, deployedFromPreflight(pf.json, pf.error, artifact?.kind === "theme"));
     }
     const ans = asked.get(id);
     const reason = ans.deployed === "NO" && !p.merged ? `${ans.reason}; ${O2_NOTE.replace("<KEY>", key)}` : ans.reason;
