@@ -86,8 +86,9 @@ Read `prepare.json`, then the file at its `ticket_json`.
    tested: a narrowed repro, a moved goalpost, a PO decision, "won't do X", a new environment, a
    workaround. Each needs `source` + date. A later comment that overrides an earlier AC is a
    `conflict`, not an edit to the AC.
-3. **Epic and siblings.** Take `epic` and `siblings` from `prepare.json`. For each sibling in a done
-   status, one line on what it shipped, from its summary.
+3. **Epic and siblings.** Take `epic` and `siblings` from `prepare.json`. Keep only siblings with
+   `done: true`. `shipped` is what the sibling's title says it shipped (the title is all `prepare`
+   carries — do not guess beyond it); `source` = `issue:<KEY>`.
 4. **Guesses are labelled.** `layer_guess` and `domains_guess` carry `basis`: the words or fields you
    inferred them from.
 
@@ -124,9 +125,11 @@ conditions: []}`. Never infer a design from anything else.
 
 Read `prepare.json` `prs` and `rung`.
 
-1. **No PRs** (`prs` empty): read the ticket JSON for file paths, class names or endpoints it names
-   (rung 4). Return `prs: []` and a gap `{where: "change", reason: "not-found", detail: "rungs 1–3
-   empty; ticket names: <paths> (rung 4, weakest)"}`.
+1. **No PRs** (`prs` empty): first look at `prepare.json` `gaps`. If it already holds a `change` or
+   `change.*` gap (`no-credential`, `access-denied`, `unreadable`), the search never ran: return
+   `prs: []` and add **no** not-found gap. Otherwise read the ticket JSON for file paths, class names
+   or endpoints it names (rung 4), return `prs: []` and ONE gap `{where: "change", reason:
+   "not-found", detail: "rungs 1–3 empty; ticket names: <paths> (rung 4, weakest)"}`.
 2. **Per PR** — read its `meta_path`, `files_path`, `diff_path`, `reviews_path`, `checks_path`.
    A path that is `null` already has its gap in the entry's `gaps` — the skill records it; use what
    remains. An entry with a whole-PR `gap` (over-cap, unreadable) is not yours: leave it out.
@@ -136,12 +139,19 @@ Read `prepare.json` `prs` and `rung`.
    - **GraphQL operations and REST endpoints touched, by name**;
    - settings, permissions and feature flags added or changed;
    - tests the PR added or changed, and changed code paths with **no** test change next to them;
-   - fate: from `meta_path` `later_prs` — reverted, superseded, or followed by a fix PR with the same key;
-   - CI conclusion (`checks_path`) and unresolved review threads (count, plus one line each for the
-     substantive ones, from `reviews_path`).
-3. **Hidden-behaviour pass.** For every diff, answer each item with `yes` + `<repo>:<path>:<line>`, or
-   `no`: default values · DB migrations · feature flags · caching · copy/localisation · search
-   indexing · background jobs · GraphQL schema (field added, removed, renamed, nullability changed).
+   - fate: from `meta_path` `later_prs` — reverted, superseded, or followed by a fix PR with the same
+     key; when `later_prs` is empty, `fate: "no later PR with this key"`;
+   - CI conclusion (`checks_path`); when `checks_path` is `null`, `ci: "not read"`;
+   - unresolved review threads from `reviews_path`: `open_threads` is the `unresolved_threads` count,
+     `threads` one line each for the substantive ones. **`unresolved_threads: null` means "not
+     read", never 0.** The schema needs an integer, so when it is `null` or `reviews_path` is
+     `null`, set `open_threads: 0` **and** add a gap `{where: "pr:<ref>:threads", reason:
+     "unreadable", detail: "unresolved thread count not read — 0 is not a count"}`.
+3. **Hidden-behaviour pass.** For every PR's diff, one row per item in `hidden_behaviour`
+   (§6 gives the row shape). The items, as the exact `item` strings: `default-values` ·
+   `db-migrations` · `feature-flags` · `caching` · `copy-localisation` · `search-indexing` ·
+   `background-jobs` · `graphql-schema` (field added, removed, renamed, nullability changed).
+   `answer` is `yes` or `no`; `source` (`<repo>:<path>:<line>`) only when `yes`.
 4. **You do not check deployment and you do not trace PRs to ACs.** The skill does both after you
    return. Leave `artifact`, `deployed`, `ac_to_diff` and `diff_to_ac` out.
 
@@ -160,9 +170,30 @@ Every finding carries `source`, one of: `field:<id>` · `comment:<id>@<ISO date>
 `"image is 1×1 px — ask for the original"`). Never invent a reason outside this list. If none fits, use
 `unreadable` and explain it in `detail`.
 
-## 6. Before you return
+## 6. Output shape
 
-- [ ] Exactly one JSON object; it matches your mode's `$def`.
+Every key listed for your mode is **required, even when its list is empty**; nothing else may appear.
+`source` strings follow §4. `gaps`, `questions` and `embedded_instructions` are in every mode.
+
+- **TICKET:** `acs` [{id "AC-n", text, source}] · `signals` [{text, source}] · `siblings` [{key,
+  title, shipped, source}] · `layer_guess` {value, basis} · `domains_guess` {value, basis} · `gaps`
+  [{where, reason, detail?}] · `questions` [{conflict, sources: [..]}] · `embedded_instructions`
+  [{text, source}].
+- **MATERIALS:** `materials` [{ref, kind, outcome "finding"|"GAP", finding?, reason?, detail?,
+  destination?, source?, scrubbed?}] · `design` {source "claude-design"|"figma"|"attachment"|"none",
+  conditions [{text, source}]} · `gaps` · `questions` · `embedded_instructions`.
+- **CHANGE:** `prs` [{repo "owner/repo", number, state, merged, head_sha, layers {storefront |
+  admin-spa | api | module | platform | test | other: [paths]}, operations, endpoints, settings,
+  tests_changed, untested, fate, ci, open_threads, threads?}] · `hidden_behaviour` [{pr
+  "<owner/repo>#<n>", item, answer "yes"|"no", source? (only when yes)}], one row per PR per item ·
+  `gaps` · `questions` · `embedded_instructions`.
+
+A disagreement between two sources is one `questions` entry: `conflict` says what differs, `sources`
+lists both.
+
+## 7. Before you return
+
+- [ ] Exactly one JSON object; it matches your mode's `$def` (§6).
 - [ ] Every input from the brief appears once, with a finding or a `GAP`.
 - [ ] Every finding has a `source`.
 - [ ] No secret, token, cookie, personal data or customer name in any string.
