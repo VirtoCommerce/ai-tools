@@ -89,6 +89,10 @@ export function standsFrom(profiles) {
     if (owners.size === 1) aliases.set(alias, [...owners][0]);
     else problems.push(`alias "${alias}" is claimed by ${[...owners].join(', ')} -- dropped; rename a profile or its KB_STAND`);
   }
+  // A DECLARED name always names its own stand. A conflict drops the DERIVED aliases only (a profile name,
+  // a host label); were the canonical name itself dropped, writes on the very name the base prints would
+  // go out unstamped and unlabelled (Cursor Bugbot on #429). The conflict is still reported above.
+  for (const canonical of stands.keys()) aliases.set(canonical, canonical);
   return { stands, aliases, problems };
 }
 
@@ -143,7 +147,8 @@ export function resolveStand(raw, { env = process.env, map = loadStands(env) } =
   if (/\s/.test(typed)) return { problem: `"${typed.slice(0, 40)}${typed.length > 40 ? '…' : ''}" is prose, not a stand name -- pass the stand you observed it on as one token (e.g. ${examples(map)}); what you saw goes in the claim or note` };
   const folded = canonicalStand(typed);
   if (!STAND_SHAPE.test(folded)) return { problem: `"${typed.slice(0, 40)}" is not a stand name -- letters, digits and _ only, at most 40 characters (e.g. ${examples(map)})` };
-  return { value: map.aliases.get(folded) ?? folded, known: map.aliases.has(folded) };
+  const value = map.aliases.get(folded) ?? folded;
+  return { value, known: map.aliases.has(folded) || map.stands.has(value) };
 }
 
 /** The `.env.<env>` profile behind a canonical stand, or null -- how a build stamp finds the stand's BACK_URL. */
