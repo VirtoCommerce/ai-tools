@@ -14,6 +14,7 @@
 // other two had identical reconstructed builds (a setting, or a PR build no manifest names).
 
 import { supportOf } from './index-build.mjs';
+import { isSource } from './method.mjs';
 import { ownersIndex } from './owners.mjs';
 import { rulesWith } from './relevance.mjs';
 import { classifyDisagreement, compareBuilds } from './variant.mjs';
@@ -34,7 +35,11 @@ export function summarize(diffs) {
  */
 async function prepare({ entry, mine, readBuild, backUrl, owners }) {
   const builds = { [mine.build]: mine.snapshot };
-  const support = supportOf(entry.evidence ?? []).filter((e) => !e.investigation);
+  // A fact read from code (`method: source`, VCST-6186) names a code version, not a build a stand ran, so it
+  // is not compared: left in, its missing build turned every later disagreement into a hard dispute even
+  // after a live confirm made the entry an observed one (Cursor Bugbot on #429). Source-only support
+  // leaves nothing to compare, and the dispute stays hard.
+  const support = supportOf(entry.evidence ?? []).filter((e) => !e.investigation && !isSource(e));
   for (const s of support) {
     if (s.build && !builds[s.build]) { const snap = await readBuild(s.build); if (snap) builds[s.build] = snap; }
   }
