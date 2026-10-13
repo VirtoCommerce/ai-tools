@@ -34,6 +34,13 @@ export function foldChain(rows) {
   return "YES";
 }
 
+/** A PR closed without merge never ships: it is shown, but not counted in the chain and never a blocker. */
+export const closedUnmerged = (p) => String(p.state ?? "").toLowerCase() === "closed" && !p.merged;
+/** The PRs the chain is folded from — the gate (rule 4) uses the same predicate. Over-cap PRs count (unchecked ⇒ UNKNOWN). */
+export const isCounted = (p) => !p.context_only && !closedUnmerged(p);
+// deploy:pr keeps the LAST artifact per module id: oldest first, so the newest PR wins a shared target.
+const oldestFirst = (a, b) => String(a.created_at ?? "").localeCompare(String(b.created_at ?? "")) || (a.number ?? 0) - (b.number ?? 0);
+
 export const blockerLine = (row) => `${row.deployed === "NO" ? "NOT DEPLOYED" : "DEPLOYMENT UNKNOWN"}: ${row.ref} — ${row.deployed_reason}`;
 
 export function artifactsBySource(deployPrJson) {
@@ -47,7 +54,9 @@ export function artifactsBySource(deployPrJson) {
 
 export function checkDeployment({ root, key, prs, run = runNpmJson }) {
   const gaps = [];
-  const counted = prs.filter((p) => !p.context_only && p.gap?.reason !== "over-cap");
+  const counted = prs.filter(isCounted);
+  const closed = prs.filter((p) => !p.context_only && closedUnmerged(p))
+    .map((p) => ({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "closed without merge" }));
   const canResolve = hasScript(root, "deploy:pr");
   const canAsk = hasScript(root, "preflight");
   if (counted.length && (!canResolve || !canAsk)) {
@@ -58,7 +67,7 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
   let resolveFailure = null;
   const noteToolMissing = () => { if (!gaps.some((g) => g.reason === "tool-missing")) gaps.push({ where: "change.deployed", reason: "tool-missing", detail: "npm CLI not found next to the node binary" }); };
   if (canResolve && canAsk && readable.length) {
-    const r = run(root, ["deploy:pr", "--", key, ...readable.map((p) => `--pr=${p.ref}`), "--json"]);
+    const r = run(root, ["deploy:pr", "--", key, ...[...readable].sort(oldestFirst).map((p) => `--pr=${p.ref}`), "--json"]);
     if (r.json && !r.error) artifacts = artifactsBySource(r.json);
     else {
       resolveFailure = `deploy:pr could not run (${r.error ?? `exit ${r.status}`})`;
@@ -69,6 +78,7 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
   const asked = new Map();
   const rows = [];
   for (const p of counted) {
+    if (p.gap?.reason === "over-cap") { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "over-cap — not checked" }); continue; }
     if (p.gap) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: `PR could not be read: ${p.gap.detail ?? p.gap.reason}` }); continue; }
     if (!canResolve || !canAsk) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "pre-flight core not available in this install" }); continue; }
     if (resolveFailure) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: resolveFailure }); continue; }
@@ -85,5 +95,5 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
     const reason = ans.deployed === "NO" && !p.merged ? `${ans.reason}; ${O2_NOTE.replace("<KEY>", key)}` : ans.reason;
     rows.push({ ref: p.ref, artifact, deployed: ans.deployed, deployed_reason: `${id}: ${reason}` });
   }
-  return { prs: rows, chain_deployed: foldChain(rows), blockers: rows.filter((r) => r.deployed !== "YES").map(blockerLine), gaps };
+  return { prs: [...rows, ...closed], chain_deployed: foldChain(rows), blockers: rows.filter((r) => r.deployed !== "YES").map(blockerLine), gaps };
 }

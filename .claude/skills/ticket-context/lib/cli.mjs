@@ -254,7 +254,9 @@ function redeploy() {
   try { assertKey(key); } catch (e) { usage(e.message); }
   const bp = flag("bundle") ?? usage("--bundle is required");
   const b = readJson(bp);
-  const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, merged: p.merged, context_only: p.context_only, gap: p.gap })) });
+  // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
+  const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
+    context_only: p.context_only, gap: p.gap })) });
   const byRef = new Map(d.prs.map((r) => [r.ref, r]));
   for (const p of b.change.prs) {
     const r = byRef.get(`${p.repo}#${p.number}`);

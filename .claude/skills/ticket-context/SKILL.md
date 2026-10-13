@@ -104,7 +104,8 @@ Write `<run_dir>/join.out.json`:
 
 It resolves each PR to its CI artifact and asks the pre-flight core whether that build is on the stand.
 **Never re-derive, override or re-probe its answer.** A storefront or platform PR is `UNKNOWN`
-(`no-live-source`) by design.
+(`no-live-source`) by design; an over-cap PR is `UNKNOWN` (not checked). A PR closed without merge is
+shown as `UNKNOWN` (`closed without merge`) and is not counted in `chain_deployed` and gets no blocker.
 
 ## Step 5 — known ground
 
@@ -130,8 +131,8 @@ and write `<run_dir>/kb.out.json`.
 - exit 0 (`done`) → keep `bundle_path`. The run dir is gone.
 
 **The gate** checks: the schema; every material has a finding with source or a GAP with a reason;
-every inventory item and PR `prepare` found has an entry; every PR not `YES` has its line in
-`blockers[]`; every HAR, log or trace that was read was read scrubbed; no secret value or token shape
+every inventory item and PR `prepare` found has an entry; every counted PR not `YES` has its line in
+`blockers[]`, and `chain_deployed` is not `YES` while one is not; every HAR, log or trace that was read was read scrubbed; no secret value or token shape
 anywhere in the bundle.
 
 ## Step 7 — return one block
