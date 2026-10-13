@@ -14,7 +14,7 @@ import { buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { extractFrames } from "./frames.mjs";
 import { loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectPr, ghClient, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectPr, ghClient, laterPrs, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, writeCache } from "./cache.mjs";
 import { knownGround } from "./known.mjs";
@@ -44,8 +44,10 @@ async function materialize(it, jira, runDir, secrets) {
     return;
   }
   if (it.kind === "video") {
-    const r = extractFrames(file, join(runDir, `frames-${it.id}`), CAPS);
-    rmSync(file, { force: true });
+    let r;
+    try { r = extractFrames(file, join(runDir, `frames-${it.id}`), CAPS); }
+    catch (e) { r = { gap: { reason: "unreadable", detail: `could not extract frames: ${String(e.message).slice(0, 150)}` } }; }
+    finally { rmSync(file, { force: true }); } // the raw video never outlives this function (S3)
     if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
     return;
   }
@@ -55,6 +57,17 @@ async function materialize(it, jira, runDir, secrets) {
     return;
   }
   it.local_path = file;
+}
+
+/** A context-only PR (ai-tools, vc-deploy-dev): metadata only, same shape as collectPr with the change-surface paths null. */
+function contextPr(p, base, runDir, sameKey) {
+  const m = p.meta;
+  const merged_at = m.merged_at ?? null;
+  const meta_path = join(runDir, `pr-${p.owner}-${p.repo}-${p.number}-meta.json`);
+  writeJson(meta_path, { repo: base.repo, number: p.number, title: m.title, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null,
+    head_sha: m.head?.sha ?? null, base: m.base?.ref ?? null, body: m.body ?? "", later_prs: laterPrs(sameKey, { ref: p.ref, merged_at }) });
+  return { ...base, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null, head_sha: m.head?.sha ?? null,
+    meta_path, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
 }
 
 async function prepare() {
@@ -103,7 +116,8 @@ async function prepare() {
     if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
   }
-  prMeta.sort((a, b) => String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+  const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
+  prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}`),
     linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`) });
@@ -111,50 +125,63 @@ async function prepare() {
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
 
   const { dir: runDir, inProject } = newRunDir(key, { root, ignored });
-  const ticketJson = join(runDir, "ticket.json");
-  writeJson(ticketJson, issue);
-  for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
+  try {
+    const ticketJson = join(runDir, "ticket.json");
+    writeJson(ticketJson, issue);
+    for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
 
-  const secrets = loadSecretValues(root);
-  const plan = planDownloads(inv.items.filter((i) => i.ref.startsWith("attachment:")), CAPS);
-  for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
-  for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
+    const secrets = loadSecretValues(root);
+    const plan = planDownloads(inv.items.filter((i) => i.ref.startsWith("attachment:")), CAPS);
+    for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
+    for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
 
-  const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
-  let pages = 0;
-  for (const it of inv.items.filter((i) => i.ref.startsWith("link:") && !i.gap)) {
-    if (it.kind === "confluence") {
-      const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
-      if (!id) { it.gap = gap(it.ref, "unreadable", "no page id in the Confluence URL"); continue; }
-      try {
-        const page = await jira.confluencePage(id);
-        it.local_path = join(runDir, `confluence-${id}.txt`);
-        writeFileSync(it.local_path, htmlToText(page.body?.storage?.value ?? "").slice(0, CAPS.pageTextBytes));
-      } catch (e) { it.gap = asGap(it.ref, e); }
-    } else if (it.kind === "external") {
-      try { it.local_path = (await fetchPublicPage(it.url, join(runDir, `page-${++pages}.txt`), { privateHosts })).path; } catch (e) { it.gap = asGap(it.ref, e); }
-    } else it.needs_connector = true; // loom · figma · claude-design — step 1 of SKILL.md
-  }
-
-  const prs = [];
-  for (const [n, p] of prMeta.entries()) {
-    const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, context_only: CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase()) };
-    if (p.gap) { prs.push({ ...base, gap: p.gap }); continue; }
-    if (n >= CAPS.prs) {
-      prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
-        gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} PRs; the ${CAPS.prs} most recent are read`) });
-      continue;
+    const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
+    let pages = 0;
+    for (const it of inv.items.filter((i) => i.ref.startsWith("link:") && !i.gap)) {
+      if (it.kind === "confluence") {
+        const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
+        if (!id) { it.gap = gap(it.ref, "unreadable", "no page id in the Confluence URL"); continue; }
+        try {
+          const page = await jira.confluencePage(id);
+          it.local_path = join(runDir, `confluence-${id}.txt`);
+          writeFileSync(it.local_path, htmlToText(page.body?.storage?.value ?? "").slice(0, CAPS.pageTextBytes));
+        } catch (e) { it.gap = asGap(it.ref, e); }
+      } else if (it.kind === "external") {
+        try { it.local_path = (await fetchPublicPage(it.url, join(runDir, `page-${++pages}.txt`), { privateHosts })).path; } catch (e) { it.gap = asGap(it.ref, e); }
+      } else it.needs_connector = true; // loom · figma · claude-design — step 1 of SKILL.md
     }
-    try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
-  }
 
-  const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, run_dir: runDir, run_dir_in_project: inProject,
-    fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, ticket_json: ticketJson,
-    ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
-  const prepPathOut = join(runDir, "prepare.json");
-  writeJson(prepPathOut, prepared);
-  out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
-    rung: ladder.rung, needs_connector: inv.items.filter((i) => i.needs_connector).map((i) => i.ref), gaps: gaps.length });
+    const prs = [];
+    // P5: the cap is for CHANGE SURFACE. Product PRs come first (newest first) and only they count; a context-only
+    // PR (ai-tools, vc-deploy-dev) gets its metadata only — no files, no diff — and never pushes a product PR over the cap.
+    let product = 0;
+    for (const p of prMeta) {
+      const contextOnly = CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
+      const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, context_only: contextOnly };
+      if (p.gap) { prs.push({ ...base, gap: p.gap }); if (!contextOnly) product++; continue; }
+      if (contextOnly) {
+        try { prs.push(contextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+        continue;
+      }
+      if (product++ >= CAPS.prs) {
+        prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
+          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; the ${CAPS.prs} most recent are read`) });
+        continue;
+      }
+      try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+    }
+
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, run_dir: runDir, run_dir_in_project: inProject,
+      fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, ticket_json: ticketJson,
+      ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
+    const prepPathOut = join(runDir, "prepare.json");
+    writeJson(prepPathOut, prepared);
+    out({ status: "prepared", prepare_path: prepPathOut, run_dir: runDir, run_dir_in_project: inProject, inventory: inv.items.length, prs: prs.length,
+      rung: ladder.rung, needs_connector: inv.items.filter((i) => i.needs_connector).map((i) => i.ref), gaps: gaps.length });
+  } catch (e) {
+    try { removeRunDir(runDir, root); } catch { /* the original failure is the one to report */ }
+    throw e;
+  }
 }
 
 function attach() {
