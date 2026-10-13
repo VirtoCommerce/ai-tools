@@ -591,6 +591,19 @@ async function teardown(personas, { orgs = ORGS, roles = ROLES, wide = !ONLY } =
   if (residue) { log(`⚠ ${residue} entity(ies) still present after teardown`); process.exitCode = 1; } else log('Teardown complete — zero residue.');
 }
 
+/** `--teardown --only ORG_RET_OTHER_ORG_RETURN`: the cross-org return on OTHER_BUYER's main order, nothing else. */
+async function teardownOtherReturn() {
+  const X = DRY_RUN ? '[DRY] would remove' : '✗';
+  const buyer = PERSONAS.find((p) => p.key === OTHER_RETURN.persona);
+  const number = orgOrderNumber(buyer.key);
+  const mine = [];
+  for (const o of await findOrdersByExactNumber(api, number)) mine.push(...(await returnsOnOrder(o.id)).filter((r) => r.customerReference === OTHER_RETURN_REF));
+  log(`TEARDOWN — ${OTHER_RETURN.alias} only (${buyer.alias}, its order ${number} and memberships stay)`);
+  if (!mine.length) { log('  nothing to remove'); return; }
+  if (!DRY_RUN) await api('DELETE', `/api/return?${idsParam(mine.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
+  log(`  ${X} ${mine.length} return(s) ${mine.map((r) => r.number).join(', ')}`);
+}
+
 /* ── main ────────────────────────────────────────────────────────────────────────────────────── */
 
 async function main() {
@@ -608,6 +621,7 @@ async function main() {
     await repairOrgsOnly(); return;
   }
   if (TEARDOWN && ISOLATED_ONLY) { await teardown(PERSONAS.filter((p) => p.isolated), { orgs: ORGS.filter((o) => o.isolated), roles: [], wide: true }); return; }
+  if (TEARDOWN && ONLY === OTHER_RETURN.alias) { await teardownOtherReturn(); return; } // the return only — never its buyer
   if (TEARDOWN) { await teardown(personas); return; }
 
   const store = await api('GET', `/api/stores/${STORE_ID}`);
