@@ -596,12 +596,20 @@ async function teardownOtherReturn() {
   const X = DRY_RUN ? '[DRY] would remove' : '✗';
   const buyer = PERSONAS.find((p) => p.key === OTHER_RETURN.persona);
   const number = orgOrderNumber(buyer.key);
-  const mine = [];
-  for (const o of await findOrdersByExactNumber(api, number)) mine.push(...(await returnsOnOrder(o.id)).filter((r) => r.customerReference === OTHER_RETURN_REF));
+  const find = async () => {
+    const out = [];
+    for (const o of await findOrdersByExactNumber(api, number)) out.push(...(await returnsOnOrder(o.id)).filter((r) => r.customerReference === OTHER_RETURN_REF));
+    return out;
+  };
+  const mine = await find();
   log(`TEARDOWN — ${OTHER_RETURN.alias} only (${buyer.alias}, its order ${number} and memberships stay)`);
   if (!mine.length) { log('  nothing to remove'); return; }
   if (!DRY_RUN) await api('DELETE', `/api/return?${idsParam(mine.map((r) => r.id))}`, null, { expectStatus: [200, 204] });
   log(`  ${X} ${mine.length} return(s) ${mine.map((r) => r.number).join(', ')}`);
+  if (DRY_RUN) return;
+  await sleep(1500);
+  const residue = await verifyRemoved(find);
+  if (residue) { log(`⚠ ${residue} return(s) still present after teardown`); process.exitCode = 1; } else log('Teardown complete — zero residue.');
 }
 
 /* ── main ────────────────────────────────────────────────────────────────────────────────────── */
