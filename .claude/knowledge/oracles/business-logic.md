@@ -2122,7 +2122,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] CMP-047 failed in REG-2026-10-12-1832
+- **Lifecycle:** SUSPECT — [bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832
 
 ---
 
