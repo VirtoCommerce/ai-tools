@@ -16,7 +16,7 @@
 // node_modules/.cache/fork-drift/. A build takes about a minute.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, symlinkSync, unlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -47,12 +47,20 @@ const NOT_RENDERED = /^client-app\/(core-api|public)\//;
 
 // ---------- building the graphs ----------
 
+// Unlink the borrowed node_modules first: a recursive delete that follows the link (a junction on Windows)
+// would empty the checkout's own node_modules.
+function removeWorktree(wt) {
+  const link = path.join(wt, "node_modules");
+  if (lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
+  git("worktree", "remove", "--force", wt);
+}
+
 function buildGraph(sha) {
   const graphPath = path.join(CACHE, `graph-${sha}.json`);
   if (existsSync(graphPath) && !args.rebuild) return JSON.parse(readFileSync(graphPath, "utf8"));
   mkdirSync(CACHE, { recursive: true });
   const wt = path.join(CACHE, `wt-${sha.slice(0, 12)}`);
-  if (existsSync(wt)) git("worktree", "remove", "--force", wt);
+  if (existsSync(wt)) removeWorktree(wt);
   git("worktree", "add", "--detach", wt, sha);
 
   // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
@@ -77,7 +85,7 @@ function buildGraph(sha) {
   if (build.status !== 0 || !existsSync(graphPath)) {
     throw new Error(`vite build failed for ${sha.slice(0, 9)} — worktree kept at ${wt}\n${(build.stderr || build.stdout).slice(-4000)}`);
   }
-  git("worktree", "remove", "--force", wt);
+  removeWorktree(wt);
   return JSON.parse(readFileSync(graphPath, "utf8"));
 }
 
