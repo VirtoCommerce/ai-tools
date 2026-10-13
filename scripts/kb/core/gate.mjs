@@ -65,8 +65,9 @@ async function prepare({ entry, mine, readBuild, backUrl, owners }) {
 export async function softDispute({ entry, observation, readBuild, backUrl, owners = ownersIndex }) {
   if (!observation?.build || !observation.snapshot) return null; // nothing to compare with: hard
   const { builds, support, relevance } = await prepare({ entry, mine: observation, readBuild, backUrl, owners });
-  // Nothing the entry depends on could be named: no difference can be shown, so it is not soft.
-  if (relevance.known === false) return null;
+  // No early return when no module can be named: a DECLARED condition difference (a setting, a role, a
+  // store) makes a disagreement soft on its own, and `classifyDisagreement` already returns a hard
+  // dispute when there is neither a compared version nor a declared difference (Cursor Bugbot on #429).
   const r = classifyDisagreement({
     observation: { build: observation.build, conditions: observation.conditions ?? null },
     support: support.map((s) => ({ build: s.build && builds[s.build] ? s.build : null, conditions: s.conditions ?? null })),
