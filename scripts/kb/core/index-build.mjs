@@ -34,7 +34,11 @@ export function countEvidence(evidence = []) {
   // the history of the claim -- but it no longer flags it: before this, an entry a human had already
   // settled (KB-27B4CD10, 2026-09-20) was served as DISPUTED forever (VCST-6179).
   const resolved = contradicting.filter(isResolved).length;
-  return { trust: supportOf(items).length, disputed: contradicting.length - resolved, resolved };
+  // A SOFT dispute (`contested`, VCST-6221 core/gate.mjs) is an open dispute made on another build: the
+  // judge sees it like any other, but it does not flag the entry DISPUTED for readers. Counted apart.
+  const open = contradicting.filter((e) => !isResolved(e));
+  const contested = open.filter((e) => e.contested).length;
+  return { trust: supportOf(items).length, disputed: open.length - contested, resolved, contested };
 }
 
 /**
@@ -156,7 +160,7 @@ const anchorText = (a) => String(typeof a === 'string' ? a : a?.coordinate ?? ''
  * anything. A diff nobody can read is a diff nobody reviews.
  */
 export function buildRow(data, path) {
-  const { trust, disputed, resolved } = countEvidence(data.evidence);
+  const { trust, disputed, resolved, contested } = countEvidence(data.evidence);
   // The card and the retirement pointer are written only when the entry has them. A key on every
   // row would change every row the first time a client from this change pushed, and a client from
   // before it would take the key off again on its next push -- the same row flapping between two
@@ -180,6 +184,7 @@ export function buildRow(data, path) {
     disputed,
     // Only when there is one, for the reason the card keys above are optional.
     ...(resolved ? { resolved } : {}),
+    ...(contested ? { contested } : {}),
   };
 }
 

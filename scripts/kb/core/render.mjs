@@ -26,10 +26,19 @@ function evidenceLine(e) {
   const verdict = !e.contradicts || !e.resolved ? ''
     : isResolved(e) ? ` [resolved: ${e.resolved}${e.resolution ? ` — ${e.resolution}` : ''}]`
       : ` [unknown resolution "${e.resolved}" — still open]`;
-  return `  ${e.contradicts ? 'contradicted' : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
+  return `  ${e.contradicts ? (e.contested ? 'contested on another build' : 'contradicted') : 'seen'} by ${e.by ?? '?'} on ${e.deployment ?? '?'}`
+    + `${e.contested ? ` (${e.contested})` : ''}`
     + `${e.conditions ? ` {${e.conditions}}` : ''} at ${e.at ?? '?'}${e.method ? ` (${e.method})` : ''}`
     + `${e.note ? ` — ${e.note}` : ''}${verdict}`;
 }
+
+/**
+ * A soft dispute (VCST-6221): somebody saw it differently on another build, and no judge has looked yet.
+ * Not DISPUTED -- the difference may be the build -- but never silent either: the reader sees what differed.
+ */
+const contestedText = (t) => (t?.contested
+  ? `, contested on another build (not yet judged${t.contestedOn?.[0] ? `: ${t.contestedOn[0]}` : ''})`
+  : '');
 
 /** The three things `cat` cannot print, printed (PLAN §3.1 step 4). */
 export function hitLines(hit) {
@@ -37,6 +46,7 @@ export function hitLines(hit) {
   lines.push(`  ${hit.id}  [${hit.trust.label}]  ${hit.trust.confirmations} confirmation(s)`
     + `${hit.trust.provisional ? ' per the index, unverified — the body did not arrive' : ''}`
     + `${hit.trust.disputed ? `, ${hit.trust.disputed} DISPUTED` : ''}`
+    + contestedText(hit.trust)
     + `${hit.trust.resolved ? `, ${hit.trust.resolved} dispute(s) resolved` : ''}`
     + `${hit.trust.beforeAmendment ? `, ${hit.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
     // SESSIONS, NOT "INDEPENDENT PARTIES". `by` holds a session key and never held a person, so the
@@ -57,6 +67,8 @@ export function hitLines(hit) {
     // exactly who needs it.
     + `${hit.trust.anonymous ? `, ${hit.trust.anonymous} anonymous` : ''}`);
   lines.push(`  ${hit.subject}`);
+  // Where it was seen, against the asker's own build (VCST-6221) -- only when the ask named its stand.
+  if (hit.build) lines.push(`  build: observed on ${hit.build.label}${hit.build.diff ? ` (yours vs then: ${hit.build.diff})` : ''}`);
   const matched = [
     hit.matchedOn.anchors.length ? `anchor ${hit.matchedOn.anchors.join(', ')}` : null,
     hit.matchedOn.tokens.length ? `words ${hit.matchedOn.tokens.join(' ')}` : null,
@@ -179,6 +191,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
   const lines = [
     `${r.entry.id}  [${r.trust.label}]  ${r.trust.confirmations} confirmation(s)`
       + `${r.trust.disputed ? `, ${r.trust.disputed} DISPUTED` : ''}`
+      + contestedText(r.trust)
       + `${r.trust.resolved ? `, ${r.trust.resolved} dispute(s) resolved` : ''}`
       + `${r.trust.beforeAmendment ? `, ${r.trust.beforeAmendment} not counted (they confirmed the claim before a judge corrected it)` : ''}`
       + `   status: ${r.entry.status}`,
@@ -338,6 +351,8 @@ function evidenceBody(verb, r) {
   }
   return [
     `kb ${verb}: queued on ${r.id} (${r.row.subject})`,
+    // The gate's answer (VCST-6221): said to the agent, so it knows why the entry will not turn DISPUTED.
+    ...(r.item?.contested ? [`  different build: recorded as a soft dispute (contested on another build: ${r.item.contested}); the judge still reviews it, readers do not see the entry as DISPUTED`] : []),
     `  ${r.queuedTo}`,
     '  nothing has been sent; it ships with the next push.',
   ];

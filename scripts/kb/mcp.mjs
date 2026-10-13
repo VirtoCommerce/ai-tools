@@ -346,7 +346,7 @@ async function callTool(name, args, ctx) {
       if (!question) return text(['kb_ask needs a question.'], true);
       const r = await ask(question, opened, {
         env: ctx.env, top: Number(args?.top) || 3, via: VIA, call: ctx.call, deployment: args?.deployment,
-        topic: args?.topic,
+        topic: args?.topic, builds: liveBuild,
       });
       return text(askLines(r, { prefix: 'kb_ask' }), FAILED.has(r.state));
     }

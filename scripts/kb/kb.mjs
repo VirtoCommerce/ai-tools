@@ -235,7 +235,7 @@ async function main(argv) {
     // `--deployment` is OPTIONAL on ask and is never defaulted from this process -- only a name the
     // caller passes is mapped onto the stand's one name (`stand()` in core/verbs.mjs).
     const r = await ask(question, opened, {
-      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));

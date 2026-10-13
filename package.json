@@ -339,7 +339,8 @@
     "kb:sync-base": "node scripts/kb/sync-base.mjs",
     "kb:cards": "node scripts/kb/cards.mjs",
     "kb:disputes": "node scripts/kb/disputes.mjs",
-    "kb:stands": "node scripts/kb/core/stands.mjs --check"
+    "kb:stands": "node scripts/kb/core/stands.mjs --check",
+    "kb:build-history": "node scripts/kb/build-history.mjs"
   },
   "repository": {
     "type": "git",

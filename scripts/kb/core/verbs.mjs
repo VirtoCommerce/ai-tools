@@ -13,7 +13,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { mintId } from './canonical.mjs';
-import { resolveStand } from './stands.mjs';
+import { profileOf, resolveStand } from './stands.mjs';
+import { buildLabel, softDispute } from './gate.mjs';
 import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
@@ -54,7 +55,7 @@ export function trustOf(evidence = []) {
   const beforeAmendment = evidence.filter((e) => !e.contradicts && !e.duplicateSession && !attestsCurrentClaim(e, amendments)).length;
   // The COUNTS come from index-build, which is also what writes them into the row -- so `ask`'s
   // drift check compares one implementation against itself rather than against a second opinion.
-  const { trust: confirmations, disputed, resolved } = countEvidence(evidence);
+  const { trust: confirmations, disputed, resolved, contested } = countEvidence(evidence);
   // WHO SAW IT, AND ONLY WHO — never a deployment standing in for a person.
   //
   // THE DEFECT THIS CLOSES, and the reason it survived four days of green gates. The line used to
@@ -104,7 +105,9 @@ export function trustOf(evidence = []) {
       : confirmations === 2 ? 'corroborated'
         : confirmations === 1 ? 'single observation'
           : 'unattested';
-  return { label, confirmations, disputed, resolved, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
+  // What a soft dispute was about, for the reader: the build difference the gate computed (core/gate.mjs).
+  const contestedOn = (Array.isArray(evidence) ? evidence : []).filter((e) => e?.contradicts && e.contested && !e.resolved).map((e) => e.contested);
+  return { label, confirmations, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
 /**
@@ -119,9 +122,9 @@ export function trustOf(evidence = []) {
 export function describeHit(hit, parsed, { unavailable = null } = {}) {
   const evidence = parsed?.data?.evidence ?? [];
   const trust = unavailable
-    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
+    ? { label: 'unread', confirmations: hit.row.trust, disputed: hit.row.disputed, resolved: hit.row.resolved ?? 0, contested: hit.row.contested ?? 0, contestedOn: [], sessions: 0, anonymous: 0, operators: null, operatorsUnknown: 0, provisional: true }
     : trustOf(evidence);
-  return {
+  const described = {
     id: hit.row.id,
     subject: hit.row.subject,
     path: hit.row.path,
@@ -133,6 +136,8 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
     provenance: evidence.map((e) => ({
       method: e.method ?? 'observation',
       deployment: e.deployment ?? null,
+      build: e.build ?? null,
+      contested: e.contested ?? null,
       conditions: e.conditions ?? null,
       at: e.at ?? null,
       by: e.by ?? null,
@@ -149,6 +154,10 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
     body: parsed?.body?.trim() ?? null,
     unavailable: null,
   };
+  // The entry as written, for the build label (`labelBuilds`) -- NOT enumerable, so `--json` output and
+  // logs stay what they were; the label needs fields `provenance` leaves out (amendments, investigations).
+  if (parsed?.data) Object.defineProperty(described, 'entryData', { value: parsed.data, enumerable: false });
+  return described;
 }
 
 // ── What a line records about the CALL, and what it deliberately does not ─────────────────────
@@ -319,7 +328,7 @@ async function buildStamp(deployment, { env, dryRun = false, builds = null } = {
   const r = resolveStand(deployment);
   if (dryRun || !r.known || typeof builds !== 'function') return {};
   const b = await builds(r.value, { env });
-  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot } : {};
+  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : {};
 }
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
@@ -633,7 +642,36 @@ export async function none({ env = process.env, ask: handle = null, via = null, 
   };
 }
 
-export async function ask(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
+/**
+ * `ask`, with each hit labelled by where its support was observed relative to the ASKER's build
+ * (VCST-6221 step 2): your build / an older, newer or different build (what differs) / unknown. Only
+ * when the caller names its stand and a door injected the build reader (`builds`); otherwise exactly the
+ * old answer. A label that cannot be computed in time is simply absent -- it never delays or fails an ask
+ * for long, because the asker's build is read once per session and module ownership is cached.
+ */
+export async function ask(asked, opened, opts = {}) {
+  const r = await askRanked(asked, opened, opts);
+  if (!opts.deployment || typeof opts.builds !== 'function' || !Array.isArray(r?.hits) || !r.hits.length) return r;
+  try { await labelBuilds(r.hits, opened, opts); } catch { /* a label is an extra, never a failure */ }
+  return r;
+}
+
+async function labelBuilds(hits, opened, { env = process.env, deployment, builds }) {
+  const where = resolveStand(deployment);
+  if (!where.known) return;
+  const mine = await builds(where.value, { env });
+  if (!mine.pin) return;
+  const backUrl = profileOf(where.value)?.backUrl?.replace(/\/$/, '') ?? null;
+  const readBuild = async (pin) => {
+    const r = await opened.reader.readEntry(`builds/${pin}.json`);
+    try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+  };
+  await Promise.all(hits.filter((h) => h.entryData).map(async (h) => {
+    h.build = await buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl });
+  }));
+}
+
+async function askRanked(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
   const started = Date.now();
   // Ranked AND logged on the repaired text: the mangled one finds the wrong entries and puts a
   // local install path in a public log (see `undoMsysRewrite`). `repaired` says it happened, so
@@ -1254,12 +1292,31 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // `claim-amended` merged was hashed against the CORRECTED body and counted as its support
   // (`attestsCurrentClaim`, index-build.mjs). An unreadable body leaves it to push's stamp.
   let bodyHash = null;
+  let entry = null;
   try {
     const read = await opened.reader.readEntry(row.path);
-    if (read?.ok) bodyHash = claimHash(parseEntry(read.text, row.path).body);
+    if (read?.ok) { const parsed = parseEntry(read.text, row.path); bodyHash = claimHash(parsed.body); entry = parsed.data; }
   } catch { /* push stamps it */ }
 
   const stamp = await buildStamp(input.deployment, { env, builds });
+  // A DISAGREEMENT ON ANOTHER BUILD IS A SOFT DISPUTE (VCST-6221, core/gate.mjs): still a dispute the
+  // judge sees, but readers get "contested on another build" instead of DISPUTED. Needs the stamp and the
+  // entry; without either it stays a hard dispute -- the gate fails closed.
+  let contested = null;
+  if (kind === 'dispute' && stamp.snapshot && entry) {
+    try {
+      const soft = await softDispute({
+        entry,
+        observation: { build: stamp.item.build, snapshot: stamp.snapshot, conditions: conditions.value },
+        readBuild: async (pin) => {
+          const r = await opened.reader.readEntry(`builds/${pin}.json`);
+          try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+        },
+        backUrl: profileOf(stamp.stand)?.backUrl?.replace(/\/$/, '') ?? null,
+      });
+      contested = soft?.contested ?? null;
+    } catch { contested = null; }
+  }
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
@@ -1273,7 +1330,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     ...(cachedWho({ dir: queueDir(env), env }) ? { who: cachedWho({ dir: queueDir(env), env }) } : {}),
     // BOUNDED, unlike every other prose field on this path used to be. See NOTE_MAX.
     ...(kind === 'dispute'
-      ? { contradicts: true, note: trimNote(input.saw) }
+      ? { contradicts: true, ...(contested ? { contested } : {}), note: trimNote(input.saw) }
       : trimNote(input.note) ? { note: trimNote(input.note) } : {}),
   };
 
