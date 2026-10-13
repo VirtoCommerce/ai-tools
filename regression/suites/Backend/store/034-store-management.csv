@@ -332,11 +332,17 @@ STORE-032,Set Price Ranges - Add/Edit/Delete Ranges and Verify,Store > Attribute
 [STATE] Deleted range removed from Storefront filters","[NETWORK] Storefront price filter buckets updated after range changes
 [API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
 [CONSOLE] No price range sync errors",Edited range not reflected on Storefront; Deleted range still appearing; Aggregation properties out of sync,restore original settings,C341065,Draft
-STORE-033,Store Access Permission,Store > Permissions,High,BL-STORE-001,,Admin logged in; User_1 created; Role_1 created with store:access permission; Role_1 assigned to User_1; Store_1 created,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permission=store:access,"[NAV] Login as User_1 at {{BACK_URL}}
-[NAV] Navigate to More > Stores","[DOM] User_1 can see Store blade
-[STATE] Store module accessible with access permission","[API] GET /api/stores returns 200 for User_1
-[CONSOLE] No 403 errors in console
-[ADMIN] Stores menu item visible for User_1",Store blade not visible for User_1; 403 on store list API; Menu item hidden despite permission,none,C237734,Draft
+STORE-033,Store permissions — store:access opens the Stores module; store:read is required to list stores,Store > Permissions,High,BL-STORE-001,,Admin logged in; Store_1 = {{STORE_ID}}; User_1 = an AGENT-TEST- admin-SPA user created for this case; Role_1 = an AGENT-TEST- role holding ONLY store:access (plus platform:access so the user can sign in to the Admin SPA); Role_1 assigned to User_1,"{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1 (random-data AGENT-TEST- login + password); role=Role_1; permissions=store:access, then store:access + store:read; store={{STORE_ID}}","[NAV] Login as User_1 at {{BACK_URL}}
+[NAV] Navigate to More > Stores
+[API] POST {{BACK_URL}}/api/stores/search with body {} as User_1
+[ACT] As Admin, add store:read to Role_1 and Save
+[NAV] As User_1, sign out and sign in again, then open More > Stores
+[API] POST {{BACK_URL}}/api/stores/search with body {} as User_1","[DOM] with store:access only, the Stores menu item is visible and the Stores blade opens {OBSERVED}
+[API] with store:access only, POST /api/stores/search returns 403 {DOC} -- access opens a module, read is needed to view its data (VirtoOZ permission model: *:access vs *:read; vc-module-store StoreModuleController.SearchStores requires StoreAuthorizationRequirement(store:read))
+[DOM] with store:access only, the Stores blade lists no stores {OBSERVED}
+[API] with store:access + store:read, POST /api/stores/search returns 200 and the results include {{STORE_ID}} {DOC}
+[DOM] with store:access + store:read, the Stores blade lists {{STORE_ID}} {OBSERVED}","[ADMIN] Security > Roles > Role_1 shows exactly the permissions this case granted at each step
+[CONSOLE] with store:access alone the store list call (api/stores/search) logs 403; after store:read is added it no longer does -- other 403s (e.g. api/platform/localizable-settings, api/platform/modules) come from platform permissions this role does not hold and are not part of this check",Stores menu hidden despite store:access; store list returned (200) with store:access alone (read not enforced = permission leak); 403 or empty list after store:read is granted,Delete User_1 and Role_1 (AGENT-TEST-); no store data is changed,C237734 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): the old expectation (GET /api/stores 200 with store:access alone) contradicted the permission model; store list requires store:read (vc-module-store StoreModuleController.SearchStores),Draft
 STORE-034,Store Read Permission,Store > Permissions,High,BL-STORE-001,,"Admin logged in; User_1 created; Role_1 with permissions: store:access, store:read, platform:dynamic_properties (access/update/read), catalog:read; Role_1 assigned to User_1","{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}}; user=User_1; role=Role_1; permissions=store:access,store:read","[NAV] Login as User_1 at {{BACK_URL}}
 [NAV] Open Stores > Select Store_1
 [ACT] Attempt to modify settings
@@ -397,15 +403,14 @@ STORE-044,Enable SPA Setting,Store > SPA,Medium,BL-STORE-001,,Admin logged in; S
 [STATE] Store now operates as Single Page Application
 [STATE] Navigation without full page reloads","[NETWORK] Page navigations do not trigger full HTTP reloads
 [CONSOLE] No SPA routing errors",Full page reloads occurring in SPA mode; Setting not saved; JS routing errors in console,restore original settings,C237757,Draft
-STORE-045,Disable SPA Setting,Store > SPA,Medium,BL-STORE-001,,Admin logged in; Store_1 created; User_1 created,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1,"[NAV] Login as Admin at {{BACK_URL}}
-[NAV] Go to Store_1 > Settings panel
-[ACT] Switch off Is SPA
-[ACT] Save
-[NAV] Navigate Storefront at {{FRONT_URL}} as User_1","[STATE] Is SPA toggle switched off
-[STATE] Setting saved
-[STATE] Store is not Single Page Application
-[STATE] Traditional page loads on navigation","[NETWORK] Page navigations trigger full HTTP requests
-[CONSOLE] No routing errors in non-SPA mode",No page reloads in non-SPA mode; Setting not saved; Store behaves as SPA when disabled,restore original settings,C237760,Draft
+STORE-045,"Disable SPA setting — the Single-page application (SPA) store setting saves, and the storefront keeps working (it is always a single-page app)",Store > SPA,Medium,BL-STORE-001,,Admin logged in; Store_1 = {{STORE_ID}} (the store the storefront at {{FRONT_URL}} serves); record the original Stores.IsSpa value before changing it,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store={{STORE_ID}},"[NAV] Login as Admin at {{BACK_URL}}
+[NAV] Go to Stores > {{STORE_ID}} > Settings widget > Store > General
+[ACT] Switch off Single-page application (SPA)
+[ACT] Click OK on the Settings blade, then Save on the store blade
+[API] GET {{BACK_URL}}/api/stores/{{STORE_ID}} and read the setting Stores.IsSpa
+[NAV] Open {{FRONT_URL}} and navigate by clicking a catalog menu item and then a product","[STATE] Stores.IsSpa = false after Save, confirmed by the API read-back {OBSERVED}
+[NETWORK] navigating by menu and product clicks issues no new document request — routes change client-side and data comes from GraphQL {OBSERVED} -- vc-frontend is always a single-page app; xAPI StoreSettings.IsSpa is marked obsolete, so the setting has no storefront effect
+[DOM] the category and product pages render normally with Is SPA off {OBSERVED}",[CONSOLE] no routing or JS errors while navigating with Is SPA off,"Setting not saved or reverted on reload; storefront broken (blank page, routing error) with Is SPA off; a document reload on every navigation (would mean the theme now honours the setting — update this case)",Restore Stores.IsSpa to its original value (switch then OK then Save) and confirm by API read-back,C237760 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): the old expectation (traditional page loads when Is SPA is off) cannot hold — the storefront is always an SPA and xAPI StoreSettings.IsSpa is obsolete,Draft
 STORE-048,SEO Link Type - None,Store > Link Type,Medium,BL-STORE-001,,Admin logged in; Store_1 created; User_1 logged in,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{FRONT_URL}}; store=Store_1; user=User_1,"[NAV] Go to Store_1 > Settings panel at {{BACK_URL}}
 [ACT] Set SEO Link type to None
 [ACT] Save
