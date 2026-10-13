@@ -1,13 +1,13 @@
 ID,Title,Section,Priority,Business_Rule,Edge_Case_Refs,Preconditions,Test_Data,Steps,Assertions,Cross_Layer_Checks,Failure_Signals,Cleanup,References,Automation_Status
-STORE-011,Edit Aggregation Properties - Add/Remove Properties,Store > Aggregation Properties,High,PROPOSED-BL-STORE-004,,Admin logged in; Store exists in system,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}},"[NAV] Open Store details > Click Aggregation properties widget
-[ACT] Select property from left list and click to add
-[ACT] Click X icon on Selected properties to remove
-[ACT] Click OK to save","[STATE] Filtering properties blade opens with Available and Selected properties lists
-[STATE] Selected property moves to Selected properties list
-[STATE] Property removed from Selected list when deleted
-[STATE] Changes saved successfully","[API] PUT /api/stores/{{STORE_ID}}/aggregation-properties returns 200
+STORE-011,Edit Aggregation Properties - Add/Remove Properties,Store > Aggregation Properties,High,PROPOSED-BL-STORE-004,,Admin logged in; Store exists in system,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}},"[NAV] Open Store > Search configuration > Facets for {{STORE_ID}}
+[ACT] Click a property in the available list to add it to the selected properties
+[ACT] Click the X icon on a selected property to remove it
+[ACT] Save the store","[STATE] Facets blade opens with available and selected property lists
+[STATE] Clicked property moves to the selected list
+[STATE] Property removed from the selected list when X is clicked
+[STATE] Store Save persists the selection: the Catalog.BrowseFilters.FilteredBrowsing setting contains exactly the selected properties","[API] GET /api/stores/{{STORE_ID}} setting Catalog.BrowseFilters.FilteredBrowsing matches the selected list after Save (there is no PUT /api/stores/{id}/aggregation-properties)
 [CONSOLE] No errors on property add/remove
-[ADMIN] Selected properties list reflects changes after save",Property not moving between lists; OK button not saving; API returns 400,restore original settings,C169669,None
+[ADMIN] Selected properties list reflects changes after save and after reopening the blade",Property not moving between lists; Save not persisting the selection (setting unchanged after reopening); a property removed in the UI still present in the setting; API returns 400,restore original settings,"C169669; Repaired 2026-10-13 (Stable 16 regression VCST-6042): ""Aggregation properties"" widget is now Store > Search configuration > Facets (click-to-add, X-to-remove, store Save); selection is stored in Catalog.BrowseFilters.FilteredBrowsing, the PUT aggregation-properties endpoint does not exist",None
 STORE-012,Edit Aggregation Properties - Property Details,Store > Aggregation Properties,High,PROPOSED-BL-STORE-004,,Admin logged in; Store exists; Aggregation properties configured,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; property_name=Brand,"[NAV] Open Aggregation properties for {{STORE_ID}}
 [ACT] Select property from Selected properties list
 [ACT] Review property details: Name (label), Aggregation type dropdown (Attribute/Range), Aggregation size (Attribute only), Allowed values
@@ -134,40 +134,36 @@ STORE-066,Email Address Verification Setting Available,Store > Email Verificatio
 [SCROLL] Scroll through settings list","[DOM] Email address verification toggle visible in settings list
 [STATE] Toggle accessible and functional","[CONSOLE] No JS errors on settings blade load
 [ADMIN] Toggle visible without any permission errors",Toggle not visible in settings; Settings blade fails to load; Toggle not interactive,none,C278771,None
-STORE-067,Enable Email Verification,Store > Email Verification,High,BL-STORE-001,,Admin logged in; Email confirmation notification active; Template_1 set for notification; User_1 created in Store_1 with Email_1,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com,"[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+STORE-067,"Enable Email Verification - setting persists, storefront profile email stays read-only, Admin resend sends the verification notification",Store > Email Verification,High,BL-STORE-001,,Admin logged in; Email confirmation notification active; a throwaway AGENT-TEST- User_1 exists in the store with an unconfirmed email (emailConfirmed=false),"{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=AGENT-TEST- User_1 (random email, {{TEST_USER_PASSWORD}} password)","[NAV] Go to Stores module > Open {{STORE_ID}} at {{BACK_URL}}
 [ACT] Open Settings blade
-[ACT] Switch on Enable email address verification toggle
+[ACT] Switch on the Email verification toggle (Store > General)
 [ACT] Click OK and Save
 [ACT] Reopen Settings blade and verify toggle state
-[NAV] Login to Storefront at {{FRONT_URL}} as User_1
-[NAV] Go to My Account > Profile
-[ACT] Change Email_1 to Email_2
-[WAIT] Check Email_2 inbox
-[ACT] Open verification email
-[ACT] Click verification link","[STATE] Enable email address verification toggle switched on
+[NAV] Login to Storefront at {{FRONT_URL}} as User_1 > My Account > Profile
+[ASSERT] Email field is a disabled textbox, First name / Last name are editable
+[NAV] Admin: Security > Users > User_1 > Resend link next to the unconfirmed email
+[ASSERT] Admin > Notifications > Notification activity feed shows a ConfirmationEmailNotification (""Email confirmation"") for User_1 with status ""Success"" (the API reports Sent)","[STATE] Email verification toggle switched on
 [STATE] Setting saved in ON position
 [STATE] Toggle persists in ON position after reopen
-[STATE] Email address verification notification sent to Email_2 inbox
-[STATE] Email received with verification link
-[NAV] User redirected to email verification page after clicking link
-[STATE] Email verification process completed","[NETWORK] Email notification API called after email change
-[CONSOLE] No notification send errors
-[ADMIN] User_1 shows unverified email status until link clicked",Toggle reverts to OFF after save; No email sent after change; Verification link returns 404; User not redirected to verification page,restore original settings,C278768,None
-STORE-068,Disable Email Verification,Store > Email Verification,High,BL-STORE-001,,Admin logged in; Email confirmation notification active; Template_1 set; User_1 created in Store_1 with Email_1,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=User_1; email1=user1@test.com; email2=user1new@test.com,"[NAV] Go to Stores module > Open Store_1 at {{BACK_URL}}
+[DOM] Storefront profile Email field is read-only (a buyer cannot change the email there)
+[STATE] Resend link produces a ConfirmationEmailNotification for User_1 with UI status ""Success"" (API status Sent)","[API] Store setting for email verification reads ON through the settings API after Save
+[ADMIN] User_1 still shows an unconfirmed email until the link is used
+[CONSOLE] No notification send errors",Toggle reverts to OFF after save; storefront profile Email is editable (an email change path that bypasses verification); Resend with the setting ON creates no notification in the Notification activity feed; notification status is not Success (API: not Sent),delete the AGENT-TEST- user; restore the original email verification setting,"C278768; Repaired 2026-10-13 (Stable 16 regression VCST-6042): storefront profile Email is hard-disabled in vc-frontend (pages/account/profile.vue; same source in 2.35.0, 2.51.2, 2.59.0), so ""change Email_1 to Email_2"" is impossible by design; the verification notification is exercised through the Admin Resend path instead. VirtoOZ StorefrontUserGuide (account/profile) still says the email can be edited = documentation gap; read-only is {OBSERVED}; 2026-10-13 re-run: area is Notifications > Notification activity feed; UI label ""Success"", API status Sent",None
+STORE-068,"Disable Email Verification - setting persists, storefront profile email stays read-only, Admin resend sends no verification notification",Store > Email Verification,High,BL-STORE-001,,Admin logged in; Email confirmation notification active; a throwaway AGENT-TEST- User_1 exists in the store with an unconfirmed email (emailConfirmed=false),"{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; user=AGENT-TEST- User_1 (random email, {{TEST_USER_PASSWORD}} password)","[NAV] Go to Stores module > Open {{STORE_ID}} at {{BACK_URL}}
 [ACT] Open Settings blade
-[ACT] Switch off Enable email address verification toggle
+[ACT] Switch off the Email verification toggle (Store > General)
 [ACT] Click OK and Save
 [ACT] Reopen Settings blade and verify toggle state
-[NAV] Login to Storefront at {{FRONT_URL}} as User_1
-[NAV] Go to My Account > Profile
-[ACT] Change Email_1 to Email_2
-[WAIT] Check Email_2 inbox","[STATE] Enable email address verification toggle switched off
+[NAV] Login to Storefront at {{FRONT_URL}} as User_1 > My Account > Profile
+[ASSERT] Email field is a disabled textbox
+[NAV] Admin: Security > Users > User_1 > Resend link next to the unconfirmed email
+[ASSERT] Notifications journal gets no new ConfirmationEmailNotification for User_1","[STATE] Email verification toggle switched off
 [STATE] Setting saved in OFF position
 [STATE] Toggle persists in OFF position after reopen
-[STATE] No verification email sent to Email_2 inbox
-[STATE] Email address changed without verification","[NETWORK] No notification API call after email change when disabled
-[CONSOLE] No unexpected notification errors
-[ADMIN] User_1 email updated immediately without verification step",Toggle reverts to ON after save; Verification email sent when disabled; Email change rejected without verification,restore original settings,C278769,None
+[DOM] Storefront profile Email field is read-only
+[STATE] No verification notification is created for User_1 while the setting is OFF","[API] Store setting for email verification reads OFF through the settings API after Save
+[ADMIN] Resend link is visible but produces no journal entry
+[CONSOLE] No unexpected notification errors",Toggle reverts to ON after save; a verification notification is created or sent while the setting is OFF; storefront profile Email is editable,delete the AGENT-TEST- user; restore the original email verification setting,"C278769; Repaired 2026-10-13 (Stable 16 regression VCST-6042): same as STORE-067: the profile email cannot be changed from the storefront, so the setting is asserted through the Admin Resend path (no notification when OFF); VirtoOZ StorefrontUserGuide still says email is editable = documentation gap",None
 STORE-069,Disable Email Verification - Statuses Unchanged,Store > Email Verification,Medium,BL-STORE-001,,Admin on Store page; Verification_link sent to User_1; User_1 assigned to Store_1; Enable email address verification set to TRUE,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}}; user=User_1,"[ACT] Send verification link to User_1
 [ACT] Before User_1 verifies, disable Enable email address verification in Store settings
 [ACT] Save
@@ -205,16 +201,16 @@ STORE-058,Currency Rounding 001 & Away From Zero,Store > Rounding Policy,Medium,
 [STATE] Rounding policy applied correctly","[API] Cart API returns prices with correct rounding applied
 [CONSOLE] No pricing calculation errors
 [ADMIN] Currency rounding settings persisted",Wrong rounding mode applied; Price shows unrounded value; Total calculation incorrect; Settings not saved,restore original settings,C307018,None
-STORE-059,Currency Rounding 001 & To Zero,Store > Rounding Policy,Medium,BL-STORE-001,,Admin logged in; Store currency configured; Product_1 created with price $26.25,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=Product_1; price=26.25; qty=3,"[NAV] Go to Store > Edit default currency > Set RoundingType = Rounding001, Midpoint Rounding = ToZero
+STORE-059,Currency Rounding 001 & To Zero,Store > Rounding Policy,Medium,BL-STORE-001,,"Admin logged in; USD currency; AGENT-TEST- Product_1 created with list price $26.25 and an AGENT-TEST- 5% item promotion applied to it (the discounted unit price 26.25 x 0.95 = 24.9375 is not a midpoint, so the rounding MODE decides the cent)",{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=AGENT-TEST-Product-<random>; price=26.25; promotion=AGENT-TEST-Promo-<random> 5% item discount; qty=3,"[NAV] Go to Store > Default currency > Currencies > USD > set RoundingType = Rounding001, Midpoint rounding = ToZero (Admin label; ToZero is .NET directed rounding toward zero, not midpoint-only)
 [ACT] Save
-[ACT] Add Product_1 (price $26.25) to cart
+[ACT] Add Product_1 (list price $26.25, 5% promotion) to cart
 [ACT] Set quantity to 3
-[ASSERT] Verify pricing","[STATE] Rounding settings saved
-[MATH] System displays rounded price = 24.94
-[MATH] Total = 24.94 * 3 = 74.82
-[STATE] Rounding policy applied correctly","[API] Cart API returns prices with ToZero rounding applied
+[ASSERT] Verify pricing (xAPI cart and storefront)","[STATE] Rounding settings saved
+[MATH] Unit price after the 5% promotion = 24.93 (24.9375 rounded toward zero, NOT 24.94)
+[MATH] Line total = 74.82 (observed; it is not unit x qty, since 24.93 x 3 = 74.79)
+[STATE] Rounding policy applied correctly","[API] xAPI cart returns unit 24.93 and line total 74.82 with ToZero rounding applied
 [CONSOLE] No pricing calculation errors
-[ADMIN] Rounding settings persisted",Wrong rounding mode (AwayFromZero) applied; Total = 74.81 instead of 74.82; Settings not saved,restore original settings,C307019,None
+[ADMIN] Rounding settings persisted",Unit price 24.94 or line total 74.81 (AwayFromZero behaviour: the ToZero mode is ignored or mapped to the default); unit 24.93 with a different line total; unrounded value shown; settings not saved,delete the AGENT-TEST- promotion and product; restore USD to Rounding001 / AwayFromZero and verify via GET /api/currencies,"C307019; Repaired 2026-10-13 (Stable 16 regression VCST-6042): ToZero is .NET directed rounding toward zero (26.25 x 0.95 = 24.9375 -> 24.93), not midpoint-only, so 24.94 was a wrong expectation; the Admin label ""Midpoint rounding"" is misleading and VirtoOZ does not document the rounding modes (doc gap, values are {OBSERVED})",None
 STORE-060,Deploy Rounding Policy,Store > Rounding Policy,Medium,BL-STORE-001,,Admin logged in; Product_1 created with price $26.25,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; product=Product_1; price=26.25,"[ACT] Create Product_1 with price $26.25
 [NAV] Go to Store > Edit currency > Configure rounding settings
 [ACT] Save
@@ -236,50 +232,52 @@ STORE-062,Midpoint Rounding - To Even,Store > Midpoint Rounding,Medium,BL-STORE-
 [ACT] Add Product_1 (qty 2) to cart > Verify Subtotal = $52.50
 [ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
 [ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
-[ACT] Apply Coupon_1 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
+[ACT] Apply Coupon_1 (5%) to Product_1 > Verify Subtotal = $157.70, Total before tax = $155.08 (Storefront and Admin order Total incl. tax = $186.10), Discount = $2.62
 [ACT] Checkout > Go to Orders on Storefront > Verify order details
 [NAV] Go to Admin > Orders > Find order > Verify Order and Payment details","[STATE] Rounding settings saved
 [MATH] Product subtotals calculated correctly with ToEven rounding
-[MATH] Discount applied with correct rounding: $2.62
+[MATH] Discount applied with correct rounding: $2.62; Total before tax = $155.08
+[MATH] Order Total incl. tax = $186.10 on Storefront and in Admin
 [STATE] Order totals match in Storefront orders
 [STATE] Admin order details match calculated values","[API] Order API returns totals matching ToEven rounding calculation
 [ADMIN] Order details consistent with Storefront values
-[CONSOLE] No calculation errors",Wrong discount ($2.63 instead of $2.62); Subtotals incorrect; Admin/Storefront order totals mismatch,restore original settings,C306961,None
+[CONSOLE] No calculation errors",Wrong discount ($2.63 instead of $2.62); Subtotals incorrect; Admin/Storefront order totals mismatch,restore original settings,C306961; Repaired 2026-10-13 (Stable 16 regression VCST-6042): step subtotal typo 155.70 -> 157.70 (the observed subtotal and the case's own sum); 2026-10-13 re-run: 155.08 is the total BEFORE tax; order Total is 186.10,None
 STORE-063,Midpoint Rounding - Away From Zero,Store > Midpoint Rounding,Medium,BL-STORE-001,,Admin logged in; Store currency with AwayFromZero rounding; Products and Coupon_1 created,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon=5%,"[ACT] Set Midpoint Rounding = AwayFromZero, RoundingType = Rounding001
 [ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
 [ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
 [ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
-[ACT] Apply Coupon_1 (5%) > Verify Subtotal = $155.70, Total = $155.07, Discount = $2.63
+[ACT] Apply Coupon_1 (5%) > Verify Subtotal = $157.70, Total before tax = $155.07 (Storefront and Admin order Total incl. tax = $186.08), Discount = $2.63
 [ACT] Checkout > Verify Storefront order details
 [ASSERT] Verify Admin order details","[STATE] Rounding settings saved
 [MATH] Subtotals calculated with AwayFromZero rounding
-[MATH] Discount = $2.63 (rounds away from zero)
+[MATH] Discount = $2.63 (rounds away from zero); Total before tax = $155.07
+[MATH] Order Total incl. tax = $186.08 on Storefront and in Admin
 [STATE] Order details consistent across Storefront and Admin","[API] Order API returns totals matching AwayFromZero rounding
 [ADMIN] Order details match Storefront values
-[CONSOLE] No rounding calculation errors",Discount = $2.62 instead of $2.63; Wrong rounding direction applied; Admin/Storefront totals mismatch,restore original settings,C306962,None
-STORE-064,Midpoint Rounding - ToZero,Store > Midpoint Rounding,Medium,BL-STORE-001,,Admin logged in; Store currency with ToZero rounding; Products and Coupons created,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon1=5%; coupon2=55%,"[ACT] Set Midpoint Rounding = ToZero, RoundingType = Rounding001
-[ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
+[CONSOLE] No rounding calculation errors",Discount = $2.62 instead of $2.63; Wrong rounding direction applied; Admin/Storefront totals mismatch,restore original settings,C306962; Repaired 2026-10-13 (Stable 16 regression VCST-6042): step subtotal typo 155.70 -> 157.70 (the observed subtotal and the case's own sum); 2026-10-13 re-run: 155.07 is the total BEFORE tax; order Total is 186.08,None
+STORE-064,Midpoint Rounding - ToZero,Store > Midpoint Rounding,Medium,BL-STORE-001,,"Admin logged in; USD with Midpoint rounding = ToZero (directed rounding toward zero); AGENT-TEST- Product_1 ($26.25), Product_2 ($26.48), Product_3 ($26.12), Coupon_1 (5% item discount on Product_1) and Coupon_2 (55% cart discount) created",{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; products=AGENT-TEST-Product-<random>; coupon1=AGENT-TEST- 5% item coupon (random code); coupon2=AGENT-TEST- 55% cart coupon (random code),"[ACT] Set USD Midpoint rounding = ToZero, RoundingType = Rounding001 > Save
+[ACT] Add Product_1 (qty 2) to cart > Verify Subtotal = $52.50
 [ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
-[ACT] Add Product_3 (qty 2) > Verify Subtotal = $155.70
-[ACT] Apply Coupon_2 (5%) to Product_1 > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
-[ACT] Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
-[ACT] Apply coupon for total cart 55% > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","[STATE] Rounding settings saved
-[MATH] Subtotals calculated with ToZero rounding
-[MATH] Discount calculations rounded toward zero
-[STATE] Coupon removal resets discount
-[MATH] Large percentage discount calculated correctly: Total = $70.96, Discount = $86.74","[API] Cart and order APIs return totals matching ToZero rounding
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
+[ACT] Apply Coupon_1 (5% on Product_1) > Verify Subtotal = $157.70, Discount = $2.62 (2.625 rounded down), Total before tax = $155.08
+[ACT] Remove coupon > Verify Subtotal = $157.70, SubtotalDiscount = $0
+[ACT] Apply Coupon_2 (55% on the whole cart) > Verify Subtotal = $157.70, Discount = $86.73 (157.70 x 0.55 = 86.735, rounded down), Total before tax = $70.97","[STATE] Rounding settings saved
+[MATH] Subtotals 52.50 / 105.46 / 157.70
+[MATH] 5% discount 2.625 rounds to 2.62 (toward zero); total before tax 155.08
+[STATE] Coupon removal resets discount to 0
+[MATH] 55% discount 86.735 rounds to 86.73; Total before tax = 70.97","[API] Cart and order APIs return the same discount and totals (2.62 / 155.08 and 86.73 / 70.97)
 [CONSOLE] No coupon calculation errors
-[ADMIN] Order discount amounts match calculated values",Coupon removal does not reset discount; Large discount calculation incorrect; Wrong rounding direction (AwayFromZero) applied,restore original settings,C306963,None
-STORE-065,Midpoint Rounding - To Negative Infinity,Store > Midpoint Rounding,Medium,BL-STORE-001,,Admin logged in; Store currency with To Negative Infinity rounding; Products and Coupons created,{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; coupon1=5%; coupon2=55%,"[ACT] Set Midpoint Rounding = To Negative Infinity, RoundingType = Rounding001
-[ACT] Add Product_1 (qty 2) > Verify Subtotal = $52.50
+[ADMIN] Order discount amounts match calculated values",Discount 2.63 or 86.74 and total 155.07 or 70.96 (AwayFromZero applied instead of ToZero); coupon removal does not reset discount; large-percentage discount calculated incorrectly; cart and order totals differ,"delete the AGENT-TEST- coupons, promotions, products and any cart/order created; restore USD to Rounding001 / AwayFromZero and verify via GET /api/currencies","C306963; Repaired 2026-10-13 (Stable 16 regression VCST-6042): subtotal typos (155.70/157.50 -> 157.70) and the 55% literals (86.74/70.96 contradicted the case's own rule: 86.735 rounds toward zero to 86.73, total 70.97); coupon naming fixed",None
+STORE-065,Midpoint Rounding - To Negative Infinity,Store > Midpoint Rounding,Medium,BL-STORE-001,,"Admin logged in; USD with Midpoint rounding = ToNegativeInfinity; AGENT-TEST- Product_1 ($26.25), Product_2 ($26.48), Product_3 ($26.12), Coupon_1 (5% item discount on Product_1) and Coupon_2 (55% cart discount) created",{{BACK_URL}} {{ADMIN_EMAIL}} {{ADMIN_PASSWORD}} {{STORE_ID}} {{FRONT_URL}}; p1_price=26.25; p2_price=26.48; p3_price=26.12; products=AGENT-TEST-Product-<random>; coupon1=AGENT-TEST- 5% item coupon (random code); coupon2=AGENT-TEST- 55% cart coupon (random code),"[ACT] Set USD Midpoint rounding = ToNegativeInfinity, RoundingType = Rounding001 > Save
+[ACT] Add Product_1 (qty 2) to cart > Verify Subtotal = $52.50
 [ACT] Add Product_2 (qty 2) > Verify Subtotal = $105.46
-[ACT] Add Product_3 (qty 2) > Verify Subtotal = $155.70
-[ACT] Apply Coupon_2 (5%) > Verify Subtotal = $155.70, Total = $155.08, Discount = $2.62
-[ACT] Remove coupon > Verify Subtotal = $157.50, SubtotalDiscount = $0
-[ACT] Apply coupon 55% to total cart > Verify Subtotal = $157.70, Total = $70.96, Discount = $86.74","[STATE] Rounding settings saved
-[MATH] Subtotals calculated with To Negative Infinity rounding
-[MATH] Discount rounds toward negative infinity
-[STATE] Coupon operations function correctly
-[MATH] Large discounts calculated accurately: Total = $70.96, Discount = $86.74","[API] Cart and order APIs return totals matching Negative Infinity rounding
+[ACT] Add Product_3 (qty 2) > Verify Subtotal = $157.70
+[ACT] Apply Coupon_1 (5% on Product_1) > Verify Subtotal = $157.70, Discount = $2.62 (2.625 rounded down), Total before tax = $155.08
+[ACT] Remove coupon > Verify Subtotal = $157.70, SubtotalDiscount = $0
+[ACT] Apply Coupon_2 (55% on the whole cart) > Verify Subtotal = $157.70, Discount = $86.73 (157.70 x 0.55 = 86.735, rounded down), Total before tax = $70.97","[STATE] Rounding settings saved
+[MATH] Subtotals 52.50 / 105.46 / 157.70
+[MATH] 5% discount 2.625 rounds down to 2.62; total before tax 155.08
+[STATE] Coupon removal resets discount to 0
+[MATH] 55% discount 86.735 rounds down to 86.73; Total before tax = 70.97 (for positive amounts ToNegativeInfinity and ToZero give the same cents)","[API] Cart and order APIs return the same discount and totals (2.62 / 155.08 and 86.73 / 70.97)
 [CONSOLE] No coupon calculation errors
-[ADMIN] Order totals match Storefront values",Wrong rounding mode applied; Coupon removal fails; Large discount total incorrect; Rounding behavior same as ToZero (not distinct),restore original settings,C306964,None
+[ADMIN] Order totals match Storefront values",Discount 2.63 or 86.74 and total 155.07 or 70.96 (AwayFromZero applied instead of ToNegativeInfinity); coupon removal fails; large discount total incorrect; cart and order totals differ,"delete the AGENT-TEST- coupons, promotions, products and any cart/order created; restore USD to Rounding001 / AwayFromZero and verify via GET /api/currencies","C306964; Repaired 2026-10-13 (Stable 16 regression VCST-6042): subtotal typos and 55% literals (86.735 rounds down to 86.73, total 70.97); removed the ""not distinct from ToZero"" failure signal, which is impossible for positive amounts",None

@@ -36,7 +36,27 @@ const REJECTED_REVIEW = { u: 'rej01', rating: 2, title: 'AGENT-TEST rejected', r
 
 const isSeeded = (r) => typeof r?.userId === 'string' && r.userId.startsWith(USER_PREFIX);
 
+// Idempotency: if a previous run already attached AGENT-TEST-rev-* reviews to a product the store
+// still surfaces (with a slug), reuse THAT product. `products(first: 30)` has no stable order, so
+// without this a re-run picks a different product and seeds a second, parallel fixture set.
+async function findPreviouslySeededProduct() {
+  const r = await api('POST', '/api/customerReviews/search', { storeId: STORE_ID, take: 500 }, { expectStatus: [200] });
+  const counts = {};
+  for (const rev of (r?.results || []).filter(isSeeded)) counts[rev.entityId] = (counts[rev.entityId] || 0) + 1;
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+  for (const id of ranked) {
+    const q = `query($id:String!){ product(id:$id, storeId:"${STORE_ID}") { id name slug } }`;
+    const res = await fetch(`${BACK_URL}/graphql`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: q, variables: { id } }) });
+    const p = (await res.json().catch(() => ({})))?.data?.product;
+    if (p?.id && p.slug) return { id: p.id, name: p.name || p.id, slug: p.slug };
+    verbose(`previously seeded entity ${id} is not store-visible with a slug — skipping`);
+  }
+  return null;
+}
+
 async function pickProduct() {
+  const reuse = await findPreviouslySeededProduct();
+  if (reuse) { log(`  ↻ reusing product that already carries AGENT-TEST reviews`); return reuse; }
   // The seeded reviews must be VIEWABLE on the storefront (for the pagination / widget UI
   // cases), so pick a product the STORE actually surfaces AND that has a SEO slug (=> a
   // reachable PDP URL). A plain admin catalog search can return catalog products with no

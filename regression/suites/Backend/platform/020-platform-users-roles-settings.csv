@@ -10,17 +10,17 @@ PLAT-001,Add New User,Platform > User Management,Critical,BL-PLAT-002,ECL-2.1; E
 [STATE] User detail blade Account Type field shows 'Manager', matching the value selected in Steps","[API] GET {{BACK_URL}}/api/platform/security/users - verify user in response
 [CONSOLE] No error logs on save
 [NETWORK] POST /api/platform/security/users returns 200",Save button unresponsive; user not in list after save; 500 error in console,delete created user via Admin,C172798; smoke-baseline,Draft
-PLAT-002,Add User with Already Existing Login,Platform > User Management,High,BL-PLAT-002,ECL-8.1,"Admin logged into backend ({{BACK_URL}}), at least one user exists",username=existing_user (already in system); email=newemail@example.com,"[NAV] Navigate to Security module at {{BACK_URL}}
-[ACT] Click Add User
-[WAIT] Wait for the dialog/action to complete
-[ACT] Enter username that already exists in the system
-[ACT] Enter other required fields
-[ACT] Click Save
-[WAIT] Wait for save to complete","[DOM] No new row is added to the Users grid; the existing user's row remains the only match (new row absent)
-[DOM] Error message displayed: 'Login already exists'
-[STATE] User does not appear in list","[API] GET {{BACK_URL}}/api/platform/security/users - verify duplicate not added
-[CONSOLE] No unhandled exceptions
-[NETWORK] POST returns 400 with validation error body",No error shown on duplicate; duplicate user created silently,none,C172819; smoke-baseline,Draft
+PLAT-002,Add User with Already Existing Login,Platform > User Management,High,BL-PLAT-002,ECL-8.1,Admin logged into backend ({{BACK_URL}}); a disposable AGENT-TEST user is provisioned by the [SETUP] step (the case never relies on a pre-existing user),username=AGENT-TEST-dup-{{RUN_ID}}; email=agent-test-dup-{{RUN_ID}}@test.virtocommerce.com; password={{DEFAULT_TEST_PASSWORD}}; duplicate_email=agent-test-dup2-{{RUN_ID}}@test.virtocommerce.com,"[SETUP] POST {{BACK_URL}}/api/platform/security/users/create with {userName: username, email, password, userType: ""Customer""}; expect HTTP 200 with succeeded:true
+[CAPTURE] Record the baseline: POST {{BACK_URL}}/api/platform/security/users/search {keyword: username} returns totalCount = 1
+[NAV] Navigate to Security > Users at {{BACK_URL}}
+[ACT] Click Add User (New account)
+[ACT] Enter the SAME username as the existing user and a different email (duplicate_email); fill the other required fields
+[ACT] Click Save / Create
+[WAIT] Wait for the save to complete","[DOM] The blade shows the error ""Username 'AGENT-TEST-dup-<RUN_ID>' is already taken."" naming the duplicated username (ASP.NET Identity DuplicateUserName text) {OBSERVED}
+[DOM] No new row is added to the Users grid; the existing user remains the only match for the username
+[STATE] The second account is not created: users/search for the username still returns totalCount = 1 and the original email is unchanged","[API] POST {{BACK_URL}}/api/platform/security/users/search {keyword: username} - totalCount = 1 after the duplicate attempt
+[NETWORK] POST /api/platform/security/users/create answers HTTP 200 with body succeeded:false and errors containing the ""already taken"" text - the platform wraps identity errors in a 200 SecurityResult, it does not return 400 {OBSERVED}
+[CONSOLE] No unhandled exceptions",Duplicate create returns succeeded:true or users/search shows 2 rows (duplicate login accepted - account takeover / ambiguous login); no error shown in the blade; error text does not name the username; HTTP 500 / unhandled exception instead of a succeeded:false result; the original user's email or password is overwritten by the duplicate attempt,"DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-dup-{{RUN_ID}} (by name, not by id); read users/search back and confirm totalCount = 0","C172819; smoke-baseline; Repaired 2026-10-13 (Stable 16 regression VCST-6042): the platform answers a duplicate login with HTTP 200 {succeeded:false, errors:[""Username '<x>' is already taken.""]}, not 400 and not ""Login already exists""; the case now provisions its own user instead of depending on a pre-existing one; KB-3F8696B8",Draft
 PLAT-003,Edit User - Login,Platform > User Management,High,BL-PLAT-002,ECL-2.1; ECL-8.1,"Admin logged into backend ({{BACK_URL}}), test user exists (C172798)",new_username=test_user_updated,"[NAV] Navigate to Security > Users at {{BACK_URL}}
 [ACT] Open existing user
 [ACT] Change Login field to new_username
@@ -66,17 +66,22 @@ PLAT-008,Delete User,Platform > User Management,High,BL-PLAT-002,ECL-2.1,"Admin 
 [STATE] User cannot login","[API] GET {{BACK_URL}}/api/platform/security/users - verify user absent from response
 [CONSOLE] No errors on delete
 [NETWORK] DELETE returns 204",User remains in list after delete; user can still login after deletion,none (user is deleted as cleanup target),C172800; smoke-baseline,Draft
-PLAT-009,Lock User Account,Platform > User Management,High,BL-PLAT-002,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), test user 'user_1' exists (C172798). NOTE: PLAT-009 tests platform-level global lock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped lock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.",username=user_1; storefront_url={{FRONT_URL}},"[NAV] Navigate to Security > Users at {{BACK_URL}}
-[ACT] Open user 'user_1'
-[ACT] Click 'Lock Account' button
-[WAIT] Wait for lock to complete
-[ACT] Save changes
-[WAIT] Wait for save to complete
+PLAT-009,Lock User Account,Platform > User Management,High,BL-PLAT-002,ECL-2.1,Admin logged into backend ({{BACK_URL}}). A disposable AGENT-TEST Customer user with a linked contact is provisioned by the [SETUP] steps and can authenticate before the lock (baseline). NOTE: PLAT-009 tests the platform-level global lock (lockoutEnd on the account). This is DISTINCT from the org-scoped lock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.,username=AGENT-TEST-lock-{{RUN_ID}}@test.virtocommerce.com; password={{DEFAULT_TEST_PASSWORD}}; storefront_url={{FRONT_URL}}; store={{STORE_ID}},"[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Contact"", fullName: ""AGENT-TEST-lock-{{RUN_ID}}""}; [CAPTURE] contactId
+[SETUP] POST {{BACK_URL}}/api/platform/security/users/create {userName: username, email: username, password, userType: ""Customer"", storeId: store, memberId: contactId}; expect succeeded:true; [CAPTURE] userId (GET users/search keyword username)
+[HTTP] POST {{BACK_URL}}/connect/token (grant_type=password, username, password, storeId={{STORE_ID}}) - baseline: HTTP 200 with access_token (proves the account can authenticate BEFORE the lock)
+[NAV] Navigate to Security > Users at {{BACK_URL}}
+[ACT] Open the user AGENT-TEST-lock-{{RUN_ID}}
+[ACT] Click ""Lock account"" in the toolbar (no confirmation dialog)
+[WAIT] Wait for the blade to show the Locked state
 [NAV] Navigate to storefront {{FRONT_URL}}
-[ACT] Attempt login as the locked user","[STATE] Account status changed to 'Locked'
-[DOM] Login attempt displays: 'This account has been locked out, please try again later.'","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify isLockedOut=true
+[ACT] Attempt login as the locked user with the correct password
+[HTTP] POST {{BACK_URL}}/connect/token with the same correct credentials","[STATE] The user blade shows Locked state = Locked
+[DOM] Storefront login is refused with the blocked message that begins ""You have been blocked."" (""You can not reach any information or create the order ..."") {OBSERVED}; there is no separate ""account locked out"" wording on Stable 15 or 16
+[STATUS] POST /connect/token with the CORRECT password is rejected (4xx, no access_token) with error code user_is_locked_out {OBSERVED}","[API] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked returns {locked:true}; the user record carries lockoutEnd in year 9999 (the permanent-lock sentinel). The user DTO has NO isLockedOut field {OBSERVED}
 [CONSOLE] No errors on lock
-[ADMIN] Audit log records lock action",Lock not reflected in UI; locked user can still login at storefront,unlock user account via Admin,C179518; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global,Draft
+[ADMIN] Audit log records lock action","Lock not reflected in the blade; /locked still returns {locked:false}; /connect/token still issues an access_token for the locked user (locked user can still sign in); storefront shows the normal logged-in state or a generic error instead of the blocked message; baseline login failed BEFORE the lock (then the refusal proves nothing - BLOCKED, not PASS)","POST {{BACK_URL}}/api/platform/security/users/{userId}/unlock (by id - lock/unlock by userName returns succeeded:false and changes nothing)
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-lock-{{RUN_ID}}@test.virtocommerce.com
+DELETE {{BACK_URL}}/api/members?ids={contactId}","C179518; Synced: VCST-5028 (2026-06-15) — VALID: platform-level lock remains global; Repaired 2026-10-13 (Stable 16 regression VCST-6042): the text ""This account has been locked out..."" does not exist in the theme on Stable 15 or 16 (only ""You have been blocked...""); the user DTO has no isLockedOut so the lock is verified through /locked + lockoutEnd + token refusal; the case now owns its user instead of ""user_1""; KB-2C4FA5E9",Draft
 PLAT-010,Unlock User Account,Platform > User Management,High,BL-PLAT-002,ECL-2.1,Locked user account exists (C179518). NOTE: PLAT-010 tests platform-level global unlock (ApplicationUser.IsLockedOut). This is DISTINCT from org-scoped unlock introduced by VCST-5028 (OrganizationMembership.IsLocked). Both mechanisms coexist.,username=user_1 (locked); storefront_url={{FRONT_URL}},"[NAV] Navigate to Backend > Security at {{BACK_URL}}
 [ACT] Find locked user from preconditions
 [ACT] Click 'Unlock account'
@@ -139,14 +144,18 @@ PLAT-015,API Key Active FALSE - Unlocked Account Returns No Results,Platform > A
 [DOM] Authentication error displayed
 [STATE] Access denied","[NETWORK] Response status 401 or 403
 [CONSOLE] No unhandled server errors",200 returned for inactive key; data exposed despite inactive key,restore API key to Active=TRUE,C184253; smoke-baseline,Draft
-PLAT-016,API Key Active TRUE - Locked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account locked (C179518), API key exists with Active=TRUE",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<active_key_secret>,"[SETUP] Confirm via GET {{BACK_URL}}/api/platform/security/users/{id} that isLockedOut=true before proceeding
-[NAV] Open browser
-[ACT] Enter API endpoint URL with api_key parameter
-[ACT] Execute API request
-[ASSERT] Observe response","[STATE] JSON response is NOT returned
-[DOM] Authentication error displayed
-[DOM] Account locked message","[NETWORK] Response status 401 or 403
-[CONSOLE] No unhandled server errors",200 returned for locked account; data accessible via API key despite account lock,unlock account after test,C184250; smoke-baseline,Draft
+PLAT-016,API Key Active TRUE - Locked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,Admin logged into backend ({{BACK_URL}}); a disposable AGENT-TEST user with an active API key is provisioned by the [SETUP] steps; the account is locked inside the case,"api_endpoint={{BACK_URL}}/api/platform/security/currentuser; protected_endpoint={{BACK_URL}}/api/platform/security/users/<userName>; username=AGENT-TEST-apikey-{{RUN_ID}}; password={{DEFAULT_TEST_PASSWORD}}; api_key=<GUID generated with random-data, sent as apiKey; read back via GET users/{userId}/apikeys>","[SETUP] POST {{BACK_URL}}/api/platform/security/users/create {userName: username, email: agent-test-apikey-{{RUN_ID}}@test.virtocommerce.com, password, userType: ""Administrator"", isAdministrator: true} (userType alone leaves isAdministrator=false and the protected endpoint answers 403 even before the lock; alternatively give the user a role with security:query); [CAPTURE] userId
+[SETUP] POST {{BACK_URL}}/api/platform/security/users/apikeys {userId, userName, isActive: true, apiKey: <GUID from random-data>} - the server does NOT generate a key (it answers 200 with an empty body and apiKey stays null), so the key is supplied by the case; then GET {{BACK_URL}}/api/platform/security/users/{userId}/apikeys; [CAPTURE] apiKeyId and confirm the stored apiKey equals the supplied GUID
+[HTTP] GET api_endpoint?api_key=<apiKey> - baseline: HTTP 200 JSON naming the user, and GET protected_endpoint?api_key=<apiKey> returns 200 (proves the key works BEFORE the lock; a 403 here means the user is not an administrator - BLOCKED, fix the setup)
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/{userId}/lock; confirm GET .../users/{userId}/locked returns {locked:true}
+[HTTP] GET protected_endpoint?api_key=<apiKey>
+[HTTP] GET api_endpoint?api_key=<apiKey>","[STATUS] The protected endpoint answers 401 after the lock (was 200 before)
+[BODY] The 401 body is empty - no user data and no lock-specific message; the platform never returns an ""account locked"" text for API-key authentication {OBSERVED}
+[BODY] currentuser with the locked user's key returns the anonymous result {} (no userName / id / permissions of the locked user) - identical to a bogus key {OBSERVED}","[API] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked returns {locked:true} before the key is exercised
+[NETWORK] Locked key: 401 on the protected endpoint; the same key was 200 before the lock
+[CONSOLE] No unhandled server errors (no 500)","200 with the user list / user data for the locked account's key (API key bypasses the account lock); currentuser still returns the locked user's identity; 500 instead of 401; baseline key request failed before the lock (key never worked - BLOCKED, not PASS)","DELETE {{BACK_URL}}/api/platform/security/users/apikeys?ids={apiKeyId}
+POST {{BACK_URL}}/api/platform/security/users/{userId}/unlock
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-apikey-{{RUN_ID}}","C184250; smoke-baseline; Repaired 2026-10-13 (Stable 16 regression VCST-6042): API-key auth for a locked account yields 401 with an EMPTY body (no ""account locked"" message on Stable 15 or 16); the assertion now requires 401 + empty body + no user data, with a before-lock baseline so a never-working key cannot pass; KB-10DDE2FE; Second pass 2026-10-13: key is supplied as a random GUID (POST apikeys generates none and returns an empty 200); user created with isAdministrator:true so the baseline is 200 not 403; {OBSERVED} Stable 16",Draft
 PLAT-017,API Key Active FALSE - Locked Account Returns No Results,Platform > API Keys,High,BL-PLAT-001; BL-PLAT-002,ECL-2.1,"User account locked (C179518), API key exists with Active=FALSE",api_endpoint={{BACK_URL}}/api/platform/security/users; api_key=<inactive_key_secret>,"[SETUP] Confirm account isLockedOut=true before proceeding
 [SETUP] Confirm API key Active flag is FALSE before proceeding
 [NAV] Open browser
@@ -250,19 +259,22 @@ PLAT-026,Delete Roles from User,Platform > Roles & Permissions,High,BL-PLAT-001,
 [DOM] Roles widget badge/count is visible showing the decremented total
 [STATE] User no longer has removed role permissions","[API] GET {{BACK_URL}}/api/platform/security/users/{id} - verify roles array excludes removed role
 [CONSOLE] No errors on removal",Role count unchanged after remove; user retains removed role permissions,none (roles removed as test action),C184072; smoke-baseline,Draft
-PLAT-061,Platform Settings - User Types Configuration,Platform > Settings,Medium,BL-PLAT-001; BL-PLAT-004,ECL-2.1,Admin logged into backend ({{BACK_URL}}),user_types_path=Settings > Platform > User types; new_type=CustomManager,"[NAV] Navigate to Settings > Platform > User types at {{BACK_URL}}
-[ASSERT] Review available user types (Manager, Administrator, Customer, etc.)
-[ACT] Add new user type: CustomManager (if applicable)
-[WAIT] Wait for the dialog/action to complete
-[ACT] Modify user type settings
-[ASSERT] Verify settings persisted
-[ACT] Create user with new user type
-[ASSERT] Verify user created with correct type","[DOM] User Types list is visible in Settings showing the Manager, Administrator, and Customer entries
-[STATE] User types configurable
-[STATE] Settings persist after save
-[STATE] New user types can be assigned to users","[API] GET {{BACK_URL}}/api/platform/security/roles - verify user types
-[CONSOLE] No errors on save
-[NETWORK] PUT returns 200",Settings not persisted; new user type not assignable; user creation fails with new type,restore original user types settings via Admin,C242701; smoke-baseline,Draft
+PLAT-061,Platform Settings - User Types Configuration,Platform > Settings,Medium,BL-PLAT-001; BL-PLAT-004,ECL-2.1,Admin logged into backend ({{BACK_URL}}); the baseline of the Account types dictionary is captured before any change,account_types_path=Settings > Platform > Security > Account types; setting=VirtoCommerce.Platform.Security.AccountTypes; new_type=AGENT-TEST-CustomManager-{{RUN_ID}}; test_username=AGENT-TEST-usertype-{{RUN_ID}}; password={{DEFAULT_TEST_PASSWORD}},"[CAPTURE] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.AccountTypes - record allowedValues as the baseline
+[NAV] Navigate to Settings > Platform > Security > Account types (pencil) at {{BACK_URL}}
+[ASSERT] Review the listed account types
+[ACT] Add the new account type new_type; edit its en-US label once
+[SAVE] Save the dictionary
+[NAV] Reload the page and reopen Settings > Platform > Security > Account types
+[HTTP] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.AccountTypes
+[NAV] Security > Users > New account: open the Account type dropdown
+[HTTP] POST {{BACK_URL}}/api/platform/security/users/create {userName: test_username, email, password, userType: new_type}; then GET users/search keyword test_username","[DOM] The Account types list shows the built-in types Administrator, Customer and Manager {DOC} (this environment also lists CustomerTest {OBSERVED})
+[STATE] After a full page reload the new type is still in the list and its edited en-US label is kept
+[STATE] allowedValues of the setting contains new_type (the system value, not the label)
+[DOM] The Account type dropdown of New account offers the new type (shown by its localized label)
+[STATE] The created user has userType == new_type (the system value)","[API] GET {{BACK_URL}}/api/platform/settings/VirtoCommerce.Platform.Security.AccountTypes - allowedValues contains new_type after save, and equals the baseline again after Cleanup
+[NETWORK] Save = POST {{BACK_URL}}/api/platform/localizable-settings/VirtoCommerce.Platform.Security.AccountTypes/dictionary-items returns 204 (not PUT 200) {OBSERVED}
+[CONSOLE] No errors on save",New type missing after reload (not persisted); allowedValues does not contain it; dictionary-items save returns non-204; new type not offered in New account; created user stored with the label or the default type instead of new_type; allowedValues differs from the baseline after Cleanup (leaked test value),"DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-usertype-{{RUN_ID}}
+Delete new_type: Account types blade > select > Delete > Yes (or DELETE {{BACK_URL}}/api/platform/localizable-settings/VirtoCommerce.Platform.Security.AccountTypes/dictionary-items?values=new_type -> 200). The UI delete can drop silently (net::ERR_CONNECTION_CLOSED) - do not trust the click: GET allowedValues and require it to equal the baseline, retrying the REST delete if not","C242701; smoke-baseline; Repaired 2026-10-13 (Stable 16 regression VCST-6042): account types live at Settings > Platform > Security > Account types (there is no ""User types"" page) and are saved by POST localizable-settings/.../dictionary-items -> 204; /api/platform/security/roles is not account types and returns 405; uses an AGENT-TEST value and reads the setting back",Draft
 PLAT-062,Healthcheck - No Problems (Modules),Platform > Healthcheck,Critical,BL-PLAT-004,ECL-2.1,"Admin logged into backend ({{BACK_URL}}), all modules healthy",healthcheck_endpoint={{BACK_URL}}/health,"[NAV] Navigate to More > Healthcheck at {{BACK_URL}} (or access {{BACK_URL}}/health endpoint)
 [ASSERT] Review overall system status
 [ASSERT] Review modules section
@@ -515,29 +527,25 @@ PLAT-083,Account Lockout — Manager-Type Account Subject to Same Lockout Policy
 [STATE] Manager account locked after 5 failed attempts (not exempt from lockout)","[API] GET {{BACK_URL}}/api/platform/security/users/<id>/locked returns {locked: true} for Manager-type user after 5 failures
 [NETWORK] POST {{BACK_URL}}/connect/token attempt 6 with correct Manager password returns 400/401 (lockout enforced; not 200)
 [CONSOLE] No JavaScript errors",Manager account remains Unlocked after 5 failed attempts (VCST-4999 regression — Manager-type exempt from lockout); attempt 6 with correct Manager password returns 200 (lockout not applied to Manager); GET .../locked returns {locked: false},[SAVE] Unlock Manager account: click Unlock in Admin SPA; delete AGENT-TEST- user,"VCST-4999, VCST-5149; TEST_DATA_DEFECT fix (REG-2026-07-30-1651 triage): retargeted to an in-test-provisioned disposable Manager account (see added [SETUP] step) instead of a static missing fixture; underlying VCST-4999 invariant independently confirmed this run via PLAT-066 (Customer-type)",Draft
-PLAT-084,Global Lock vs Org-Scoped Lock — Distinct Mechanisms (VCST-5028),Platform > User Management > Lockout,High,BL-AUTH-003,ECL-2.1,Admin logged into Backend ({{BACK_URL}}); a test user exists who is a member of at least one org (use @td(TECHFLOW_BUYER.email)),back_url={{BACK_URL}}; user_email=@td(TECHFLOW_BUYER.email),"[NAV] Navigate to {{BACK_URL}} > Security > Users
-[BLADE] Users blade open
-[ACT] Search for @td(TECHFLOW_BUYER.email)
-[ACT] Open user detail blade
-[ASSERT] Note current platform lock state (ApplicationUser.IsLockedOut) — should be Unlocked
-[ACT] Click Lock button in Admin SPA (platform-level global lock)
-[WAIT] Wait for lock to complete
-[SAVE] Confirm lock action
-[ASSERT] User detail blade shows Locked state
-[HTTP GET] {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id)
-[STATUS] 200
-[BODY] Check field isLockedOut = true (platform-level global lock applied)
-[NAV] Navigate to Customer module > Members — find the same user @td(TECHFLOW_BUYER.email)
-[BLADE] Open user's Organization Memberships widget (VCST-5028)
-[ASSERT] OrganizationMembership.IsLocked field for TechFlow membership is false — org-scoped lock is INDEPENDENT of platform lock
-[ASSERT] Platform lock (isLockedOut=true) and org lock (IsLocked=false) coexist simultaneously — they are distinct mechanisms
-[NAV] Return to Security > Users
-[ACT] Click Unlock for @td(TECHFLOW_BUYER.email) to restore platform lock state
-[WAIT] Wait for unlock to complete","[FORM] Platform-level lock (ApplicationUser.IsLockedOut) reflects Locked after Admin SPA lock action
-[API] GET ...users/{id} returns isLockedOut=true after platform lock
-[FORM] Organization Memberships widget shows org-scoped IsLocked = false (unchanged by platform lock) — mechanisms are independent
-[ASSERT] Both lock fields coexist without interfering: platform isLockedOut=true, org IsLocked=false in same user state","[API] GET {{BACK_URL}}/api/platform/security/users/@td(TECHFLOW_BUYER.platform_id) — verify isLockedOut field before and after lock action
-[VERIFY] Customer module org-memberships endpoint confirms org-scoped lock field is unaffected by platform lock action",Platform lock and org-scoped lock appear to be the same mechanism (regression: locking platform also sets org IsLocked=true); org lock widget absent (VCST-5028 widget not rendered); GET isLockedOut returns null or missing,[ACT] Unlock @td(TECHFLOW_BUYER.email) via Admin SPA after test to restore original state,VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15),Draft
+PLAT-084,Global Lock vs Org-Scoped Lock — Distinct Mechanisms (VCST-5028),Platform > User Management > Lockout,High,BL-AUTH-003,ECL-2.1,"Admin logged into Backend ({{BACK_URL}}); a disposable AGENT-TEST organization, contact, user and organization membership are provisioned by the [SETUP] steps (no shared persona is locked or modified)",back_url={{BACK_URL}}; org_name=AGENT-TEST-org-lock-{{RUN_ID}}; username=AGENT-TEST-lock84-{{RUN_ID}}@test.virtocommerce.com; password={{DEFAULT_TEST_PASSWORD}}; store={{STORE_ID}},"[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Organization"", name: org_name}; [CAPTURE] organizationId
+[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Contact"", fullName: ""AGENT-TEST-lock84-{{RUN_ID}}"", organizations: [organizationId]}; [CAPTURE] contactId
+[SETUP] POST {{BACK_URL}}/api/platform/security/users/create {userName: username, email: username, password, userType: ""Customer"", storeId: store, memberId: contactId}; then GET {{BACK_URL}}/api/platform/security/users/{username} and [CAPTURE] userId = id (users/create returns only {succeeded, errors})
+[SETUP] POST {{BACK_URL}}/api/customer/organization-memberships {userId, organizationId}; [CAPTURE] membershipId
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked - baseline {locked:false}; POST {{BACK_URL}}/api/customer/organization-memberships/search {userId} - baseline isLocked:false
+[NAV] Navigate to {{BACK_URL}} > Security > Users; search for username; open the user detail blade
+[ACT] Click ""Lock account"" in the toolbar (platform-level global lock; no confirmation dialog)
+[WAIT] Wait for the blade to show the Locked state
+[HTTP] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked, then GET {{BACK_URL}}/api/platform/security/users/id/{userId} (the id/ segment form; users/{userId} reads the segment as a userName and returns 200 null)
+[NAV] Contacts > the contact > Organization memberships > open the membership blade
+[HTTP] POST {{BACK_URL}}/api/customer/organization-memberships/search {userId}","[FORM] The user blade shows Locked state = Locked after the Admin lock action
+[API] GET users/{userId}/locked returns {locked:true}; the user record read via users/id/{userId} carries lockoutEnd in year 9999. The user DTO has NO isLockedOut field, so the lock is asserted through /locked and lockoutEnd {OBSERVED}
+[FORM] The membership blade shows Locked state = Unlocked while the platform lock is active - the org-scoped flag is untouched {OBSERVED}
+[API] organization-memberships/search by userId returns isLocked:false and isCurrentlyLocked:false while locked:true on the platform account - the two mechanisms are independent {OBSERVED}","[API] GET {{BACK_URL}}/api/platform/security/users/{userId}/locked before (false) and after (true) the lock action
+[VERIFY] The Customer module memberships endpoint confirms the org-scoped lock fields are unchanged by the platform lock action
+[CONSOLE] Opening the membership blade logs TypeError ""Cannot read properties of null (reading toLowerCase)"" twice (Customer module role-whitelist filter) - known incidental, the blade still renders; not an assertion failure",Locking the platform account also sets the membership isLocked/isCurrentlyLocked = true (the two mechanisms merged - VCST-5028 regression); /locked still false after the Admin lock; the membership widget/blade is absent (VCST-5028 not rendered); the baseline already showed locked:true (leaked state from a previous run - BLOCKED); lock applied to a user other than the case's own AGENT-TEST user,"POST {{BACK_URL}}/api/platform/security/users/{userId}/unlock (by id)
+DELETE {{BACK_URL}}/api/customer/organization-memberships?ids={membershipId}
+DELETE {{BACK_URL}}/api/platform/security/users?names=AGENT-TEST-lock84-{{RUN_ID}}@test.virtocommerce.com
+DELETE {{BACK_URL}}/api/members?ids={contactId}&ids={organizationId} (repeated ids parameter - a comma-joined ids value returns 204 but deletes nothing)","VCST-5028; PLAT-009; PLAT-010; Synced: VCST-5028 (2026-06-15); Repaired 2026-10-13 (Stable 16 regression VCST-6042): the user DTO has no isLockedOut field (asserted via /locked + lockoutEnd instead); the case no longer hardcodes/locks the shared TECHFLOW_BUYER persona - it creates its own org + contact + user + membership per run; KB-F39ECA1A, KB-2C4FA5E9; Second pass 2026-10-13: Cleanup uses repeated ids parameters (comma form deleted nothing); Third pass 2026-10-13 (live run): lockoutEnd is read via GET users/id/{userId} (users/{userId} resolves a userName: 200 null)",Draft
 PLAT-085,Admin SPA Session Expiry Shows Clean Sign-In Screen (No Broken Blade) After API 401,Platform > Security > Session Expiry,Critical,BL-AUTH-014,,Admin logged into Backend ({{BACK_URL}}) with a valid session; a blade is open showing live data (e.g. Security > Users grid),admin_email={{ADMIN_EMAIL}}; admin_password={{ADMIN_PASSWORD}},"[NAV] Navigate to {{BACK_URL}}
 [ACT] Sign in with admin credentials
 [WAIT] Admin SPA home loads

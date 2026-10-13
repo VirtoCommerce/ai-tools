@@ -302,18 +302,23 @@
 [STATE] Data consistency maintained","[API] GET {{BACK_URL}}/api/platform/dynamic-properties after each operation
 [ADMIN] Verify each change in respective UI
 [CONSOLE] No errors on edit or delete","Edits not reflected cross-direction; deletes leave orphaned properties","none (properties deleted as test actions)","C176002, C176003, C176004, C176005","Automated"
-"PLAT-051","Organization Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}), Organization exists","org_name=test_org_001; property_types=[ShortText, LongText, Integer]; integer_boundary=2147483647","[ACT] Create Short Text property (Required, Dictionary, Multivalue, Multilingual)
-[ACT] Create Short Text combinations (Multilingual + Required, Multivalue + Multilingual, Multivalue + Required)
-[ACT] Create Long Text property (Required, Multivalue, Multilingual, Required + Multilingual)
-[ACT] Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
-[ACT] Test display order, description, localization
-[ACT] Test large integer value: enter 2147483647","[STATE] Short Text properties validate correctly with all flag combinations
-[STATE] Long Text properties support required + multilingual
-[STATE] Integer properties validate type and boundaries
-[STATE] Display order affects property order
-[STATE] Localization working for multilingual properties","[API] GET {{BACK_URL}}/api/platform/dynamic-properties - verify all created properties
-[CONSOLE] No validation errors for valid inputs
-[CONSOLE] Validation errors present for invalid inputs","Integer field accepts non-integer values; multilingual not persisting; display order not respected","delete all created test dynamic properties via Admin","C274628-274629, C274632, C279189-279191, C279193, C274624-274627, C274670-274672, C279268-279274","Automated"
+"PLAT-051","Organization Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}); an AGENT-TEST Organization is provisioned by the [SETUP] step","org_name=AGENT-TEST-org-{{RUN_ID}}; property_name_prefix=AGENT-TEST-dp-{{RUN_ID}}; property_types=[ShortText, LongText, Integer]; integer_boundary=2147483647; invalid_integers=[x9, abc]","[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Organization"", name: ""AGENT-TEST-org-{{RUN_ID}}""}; [CAPTURE] memberId
+[ACT] Open Platform > Dynamic properties > Organization > Add new property; create Short Text properties: Required, Dictionary, Multivalue, Multilingual, and the combinations Multilingual + Required, Multivalue + Multilingual, Multivalue + Required
+[ACT] Create Long Text properties: Required, Multilingual, Required + Multilingual (Multivalue is NOT offered for Long Text - the switch is disabled)
+[ACT] Create Integer properties: Required, Multivalue, Required + Multivalue (Multilingual is NOT offered for Integer - the switch is disabled)
+[ACT] Try to switch on Multivalue for a Long Text property and Multilingual for an Integer property
+[ACT] Set display order and description on the properties and reopen the list
+[NAV] Open the AGENT-TEST Organization detail blade > Dynamic properties and fill the values. A Required property keeps OK disabled until it is filled; a Required + Multilingual property needs EVERY language filled before OK enables; the organization already has two pre-existing Required org properties - fill those too before OK enables
+[ACT] Integer: enter 2147483647, then x9 and abc
+[SAVE] Save the Organization, reopen it","[STATE] Short Text properties accept every supported flag combination and the values persist after Save + reopen
+[STATE] Long Text supports Required, Multilingual and Required + Multilingual; values persist
+[STATE] Integer supports Required, Multivalue and Required + Multivalue; 2147483647 is accepted and persisted; x9 and abc are rejected
+[STATE] The Long Text + Multivalue and Integer + Multilingual switches are disabled in the Admin form {OBSERVED} - the product does not offer those combinations (a property forced in via the API has no editor: its template 404s)
+[STATE] Required properties block OK until filled; Required + Multilingual blocks until every language is filled
+[STATE] Display order drives the order of the properties on the Organization form
+[STATE] Localization works for multilingual properties","[API] POST {{BACK_URL}}/api/platform/dynamic/properties/search {keyword: property_name_prefix, objectType: VirtoCommerce.CustomerModule.Core.Model.Organization} (the short name Organization returns 0 results) - every created property carries the flags it was created with (isRequired / isArray / isMultilingual / isDictionary) and the right valueType
+[API] GET {{BACK_URL}}/api/members?ids={memberId} - the saved values read back unchanged (the large integer is exactly 2147483647)
+[CONSOLE] No validation errors for valid inputs; validation errors present for invalid inputs","Integer field accepts a non-integer (x9 / abc) or truncates 2147483647; a Required property lets OK enable while empty (required not enforced); Required + Multilingual saves with a language missing; multilingual values not persisted or lost for one locale; the Long Text + Multivalue / Integer + Multilingual switches become enabled although the property then renders without an editor (404 template); display order not respected; a saved flag differs from what the API reads back","DELETE {{BACK_URL}}/api/platform/dynamic/properties?propertyIds=<every AGENT-TEST-dp-{{RUN_ID}} property>; DELETE {{BACK_URL}}/api/members?ids={memberId}; search the properties again and confirm none with the prefix remain","C274628-274629, C274632, C279189-279191, C279193, C274624-274627, C274670-274672, C279268-279274; Repaired 2026-10-13 (Stable 16 regression VCST-6042): dropped the Long Text + Multivalue and Integer + Multilingual combinations (the Admin form disables those switches) and replaced them with an assertion that they stay disabled; added the Required + Multilingual every-language rule; the case now owns an AGENT-TEST organization; KB-6698A1D9; Second pass 2026-10-13: objectType in the cross-layer search is the full type name VirtoCommerce.CustomerModule.Core.Model.<Type> (short name returns 0)","Automated"
 "PLAT-052","Add Dynamic Property for Employee - Bidirectional","Platform > Dynamic Properties > Contacts","High","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}})","property_name=EmpProperty1; entity_type=VirtoCommerce.CustomerModule.Core.Model.Employee","[NAV] Navigate to More > Dynamic Properties at {{BACK_URL}}
 [ACT] Select type 'VirtoCommerce.CustomerModule.Core.Model.Employee'
 [ACT] Click Add Property: EmpProperty1
@@ -340,19 +345,23 @@
 [STATE] Data consistency maintained","[API] GET {{BACK_URL}}/api/platform/dynamic-properties after each operation
 [ADMIN] Verify each change in respective UI
 [CONSOLE] No errors on edit or delete","Edits not reflected cross-direction; deletes leave orphaned properties","none (properties deleted as test actions)","C176009, C176010, C176011, C176012","Automated"
-"PLAT-054","Employee Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}), Employee exists","employee_name=test_employee_001; property_types=[ShortText, LongText, Integer]; integer_boundary=2147483647","[ACT] Create Short Text property (Required, Multilingual, Dictionary, Multivalue)
-[ACT] Create Short Text combinations (Multilingual + Required, Multivalue + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary)
-[ACT] Create Long Text property (Required, Multilingual, Multivalue, Required + Multilingual)
-[ACT] Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
-[ACT] Test display order, description, localization
-[ACT] Test large integer value: enter 2147483647","[STATE] Short Text properties validate correctly with all flag combinations
-[STATE] Long Text properties support required + multilingual
-[STATE] Integer properties validate type and boundaries
-[STATE] Display order affects property order
-[STATE] Dictionary + Multilingual + Required combinations work
-[STATE] Localization working for multilingual properties","[API] GET {{BACK_URL}}/api/platform/dynamic-properties - verify all created properties
-[CONSOLE] No validation errors for valid inputs
-[CONSOLE] Validation errors present for invalid inputs","Integer field accepts non-integer; complex combinations (multivalue+multilingual+dictionary) fail; localization not persisted","delete all created test dynamic properties via Admin","C274708-274709, C274712, C279194-279198, C274704-274707, C274713, C274743-274747, C279285-279288","Automated"
+"PLAT-054","Employee Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}); an AGENT-TEST Employee is provisioned by the [SETUP] step","employee_name=AGENT-TEST-employee-{{RUN_ID}}; property_name_prefix=AGENT-TEST-dp-{{RUN_ID}}; property_types=[ShortText, LongText, Integer]; integer_boundary=2147483647; invalid_integers=[x9, abc]","[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Employee"", fullName: ""AGENT-TEST-employee-{{RUN_ID}}"", firstName: ""AGENT-TEST"", lastName: ""employee-{{RUN_ID}}""} (without first/last name the Admin Save stays disabled); [CAPTURE] memberId
+[ACT] Open Platform > Dynamic properties > Employee > Add new property; create Short Text properties: Required, Multilingual, Dictionary, Multivalue, and the combinations Multilingual + Required, Multivalue + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary, Dictionary + Multilingual + Required
+[ACT] Create Long Text properties: Required, Multilingual, Required + Multilingual (Multivalue is NOT offered for Long Text - the switch is disabled)
+[ACT] Create Integer properties: Required, Multivalue, Required + Multivalue (Multilingual is NOT offered for Integer - the switch is disabled)
+[ACT] Try to switch on Multivalue for a Long Text property and Multilingual for an Integer property
+[ACT] Set display order and description on the properties and reopen the list
+[NAV] Open the AGENT-TEST Employee detail blade > Dynamic properties and fill the values. A Required property keeps OK disabled until it is filled; a Required + Multilingual property needs EVERY language filled before OK enables; for Dictionary properties pick the item in the dictionary picker (a Dictionary + Multilingual property shows ONE picker, not a dictionary item per language)
+[ACT] Integer: enter 2147483647, then x9 and abc
+[SAVE] Save the Employee, reopen it","[STATE] Short Text properties accept every supported flag combination and the values persist after Save + reopen
+[STATE] Long Text supports Required, Multilingual and Required + Multilingual; values persist
+[STATE] Integer supports Required, Multivalue and Required + Multivalue; 2147483647 is accepted and persisted; x9 and abc are rejected
+[STATE] The Long Text + Multivalue and Integer + Multilingual switches are disabled in the Admin form {OBSERVED} - the product does not offer those combinations (a property forced in via the API has no editor: its template 404s)
+[STATE] Required properties block OK until filled; Required + Multilingual blocks until every language is filled
+[STATE] Display order drives the order of the properties on the Employee form
+[STATE] Dictionary + Multilingual + Required and Dictionary + Multivalue + Required combinations work (the Dictionary + Multilingual + Required property shows one dictionary picker and the picked item persists); localization works for multilingual properties (all 10 locales for Required + Multilingual)","[API] POST {{BACK_URL}}/api/platform/dynamic/properties/search {keyword: property_name_prefix, objectType: VirtoCommerce.CustomerModule.Core.Model.Employee} (the short name Employee returns 0 results) - every created property carries the flags it was created with (isRequired / isArray / isMultilingual / isDictionary) and the right valueType
+[API] GET {{BACK_URL}}/api/members?ids={memberId} - the saved values read back unchanged (the large integer is exactly 2147483647)
+[CONSOLE] No validation errors for valid inputs; validation errors present for invalid inputs","Integer field accepts a non-integer (x9 / abc) or truncates 2147483647; a Required property lets OK enable while empty (required not enforced); Required + Multilingual saves with a language missing; multilingual values not persisted or lost for one locale; complex combinations (Multivalue + Multilingual + Dictionary) fail to save or lose items; the Long Text + Multivalue / Integer + Multilingual switches become enabled although the property then renders without an editor (404 template); display order not respected; a saved flag differs from what the API reads back; Required dictionary property left empty but OK/Save enabled (VCST-6331)","DELETE {{BACK_URL}}/api/platform/dynamic/properties?propertyIds=<every AGENT-TEST-dp-{{RUN_ID}} property>; DELETE {{BACK_URL}}/api/members?ids={memberId}; search the properties again and confirm none with the prefix remain","C274708-274709, C274712, C279194-279198, C274704-274707, C274713, C274743-274747, C279285-279288; Repaired 2026-10-13 (Stable 16 regression VCST-6042): dropped the Long Text + Multivalue and Integer + Multilingual combinations (the Admin form disables those switches) and replaced them with an assertion that they stay disabled; the case now owns an AGENT-TEST employee; Second pass 2026-10-13: objectType in the cross-layer search is the full type name VirtoCommerce.CustomerModule.Core.Model.<Type> (short name returns 0); setup member carries firstName/lastName so Admin Save enables; Dictionary + Multilingual uses a single picker and its Required combination is now created in the steps | Known pre-existing defect VCST-6331 (2026-10-13): a Required DICTIONARY property does not block OK/Save when empty (missing ng-required in genericValueInput.tpl.html; also on Stable 15) - this case is expected to FAIL on that assertion until VCST-6331 is fixed","Automated"
 "PLAT-055","Add Dynamic Property for Customer/Contact - Bidirectional","Platform > Dynamic Properties > Contacts","High","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}})","property_name=ContactProperty1; entity_type=VirtoCommerce.CustomerModule.Core.Model.Contact","[NAV] Navigate to More > Dynamic Properties at {{BACK_URL}}
 [ACT] Select type 'VirtoCommerce.CustomerModule.Core.Model.Contact'
 [ACT] Click Add Property: ContactProperty1
@@ -378,19 +387,23 @@
 [STATE] Data consistency maintained","[API] GET {{BACK_URL}}/api/platform/dynamic-properties after each operation
 [ADMIN] Verify each change in respective UI
 [CONSOLE] No errors on edit or delete","Edits not reflected cross-direction; deletes leave orphaned properties","none (properties deleted as test actions)","C176016, C176017, C176018, C176019","Automated"
-"PLAT-057","Contact Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}), Contact exists","contact_name=test_contact_001; property_types=[ShortText, LongText, Integer]; locales=[EN, FR]; integer_boundary=2147483647","[ACT] Create Short Text property (Required, Dictionary, Multivalue, Multilingual)
-[ACT] Create Short Text combinations (Multivalue + Multilingual, Required + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary, Dictionary + Multilingual + Required)
-[ACT] Create Long Text property (Required, Multivalue, Multilingual, Required + Multilingual)
-[ACT] Create Integer property (Required, Multivalue, Required + Multivalue, Multilingual)
-[ACT] Test display order, description, FR localization
-[ACT] Test large integer value: enter 2147483647","[STATE] Short Text properties validate correctly with all complex combinations
-[STATE] Long Text properties support required + multilingual
-[STATE] Integer properties validate type and boundaries
-[STATE] Display order affects property order
-[STATE] Dictionary + Multilingual + Required combinations work
-[STATE] Localization working (FR tested)","[API] GET {{BACK_URL}}/api/platform/dynamic-properties - verify all created properties
-[CONSOLE] No validation errors for valid inputs
-[CONSOLE] Validation errors present for invalid inputs","Complex combinations fail; FR localization not saved; integer boundary rejected","delete all created test dynamic properties via Admin","C274760-274761, C274764, C279199-279203, C274749-274759, C279291-279295","Automated"
+"PLAT-057","Contact Dynamic Property - Value Types Validation","Platform > Dynamic Properties > Contacts","Medium","BL-PLAT-004","ECL-8.1","Admin logged into backend ({{BACK_URL}}); an AGENT-TEST Contact is provisioned by the [SETUP] step","contact_name=AGENT-TEST-contact-{{RUN_ID}}; property_name_prefix=AGENT-TEST-dp-{{RUN_ID}}; property_types=[ShortText, LongText, Integer]; locales=[EN, FR]; integer_boundary=2147483647; invalid_integers=[x9, abc]","[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Contact"", fullName: ""AGENT-TEST-contact-{{RUN_ID}}"", firstName: ""AGENT-TEST"", lastName: ""contact-{{RUN_ID}}""} (without first/last name the Admin Save stays disabled); [CAPTURE] memberId
+[ACT] Open Platform > Dynamic properties > Contact > Add new property; create Short Text properties: Required, Dictionary, Multivalue, Multilingual, and the combinations Multivalue + Multilingual, Required + Multilingual, Multivalue + Required, Multivalue + Multilingual + Dictionary, Multivalue + Required + Dictionary, Dictionary + Multilingual + Required
+[ACT] Create Long Text properties: Required, Multilingual, Required + Multilingual (Multivalue is NOT offered for Long Text - the switch is disabled)
+[ACT] Create Integer properties: Required, Multivalue, Required + Multivalue (Multilingual is NOT offered for Integer - the switch is disabled)
+[ACT] Try to switch on Multivalue for a Long Text property and Multilingual for an Integer property
+[ACT] Set display order and description on the properties and reopen the list
+[NAV] Open the AGENT-TEST Contact detail blade > Dynamic properties and fill the values. A Required property keeps OK disabled until it is filled; a Required + Multilingual property needs EVERY language filled before OK enables; a Dictionary + Multilingual + Required property shows EN and FR names; FR values must persist
+[ACT] Integer: enter 2147483647, then x9 and abc
+[SAVE] Save the Contact, reopen it","[STATE] Short Text properties accept every supported flag combination and the values persist after Save + reopen
+[STATE] Long Text supports Required, Multilingual and Required + Multilingual; values persist
+[STATE] Integer supports Required, Multivalue and Required + Multivalue; 2147483647 is accepted and persisted; x9 and abc are rejected
+[STATE] The Long Text + Multivalue and Integer + Multilingual switches are disabled in the Admin form {OBSERVED} - the product does not offer those combinations (a property forced in via the API has no editor: its template 404s)
+[STATE] Required properties block OK until filled; Required + Multilingual blocks until every language is filled
+[STATE] Display order drives the order of the properties on the Contact form
+[STATE] Localization works (FR tested) and the EN/FR names of a Dictionary + Multilingual + Required property are both shown","[API] POST {{BACK_URL}}/api/platform/dynamic/properties/search {keyword: property_name_prefix, objectType: VirtoCommerce.CustomerModule.Core.Model.Contact} (the short name Contact returns 0 results) - every created property carries the flags it was created with (isRequired / isArray / isMultilingual / isDictionary) and the right valueType
+[API] GET {{BACK_URL}}/api/members?ids={memberId} - the saved values read back unchanged (the large integer is exactly 2147483647)
+[CONSOLE] No validation errors for valid inputs; validation errors present for invalid inputs","Integer field accepts a non-integer (x9 / abc) or truncates 2147483647; a Required property lets OK enable while empty (required not enforced); Required + Multilingual saves with a language missing; multilingual values not persisted or lost for one locale; FR localization not saved; the Long Text + Multivalue / Integer + Multilingual switches become enabled although the property then renders without an editor (404 template); display order not respected; a saved flag differs from what the API reads back; Required dictionary property left empty but OK/Save enabled (VCST-6331)","DELETE {{BACK_URL}}/api/platform/dynamic/properties?propertyIds=<every AGENT-TEST-dp-{{RUN_ID}} property>; DELETE {{BACK_URL}}/api/members?ids={memberId}; search the properties again and confirm none with the prefix remain","C274760-274761, C274764, C279199-279203, C274749-274759, C279291-279295; Repaired 2026-10-13 (Stable 16 regression VCST-6042): dropped the Long Text + Multivalue and Integer + Multilingual combinations (the Admin form disables those switches) and replaced them with an assertion that they stay disabled; the case now owns an AGENT-TEST contact; Second pass 2026-10-13: objectType in the cross-layer search is the full type name VirtoCommerce.CustomerModule.Core.Model.<Type> (short name returns 0); setup member carries firstName/lastName so Admin Save enables | Known pre-existing defect VCST-6331 (2026-10-13): a Required DICTIONARY property does not block OK/Save when empty (missing ng-required in genericValueInput.tpl.html; also on Stable 15) - this case is expected to FAIL on that assertion until VCST-6331 is fixed","Automated"
 "PLAT-058","Add Dynamic Property for Content Pages (.md) - Bidirectional","Platform > Dynamic Properties > Content","High","BL-PLAT-004","ECL-2.1","Admin logged into backend ({{BACK_URL}}), Content module active","property_name=PageProperty1; entity_type=VirtoCommerce.ContentModule.Core.Model.FrontMatterHeaders","[NAV] Navigate to More > Dynamic Properties at {{BACK_URL}}
 [ACT] Select type 'VirtoCommerce.ContentModule.Core.Model.FrontMatterHeaders'
 [ACT] Click Add Property: PageProperty1
@@ -444,36 +457,32 @@
 [DOM] Validation error is shown for non-integer input","[API] GET {{BACK_URL}}/api/platform/dynamic-properties - verify Integer property in response
 [CONSOLE] Validation error present for decimal/text input
 [NETWORK] Save with invalid value returns 400","Non-integer values accepted; no validation error; decimal silently truncated without warning","delete created dynamic property via Admin","","Not Automated"
-"PLAT-071","Dynamic Property Short Text Type","Platform > Dynamic Properties","Medium","BL-PLAT-004","ECL-8.1","Admin logged into Backend ({{BACK_URL}}), Dynamic Properties module is accessible","entity_type=Member; property_name=TestShortTextProp; char_limit=100; valid_text=Hello World; over_limit_text=<101 character string>","[NAV] Navigate to Platform > Dynamic Properties at {{BACK_URL}}
-[ACT] Select an entity type
-[ACT] Click Add Property
-[ACT] Set property type to ShortText
-[ACT] Configure a maximum character limit: 100
-[ACT] Enter property name and save
-[NAV] Open an entity record and enter text up to the limit
-[ACT] Attempt to enter text exceeding the limit
-[ACT] Save and verify","[STATE] ShortText property is created with the configured character limit
-[DOM] Property appears on the entity form as a text input
-[STATE] Input is restricted to the configured character limit
-[STATE] Text within the limit saves correctly
-[DOM] Exceeding the limit shows a validation warning or prevents saving","[API] GET {{BACK_URL}}/api/platform/dynamic-properties - verify ShortText property
-[CONSOLE] Validation warning or error for over-limit input
-[NETWORK] Save with over-limit text returns 400 if server-side validated","No character limit enforced; text exceeding limit saves without error; char counter missing","delete created dynamic property via Admin","","Not Automated"
-"PLAT-072","Dynamic Property Long Text HTML Type","Platform > Dynamic Properties","Medium","BL-PLAT-004","ECL-8.1","Admin logged into Backend ({{BACK_URL}}), Dynamic Properties module is accessible","entity_type=Member; property_name=TestLongTextProp; html_content=<b>Bold</b> text; xss_payload=<script>alert('xss')</script>","[NAV] Navigate to Platform > Dynamic Properties at {{BACK_URL}}
-[ACT] Select an entity type
-[ACT] Click Add Property
-[ACT] Set property type to LongText or HTML
-[ACT] Enter property name and save
-[NAV] Open an entity record
-[ACT] Locate the new property and enter rich text or HTML content: <b>Bold</b> text
-[ACT] Save the entity
-[ACT] Reopen the entity and verify the content renders correctly","[STATE] LongText or HTML property is created and visible on the entity form
-[DOM] Rich text editor or HTML input area is provided for the property
-[STATE] HTML content is saved without escaping markup
-[DOM] Reopened entity displays the HTML content rendered correctly
-[STATE] XSS prevention is in place (script tags are sanitized)","[API] GET entity via API - verify HTML content saved without stripping valid tags
-[CONSOLE] No XSS alert triggered; script tags sanitized
-[NETWORK] Save returns 200","XSS script executes (not sanitized); HTML tags stripped when saving valid markup; rich text editor absent","delete created dynamic property via Admin","","Not Automated"
+"PLAT-071","Dynamic Property Short Text Type","Platform > Dynamic Properties","Medium","BL-PLAT-004","ECL-8.1","Admin logged into Backend ({{BACK_URL}}); an AGENT-TEST contact is provisioned by the [SETUP] step","entity_type=Member (Contact); property_name=AGENT-TEST-ShortTextProp-{{RUN_ID}}; valid_text=Hello World; text_512=a 512-character string; text_513=a 513-character string; text_1100=a 1100-character string. There is NO configurable character limit; the limit is the fixed 512-character column","[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Contact"", fullName: ""AGENT-TEST-shorttext-{{RUN_ID}}"", firstName: ""AGENT-TEST"", lastName: ""shorttext-{{RUN_ID}}""} (without first/last name the Admin Save stays disabled); [CAPTURE] memberId
+[NAV] Navigate to Platform > Dynamic Properties at {{BACK_URL}}; select the Contact object type; Add new property
+[ACT] Set the value type to Short Text, enter property_name and Create
+[NAV] Open the AGENT-TEST contact > Dynamic properties; enter valid_text and Save
+[HTTP] PUT {{BACK_URL}}/api/members with the property value = text_512; then GET {{BACK_URL}}/api/members?ids={memberId}
+[HTTP] PUT {{BACK_URL}}/api/members with the property value = text_513 (boundary + 1)
+[ACT] In the Admin widget enter text_1100 and click Save
+[HTTP] GET {{BACK_URL}}/api/members?ids={memberId} after each rejected save","[STATE] The Short Text property is created and shown on the contact form as a single-line text input
+[STATE] valid_text and text_512 (exactly the 512-character boundary) save, and the stored value reads back with length 512 {OBSERVED}
+[STATUS] text_513 and text_1100 are rejected CLEANLY: a 4xx validation response (or an inline validation message in the Admin widget) that does not expose SQL; the status is NOT 500
+[STATE] After the rejected save the stored value is still the previous 512-character value (nothing truncated, nothing half-written)
+[DOM] The Admin hint for Short text states the real limit; today it says ""Text values under 1024 characters"" while only 512 are accepted {OBSERVED}","[API] POST {{BACK_URL}}/api/platform/dynamic/properties/search {keyword: property_name} - the property exists with valueType ShortText
+[NETWORK] PUT /api/members: 512 chars -> 204; 513..1025 chars -> today 500 with raw SQL ""String or binary data would be truncated ... ShortTextValue"" (VCST-6323); expected a 4xx
+[CONSOLE] The Admin widget shows a validation message, not ""500: Internal server error""","513+ characters return HTTP 500 / ""Internal server error"" toast / raw SQL text ""String or binary data would be truncated"" (VCST-6323 - this case FAILS until that is fixed); a 513-character value is saved silently truncated to 512; 512 characters are rejected (limit lowered); the Admin hint promises more characters (1024) than the server accepts","DELETE {{BACK_URL}}/api/platform/dynamic/properties?propertyIds=<the AGENT-TEST-ShortTextProp property>; DELETE {{BACK_URL}}/api/members?ids={memberId}","VCST-6323; Repaired 2026-10-13 (Stable 16 regression VCST-6042): there is no configurable max-length (stale ""configure max 100"" step removed); the fixed limit is 512 and the boundary is explicit (512 saves, 513 must be rejected cleanly, not 500); the case is expected to FAIL on VCST-6323 (Short text > 512 chars -> 500) and must not be rewritten to pass; KB-C804D647; Second pass 2026-10-13: setup member carries firstName/lastName so Admin Save enables","Not Automated"
+"PLAT-072","Dynamic Property Long Text HTML Type","Platform > Dynamic Properties","Medium","BL-PLAT-004","ECL-8.1","Admin logged into Backend ({{BACK_URL}}); an AGENT-TEST contact is provisioned by the [SETUP] step","entity_type=Member (Contact); property_names=AGENT-TEST-HtmlProp-{{RUN_ID}} (type Html), AGENT-TEST-LongTextProp-{{RUN_ID}} (type Long text); html_content=<b>Bold</b> text; marker_payload=<img src=x onerror=""window.__agentTestXss=1""><svg onload=""window.__agentTestXss=1""> (harmless marker: it only sets a window flag, never alerts)","[SETUP] POST {{BACK_URL}}/api/members {memberType: ""Contact"", fullName: ""AGENT-TEST-html-{{RUN_ID}}"", firstName: ""AGENT-TEST"", lastName: ""html-{{RUN_ID}}""} (without first/last name the Admin Save stays disabled); [CAPTURE] memberId
+[NAV] Navigate to Platform > Dynamic Properties at {{BACK_URL}}; select the Contact object type
+[ACT] Add one property of type Html and one of type Long text; Create
+[NAV] Open the AGENT-TEST contact > Dynamic properties: the Html property is a code editor, the Long text property is a textarea
+[ACT] Enter html_content + marker_payload in both properties; Save the contact
+[HTTP] GET {{BACK_URL}}/api/members?ids={memberId}
+[NAV] Reopen the contact in Admin and view both properties; evaluate window.__agentTestXss in the page","[STATE] Both properties are created; Html is edited in a code editor, Long text in a plain textarea {OBSERVED}
+[STATE] The values are stored VERBATIM: the API returns exactly html_content + marker_payload, tags neither stripped nor entity-encoded {OBSERVED}
+[DOM] Reopened in Admin the value is shown as literal source text (escaped), not as rendered HTML; the title and the rest of the form are unchanged {OBSERVED}
+[STATE] Nothing executes: window.__agentTestXss is still undefined after the contact is opened and re-opened","[API] GET {{BACK_URL}}/api/members?ids={memberId} - the stored string equals the entered string byte for byte
+[CONSOLE] No script executed, no alert dialog, no page error while the stored markup is displayed
+[NETWORK] The save request returns 2xx (204/200)","window.__agentTestXss is set or an alert appears (stored XSS - the Admin renders the stored value as live HTML); the Admin shows the value as rendered bold text instead of source (output no longer escaped); the stored value differs from the entered one (tags stripped or encoded - data corruption); save returns 4xx/5xx for valid markup","DELETE {{BACK_URL}}/api/platform/dynamic/properties?propertyIds=<both AGENT-TEST properties>; DELETE {{BACK_URL}}/api/members?ids={memberId}","Repaired 2026-10-13 (Stable 16 regression VCST-6042): values are stored as typed and shown as escaped source in Admin (no rendered HTML, no server-side sanitising); the ""rendered HTML"" / ""sanitised"" assertions are replaced by a verbatim-storage check plus a harmless-marker check that nothing executes; storefront does not render member dynamic properties; KB-3775F726; Second pass 2026-10-13: setup member carries firstName/lastName so Admin Save enables","Not Automated"
 "PLAT-073","Dynamic Property Dictionary Type","Platform > Dynamic Properties","Medium","BL-PLAT-004","ECL-2.1","Admin logged into Backend ({{BACK_URL}}), Dynamic Properties module is accessible","entity_type=Member; property_name=TestDictionaryProp; dict_values=[Option1, Option2, Option3]","[NAV] Navigate to Platform > Dynamic Properties at {{BACK_URL}}
 [ACT] Select an entity type
 [ACT] Click Add Property

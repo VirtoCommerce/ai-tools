@@ -1,42 +1,35 @@
 ID,Title,Section,Type,Priority,Estimate,Preconditions,Steps,Expected Result,References,Automation Status
-SRCHA-001,Search by full product name (Elastic),Elastic Search,Functional,Critical,3m,Elastic search configured; products indexed,"1. Navigate to Admin > Search
-2. Search by full product name","Product found and displayed in results",C139043,Not Automated
-SRCHA-002,Search by partial input (few symbols),Elastic Search,Functional,High,3m,Elastic search configured; products indexed including a product named 'Bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
-2. Select the Products index tab or entity type
-3. Enter the first 3 characters 'Bol' in the search field
-4. Click Search or press Enter
-5. Inspect the returned results list
-6. Verify the result count displayed above the results
-7. Click on a result to confirm it is a product whose name contains 'Bol'","- Search field accepts partial text 'Bol' without errors
-- Results list is returned within 3 seconds
-- Results contain at least one product with name matching 'Bolt' or starting with 'Bol'
-- Result count is greater than 0
-- No full-name match is required; prefix/partial match is sufficient
-- Results do not include products with completely unrelated names",C139044,Not Automated
-SRCHA-003,Search by multiple words,Elastic Search,Functional,High,3m,Elastic search configured; products indexed including a product described with 'stainless steel bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
-2. Select the Products index tab or entity type
-3. Enter the multi-word query 'stainless steel bolt' in the search field
-4. Click Search or press Enter
-5. Review the returned results list
-6. Verify that results contain products relevant to all or most of the entered words
-7. Check that result ranking places the closest matches at the top","- Search accepts the multi-word input 'stainless steel bolt' without errors
-- Results are returned within 3 seconds
-- At least one result is relevant to the query (e.g. product name or description contains 'stainless', 'steel', or 'bolt')
-- Results are ranked by relevance — products matching more words appear higher
-- No error or empty state is shown when multiple words are entered
-- Irrelevant products that share no keywords with the query are not returned",C139046,Not Automated
-SRCHA-004,Search with incorrect value - no results,Elastic Search,Negative,Medium,3m,Elastic search configured; products indexed; no product exists with the search term used; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
-2. Select the Products index tab or entity type
-3. Enter the nonsensical search term 'xyznonexistent12345' in the search field
-4. Click Search or press Enter
-5. Observe the results area for returned items
-6. Check for a zero-results count or empty state message
-7. Verify no error page or application crash occurs","- Search accepts the nonsensical input without errors
-- Results list returns zero items
-- Result count displays 0 or equivalent (e.g. 'No results found')
-- An appropriate empty state message is shown to indicate no matches
-- No application error, exception stack trace, or crash is shown
-- UI remains fully functional and a new search can be initiated after the empty result",C139045,Not Automated
+SRCHA-001,Search by full product name (Elastic),Elastic Search,Functional,Critical,3m,"ElasticSearch8 is the active provider for Product; Product index built; admin token for {{BACK_URL}}; a seeded AGENT-TEST- product P is discovered live (first AGENT-TEST- product from admin search); Product search surfaces: admin indexed search POST {{BACK_URL}}/api/catalog/search/products (body searchPhrase) and anonymous xAPI products(storeId: {{STORE_ID}}, query:). The Admin > Search > Search index blade has NO free-text search field (3.1076.1) - it only builds/swaps indexes.","1. Discover product P (live-discover: first product whose name starts with AGENT-TEST-); record its code and full name N
+2. POST {{BACK_URL}}/api/catalog/search/products with searchPhrase = N
+3. Read items[].code and totalCount
+4. Run xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: N) anonymously and read items[].sku
+5. Record the store total with no query for comparison","- Admin search: items contain P.code and totalCount >= 1; no error
+- xAPI: items contain P.sku; no errors[]
+- Full-name search narrows the catalog: totalCount is less than the store total from step 5
+- Fails if: the product is missing from either surface (index not built / analyzer drops tokens), or the query is ignored and the whole catalog is returned",C139043 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): steps described a Search > Products field that does not exist; retargeted to Catalog search + xAPI that the live run used {OBSERVED},Not Automated
+SRCHA-002,Search by partial input (few symbols),Elastic Search,Functional,High,3m,"ElasticSearch8 active for Product; Product index built; a product P exists whose name has a token of at least 4 chars (discovered live); Product search surfaces: admin indexed search POST {{BACK_URL}}/api/catalog/search/products (body searchPhrase) and anonymous xAPI products(storeId: {{STORE_ID}}, query:). The Admin > Search > Search index blade has NO free-text search field (3.1076.1) - it only builds/swaps indexes.","1. Discover product P (live-discover) and take the first 3 characters of its first name token as prefix X (e.g. 'Bol' for 'Bolt')
+2. Run anonymous xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: X) and read totalCount, items[].name
+3. POST {{BACK_URL}}/api/catalog/search/products with searchPhrase = X and read totalCount
+4. Record the unfiltered store total
+5. Inspect the returned names","- Both surfaces return no error and totalCount > 0
+- P is among the returned items (prefix match via the ES8 edge-ngram analyzer)
+- Matches may also come from other searchable fields (e.g. description), so name content is not asserted beyond P
+- totalCount is less than the store total
+- Fails if: partial input returns 0 hits (ngram/prefix analysis broken, e.g. MinGram misconfigured) or the whole catalog (filter ignored)","C139044 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): the Admin Search field does not exist; retargeted to xAPI/Catalog search {OBSERVED}: 25 hits for Bol, prefix match works",Not Automated
+SRCHA-003,Search by multiple words,Elastic Search,Functional,High,3m,"ElasticSearch8 active for Product; Product index built; a product whose name contains three distinct words exists (discovered live from a product name with at least 3 tokens); Product search surfaces: admin indexed search POST {{BACK_URL}}/api/catalog/search/products (body searchPhrase) and anonymous xAPI products(storeId: {{STORE_ID}}, query:). The Admin > Search > Search index blade has NO free-text search field (3.1076.1) - it only builds/swaps indexes.","1. Discover product P whose name has at least 3 tokens and take three of them as query Q (e.g. 'stainless steel bolt')
+2. Run anonymous xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: Q) and read items[].name in order
+3. Count hits whose name contains all three words, and note the position of the first such hit
+4. Run the same query on admin POST {{BACK_URL}}/api/catalog/search/products","- No error; totalCount > 0
+- The TOP hit matches all three words (P is returned); a further full match may rank below a 2-word match, so only the first position is asserted
+- Hits matching none of the words are not returned
+- Fails if: relevance ordering is lost (a partial match outranks the full match) or unrelated products are returned",C139046 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): steps targeted a non-existent Admin field; retargeted to xAPI {OBSERVED}: full-match item ranked first of 3 hits,Not Automated
+SRCHA-004,Search with incorrect value - no results,Elastic Search,Negative,Medium,3m,"ElasticSearch8 active for Product; Product index built; query term is a random token AGENT-TEST-NOHIT-<random>; Product search surfaces: admin indexed search POST {{BACK_URL}}/api/catalog/search/products (body searchPhrase) and anonymous xAPI products(storeId: {{STORE_ID}}, query:). The Admin > Search > Search index blade has NO free-text search field (3.1076.1) - it only builds/swaps indexes.","1. Generate random token T = AGENT-TEST-NOHIT-<random> (random-data), guaranteed to match no product
+2. Run anonymous xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: T)
+3. POST {{BACK_URL}}/api/catalog/search/products with searchPhrase = T
+4. Immediately re-run a valid query (the full name of an AGENT-TEST- product) on the same surface","- Both surfaces: totalCount 0, items empty, no errors[] and no HTTP 4xx/5xx
+- The follow-up valid query still returns its product (an empty result does not poison the next search)
+- Fails if: a nonsense term returns fuzzy hits, throws a 500, or the following valid search fails
+- Empty-state wording is a storefront UI concern and is not asserted here",C139045 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): Admin search field does not exist; retargeted to API surfaces {OBSERVED}: totalCount 0 on both,Not Automated
 SRCHA-005,Lucene search by full product name,Lucene Search,Functional,Medium,3m,Lucene search provider configured,"1. Configure Lucene search provider
 2. Search by full product name","Product found using Lucene search",C180636,Not Automated
 SRCHA-006,Lucene search by partial input,Lucene Search,Functional,Medium,3m,Lucene search provider configured and set as active; products indexed including a product named 'Bolt'; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search
@@ -65,11 +58,22 @@ SRCHA-010,Swap indexes (blue-green),Index Management,Functional,High,3m,Both ind
 3. Verify swap completed","Active and inactive indices swapped successfully",C327398,Not Automated
 SRCHA-011,Cancel index build,Index Management,Functional,Medium,3m,Index build in progress,"1. Start index build
 2. Click Cancel","Index build cancelled; partial state handled gracefully",C329028,Not Automated
-SRCHA-012,Backup indices - select all,Index Management,Functional,Medium,3m,Multiple indices exist,"1. Navigate to Search Index
-2. Select All indices
-3. Click Backup","All selected indices backed up successfully",C329230,Not Automated
-SRCHA-013,Backup indices - select one,Index Management,Functional,Medium,2m,Multiple indices exist,"1. Select single index
-2. Click Backup","Selected index backed up successfully",C329231,Not Automated
+SRCHA-012,Backup indices - select all,Index Management,Functional,Medium,3m,Blue-green indexing available; all 7 document types have an active index; admin logged into {{BACK_URL}}; run in an index-maintenance window (Delete and build on every type is heavy),"1. Navigate to {{BACK_URL}} > Search > Search index
+2. Make sure backup indices are hidden: the toolbar button must read Show backup indices (if it reads Hide backup indices, click it once); otherwise Select all also selects the inactive rows (all 14 instead of 7)
+3. Record each type's active last-indexation date and document count, then select all 7 active indices (header checkbox)
+4. Click Build index in the toolbar and choose Delete and build; wait for Indexation completed
+5. Click the Show backup indices toolbar button (a button, not a tick; it toggles to Hide backup indices)
+6. For every type, read the inactive (backup) row","- There is no Backup toolbar action (toolbar: Refresh, Build index, Show backup indices); backup is implicit in blue-green Delete and build
+- Indexation finishes with Errors 0
+- Every type shows an inactive row whose last-indexation date and document count equal the values recorded in step 2, beside a new active row with a later date
+- Fails if: a type has no backup row after Delete and build, or the backup row carries the new build instead of the previous one",C329230 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): there is no Backup action in 3.1076.1; backup is the inactive index kept by blue-green Delete and build {OBSERVED},Not Automated
+SRCHA-013,Backup indices - select one,Index Management,Functional,Medium,2m,Blue-green indexing available; Product has an active index; admin logged into {{BACK_URL}},"1. Navigate to {{BACK_URL}} > Search > Search index and click the Show backup indices toolbar button (a button that toggles to Hide backup indices, not a tick)
+2. Record the Product active row last-indexation date D0 and document count C0
+3. Select only the Product row, click Build index > Delete and build and wait for Indexation completed
+4. Read the Product active row (date D1, count C1) and the inactive backup row","- Only Product was rebuilt; other types keep their dates
+- Active row date D1 is later than D0
+- Backup row exists with date D0 and count C0 (the previous build), distinct from the active row
+- Fails if: the backup row is missing, equals the new build (D1), or other types were rebuilt too",C329231 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): no Backup action exists; intent (keep one index as backup) is delivered by Delete and build + Show backup indices {OBSERVED}: 760-doc backup beside new 758 active,Not Automated
 SRCHA-014,Refresh search index blade after build,Index Management,Functional,Medium,2m,Index build completed,"1. Build index
 2. Click Refresh","Index blade refreshed showing updated status and counts",C338456,Not Automated
 SRCHA-015,Create product then refresh index,Index Management,Functional,High,3m,Products module available,"1. Create new product
@@ -96,28 +100,53 @@ SRCHA-023,Delete and rebuild index,Elastic Search Module,Functional,High,3m,Inde
 2. Wait for completion","Old index deleted; new index built from scratch",C217786,Not Automated
 SRCHA-024,Cancel Elastic Search build,Elastic Search Module,Functional,Medium,2m,Build in progress,"1. Start build
 2. Click Cancel","Build cancelled gracefully",C217787,Not Automated
-SRCHA-025,Index product and search,Elastic Search Module,Functional,High,3m,Products exist,"1. Index products
-2. Search for a specific product by name","Product found in search results after indexation",C217788 C217793,Not Automated
-SRCHA-026,Filtered search for products,Elastic Search Module,Functional,High,3m,Products indexed with various attributes,"1. Index products
-2. Perform filtered search (e.g. by category or attribute)","Products matching filter criteria returned",C217794,Not Automated
-SRCHA-027,Index and search contacts,Elastic Search Module,Functional,Medium,3m,Contacts exist in system,"1. Index contacts
-2. Search for a specific contact","Contact found in search results",C217795 C217796,Not Automated
-SRCHA-028,Apply single TermFilter,Search Filters API,Functional,High,3m,Products indexed; API accessible,"1. Execute search with single TermFilter parameter
-2. Verify results","Results filtered by single term correctly",C406817,Not Automated
-SRCHA-029,Apply multiple TermFilters (AND logic),Search Filters API,Functional,High,3m,Products indexed with multiple attributes,"1. Execute search with multiple TermFilter parameters
-2. Verify AND logic applied","Only products matching ALL term filters returned",C406818,Not Automated
-SRCHA-030,Apply OrFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with OrFilter
-2. Verify results","Products matching ANY of the OR conditions returned",C406819,Not Automated
-SRCHA-031,Apply AndFilter with nested OrFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with AndFilter containing nested OrFilter
-2. Verify results","Complex filter logic applied correctly",C406820,Not Automated
-SRCHA-032,Apply NotFilter,Search Filters API,Functional,Medium,3m,Products indexed,"1. Execute search with NotFilter
-2. Verify results","Products NOT matching the filter criteria returned",C406821,Not Automated
-SRCHA-033,Apply RangeFilter (greater than),Search Filters API,Functional,Medium,3m,Products with numeric properties indexed,"1. Execute search with RangeFilter (greater than value)
-2. Verify results","Only products with property value greater than threshold returned",C406822,Not Automated
-SRCHA-034,Apply RangeFilter (between),Search Filters API,Functional,Medium,3m,Products with numeric properties indexed,"1. Execute search with RangeFilter (lower and upper bounds)
-2. Verify results","Only products with property value within range returned",C406823,Not Automated
+SRCHA-025,Index product and search,Elastic Search Module,Functional,High,3m,Product index built; event-based indexation (Catalog.Search.EventBasedIndexation.Enable) is false by default so a manual build is required; admin token for {{BACK_URL}},"1. Create product AGENT-TEST-<random> in a catalog via POST {{BACK_URL}}/api/catalog/products
+2. Run Search > Search index > Build index on Product (no delete) and wait for Indexation completed
+3. Search by its full name: admin POST /api/catalog/search/products searchPhrase and anonymous xAPI products(query:)
+4. Delete the product and rebuild Product with Delete and build (removes the ghost document)","- After the build the new product is returned by name on the admin search and (when visible in the store catalog) by xAPI
+- Fails if: a product created before the build is not findable by its own full name afterwards (indexation skips new records)",C217788 C217793 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): steps said Index products + search without naming a surface; now names Build index and the API surfaces used live {OBSERVED},Not Automated
+SRCHA-026,Filtered search for products,Elastic Search Module,Functional,High,3m,Product index built; a category C with a known product P exists in an AGENT-TEST catalog (discovered live); anonymous xAPI access,"1. Discover category C and its path (catalog id/category id chain) and product P in it
+2. Run xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, filter: ""category.subtree:<path of C>"") and read items[].sku
+3. Run the same query adding a second filter that excludes P (""!code:<P.code>"")
+4. Compare with the unfiltered store total","- Step 2 returns P and every returned product belongs to C's subtree; totalCount is less than the store total
+- Step 3 does not return P
+- Fails if: the filter is ignored (store total returned), P is missing from its own category, or products from other categories appear","C217794 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): filter syntax was unspecified; now category.subtree:<path>, the field the live run used {OBSERVED}",Not Automated
+SRCHA-027,Index and search contacts,Elastic Search Module,Functional,Medium,3m,"Member index active (ElasticSearch8); a contact with a distinctive name exists (seeded via @td(), e.g. an AGENT-TEST- contact); admin token","1. Take a seeded contact K, its full name and its last-name token
+2. POST {{BACK_URL}}/api/members/search with searchPhrase = K full name; read results
+3. Repeat with the last-name token only
+4. Repeat with a random token AGENT-TEST-NOHIT-<random>","- Steps 2 and 3 return K (one hit for a distinctive name); step 4 returns 0
+- Fails if: a contact present in the DB is not in the Member index results, or a nonsense phrase returns contacts","C217795 C217796 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): named the Contacts search surface (members/search) and dropped the vague Index contacts step {OBSERVED}: Member index 314 docs, hit by full name and by last name",Not Automated
+SRCHA-028,Apply single TermFilter,Search Filters API,Functional,High,3m,Product index built; AGENT-TEST- product P discovered live; admin token,"1. POST {{BACK_URL}}/api/catalog/search/products with searchPhrase = ""code:<P.code>"" (field:value term filter, the search-phrase form of a TermFilter)
+2. Read items[].code and totalCount","- Exactly one item: P (single term filter on code); totalCount 1
+- Fails if: the term filter is ignored (more than one hit) or matches substrings of other codes","C406817 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): TermFilter is the Search-module .NET model, not an API; expressed as field:value searchPhrase {OBSERVED}",Not Automated
+SRCHA-029,Apply multiple TermFilters (AND logic),Search Filters API,Functional,High,3m,"Product index built; P available in fulfilment center F = @td(FC_EAST.id) and a second FC F2 where P is NOT available; admin token","1. searchPhrase ""code:<P.code> available_in:@td(FC_EAST.id)"" (two terms are ANDed)
+2. searchPhrase ""code:<P.code> available_in:<F2>""","- Step 1 returns exactly P
+- Step 2 returns 0 items (AND enforced, not OR)
+- Fails if: the second query still returns P (terms OR-ed) or the first returns more than P",C406818 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): multi-TermFilter expressed in searchPhrase syntax with an AND-negative control {OBSERVED},Not Automated
+SRCHA-030,Apply OrFilter,Search Filters API,Functional,Medium,3m,"Product index built; two AGENT-TEST- products P1, P2 discovered live; admin token","1. searchPhrase ""code:<P1.code> OR code:<P2.code>""
+2. Read items[].code","- Exactly P1 and P2 are returned
+- Fails if: only one is returned (OR treated as AND) or unrelated products are added",C406819 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): OrFilter expressed in searchPhrase syntax {OBSERVED},Not Automated
+SRCHA-031,Apply AndFilter with nested OrFilter,Search Filters API,Functional,Medium,3m,"Product index built; products P1, P2 available in FC F = @td(FC_EAST.id), and P3 not in F; admin token","1. searchPhrase ""available_in:@td(FC_EAST.id) AND (code:<P1.code> OR code:<P2.code>)""
+2. Read items[].code
+3. Repeat with the OR group on P3 and P1","- Step 1 returns exactly P1 and P2
+- Step 3 returns only P1 (P3 is not in F)
+- Fails if: nesting is flattened (AND/OR precedence wrong) so P3 or other products appear",C406820 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): nested And/Or expressed in searchPhrase syntax {OBSERVED},Not Automated
+SRCHA-032,Apply NotFilter,Search Filters API,Functional,Medium,3m,Product index built; AGENT-TEST- product P discovered live; anonymous xAPI access,"1. Back-to-back (the store total drifts during a session): read xAPI products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}) totalCount T0, then immediately run products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, filter: ""!code:<P.code>"") and read totalCount T1 and items
+2. Re-read T0 right after to confirm it did not drift between the two reads
+3. Run products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, query: <P full name>, filter: ""!code:<P.code>"")
+4. Note: negation is ""!field:value""; the word NOT is not negation syntax (admin searchPhrase ""NOT code:X"" returns 0)","- T1 equals T0 minus 1 and P is not in the items
+- Step 3 returns 0 hits for P
+- Fails if: negation excludes nothing (T1 equals T0) or excludes more than the matched product","C406821 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): NotFilter is not exposed; negation is ""!field:value"" (NOT keyword fails) {OBSERVED}",Not Automated
+SRCHA-033,Apply RangeFilter (greater than),Search Filters API,Functional,Medium,3m,Product index built; AGENT-TEST- products with prices around the threshold exist; anonymous xAPI access,"1. products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, filter: ""price:(100 TO)"") over AGENT-TEST products
+2. Read the effective price of every item
+3. Compute the minimum price among the returned items","- Every returned item has effective price greater than 100 (exclusive bound)
+- A product priced exactly 100 or lower is not returned
+- Fails if: the bound is inclusive or ignored (a price <= 100 is returned)","C406822 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): RangeFilter expressed as price:(100 TO) {OBSERVED}: min 119.99, none <= 100",Not Automated
+SRCHA-034,Apply RangeFilter (between),Search Filters API,Functional,Medium,3m,"Product index built; AGENT-TEST- products with prices inside and outside [50, 80] exist; anonymous xAPI access","1. products(storeId: {{STORE_ID}}, currencyCode: {{CURRENCY_CODE}}, filter: ""price:[50 TO 80]"")
+2. Read the effective price of every item (the indexed price is the effective one, i.e. sale price when set)","- Every returned item has effective price within 50 and 80 inclusive; products outside the bounds are absent
+- Fails if: either bound is not applied (items below 50 or above 80)",C406823 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): RangeFilter between expressed as price:[50 TO 80] {OBSERVED}: 25 items all in bounds; the indexed value is the effective price,Not Automated
 SRCHA-035,Filter on nested property,Search Filters API,Functional,Medium,3m,Products with nested properties indexed,"1. Execute search filtering on nested property path
-2. Verify results","Filter applied correctly on nested property",C406824,Not Automated
+2. Verify results",Filter applied correctly on nested property,"C406824 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): RETIRED: index documents are flat (price_<pricelist>, available_in, property-name fields) so there is no nested-property path to filter on; the multi-part hierarchical field category.subtree is exercised by SRCHA-026 {OBSERVED}",Deprecated
 SRCHA-036,Settings - token filter and gram configuration,Settings,Functional,Medium,3m,Admin logged in,"1. Navigate to Settings > Search
 2. Configure Token Filter
 3. Set Min Gram and Max Gram values
@@ -131,24 +160,17 @@ SRCHA-038,Settings - schedule indexing jobs,Settings,Functional,Medium,3m,Admin 
 4. Save","Indexing job scheduled with configured cron expression",C242232 C242234,Not Automated
 SRCHA-039,Settings - enable scale-out indexing,Settings,Functional,Medium,3m,Admin logged in; multi-instance capable,"1. Enable scale-out indexing
 2. Set maximum queued indexing jobs
-3. Save","Scale-out indexing enabled with configured job limit",C242235 C242236,Not Automated
+3. Save",Scale-out indexing enabled with configured job limit,"C242235 C242236 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): RETIRED: Search 3.1010 has no scale-out / maximum-queued-indexing-jobs setting (settings: IndexingJobs.Enable, CronExpression, IndexPartitionSize, PartialDocumentUpdate); the source TestRail cases describe an older module {OBSERVED}. Partition-size intent is not retargeted: no case asserts IndexPartitionSize yet",Deprecated
 SRCHA-040,Scalable indexation verification,Scalable Indexation,Performance,Low,10m,Multi-instance configuration; large dataset,"1. Configure scalable indexation partitions
 2. Run indexation with x2 scaling
 3. Verify product schema and partitioning","Scalable indexation completes correctly; products searchable across partitions",C356720 C356721 C356722,Not Automated
-SRCHA-041,Blue-Green Index Backup Before Rebuild,Index Management,Functional,Medium,4m,Blue-green indexing enabled; active index contains indexed data; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
-2. Identify the currently active index and note its document count
-3. Locate the Backup option in the index management toolbar or context menu
-4. Select the active index for backup
-5. Click Backup and wait for the backup operation to complete
-6. Verify that the backup operation status shows success
-7. Initiate a full index rebuild on the active index
-8. After rebuild completes, verify the backup still exists and is accessible","- Active index is identified and its document count is recorded before backup
-- Backup option is available in the index management UI
-- Backup operation starts without errors
-- Backup completion status is shown (success/completed)
-- The backup operation does not interrupt the active index availability
-- Backup remains intact after a subsequent rebuild operation
-- Backup can be referenced for rollback if rebuild fails",C329230,Not Automated
+SRCHA-041,Blue-Green Index Backup Before Rebuild,Index Management,Functional,Medium,4m,Blue-green indexing enabled; Product has an active index; admin logged into {{BACK_URL}}; anonymous xAPI access for availability sampling,"1. Navigate to {{BACK_URL}} > Search > Search index, click the Show backup indices toolbar button (it toggles to Hide backup indices; not a tick)
+2. Record Product active row date D0 and document count C0
+3. Select Product, Build index > Delete and build; while it runs sample anonymous xAPI products(storeId: {{STORE_ID}}) every 10 s and note totalCount
+4. After Indexation completed, read the Product active row and the inactive backup row","- Every xAPI sample during the rebuild returns the store products (search stays available; no zero or error sample)
+- The inactive row holds the previous build: date D0, count C0; the active row has a later date
+- Fails if: search returns empty/errors during the rebuild (index deleted in place instead of blue-green) or no backup row remains
+- Rollback via Swap indices is covered by SRCHA-010",C329230 | Repaired 2026-10-13 (Stable 16 regression VCST-6042): no Backup action exists; blue-green backup + availability verified {OBSERVED}: previous 760-doc build retained beside new 758 active,Not Automated
 SRCHA-042,Blue-Green Index Swap — Active and Inactive Exchange,Index Management,Functional,High,4m,Blue-green indexing enabled; both active and inactive indices are built and contain data; admin logged into ${BACK_URL},"1. Navigate to ${BACK_URL} > Search > Index Management
 2. Note the current active index name/identifier and its document count
 3. Note the current inactive (standby) index name/identifier and its document count
