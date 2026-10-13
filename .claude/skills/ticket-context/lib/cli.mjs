@@ -14,7 +14,7 @@ import { AC_FIELD_NAME_RE, buildInventory, resolveFieldsByName } from "./invento
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { extractFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
@@ -111,6 +111,12 @@ async function prepare() {
   }
   const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
   prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+  // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
+  if (gh) {
+    const companions = await followCompanions({ gh, prMeta, orgs, gaps });
+    ladder.ladder.push({ rung: "companion", found: companions.length });
+    prMeta.push(...companions);
+  }
 
   const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
@@ -155,7 +161,7 @@ async function prepare() {
     let product = 0;
     for (const p of prMeta) {
       const contextOnly = CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
-      const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, context_only: contextOnly };
+      const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), context_only: contextOnly };
       if (p.gap) { prs.push({ ...base, gap: p.gap }); if (!contextOnly) product++; continue; }
       if (contextOnly) {
         try { prs.push(collectContextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
@@ -163,7 +169,7 @@ async function prepare() {
       }
       if (product++ >= CAPS.prs) {
         prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
-          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; the ${CAPS.prs} most recent are read`) });
+          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; the ladder's most recent are read first, then the companions they name`) });
         continue;
       }
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }

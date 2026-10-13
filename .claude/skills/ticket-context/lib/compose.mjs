@@ -50,7 +50,8 @@ export function compose(prep, outs) {
       fate: p.gap ? `not analysed (${p.gap.reason})` : "context only — not change surface", ci: "not read", open_threads: 0 };
     const dp = dep.get(p.ref);
     const fallback = p.gap?.reason === "over-cap" ? "over-cap — not checked" : p.context_only ? "context only — not change surface" : "deployment not checked";
-    prs.push({ ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), context_only: !!p.context_only,
+    // found_via: a companion named in the body of the ladder PR it names (one hop) — provenance from prepare, never the agent.
+    prs.push({ ...identity, ...analysis, ...(p.gap ? { gap: p.gap } : {}), ...(p.found_via ? { found_via: p.found_via } : {}), context_only: !!p.context_only,
       artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback });
   }
 

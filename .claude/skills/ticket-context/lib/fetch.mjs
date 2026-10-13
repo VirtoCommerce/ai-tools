@@ -5,7 +5,8 @@ import { GapError, gap } from "./gap.mjs";
 
 export const CAPS = Object.freeze({
   attachmentBytes: 25 * 2 ** 20, ticketBytes: 100 * 2 ** 20, frames: 12, frameEverySec: 2, docPages: 20,
-  prs: 6, diffBytes: 500 * 1024, prFiles: 300, pageTextBytes: 200 * 1024, linkedIssues: 10, redirects: 3,
+  prs: 6, companions: 12, // companions: named companion PR references looked up per run (one hop; github.mjs)
+  diffBytes: 500 * 1024, prFiles: 300, pageTextBytes: 200 * 1024, linkedIssues: 10, redirects: 3,
   comments: 500, commentPage: 100, // comments read per ticket (oldest first) · page size on the Jira comment endpoint
   pageBytes: 2 * 2 ** 20, // raw bytes read from a public page before it is turned into text
   fetchTimeoutMs: 30_000, downloadTimeoutMs: 120_000, npmTimeoutMs: 300_000, ffmpegTimeoutMs: 120_000,

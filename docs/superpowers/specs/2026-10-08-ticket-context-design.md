@@ -243,6 +243,14 @@ Every inventory item that is not a PR, by kind:
 explicit link + dev-status → org-wide PR search by key → commit search by key → paths named in the
 ticket (rung 4, the weakest; only the agent can read paths out of prose, so it is reported as a
 `GAP: not-found` with the candidate paths in `detail`). Stop at the first rung that yields PRs.
+*Revised 2026-10-13:* then follow **named companions, one hop only**. A change can span repos whose PRs
+carry other keys, so no rung finds them (VCST-5925: rung 2 found two of four PRs). The body of a
+product PR the ladder found names them as a PR URL, `owner/repo#n`, or a bare `repo#n` (read as the
+naming PR's owner). The owner must be a configured org, and context-only PRs are neither read for
+companions nor added as companions. A shorthand that 404s is an issue, not a PR, and is dropped. Each companion is a
+product PR entry with `found_via: <naming PR>`. It is appended after the ladder's PRs, so the PR cap
+fills with ladder PRs first and a companion past the cap is an `over-cap` gap. At most
+`CAPS.companions` references are looked up, and the rest are one `over-cap` gap. A companion's own body is never read.
 
 **Per PR, the agent returns** (from the files `prepare` wrote):
 

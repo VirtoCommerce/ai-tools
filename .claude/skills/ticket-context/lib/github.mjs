@@ -136,6 +136,63 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
   return { rung: refs.size ? 3 : rung1.length ? 1 : null, refs: withRung1([...refs.values()]), sameKey, ladder };
 }
 
+// Named companions (design §5 Block 3). A change can span repos whose PRs carry other keys, so no rung finds
+// them; the body of a PR the ladder found is where its author names them. Three forms: a PR URL,
+// `owner/repo#n`, and a bare `repo#n`, which is read as the naming PR's own owner. The owner must be one of
+// the configured orgs (the allow-list rungs 2–3 search) and owner/repo/number pass the ladder's validation.
+const COMPANION_URL_RE = /https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/pull\/(\d+)/gi;
+const COMPANION_SHORT_RE = /(?<![\w./#-])(?:([A-Za-z0-9_.-]+)\/)?([A-Za-z0-9_.-]+)#(\d+)\b/g;
+const isContextRepo = (repo) => CONTEXT_ONLY_REPOS.includes(String(repo).toLowerCase());
+
+export function namedCompanions(body, namingOwner, orgs) {
+  const allowed = new Set(orgs.map((o) => o.toLowerCase()));
+  const out = [];
+  const add = (owner, repo, n, url) => {
+    const number = Number(n);
+    if (!owner || !allowed.has(owner.toLowerCase())) return;
+    try { checkRepo(owner, repo); checkNumber(number); } catch { return; }
+    out.push({ ref: `${owner}/${repo}#${number}`, owner, repo, number, url });
+  };
+  const text = String(body ?? "");
+  for (const m of text.matchAll(COMPANION_URL_RE)) add(m[1], m[2], m[3], true);
+  for (const m of text.matchAll(COMPANION_SHORT_RE)) add(m[1] ?? namingOwner, m[2], m[3], false);
+  return out;
+}
+
+/** One hop, never more: only the bodies of the PRs the ladder found are read, never a companion's own body, and
+ *  never a context-only PR's. Each new product PR comes back as a ladder ref with `rung: null` and
+ *  `found_via: <the naming PR>`; the caller appends them AFTER the ladder's PRs, so CAPS.prs fills with ladder
+ *  PRs first and a companion past it is an over-cap gap like any other. The body is the one prepare already
+ *  holds in `meta` (gh.pr); only the companion's own metadata is fetched. */
+export async function followCompanions({ gh, prMeta, orgs, gaps, caps = CAPS }) {
+  const seen = new Set(prMeta.map((p) => p.ref.toLowerCase()));
+  const named = [];
+  for (const p of prMeta) {
+    if (!p.meta || isContextRepo(p.repo)) continue;
+    for (const c of namedCompanions(p.meta.body, p.owner, orgs)) {
+      const k = c.ref.toLowerCase();
+      if (seen.has(k) || isContextRepo(c.repo)) continue;
+      seen.add(k);
+      named.push({ ...c, found_via: p.ref });
+    }
+  }
+  const out = [];
+  for (const [i, c] of named.entries()) {
+    if (i >= caps.companions) {
+      gaps.push(gap("change.companions", "over-cap", `${named.length - i} more named companion PRs not looked up; the first ${caps.companions} were`));
+      break;
+    }
+    const r = { ref: c.ref, owner: c.owner, repo: c.repo, number: c.number, rung: null, found_via: c.found_via };
+    try { out.push({ ...r, meta: await gh.pr(c.owner, c.repo, c.number) }); } catch (e) {
+      // `#n` names issues as well as PRs, and /pulls/<n> is a 404 for an issue: a shorthand that is not a PR is
+      // not a companion. A PR URL that cannot be read is one, and keeps its gap.
+      if (!c.url && e instanceof GapError && e.reason === "deleted") continue;
+      out.push({ ...r, gap: asGap(`pr:${c.ref}`, e) });
+    }
+  }
+  return out;
+}
+
 /** A context-only PR (deployment manifest, tooling): metadata only, same entry shape as collectPr with the change-surface paths null. */
 export function collectContextPr(p, base, runDir, sameKey = []) {
   const { owner, repo, number, meta: m } = p;
@@ -155,7 +212,7 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {
   checkNumber(number);
   const slug = `${owner}-${repo}-${number}`;
   const merged = !!meta.merged_at;
-  const entry = { ref: p.ref, repo: `${owner}/${repo}`, number, rung: p.rung ?? null, state: meta.state, merged, merged_at: meta.merged_at ?? null,
+  const entry = { ref: p.ref, repo: `${owner}/${repo}`, number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), state: meta.state, merged, merged_at: meta.merged_at ?? null,
     created_at: meta.created_at ?? null, head_sha: meta.head?.sha ?? null, context_only: CONTEXT_ONLY_REPOS.includes(repo.toLowerCase()),
     meta_path: null, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
   const write = (name, data) => {

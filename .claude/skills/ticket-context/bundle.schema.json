@@ -46,7 +46,7 @@
     "prBundle": { "allOf": [ { "$ref": "#/$defs/prAgent" },
       { "type": "object", "required": ["artifact", "deployed", "deployed_reason", "context_only"],
         "properties": { "artifact": { "$ref": "#/$defs/artifact" }, "deployed": { "enum": ["YES", "NO", "UNKNOWN"] },
-          "deployed_reason": { "$ref": "#/$defs/text" }, "context_only": { "type": "boolean" } } } ] },
+          "deployed_reason": { "$ref": "#/$defs/text" }, "context_only": { "type": "boolean" }, "found_via": { "$ref": "#/$defs/text" } } } ] },
     "hidden": { "type": "object", "additionalProperties": false, "required": ["pr", "item", "answer"],
       "properties": { "pr": { "$ref": "#/$defs/text" },
         "item": { "enum": ["default-values", "db-migrations", "feature-flags", "caching", "copy-localisation", "search-indexing", "background-jobs", "graphql-schema", "rest-contract"] },
