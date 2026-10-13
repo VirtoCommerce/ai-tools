@@ -2,8 +2,9 @@
 // FIGMA_TOKEN (design-sources.md). One credential, never retried with another (S7); the token goes to
 // api.figma.com only, and the image is downloaded from a Figma image host without it, under the attachment cap.
 import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { CAPS, isPublicUrl, readCapped, timedFetch } from "./fetch.mjs";
-import { GapError } from "./gap.mjs";
+import { GapError, asGap, gap } from "./gap.mjs";
 
 const API = "https://api.figma.com";
 const KEY = /^[A-Za-z0-9]{6,64}$/;
@@ -38,7 +39,8 @@ async function call(fetchImpl, url, init, ms, label) {
   }
 }
 
-export async function exportFigmaFrame({ url, token, file, fetchImpl = fetch, caps = CAPS }) {
+/** Bytes `maxBytes` at most (the caller's share of CAPS.ticketBytes). Returns { file, bytes }. */
+export async function exportFigmaFrame({ url, token, file, fetchImpl = fetch, caps = CAPS, maxBytes = caps.attachmentBytes }) {
   const ref = parseFigmaUrl(url);
   if (!ref) throw new GapError("unreadable", "not a Figma file link with a file key");
   if (!ref.nodeId) throw new GapError("not-found", "no node-id in the Figma link — ask for a link to the frame, or a PNG export");
@@ -62,6 +64,36 @@ export async function exportFigmaFrame({ url, token, file, fetchImpl = fetch, ca
   if (!pic.ok) throw new GapError("unreadable", `Figma image download ${pic.status}`);
   const type = pic.headers.get("content-type") ?? "";
   if (type && !/^image\//.test(type)) throw new GapError("unreadable", `the Figma image is ${type}, not an image`);
-  writeFileSync(file, (await readCapped(pic, caps.attachmentBytes, { label: "Figma image", ms: caps.downloadTimeoutMs })).buf);
-  return file;
+  let buf;
+  try { buf = (await readCapped(pic, maxBytes, { label: "Figma image", ms: caps.downloadTimeoutMs })).buf; } catch (e) {
+    if (e instanceof GapError) throw e; // over-cap or the timeout
+    throw new GapError("unreadable", `could not reach ${hostOf(img)}`); // a stream error can echo the signed URL
+  }
+  writeFileSync(file, buf);
+  return { file, bytes: buf.length };
+}
+
+/** Step 0b for every Figma link when FIGMA_TOKEN is set. A link the images API cannot take (no file key, no
+ *  node-id, /make/, /slides/, community, an instance id) stays a connector item, as without a token. At most
+ *  CAPS.figmaFrames are exported; the rest get an over-cap gap each and ONE gap naming them all. Every PNG's bytes
+ *  count against `budget` (what CAPS.ticketBytes leaves after the attachments). Returns { gaps, bytes }. */
+export async function exportFigmaItems(items, { token, runDir, budget, fetchImpl = fetch, caps = CAPS }) {
+  const gaps = [];
+  const over = [];
+  let left = budget;
+  let done = 0;
+  for (const it of items) {
+    if (!parseFigmaUrl(it.url)?.nodeId) { it.needs_connector = true; continue; }
+    if (done >= caps.figmaFrames) { over.push(it); continue; }
+    if (left <= 0) { it.gap = gap(it.ref, "over-cap", `the ticket's attachments and Figma frames would pass ${caps.ticketBytes} bytes`); continue; }
+    done++;
+    try {
+      const r = await exportFigmaFrame({ url: it.url, token, file: join(runDir, `figma-${done}.png`), fetchImpl, caps, maxBytes: Math.min(caps.attachmentBytes, left) });
+      it.local_path = r.file;
+      left -= r.bytes;
+    } catch (e) { it.gap = asGap(it.ref, e); }
+  }
+  for (const it of over) it.gap = gap(it.ref, "over-cap", `past the cap of ${caps.figmaFrames} Figma frames — see gap "figma"`);
+  if (over.length) gaps.push(gap("figma", "over-cap", `more than ${caps.figmaFrames} Figma frames; not exported: ${over.map((i) => i.ref).join(", ")}`));
+  return { gaps, bytes: budget - left };
 }
