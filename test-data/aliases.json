@@ -2654,24 +2654,34 @@
   },
   "CFG_FILE_HOODIE": {
     "_inline": true,
-    "productAlias": "CFG-004",
-    "productName": "Hoodie Base with Only File non required",
-    "slug": "physical",
-    "url": "/products-with-options/configurable-caps-shirts/physical",
-    "fullUrl_template": "{{FRONT_URL}}/products-with-options/configurable-caps-shirts/physical",
-    "fileSectionName": "Only File non required",
+    "file": "products/configurable-products",
+    "filter": {
+      "product_id": "CFG-FILE"
+    },
+    "fields": {
+      "productId": "product_id_guid",
+      "fileSectionId": "file_section_id"
+    },
+    "productAlias": "CFG-FILE",
+    "productName": "AGENT-TEST-Config-FileUpload",
+    "slug": "agent-test-config-fileupload",
+    "url": "/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fullUrl_template": "{{FRONT_URL}}/products-with-options/cfg-parents/agent-test-config-fileupload",
+    "fileSectionName": "Design Upload",
     "fileSectionType": "File",
     "fileSectionIsRequired": false,
     "maxFiles": 5,
-    "maxFileSizeMb": 9.5,
-    "categoryPath": "Products with Options > Configurable Caps & Shirts",
-    "basePrice": 300,
+    "maxFileSizeMb": 1,
+    "maxFileSizeBytes": 1048576,
+    "limits_source": "Storefront fallback, NOT a section or server setting: vc-frontend client-app/shared/files/constants.ts DEFAULT_FILE_MAX_COUNT=5 and DEFAULT_FILE_MAX_SIZE=getBytes({value:1,unit:'megabyte'}) (ui-kit/utilities/file-size.ts base 1024 => 1048576 bytes; constant unchanged since vc-frontend #938, 2024-02-05). option-file.vue calls useFiles('product-configuration'); useFiles keeps these defaults whenever fileUploadOptions(scope:'product-configuration') returns null, which it does on vcst (scope not registered, 2026-10-12). Neither REST /api/catalog/products/configurations nor xAPI productConfiguration exposes a per-section size/count. If the scope is ever registered server-side, its fileUploadOptions.maxFileSize/maxFileCount win and these two fields must be re-read from that query.",
+    "categoryPath": "SEED-Configurables > Configurable Parents",
+    "basePrice": 80,
     "currency": "USD",
-    "captured_at": "2026-04-30",
-    "captured_via": "productConfiguration(configurableProductId,storeId) GraphQL on FRONT_URL/graphql",
-    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..003 + CFG-FILE-BVA-001..002. CFG-004 is a Configurable hoodie with exactly one optional File section (None option present, max 5 files, max 9.5MB each). For BVA cases use maxFiles=5 (boundary). For ST cases use the (url, fileSectionId) pair. fileSectionId resolved live from xAPI 2026-04-30 — re-introspect if the underlying product configuration is reseeded.",
-    "_status": "needs-reseed-20260518",
-    "_status_note": "CFG-004 Hoodie File-only optional. No [F?] single-section survivor (Tramadol/Revlimid are [F!])."
+    "captured_at": "2026-10-12",
+    "captured_via": "TEST_ENV=vcst: REST POST /api/catalog/products/configurations/search + xAPI product/productConfiguration(configurableProductId,storeId) + fileUploadOptions(scope:\"product-configuration\") (null) + storefront GET of url (200); runtime GUIDs written to aliases.vcst.json by seed-configurable.mjs --only CFG-FILE (syncEnvAliases via file/filter/fields above).",
+    "notes": "VCST-4826 / VCST-4825 GAP — moves the hardcoded product path out of CFG-FILE-ST-001..002 + CFG-FILE-BVA-001..002 (072e) and backs CFG-GQL-029 (050i). A configurable with exactly ONE optional File section (None option present). Business fields mirror the seeder spec CFG-FILE (scripts/seed-data/products/configurable-specs.mjs) and its row in products/configurable-products.csv; td:validate:cfg fails if they diverge. productId/fileSectionId are runtime GUIDs: they live ONLY in aliases.<env>.json and are rewritten on every `npm run seed:configurable -- --only CFG-FILE`. Same product as CFG_FILE_UPLOAD (which has no section/limit fields). For BVA use maxFiles (count boundary) and maxFileSizeBytes (size boundary — 1 MiB, not 1,000,000).",
+    "_status": "repointed-20261012",
+    "_status_note": "Repointed 2026-10-12 from CFG-004 'Hoodie Base with Only File non required' (demo-catalog product with no seeder spec; gone from vcst — name search empty, old GUID a04bbb3c… resolves to nothing, url 404) to the seeder-owned CFG-FILE. Shape preserved (one optional File section, None option); name/price/section name changed (Hoodie $300 'Only File non required' -> $80 'Design Upload'). maxFileSizeMb corrected 9.5 -> 1 from its real source (limits_source)."
   },
   "CFG_PRODUCT_CONDITIONAL_DEFERRED": {
     "_inline": true,
@@ -2724,7 +2734,7 @@
       "pdfVersion": "1.4",
       "generated_at": "2026-04-30",
       "generator": "scripts/inline node — handcrafted minimal PDF/1.4 (Catalog, Pages, single Page with Helvetica text 'CFG-PDP-048 test fixture - 1 page')",
-      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeMb)=9.5 MB and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
+      "_purpose": "CFG-PDP-048 happy-path File section upload. Stays well under @td(CFG_FILE_HOODIE.maxFileSizeBytes) and exercises a real PDF MIME type (not octet-stream). Single-page so the configuration preview / receipt rendering paths can render predictably. Re-generate (do NOT mutate this file in place) if the underlying validator changes (e.g., PDF/A required, signature required); update sha256 + sizeBytes if regenerated."
     },
     "_status": "unchanged-20260518",
     "_status_note": "File-upload fixture aliases — no product GUID dependency. Unaffected by restore."
@@ -2899,7 +2909,7 @@
   "UPLOAD_FIXTURES": {
     "_inline": true,
     "_directory": "test-data/uploads/",
-    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are <9.5MB so they pass @td(CFG_FILE_HOODIE.maxFileSizeMb) validation. Re-introspect sizeBytes after any directory edit.",
+    "_purpose": "Curated runtime upload fixtures for File-section selection-mutation tests (CFG-GQL-029 in 050i-graphql-configurations.csv) and storefront file-upload regressions (072-series). Runner uploads the file via REST (POST {BACK_URL}/api/platform/assets/upload OR storefront file-upload mutation) at test time and captures the returned URL into {{UPLOADED_FILE_URL}}. All listed files are under @td(CFG_FILE_HOODIE.maxFileSizeBytes) (the storefront 1 MiB fallback — see CFG_FILE_HOODIE.limits_source) so they pass File-section size validation. Re-introspect sizeBytes after any directory edit.",
     "primary": {
       "path": "test-data/uploads/Logo1.png",
       "mimeType": "image/png",

@@ -1415,7 +1415,6 @@ These invariants hold for any rendered surface — Storybook stories, storefront
 - **Source:** VCST-4597 (Done) — PDP shipment options content overflowed its widget container
 - **Source:** VCST-5124 (Done) — cart save-for-later control overflowed its card by 27px on mobile
 - **Trust:** DECLARED
-- **Lifecycle:** SUSPECT — [case] RET-ORG-027, RET-ORG-041 failed in REG-2026-10-08-1840
 
 ### BL-UI-005: Alignment in horizontal groups `[P2-ux]`
 - **Rule:** Elements in a horizontal group share a baseline: text baselines align, vertical centers align within 1 px, buttons in the same row share `height` exactly, and an icon adjacent to text vertically centers with that text (within 1 px). Product-grid cells share height per row; table-row cells share height per row.
@@ -2122,6 +2121,7 @@ These invariants hold for any rendered customer-facing surface on the accessibil
 - **Source:** `client-app/shared/cart/components/coupon-card.vue` — the coupon-apply error paragraph is conditionally mounted with `role="alert"` only when an error exists, so its appearance in the DOM itself triggers the assistive-technology alert announcement.
 - **Source:** VCST-5912 (Done) — quantity spinbutton exposed aria-invalid=true and a wrong aria-valuenow on untouched render; fixed
 - **Trust:** DECLARED
+- **Lifecycle:** SUSPECT — [bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832
 
 ---
 
@@ -2416,13 +2416,13 @@ ticket or a docs page disputes (`status`).
 | Import / Export | BL-IMPEX-001–004 | 4 | 0 | 4 | 0 | 1 | 0 |
 | SEO & URLs | BL-SEO-001–004 | 4 | 0 | 2 | 2 | 2 | 0 |
 | Profile & Member Data | BL-PROFILE-001 | 1 | 0 | 1 | 0 | 0 | 0 |
-| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 4 |
+| UI Display & Layout Stability | BL-UI-001–007 | 7 | 0 | 2 | 5 | 5 | 3 |
 | GraphQL xAPI Contract | BL-GQL-001–004 | 4 | 1 | 2 | 1 | 2 | 2 |
 | Loyalty & Mixed Cart | BL-LOY-001–020 | 19 | 10 | 7 | 2 | 10 | 0 |
 | Payment Processors | BL-PAY-001–004 | 3 | 3 | 0 | 0 | 2 | 0 |
 | White Labeling | BL-WL-001–006 | 6 | 0 | 2 | 4 | 4 | 0 |
 | Sales Rep | BL-SR-001–032 | 32 | 3 | 18 | 11 | 6 | 4 |
-| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 3 |
+| Accessibility | BL-A11Y-001–004 | 4 | 0 | 4 | 0 | 4 | 4 |
 | Customer Reviews | BL-CR-001–018 | 9 | 1 | 6 | 2 | 5 | 0 |
 | Platform Administration | BL-PLAT-001–004 | 3 | 0 | 2 | 1 | 3 | 0 |
 | Store Management | BL-STORE-001 | 1 | 0 | 1 | 0 | 1 | 0 |

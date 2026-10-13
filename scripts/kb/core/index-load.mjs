@@ -118,6 +118,7 @@ export function normalizeRow(raw, { index = 'index.json' } = {}) {
     trust: Number.isFinite(raw.trust) ? raw.trust : 0,
     disputed: Number.isFinite(raw.disputed) ? raw.disputed : 0,
     resolved: Number.isFinite(raw.resolved) ? raw.resolved : 0,
+    contested: Number.isFinite(raw.contested) ? raw.contested : 0,
     index,
   };
 }
