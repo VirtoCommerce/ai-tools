@@ -8,7 +8,7 @@
  *
  * Order (explicit seed priority — see STEPS[].priority):
  *   preflight    : member-index → catalog+categories+store (ensureVirtualCatalog) → fulfillment-center
- *   priority 30+ : properties → products → configurable → pricing → inventory → bopis
+ *   priority 30+ : properties → products → configurable → pricing → inventory → category-images → bopis
  *                  → company-users → promotions → loyalty → white-labeling
  *   (prices run AFTER products AND configurable so every product is priced; bopis after inventory
  *    so a fulfillment center exists; company-users after the member index is ready.)
@@ -60,6 +60,8 @@ const TEARDOWN_STEPS = [
   // Wishlists are carts referencing products AND a security account, so they go before both.
   { name: 'wishlists', script: 'wishlists/seed-wishlists.mjs', args: ['--teardown'] },
   // Orders/quotes reference products + users, so sweep them FIRST (before the entities they point at).
+  // VCST-5884 organization returns: its own orders/returns, AGENT-TEST accounts, orgs and two pinned roles.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', args: ['--teardown'] },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', args: ['--teardown'] },
   { name: 'orders', script: 'orders/seed-order-states.mjs', args: ['--teardown'] },
   { name: 'white-labeling', script: 'white-labeling/seed-white-labeling.mjs', args: ['--teardown'] },
@@ -96,6 +98,9 @@ const TEARDOWN_STEPS = [
   { name: 'configurable', script: 'products/seed-configurable.mjs', args: ['--teardown'] },
   { name: 'products', script: 'products/seed-standard-products.mjs', args: ['--teardown'] },
   { name: 'properties', script: 'catalog/seed-catalog-properties.mjs', args: ['--teardown'] },
+  // Category images before the catalog sweep: it strips our images from every store-catalog category
+  // (real ones included) and deletes the uploaded files — a catalog-first sweep would leave the files.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', args: ['--teardown'] },
   // Sweeps every AGENT-TEST-SEED-* catalog + its categories/products/pricelists and unbinds the store.
   { name: 'catalog+categories', script: 'seed-test-data.js', args: ['teardown'] },
 ];
@@ -143,6 +148,10 @@ const STEPS = [
   // names, store-scoped SEO) instead of a date-stamped fork, and seeds into the same catalogs. Runs
   // after inventory(70) so its stock has FFCs. Optional — supplementary to the .mjs product set.
   { name: 'test-data', script: 'seed-test-data.js', args: ['catalog'], required: false, priority: 75 },
+  // Category artwork (test-data/catalogs/category-images.csv). Resolves categories BY NAME inside the
+  // store's catalog, so it runs after store(80) binds that catalog and after every phase that creates
+  // categories. Optional: a name the env does not carry is reported unmatched, never created.
+  { name: 'category-images', script: 'catalog/seed-category-images.mjs', required: false, priority: 85 },
   { name: 'bopis', script: 'bopis/seed-bopis.mjs', required: true, priority: 90 },
   { name: 'company-users', script: 'b2b/seed-company-users.mjs', args: ['all'], required: true, priority: 100 },
   // Org addresses beyond the single inline default baked into orgBody() — needs the org graph (100) first.
@@ -187,6 +196,9 @@ const STEPS = [
   // `sales-rep-documents` in FileUpload:Scopes, and the task seeder needs a storefront password
   // grant (SALES_REP_EMAIL + SALES_REP_PASSWORD_<ENV>).
   { name: 'sales-rep', script: 'sales-rep/seed-sales-rep-family.mjs', required: false, priority: 142 },
+  // VCST-5884 organization returns: creates its own orgs/accounts/roles, then orders on live-discovered
+  // products (40) in the store (80). Optional: needs the Return module + Return.ReturnEnabled on the store.
+  { name: 'returns-org', script: 'orders/seed-org-returns.mjs', required: false, priority: 143 },
   { name: 'quotes', script: 'orders/seed-quotes.mjs', required: false, priority: 145 },
   // Push Messages inboxes (suite 068): tops the reader's inbox up to a mixed read/unread state and
   // sends the bulk recipient 3 fresh messages. After company-users (100), which creates the

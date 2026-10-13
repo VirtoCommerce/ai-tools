@@ -972,6 +972,28 @@ function evaluatePerfPredicate(
   };
 }
 
+// Split a path on `.` only OUTSIDE a `[...]` group, so a filter value that
+// itself contains dots (an e-mail, a SKU, a version) stays one segment:
+// `results[*?to=a.b@c.com].length` → ["results[*?to=a.b@c.com]", "length"].
+// A plain `split(".")` cut that value apart, the filter regex then failed to
+// match, and the lookup returned undefined (a COUNT read as NaN).
+function splitPathSegments(path: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < path.length; i++) {
+    const ch = path[i];
+    if (ch === "[") depth++;
+    else if (ch === "]") depth = Math.max(0, depth - 1);
+    else if (ch === "." && depth === 0) {
+      parts.push(path.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(path.slice(start));
+  return parts;
+}
+
 export function getByPath(obj: unknown, path: string): unknown {
   // Accept both the natural "data.foo.bar" (author-facing) and the
   // internal shape where `obj` is already `response.data`. Strip a leading
@@ -995,7 +1017,7 @@ export function getByPath(obj: unknown, path: string): unknown {
     : bracketNormalized === "data"
     ? ""
     : bracketNormalized;
-  const parts = normalized ? normalized.split(".") : [];
+  const parts = normalized ? splitPathSegments(normalized) : [];
   let cur: unknown = obj;
   for (const p of parts) {
     if (cur === null || cur === undefined) return undefined;
