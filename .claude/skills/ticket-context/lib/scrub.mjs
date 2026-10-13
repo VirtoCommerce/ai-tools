@@ -136,12 +136,12 @@ function requestFacts(req, secrets) {
     headerBytes,
     cookies: { count: pairs.length, bytes: cookieHeader.length || pairs.reduce((n, [k, v]) => n + k.length + v.length + 2, 0) },
     headerNames: [...new Set(headers.map((h) => nameOf(h?.name, secrets).toLowerCase()))].slice(0, 100),
-    cookieNames: pairs.map(([k]) => nameOf(k, secrets)).slice(0, 100),
+    cookieSizes: pairs.map(([k, v]) => ({ name: nameOf(k, secrets), bytes: k.length + v.length + 1 })).slice(0, 100),
   };
 }
 
 /** A HAR reduced to what a reader needs: no header, cookie or query value survives — only their
- *  sizes, and on a failing entry their names. */
+ *  sizes, and on a failing entry their names (each cookie with its own size). */
 export function reduceHar(har, secrets = new Set()) {
   const entries = har?.log?.entries;
   if (!Array.isArray(entries)) throw new Error("not a HAR: no log.entries");
@@ -160,7 +160,7 @@ export function reduceHar(har, secrets = new Set()) {
         status,
         operation: operationsOf(e.request?.postData?.text ?? ""),
         request_header_bytes: req.headerBytes,
-        cookies: isError ? { ...req.cookies, names: req.cookieNames } : req.cookies,
+        cookies: isError ? { ...req.cookies, each: req.cookieSizes } : req.cookies,
         ...(isError ? { request_header_names: req.headerNames } : {}),
         error: !isError ? null : body === null ? "[binary body]" : redactText(body, secrets).slice(0, 500),
       };

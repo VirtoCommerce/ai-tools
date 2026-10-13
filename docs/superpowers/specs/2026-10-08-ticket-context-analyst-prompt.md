@@ -101,7 +101,7 @@ For each ref in `ITEMS`, find its entry in `prepare.json` `inventory` and read i
 | kind | Extract |
 |---|---|
 | `screenshot` / `image` | expected vs actual as **shown**, exact UI text (quoted), screen/route if visible, role/account if visible |
-| `har` / `log` / `trace` | **only if `scrubbed: true`**, else `GAP: not-scrubbed`. Endpoint or GraphQL operation name, status, error message, the layer it points to. A HAR entry also carries request header bytes and cookie count/bytes (names only on a failing entry, never a value): use them when the failure is about size or a missing/duplicated header or cookie |
+| `har` / `log` / `trace` | **only if `scrubbed: true`**, else `GAP: not-scrubbed`. Endpoint or GraphQL operation name, status, error message, the layer it points to. A HAR entry also carries request header bytes and cookie count/bytes (on a failing entry also header names and each cookie's name and bytes, never a value): use them when the failure is about size or a missing/duplicated header or cookie |
 | `video` | `local_path` is a folder of frames: read them in name order. Ordered repro steps, one per meaningful change between frames |
 | `document` | requirements absent from the ACs (cite page or section). A PDF: pages 1–20 only; a longer one also gets a gap `{where: <ref>, reason: "over-cap", detail: "pages 21+ not read"}` |
 | `loom` | transcript-derived steps; quote what the speaker says is wrong |
