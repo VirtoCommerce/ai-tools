@@ -8,12 +8,10 @@ export const CONTRACT = '.claude/knowledge/execution/kb-capture-contract.md';
 
 /**
  * Where a `deployment` value comes from -- said by every write that takes one (capture, confirm,
- * dispute): a confirm on `vcst` lands on a different stand than an entry on `vcst_qa`, and
- * `canonicalStand` folds spelling only, never one name onto another (PR #400 review).
+ * dispute). No spelling rule: the door maps every alias of a stand onto its one name (VCST-6189,
+ * `core/stands.mjs`), so `vcst`, `vcst-qa` and `vcst_qa` all land on the same stand.
  */
-export const DEPLOYMENT_SOURCE = 'the stand you observed it on, spelled as the base spells it -- the `on <stand>` of an evidence '
-  + 'line kb_ask / kb_show printed (vcst_qa, vcptcore_stable); with no such line yet, the first label of the BACK_URL '
-  + 'host with `-` as `_` (vcst-qa.govirto.com -> vcst_qa); never the bare TEST_ENV value (`vcst` is not `vcst_qa`)';
+export const DEPLOYMENT_SOURCE = 'the stand you observed it on, as one token (vcst_qa, vcptcore_stable, or its TEST_ENV name)';
 
 /** What `conditions` holds (VCST-6179) -- said by every write that takes one. */
 export const CONDITIONS_SOURCE = 'Optional, and expected on a dispute: what the stand was running and how it was set up, as '

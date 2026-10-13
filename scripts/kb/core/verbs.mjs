@@ -12,7 +12,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { canonicalStand, mintId } from './canonical.mjs';
+import { mintId } from './canonical.mjs';
+import { resolveStand } from './stands.mjs';
 import { normalizeConditions, repairConditions } from './conditions.mjs';
 import { parseEntry } from './frontmatter.mjs';
 import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neighbours, normalizeAnchor } from './coordinates.mjs';
@@ -176,9 +177,10 @@ export function describeHit(hit, parsed, { unavailable = null } = {}) {
 //           (KB-27B4CD10) turned entirely on the difference between those two stands. A demand log
 //           that cannot separate them can show neither fact.
 //
-//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. There is no source of
-//           truth for a stand's canonical name, and both candidates were checked rather than
-//           assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
+//           OPTIONAL, AND NEVER DEFAULTED, which is the whole of its safety. (The NAME the caller
+//           passes is mapped onto one per stand since VCST-6189 -- `stand()` below; what follows is
+//           why the process never SUPPLIES one.) Both candidates for a default were checked rather
+//           than assumed. `TEST_ENV` is not set in the process at all (`node -e "process.env.TEST_ENV"`
 //           -> undefined; the MCP server is registered with no `env` block and inherits the
 //           session's), and its loader default `vcst` is not the string the base uses for that
 //           stand -- `vcst_qa`, 33 evidence lines against 1. `BACK_URL`'s host would map both live
@@ -281,39 +283,28 @@ const door = (via, call) => ({
 });
 /**
  * WHICH STAND the question was about, when the caller names one -- and nothing at all when it
- * does not. Trimmed, because an argument of whitespace is a caller that meant to say nothing, and
- * `deployment: ""` in the log would read as a stand whose name is the empty string.
+ * does not. Never defaulted: the stand is a property of the observation, not of this process.
  *
- * The NAME is never mapped. The base already holds `vcst` once against `vcst_qa` 33 times, so a
- * normaliser has a real fragmentation to argue for -- and it would be a transcribed mapping with no
- * source of truth behind it, which is the same defect wearing a tidier name. What the log needs is
- * what the caller believed; the disagreement is a finding, not something to iron out on the way in.
- * Only the SPELLING is folded (case, `-` against `_`) by `canonicalStand`, which is a rule on the
- * string and not a table -- see its comment for why `vcst-qa` vs `vcst_qa` is not a disagreement.
+ * MAPPED ONTO ONE NAME since VCST-6189, which reverses the "never mapped" rule this comment used to
+ * state. The map is read from the committed `.env.<env>` profiles (`KB_STAND=`), so it has the source
+ * of truth the old refusal said did not exist, and it only renames what the caller typed -- the full
+ * argument is in `core/stands.mjs`. `vcst`, `vcst-qa` and `vcst_qa` all land on `vcst_qa`; a name the
+ * profiles do not know passes through spelling-folded (`canonicalStand`).
  *
- * A STRING OR NOTHING, which is not defensive typing. `kb.mjs`'s parser hands a flag given
- * without a value the boolean `true`, so `kb ask "q" --deployment --json` would otherwise publish
- * `deployment: "true"` -- a stand name that is not a stand, indistinguishable in the log from one
- * an agent meant. The typed guard is the same one `door()` puts on `call`, for the same reason.
- *
- * AND BOUNDED, which the first version was not. "Verbatim" is a promise about not NORMALISING --
- * not to case-fold, not to map `vcst` onto `vcst_qa`, not to have an opinion about what a stand is
- * called -- and it was wrongly read as a promise not to bound the length either. The value is
- * caller-supplied, it lands in a PUBLIC, APPEND-ONLY log, and nothing between the tool call and the
- * file had a view on its size, so an agent that put a paragraph here published a paragraph (§7: ids
- * and subjects only, never prose). `DEPLOYMENT_MAX` is set far clear of every stand name this base
- * has ever held -- the longest, `vcptcore_stable`, is 15 characters -- so a real value is never
- * touched and the cap is only ever felt by something that was not a stand name. Truncated rather
- * than dropped, by `label()`'s argument below: the caller did name a stand and the only defect is
- * length, and the cut is deterministic so an ask and its confirm still join.
+ * A STRING OR NOTHING: `kb.mjs`'s parser hands a flag given without a value the boolean `true`, which
+ * would otherwise publish `deployment: "true"`. And NOT PROSE: a value with whitespace or over 40
+ * characters is not a stand name. On `ask` it is dropped (a read is never refused for a log field);
+ * every write refuses it at the door (`standProblem`), so an evidence item never holds a paragraph.
  */
 export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
-  const d = typeof deployment === 'string' ? deployment.trim() : '';
-  return d ? { deployment: canonicalStand(d.slice(0, DEPLOYMENT_MAX)) } : {};
+  const r = resolveStand(deployment);
+  return r.value ? { deployment: r.value } : {};
 };
-/** The same fold for an EVIDENCE item, so an entry and the log line about it name one stand. */
-export const standName = (deployment) => stand(deployment).deployment ?? deployment;
+/** The same name for an EVIDENCE item, so an entry and the log line about it name one stand. */
+export const standName = (deployment) => resolveStand(deployment).value ?? deployment;
+/** Why a write's `deployment` is unusable, or null -- the door's refusal (VCST-6189). */
+export const standProblem = (deployment) => resolveStand(deployment).problem ?? null;
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -998,6 +989,8 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   // the source of a missing field (VCST-6156). The hints ride on the RESULT only; `refuseAtDoor`
   // logs kinds and shapes, never a rejected value.
   if (missing.length) return refuseAtDoor(doorHints({ state: 'invalid', why: `capture needs: ${missing.join(', ')}`, missing }, input), input, door);
+  const where = standProblem(input.deployment);
+  if (where) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable deployment: ${where}` }, input), input, door);
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable conditions: ${conditions.problem}` }, input), input, door);
 
@@ -1208,6 +1201,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     return { state: 'invalid', why: `${row.id} is superseded${active.size ? ` by ${[...active].join(', ')}; open the one you observed (kb_show with verify) and ${kind} it` : ' and has no active successor'}` };
   }
   if (!String(input.deployment ?? '').trim()) return { state: 'invalid', why: `${kind} needs --deployment <env>` };
+  const where = standProblem(input.deployment);
+  if (where) return { state: 'invalid', why: `unusable --deployment: ${where}` };
   if (kind === 'dispute' && !String(input.saw ?? '').trim()) return { state: 'invalid', why: 'dispute needs --saw "<what you saw instead>"' };
   const conditions = normalizeConditions(input.conditions);
   if (conditions.problem) return { state: 'invalid', why: `unusable --conditions: ${conditions.problem} (key=value; key=value, e.g. platform=3.1007.27; setting:Store.Name=value)` };

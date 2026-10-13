@@ -39,7 +39,7 @@ rewritten into a Windows path (repaired since VCST-6102, but only when the rewri
 | `claim` | what you observed, as a statement | you — **button labels, field names and menu paths go here**, never in an anchor |
 | `anchors` | ≥ 1 coordinate the behaviour lives at | the table below |
 | `scope` | ≥ 1 `axis=value` | `surface=<value>` from `SURFACES` in [`scripts/kb/core/index-load.mjs`](../../../scripts/kb/core/index-load.mjs); an item without `=` is dropped silently, so `surface storefront` ends in a refusal |
-| `deployment` | the stand you observed it on | **the stand's name as the base already spells it** — the `on <stand>` of an evidence line that `kb_ask` / `kb_show` printed for that stand (`vcst_qa`, `vcptcore_stable`). **Never the bare `TEST_ENV` value:** `vcst` is not `vcst_qa`, and the base never maps one onto the other (`stand()` in `verbs.mjs`, header). No hit on that stand ⇒ the first label of the `BACK_URL` host with `-` as `_` (`vcst-qa.govirto.com` → `vcst_qa`) |
+| `deployment` | the stand you observed it on | one token: the stand's name or its `TEST_ENV` / host name — the door maps every alias onto the stand's one name, declared as `KB_STAND` in its `.env.<env>` profile (`scripts/kb/core/stands.mjs`). Prose is refused |
 | `method` | how you established it | optional; `observation` (the default) is the only value the tool description admits — see §Open decision |
 | `conditions` | what the stand was running and how it was set up | optional on `capture` / `confirm`, **expected on `dispute`** — §Conditions |
 

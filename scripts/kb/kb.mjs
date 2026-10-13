@@ -231,8 +231,8 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
-    // for why this door has no authoritative source to derive it from either.
+    // `--deployment` is OPTIONAL on ask and is never defaulted from this process -- only a name the
+    // caller passes is mapped onto the stand's one name (`stand()` in core/verbs.mjs).
     const r = await ask(question, opened, {
       top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
     });
