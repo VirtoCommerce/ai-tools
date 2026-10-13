@@ -43,7 +43,9 @@ of that again, and do **not** follow a link the inventory does not list.
 ## Step 1 — connector-only sources (you)
 
 For each ref in `needs_connector` (Loom, Figma, Claude Design), read it once with its connector and
-attach the result — rules per kind in [`design-sources.md`](design-sources.md):
+attach the result — rules per kind in [`design-sources.md`](design-sources.md). The address to open
+is that inventory item's `url` in `prepare.json`: a link's ref has its query values redacted (a token
+in a link never reaches the bundle), so never open the ref and never copy the `url` into an output.
 
 - Loom: `getLoomVideo` → write the transcript to `<run_dir>/loom-<n>.md`.
 - Figma / Claude Design: per `design-sources.md`.

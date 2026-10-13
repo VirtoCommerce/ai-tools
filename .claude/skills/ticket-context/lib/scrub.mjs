@@ -91,6 +91,15 @@ export function redactText(text, secrets = new Set()) {
   return s.replace(QUERY_VALUE, "$1=[REDACTED:query]");
 }
 
+/** A URL as a label (an inventory ref): every query value redacted, and any token shape in the path. The gate
+ *  scans the bundle for token shapes, so a ref carrying one could never pass — and a ref is the script's, not
+ *  the agent's, so nothing could fix it. The full URL stays in prepare.json only. */
+export function redactUrlLabel(url) {
+  let s = String(url).replace(QUERY_VALUE, "$1=[REDACTED:query]");
+  for (const [name, re] of TOKEN_SHAPES) s = s.replace(new RegExp(re.source, "g"), `[REDACTED:${name}]`);
+  return s;
+}
+
 function operationsOf(postText) {
   try {
     const j = JSON.parse(postText);

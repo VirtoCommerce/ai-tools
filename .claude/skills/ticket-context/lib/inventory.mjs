@@ -3,10 +3,19 @@
 // Nothing leaves silently: every attachment, inline image, link and linked issue becomes an item (possibly
 // carrying a gap) or is routed (PR -> prRefs; an attachment URL of THIS issue -> its existing item; a link to
 // the issue itself -> dropped).
+import { createHash } from "node:crypto";
 import { gap } from "./gap.mjs";
+import { redactUrlLabel } from "./scrub.mjs";
 
 const URL_RE = /https?:\/\/[^\s<>"'`)\]}|]+/g;
 const trimUrl = (u) => u.replace(/[.,;:!?]+$/, "");
+/** A link's ref: the URL with query values (and token shapes) redacted, plus a short hash of the full URL when
+ *  redaction changed it, so two links differing only in a redacted value stay two items. The full URL is the
+ *  item's `url`, in prepare.json only — never in a ref, stdout, the bundle or the cache. */
+export function linkRef(url) {
+  const label = redactUrlLabel(url);
+  return label === url ? `link:${url}` : `link:${label}~${createHash("sha256").update(String(url)).digest("hex").slice(0, 8)}`;
+}
 export const PR_URL_RE = /^https:\/\/github\.com\/([^/\s]+)\/([^/\s]+)\/pull\/(\d+)/i;
 
 export function attachmentKind(filename = "", mime = "") {
@@ -127,7 +136,7 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, linkField
     }
     const kind = classifyLink(url, trackerBase, ownIds);
     if (kind === "skip") return; // an attachment of THIS issue: already its own item
-    const id = `link:${url}`;
+    const id = linkRef(url);
     if (kind == null) {
       if (!items.has(id)) items.set(id, { ref: id, kind: "external", where: [], url, gap: gap(id, "unreadable", "not an http(s) URL; not fetched") });
     } else if (kind === "pr") {

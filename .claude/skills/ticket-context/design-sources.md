@@ -9,9 +9,9 @@ site.
 
 | Inventory item | What you (the runner) do | What you attach |
 |---|---|---|
-| `claude-design`, `claude.ai/design/p/<uuid>?file=…` | look for the local copy `.design-source/<uuid>/` (gitignored; files a person put on disk, e.g. "Send to Claude Code") | that directory, or `--gap connector-unavailable --detail "no local copy of design project <uuid> — export it to .design-source/<uuid>/"` |
-| `claude-design`, `claude.ai/code/artifact/…` (a "Changes" artifact) | Artifact tool `read` with `path: "index.html"` and `out_dir` set to the run dir (so `attach --file` accepts it). If the read returns a summary instead of raw HTML (an artifact owned by someone else), do not attach it | the saved `index.html`, or `--gap connector-unavailable --detail "artifact not readable as raw HTML — ask for a local export"` |
-| `figma` | Figma MCP: `get_screenshot` of the linked node (`get_metadata` for frame names) into the run dir | the PNG; no Figma MCP ⇒ `--gap connector-unavailable --detail "ask for a PNG export of the frame"` |
+| `claude-design`, `url` `claude.ai/design/p/<uuid>?file=…` | look for the local copy `.design-source/<uuid>/` (gitignored; files a person put on disk, e.g. "Send to Claude Code") | that directory, or `--gap connector-unavailable --detail "no local copy of design project <uuid> — export it to .design-source/<uuid>/"` |
+| `claude-design`, `url` `claude.ai/code/artifact/…` (a "Changes" artifact) | Artifact tool `read` with `path: "index.html"` and `out_dir` set to a directory of its own, `<run_dir>/artifact-<n>/` (`n` counts the artifacts of this run; never the run dir itself, where two reads would overwrite one `index.html`). If the read returns a summary instead of raw HTML (an artifact owned by someone else), do not attach it | `<run_dir>/artifact-<n>/index.html`, or `--gap connector-unavailable --detail "artifact not readable as raw HTML — ask for a local export"` |
+| `figma` (open its `url`) | Figma MCP: `get_screenshot` of the linked node (`get_metadata` for frame names) into the run dir | the PNG; no Figma MCP ⇒ `--gap connector-unavailable --detail "ask for a PNG export of the frame"` |
 | a mockup attachment | nothing — it is already a downloaded image | — |
 
 ## Step 2 — what the MATERIALS agent extracts
@@ -19,7 +19,8 @@ site.
 - **Conditions, not pictures:** states (empty, loading, error, disabled, long text, zero/one/many),
   breakpoints shown, exact copy and labels (quoted), role-dependent visibility, and what differs from
   the current screen when the source shows both.
-- **A local Claude Design copy:** start with the artboard the link's `file=` parameter names.
+- **A local Claude Design copy:** start with the artboard the `file=` parameter of the item's `url` in
+  `prepare.json` names (the ref has that value redacted).
 - **A "Changes" artifact is a document about a design, not a design.** Its `:root` variables are page
   chrome, not storefront tokens — never report them as conditions. Its content is a change table
   (Property | Prod | Design): each row is one condition; a row with prose or several values stays prose.
