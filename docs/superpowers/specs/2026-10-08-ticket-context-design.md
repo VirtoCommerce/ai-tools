@@ -190,7 +190,12 @@ It does everything that needs a credential or a shell, so the agent needs neithe
 - **Files.** Attachments under the caps are downloaded; HAR/log/trace files are scrubbed (S2) and only the
   scrubbed copy is handed on; videos become frames (D4); public external pages become text (S5).
 - **PRs.** Rungs 1–3 of the ladder (§Block 3). Per PR: metadata, files, the diff, review comments,
-  unresolved thread count and check-run conclusions, each written to the run dir.
+  unresolved thread count and check-run conclusions, each written to the run dir. *Revised 2026-10-13
+  (Phase 2, fix wave 2):* a diff GitHub refuses (406, too large) is assembled from the per-file `patch`
+  fields of the files API (`/pulls/{n}/files`, 100 per page, up to the 300-file cap), with `diff --git`
+  headers, into the same diff file and under the same 500 KB cap. A file with no `patch` (binary or too
+  large) is listed in a `pr:<ref>:patches` gap; the diff is a gap only when the files API failed too.
+  *Replaces:* the whole PR's hunks unread on a 406 (VCST-4933, pagebuilder#159).
 - Every item that could not be read is already a `GAP` in `prepare.json`, with its reason.
 
 ### Step 0b — connector-only sources (skill runner)
