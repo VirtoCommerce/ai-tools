@@ -90,9 +90,9 @@ yarn check:plugin-module "$WEB"
 
 ✅ `All checks passed.` Nothing else counts as done.
 
-## 5. Optional: see it in a storefront, check a package
+## 5. Optional: see it in a storefront, check a package, try a local platform
 
-Offer both; do them only if the user wants.
+Offer each; do only what the user wants.
 
 - **Local storefront:** S1a step 5. It needs a backend in `$HOST/.env.local`. It changes
   `client-app/config/settings_data.json` in `$HOST`: restore it afterwards and confirm `git status` there is clean.
