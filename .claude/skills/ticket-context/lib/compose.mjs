@@ -34,10 +34,11 @@ export function compose(prep, outs) {
   const dep = new Map((d.prs ?? []).map((p) => [p.ref, p]));
   const prs = [];
   for (const p of prep.prs) {
-    const a = p.gap ? undefined : agentPrs.get(p.ref); // a whole-PR gap from prepare wins over any agent entry
-    if (!a && !p.gap) continue; // the agent left it out: gate rule 3 names it
+    // A whole-PR gap from prepare wins over any agent entry; a context-only PR is not change surface, so the agent's entry for it (if any) is ignored too.
+    const a = (p.gap || p.context_only) ? undefined : agentPrs.get(p.ref);
+    if (!a && !p.gap && !p.context_only) continue; // the agent left it out: gate rule 3 names it
     const base = a ?? { repo: p.repo, number: p.number, state: p.state ?? "unknown", merged: !!p.merged, head_sha: p.head_sha ?? "", layers: {},
-      operations: [], endpoints: [], settings: [], tests_changed: [], untested: [], fate: `not analysed (${p.gap.reason})`, ci: "not read", open_threads: 0, gap: p.gap };
+      operations: [], endpoints: [], settings: [], tests_changed: [], untested: [], fate: p.gap ? `not analysed (${p.gap.reason})` : "context only — not change surface", ci: "not read", open_threads: 0, ...(p.gap ? { gap: p.gap } : {}) };
     const dp = dep.get(p.ref);
     const fallback = p.gap?.reason === "over-cap" ? "over-cap — not checked" : p.context_only ? "context only — not change surface" : "deployment not checked";
     prs.push({ ...base, context_only: !!p.context_only, artifact: dp?.artifact ?? null, deployed: dp?.deployed ?? "UNKNOWN", deployed_reason: dp?.deployed_reason ?? fallback });

@@ -130,6 +130,7 @@ Read `prepare.json` `prs` and `rung`.
 2. **Per PR** — read its `meta_path`, `files_path`, `diff_path`, `reviews_path`, `checks_path`.
    A path that is `null` already has its gap in the entry's `gaps` — the skill records it; use what
    remains. An entry with a whole-PR `gap` (over-cap, unreadable) is not yours: leave it out.
+   Neither is an entry with `context_only: true` (a deployment-manifest or tooling PR): it is context, not change surface — leave it out.
    - identity: repo, number, state, merged, head SHA (from `meta_path`);
    - files grouped by layer token: `storefront` · `admin-spa` · `api` · `module` · `platform` · `test` · `other`;
    - **GraphQL operations and REST endpoints touched, by name**;

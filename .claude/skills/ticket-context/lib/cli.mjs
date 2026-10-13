@@ -14,7 +14,7 @@ import { buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { extractFrames } from "./frames.mjs";
 import { loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectPr, ghClient, laterPrs, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, writeCache } from "./cache.mjs";
 import { knownGround } from "./known.mjs";
@@ -57,17 +57,6 @@ async function materialize(it, jira, runDir, secrets) {
     return;
   }
   it.local_path = file;
-}
-
-/** A context-only PR (ai-tools, vc-deploy-dev): metadata only, same shape as collectPr with the change-surface paths null. */
-function contextPr(p, base, runDir, sameKey) {
-  const m = p.meta;
-  const merged_at = m.merged_at ?? null;
-  const meta_path = join(runDir, `pr-${p.owner}-${p.repo}-${p.number}-meta.json`);
-  writeJson(meta_path, { repo: base.repo, number: p.number, title: m.title, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null,
-    head_sha: m.head?.sha ?? null, base: m.base?.ref ?? null, body: m.body ?? "", later_prs: laterPrs(sameKey, { ref: p.ref, merged_at }) });
-  return { ...base, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null, head_sha: m.head?.sha ?? null,
-    meta_path, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
 }
 
 async function prepare() {
@@ -160,7 +149,7 @@ async function prepare() {
       const base = { ref: p.ref, repo: `${p.owner}/${p.repo}`, number: p.number, rung: p.rung ?? null, context_only: contextOnly };
       if (p.gap) { prs.push({ ...base, gap: p.gap }); if (!contextOnly) product++; continue; }
       if (contextOnly) {
-        try { prs.push(contextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
+        try { prs.push(collectContextPr(p, base, runDir, ladder.sameKey)); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
         continue;
       }
       if (product++ >= CAPS.prs) {

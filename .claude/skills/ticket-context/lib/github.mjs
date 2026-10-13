@@ -130,6 +130,19 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
   return { rung: refs.size ? 3 : null, refs: [...refs.values()], sameKey, ladder };
 }
 
+/** A context-only PR (deployment manifest, tooling): metadata only, same entry shape as collectPr with the change-surface paths null. */
+export function collectContextPr(p, base, runDir, sameKey = []) {
+  const { owner, repo, number, meta: m } = p;
+  checkRepo(owner, repo);
+  checkNumber(number);
+  const merged_at = m.merged_at ?? null;
+  const meta_path = join(runDir, `pr-${owner}-${repo}-${number}-meta.json`);
+  writeFileSync(meta_path, JSON.stringify({ repo: base.repo, number, title: m.title, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null,
+    head_sha: m.head?.sha ?? null, base: m.base?.ref ?? null, body: m.body ?? "", later_prs: laterPrs(sameKey, { ref: p.ref, merged_at }) }, null, 1));
+  return { ...base, state: m.state, merged: !!merged_at, merged_at, created_at: m.created_at ?? null, head_sha: m.head?.sha ?? null,
+    meta_path, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
+}
+
 export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {}) {
   const { owner, repo, number, meta } = p;
   checkRepo(owner, repo);
