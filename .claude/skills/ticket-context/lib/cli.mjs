@@ -15,7 +15,7 @@ import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } 
 import { exportFigmaFrame, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
-import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, runLadder } from "./github.mjs";
+import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, orderPrMeta, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
@@ -131,8 +131,7 @@ async function prepare() {
     if (!gh) { prMeta.push({ ...r, gap: gap(`pr:${r.ref}`, gcred.reason, gcred.detail) }); continue; }
     try { prMeta.push({ ...r, meta: await gh.pr(r.owner, r.repo, r.number) }); } catch (e) { prMeta.push({ ...r, gap: asGap(`pr:${r.ref}`, e) }); }
   }
-  const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
-  prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+  orderPrMeta(prMeta);
   // Named companions, one hop (github.mjs): appended after the ladder's PRs, so they take only the cap left over.
   if (gh) {
     const companions = await followCompanions({ gh, prMeta, orgs, gaps });
@@ -182,7 +181,7 @@ async function prepare() {
     }
 
     const prs = [];
-    // P5: the cap is for CHANGE SURFACE. Product PRs come first (newest first) and only they count; a context-only
+    // P5: the cap is for CHANGE SURFACE. Product PRs come first (rung 1 first, then newest first) and only they count; a context-only
     // PR (ai-tools, vc-deploy-dev) gets its metadata only — no files, no diff — and never pushes a product PR over the cap.
     let product = 0;
     for (const p of prMeta) {
@@ -195,7 +194,7 @@ async function prepare() {
       }
       if (product++ >= CAPS.prs) {
         prs.push({ ...base, state: p.meta.state, merged: !!p.meta.merged_at, head_sha: p.meta.head?.sha ?? null,
-          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; the ladder's most recent are read first, then the companions they name`) });
+          gap: gap(`pr:${p.ref}`, "over-cap", `more than ${CAPS.prs} product PRs; rung 1 first, then the most recent, then the companions they name`) });
         continue;
       }
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }

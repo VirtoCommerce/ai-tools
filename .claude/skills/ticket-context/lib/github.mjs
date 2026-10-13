@@ -143,6 +143,15 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
   return { rung, refs: merged, sameKey, ladder };
 }
 
+/** The order the PR cap (CAPS.prs) fills in: context-only PRs last; then by rung — 1 (explicitly linked), 2, 3,
+ *  companions (rung null) last — so newer key-search hits never push a linked PR over the cap; then newest
+ *  first. Sorts in place. */
+export function orderPrMeta(prMeta) {
+  const isContext = (p) => CONTEXT_ONLY_REPOS.includes(String(p.repo).toLowerCase());
+  return prMeta.sort((a, b) => (isContext(a) - isContext(b)) || ((a.rung ?? 9) - (b.rung ?? 9))
+    || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+}
+
 // Named companions (design §5 Block 3). A change can span repos whose PRs carry other keys, so no rung finds
 // them; the body of a PR the ladder found is where its author names them. Three forms: a PR URL,
 // `owner/repo#n`, and a bare `repo#n`, which is read as the naming PR's own owner. The owner must be one of
