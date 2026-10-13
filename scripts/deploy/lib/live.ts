@@ -64,6 +64,34 @@ export async function probePlatformVersion(c: EnvCoords): Promise<{ ok: true; ve
     return version ? { ok: true, version } : { ok: false, status: 'no-version-in-page' };
   } catch { return { ok: false, status: 'network' }; }
 }
+/** The storefront's entry script, as its index HTML references it: `/assets/index-<hash>.js`. */
+export function parseThemeEntry(html: string): string | null {
+  return /["'](\/?assets\/index-[\w-]+\.js)["']/.exec(html)?.[1] ?? null;
+}
+/** The theme's package version, which the vc-frontend build inlines as `x="2.60.0-pr-…",y={version:x}`. */
+export function parseThemeVersion(js: string): string | null {
+  const v = /["'](\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)["'],[\w$]+=\{version:[\w$]+\}/.exec(js)?.[1]
+    ?? /\{version:["'](\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)["']\}/.exec(js)?.[1];
+  return v ?? null;
+}
+/**
+ * The live, anonymous source of the storefront theme version: the entry bundle the index HTML loads.
+ * The HTML is cache-busted (kb KB-D9DF8E54: it is served max-age=7200, so a plain GET can name the
+ * previous build). Read-only GETs of FRONT_URL.
+ */
+export async function probeThemeVersion(frontUrl: string): Promise<{ ok: true; version: string } | { ok: false; status: ProbeStatus | 'no-front-url' | 'no-entry-script' | 'no-version-in-bundle' }> {
+  if (!frontUrl) return { ok: false, status: 'no-front-url' };
+  try {
+    const page = await fetch(`${frontUrl}/?_preflight=${Date.now()}`, { headers: { 'Cache-Control': 'no-cache' } });
+    if (page.status !== 200) return { ok: false, status: page.status };
+    const entry = parseThemeEntry(await page.text());
+    if (!entry) return { ok: false, status: 'no-entry-script' };
+    const js = await fetch(new URL(entry, `${frontUrl}/`).href);
+    if (js.status !== 200) return { ok: false, status: js.status };
+    const version = parseThemeVersion(await js.text());
+    return version ? { ok: true, version } : { ok: false, status: 'no-version-in-bundle' };
+  } catch { return { ok: false, status: 'network' }; }
+}
 export async function platformHealthy(c: EnvCoords): Promise<boolean> {
   try { return (await fetch(`${c.backUrl}/health`, { redirect: 'manual' })).status === 200; } catch { return false; }
 }

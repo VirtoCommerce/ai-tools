@@ -21,10 +21,15 @@ function formatPlatform(f: EnvFacts): string {
   return formatPlatformTheme(isUnknown(f.declared) ? null : f.declared, "Platform");
 }
 
+/** The live theme version when the storefront bundle gave one; else the declared one, labelled as such. */
+function formatTheme(f: EnvFacts): string {
+  if (typeof f.deployedTheme === "string") return `Theme ${f.deployedTheme} (deployed)`;
+  return formatPlatformTheme(isUnknown(f.declared) ? null : f.declared, "Theme");
+}
+
 function buildLine(f: EnvFacts): string {
-  const d = isUnknown(f.declared) ? null : f.declared;
   const platform = formatPlatform(f);
-  const theme = formatPlatformTheme(d, "Theme");
+  const theme = formatTheme(f);
   const drift = isUnknown(f.drift) ? "drift: UNKNOWN" : `drift: ${f.drift.length ? plural(f.drift.length, "module") : "none"}`;
   const ledger = isUnknown(f.ledger) ? "ledger: UNKNOWN" : f.ledger.stale === null ? "ledger: UNKNOWN" : `ledger: ${f.ledger.stale ? "stale" : "fresh"}`;
   return `${platform} · ${theme} · ${drift} · ${ledger}`;
@@ -36,11 +41,10 @@ export function renderHuman(meta: { env: string; for: string; ticket?: string; a
   const warn = checks.filter((c) => c.status === "WARN").length;
   const unknown = checks.filter((c) => c.status === "UNKNOWN").length;
   const scope = meta.ticket ? `${meta.for} ${meta.ticket}` : meta.for;
-  const d = isUnknown(facts.declared) ? null : facts.declared;
 
   if (block + warn + unknown === 0) {
     const platform = formatPlatform(facts);
-    const theme = formatPlatformTheme(d, "Theme");
+    const theme = formatTheme(facts);
     return `Preflight · ${meta.env} · ${scope} · ${platform} · ${theme} · READY (${plural(okN, "check")} OK)\n`;
   }
 
