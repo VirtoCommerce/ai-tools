@@ -12,7 +12,7 @@ ticket type. Name every floor in the strategy as fired or not, with its signal.
 | F2 | a Story whose surface purpose is `UNDECLARED` in the domain map §1 ([`../../knowledge/domain/domain-map.md`](../../knowledge/domain/domain-map.md)) | test model + exploratory, whatever else holds |
 | F3 | `visual_surface: true` ([`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1) | visual lane |
 | F4 | a revenue-critical flow is touched (cart, checkout, payment, pricing, orders) | no risk on it below Medium |
-| F5 | the diff touches a surface existing suite cases cover (`npm run regression:select -- --path <changed files>`) | coverage triage + a regression run over those cases, **after the staleness check below** |
+| F5 | the diff touches a surface existing suite cases cover: `npm run regression:select -- --path <changed files>` **plus** `npm run tc:scope -- --domain <slug>` (the manifest's domain/tags vocabulary catches what path tokens miss — [`../../knowledge/execution/regression-selection.md`](../../knowledge/execution/regression-selection.md)) | coverage triage + a regression run over those cases, **after the staleness check below** |
 | F6 | a PR is not deployed on the stand under test (the deploy manifest or `/api/platform/modules` does not carry the PR's build), or the deployment is `UNKNOWN` | **BLOCKED** before any browser opens; `UNKNOWN` is written into the verdict as "deployment unverified" |
 | F7 | `Review task` — no ACs | oracles from the diff only; F5 on by default |
 | F8 | the change IS the design system or the token layer (`ui-kit`, [`../qa-test/ui-kit-class.md`](../qa-test/ui-kit-class.md)) | F3 + token audit; fails closed |
@@ -25,9 +25,9 @@ dismiss. Measured: 9 of 22 `073` rows were repaired after VCST-5883's run; 8 of 
 known broken before VCST-5884's round 3. So the selected cases are checked first, cheaply, and a stale one
 **never enters the run**:
 
-1. `npm run tc:scope` over the change — rows it disposes `REPAIR` or `RE-BASE` are stale
-   ([`../../knowledge/execution/regression-selection.md`](../../knowledge/execution/regression-selection.md)
-   §Existing-Coverage Triage).
+1. `npm run tc:scope` over the change — rows it disposes `REPAIR` are stale. A `RE-BASE` row is **not**:
+   its old assertion is exactly what the change must be run against, so it stays in the run and its
+   result is settled at triage ([`../qa-test/coverage-triage.md`](../qa-test/coverage-triage.md) §3a).
 2. `npm run suites:executability:check` — rows it marks non-executable.
 3. A field, operation, route or selector the diff **renames or removes**, grepped in the selected rows.
 4. From round 2 on: the previous round's triage `test-defect` ids.
