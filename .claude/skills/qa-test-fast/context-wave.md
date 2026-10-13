@@ -12,7 +12,9 @@ Dispatch C first when it is due (background, its own browser lane), then run
 ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
 conditions, the PRs (only product-repo PRs are change surface), PR↔AC both ways, whether each PR is
 deployed on this stand, known ground, gaps and blockers. Do not re-fetch the ticket or a PR, and do not
-re-check deployment: the bundle is the answer.
+re-check deployment: the bundle is the answer. **When `/ticket-context` STOPs** (no tracker credential,
+a failed gate, a run dir outside the project), Stage 1 is `BLOCKED` and the verdict quotes its STOP line
+verbatim — never a FAIL, and never a model built from a partial read.
 
 ### C · Domain map — only when the state is `ABSENT` or `unresolved`
 Invoke `/qa-domain-map <slug>` on `playwright-firefox` as
