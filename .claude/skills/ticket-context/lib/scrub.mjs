@@ -15,7 +15,6 @@ export const TOKEN_SHAPES = Object.freeze([
   ["jwt", /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/],
   ["bearer", /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/-]{20,}=*/],
 ]);
-const HEADER_LINE = /^(\s*"?)(authorization|proxy-authorization|cookie|set-cookie|x-api-key|api[_-]?key)("?\s*[:=]\s*).*$/gim;
 const QUERY_VALUE = /([?&][^=&#\s"']+)=([^&#\s"']+)/g;
 
 export function secretValuesFrom(text) {
@@ -61,7 +60,7 @@ export function redactText(text, secrets = new Set()) {
   // Fixed header rule: match built-in headers + x-csrf/xsrf with suffixes + any header name containing SECRET_NAME word
   // Build with String.raw to handle escapes properly
   const headerPrefixPattern = String.raw`(^|[\s"'{,;\[(>])`;
-  const headerNamePattern = String.raw`(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf[\w-]*|x-xsrf[\w-]*|ocp-apim-subscription-key|session|sid|x-auth-token|[\w-]*(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key)[\w-]*)`;
+  const headerNamePattern = String.raw`(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf[\w-]{0,64}|x-xsrf[\w-]{0,64}|ocp-apim-subscription-key|session|sid|x-auth-token|[\w-]{0,64}(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key)[\w-]{0,64})`;
   const headerValuePattern = String.raw`("(?:[^"\\]|\\.)*"|[^\r\n"]*)`;
   const secretHeaderPattern = headerPrefixPattern + headerNamePattern + String.raw`\s*:\s*(?!\[REDACTED)` + headerValuePattern;
 
@@ -73,7 +72,7 @@ export function redactText(text, secrets = new Set()) {
 
   // JSON secret-key rule: ONLY match keys that are secret-named (password, token, cookie, authorization, session, sid, refresh_token, etc.)
   // Use String.raw to fix the \s bug: without it, \s becomes s in template literals
-  const keyNamePattern = String.raw`(authorization|cookie|session|sid|[\w-]*(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key|refresh[_-]?token)[\w-]*)`;
+  const keyNamePattern = String.raw`(authorization|cookie|session|sid|[\w-]{0,64}(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key|refresh[_-]?token)[\w-]{0,64})`;
   const jsonValuePattern = String.raw`("(?:[^"\\]|\\.)*"|[^,}\]\s]+)`;
   const secretKeyPattern = String.raw`"` + keyNamePattern + String.raw`"\s*:\s*(?!\[REDACTED)` + jsonValuePattern;
   s = s.replace(new RegExp(secretKeyPattern, "gi"), (m, k, v) => {
