@@ -28,7 +28,10 @@
  *
  * SAFETY / CONVENTIONS: assertSafeTarget() prod guard, AGENT-TEST-ORD-RET-* naming (distinct from
  * seed-order-states' AGENT-TEST-ORD-* so neither teardown can sweep the other's orders), idempotent
- * find-or-create with self-heal, runtime GUIDs to aliases.<env>.json only.
+ * find-or-create with self-heal, runtime GUIDs to aliases.<env>.json only. RECIPIENTS: every email field
+ * of a shaped order is forced to RETURN_ORDER_RECIPIENT (AGENT-TEST yopmail), and the POST is refused
+ * otherwise — the templates' {{USER_EMAIL}} can be a real mailbox. The BUYER ACCOUNT is still the env
+ * persona (suite 073 signs in as it); account-addressed notifications are NOT covered by this.
  *
  * Flags: --dry-run · --verbose · --teardown · --only <KEY|ALIAS>
  */
@@ -44,6 +47,7 @@ import {
   LINE_ROLE_X, LINE_ROLE_CANCELLED, LINE_ROLE_Y, deliveredTotalFor,
   returnOrderNumber, resolveTokens, applyReturnCatalogItems, finalizeReturnOrderBody,
   buildReturnPhase2Body, diagnoseSeededOrder, deliveryDateFor, returnHoldsUnits,
+  RETURN_ORDER_RECIPIENT, shapeReturnOrderRecipients, recipientProblems, maskEmail,
 } from './orders-specs.mjs';
 
 const loadFixture = (rel) => JSON.parse(readFileSync(join(ROOT, 'test-data', rel), 'utf8'));
@@ -181,6 +185,11 @@ async function ensureOrder(spec, buyer, productsByRole, rolesBySku, windowDays, 
     // spec says. Rebuild it rather than hand the next run a drained fixture.
     const held = spec.rebuildWhenHeld ? (await returnsForOrder(existing.id)).filter(returnHoldsUnits) : [];
     if (held.length) d.problems.unshift(`${held.length} return(s) on it still hold units (${held.slice(0, 3).map((r) => `${r.number} ${r.status}`).join(', ')}) — exhausted`);
+    // Recipient drift: an order seeded before the fixture mailbox existed still mails whoever its address
+    // names (often the env persona's real inbox). The platform takes the order-address email first, so the
+    // order is rebuilt rather than reused — a PUT would emit status/shipment notifications to that address.
+    const foreign = recipientProblems(existing, RETURN_ORDER_RECIPIENT);
+    if (foreign.length) d.problems.unshift(`order recipient(s) are not ${RETURN_ORDER_RECIPIENT} (${foreign.map((r) => `${r.path}=${r.missing !== undefined ? 'missing' : maskEmail(r.email)}`).join(', ')})`);
     if (!d.problems.length) { log(`  ${number} exists and still matches the spec → ${existing.id}`); return { id: existing.id, order: existing, rebuilt: false }; }
     log(`  ${number} rebuilding — ${d.problems.length} problem(s): ${d.problems[0]}`);
     await deleteOrderWithReturns(existing);
@@ -190,11 +199,19 @@ async function ensureOrder(spec, buyer, productsByRole, rolesBySku, windowDays, 
   const raw = loadFixture(spec.fixtureFile);
   const { obj, unresolved } = resolveTokens(raw, process.env);
   if (unresolved.length) throw new Error(`${number}: unresolved env token(s) ${unresolved.join(', ')} — refusing to POST a literal "{{VAR}}"`);
-  const withProducts = applyReturnCatalogItems(obj, productsByRole);
+  // Recipients → the dedicated fixture mailbox (the template's {{USER_EMAIL}} can be a real person's).
+  // The buyer ACCOUNT stays the env persona: only the order's own recipient fields change.
+  const withProducts = applyReturnCatalogItems(shapeReturnOrderRecipients(obj), productsByRole);
   const body = finalizeReturnOrderBody(spec, withProducts, {
     customerId: buyer.id, customerName: buyer.name,
     organizationId: buyer.organizationId, organizationName: buyer.organizationName,
   }, now);
+  // HARD STOP before the first write — the order-created email goes out on this POST, to the order address.
+  const bad = recipientProblems(body, RETURN_ORDER_RECIPIENT);
+  if (bad.length) {
+    throw new Error(`${number}: REFUSING to POST — recipient(s) other than ${RETURN_ORDER_RECIPIENT}: ${bad.map((r) => `${r.path}=${r.missing !== undefined ? `missing (${r.missing})` : maskEmail(r.email)}`).join(', ')}`);
+  }
+  log(`    ${number}: recipients ${[...new Set((body.addresses || []).map((a) => a.email))].join(', ')} (${(body.addresses || []).length} address(es))`);
   const created = await api('POST', '/api/order/customerOrders', body);
   if (DRY_RUN) { log(`  [DRY] would create ${number} (${spec.orderStatus}, ${spec.shipments.length} shipment(s))`); return { id: null, order: null, rebuilt: true }; }
 
