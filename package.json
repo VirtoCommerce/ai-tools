@@ -340,7 +340,8 @@
     "kb:cards": "node scripts/kb/cards.mjs",
     "kb:disputes": "node scripts/kb/disputes.mjs",
     "kb:stands": "node scripts/kb/core/stands.mjs --check",
-    "kb:build-history": "node scripts/kb/build-history.mjs"
+    "kb:build-history": "node scripts/kb/build-history.mjs",
+    "kb:normalize-evidence": "node scripts/kb/normalize-evidence.mjs"
   },
   "repository": {
     "type": "git",
