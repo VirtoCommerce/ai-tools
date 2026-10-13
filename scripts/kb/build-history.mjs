@@ -94,6 +94,9 @@ export async function history({ base, root = REPO_ROOT }) {
     const r = resolveStand(String(it.deployment ?? ''), { map });
     const profile = r.known ? profileOf(r.value, { map }) : null;
     if (!profile || !it.at) { out.push({ ...it, unknown: profile ? 'no date' : `no profile for ${it.deployment}` }); continue; }
+    // The same guard as the live stamp (core/build.mjs): a stand whose profile is not committed here is
+    // somebody's own, and its builds never go into the public base (review of ai-tools#429).
+    if (!profile.tracked) { out.push({ ...it, unknown: `.env.${profile.env} is not tracked: a private stand's builds are never read` }); continue; }
     if (!branches.has(r.value)) {
       const coords = envLib.resolveEnvCoords(profile.env);
       branches.set(r.value, { coords, commits: commitsOf(coords, `${since}T00:00:00Z`) });

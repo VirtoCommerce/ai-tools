@@ -32,7 +32,7 @@ import { canonicalStand } from './canonical.mjs';
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 /** A per-env profile; `.env.local`, `.env.defaults`, `.env.playwright.local` and backups are not stands. */
 const PROFILE = /^\.env\.([a-z0-9_]+)$/i;
-const NOT_A_STAND = new Set(['local', 'defaults']);
+const NOT_A_STAND = new Set(['local', 'defaults', 'backup']);
 
 /** The KEY=value pairs a profile assigns, last assignment winning (dotenv semantics), quotes stripped. */
 export function readAssignments(text) {
@@ -57,13 +57,22 @@ export function standsFrom(profiles) {
   const stands = new Map();
   const claims = new Map(); // alias -> Set<canonical>
   const problems = [];
-  for (const { env, text, tracked = true } of profiles) {
+  // TRACKED PROFILES FIRST, so a gitignored copy (`.env.backup` taken from `.env.vcst`) that declares the
+  // same KB_STAND can never claim the stand ahead of the committed profile and make it "private"
+  // (review of ai-tools#429). Within each group, the given order.
+  const ordered = [...profiles].sort((x, y) => Number(y.tracked !== false) - Number(x.tracked !== false));
+  for (const { env, text, tracked = true } of ordered) {
     const a = readAssignments(text);
     const declared = String(a.KB_STAND ?? '').trim();
     if (!declared) { problems.push(`.env.${env}: no KB_STAND= line -- declare the stand name this profile observes`); continue; }
     const canonical = canonicalStand(declared);
     if (!STAND_SHAPE.test(canonical)) { problems.push(`.env.${env}: KB_STAND="${declared}" is not a stand name`); continue; }
-    if (stands.has(canonical)) { problems.push(`.env.${env}: KB_STAND=${canonical} is already declared by .env.${stands.get(canonical).env}`); continue; }
+    if (stands.has(canonical)) {
+      // An untracked duplicate of a committed stand is a local copy, not a second stand: ignored quietly.
+      if (!tracked && stands.get(canonical).tracked) continue;
+      problems.push(`.env.${env}: KB_STAND=${canonical} is already declared by .env.${stands.get(canonical).env}`);
+      continue;
+    }
     // `tracked`: the profile is committed to this (public) repo. Only such a stand's build may be read
     // into the public base -- a client's own, untracked profile is mapped for its NAME, never stamped
     // (review of ai-tools#429; CLAUDE.md: nothing client-specific goes into the base).
@@ -121,13 +130,16 @@ export const STAND_SHAPE = /^[a-z0-9][a-z0-9_.]{0,39}$/;
  */
 const examples = (map) => [...map.stands].filter(([, p]) => !/\/\/(localhost|127\.)/.test(p.backUrl ?? '')).map(([n]) => n).slice(0, 3).join(', ') || 'vcst_qa';
 
-export function resolveStand(raw, { map = loadStands() } = {}) {
+export function resolveStand(raw, { env = process.env, map = loadStands(env) } = {}) {
   let typed = typeof raw === 'string' ? raw.trim() : '';
   if (!typed) return {};
   // A full URL or host names the stand by its host: `https://vcst-qa.govirto.com/` or `vcst-qa.govirto.com`
-  // -> `vcst-qa`, which the map knows (review of ai-tools#429).
-  const host = /^(?:https?:\/\/)?([a-z0-9-]+)(?:\.[a-z0-9-]+)+(?::\d+)?\/?$/i.exec(typed);
-  if (host && /[a-z]/i.test(host[1]) && !/^\d+$/.test(host[1])) typed = host[1];
+  // -> `vcst-qa`, which the map knows (review of ai-tools#429). Only for something that IS an address --
+  // a scheme, or two dots -- and never for a name the map already knows, so a stand whose own name holds
+  // a dot is not cut down to another stand's.
+  const host = /^(https?:\/\/)?([a-z0-9-]+)((?:\.[a-z0-9-]+)+)(?::\d+)?\/?$/i.exec(typed);
+  if (host && !map.aliases.has(canonicalStand(typed)) && (host[1] || (host[3].match(/\./g) ?? []).length >= 2)
+    && /[a-z]/i.test(host[2])) typed = host[2];
   if (/\s/.test(typed)) return { problem: `"${typed.slice(0, 40)}${typed.length > 40 ? '…' : ''}" is prose, not a stand name -- pass the stand you observed it on as one token (e.g. ${examples(map)}); what you saw goes in the claim or note` };
   const folded = canonicalStand(typed);
   if (!STAND_SHAPE.test(folded)) return { problem: `"${typed.slice(0, 40)}" is not a stand name -- letters, digits and _ only, at most 40 characters (e.g. ${examples(map)})` };
@@ -135,7 +147,7 @@ export function resolveStand(raw, { map = loadStands() } = {}) {
 }
 
 /** The `.env.<env>` profile behind a canonical stand, or null -- how a build stamp finds the stand's BACK_URL. */
-export function profileOf(stand, { map = loadStands() } = {}) {
+export function profileOf(stand, { env = process.env, map = loadStands(env) } = {}) {
   return map.stands.get(stand) ?? null;
 }
 

@@ -35,7 +35,9 @@ import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
 import { claimKey, findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, claimHash, entryPath } from './index-build.mjs';
+import { buildIndex, buildPath, buildRow, claimHash, entryPath } from './index-build.mjs';
+
+export { buildPath };
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
@@ -415,9 +417,6 @@ export function appendEvidence(text, item, where) {
 const EVIDENCE_KEY = ['at', 'by', 'method', 'deployment', 'contradicts'];
 const keyOf = (e, k) => (k === 'deployment' && e?.[k] != null ? standName(e[k]) : e?.[k] ?? null);
 export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === keyOf(b, k));
-
-/** Where a build's snapshot lives in the base. */
-export const buildPath = (pin) => `builds/${pin}.json`;
 
 /**
  * A queued line with its stand named as the base names it (VCST-6189). The door has done this since

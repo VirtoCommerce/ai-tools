@@ -30,7 +30,7 @@ export function summarize(diffs) {
 /**
  * What both the dispute gate and the build label compare -- one preparation, so the two cannot drift:
  * the snapshots (`mine` first), the entry's support whose build the base holds, and the relevance rule
- * fed with the swagger owners of the modules whose versions differ.
+ * fed with the swagger owners of every module BOTH sides name.
  */
 async function prepare({ entry, mine, readBuild, backUrl, owners }) {
   const builds = { [mine.build]: mine.snapshot };
@@ -39,15 +39,18 @@ async function prepare({ entry, mine, readBuild, backUrl, owners }) {
     if (s.build && !builds[s.build]) { const snap = await readBuild(s.build); if (snap) builds[s.build] = snap; }
   }
   const known = support.filter((s) => s.build && builds[s.build]);
-  // Ownership is only asked of modules both sides run at different versions.
+  // Ownership is asked of every module both sides name -- not only the ones whose versions differ: the
+  // module that owns an entry's REST anchor is relevant whether or not it changed, and leaving it out
+  // when it matched is exactly what made "your build" unreachable for REST entries (review of
+  // ai-tools#429). Each module's document is fetched once per version and cached (owners.mjs).
   const ours = mine.snapshot.modules ?? {};
-  const differing = new Set();
+  const common = new Set();
   for (const s of known) {
     const theirs = builds[s.build].modules ?? {};
-    for (const id of Object.keys(ours)) if (theirs[id] != null && theirs[id] !== ours[id]) differing.add(id);
+    for (const id of Object.keys(ours)) if (theirs[id] != null) common.add(id);
   }
-  const index = backUrl && differing.size
-    ? await owners(backUrl, [...differing].map((id) => ({ id, version: ours[id] })))
+  const index = backUrl && common.size
+    ? await owners(backUrl, [...common].map((id) => ({ id, version: ours[id] })))
     : { paths: {}, schemas: {} };
   return { builds, support, known, relevance: rulesWith(index)[RELEVANCE](entry, builds) };
 }

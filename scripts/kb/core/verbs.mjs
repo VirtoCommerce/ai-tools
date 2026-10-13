@@ -22,7 +22,7 @@ import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neigh
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildPath, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -336,7 +336,7 @@ export const standProblem = (deployment) => resolveStand(deployment).problem ?? 
  * and in CI -- no `.env.local` -- it would otherwise try an admin login on every real stand it named.
  */
 async function buildStamp(deployment, { env, dryRun = false, builds = null } = {}) {
-  const r = resolveStand(deployment);
+  const r = resolveStand(deployment, { env });
   if (dryRun || !r.known || typeof builds !== 'function') return {};
   const b = await builds(r.value, { env });
   return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot, stand: r.value } : {};
@@ -667,19 +667,39 @@ export async function ask(asked, opened, opts = {}) {
   return r;
 }
 
+/** A build snapshot the base holds, or null -- the one reader the gate and the labels share. */
+const buildReader = (opened) => async (pin) => {
+  const r = await opened.reader.readEntry(buildPath(pin));
+  try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
+};
+
+/**
+ * A label is an extra on a READ, so it gets one budget for the whole answer: past LABEL_DEADLINE_MS the
+ * hits go out unlabelled rather than the ask waiting on a slow stand and its swagger documents
+ * (review of ai-tools#429). The work carries on in the background and fills the caches for the next ask.
+ */
+export const LABEL_DEADLINE_MS = 6_000;
+
 async function labelBuilds(hits, opened, { env = process.env, deployment, builds }) {
-  const where = resolveStand(deployment);
-  if (!where.known) return;
-  const mine = await builds(where.value, { env });
-  if (!mine.pin) return;
-  const backUrl = profileOf(where.value)?.backUrl?.replace(/\/$/, '') ?? null;
-  const readBuild = async (pin) => {
-    const r = await opened.reader.readEntry(`builds/${pin}.json`);
-    try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
-  };
-  await Promise.all(hits.filter((h) => h.entryData).map(async (h) => {
-    h.build = await buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl });
-  }));
+  const work = (async () => {
+    const where = resolveStand(deployment, { env });
+    if (!where.known) return;
+    const mine = await builds(where.value, { env });
+    if (!mine.pin) return;
+    const backUrl = profileOf(where.value, { env })?.backUrl?.replace(/\/$/, '') ?? null;
+    const readBuild = buildReader(opened);
+    const labels = await Promise.all(hits.map((h) => (h.entryData
+      ? buildLabel({ entry: h.entryData, asker: { build: mine.pin, snapshot: mine.snapshot }, readBuild, backUrl })
+      : null)));
+    return labels;
+  })();
+  let timer;
+  const labels = await Promise.race([
+    work.catch(() => null),
+    new Promise((r) => { timer = setTimeout(() => r(null), LABEL_DEADLINE_MS); timer.unref?.(); }),
+  ]).finally(() => clearTimeout(timer));
+  // Applied only when they all arrived in time: a half-labelled answer would read as "unknown" for the rest.
+  if (Array.isArray(labels)) labels.forEach((l, i) => { if (l) hits[i].build = l; });
 }
 
 async function askRanked(asked, opened, { env = process.env, top = 3, via = null, call = null, deployment = null, topic = null } = {}) {
@@ -1353,11 +1373,8 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
       const soft = await softDispute({
         entry,
         observation: { build: stamp.item.build, snapshot: stamp.snapshot, conditions: conditions.value },
-        readBuild: async (pin) => {
-          const r = await opened.reader.readEntry(`builds/${pin}.json`);
-          try { return r?.ok ? JSON.parse(r.text) : null; } catch { return null; }
-        },
-        backUrl: profileOf(stamp.stand)?.backUrl?.replace(/\/$/, '') ?? null,
+        readBuild: buildReader(opened),
+        backUrl: profileOf(stamp.stand, { env })?.backUrl?.replace(/\/$/, '') ?? null,
       });
       contested = soft?.contested ?? null;
     } catch { contested = null; }
@@ -1590,7 +1607,9 @@ export async function reindex(opened, { env = process.env, write = true, generat
   const added = cat.state === 'ok' ? [...seen].filter((id) => !before.has(id)).sort() : [];
   const removed = [...before.keys()].filter((id) => !seen.has(id)).sort();
   const retrusted = [...rowsFor.values()].flat()
-    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed))
+    // `contested` too (VCST-6221): a soft dispute moving is drift the operator should hear about.
+    .filter((r) => before.has(r.id) && (before.get(r.id).trust !== r.trust || before.get(r.id).disputed !== r.disputed
+      || (before.get(r.id).contested ?? 0) !== (r.contested ?? 0)))
     .map((r) => ({ id: r.id, was: before.get(r.id).trust, now: r.trust }));
 
   // `base` is CATEGORISED, never logged verbatim. The log is a file in a PUBLIC repository (PLAN

@@ -94,7 +94,11 @@ function main() {
   if (!base || /^https?:/i.test(base)) { console.error('usage: npm run kb:normalize-evidence -- --base <local checkout> [--history <file>] [--apply]'); process.exit(2); }
   const apply = process.argv.includes('--apply');
   const hist = arg('--history') ? JSON.parse(readFileSync(resolve(arg('--history')), 'utf8')) : { items: [], builds: {} };
-  const pinOf = new Map(hist.items.filter((i) => i.build && i.from === 'deploy-history').map((i) => [`${i.id}#${i.index}`, i.build]));
+  // Joined on WHAT the item is (entry, time, session), never on its position: the base can move between
+  // `kb:build-history` and `--apply`, and a position would then hand a build to the wrong observation
+  // (review of ai-tools#429). An item the history does not know simply gets no build.
+  const itemKey = (id, e) => `${id}|${e.at ?? ''}|${e.by ?? ''}`;
+  const pinOf = new Map(hist.items.filter((i) => i.build && i.from === 'deploy-history').map((i) => [itemKey(i.id, i), i.build]));
   const map = loadStands();
   const read = (rel) => readFileSync(join(base, rel), 'utf8').replace(/\r\n/g, '\n');
 
@@ -112,7 +116,7 @@ function main() {
     let changed = false;
     const evidence = (data.evidence ?? []).map((e, i) => {
       bump(before, String(e.deployment ?? '(none)').slice(0, 40));
-      const r = normalizeItem(e, { map, build: pinOf.get(`${data.id}#${i}`) ?? null });
+      const r = normalizeItem(e, { map, build: pinOf.get(itemKey(data.id, e)) ?? null });
       for (const c of r.changes) tally[c] = (tally[c] ?? 0) + 1;
       if (r.changes.length) changed = true;
       if (r.item.build && r.changes.includes('build')) pins.add(r.item.build);
@@ -130,10 +134,23 @@ function main() {
   for (const [path, text] of writes) writeFileSync(join(base, path), text);
   mkdirSync(join(base, 'builds'), { recursive: true });
   for (const pin of pins) writeFileSync(join(base, 'builds', `${pin}.json`), `${JSON.stringify({ pin, ...hist.builds[pin] }, null, 2)}\n`);
-  const all = new Map([...files, ...writes]);
-  const index = buildIndex([...all].map(([path, text]) => buildRow(parseEntry(text, path).data, path)));
-  writeFileSync(join(base, 'index.json'), `${JSON.stringify(index, null, 2)}\n`);
-  console.log(`written; index.json rebuilt: ${index.count} rows`);
+  // Every index the manifest declares, each row filed under its entry's plane -- the layout `kb reindex`
+  // writes. Not `reindex` itself: it queues a log line, and a migration has nothing to say in the public
+  // log (review of ai-tools#429).
+  const manifest = JSON.parse(read('kb.json'));
+  const byPlane = new Map(Object.entries(manifest.indexes ?? {}).map(([plane, file]) => [plane, String(file)]));
+  const rowsFor = new Map([...new Set(byPlane.values())].map((file) => [file, []]));
+  for (const [path, text] of new Map([...files, ...writes])) {
+    const { data } = parseEntry(text, path);
+    const file = byPlane.get(String(data.plane ?? 'experiential'));
+    if (!file) throw new Error(`${path}: plane "${data.plane}" is not in kb.json indexes`);
+    rowsFor.get(file).push(buildRow(data, path));
+  }
+  for (const [file, rows] of rowsFor) {
+    const index = buildIndex(rows);
+    writeFileSync(join(base, file), `${JSON.stringify(index, null, 2)}\n`);
+    console.log(`written; ${file} rebuilt: ${index.count} rows`);
+  }
 }
 
 if (process.argv[1] && /normalize-evidence\.mjs$/.test(process.argv[1])) {

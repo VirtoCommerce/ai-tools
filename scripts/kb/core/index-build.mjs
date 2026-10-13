@@ -190,6 +190,8 @@ export function buildRow(data, path) {
 
 /** Where an entry lives, given its id. One rule, so the index and the writer cannot disagree. */
 export const entryPath = (id) => `entries/${id}.md`;
+/** Where a build's snapshot lives (VCST-6221): one rule for the writer (push) and the readers (gate, labels). */
+export const buildPath = (pin) => `builds/${pin}.json`;
 
 /**
  * The whole index file.
