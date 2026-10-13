@@ -99,21 +99,28 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
       sameKey = (await gh.searchPrs(key, orgs)).map((i) => ({ ...refFromSearchItem(i), title: i.title, state: i.state, created_at: i.created_at })).filter((r) => r.ref);
     } catch (e) { gaps.push(asGap("change.search", e)); }
   }
-  const rung1 = explicitRefs.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 1 }));
-  ladder.push({ rung: 1, found: rung1.length });
-  // Rung 1 ends the search only when it found change surface: a ticket linking only its deployment-manifest or
-  // tooling PRs (context-only) still has its product PRs searched for on rungs 2–3.
-  const isProduct = (r) => !CONTEXT_ONLY_REPOS.includes(String(r.repo).toLowerCase());
-  if (rung1.some(isProduct)) return { rung: 1, refs: rung1, sameKey, ladder };
-  const withRung1 = (found) => {
-    const seen = new Set(rung1.map((r) => r.ref.toLowerCase()));
-    return [...rung1, ...found.filter((r) => !seen.has(r.ref.toLowerCase()))];
+  // Rungs 1 and 2 always both run and merge (deduplicated, the lower rung keeps the PR): a comment naming two
+  // PRs is not proof there is no third, and the key search is what finds it (VCST-4933: x-cms#23). Rung 3, the
+  // costliest, runs only when 1–2 found no product PR. `rung` is the highest rung that ADDED a PR.
+  const merged = [];
+  const seen = new Set();
+  let rung = null;
+  const add = (list, n) => {
+    let added = 0;
+    for (const r of list) {
+      const k = r.ref.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      merged.push({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: n });
+      added++;
+    }
+    if (added) rung = n;
+    ladder.push({ rung: n, found: list.length, added });
   };
-  if (sameKey.length) {
-    ladder.push({ rung: 2, found: sameKey.length });
-    return { rung: 2, refs: withRung1(sameKey.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 2 }))), sameKey, ladder };
-  }
-  ladder.push({ rung: 2, found: 0 });
+  add(explicitRefs, 1);
+  add(sameKey, 2);
+  const isProduct = (r) => !CONTEXT_ONLY_REPOS.includes(String(r.repo).toLowerCase());
+  if (merged.some(isProduct)) return { rung, refs: merged, sameKey, ladder };
   const refs = new Map();
   if (orgs.length) {
     try {
@@ -132,8 +139,8 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
       }
     } catch (e) { gaps.push(asGap("change.commits", e)); }
   }
-  ladder.push({ rung: 3, found: refs.size });
-  return { rung: refs.size ? 3 : rung1.length ? 1 : null, refs: withRung1([...refs.values()]), sameKey, ladder };
+  add([...refs.values()], 3);
+  return { rung, refs: merged, sameKey, ladder };
 }
 
 // Named companions (design §5 Block 3). A change can span repos whose PRs carry other keys, so no rung finds

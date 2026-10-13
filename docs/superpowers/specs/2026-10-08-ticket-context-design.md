@@ -242,7 +242,11 @@ Every inventory item that is not a PR, by kind:
 **Find** (`prepare`) — the measured ladder of `technical-change.md` §2.1, with C2/C3 applied:
 explicit link + dev-status → org-wide PR search by key → commit search by key → paths named in the
 ticket (rung 4, the weakest; only the agent can read paths out of prose, so it is reported as a
-`GAP: not-found` with the candidate paths in `detail`). Stop at the first rung that yields PRs.
+`GAP: not-found` with the candidate paths in `detail`). *Revised 2026-10-13 (Phase 2, fix wave 2):*
+rungs 1 and 2 **always both run**, merged and deduplicated (a PR keeps the lower rung that found it);
+rung 3 runs only when rungs 1–2 found no product PR; `change.rung` is the highest rung that added a PR.
+*Replaces:* "stop at the first rung that yields PRs". On VCST-4933 a comment named two PRs, rung 1
+stopped there, and the functional fix (x-cms#23) was found only by the key search.
 *Revised 2026-10-13:* then follow **named companions, one hop only**. A change can span repos whose PRs
 carry other keys, so no rung finds them (VCST-5925: rung 2 found two of four PRs). The body of a
 product PR the ladder found names them as a PR URL, `owner/repo#n`, or a bare `repo#n` (read as the
