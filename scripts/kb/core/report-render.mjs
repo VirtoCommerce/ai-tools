@@ -281,6 +281,7 @@ function panelEvidence(p) {
     <h2>5 · Confirmations and disputes</h2>
     <p class="lede">Where a fact was seen to hold again, and where it did not.
       <strong>${esc(p.confirms)}</strong> confirmation(s), <strong>${esc(p.disputes)}</strong> dispute(s).
+      ${p.builds ? `${esc(p.builds.stamped)} of ${esc(p.builds.writes)} write(s) carry a machine-read build; ${esc(p.builds.soft)} dispute(s) were soft (made on another build than every confirmation — judged, not shown as DISPUTED).` : ''}
       ${p.queue ? `Dispute queue now: <strong${p.queue.openEntries ? ' class="bad"' : ''}>${esc(p.queue.openEntries)}</strong> of ${esc(p.queue.active)} active entries hold ${esc(p.queue.openDisputes)} open dispute(s); ${esc(p.queue.resolvedDisputes)} resolved on ${esc(p.queue.resolvedEntries)} entr(ies) (<code>npm run kb:disputes -- list</code>, <code>/kb-judge</code>).` : ''}
       ${p.contested.length ? `<strong class="bad">${p.contested.length} entry/entries are contested</strong> — confirmed and disputed both. A disputed entry with four confirmations is the single most decision-worthy row in this report.` : ''}</p>
     ${rows.length ? table(['id', 'subject', 'confirms', 'disputes', 'deployments', 'saw instead'], rows)
@@ -544,6 +545,7 @@ export function renderText(report) {
   out.push(`  unhelpful      ${p.unhelpful.flagged.length}/${p.unhelpful.decidable} decidable = ${pct(p.unhelpful.rate)} (${p.unhelpful.undecidable} undecidable, ${p.unhelpful.unprompted} unprompted, ${p.unhelpful.afterMiss} after a miss)`);
   out.push(`  entries served ${p.entries.used.length} of ${p.entries.indexed} indexed; ${p.entries.never.length} never served here`);
   out.push(`  evidence       ${p.evidence.confirms} confirm, ${p.evidence.disputes} dispute, ${p.evidence.contested.length} contested`);
+  if (p.evidence.builds) out.push(`  builds         ${p.evidence.builds.stamped} of ${p.evidence.builds.writes} write(s) carry a build; ${p.evidence.builds.soft} soft dispute(s) (on another build)${p.evidence.queue ? `; ${p.evidence.queue.softOpen ?? 0} soft dispute(s) open on the base` : ''}`);
   out.push(`  refusals       ${p.refusals.total} as duplicate, ${p.refusals.atDoor.length} turned away at the door`
     + `${p.refusals.atDoor.length ? ` (${p.refusals.atDoorRetried} retried and landed)` : ''}`);
   const d = p.refusals.door;

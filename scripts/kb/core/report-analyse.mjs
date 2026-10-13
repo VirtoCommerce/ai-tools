@@ -460,6 +460,11 @@ export function evidence(lines, idx) {
     }
     return rows.get(key);
   };
+  // VCST-6221: how much of the window's new evidence carries a machine-read build, and how many of its
+  // disputes the gate made SOFT (made on another build: still judged, not DISPUTED for readers).
+  const writes = lines.filter((l) => ['capture', 'confirm', 'dispute'].includes(l.kind) && l.id && !l.state);
+  const stamped = writes.filter((l) => l.build).length;
+  const soft = lines.filter((l) => l.kind === 'dispute' && l.id && l.soft).length;
   for (const l of lines) {
     if (l.kind === 'confirm' && l.id) {
       const r = get(l.id);
@@ -485,6 +490,7 @@ export function evidence(lines, idx) {
     openDisputes: live.reduce((n, r) => n + (Number(r.disputed) || 0), 0),
     resolvedEntries: live.filter((r) => r.resolved > 0).length,
     resolvedDisputes: live.reduce((n, r) => n + (Number(r.resolved) || 0), 0),
+    softOpen: live.reduce((n, r) => n + (Number(r.contested) || 0), 0),
     active: live.length,
   };
   return {
@@ -493,6 +499,7 @@ export function evidence(lines, idx) {
     contested: all.filter((r) => r.disputes > 0 && r.confirms > 0),
     confirms: all.reduce((n, r) => n + r.confirms, 0),
     disputes: all.reduce((n, r) => n + r.disputes, 0),
+    builds: { writes: writes.length, stamped, soft },
   };
 }
 

@@ -1192,6 +1192,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     kind: 'capture',
     id,
     subject: input.subject,
+    // WHICH BUILD it was seen on (VCST-6221): a pin, an id -- no prose -- so `kb:report` can say what
+    // share of new evidence carries a build. Absent when the stand could not be read.
+    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
     // THE QUESTION, not only the subject. The subject is the claim; the question is the RETRIEVAL
     // KEY, and it is the half that decides whether anyone ever finds this entry again. Session 10
     // measured why that distinction is load-bearing: a base subject is a 3-11 token label while
@@ -1365,6 +1368,10 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     //
     // It is still in `payload` (local, never published) and still on the entry. Nothing is lost.
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
+    // The build pin (an id) and whether the gate made it a SOFT dispute (VCST-6221) -- what `kb:report`
+    // counts for the stamp share and the soft-dispute rate. The difference itself stays on the entry.
+    ...(stamp.item?.build ? { build: stamp.item.build } : {}),
+    ...(contested ? { soft: true } : {}),
     ...repair,
     ...context({ via, call, topic }),
     payload: { id: row.id, path: row.path, item, ...(stamp.snapshot ? { build: stamp.snapshot } : {}) },
