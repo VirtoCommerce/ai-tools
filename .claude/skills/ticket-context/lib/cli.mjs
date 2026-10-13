@@ -10,7 +10,7 @@ import { codeHostCredential, readProfile, resolveProfile, trackerCredential } fr
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
-import { buildInventory, resolveFieldsByName } from "./inventory.mjs";
+import { AC_FIELD_NAME_RE, buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { extractFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
@@ -73,9 +73,9 @@ async function prepare() {
   const gaps = [];
 
   const allFields = await jira.fields();
-  const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, /acceptance criteria/i);
+  const acFields = resolveFieldsByName(allFields, profile.fieldMap.acceptanceCriteria, AC_FIELD_NAME_RE);
   const linkFields = resolveFieldsByName(allFields, profile.fieldMap.prototype, /prototype/i);
-  if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named like 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
+  if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named 'Acceptance' or 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   // Comments past the first page are paged in before the inventory and ticket.json see the issue; any unread rest is a gap.
   const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps });
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });

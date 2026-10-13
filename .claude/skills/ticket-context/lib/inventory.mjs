@@ -100,6 +100,11 @@ function valueRefs(value) {
   return out;
 }
 
+/** D8 name rule: the WHOLE field name is the term — "Acceptance" or the misspelt "Acceptence", with or without
+ *  " criteria", any case. A name that only extends the term ("Acceptance criteria improvement", "Acceptance date")
+ *  is a different field, so the match is anchored at both ends. */
+export const AC_FIELD_NAME_RE = /^\s*accept[ae]nce(\s+criteria)?\s*$/i;
+
 /** D8: the profile's fieldMap override wins; else every CUSTOM field whose name matches. */
 export function resolveFieldsByName(allFields, override, nameRe) {
   if (override) return [{ id: override, name: allFields.find((f) => f.id === override)?.name ?? override }];
