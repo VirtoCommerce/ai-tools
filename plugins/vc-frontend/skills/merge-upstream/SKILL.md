@@ -37,6 +37,9 @@ would hit with `gh repo view --json nameWithOwner`, and pass `--repo` anyway. Up
 brief, the log and the PR body are written in full (`VirtoCommerce/vc-frontend#2501`): a bare `#2501`
 resolves against the repository it is read in.
 
+**Fetch `origin` first:** `git fetch origin`. Both cases below start from `origin/dev`; a stale ref
+leaves the fork's latest commits out of the merge.
+
 **Fork repository** (vc-frontend-next, a customer theme):
 
 - Work in a clone of the fork and add upstream there:
