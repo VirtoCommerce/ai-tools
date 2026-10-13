@@ -4,7 +4,8 @@
 > first draft with no review. It was re-checked against `main` after `/preflight` phases 1–2 landed
 > (#421, #424, #426), and revised: **D3** (deployment), **D6** (the agent's tools), the flow in §5 and
 > the tree in §4. **D8–D12** are added, along with **O2–O3**. Each revision says what it replaces and
-> why. Phase 1 plan: [`../plans/2026-10-13-ticket-context-phase-1.md`](../plans/2026-10-13-ticket-context-phase-1.md).
+> why. **Phase 2 fix wave 2 (2026-10-13)** revised Block 3 (ladder, 406 diffs, hotspots, claims), step 0b
+> (Figma), D4 (animated GIFs), D6/A1 (one CHANGE per product PR), D9, D12, and added **O4–O6**. Phase 1 plan: [`../plans/2026-10-13-ticket-context-phase-1.md`](../plans/2026-10-13-ticket-context-phase-1.md).
 
 ## 1. Problem
 
@@ -445,6 +446,9 @@ over `deploy:pr` and the pre-flight CLI (D3).
 | O1 | The pre-flight core and `deploy:pr` live in the repo root's `scripts/`, which a plugin cannot reference. When `/ticket-context` moves to `vc-fix`, its deployment fields lose their source. | (a) Copy them into the plugin deliberately, as `vc-fix` already does for `knowledge/` and `config.js`, and accept a second copy to keep in step. (b) Move the core into the plugin first, and have this repo consume it from there. To be settled with VCST-6225 before Phase 5, not now. |
 | O2 | **A deployed PR build can read as NOT DEPLOYED.** `deploy:pr`'s own header says pre-release artifacts are often not version-bumped in `module.manifest` (the `-pr` suffix lives only in the blob name), while the core's `expectMet` requires an exact match for a pre-release `--expect`. | Fix in the core's policy (VCST-6225), e.g. accept a pre-release when the declared pin is that blob and the live base matches. Until then `lib/deploy.mjs` reports the core's answer unchanged, and an open PR's `NO` carries `deployed_reason` "pre-release builds may not bump the live version — confirm with `npm run deploy:pr -- <KEY> --verify`". |
 | O3 | `kb` asks from a client install. The base logs questions verbatim to a public repository; D11 keeps ticket text out of questions, but a client's endpoint or page path is still client-identifying. | Decide with the `kb` owners before Phase 5: no `kb` step on `projectType: client`, or a client-side base. Phase 1 runs only here. |
+| O4 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **The theme version as a deployment source.** A storefront (theme) PR is `UNKNOWN: no-live-source` by design, though the stand's theme bundle carries its version. | Belongs to the pre-flight core (VCST-6225), not this skill: the core reads the theme version, and `lib/deploy.mjs` keeps asking the core (D3). |
+| O5 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **"token: 400" from the environment.** On a Phase 2 replay the pre-flight core could not get a platform token, so every module PR read `UNKNOWN`. | An environment or core credential problem, not this skill's; `deploy.mjs` reports the core's answer unchanged. Re-check after VCST-6225. |
+| O6 | *Added 2026-10-13 (Phase 2, not in fix wave 2).* **The join step's quality** (Step 3, PR ↔ AC). It is a runner step, and the Phase 2 replay built it with a keyword shortcut for three of the five tickets, so its `ac_to_diff` figures understate an LLM join. | Measure it on its own in the next validation round before changing it: a script join, a dedicated mode, or the runner as today. |
 
 ## 12. Risks
 
