@@ -790,7 +790,23 @@ async function askRanked(asked, opened, { env = process.env, top = 3, via = null
 
 // ── show ──────────────────────────────────────────────────────────────────────────────────────
 
-export async function show(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
+/**
+ * `show`, with the build label `ask` gives (VCST-6221): under the verdict ranker most asks end in a list
+ * and the agent reads the entry through `show`, so a label only on `ask`'s direct answers would almost
+ * never be seen. Only when the caller names its stand and a door injected the build reader.
+ */
+export async function show(id, opened, opts = {}) {
+  const r = await showEntry(id, opened, opts);
+  if (r.state !== 'answer' || !opts.deployment || typeof opts.builds !== 'function') return r;
+  try {
+    const hit = { entryData: r.entry };
+    await labelBuilds([hit], opened, opts);
+    if (hit.build) r.build = hit.build;
+  } catch { /* a label is an extra */ }
+  return r;
+}
+
+async function showEntry(id, opened, { env = process.env, via = null, call = null, topic = null, ask: handle = null, verify = false } = {}) {
   // The ask this read answers, by handle, when the caller has one (an `ambiguous` verdict prints it):
   // the pick-side twin of `none`'s pointer, and the other half of every label M6 recalibrates on.
   // `verify` (VCST-6191): an open made to read an entry before confirming or disputing it, not a

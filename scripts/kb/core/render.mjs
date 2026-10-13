@@ -208,6 +208,7 @@ export function showLines(r, { prefix = 'kb show' } = {}) {
     `question: ${r.entry.question ?? '—'}`,
     `anchors:  ${(r.entry.anchors ?? []).map((a) => a.coordinate).join(', ')}`,
     `scope:    ${r.row.scope.join(', ')}`,
+    ...(r.build ? [`build:    observed on ${r.build.label}${r.build.diff ? ` (yours vs then: ${r.build.diff})` : ''}`] : []),
   ];
   // A retired or split entry still resolves by id (VCST-6122 Decision 2); say where its fact went.
   const next = idList(r.entry.supersededBy);

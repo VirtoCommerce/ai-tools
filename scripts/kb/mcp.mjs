@@ -156,6 +156,7 @@ export const TOOLS = Object.freeze([
         id: str('The entry id, e.g. KB-27B4CD10.'),
         ask: str('The ask handle kb_ask printed ("ask handle: …"), when you are opening one of its headlines.'),
         verify: { type: 'boolean', description: 'true when you open the entry only to read it before confirming or disputing it -- not a pick from any list.' },
+        deployment: str('Optional: the stand you are working on (vcst_qa, vcptcore_stable, or its TEST_ENV name) -- you are then told whether the entry was observed on your build.'),
         topic: TOPIC,
       },
       required: ['id'],
@@ -356,7 +357,7 @@ async function callTool(name, args, ctx) {
     case 'kb_show': {
       const id = String(args?.id ?? '').trim();
       if (!id) return text(['kb_show needs an entry id.'], true);
-      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true || args?.verify === 'true' });
+      const r = await show(id, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, ask: args?.ask, verify: args?.verify === true || args?.verify === 'true', deployment: args?.deployment, builds: liveBuild });
       return text(showLines(r, { prefix: 'kb_show' }), FAILED.has(r.state));
     }
     case 'kb_none': {

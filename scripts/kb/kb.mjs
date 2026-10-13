@@ -247,6 +247,7 @@ async function main(argv) {
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
     const r = await show(id, opened, {
       via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+      deployment: typeof args.flags.deployment === 'string' ? args.flags.deployment : null, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
