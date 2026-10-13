@@ -75,7 +75,9 @@ Artifacts table decides every row below; a skipped row keeps the strategy's reas
   is the regression id list for Stage 2.
 
 - **Test model — you, inline.** `/qa-test-model <TICKET> --context <bundle>`. You are the Judge, and
-  the model's gate runs inside that skill.
+  the model's gate runs inside that skill. The bundle carries the in-scope `UNVERIFIED` nodes of the
+  mind map as it stands **before** this wave's update; the model records each as a `{HYPOTHESIS}`
+  oracle on its link, which makes it one of `/qa-exploratory ticket`'s five charter sources.
 - **Mind map — `ba-system-analyzer`, no browser.**
   - The map exists → `/qa-test-mind-map update <slug> --from <TICKET>`.
   - It is absent and the domain map is `PRESENT` → `build`, **with step 10 removed from the brief**,
@@ -112,7 +114,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 | In-scope node | Its line in the checklist |
 |---|---|
 | DRIFT | An item that re-observes `drift.observed`, with Expected `drift.expected`. The Result is `DRIFT HOLDS` or `DRIFT RESOLVED`, plus evidence. It decides an AC only when that AC names the behaviour. A HOLDS whose route `TM-018` flags as unfiled is written `FAIL — DRIFT HOLDS (TM-018 unfiled)`, so Stage 3 triage collects it; any other HOLDS stays `DRIFT HOLDS`. |
-| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item. **When exploratory ran `FIRST`**, no later session takes it: the line stays, and `verdict.md` lists the node under *Not tested, and why* as residual risk for the next round's charter. |
+| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item; it reaches the charter as the model's `{HYPOTHESIS}` oracle (§Wave 2), whether the session runs first or alongside. A node the update added in this wave is not in the model yet: `verdict.md` lists it under *Not tested, and why*. |
 | No stamped case | An ordinary item. A PASS on it is a `candidate case` in `verdict.md`. |
 | Integration point (cross-domain edge) | One item that exercises both sides, under the other domain's partition. A PASS is a `candidate case` carrying both stamps. |
 | Linked to a suspect case | No change. The suspect list stays in the bundle for the verdict. |
