@@ -91,11 +91,15 @@ export function redactText(text, secrets = new Set()) {
   return s.replace(QUERY_VALUE, "$1=[REDACTED:query]");
 }
 
-/** A URL as a label (an inventory ref): every query value redacted, and any token shape in the path. The gate
+/** A URL as a label (an inventory ref): every query value, any userinfo and any fragment carrying a value
+ *  (`#access_token=…`) redacted, and any token shape in the path. The gate
  *  scans the bundle for token shapes, so a ref carrying one could never pass — and a ref is the script's, not
  *  the agent's, so nothing could fix it. The full URL stays in prepare.json only. */
 export function redactUrlLabel(url) {
-  let s = String(url).replace(QUERY_VALUE, "$1=[REDACTED:query]");
+  let s = String(url)
+    .replace(/^(https?:\/\/)[^/?#@\s]+@/i, "$1[REDACTED:userinfo]@")
+    .replace(/#[^#]*=.*$/, "#[REDACTED:fragment]")
+    .replace(QUERY_VALUE, "$1=[REDACTED:query]");
   for (const [name, re] of TOKEN_SHAPES) s = s.replace(new RegExp(re.source, "g"), `[REDACTED:${name}]`);
   return s;
 }
@@ -141,14 +145,14 @@ export function reduceHar(har, secrets = new Set()) {
 
 /** A HAR is a HAR whatever its file name: a JSON object with log.entries[]. */
 export function isHarText(raw) {
-  if (!/^s*{/.test(raw)) return false;
-  try { return Array.isArray(JSON.parse(raw)?.log?.entries); } catch { return false; }
+  if (!/^\uFEFF?\s*{/.test(raw)) return false;
+  try { return Array.isArray(JSON.parse(raw.replace(/^\uFEFF/, ""))?.log?.entries); } catch { return false; }
 }
 
 /** Write the scrubbed copy beside the raw file and return its path. The caller deletes the raw file.
  *  A HAR saved under another name (.json, .txt) is REDUCED like a .har, never only redacted. */
 export function scrubFile(path, kind, secrets) {
-  const raw = readFileSync(path, "utf8");
+  const raw = readFileSync(path, "utf8").replace(/^\uFEFF/, "");
   if (kind === "har" || isHarText(raw)) {
     const out = `${path}.scrubbed.json`;
     writeFileSync(out, JSON.stringify(reduceHar(JSON.parse(raw), secrets), null, 1));
