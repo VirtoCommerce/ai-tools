@@ -12,7 +12,7 @@ is passed as a path, never pasted.
 
 ### A · Ticket — `ba-system-analyzer`, no browser
 Fetch the ticket **with all fields**, following the fetch bullets of
-[`../qa-test/preflight.md`](../qa-test/preflight.md) §1a (comments always, and every attachment opened —
+[`../qa-test/intake.md`](../qa-test/intake.md) §1a (comments always, and every attachment opened —
 one that cannot be read is a named gap). ACs often live in a custom field; an empty description is not
 "no ACs". Return:
 - the ACs as numbered atomic conditions (`AC-1…`), each with its source (the field, or a comment and

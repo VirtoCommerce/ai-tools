@@ -3,7 +3,7 @@
   "_meta": {
     "version": "3.0",
     "description": "Regression test suite manifest for parallel orchestration with module-aligned directories under Frontend/Backend layers",
-    "generated": "2026-10-08",
+    "generated": "2026-10-12",
     "totalSuites": 154,
     "csvFormat": "Enriched Agent-Native CSV (ID, Title, Section, Priority, Business_Rule, Edge_Case_Refs, Preconditions, Test_Data, Steps, Assertions, Cross_Layer_Checks, Failure_Signals, Cleanup, References, Automation_Status)",
     "domains": [
@@ -444,7 +444,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -1846,7 +1846,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "customerApplicability": "reference",
       "notes": "RET-GQL-031..035 (added 2026-09-25) prove five store settings are actually READ, not hardcoded defaults, by changing each live via POST /api/platform/settings/v2/tenant/Store/{id}/values, observing the shift, then restoring: Return.WindowDays, Return.AllowedOrderStatuses, Return.AllowedShipmentStatuses (blank means ANY status here, the inverse of AllowedOrderStatuses's blank), and Return.ReturnNewNumberTemplate; RET-GQL-035 is a pure read proving returnReasons.localizedName is per-culture admin text with a code fallback, not a global string. These intentionally do NOT write through PUT /api/stores despite a live 2026-09-25 finding that it propagates faster: PUT /api/stores REPLACES the whole store entity (scripts/seed-data/store/set-store-setting.mjs documents a real 2026-08-27 outage from a partial body), and safely reconstructing its ~100-entry settings array has no equivalent in this runner's declarative Steps grammar — only a real GET-spread-PUT script (or the Admin SPA's own Save) can do that safely. So these cases accept the slower, already-documented (RET-GQL-028) propagation risk of the tenant-values endpoint instead; a WAIT timeout on them is a cache/propagation finding, not a functional regression. Return.Reasons (the reason-dictionary SELECTION setting, distinct from ReasonsRequiringComment) could not be covered at all: PUT /api/stores returns 204 but the value stays null on every write attempt — no case exists for it, and none should be authored until that write path is understood. VERIFIED LIVE ON vcptcore_qa1 2026-09-25 (npm run store:set -- --list --store B2B-store) that the real persisted setting names are Return.WindowDays / Return.AllowedOrderStatuses / Return.AllowedShipmentStatuses / Return.ReturnNewNumberTemplate / Return.ReturnEnabled / Return.Reasons / Return.ReasonsRequiringComment / Return.AttachmentsRequired — NOT the ReturnWindowDays/ReturnAllowedOrderStatuses/ReturnAllowedShipmentStatuses spelling the domain map's own ModuleConstants.cs citation uses; that citation names C# field identifiers, not the dotted setting keys the REST/GraphQL surface actually reads.",
@@ -2070,7 +2070,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2095,7 +2095,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2121,7 +2121,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "cms"
+        "VirtoCommerce.PageBuilderModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2216,7 +2216,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "import-export"
+        "VirtoCommerce.CatalogCsvImportModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference"
@@ -2241,7 +2241,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "import-export"
+        "VirtoCommerce.CatalogCsvImportModule"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2551,7 +2551,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2575,7 +2575,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2605,7 +2605,7 @@
         "sprint"
       ],
       "requiresModules": [
-        "returns"
+        "VirtoCommerce.Return"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference",
@@ -2825,7 +2825,7 @@
         "data-quality"
       ],
       "requiresModules": [
-        "channels"
+        "VirtoCommerce.CatalogPublishing"
       ],
       "envRiskGate": "staging",
       "customerApplicability": "reference"
@@ -3533,7 +3533,7 @@
       "layer": "frontend",
       "concern": "functional",
       "priority": "P2",
-      "testCount": 35,
+      "testCount": 53,
       "estimatedMinutes": 26,
       "agent": "qa-frontend-expert",
       "tags": [

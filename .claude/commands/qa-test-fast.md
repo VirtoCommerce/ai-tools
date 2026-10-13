@@ -48,9 +48,11 @@ never from the ticket type.
    | anything else (Story, Task, Epic, Review task, Technical task, Bug `not-fixed`, a PR) | **test** — a refactor's strategy is regression-averse with no new-behaviour risks; a `not-fixed` Bug's mission is reproduce-and-characterize, next step `/vc-fix:qa-fix` |
 2. **Count the rounds** per [`rounds.md`](../skills/qa-test-strategy/rounds.md). A fourth ⇒ **STOP** with
    the escalation there. Round ≥ 2 ⇒ record the last tested commit of each PR.
-3. **Environment.** Run `npm run env:check`, record the deployed build per
-   [`../templates/agent-dispatch.md`](../templates/agent-dispatch.md) §Build Verification, and resolve
-   `{SPRINT}` as [`../skills/qa-test/preflight.md`](../skills/qa-test/preflight.md) does.
+3. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
+   `ticket-fast --ticket <KEY> --components <…> [--expect <PR module@version>]`. It returns env health,
+   the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
+   `expect` row is BLOCKED-on-deploy, never a FAIL — the strategy's F6.
 4. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
@@ -63,10 +65,8 @@ never from the ticket type.
      ([`../knowledge/execution/tracker-ops.md`](../knowledge/execution/tracker-ops.md) §0).
 5. **Domain slug.** Take the candidate from the ticket's components and summary, then check it with
    `npm run bl:extract -- --has-domain <slug>`.
-6. **Ask the base for this run's coordinates.** For each page path, GraphQL operation and endpoint the
-   ticket names, run `mcp__kb__kb_ask` (CLI: `npm run kb -- ask "<coordinate> <question>"`). Record the
-   hit ids; a miss is not a blocker. Rule: [`../../CLAUDE.md`](../../CLAUDE.md) §Essential Rules →
-   *Product context*.
+6. **Ask the base for this run's coordinates** — done inside `/preflight` step 3 (kb first, then
+   VirtoOZ). Carry its hit ids into Stage 1.
 
 ## Stage 1 — Context
 
