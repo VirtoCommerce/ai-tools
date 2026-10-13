@@ -125,7 +125,7 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
     // catalogId is REQUIRED: OrderLineItem.CatalogId is NOT NULL, so an order create without it
     // 500s at the DB layer ("Cannot insert the value NULL into column 'CatalogId'").
     const d = await gql(token, `{ products(storeId:"${STORE_ID}", cultureName:"en-US", currencyCode:"USD", first: 50, after:"${page * 50}", sort:"code:asc", query:"") {
-        items { id code name catalogId minQuantity availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
+        items { id code name catalogId imgSrc minQuantity availabilityData { isBuyable isInStock } price { actual { amount } } } } }`);
     const items = d?.products?.items || [];
     if (!items.length) break;
     for (const p of items) {
@@ -139,7 +139,7 @@ async function discoverStoreProducts(token, need, { cartable = false } = {}) {
       // addItem answers PRODUCT_MIN_QTY and returns an EMPTY cart (itemsCount=0), which every cart
       // fixture here then fails on. Read the bound from the product (never transcribed) and drop it.
       if (cartable && (p.minQuantity ?? 1) > 1) { verbose(`skip ${sku}: minQuantity ${p.minQuantity} > 1 — a cart line below it is rejected with PRODUCT_MIN_QTY`); continue; }
-      out.push({ id: p.id, sku, name: String(p.name || sku).replace(/\s+/g, ' ').trim(), catalogId: p.catalogId, price: p.price?.actual?.amount });
+      out.push({ id: p.id, sku, name: String(p.name || sku).replace(/\s+/g, ' ').trim(), catalogId: p.catalogId, imgSrc: p.imgSrc || null, price: p.price?.actual?.amount });
       if (out.length >= target) break;
     }
   }
@@ -175,7 +175,10 @@ async function seedShapedOrder(spec, orgs, customerId, products) {
   if (existing) {
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
     const shapeOk = (full?.items || []).length === items.length
-      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01));
+      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01
+        // imageUrl is write-once (PUT ignores it), so a line that should show the product image and
+        // does not is a shape drift the rebuild below repairs.
+        && (!want.imageUrl || !!got.imageUrl)));
     const ok = full?.customerId === customerId
       && full?.organizationId === org.id
       && full?.status === spec.status
@@ -243,7 +246,10 @@ async function seedRowcapOrder(spec, orgs, customerId, products) {
   if (existing) {
     const full = await api('GET', `/api/order/customerOrders/${existing.id}`);
     const shapeOk = (full?.items || []).length === items.length
-      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01));
+      && items.every((want) => (full.items).some((got) => got.sku === want.sku && got.quantity === want.quantity && Math.abs((got.price || 0) - want.price) < 0.01
+        // imageUrl is write-once (PUT ignores it), so a line that should show the product image and
+        // does not is a shape drift the rebuild below repairs.
+        && (!want.imageUrl || !!got.imageUrl)));
     const ok = full?.customerId === customerId
       && full?.organizationId === org.id
       && full?.status === spec.status
