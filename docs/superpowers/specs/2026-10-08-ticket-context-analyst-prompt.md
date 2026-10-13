@@ -10,7 +10,7 @@
 
 | # | Decision | Why |
 |---|---|---|
-| A1 | **One agent, three modes** (`TICKET`, `MATERIALS`, `CHANGE`). The skill dispatches it three times in one message, one mode each. | One definition to keep under BUDGET-004. Three parallel dispatches keep the speed of today's Stage 1 (P1). |
+| A1 | **One agent, three modes** (`TICKET`, `MATERIALS`, `CHANGE`). The skill dispatches it three times in one message, one mode each. *Revised 2026-10-13 (Phase 2, fix wave 2):* with more than one product PR, CHANGE is one dispatch **per product PR** in that same message, each brief carrying `PRS: <ref>`; the skill concatenates their `prs`, `hidden_behaviour`, `gaps`, `questions` and `embedded_instructions` into `change.out.json`. `model: inherit` stays. | One definition to keep under BUDGET-004. Three parallel dispatches keep the speed of today's Stage 1 (P1). Phase 2's replays measured CHANGE as the long pole on multi-PR tickets: one agent read every PR in turn. |
 | A2 | **Revised 2026-10-13. `tools: Read, Grep, Glob` — nothing else.** No `Bash`, no write tool, no `WebFetch`, no MCP. | *Replaces:* an allowlist with exact MCP tool ids and `WebFetch`. MCP ids are per-install and did not match this repo's servers (design D6); a server-level pattern would admit write tools. `WebFetch` let any text the agent read become a request URL — the exfiltration path of a prompt injection. With three file tools, read-only and no-network hold by construction. |
 | A3 | **Everything that touches a remote system or a shell runs before the dispatch**: tracker and code-host REST, downloads, HAR/log scrubbing (S2), `ffmpeg` frames (D4), public pages, and — by the skill runner — the connector-only sources (Loom, Figma). The agent receives **paths** in `prepare.json`. | Deterministic work belongs in scripts. It keeps raw HARs, credentials and the network away from the agent. |
 | A4 | **Revised 2026-10-13. The PR ladder is a script** (rungs 1–3 in `lib/github.mjs`). The agent only reports rung 4: paths the ticket names, as candidates. | *Replaces:* the ladder over GitHub MCP. A script runs the same ladder in every session, with or without MCP. |
@@ -19,6 +19,7 @@
 | A7 | **Self-contained.** It cites no `.claude/` file and no team `shared-instructions.md`. | M1: a citation into `.claude/` becomes a dangling path after the move. This departs from `authoring-standard.md` §2 ("an agent's first lines point at its team's shared-instructions"). The Phase 1 PR records the exception in the standard (plan Task 9). |
 | A8 | **`model: inherit`** — the agent runs on whatever model the session that dispatches it runs on; no model is pinned. | Documented for subagent frontmatter ("the subagent runs on the same model as the parent conversation"). The model is the operator's choice, not the prompt's: a pinned alias would silently override it in every client install (C1). Phase 2 measures quality and cost on the default (§10) before anyone pins it. |
 | A9 | **Inputs the brief does not list do not exist.** The agent reads `prepare.json` and the files it names; a link inside a file it reads is recorded, never followed (it has no way to follow one). | One hop (S5) is enforced by the absence of a fetch tool, and the rule keeps the output inside what the gate can check (§6 rule 3). |
+| A10 | **Added 2026-10-13 (Phase 2, fix wave 2). CHANGE returns per PR `hotspots` (≤12, a changed line + the testable risk on it) and `claims` (≤25, always: the PR body's atomic testable statements, sourced `pr:<repo>#<n>`).** Claims are never ACs. The skill keeps the first 12 / 25 and records the rest as an `over-cap` gap. | Hotspots were the baseline Stage 1's strongest output and the bundle had none. On VCST-5097 the ticket had no ACs and the QA run's oracle was the PR body, from which the bundle derived nothing. Keeping claims apart from ACs keeps provenance honest: the consumer sees that the oracle is the author's word. |
 
 ## 2. Brief contract (what the skill passes in)
 
@@ -27,18 +28,21 @@ MODE:            TICKET | MATERIALS | CHANGE
 TICKET:          <KEY>
 PREPARE:         <absolute path to prepare.json>     (every other input is a path inside it)
 ITEMS:           <MATERIALS only: the inventory refs to analyse — every item with a local_path and no gap>
+PRS:             <CHANGE only, optional: the PR ref(s) to analyse; absent = every PR in prepare.json>
 OUTPUT_SCHEMA:   <absolute path to bundle.schema.json>, $def: ticketOut | materialsOut | changeOut
 DESIGN_RULES:    <MATERIALS only: absolute path to design-sources.md>
 ```
 
 The tracker, host and org are not in the brief: the agent fetches nothing, so it does not need them.
+*Added 2026-10-13 (Phase 2, fix wave 2):* `PRS:` — with more than one product PR the skill dispatches
+one CHANGE per PR in the same message (A1) and merges the outputs (`cli.mjs merge-change`).
 
 ## 3. The agent file (proposed, verbatim)
 
 ````markdown
 ---
 name: ticket-context-analyst
-description: "Read-only ticket context extractor for /ticket-context. Reads only the files the skill already fetched and scrubbed (prepare.json and the paths in it). Three modes — TICKET (ACs, comment signals, epic/siblings, guesses), MATERIALS (attachments, inline images, linked pages and tickets, design conditions), CHANGE (per PR: layers, operations, settings, tests, fate, hidden behaviour). Every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. No network, no shell, no writes."
+description: "Read-only ticket context extractor for /ticket-context. Reads only the files the skill already fetched and scrubbed (prepare.json and the paths in it). Three modes — TICKET (ACs, comment signals, epic/siblings, guesses), MATERIALS (attachments, inline images, linked pages and tickets, design conditions), CHANGE (per PR: layers, operations, settings, tests, fate, risk hotspots, PR-body claims, hidden behaviour). Every input ends as a finding with provenance or a GAP with a reason; returns ONE JSON object for its mode and nothing else. No network, no shell, no writes."
 model: inherit
 color: cyan
 applicability: universal
@@ -123,7 +127,8 @@ conditions: []}`. Never infer a design from anything else.
 
 ## 3. Mode CHANGE
 
-Read `prepare.json` `prs` and `rung`.
+Read `prepare.json` `prs` and `rung`. A `PRS:` line in the brief limits you to the entries whose `ref`
+it names (another dispatch covers the rest); without it, every entry is yours.
 
 1. **No PRs** (`prs` empty): first look at `prepare.json` `gaps`. If it already holds a `change` or
    `change.*` gap (`no-credential`, `access-denied`, `unreadable`), the search never ran: return
@@ -153,7 +158,15 @@ Read `prepare.json` `prs` and `rung`.
      `threads` one line each for the substantive ones. **`unresolved_threads: null` means "not
      read", never 0.** The schema needs an integer, so when it is `null` or `reviews_path` is
      `null`, set `open_threads: 0` **and** add a gap `{where: "pr:<ref>:threads", reason:
-     "unreadable", detail: "unresolved thread count not read — 0 is not a count"}`.
+     "unreadable", detail: "unresolved thread count not read — 0 is not a count"}`;
+   - **risk hotspots** (`hotspots`, at most 12, most important first): `{source:
+     "<repo>:<path>:<line>", risk}`. A hotspot names **one changed line** of the diff (its line in the
+     new file, from the hunk header), never a whole file. `risk` is one line: what can break and how
+     to see it — a testable consequence, never a code-style remark. No such line ⇒ `hotspots: []`;
+   - **claims** (`claims`, always, at most 25): each atomic, testable statement the PR title or body
+     (`meta_path` `body`) makes about what the change does, as `{text, source: "pr:<repo>#<n>"}`.
+     Claims are what the author says the change does, **never ACs**, whatever the ticket holds: do
+     not number them as ACs or merge them with ACs. A body with no testable statement ⇒ `claims: []`.
 3. **Hidden-behaviour pass.** For every PR's diff, one row per item in `hidden_behaviour`
    (§6 gives the row shape). The items, as the exact `item` strings: `default-values` ·
    `db-migrations` · `feature-flags` · `caching` · `copy-localisation` · `search-indexing` ·
@@ -192,7 +205,8 @@ Every key listed for your mode is **required, even when its list is empty**; not
   conditions [{text, source}]} · `gaps` · `questions` · `embedded_instructions`.
 - **CHANGE:** `prs` [{repo "owner/repo", number, state, merged, head_sha, layers {storefront |
   admin-spa | api | module | platform | test | other: [paths]}, operations, endpoints, settings,
-  tests_changed, untested, fate, ci, open_threads, threads?}] · `hidden_behaviour` [{pr
+  tests_changed, untested, fate, ci, open_threads, threads?, hotspots [{source, risk}], claims
+  [{text, source}]}] · `hidden_behaviour` [{pr
   "<owner/repo>#<n>", item, answer "yes"|"no", source? (only when yes)}], one row per PR per item ·
   `gaps` · `questions` · `embedded_instructions`.
 
