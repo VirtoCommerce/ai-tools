@@ -158,6 +158,25 @@ export function openedIds(journal) {
 }
 
 
+/**
+ * The hash of the body this session LAST opened for `id` (VCST-6221 step 6), or null: a `show` that
+ * answered, or an ask that printed the body. A confirm or dispute attests that body -- not whatever the
+ * base holds when the verb runs, which a judge's correction may have replaced in between.
+ */
+export function openedHash(records, id) {
+  const want = String(id).toUpperCase();
+  const list = (Array.isArray(records) ? records : []).filter(Boolean).slice().sort((a, b) => String(a.at).localeCompare(String(b.at)));
+  for (let i = list.length - 1; i >= 0; i -= 1) {
+    const r = list[i];
+    if (r.kind === 'show' && r.state === 'answer' && String(r.id ?? '').toUpperCase() === want && r.bodyHash) return r.bodyHash;
+    if (r.kind === 'ask' && r.bodyHashes) {
+      const key = Object.keys(r.bodyHashes).find((k) => k.toUpperCase() === want);
+      if (key) return r.bodyHashes[key];
+    }
+  }
+  return null;
+}
+
 const Q_MAX = 110;
 /** How many questions one reminder names; the rest stay unraised and come back at the next stop. */
 export const LISTED = 5;

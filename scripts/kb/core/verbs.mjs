@@ -25,9 +25,9 @@ import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, cou
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
-  readQueue, sessionId,
+  readQueue, sessionId, loopRecord as loopRecordOf,
 } from './queue.mjs';
-import { lastWord, openedIds, pointersByAsk } from './loop.mjs';
+import { lastWord, openedHash, openedIds, pointersByAsk } from './loop.mjs';
 import { cachedWho } from './who.mjs';
 import { MIN_RELATED_WORDS, RANKER, rank, rankNeighbours, relatedTo, tokenize } from './rank.mjs';
 import { prepareVocabulary, readVocabulary } from './query.mjs';
@@ -586,7 +586,7 @@ async function askVerdict({ question, repair, cat, opened, ranker, env, started,
       return { state: 'unreachable', verdict: 'answer', hits: [missing], rows: cat.rows.length, ...repair };
     }
     const described = describeHit(hit, p);
-    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: [c.row.id], state: 'answer', ms: Date.now() - started, ...stamp }, { env });
+    await log({ ...common, matched: [c.row.id], trustShown: [described.trust.label], opened: [c.row.id], state: 'answer', ms: Date.now() - started, ...stamp, payload: { bodyHashes: { [c.row.id]: claimHash(p.body) } } }, { env });
     return { state: 'answer', verdict: 'answer', hits: [described], rows: cat.rows.length, ...repair };
   }
   if (d.verdict === 'ambiguous') {
@@ -773,6 +773,7 @@ async function askRanked(asked, opened, { env = process.env, top = 3, via = null
     ...(state === 'unreachable' ? { why: described[0]?.unavailable ?? 'no body could be read' } : {}),
     ms: Date.now() - started,
     ...ranked({ via, call, topic, deployment }),
+    ...(opened_.length ? { payload: { bodyHashes: Object.fromEntries(opened_.map((h) => [h.id, claimHash(h.body)])) } } : {}),
   }, { env });
 
   return { state, hits: described, rows: cat.rows.length, ...repair };
@@ -817,7 +818,10 @@ export async function show(id, opened, { env = process.env, via = null, call = n
     await log({ kind: 'show', id, state: 'unreachable', why: err.message, ...after, ...context({ via, call, topic }) }, { env });
     return { state: 'unreachable', row, why: `unparseable entry: ${err.message}` };
   }
-  await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }) }, { env });
+  // THE BODY THIS SESSION READ (VCST-6221 step 6), hashed into the local journal -- `payload` never
+  // reaches the public log (`toLogLine`). A confirm later in the session attests THIS body, even if a
+  // judge's correction merged in between.
+  await log({ kind: 'show', id: row.id, state: 'answer', ...after, ...context({ via, call, topic }), payload: { bodyHash: claimHash(parsed.body) } }, { env });
   return { state: 'answer', row, entry: parsed.data, body: parsed.body.trim(), trust: trustOf(parsed.data.evidence ?? []) };
 }
 
@@ -1297,6 +1301,11 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     const read = await opened.reader.readEntry(row.path);
     if (read?.ok) { const parsed = parseEntry(read.text, row.path); bodyHash = claimHash(parsed.body); entry = parsed.data; }
   } catch { /* push stamps it */ }
+  // ...BUT THE BODY THE AGENT READ WINS (VCST-6221 step 6). Hashed from the base NOW, a confirm whose
+  // `kb_show` came before a judge's `claim-amended` merged would attest the corrected wording it never
+  // read. The session's journal holds the hash of the body it opened; the current body is the fallback.
+  const readBody = openedHash([...journal, ...(await readQueue({ env })).lines.map(loopRecordOf).filter(Boolean)], row.id);
+  if (readBody) bodyHash = readBody;
 
   const stamp = await buildStamp(input.deployment, { env, builds });
   // A DISAGREEMENT ON ANOTHER BUILD IS A SOFT DISPUTE (VCST-6221, core/gate.mjs): still a dispute the
