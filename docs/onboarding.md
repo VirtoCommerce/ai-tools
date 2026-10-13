@@ -252,7 +252,9 @@ appears there.
 queued and nothing is published, the `Stop` hook does nothing, and the `SessionStart` hook *removes*
 `kb` from `.mcp.json` rather than adding it back. `npm run kb -- ask` still reads, since reading a public
 repo sends nothing. Pushes go only to `VirtoCommerce/vc-knowledge`. A push to any other base is refused
-unless `KB_ALLOW_ANY_BASE=1` is set.
+unless `KB_ALLOW_ANY_BASE=1` is set. A write reads the build of the stand it names (its `/api/platform/modules`,
+with the admin credentials of that stand from `.env.local`); `KB_BUILD=0` turns that off and the evidence
+is written without a build.
 
 **Reviewing before anything is published.** Set `KB_PUSH_CONFIRM=1` in the same place and nothing is
 published automatically. The hook, the sweep and the server's timer all hold the queue. Run

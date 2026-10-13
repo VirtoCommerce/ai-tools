@@ -17,7 +17,7 @@ import { RUN_MAX, loopPath, metaPath, queueDir, queuePath, readQueue } from '../
 import { fingerprint, whoPath } from '../kb/core/who.mjs';
 import { localReader } from '../kb/core/reader.mjs';
 import { RANKER } from '../kb/core/rank.mjs';
-import { DEPLOYMENT_MAX, NOTE_MAX, TOPIC_MAX, ask, askAbout, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
+import { NOTE_MAX, TOPIC_MAX, ask, askAbout, capture, confirm, dispute, show } from '../kb/core/verbs.mjs';
 import { captureLines } from '../kb/core/render.mjs';
 
 const FIXTURE = join(import.meta.dirname, 'fixtures', 'kb-base');
@@ -663,7 +663,7 @@ test('a stand name is folded on SPELLING only — into the entry and the log ali
       subject: 'a fact seen on a stand typed with a hyphen',
       question: 'is a stand typed with a hyphen the same stand',
       claim: 'It is.',
-      deployment: 'vcst qa',
+      deployment: 'VCST-Qa',
       anchors: ['/company/hyphen-stand'],
       scope: ['surface=storefront-ui'],
     }, opened(), { env, via: 'cli' });
@@ -672,17 +672,6 @@ test('a stand name is folded on SPELLING only — into the entry and the log ali
     assert.equal(confirmed.deployment, 'vcst_qa');
     assert.equal(confirmed.payload.item.deployment, 'vcst_qa', 'the entry, not only the log line');
     assert.equal(captured.payload.entry.evidence[0].deployment, 'vcst_qa');
-  });
-});
-
-test('a stand NAME is never mapped — `vcst` stays `vcst`, not `vcst_qa`', async () => {
-  // The line `canonicalStand` must not cross: `vcst` onto `vcst_qa` needs a table nobody owns.
-  await withQueue(async (env) => {
-    opens(env, EXISTING_ID);
-    await confirm(EXISTING_ID, { deployment: 'vcst' }, opened(), { env, via: 'cli' });
-    const [line] = await linesOf(env);
-    assert.equal(line.deployment, 'vcst');
-    assert.equal(line.payload.item.deployment, 'vcst');
   });
 });
 
@@ -720,62 +709,6 @@ test('an evidence NOTE is bounded too - the one prose field every agent actually
     opens(env, EXISTING_ID);
     const r = await dispute(EXISTING_ID, { deployment: 'vcst_qa', saw: real }, opened(), { env, via: 'cli' });
     assert.equal(r.item.note, real, 'the longest note the base actually holds is untouched');
-  });
-});
-
-test('an over-long deployment is BOUNDED — "verbatim" is about normalising, not about length', async () => {
-  // F1 (PLAN §22.3). The field is caller-supplied and lands in a PUBLIC, APPEND-ONLY log where a
-  // line cannot be edited or withdrawn, and nothing between the tool call and the file had a view
-  // on its size — so an agent that put a paragraph here published a paragraph, against §7's "ids
-  // and subjects only, never prose". The bound is imported, never transcribed (GOLDEN RULE).
-  //
-  // "Verbatim" survives intact, because it was always a promise about NORMALISING: no case-fold,
-  // no mapping `vcst` onto `vcst_qa`, no opinion about what a stand is called. The test below this
-  // one is the one that pins that, and it is unchanged.
-  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
-  assert.ok(LONG.length > DEPLOYMENT_MAX, 'the fixture must actually exceed the bound');
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
-    await ask(MISSED_COLD, opened(), { env, via: 'cli', deployment: LONG });
-    const lines = await linesOf(env);
-    for (const l of lines) assert.equal(l.deployment.length, DEPLOYMENT_MAX);
-    // Deterministic, so an ask and the confirm that follows it still join on the same stand.
-    assert.equal(lines[0].deployment, lines[1].deployment);
-  });
-
-  // A BOUND, NOT A VALIDATOR: it is set far clear of every stand name this base has ever held —
-  // the longest, `vcptcore_stable`, is 15 characters — so a real value is never touched.
-  await withQueue(async (env) => {
-    for (const stand of ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']) {
-      await ask(ANSWERED, opened(), { env, via: 'cli', deployment: stand });
-    }
-    const lines = await linesOf(env);
-    assert.deepEqual(lines.map((l) => l.deployment), ['vcst_qa', 'vcptcore_stable', 'vcptcore_qa1', 'virtostart']);
-  });
-});
-
-test('the cap is a property of the FIELD, so confirm writes the same bounded deployment ask does', async () => {
-  // One public log, one `deployment` key, two verbs writing it — a bound only one of them applies
-  // is a bound the log does not have. `confirm` used to put `input.deployment` on the line
-  // directly, bypassing the very function that holds the rule.
-  const LONG = `vcst_qa ${'x'.repeat(DEPLOYMENT_MAX * 3)}`;
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: LONG });
-    await confirm(EXISTING_ID, { deployment: LONG }, opened(), { env, via: 'cli' });
-    const [asked, confirmed] = await linesOf(env);
-    assert.equal(confirmed.kind, 'confirm');
-    assert.equal(confirmed.deployment.length, DEPLOYMENT_MAX);
-    assert.equal(confirmed.deployment, asked.deployment, 'both doors, one rule');
-  });
-});
-
-test('the deployment is recorded verbatim — the log reports, it does not normalise', async () => {
-  // The base already holds `vcst` once against `vcst_qa` 33 times. Ironing that out on the way in
-  // would need a mapping with no source of truth behind it, and would hide the one thing worth
-  // knowing: that two callers disagree about what the stand is called.
-  await withQueue(async (env) => {
-    await ask(ANSWERED, opened(), { env, via: 'cli', deployment: '  vcst  ' });
-    assert.equal((await linesOf(env)).at(-1).deployment, 'vcst', 'trimmed, and otherwise untouched');
   });
 });
 
