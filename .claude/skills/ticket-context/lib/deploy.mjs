@@ -26,8 +26,8 @@ export function expectFor(artifact, merged) {
 
 export function deployedFromPreflight(json, error, theme = false) {
   if (!json) return { deployed: "UNKNOWN", reason: error ? `pre-flight could not run (${error})` : "pre-flight could not run" };
-  // The theme's live version does not come from the modules API, so an unreadable module set says nothing about it.
-  const dep = theme ? null : json.facts?.deployed;
+  // The theme's live version comes from the storefront bundle, not the modules API: only its own probe can make it unknown.
+  const dep = theme ? json.facts?.deployedTheme : json.facts?.deployed;
   if (dep && typeof dep === "object" && "unknown" in dep) return { deployed: "UNKNOWN", reason: `deployed state unknown: ${dep.unknown}` };
   const row = (json.checks ?? []).find((c) => c.id === "expect");
   if (!row) return { deployed: "UNKNOWN", reason: "pre-flight returned no expect row" };
