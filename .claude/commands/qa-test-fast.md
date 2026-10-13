@@ -38,10 +38,11 @@ behind every step, the rationalization table and the red flags are in
    other than `feature-test` ⇒ **STOP** and name the right command (`/qa-verify-fix`,
    `/qa-hotfix-check`, `/qa-test`).
 2. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
-   `ticket-fast --ticket <KEY> --components <…> [--expect <PR module@version>]`. It returns env health,
+   `ticket-fast --ticket <KEY> --components <…>`. It returns env health,
    the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
-   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
-   `expect` row is BLOCKED-on-deploy, never a FAIL.
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
+   row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
+   `/ticket-context` asks the same core per PR.
 3. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
@@ -62,13 +63,15 @@ behind every step, the rationalization table and the red flags are in
 Full briefs, merge rules and the context bundle:
 [`../skills/qa-test-fast/context-wave.md`](../skills/qa-test-fast/context-wave.md).
 
-1. **Wave 1 — one message:**
-   - **A** ticket, comments and attachments — `ba-system-analyzer`, no browser
-   - **B** linked PRs and their `gh pr diff` — `ba-api-specialist`, no browser
+1. **Wave 1:**
    - **C** domain map — `/qa-domain-map <slug>` on `playwright-firefox`, only when the map is
-     `ABSENT`/`unresolved`
-2. **Join.** Merge A+B+C into the context bundle. If B names a GraphQL operation, run both
-   contract-refresh commands ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
+     `ABSENT`/`unresolved`; dispatch it first, in the background
+   - **A+B** [`/ticket-context <KEY> --domain <slug> --kb-hits <Step 0 ids>`](../skills/ticket-context/SKILL.md)
+     — ticket, every attachment and link, the PRs, their deployment on this stand, known ground and
+     gaps, as one gated bundle
+2. **Join.** The bundle is the context. Its `blockers[]` decide deployment, and if it names a GraphQL
+   operation, run both contract-refresh commands
+   ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
 3. **Wave 2 — one message:**
    - `/qa-test-model <TICKET> --context <bundle>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,

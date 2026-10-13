@@ -1,37 +1,18 @@
 # Stage 1 — the context waves, in detail
 
-Three waves, each one message. Every brief uses the section structure of
+Three waves. Every brief uses the section structure of
 [`../../templates/agent-dispatch.md`](../../templates/agent-dispatch.md) §Agent Prompt Structure.
-Briefs A and B are **Mechanic** dispatches (tracker and diff reading, no platform observation), so they
-omit the `Observed behaviour` line, as that template allows. Anything the brief can pass as a **file**
-is passed as a path, never pasted.
+Anything the brief can pass as a **file** is passed as a path, never pasted.
 
-## Wave 1 — one message, up to three dispatches
+## Wave 1 — the ticket context, and the domain map when it is missing
 
-### A · Ticket — `ba-system-analyzer`, no browser
-Fetch the ticket **with all fields**, following the fetch bullets of
-[`../qa-test/intake.md`](../qa-test/intake.md) §1a (comments always, and every attachment opened —
-one that cannot be read is a named gap). ACs often live in a custom field; an empty description is not
-"no ACs". Return:
-- the ACs as numbered atomic conditions (`AC-1…`), each with its source (the field, or a comment and
-  its date)
-- the comment signals that change what is tested
-- one concrete finding per attachment
-- the epic line and any Done siblings (the integration seams)
-- the domains, a layer guess and open questions
-
-Read-only: no tracker writes.
-
-### B · PRs — `ba-api-specialist`, no browser
-Work the four-rung ladder of [`../qa-test/technical-change.md`](../qa-test/technical-change.md) §2.1 and
-stop at the first rung that yields PRs. Then run `gh pr diff <n> --repo <r>` per PR. **Only product-repo
-PRs are change surface.** Deployment-manifest PRs and this repo's PRs are listed as context. Return, per PR:
-- repo, number, state, and the build it is deployed in (if known)
-- files, by layer token (`storefront` / `admin-spa` / `api` / `module` / `platform`)
-- the **GraphQL operations and REST endpoints touched, by name**
-- settings and permissions added or changed
-- risk hotspots as `file:line` plus one line each
-- review-thread concerns
+### A+B · Ticket context — [`/ticket-context`](../ticket-context/SKILL.md)
+Dispatch C first when it is due (background, its own browser lane), then run
+`/ticket-context <KEY> --domain <slug> --kb-hits <ids from Step 0>`. It returns one gated bundle:
+ACs with provenance, comment signals, every attachment, inline image and link with an outcome, design
+conditions, the PRs (only product-repo PRs are change surface), PR↔AC both ways, whether each PR is
+deployed on this stand, known ground, gaps and blockers. Do not re-fetch the ticket or a PR, and do not
+re-check deployment: the bundle is the answer.
 
 ### C · Domain map — only when the state is `ABSENT` or `unresolved`
 Invoke `/qa-domain-map <slug>` on `playwright-firefox` as
@@ -46,17 +27,17 @@ the trigger is this section's heading. The state is decided by [`../qa-test/axes
 
 ## Join 1 — the context bundle
 
-Write it to your scratchpad, never under `reports/`. It is not a report category. The bundle holds:
-- A's conditions and findings
-- B's change surface
-- the domain map state and path
-- the mind map path, or `null`
-- the kb hit ids from Step 0
-- the gaps A and B named
-- `visual_surface` + `surface_source[]`, derived from B's diff per
-  [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1
+The bundle is `/ticket-context`'s file; it is never copied under `reports/` (not a report category).
+Before Wave 2:
+- **Deployment.** A `NOT DEPLOYED:` line in `blockers[]` is BLOCKED-on-deploy: stop, never a FAIL. A
+  `DEPLOYMENT UNKNOWN:` line lets the run proceed, and `verdict.md` says "deployment unverified" and
+  quotes the line.
+- **Domain map.** C's result, when it ran, replaces the bundle's `known.domain_map` state.
+- **Visual axis.** `visual_surface` + `surface_source[]`, derived from the bundle's `change.prs[].layers`
+  per [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1.
+- **Pass the bundle path** to `/qa-test-model --context` and to every later brief that needs the ticket.
 
-**Contract refresh (inline).** If B named a GraphQL operation, run the two commands of
+**Contract refresh (inline).** If the bundle names a GraphQL operation (in `change.prs[].operations`), run the two commands of
 [`../qa-test/contract-refresh.md`](../qa-test/contract-refresh.md) §2. Drift on an operation the diff
 touches goes into the bundle as a model input.
 
