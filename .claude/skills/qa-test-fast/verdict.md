@@ -14,6 +14,9 @@ hand.
    the regression classifier. Phase 4 then sends **every** real-bug candidate to the layer's QA expert, whose
    brief makes it invoke `vc-fix:qa-investigate` ahead of `qa-bug`. Each one returns `REPRODUCED` /
    `NOT_REPRODUCED` plus an evidence package.
+   **When regression ran**, invoke it again with `<RUN_ID> --verify` (never `--fix`: no suite row is
+   written in this flow, D2). Its real-bug candidates join the same `qa-bug` step; its test-defect rows
+   go to `/qa-test-lifecycle` as stale cases.
 3. **Apply what it returns** ([`../qa-triage-results/routing-and-fix.md`](../qa-triage-results/routing-and-fix.md)
    §Ticket mode):
 
