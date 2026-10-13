@@ -7,7 +7,7 @@
 ## Round <N> of 3 — <YYYY-MM-DD>
 
 Status: DRAFT | APPROVED (<who>, <date>) | AUTO (--yes) · Depth label: <light | standard | deep> (computed)
-Build: <PR#n @ sha per repo> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN> · Previous: <Round N−1 verdict, build | none>
+Build: <PR#n @ sha per repo> · Stand: <env> · Deployed: <yes | NO → F6 | UNKNOWN → unverified> · Previous: <Round N−1 verdict, build | none>
 Floors fired: <F1 (signal) · F3 (signal) · …> · not fired: <F2, F4, …>
 
 **Mission.** <one sentence: the question this round answers, and for whom. Round 3: say it is the last.>

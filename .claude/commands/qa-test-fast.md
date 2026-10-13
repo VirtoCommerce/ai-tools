@@ -49,10 +49,11 @@ never from the ticket type.
 2. **Count the rounds** per [`rounds.md`](../skills/qa-test-strategy/rounds.md). A fourth ⇒ **STOP** with
    the escalation there. Round ≥ 2 ⇒ record the last tested commit of each PR.
 3. **Environment.** Run [`/preflight`](../skills/preflight/SKILL.md)
-   `ticket-fast --ticket <KEY> --components <…> [--expect <PR module@version>]`. It returns env health,
+   `ticket-fast --ticket <KEY> --components <…>`. It returns env health,
    the deployed build, `{SPRINT}`, the duplicate check (its row says "same build" / "different build" when
-   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*` /
-   `expect` row is BLOCKED-on-deploy, never a FAIL — the strategy's F6.
+   both runs probed the deployed modules) and MCP availability, and runs its own remediation loop. A `not-deployed:*`
+   row is BLOCKED-on-deploy, never a FAIL. **No `--expect` here:** the PRs are found in Stage 1, where
+   `/ticket-context` asks the same core per PR — the strategy's F6 reads its `blockers[]`.
 4. **Prior artifacts are inputs.** For this ticket, glob `reports/tickets/*/<TICKET>/`,
    `reports/ba/test-models/<TICKET>-*` and `reports/bugs/**`. A prior model is amended, never forked.
    Prior bugs are the dedupe baseline `qa-bug` checks against. A prior run on a **different build**
@@ -73,23 +74,26 @@ never from the ticket type.
 Full briefs, merge rules and the context bundle:
 [`../skills/qa-test-fast/context-wave.md`](../skills/qa-test-fast/context-wave.md).
 
-1. **Wave 1 — one message:**
-   - **A** ticket, comments and attachments — `ba-system-analyzer`, no browser
-   - **B** linked PRs and their `gh pr diff` — `ba-api-specialist`, no browser
+1. **Wave 1:**
    - **C** domain map — `/qa-domain-map <slug>` on `playwright-firefox`, only when the map is
-     `ABSENT`/`unresolved`
-2. **Join.** Merge A+B+C into the context bundle. If B names a GraphQL operation, run both
-   contract-refresh commands ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
+     `ABSENT`/`unresolved`; dispatch it first, in the background
+   - **A+B** [`/ticket-context <KEY> --domain <slug> --kb-hits <Step 0 ids>`](../skills/ticket-context/SKILL.md)
+     — ticket, every attachment and link, the PRs, their deployment on this stand, known ground and
+     gaps, as one gated bundle
+2. **Join.** The bundle is the context; run-derived state goes to the run context, which names it. If
+   the bundle names a GraphQL operation, run both contract-refresh commands
+   ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
 3. **Strategy — you, inline.** Invoke the Skill tool with `skill: "qa-test-strategy"`, args
-   `<TICKET> --context <bundle>` (plus `--yes` when passed). It writes this round's section of
+   `<TICKET> --context <run context>` (plus `--yes` when passed). It writes this round's section of
    `test-strategy.md`, applies the floors, runs its gate, dispatches the verifier when a risk is Critical,
    and asks the user **once** to approve. **Nothing below runs until the strategy is `APPROVED` or
-   `AUTO (--yes)`.** F6 fired (the build is not deployed) ⇒ the run ends here as `BLOCKED`. Its artifacts
-   table decides everything below.
+   `AUTO (--yes)`.** F6 fired (a `NOT DEPLOYED:` line in the bundle's `blockers[]`) ⇒ the run ends here
+   as `BLOCKED`; a `DEPLOYMENT UNKNOWN:` line does not stop it — the verdict says "deployment unverified".
+   Its artifacts table decides everything below.
 4. **Wave 2 — one message, only the rows the strategy marked `RUN`:**
-   - `/qa-test-model <TICKET> --context <bundle>` (round ≥ 2: amend), run by you
+   - `/qa-test-model <TICKET> --context <run context>` (round ≥ 2: amend), run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
-     **without** build step 10; then copy the map signals into the bundle
+     **without** build step 10; then copy the map signals into the run context
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
    - the staleness check over F5's selected cases, inline
      ([`floors.md`](../skills/qa-test-strategy/floors.md) §Staleness check): the stale ids go into the
@@ -121,7 +125,7 @@ Briefs, the lane split, the data rules and teardown:
    `EXPLORE` risks ([`execution.md`](../skills/qa-test-fast/execution.md) §Exploratory). `--no-explore` drops the lane. A skip is recorded,
    never silent.
 3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, when F3 or F8 fired (`visual_surface: true`,
-   derived from the Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+   derived from the bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes

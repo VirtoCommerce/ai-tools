@@ -18,17 +18,19 @@ strategy's artifacts, its depth label, and at most three rounds per ticket.
 
 ```
 Step 0  route the job · count rounds (4th ⇒ STOP) · env · prior artifacts · slug · kb ask
-Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
+Stage 1 Wave 1  /ticket-context (ticket · materials · PRs · deploy) ‖ C domain map (only if ABSENT)
+                ── join → run context naming the bundle (+ schema:refresh)
         Strategy /qa-test-strategy (inline) ── floors ── gate ── [verifier if Critical] ── user approves once
-                 [--yes skips the question]   F6 (not deployed) ⇒ BLOCKED, stop
+                 [--yes skips the question]   F6 (NOT DEPLOYED) ⇒ BLOCKED, stop; UNKNOWN ⇒ unverified, go on
         Wave 2  /qa-test-model ‖ /qa-test-mind-map ‖ staleness check — only rows the strategy marked RUN
         Wave 3  exploratory FIRST (only when the strategy says so; not on --no-explore / --dry-run)
         Wave 4  /qa-checklist [--from-model]  ──  stage gate   [--dry-run stops here]
-Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory ALONGSIDE(firefox) ‖ visual(devtools) ‖
-                regression(non-stale ids) — ≤3 browser lanes at once, sequenced by risk; data on the fly
-Stage 3         qa-triage-results (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per confirmed bug
-                ── teardown → reconcile strategy → verdict (round 3 non-PASS ⇒ escalation) → files → HTML
-                → ask → comment → kb
+Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory ALONGSIDE(firefox) ‖
+                visual(devtools, ui-ux-expert → Skill qa-design) ‖ regression(non-stale ids)
+                — ≤3 browser lanes at once, sequenced by risk; data on the fly ── settings restored
+Stage 3         qa-triage-results ticket --verify (→ vc-fix:qa-investigate per real bug) → /vc-fix:qa-bug per
+                confirmed bug, with its package ── teardown → reconcile strategy → verdict (round 3 non-PASS
+                ⇒ escalation) → files → HTML page → ask → comment → kb
 ```
 
 **Why waves, not six parallel agents:** the dependencies are real. The strategy needs the whole bundle.
