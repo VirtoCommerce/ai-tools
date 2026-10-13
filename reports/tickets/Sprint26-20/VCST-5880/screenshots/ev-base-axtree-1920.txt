@@ -1,0 +1,183 @@
+BUILD: BASELINE https://vcst-qa-storefront.govirto.com (vc-frontend theme 2.60.0-pr-2511-81f1-81f18d01, pre-fix compare table) - Chrome DevTools take_snapshot verbose (real Chromium AX tree), 1920x1080, guest, 5 products Group A
+DATE: 2026-10-12 - subtree trimmed to the compare table(s): header row + first 3 body rows (Price per unit, Availability, SKU); verbatim otherwise
+                        uid=56_132 table
+                          uid=56_133 rowgroup
+                            uid=56_134 row
+                              uid=56_135 columnheader "AGENT-TEST-Compare-Alpha Remove from compare AGENT-TEST-Compare-Alpha Add to cart"
+                                uid=56_136 generic
+                                  uid=55_73 image "AGENT-TEST-Compare-Alpha" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main.png"
+                                  uid=56_137 generic
+                                    uid=55_74 button "Remove from compare" description="Remove from compare"
+                                      uid=56_138 ignored
+                                uid=56_139 ignored
+                                  uid=56_140 ignored
+                                    uid=55_75 link "AGENT-TEST-Compare-Alpha" url="https://vcst-qa-storefront.govirto.com/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-alpha"
+                                      uid=55_76 StaticText "AGENT-TEST-Compare-Alpha"
+                                        uid=56_6 InlineTextBox "AGENT-TEST-Compare-"
+                                        uid=56_6 InlineTextBox "Alpha"
+                                  uid=55_77 button "Add to cart"
+                                    uid=56_141 ignored
+                              uid=56_142 columnheader "AGENT-TEST-Compare-Beta Remove from compare AGENT-TEST-Compare-Beta Add to cart"
+                                uid=56_143 generic
+                                  uid=55_78 image "AGENT-TEST-Compare-Beta" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main.png"
+                                  uid=56_144 generic
+                                    uid=55_79 button "Remove from compare" description="Remove from compare"
+                                      uid=56_145 ignored
+                                uid=56_146 ignored
+                                  uid=56_147 ignored
+                                    uid=55_80 link "AGENT-TEST-Compare-Beta" url="https://vcst-qa-storefront.govirto.com/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-beta"
+                                      uid=55_81 StaticText "AGENT-TEST-Compare-Beta"
+                                        uid=56_6 InlineTextBox "AGENT-TEST-Compare-"
+                                        uid=56_6 InlineTextBox "Beta"
+                                  uid=55_82 button "Add to cart"
+                                    uid=56_148 ignored
+                              uid=56_149 columnheader "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Remove from compare AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 Add to cart"
+                                uid=56_150 generic
+                                  uid=55_83 image "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main.png"
+                                  uid=56_151 generic
+                                    uid=55_84 button "Remove from compare" description="Remove from compare"
+                                      uid=56_152 ignored
+                                uid=56_153 ignored
+                                  uid=56_154 ignored
+                                    uid=55_85 link "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" url="https://vcst-qa-storefront.govirto.com/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-longname-abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789"
+                                      uid=55_86 StaticText "AGENT-TEST-Compare-LongName ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                                        uid=56_6 InlineTextBox "AGENT-TEST-Compare-"
+                                        uid=56_6 InlineTextBox "LongName "
+                                        uid=56_6 InlineTextBox "…"
+                                        uid=56_6 InlineTextBox "ABCDEFGHIJKLMNOPQ"
+                                        uid=56_6 InlineTextBox "RSTUVWXYZABCDEFG"
+                                        uid=56_6 InlineTextBox "HIJKLMNOPQRSTUVW"
+                                        uid=56_6 InlineTextBox "XYZ0123456789"
+                                  uid=55_87 button "Add to cart"
+                                    uid=56_155 ignored
+                              uid=56_156 columnheader "AGENT-TEST-Compare-Filler-One Remove from compare AGENT-TEST-Compare-Filler-One Add to cart"
+                                uid=56_157 generic
+                                  uid=55_88 image "AGENT-TEST-Compare-Filler-One" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main.png"
+                                  uid=56_158 generic
+                                    uid=55_89 button "Remove from compare" description="Remove from compare"
+                                      uid=56_159 ignored
+                                uid=56_160 ignored
+                                  uid=56_161 ignored
+                                    uid=55_90 link "AGENT-TEST-Compare-Filler-One" url="https://vcst-qa-storefront.govirto.com/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-filler-one"
+                                      uid=55_91 StaticText "AGENT-TEST-Compare-Filler-One"
+                                        uid=56_6 InlineTextBox "AGENT-TEST-Compare-"
+                                        uid=56_6 InlineTextBox "Filler-One"
+                                  uid=55_92 button "Add to cart"
+                                    uid=56_162 ignored
+                              uid=56_163 columnheader "AGENT-TEST-Compare-Filler-Two Remove from compare AGENT-TEST-Compare-Filler-Two Add to cart"
+                                uid=56_164 generic
+                                  uid=55_93 image "AGENT-TEST-Compare-Filler-Two" url="https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main.png"
+                                  uid=56_165 generic
+                                    uid=55_94 button "Remove from compare" description="Remove from compare"
+                                      uid=56_166 ignored
+                                uid=56_167 ignored
+                                  uid=56_168 ignored
+                                    uid=55_95 link "AGENT-TEST-Compare-Filler-Two" url="https://vcst-qa-storefront.govirto.com/seed-compare-fixtures/seed-compare-fixtures-group-a/agent-test-compare-filler-two"
+                                      uid=55_96 StaticText "AGENT-TEST-Compare-Filler-Two"
+                                        uid=56_6 InlineTextBox "AGENT-TEST-Compare-"
+                                        uid=56_6 InlineTextBox "Filler-Two"
+                                  uid=55_97 button "Add to cart"
+                                    uid=56_169 ignored
+                      uid=56_170 table
+                        uid=56_171 ignored
+                          uid=56_172 row
+                            uid=56_173 rowheader "Price per unit Price, excl. VAT, per unit. Pin “Price per unit”"
+                              uid=56_174 ignored
+                                uid=56_175 ignored
+                                  uid=55_98 StaticText "Price per unit"
+                                    uid=56_6 InlineTextBox "Price per unit"
+                                uid=56_176 ignored
+                                  uid=56_177 generic
+                                    uid=55_99 image "Price, excl. VAT, per unit."
+                                      uid=56_178 image
+                              uid=55_100 button "Pin “Price per unit”" description="Pin to top"
+                                uid=56_179 ignored
+                                  uid=56_180 ignored
+                            uid=56_181 cell "$49.99"
+                              uid=56_182 ignored
+                                uid=56_183 ignored
+                                  uid=55_101 StaticText "$49.99"
+                                    uid=56_6 InlineTextBox "$49.99"
+                            uid=56_184 cell "$59.99"
+                              uid=56_185 ignored
+                                uid=56_186 ignored
+                                  uid=55_102 StaticText "$59.99"
+                                    uid=56_6 InlineTextBox "$59.99"
+                            uid=56_187 cell "$19.99"
+                              uid=56_188 ignored
+                                uid=56_189 ignored
+                                  uid=55_103 StaticText "$19.99"
+                                    uid=56_6 InlineTextBox "$19.99"
+                            uid=56_190 cell "$9.99"
+                              uid=56_191 ignored
+                                uid=56_192 ignored
+                                  uid=55_104 StaticText "$9.99"
+                                    uid=56_6 InlineTextBox "$9.99"
+                            uid=56_193 cell "$8.99"
+                              uid=56_194 ignored
+                                uid=56_195 ignored
+                                  uid=55_105 StaticText "$8.99"
+                                    uid=56_6 InlineTextBox "$8.99"
+                          uid=56_196 row
+                            uid=56_197 rowheader "Availability Pin “Availability”"
+                              uid=56_198 ignored
+                                uid=56_199 ignored
+                                  uid=55_106 StaticText "Availability"
+                                    uid=56_6 InlineTextBox "Availability"
+                              uid=55_107 button "Pin “Availability”" description="Pin to top"
+                                uid=56_200 ignored
+                                  uid=56_201 ignored
+                            uid=56_202 cell "In stock"
+                              uid=56_203 group "In stock"
+                                uid=56_204 generic
+                                  uid=56_205 ignored
+                                    uid=55_108 StaticText "12"
+                                      uid=56_6 InlineTextBox "12"
+                            uid=56_206 cell "In stock"
+                              uid=56_207 group "In stock"
+                                uid=56_208 generic
+                                  uid=56_209 ignored
+                                    uid=55_109 StaticText "340"
+                                      uid=56_6 InlineTextBox "340"
+                            uid=56_210 cell "In stock"
+                              uid=56_211 group "In stock"
+                                uid=56_212 generic
+                                  uid=56_213 ignored
+                                    uid=55_110 StaticText "60"
+                                      uid=56_6 InlineTextBox "60"
+                            uid=56_214 cell "In stock"
+                              uid=56_215 group "In stock"
+                                uid=56_216 generic
+                                  uid=56_217 ignored
+                                    uid=55_111 StaticText "80"
+                                      uid=56_6 InlineTextBox "80"
+                            uid=56_218 cell "In stock"
+                              uid=56_219 group "In stock"
+                                uid=56_220 generic
+                                  uid=56_221 ignored
+                                    uid=55_112 StaticText "80"
+                                      uid=56_6 InlineTextBox "80"
+                          uid=56_222 row
+                            uid=56_223 rowheader "SKU Pin “SKU”"
+                              uid=56_224 ignored
+                                uid=56_225 ignored
+                                  uid=55_113 StaticText "SKU"
+                                    uid=56_6 InlineTextBox "SKU"
+                              uid=55_114 button "Pin “SKU”" description="Pin to top"
+                                uid=56_226 ignored
+                                  uid=56_227 ignored
+                            uid=56_228 cell "AGENT-TEST-CMP-ALPHA"
+                              uid=55_115 StaticText "AGENT-TEST-CMP-ALPHA"
+                                uid=56_6 InlineTextBox "AGENT-TEST-CMP-ALPHA"
+                            uid=56_229 cell "AGENT-TEST-CMP-BETA"
+                              uid=55_116 StaticText "AGENT-TEST-CMP-BETA"
+                                uid=56_6 InlineTextBox "AGENT-TEST-CMP-BETA"
+                            uid=56_230 cell "AGENT-TEST-CMP-LONGNAME"
+                              uid=55_117 StaticText "AGENT-TEST-CMP-LONGNAME"
+                                uid=56_6 InlineTextBox "AGENT-TEST-CMP-LONGNAME"
+                            uid=56_231 cell "AGENT-TEST-CMP-FILL-1"
+                              uid=55_118 StaticText "AGENT-TEST-CMP-FILL-1"
+                                uid=56_6 InlineTextBox "AGENT-TEST-CMP-FILL-1"
+                            uid=56_232 cell "AGENT-TEST-CMP-FILL-2"
+                              uid=55_119 StaticText "AGENT-TEST-CMP-FILL-2"
+                                uid=56_6 InlineTextBox "AGENT-TEST-CMP-FILL-2"

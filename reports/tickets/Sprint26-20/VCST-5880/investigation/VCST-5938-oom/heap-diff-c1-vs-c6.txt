@@ -1,0 +1,63 @@
+# PR build heap snapshot diff, cycle 1 vs cycle 6 (post-GC; snapshots taken via DevTools take_heapsnapshot)
+A total MB 41.67 nodes 708550  B total MB 43.44 nodes 726696
+top growth by self size (name, dCount, dBytes, countB, bytesB):
+(code) | 5866 | 1092700 | 156148 | 11325764
+blink::AXObjectCacheImpl::AXDirtyObject | 5683 | 272784 | 6593 | 316464
+blink::AXNodeObject | 2003 | 208312 | 3638 | 378352
+system / Context / scope @273471 | 2690 | 53800 | 2690 | 53800
+system / Context / scope @273461 | 2690 | 53800 | 2690 | 53800
+system / Context / scope @147239 | 709 | 48212 | 709 | 48212
+PerformanceEventTiming | 150 | 38400 | 164 | 41984
+blink::HashTrieNode<blink::CSSVariableData> | 106 | 28832 | 2886 | 784992
+system / Context / scope @147347 | 525 | 27300 | 525 | 27300
+blink::NetworkResourcesData::ResourceData | 94 | 27072 | 243 | 69984
+blink::AXNodeObject::GenerationalCache | 801 | 25632 | 1033 | 33056
+blink::HeapVectorBacking<cppgc::internal::BasicMember<blink: | 1 | 25552 | 3324 | 246704
+system / Context / scope @282231 | 904 | 25312 | 904 | 25312
+(object shape) | 519 | 22656 | 29511 | 1407180
+system / Context / scope @115837 | 1 | 19204 | 1 | 19204
+B dominant by self size:
+(code) | 156148 | 10.80 MB
+system / ExternalStringData | 1221 | 10.64 MB
+(array) | 33312 | 2.01 MB
+(string) | 90319 | 1.61 MB
+Object | 52747 | 1.51 MB
+(object shape) | 29511 | 1.34 MB
+(closure) | 47546 | 1.32 MB
+blink::HashTrieNode<blink::CSSVariableData> | 2886 | 0.75 MB
+blink::StyleRule | 10380 | 0.65 MB
+CSSStyleRule | 9166 | 0.63 MB
+blink::CSSRuleSourceData | 5392 | 0.58 MB
+mQ | 12349 | 0.52 MB
+
+# BASELINE build heap snapshot diff, cycle 1 vs cycle 6
+A total MB 42.09 nodes 764500  B total MB 42.22 nodes 754074
+top growth by self size (name, dCount, dBytes, countB, bytesB):
+blink::AXObjectCacheImpl::AXDirtyObject | 4358 | 209184 | 5255 | 252240
+blink::AXNodeObject | 1489 | 154856 | 3127 | 325208
+system / Context / scope @240821 | 2690 | 53800 | 2690 | 53800
+system / Context / scope @289929 | 2690 | 53800 | 2690 | 53800
+system / Context / scope @174999 | 707 | 48076 | 707 | 48076
+blink::HeapHashTableBacking<blink::HashTable<int, blink::Key | 0 | 32776 | 9 | 66312
+system / Context / scope @128505 | 525 | 27300 | 525 | 27300
+system / Context / scope @239989 | 904 | 25312 | 904 | 25312
+blink::NetworkResourcesData::ResourceData | 76 | 21888 | 224 | 64512
+blink::HeapVectorBacking<cppgc::internal::BasicMember<blink: | 59 | 21168 | 3501 | 243632
+system / Context / scope @124617 | 1 | 19204 | 1 | 19204
+system / Context / scope @128743 | 1 | 18248 | 1 | 18248
+system / Context / scope @134503 | 896 | 17920 | 896 | 17920
+system / Context / scope @176283 | 707 | 16968 | 707 | 16968
+system / Context / scope @240001 | 707 | 16968 | 707 | 16968
+B dominant by self size:
+(code) | 158793 | 10.63 MB
+system / ExternalStringData | 925 | 8.63 MB
+(array) | 33614 | 2.11 MB
+(string) | 96243 | 1.78 MB
+Object | 52755 | 1.51 MB
+(object shape) | 31365 | 1.46 MB
+(closure) | 50579 | 1.40 MB
+blink::HashTrieNode<blink::CSSVariableData> | 3082 | 0.80 MB
+system / FunctionTemplateInfo | 12204 | 0.74 MB
+blink::StyleRule | 10380 | 0.65 MB
+CSSStyleRule | 9166 | 0.63 MB
+blink::CSSRuleSourceData | 5392 | 0.58 MB
