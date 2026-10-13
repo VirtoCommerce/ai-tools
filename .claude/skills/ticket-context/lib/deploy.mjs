@@ -6,10 +6,15 @@ import { hasScript, runNpmJson } from "./npm.mjs";
 export const O2_NOTE = "pre-release builds may not bump the live version — confirm with `npm run deploy:pr -- <KEY> --verify`";
 export const baseOf = (v) => String(v).split("-")[0];
 
+// The id and version come from a PR body's artifact URL, i.e. text anyone who can edit the PR controls.
+const ID_RE = /^[A-Za-z0-9_.]+$/;
+const VERSION_RE = /^[0-9A-Za-z.+_-]+$/;
+
 export function expectFor(artifact, merged) {
   if (!artifact) return { skip: "no CI artifact resolved for this PR" };
   if (artifact.kind === "theme") return { skip: "no-live-source: the stand does not report the storefront theme version" };
   if (artifact.kind === "platform") return { skip: "no-live-source: the pre-flight core's --expect covers modules only" };
+  if (!ID_RE.test(String(artifact.id ?? "")) || !VERSION_RE.test(String(artifact.version ?? ""))) return { skip: "artifact id or version has unexpected characters" };
   return { module: artifact.id, version: merged ? baseOf(artifact.version) : artifact.version };
 }
 
@@ -50,21 +55,32 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
   }
   const readable = counted.filter((p) => !p.gap);
   let artifacts = new Map();
+  let resolveFailure = null;
+  const noteToolMissing = () => { if (!gaps.some((g) => g.reason === "tool-missing")) gaps.push({ where: "change.deployed", reason: "tool-missing", detail: "npm CLI not found next to the node binary" }); };
   if (canResolve && canAsk && readable.length) {
     const r = run(root, ["deploy:pr", "--", key, ...readable.map((p) => `--pr=${p.ref}`), "--json"]);
-    if (r.json) artifacts = artifactsBySource(r.json);
-    else gaps.push({ where: "change.deployed", reason: "unreadable", detail: `deploy:pr exit ${r.status}: no artifact table` });
+    if (r.json && !r.error) artifacts = artifactsBySource(r.json);
+    else {
+      resolveFailure = `deploy:pr could not run (${r.error ?? `exit ${r.status}`})`;
+      if (r.error === "npm-cli-not-found") noteToolMissing();
+      else gaps.push({ where: "change.deployed", reason: "unreadable", detail: `deploy:pr exit ${r.status}: no artifact table` });
+    }
   }
   const asked = new Map();
   const rows = [];
   for (const p of counted) {
     if (p.gap) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: `PR could not be read: ${p.gap.detail ?? p.gap.reason}` }); continue; }
     if (!canResolve || !canAsk) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: "pre-flight core not available in this install" }); continue; }
+    if (resolveFailure) { rows.push({ ref: p.ref, artifact: null, deployed: "UNKNOWN", deployed_reason: resolveFailure }); continue; }
     const artifact = artifacts.get(p.ref) ?? null;
     const e = expectFor(artifact, p.merged);
     if (e.skip) { rows.push({ ref: p.ref, artifact, deployed: "UNKNOWN", deployed_reason: e.skip }); continue; }
     const id = `${e.module}@${e.version}`;
-    if (!asked.has(id)) asked.set(id, deployedFromPreflight(run(root, ["preflight", "--", "--for", "ticket-fast", "--ticket", key, "--expect", id, "--json"]).json));
+    if (!asked.has(id)) {
+      const pf = run(root, ["preflight", "--", "--for", "ticket-fast", "--ticket", key, "--expect", id, "--json"]);
+      if (pf.error === "npm-cli-not-found") noteToolMissing();
+      asked.set(id, deployedFromPreflight(pf.json));
+    }
     const ans = asked.get(id);
     const reason = ans.deployed === "NO" && !p.merged ? `${ans.reason}; ${O2_NOTE.replace("<KEY>", key)}` : ans.reason;
     rows.push({ ref: p.ref, artifact, deployed: ans.deployed, deployed_reason: `${id}: ${reason}` });
