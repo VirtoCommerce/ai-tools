@@ -80,7 +80,7 @@ async function prepare() {
   const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)], { gaps });
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
   const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
-  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
+  const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, acFieldIds: acFields.map((f) => f.id), linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
 
   let epic = null;
   let siblings = [];

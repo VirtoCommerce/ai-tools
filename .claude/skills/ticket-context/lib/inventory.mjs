@@ -106,7 +106,7 @@ export function resolveFieldsByName(allFields, override, nameRe) {
   return allFields.filter((f) => f.custom && nameRe.test(f.name ?? "")).map((f) => ({ id: f.id, name: f.name }));
 }
 
-export function buildInventory({ issue, remoteLinks = [], trackerBase, linkFieldIds = [], devPrUrls = [] }) {
+export function buildInventory({ issue, remoteLinks = [], trackerBase, acFieldIds = [], linkFieldIds = [], devPrUrls = [] }) {
   const f = issue.fields ?? {};
   const r = issue.renderedFields ?? {};
   const items = new Map();
@@ -160,7 +160,8 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, linkField
   const sources = [
     ["description", f.description, r.description],
     ...(f.comment?.comments ?? []).map((c, i) => [`comment:${c.id}@${c.created}`, c.body, r.comment?.comments?.[i]?.body]),
-    ...linkFieldIds.map((id) => [`field:${id}`, f[id], r[id]]),
+    // AC fields (D8) and link fields: `field:<id>`, the same notation the TICKET agent cites as an AC's source.
+    ...[...new Set([...acFieldIds, ...linkFieldIds])].map((id) => [`field:${id}`, f[id], r[id]]),
   ];
   for (const [where, value, html] of sources) {
     if (value == null) continue;
