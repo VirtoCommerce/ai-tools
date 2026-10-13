@@ -205,7 +205,37 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, acFieldId
   for (const url of devPrUrls) addLink(url, "dev-status");
   for (const l of f.issuelinks ?? []) {
     const other = l.outwardIssue ?? l.inwardIssue;
-    if (other?.key) addIssue(other.key, `issuelinks:${l.type?.name ?? "link"}`);
+    // The direction phrase ("is blocked by", "causes") goes with the type name: rankLinked reads both.
+    const dir = l.outwardIssue ? l.type?.outward : l.type?.inward;
+    if (other?.key) addIssue(other.key, `issuelinks:${l.type?.name ?? "link"}${dir ? ` (${dir})` : ""}`);
   }
   return { items: [...items.values()], prRefs: [...prRefs.values()] };
+}
+
+// D12: which linked issues CAPS.linkedIssues keeps. Group 0 = a subtask or the parent; then the link kinds, by
+// their type name or direction phrase; 4 = everything else (another link type, a key named only in text).
+const LINK_GROUPS = Object.freeze([[/block|caus|problem|incident/i, 1, "blocks/causes"], [/clon|duplicat/i, 2, "clones/duplicates"], [/relat/i, 3, "relates"]]);
+const GROUP_LABEL = Object.freeze(["subtask/parent", "blocks/causes", "clones/duplicates", "relates", "other"]);
+export function linkGroup(item, parentKey, subtaskKeys) {
+  if (item.key === parentKey || subtaskKeys.has(item.key)) return 0;
+  let best = 4;
+  for (const w of item.where ?? []) {
+    if (!w.startsWith("issuelinks:")) continue;
+    for (const [re, g] of LINK_GROUPS) if (re.test(w.slice(11))) best = Math.min(best, g);
+  }
+  return best;
+}
+
+/** Linked-issue items, ordered for the cap: by group, then most recently updated first (`updated`: key → ISO
+ *  date; a key without one goes last in its group), then inventory order. Each item gets `link_group`. */
+export function rankLinked(items, { parentKey = null, subtaskKeys = [], updated = new Map() } = {}) {
+  const subs = new Set(subtaskKeys);
+  return items.map((it, i) => ({ it, i, g: linkGroup(it, parentKey, subs), u: String(updated.get(it.key) ?? "") }))
+    .sort((a, b) => a.g - b.g || b.u.localeCompare(a.u) || a.i - b.i)
+    .map(({ it, g }) => Object.assign(it, { link_group: GROUP_LABEL[g] }));
+}
+
+/** The over-cap gap of a linked issue the ranking put past the cap: its key and group are in the detail. */
+export function linkedOverCap(item, rank, cap) {
+  return gap(item.ref, "over-cap", `more than ${cap} linked issues: ${item.key} (${item.link_group ?? "other"}) ranked ${rank + 1}, past the cap — subtasks/parent, blocks/causes, clones/duplicates, relates are kept first, newest first`);
 }

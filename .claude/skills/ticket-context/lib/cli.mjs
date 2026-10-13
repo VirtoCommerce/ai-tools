@@ -10,7 +10,7 @@ import { codeHostCredential, readProfile, resolveProfile, trackerCredential } fr
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
 import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
-import { AC_FIELD_NAME_RE, buildInventory, resolveFieldsByName } from "./inventory.mjs";
+import { AC_FIELD_NAME_RE, buildInventory, linkedOverCap, rankLinked, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { exportFigmaFrame, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
@@ -105,10 +105,18 @@ async function prepare() {
       .map((s) => ({ key: s.key, title: s.fields?.summary ?? "", status: s.fields?.status?.name ?? null, done: s.fields?.status?.statusCategory?.key === "done" }));
   }
 
-  const linked = inv.items.filter((i) => i.kind === "ticket");
+  let linked = inv.items.filter((i) => i.kind === "ticket" && !i.gap);
+  // D12: over the cap, the cap keeps the right ones — ranked by relation, then most recently updated first.
+  // The dates cost one search, made only when there is something to drop.
+  if (linked.length > CAPS.linkedIssues) {
+    const keys = linked.map((i) => i.key);
+    const updated = new Map((await jira.search(`key in (${keys.join(",")}) ORDER BY updated DESC`, ["updated"], Math.min(keys.length, 100))
+      .catch((e) => { gaps.push(asGap("linked-issues.order", e)); return []; })).map((j) => [j.key, j.fields?.updated ?? ""]));
+    linked = rankLinked(linked, { parentKey: issue.fields.parent?.key ?? null, subtaskKeys: (issue.fields.subtasks ?? []).map((t) => t.key), updated });
+  }
   const linkedJson = new Map();
   for (const [n, it] of linked.entries()) {
-    if (n >= CAPS.linkedIssues) { it.gap = gap(it.ref, "over-cap", `more than ${CAPS.linkedIssues} linked issues`); continue; }
+    if (n >= CAPS.linkedIssues) { it.gap = linkedOverCap(it, n, CAPS.linkedIssues); continue; }
     try { linkedJson.set(it.key, await jira.issue(it.key, LINKED_FIELDS)); } catch (e) { it.gap = asGap(it.ref, e); }
   }
 
