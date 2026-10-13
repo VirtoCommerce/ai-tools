@@ -11,23 +11,24 @@ export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [] })
   return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort() })).digest("hex").slice(0, 16);
 }
 
-/** The path, and every ancestor directory with a trailing "/", so a file that does not exist yet still matches `.vc-fix/`. */
+/**
+ * Ask git about the FULL path only. git answers correctly for a file that does not exist yet under an ignored
+ * directory, and honours negations (`.vc-fix/*` + `!.vc-fix/context/`). Checking ancestor directories too would
+ * say "ignored" for a path git says is NOT ignored and write a bundle into a committable place. A wrong
+ * "not ignored" only skips the cache; a wrong "ignored" leaks — so every doubt (exit 1, 128, no git) is false.
+ */
 export function isIgnored(root, path, exec = execFileSync) {
   const rel = relative(root, path).split("\\").join("/");
   if (!rel || rel.startsWith("..")) return false;
-  const parts = rel.split("/");
-  const candidates = [rel, ...parts.slice(0, -1).map((_, i) => `${parts.slice(0, i + 1).join("/")}/`)];
-  for (const c of candidates) {
-    try { exec("git", ["check-ignore", "-q", "--no-index", c], { cwd: root, stdio: "ignore" }); return true; } catch { /* 1 = not ignored, 128 = not a repo */ }
-  }
-  return false;
+  try { exec("git", ["check-ignore", "-q", "--no-index", rel], { cwd: root, stdio: "ignore" }); return true; } catch { return false; } // 1 = not ignored, 128 = not a repo
 }
 
 export function readCached(file, key, now = new Date(), ttl = TTL_MS) {
   if (!existsSync(file)) return null;
   try {
     const b = JSON.parse(readFileSync(file, "utf8"));
-    return b.freshness_key === key && now - new Date(b.fetched_at) < ttl ? b : null;
+    const age = now - new Date(b.fetched_at); // a fetched_at in the future (or unparsable ⇒ NaN) is a miss, never "fresh"
+    return b.freshness_key === key && age >= 0 && age < ttl ? b : null;
   } catch { return null; }
 }
 

@@ -9,32 +9,45 @@ export function domainState(json, slug) {
   if (!slug) return { state: "unresolved", path: null };
   const map = json?.maps?.find((m) => m.slug === slug);
   if (!map) return { state: "ABSENT", path: null };
-  const stale = (json.findings ?? []).some((f) => f.file === map.file && f.code === "DOMAIN-001");
-  return { state: stale ? "STALE" : "PRESENT", path: `.claude/knowledge/domain/${map.file}` };
+  const codes = (json.findings ?? []).filter((f) => f.file === map.file).map((f) => f.code);
+  const path = `.claude/knowledge/domain/${map.file}`;
+  if (codes.includes("DOMAIN-002")) return { state: "STALE", path, expired: true }; // expired: verdicts are no longer citable
+  return { state: codes.includes("DOMAIN-001") ? "STALE" : "PRESENT", path };
 }
 
-/** regression:select also picks suites by staleness rotation; those are not "at risk from this change". */
+/** regression:select also picks suites by rotation, a risk floor and history; none of those is "at risk from this change". */
+const NOT_CHANGE_DRIVEN = new Set(["rotation", "risk-floor", "history"]);
 export function changeSelected(json) {
   return (json?.selected ?? [])
-    .map((s) => ({ suite: s.id, name: s.name, reasons: (s.reasons ?? []).map((r) => r.kind).filter((k) => k !== "rotation") }))
+    .map((s) => ({ suite: s.id, name: s.name, reasons: (s.reasons ?? []).map((r) => r.kind).filter((k) => !NOT_CHANGE_DRIVEN.has(k)) }))
     .filter((s) => s.reasons.length);
 }
 
 function* walk(dir) {
-  if (!existsSync(dir)) return;
-  for (const e of readdirSync(dir, { withFileTypes: true })) {
+  let entries;
+  try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; } // missing or unreadable ⇒ nothing here
+  for (const e of entries) {
     const p = join(dir, e.name);
     if (e.isDirectory()) yield* walk(p); else yield p;
   }
 }
 
+const list = (dir) => { try { return readdirSync(dir); } catch { return []; } };
+const has = (p) => { try { return existsSync(p); } catch { return false; } };
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Prior runs mentioning the ticket. One unreadable entry is skipped, never thrown. */
 export function priorRuns(root, key) {
   const out = [];
   const tickets = join(root, "reports", "tickets");
-  if (existsSync(tickets)) for (const sprint of readdirSync(tickets)) if (existsSync(join(tickets, sprint, key))) out.push(`reports/tickets/${sprint}/${key}/`);
+  for (const sprint of list(tickets)) if (has(join(tickets, sprint, key))) out.push(`reports/tickets/${sprint}/${key}/`);
   const models = join(root, "reports", "ba", "test-models");
-  if (existsSync(models)) for (const f of readdirSync(models)) if (f.startsWith(`${key}-`)) out.push(`reports/ba/test-models/${f}`);
-  for (const f of walk(join(root, "reports", "bugs"))) if (f.endsWith(".md") && readFileSync(f, "utf8").includes(key)) out.push(relative(root, f).split("\\").join("/"));
+  for (const f of list(models)) if (f.startsWith(`${key}-`)) out.push(`reports/ba/test-models/${f}`);
+  const mention = new RegExp(`(?<![A-Za-z0-9-])${escapeRe(key)}(?!\\d)`); // VCST-62 is not VCST-6223, nor XVCST-62
+  for (const f of walk(join(root, "reports", "bugs"))) {
+    if (!f.endsWith(".md")) continue;
+    try { if (mention.test(readFileSync(f, "utf8"))) out.push(relative(root, f).split("\\").join("/")); } catch { /* dangling link, unreadable file */ }
+  }
   return out;
 }
 
@@ -66,13 +79,16 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
   if (product.length && need("regression:select")) {
     const byRepo = new Map();
     for (const p of product) {
-      const repo = p.repo.split("/")[1];
-      byRepo.set(repo, [...(byRepo.get(repo) ?? []), ...JSON.parse(readFileSync(p.files_path, "utf8")).map((f) => f.filename)]);
+      const repo = String(p.repo ?? "").split("/")[1] ?? "unknown";
+      try {
+        const names = JSON.parse(readFileSync(p.files_path, "utf8")).map((f) => f.filename).filter(Boolean);
+        byRepo.set(repo, [...(byRepo.get(repo) ?? []), ...names]);
+      } catch { gaps.push({ where: `known.regression:select.${repo}`, reason: "unreadable", detail: "files list unreadable" }); } // that PR is skipped
     }
     for (const [repo, files] of byRepo) {
-      const list = join(runDir, `changed-${repo}.txt`);
-      writeFileSync(list, files.join("\n"));
-      const r = run(root, ["regression:select", "--", "--repo", repo, "--changed-files", list, "--json"]);
+      const changed = join(runDir, `changed-${repo}.txt`);
+      try { writeFileSync(changed, files.join("\n")); } catch { gaps.push({ where: `known.regression:select.${repo}`, reason: "unreadable", detail: "changed-files list not writable" }); continue; }
+      const r = run(root, ["regression:select", "--", "--repo", repo, "--changed-files", changed, "--json"]);
       if (r.json) known.cases_at_risk.push(...changeSelected(r.json).map((s) => ({ ...s, via: `regression:select ${repo}` })));
       else failed("regression:select", r);
     }
