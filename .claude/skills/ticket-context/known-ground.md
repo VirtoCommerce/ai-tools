@@ -20,8 +20,13 @@ A `STALE` map is read as hypotheses. This skill never builds or refreshes a map.
 
 What the platform was **observed** to do is looked up, never grepped. The `kb` tools are deferred:
 load them with `ToolSearch` `select:mcp__kb__kb_ask,mcp__kb__kb_show,mcp__kb__kb_none`. Without the
-server, use `npm run kb -- ask "<q>" --json`, `show`, `none`. Neither available ⇒ `kb.out.json` is
-`{"kb":[]}` and the consumer is told the base was not read.
+server, use `npm run kb -- ask "<q>" --json`, `show`, `none`.
+
+**Two different empties — never write them alike.** `npm run kb` exit 1 (nobody has written it down)
+⇒ that coordinate's row with `entries: []`. Exit 3, or neither the server nor the CLI available ⇒ the
+base was **not read**: write `kb.out.json` as
+`{"kb":[{"coordinate":"*","entries":[],"trust":"not-read","answer":"the base was not read (<reason>)"}]}`.
+Step 7 then reports `kb: not read (<reason>)`.
 
 1. **Coordinates.** The GraphQL operations, REST endpoints and storefront page paths in
    `change.out.json`, at most 5, most specific first. A coordinate covered by the caller's `--kb-hits`

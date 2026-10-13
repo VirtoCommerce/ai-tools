@@ -117,10 +117,12 @@ and write `<run_dir>/kb.out.json`.
 `node "<skill>/lib/cli.mjs" finish --prepare <prepare_path>`.
 
 - `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`. Re-dispatch **that
-  mode once**, quoting the errors. A second failure ⇒ STOP and report.
+  mode once**, quoting the errors. A second failure ⇒ STOP and report. An error prefixed `join:` comes
+  from your own `join.out.json`: fix it and rewrite that file (there is no join mode to re-dispatch).
 - `finish` exit 2 (`gate-failed`): fix the cause, never the bundle.
   - `inventory: <ref> has no outcome` → re-dispatch MATERIALS with `ITEMS` = only those refs, merge the
-    returned `materials` into `materials.out.json`, compose again.
+    returned `materials`, `gaps`, `questions` and `embedded_instructions` into `materials.out.json`,
+    compose again.
   - `PR … has no entry` → re-dispatch CHANGE.
   - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact.
   - A second failure ⇒ STOP and report the errors verbatim.
@@ -134,7 +136,8 @@ anywhere in the bundle.
 ## Step 7 — return one block
 
 To the caller: the bundle path; counts (ACs · materials finding/GAP · PRs · `chain_deployed`);
-`blockers[]` verbatim; the gaps that change what can be tested. Never paste the bundle, a diff or an
+`blockers[]` verbatim; the gaps that change what can be tested; and, when `kb.out.json` carries the
+`not-read` row, the line `kb: not read (<reason>)`. Never paste the bundle, a diff or an
 attachment. A `NOT DEPLOYED:` blocker is BLOCKED-on-deploy for the consumer, never a FAIL; a
 `DEPLOYMENT UNKNOWN:` blocker means the consumer's verdict says "deployment unverified".
 

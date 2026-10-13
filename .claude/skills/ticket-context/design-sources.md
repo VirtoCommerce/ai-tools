@@ -10,7 +10,7 @@ site.
 | Inventory item | What you (the runner) do | What you attach |
 |---|---|---|
 | `claude-design`, `claude.ai/design/p/<uuid>?file=…` | look for the local copy `.design-source/<uuid>/` (gitignored; files a person put on disk, e.g. "Send to Claude Code") | that directory, or `--gap connector-unavailable --detail "no local copy of design project <uuid> — export it to .design-source/<uuid>/"` |
-| `claude-design`, `claude.ai/code/artifact/…` (a "Changes" artifact) | Artifact tool `read`; save the HTML it returns into the run dir | the saved HTML |
+| `claude-design`, `claude.ai/code/artifact/…` (a "Changes" artifact) | Artifact tool `read` with `path: "index.html"` and `out_dir` set to the run dir (so `attach --file` accepts it). If the read returns a summary instead of raw HTML (an artifact owned by someone else), do not attach it | the saved `index.html`, or `--gap connector-unavailable --detail "artifact not readable as raw HTML — ask for a local export"` |
 | `figma` | Figma MCP: `get_screenshot` of the linked node (`get_metadata` for frame names) into the run dir | the PNG; no Figma MCP ⇒ `--gap connector-unavailable --detail "ask for a PNG export of the frame"` |
 | a mockup attachment | nothing — it is already a downloaded image | — |
 
