@@ -421,6 +421,9 @@ export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === 
  * the map existed; a queue written by an OLDER client -- or before a profile gained its KB_STAND --
  * reaches the base through here, so the rename happens at push too and no old spelling is re-added.
  */
+/** Where a build's snapshot lives in the base. */
+export const buildPath = (pin) => `builds/${pin}.json`;
+
 export function onCanonicalStands(line) {
   const p = line?.payload;
   if (!p) return line;
@@ -516,6 +519,15 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
   for (const queued of lines) {
     if (!MUTATIONS.includes(queued.kind) || !queued.payload) continue;
     const line = onCanonicalStands(queued);
+    // THE BUILD BEHIND A STAMP (VCST-6221), written once: `builds/<pin>.json` is content-addressed, so a
+    // second writer of the same build finds the file and writes nothing. Snapshot without a stamped
+    // item (a refused capture below) still lands -- it is a true fact about a build, not a claim.
+    const snap = line.payload.build;
+    const pinned = line.payload.item?.build ?? line.payload.entry?.evidence?.[0]?.build;
+    if (snap && pinned && !files.has(buildPath(pinned)) && (await read(buildPath(pinned))) == null) {
+      files.set(buildPath(pinned), `${JSON.stringify({ pin: pinned, ...snap }, null, 2)}
+`);
+    }
 
     if (line.kind === 'capture') {
       const { entry, body } = line.payload;

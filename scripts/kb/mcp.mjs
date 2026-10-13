@@ -56,6 +56,7 @@ import { queueDir } from './core/queue.mjs';
 import { CONDITIONS_SOURCE, DEPLOYMENT_SOURCE } from './core/contract.mjs';
 import { repoRoot, writeToken } from './core/token.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 import { resolveWho } from './core/who.mjs';
 
 /** The newest protocol version this server speaks; older ones are echoed back when a client asks. */
@@ -364,7 +365,7 @@ async function callTool(name, args, ctx) {
         subject: args?.subject, question: args?.question, claim: args?.claim,
         deployment: args?.deployment, method: args?.method, conditions: asList(args?.conditions),
         anchors: asList(args?.anchors), scope: asList(args?.scope),
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       // `refused` is not an error: the base already holds the fact, which is the dedup working, and
       // the text hands back the id to confirm instead.
       return text(captureLines(r, { prefix: 'kb_capture' }), r.state === 'invalid' || FAILED.has(r.state));
@@ -376,7 +377,7 @@ async function callTool(name, args, ctx) {
       const r = await fn(String(args?.id ?? '').trim(), {
         deployment: args?.deployment, note: args?.note, saw: args?.saw, method: args?.method,
         conditions: asList(args?.conditions),
-      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic });
+      }, opened, { env: ctx.env, via: VIA, call: ctx.call, topic: args?.topic, builds: liveBuild });
       return text(evidenceLines(verb, r), r.state === 'invalid' || FAILED.has(r.state));
     }
     default:

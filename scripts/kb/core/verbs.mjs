@@ -305,6 +305,22 @@ const stand = (deployment) => {
 export const standName = (deployment) => resolveStand(deployment).value ?? deployment;
 /** Why a write's `deployment` is unusable, or null -- the door's refusal (VCST-6189). */
 export const standProblem = (deployment) => resolveStand(deployment).problem ?? null;
+
+/**
+ * The build the named stand is running, for an evidence item (VCST-6221): `{ item: {build}, snapshot }`
+ * or `{}`. Only for an OBSERVATION on a stand the profiles know -- a source fact names a code version,
+ * and an unknown stand has no BACK_URL to read. Never blocks the write: no stamp is a legal outcome.
+ *
+ * `builds` is the reader, INJECTED by the two doors (`liveBuild`, core/build.mjs) and absent
+ * everywhere else: a verb called from a test, a script or a migration reads no stand over the network,
+ * and in CI -- no `.env.local` -- it would otherwise try an admin login on every real stand it named.
+ */
+async function buildStamp(deployment, { env, dryRun = false, builds = null } = {}) {
+  const r = resolveStand(deployment);
+  if (dryRun || !r.known || typeof builds !== 'function') return {};
+  const b = await builds(r.value, { env });
+  return b.pin ? { item: { build: b.pin }, snapshot: b.snapshot } : {};
+}
 /**
  * WHAT THE WORK WAS -- a short English noun phrase, written by the AGENT and passed with the call.
  *
@@ -977,7 +993,7 @@ export async function capture(input, opened, opts = {}) {
   return { ...(await captureRepaired(fixed, opened, { ...opts, repair })), ...repair };
 }
 
-async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, dryRun = false } = {}) {
+async function captureRepaired(input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, dryRun = false, builds = null } = {}) {
   // `dryRun` (VCST-6156): every check below runs -- the door, the corpus-aware anchor check, the
   // dedup and the subject check -- and nothing is logged or queued. Until this existed the CLI parsed
   // `--dry-run` on capture and ignored it, so a "check" queued a real capture for the next push.
@@ -1056,6 +1072,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     });
     return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
   }
+  const stamp = await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
     id,
     subject: input.subject,
@@ -1070,6 +1087,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     evidence: [{
       method: input.method ?? 'observation',
       deployment: standName(input.deployment),
+      ...stamp.item,
       ...(conditions.value ? { conditions: conditions.value } : {}),
       at: new Date().toISOString(),
       by: `session:${sessionId(env)}`,
@@ -1169,7 +1187,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
     ...context({ via, call, topic }),
     // The PAYLOAD the pusher needs. The public log line is this minus `payload` (see toLogLine):
     // a log line carries ids and subjects only, but the queue must carry what it is queueing.
-    payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }) },
+    payload: { entry, body: String(input.claim).trim(), key: identityKey({ anchors: input.anchors, scope }), ...(stamp.snapshot ? { build: stamp.snapshot } : {}) },
   }, { env });
 
   if (written.disabled) return { state: 'disabled', why: written.why };
@@ -1178,7 +1196,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
 
 // ── confirm / dispute ─────────────────────────────────────────────────────────────────────────
 
-async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {} } = {}) {
+async function appendEvidence(kind, id, input, opened, { env = process.env, via = null, call = null, topic = null, repair = {}, builds = null } = {}) {
   const cat = await catalogue(opened);
   if (cat.state !== 'ok') {
     await log({ kind, id, state: cat.state, why: cat.why, ...repair, ...context({ via, call, topic }) }, { env });
@@ -1241,9 +1259,11 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     if (read?.ok) bodyHash = claimHash(parseEntry(read.text, row.path).body);
   } catch { /* push stamps it */ }
 
+  const stamp = await buildStamp(input.deployment, { env, builds });
   const item = {
     method: input.method ?? 'observation',
     deployment: standName(input.deployment),
+    ...stamp.item,
     ...(conditions.value ? { conditions: conditions.value } : {}),
     at: new Date().toISOString(),
     by: `session:${sessionId(env)}`,
@@ -1281,7 +1301,7 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
     ...(kind === 'confirm' ? { trust: row.trust + 1 } : {}),
     ...repair,
     ...context({ via, call, topic }),
-    payload: { id: row.id, path: row.path, item },
+    payload: { id: row.id, path: row.path, item, ...(stamp.snapshot ? { build: stamp.snapshot } : {}) },
   }, { env });
 
   // A dispute NEVER auto-retires anything. One contradicting observation against four

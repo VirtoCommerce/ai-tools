@@ -25,6 +25,7 @@ import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -267,7 +268,7 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
     else emit(captureLines(r, { card: true }));
@@ -283,7 +284,7 @@ async function main(argv) {
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
       conditions: args.flags.conditions,
-    }, opened, { via: VIA, topic: args.flags.topic });
+    }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;
