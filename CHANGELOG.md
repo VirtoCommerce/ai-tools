@@ -31,6 +31,11 @@ and every change needs human review.
   fork no longer renders, render sites it dropped, and changes to files a committed `fork-map.json` says the fork
   replaced. The skill briefs each upstream commit as port / already / n/a / lost feature, ports the approved ones
   with a mutation-checked test, and keeps the map current.
+- **`mf-new-plugin`** makes a backend module ship a storefront plugin (scenario S1a of vc-frontend's Module
+  Federation docs). vc-frontend's `create:plugin --module` writes only new files; the skill edits the module's own
+  `.csproj`, `module.manifest` and `.gitignore` after the user approves the diffs, copying versions only from what
+  `check:plugin-module` prints, and is done when that check passes. It never commits, and reports CI without
+  editing it, because module CI is updated centrally.
 ---
 
 ## `vc-secrets`: a declared process gets its secrets at launch, not from a config file — catalog `0.11.0`, `vc-secrets` `0.1.0` — 2026-10-02

@@ -1,6 +1,7 @@
 # vc-frontend
 
-**Keeps a Virto Commerce frontend fork up to date with upstream, without losing the fork's look.**
+**Keeps a Virto Commerce frontend fork up to date with upstream, without losing the fork's look. And adds a
+storefront plugin to a backend module.**
 
 > The fork owns how it looks. Upstream owns how it behaves.
 
@@ -26,6 +27,7 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 |---|---|
 | Bring upstream into the fork (`upstream/dev`, a release tag, or `origin/dev` into a redesign branch) | `/vc-frontend:merge-upstream <ref>` |
 | Find upstream fixes the fork never got, because it renders its own component instead | `/vc-frontend:port-upstream-to-fork` |
+| Make a backend module ship a storefront plugin (Module Federation) | `/vc-frontend:mf-new-plugin <name> <*.Web path>` |
 
 `merge-upstream` runs `port-upstream-to-fork` itself. Run the second one alone only to audit a fork.
 
@@ -59,5 +61,21 @@ It installs disabled. Enable it in `/plugin`, or with `claude plugin enable vc-f
 - A reachable backend for the smoke test (`APP_BACKEND_URL` in `.env.local`).
 - `gh`, for the repo settings check and the PR.
 
-Full details: [`skills/merge-upstream/SKILL.md`](skills/merge-upstream/SKILL.md) and
-[`skills/port-upstream-to-fork/SKILL.md`](skills/port-upstream-to-fork/SKILL.md).
+## A storefront plugin in a backend module
+
+`mf-new-plugin` follows scenario S1a of vc-frontend's Module Federation docs. vc-frontend's generator creates the
+plugin in the module's `StorefrontApp/` and never edits the module's own files. The skill makes those edits
+(`.csproj`, `module.manifest`, `.gitignore`), and `yarn check:plugin-module` decides when it is done.
+
+1. **[PAUSE] You confirm** the plugin name and options.
+2. It scaffolds, then runs the check to list what the module still lacks.
+3. **[PAUSE] You approve the diffs.** Raising the module's platform or dependency versions is called out: it
+   changes who can install the module.
+4. It builds the plugin and runs the check until it passes. It never commits.
+
+It needs a vc-frontend checkout that is up to date with `dev`, and the module repo on a branch, with no uncommitted
+changes.
+
+Full details: [`skills/merge-upstream/SKILL.md`](skills/merge-upstream/SKILL.md),
+[`skills/port-upstream-to-fork/SKILL.md`](skills/port-upstream-to-fork/SKILL.md) and
+[`skills/mf-new-plugin/SKILL.md`](skills/mf-new-plugin/SKILL.md).
