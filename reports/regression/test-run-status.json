@@ -1,25 +1,25 @@
 {
- "runId": "REG-2026-10-08-1151",
+ "runId": "REG-2026-10-12-1832",
  "status": "completed",
- "startedAt": "2026-10-08T09:51:40.270Z",
- "windowStart": "2026-10-08T09:51:40.270Z",
- "selection": "106",
- "env": "vcst",
+ "startedAt": "2026-10-12T16:33:20.000Z",
+ "windowStart": "2026-10-12T16:33:20.000Z",
+ "selection": "098",
+ "env": "localhost",
  "scoped": true,
- "purpose": "VCST-6077 round 2 C1 supplement: SR-TK-023 only; --no-promote",
+ "purpose": "VCST-5880 /qa-test Step 4c (C1): exact set of 17 Draft cases CMP-036,038-053; --ids; --no-promote",
  "suites": {
-  "106": {
+  "098": {
    "status": "done",
    "lane": "browser",
-   "browser": "playwright-edge",
-   "laneId": 3,
-   "startedAt": "2026-10-08T09:51:40.270Z",
+   "browser": "playwright-chrome",
+   "laneId": 1,
+   "startedAt": "2026-10-12T16:33:20.000Z",
    "attempts": 1,
-   "pass": 1,
-   "fail": 0,
-   "blocked": 0,
-   "finishedAt": "2026-10-08T09:52:50.831Z"
+   "pass": 5,
+   "fail": 2,
+   "blocked": 10,
+   "finishedAt": "2026-10-12T17:01:47.000Z"
   }
  },
- "finishedAt": "2026-10-08T09:52:50.831Z"
+ "finishedAt": "2026-10-12T17:01:47.000Z"
 }
