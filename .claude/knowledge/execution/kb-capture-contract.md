@@ -105,6 +105,14 @@ refused, never truncated: a cut value is a wrong condition. Why it exists: two o
 behaviour on one stand disagree most often because the build or a setting differed, and until this
 field nothing recorded either (VCST-6179; `scripts/kb/core/conditions.mjs`, header).
 
+**The build is read for you** (VCST-6221): every write through either door is stamped with the build of
+the stand you named (`build: <pin>`, snapshot in the base under `builds/`), so `conditions` is for what
+the machine cannot know — a setting, a store, a role, an entity state. A `kb_dispute` made on a different
+build than every confirmation of the entry (over the modules the entry depends on) is recorded as a
+**soft** dispute: the door says so, the judge still reviews it, and readers see *contested on another
+build* instead of DISPUTED. Same build, or a build that could not be read, is an ordinary dispute
+(`scripts/kb/core/gate.mjs`, header).
+
 ## Resolved disputes
 
 A dispute flags an entry; only `/kb-judge` closes one, after a live investigation, through a reviewed
@@ -115,7 +123,8 @@ is printed with its verdict, but it no longer marks the entry DISPUTED. No agent
 After a `claim-amended` verdict, confirmations of the OLD wording stay on the entry and stop counting
 toward its trust: those made before the verdict, and those made of the old body later -- e.g. on
 `main` while the judge's PR was in review. Each confirm / dispute records the hash of the body it was
-made against (`bodyHash`, stamped when it is recorded; push fills it in only for an older client),
+made against (`bodyHash`: the body this session last opened with `kb_show` or an answering `kb_ask`,
+else the body the base holds when it is recorded; push fills it in only for an older client),
 and the verdict records the hash of the body it replaced (`amendedFrom`). Trust is then the judge's
 investigation -- one per judging session -- plus confirmations of the NEW body
 (`attestsCurrentClaim` / `supportOf` in the same file).

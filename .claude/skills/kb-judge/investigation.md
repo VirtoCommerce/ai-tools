@@ -97,6 +97,11 @@ Per dispute (per contradicting evidence item), one of:
 | The entry holds on the conditions the dispute named; the dispute misread its observation | `dispute-wrong` | nothing in the claim; the resolution says what the dispute misread |
 | Not established — a source unreachable, or the reproduction inconclusive | **no verdict** | the dispute stays OPEN; the PR says what is missing |
 
+**A soft dispute** (`contested` on the item, `DISPUTE (soft)` in the dossier) was made on a different build
+than every confirmation; the field holds the computed difference. It is a hypothesis, not a verdict: the
+replay of 91 settled disputes found the claim simply wrong in about a third of such cases (20 of 65), so establish
+whether the named difference causes the behaviour before choosing `version-scoped`.
+
 **A split made before VCST-6221 copied every evidence item of the parent to every child**, disputes
 included (`splitFrom` on the item). Such a dispute is often about the sibling: resolve it on the child
 it does not concern as `split`, naming the sibling in `--why`, and judge it on the child it does
