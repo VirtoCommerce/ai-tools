@@ -29,6 +29,9 @@ const has = (n) => argv.includes(`--${n}`);
 const out = (o) => process.stdout.write(`${JSON.stringify(o, null, 2)}\n`);
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
+/** An output a model (or the runner) wrote: unparsable is a schema failure naming the file — the documented
+ *  re-dispatch path (exit 2) — never a crash (exit 3). */
+const readOutput = (dir, name, errors) => { try { return readJson(join(dir, name)); } catch { errors.push(`${name}: not valid JSON`); return undefined; } };
 const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
@@ -241,7 +244,10 @@ function mergeChangeCmd() {
   const names = readdirSync(prep.run_dir).filter((n) => CHANGE_PART_RE.test(n))
     .sort((a, b) => Number(CHANGE_PART_RE.exec(a)[1]) - Number(CHANGE_PART_RE.exec(b)[1]));
   if (!names.length) { console.error("✗ no change.<n>.out.json in the run dir — save each CHANGE output first"); process.exit(3); }
-  const { errors, merged } = mergeChange(names.map((name) => ({ name, out: readJson(join(prep.run_dir, name)) })));
+  const parseErrors = [];
+  const parts = names.map((name) => ({ name, out: readOutput(prep.run_dir, name, parseErrors) }));
+  if (parseErrors.length) { out({ status: "schema-failed", errors: parseErrors }); process.exit(2); }
+  const { errors, merged } = mergeChange(parts);
   if (errors.length) { out({ status: "schema-failed", errors }); process.exit(2); }
   writeJson(join(prep.run_dir, OUT_FILES.change), merged);
   out({ status: "merged", parts: names.length, prs: merged.prs.length });
@@ -278,11 +284,13 @@ function known() {
 function composeCmd() {
   const prep = readJson(prepPath());
   const outs = {};
+  const parseErrors = [];
   for (const [k, f] of Object.entries(OUT_FILES)) {
     const fp = join(prep.run_dir, f);
-    if (existsSync(fp)) outs[k] = readJson(fp);
+    if (existsSync(fp)) outs[k] = readOutput(prep.run_dir, f, parseErrors);
     else if (k !== "kb") { console.error(`✗ missing ${f} in the run dir — run the step that writes it`); process.exit(3); }
   }
+  if (parseErrors.length) { out({ status: "schema-failed", errors: parseErrors }); process.exit(2); }
   const errors = checkAgentOutputs(outs);
   if (errors.length) { out({ status: "schema-failed", errors }); process.exit(2); }
   const bp = join(prep.run_dir, "bundle.json");

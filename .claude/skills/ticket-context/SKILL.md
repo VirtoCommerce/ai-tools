@@ -137,7 +137,8 @@ and write `<run_dir>/kb.out.json`.
 `node "<skill>/lib/cli.mjs" compose --prepare <prepare_path>`, then
 `node "<skill>/lib/cli.mjs" finish --prepare <prepare_path>`.
 
-- `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`. Re-dispatch **that
+- `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`, or `<file>: not valid
+  JSON`. Re-dispatch **that
   mode once**, quoting the errors. A second failure ⇒ `abort`, STOP and report. An error prefixed `join:` comes
   from your own `join.out.json`: fix it and rewrite that file (there is no join mode to re-dispatch).
 - `finish` exit 2 (`gate-failed`): fix the cause, never the bundle.
