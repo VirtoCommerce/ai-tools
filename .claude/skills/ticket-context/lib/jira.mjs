@@ -12,6 +12,8 @@ export function jiraClient(cred, fetchImpl = fetch) {
     const url = /^https?:\/\//.test(pathOrUrl) ? pathOrUrl : cred.base + pathOrUrl;
     const target = new URL(url);
     if (target.origin !== origin) throw new GapError("private-host", `not sent: ${target.host} is not the tracker (${new URL(cred.base).host})`);
+    // download() relies on this: Jira 303s attachment content to the media host, and fetch (redirect: "follow")
+    // strips the Authorization header on a cross-origin redirect, so the credential never reaches that host.
     const res = await fetchImpl(url, { method, body, headers: { Authorization: cred.auth, Accept: accept, ...(body ? { "Content-Type": "application/json" } : {}) } });
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `Jira ${res.status} on ${target.pathname} — check JIRA_EMAIL / JIRA_API_TOKEN (never retried with another credential)`);
     if (res.status === 404) throw new GapError("deleted", `Jira 404 on ${target.pathname}`);
