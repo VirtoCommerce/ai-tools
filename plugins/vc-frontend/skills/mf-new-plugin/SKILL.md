@@ -50,9 +50,9 @@ From `$HOST`:
 yarn create:plugin <name> --module "$WEB" [--with-apollo] [--with-tailwind]
 ```
 
-It ends with a list of what is still to do in the module. Keep it: it is step 3's work list. If it warns that the
-facade version has no release, read S1a ⚠️ 3 to the user and ask how to go on; never commit a yalc or `portal:`
-pin.
+It ends with a list of what is still to do in the module. Keep it: it is step 3's work list. Its note on an
+unreleased facade is always printed; it matters only if `yarn install` in step 4 fails with a 404 on
+`@vc-frontend/core`. Then read S1a ⚠️ 3 to the user and ask how to go on; never commit a yalc or `portal:` pin.
 
 ## 3. Wire the module
 
@@ -67,7 +67,8 @@ changes for the module's users. Write nothing until the user agrees.
 | `.gitignore` | the line the check prints | The repository's root `.gitignore` |
 | CI (`.github/workflows/`) | none | Report only. Module CI is updated centrally (its commits read "Auto update Github Action workflows"), so a local edit is overwritten. It must set up Node; if it does not, say so in the report |
 
-Apply the agreed edits, then run the check again. Loop until nothing about a module file fails. Never edit a file
+Apply the agreed edits, then run the check again. Loop until nothing about a module file fails; `yarn.lock is
+empty` is step 4's. Never edit a file
 inside `StorefrontApp/` to silence a check: it was generated for exactly this setup, so a failure there is a
 generator bug to report.
 
