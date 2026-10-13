@@ -851,15 +851,15 @@
     "user_id": "31949b97-a5c6-4709-886a-6116dc28acb4"
   },
   "SR_STATS_TOPSELLER_ORDER": {
-    "id": "3f732df3-9fc0-4861-8e99-882d7bf265f6",
+    "id": "c7541c4c-a95d-4db2-a509-fab547135929",
     "number": "AGENT-TEST-SRO-STATS-TOPSELLERS"
   },
   "SR_STATS_CART_ACME": {
-    "id": "54f8d2f6-7c18-41e4-b15c-2578dfeba0e2",
+    "id": "96cad981-a729-4c08-93c1-f20f6ae2779b",
     "name": "AGENT-TEST-SR-CART-ACME"
   },
   "SR_STATS_CART_WEST": {
-    "id": "c6626374-2688-4d99-9d98-6cb6069561a9",
+    "id": "ec24035d-0801-4529-b060-80df4f751831",
     "name": "AGENT-TEST-SR-CART-WEST"
   },
   "LOYALTY_ZERO_USER": {
@@ -906,12 +906,12 @@
     "contactId": "089afd9f-fefc-43cb-9219-8f42b45047c0"
   },
   "SR_ORDER_ACME_WIN_NEW": {
-    "id": "88c6721e-4768-462b-b55e-d9a65a575a45",
-    "createdDate": "2026-09-24T14:30:56.4347695Z"
+    "id": "11463564-0ff0-4c73-bb01-eec7725570b2",
+    "createdDate": "2026-10-13T07:46:53.7510695Z"
   },
   "SR_ORDER_ACME_WIN_PROC": {
-    "id": "2a1f9f3b-f16d-4a78-b0a7-32ab1942ff56",
-    "createdDate": "2026-09-24T14:30:58.1329361Z"
+    "id": "550825f4-c0ec-41e3-b173-1172351e1b40",
+    "createdDate": "2026-10-13T07:46:59.0473958Z"
   },
   "CAT_EMPTY": {
     "id": "ccb46dbd-c966-4159-8093-9c5a2f264603",
@@ -928,8 +928,8 @@
     "url": "/seed-test-fixtures/agent-test-seo-configured-product"
   },
   "SR_ORDER_ACME_ELEC": {
-    "id": "a6551f1e-4720-40be-a235-dfaf458e557e",
-    "createdDate": "2026-09-24T14:31:14.2639256Z"
+    "id": "c030493a-fb39-4e35-b7d3-65dadd7aa8c7",
+    "createdDate": "2026-10-13T07:47:21.3477265Z"
   },
   "MSN_ORDERVALUE": {
     "id": "91ec8c28-d73a-4df9-8045-5171cd3a504b",
@@ -1374,18 +1374,18 @@
     "banner_url": "https://vcst-qa.govirto.com/cms-content/assets/agent-test/loyalty-missions/msn-banner-per-sku.svg"
   },
   "ORDER_REP_PLACED": {
-    "id": "5a6be14b-b639-4f82-bf36-f2ebac3a9e4d",
-    "createdDate": "2026-09-24T14:30:59.5311579Z",
+    "id": "d5972ad6-2796-47c6-8941-09917745857f",
+    "createdDate": "2026-10-13T07:47:03.5963115Z",
     "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "ORDER_BUYER_PLACED": {
-    "id": "b5382d43-bebc-4f72-ac0f-9a4cce6948b1",
-    "createdDate": "2026-09-24T14:31:01.5713297Z",
+    "id": "3052a05c-3a95-4a16-8cbc-c1156f64b620",
+    "createdDate": "2026-10-13T07:47:07.0152532Z",
     "customerId": "2f917069-fea7-4a6a-8d80-0899aa0a0586"
   },
   "ORDER_NOT_SERVED": {
-    "id": "42dd5cb0-31b9-4e45-93b9-b964a551aa36",
-    "createdDate": "2026-09-24T14:31:03.1395117Z",
+    "id": "b70f691c-db60-460d-b515-840d7bbf0a27",
+    "createdDate": "2026-10-13T07:47:11.9253337Z",
     "customerId": "f4b70c55-d140-4b5a-8c38-dd925a52b8ab"
   },
   "SR_REP_LOCKABLE": {
@@ -1588,23 +1588,23 @@
     "url": "/api/files/6a32ca9fb66a4cab84e9ef64615880ab"
   },
   "SR_ROWCAP_ORDER_ACME_NEW": {
-    "id": "13857e74-e1a7-480e-a91f-24767960c8e9",
+    "id": "4981972d-8eb6-403f-ba47-9b724fb85b0f",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-01"
   },
   "SR_ROWCAP_ORDER_ACME_CANCELLED": {
-    "id": "8bf6c602-1b04-443c-be7e-a57b8febaabf",
+    "id": "34f76832-8b60-43f5-be90-4c8c070e69f9",
     "number": "AGENT-TEST-SRO-ROWCAP-ACME-07"
   },
   "SR_ROWCAP_ORDER_TECH_COMPLETED": {
-    "id": "53eacad2-18cf-44d4-9147-40a908fe5115",
+    "id": "27eb304f-32a3-42f3-a80d-d2bdeb954766",
     "number": "AGENT-TEST-SRO-ROWCAP-TECH-04"
   },
   "SR_I18N_SINGULAR_ORDER": {
-    "id": "620db19d-0ca1-4e88-bcde-4fc564003771",
+    "id": "05a568d3-6fd9-4405-a750-8d277f349763",
     "number": "AGENT-TEST-SRO-I18N-ACME3"
   },
   "SR_I18N_SINGULAR_CART": {
-    "id": "e37c4c44-23fb-406f-a16f-f8d05a23f408",
+    "id": "f8ae02e3-1286-49ef-b178-4edfd6d9dc70",
     "name": "AGENT-TEST-SR-CART-I18N-ACME3"
   },
   "B2B_STORE_MEMBERSHIP_ROLES": {
@@ -1910,61 +1910,61 @@
       {
         "type": "order",
         "key": "DORD-NW-01",
-        "id": "4f0653a3-fdd2-413e-98c1-f9de13f3ae8b",
+        "id": "6feb854b-0d47-4b2a-a0e9-f0185c3033b0",
         "number": "SO-619637"
       },
       {
         "type": "order",
         "key": "DORD-CN-01",
-        "id": "96495790-b248-4eed-be71-65871e64d14f",
+        "id": "f23a6947-d3d9-42fb-94a0-41b27865847b",
         "number": "SO-992787"
       },
       {
         "type": "order",
         "key": "DORD-NW-02",
-        "id": "6d2ab9ed-6872-4bf0-adbc-2f0a0f36de59",
+        "id": "cc69c4a6-6950-4392-b055-fb32a5e4cd31",
         "number": "SO-619638"
       },
       {
         "type": "order",
         "key": "DORD-CN-02",
-        "id": "67792afb-c135-40fa-a918-2654d7288be6",
+        "id": "79d47298-27a5-4765-9234-1ce3808bfb65",
         "number": "SO-992788"
       },
       {
         "type": "order",
         "key": "DORD-FB-01",
-        "id": "f5a31ab7-b4e2-4e13-8a07-a1fd0064957d",
+        "id": "0376c907-bd59-4ad4-a061-cdbf3cf08b0e",
         "number": "SO-705858"
       },
       {
         "type": "order",
         "key": "DORD-WT-01",
-        "id": "b460a3b9-d0f7-4617-bf60-2d969f5b9791",
+        "id": "9349bd12-dca5-4913-90ec-53170a97e488",
         "number": "SO-741953"
       },
       {
         "type": "order",
         "key": "DORD-NW-03",
-        "id": "b8f95322-5063-4db2-b500-1ca95fe12460",
+        "id": "9786c31d-8613-4e54-ba7b-9eeb2af1691d",
         "number": "SO-619639"
       },
       {
         "type": "order",
         "key": "DORD-CN-03",
-        "id": "586fb487-5e99-4a21-b448-562cb530814c",
+        "id": "946ea346-1db0-4152-992f-b5f4929417b3",
         "number": "SO-992789"
       },
       {
         "type": "order",
         "key": "DORD-FB-02",
-        "id": "98b321af-3689-414a-82ac-a70a818126ef",
+        "id": "e9163941-26c4-4af0-89ac-67cb2519d77d",
         "number": "SO-705859"
       },
       {
         "type": "order",
         "key": "DORD-WT-02",
-        "id": "c05e70c7-7167-494b-99fa-798a08793acd",
+        "id": "fe57db66-2081-4804-b80c-c3a921af8e05",
         "number": "SO-741954"
       },
       {

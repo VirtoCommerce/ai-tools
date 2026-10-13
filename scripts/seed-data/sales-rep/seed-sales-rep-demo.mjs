@@ -40,7 +40,7 @@ import { join } from 'node:path';
 import {
   ROOT, BACK_URL, FRONT_URL, STORE_ID, DRY_RUN, TEARDOWN, ONLY,
   assertSafeTarget, auth, api, log, verbose, idsParam, verifyRemoved,
-  writeEnvAliasOverride, discoverCatalogProducts, uploadScopedFile,
+  writeEnvAliasOverride, discoverCatalogProducts, orderLacksProductImages, uploadScopedFile,
 } from '../../lib/seed-common.mjs';
 import {
   __setApi, ensureSecurityAccount, findRole, searchMemberships, ensureOrgMembership,
@@ -417,7 +417,7 @@ async function discoverProductPools(need = productNeedByOrg()) {
     // but not relevance-bounded (see productMatch in the spec module), it carries near-duplicate
     // rows for the same physical product, and it still serves this repo's own fixture products.
     // Capped: discoverCatalogProducts asks for twice this, and a search over ~1000 fails SILENTLY to [].
-    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch }).catch(() => []);
+    const found = await discoverCatalogProducts(api, Math.min(want * 8 + 40, 450), { searchPhrase: org.productSearch, withImages: true }).catch(() => []);
     const seenName = new Set();
     const usable = [];
     for (const p of found) {
@@ -470,7 +470,15 @@ async function ensureOrders(orgs, reps) {
     const number = demoOrderNumber(spec.key);
     const found = await api('POST', '/api/order/customerOrders/search', { keyword: number, take: 1 }, { expectStatus: [200, 201] });
     const existing = (found?.results || [])[0];
-    if (existing) { created.push({ type: 'order', key: spec.key, id: existing.id, number }); verbose(`order ${number} exists`); continue; }
+    // An order seeded before line items carried product images is rebuilt to gain them (imageUrl is
+    // write-once — PUT ignores it). The loop runs in `seq` order, so a full first rebuild keeps the
+    // relative recency; a product without an image never triggers it.
+    if (existing) {
+      const full = DRY_RUN ? null : await api('GET', `/api/order/customerOrders/${existing.id}`);
+      if (!full || !(await orderLacksProductImages(api, full))) { created.push({ type: 'order', key: spec.key, id: existing.id, number }); verbose(`order ${number} exists`); continue; }
+      await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
+      log(`  order ${number} rebuilding (line items lack product images)`);
+    }
 
     const pool = pools[spec.org] || [];
     const start = cursor[spec.org] || 0;
