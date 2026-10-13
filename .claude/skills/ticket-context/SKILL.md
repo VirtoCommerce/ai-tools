@@ -20,11 +20,20 @@ failed · `3` could not run.
 `node "<skill>/lib/cli.mjs" prepare <KEY> [--fresh]`
 
 - `status: "cached"` → deployment is never cached: run
-  `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7.
+  `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7. `redeploy`
+  exit 2 or 3 means the cached bundle no longer validates or reads: run `prepare <KEY> --fresh` (same
+  flags) and continue from its answer.
 - `status: "no-tracker"` (exit 3) → **STOP.** Report the gap's `detail` (the variable to set, or the
   tracker not read yet). Nothing can be read without the ticket.
+- `status: "prepared"` with `run_dir_in_project: false` → the run dir fell back to the OS temp
+  directory, which a dispatched agent cannot read without a prompt. Run `abort` (below) and **STOP**
+  with the remedy: add `.vc-fix/` to `.gitignore`, or run inside a git project.
 - `status: "prepared"` → keep `prepare_path` and `run_dir`. Continue.
 - Any other exit 3 → report the message and STOP.
+
+**Every STOP after this point** first runs `node "<skill>/lib/cli.mjs" abort --prepare <prepare_path>`:
+the run dir holds raw client data and is deleted now, not left behind. (A run dir a crash left is
+swept by the next `prepare` for the key after 24 h.)
 
 `prepare` has already fetched the ticket (named fields + the AC field), built the inventory from the
 tracker's own data, downloaded attachments, scrubbed HAR and logs, extracted video frames, read
@@ -119,7 +128,7 @@ and write `<run_dir>/kb.out.json`.
 `node "<skill>/lib/cli.mjs" finish --prepare <prepare_path>`.
 
 - `compose` exit 2 (`schema-failed`): an agent output does not match its `$def`. Re-dispatch **that
-  mode once**, quoting the errors. A second failure ⇒ STOP and report. An error prefixed `join:` comes
+  mode once**, quoting the errors. A second failure ⇒ `abort`, STOP and report. An error prefixed `join:` comes
   from your own `join.out.json`: fix it and rewrite that file (there is no join mode to re-dispatch).
 - `finish` exit 2 (`gate-failed`): fix the cause, never the bundle.
   - `inventory: <ref> has no outcome` → re-dispatch MATERIALS with `ITEMS` = only those refs, merge the
@@ -127,13 +136,13 @@ and write `<run_dir>/kb.out.json`.
     compose again.
   - `PR … has no entry` → re-dispatch CHANGE.
   - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact.
-  - A second failure ⇒ STOP and report the errors verbatim.
+  - A second failure ⇒ `abort`, STOP and report the errors verbatim.
 - exit 0 (`done`) → keep `bundle_path`. The run dir is gone.
 
 **The gate** checks: the schema; every material has a finding with source or a GAP with a reason;
 every inventory item and PR `prepare` found has an entry; every counted PR not `YES` has its line in
-`blockers[]`, and `chain_deployed` is not `YES` while one is not; every HAR, log or trace that was read was read scrubbed; no secret value or token shape
-anywhere in the bundle.
+`blockers[]`, and `chain_deployed` is not `YES` while one is not; every HAR, log or trace that was
+read was read scrubbed; no secret value or token shape anywhere in the bundle.
 
 ## Step 7 — return one block
 

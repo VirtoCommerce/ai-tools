@@ -3,8 +3,8 @@
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir } from "./paths.mjs";
+import { dirname, join, resolve } from "node:path";
+import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
 import { loadLayeredEnv } from "./env.mjs";
 import { codeHostCredential, readProfile, resolveProfile, trackerCredential } from "./profile.mjs";
 import { GAP_REASONS, SCHEMA, asGap, gap } from "./gap.mjs";
@@ -28,7 +28,7 @@ const has = (n) => argv.includes(`--${n}`);
 const out = (o) => process.stdout.write(`${JSON.stringify(o, null, 2)}\n`);
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
-const USAGE = "usage: cli.mjs prepare <KEY> [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> [--domain <slug>] | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> [--domain <slug>] | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -62,6 +62,8 @@ async function materialize(it, jira, runDir, secrets) {
 async function prepare() {
   const key = argv[1];
   try { assertKey(key); } catch (e) { usage(e.message); }
+  // S3: a run dir a crashed or STOPped run left behind (either shape) goes first, before any cache return.
+  try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
   loadLayeredEnv(root);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
@@ -249,6 +251,13 @@ function finish() {
   out({ status: "done", bundle_path: final, cached: c.cached, ...(c.cached ? {} : { reason: c.reason }) });
 }
 
+/** Every STOP after prepare: the run dir (raw client data) is deleted now, not left for the 24 h sweep. */
+function abort() {
+  const dir = dirname(resolve(prepPath())); // prepare.json sits at the run dir's root
+  removeRunDir(dir, root); // refuses anything that is not a run dir of this skill
+  out({ status: "aborted", run_dir: dir });
+}
+
 function redeploy() {
   const key = argv[1];
   try { assertKey(key); } catch (e) { usage(e.message); }
@@ -270,7 +279,7 @@ function redeploy() {
   out({ status: "redeployed", bundle_path: bp, chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
 
-const commands = { prepare, attach, deploy, known, compose: composeCmd, check, finish, redeploy };
+const commands = { prepare, attach, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);
