@@ -4,12 +4,12 @@
   "domain_slug": "ret",
   "domain_map_rev": 2,
   "generated": "2026-10-06",
-  "amended": "2026-10-07",
+  "amended": "2026-10-12",
   "metadata": {
-    "scope": "Both mechanisms on the Return entity: buyer self-service (VCST-5628), agent decisions and notifications (VCST-5883), legacy admin records. Orderless returns (VCST-5884) and the mandatory decline reason (VCST-5885) are out.",
-    "built_from": "returns.md rev 1 (built), rev 2 (update 2026-10-06) (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs.",
-    "kb_read": "2026-10-06 — 4 questions (authorize outcome, returnableItems eligibility, available-statuses / cancel, notifications); opened KB-21F4F161, KB-F97CFAF6, KB-17555498, KB-06CFE625; cited from headlines KB-700E5D52, KB-DF9F415E, KB-4E1FF232, KB-C6BB1914, KB-1F2EBF83, KB-85F02FDB",
-    "domain_map_note": "Updated to returns.md rev 2 (Return 3.1004.0, theme 2.59.0-pr-2532). Slug renamed returns -> ret when Domain 28 (BL-RET) was declared.",
+    "scope": "Both mechanisms on the Return entity: buyer self-service (VCST-5628), agent decisions and notifications (VCST-5883), organization visibility of colleagues' returns (VCST-5884, unmerged PR builds), legacy admin records. Orderless returns and the mandatory decline reason (VCST-5885) are out.",
+    "built_from": "returns.md rev 1 (built), rev 2 (update 2026-10-06) (§1 value chain, §2, §3 D1-D9, §5), test model VCST-5883-2026-09-28 (Part 0, scenarios), suites 050o, 014c, 073, 073a, 073b (Title + References + status), run REG-2026-10-01-2133, kb entries below. No BL-RET / ECL returns oracle exists, so no oracle_refs. | update 2026-10-12 (VCST-5884 round 3): test model VCST-5884-2026-10-08 (Part 0 O1-O7, Round 3 S26-S32), testing-checklist round 3, run REG-2026-10-12-1119, summary.json domain_map.mind_map_findings.",
+    "kb_read": "2026-10-06 — 4 questions (authorize outcome, returnableItems eligibility, available-statuses / cancel, notifications); opened KB-21F4F161, KB-F97CFAF6, KB-17555498, KB-06CFE625; cited from headlines KB-700E5D52, KB-DF9F415E, KB-4E1FF232, KB-C6BB1914, KB-1F2EBF83, KB-85F02FDB | 2026-10-12 - 4 questions (organizationReturns, SubmittedDate, NotifyOrganizationEmail, holder read-only); opened KB-9E0ED0F4, KB-62BF1335, KB-40BBC91A, KB-25682485, KB-22E486F9, KB-BFD13716, KB-657521DF.",
+    "domain_map_note": "Updated to returns.md rev 2 (Return 3.1004.0, theme 2.59.0-pr-2532). Slug renamed returns -> ret when Domain 28 (BL-RET) was declared. VCST-5884 nodes (ret.org.*, ret.state.cancelled.*) rest on UNMERGED PR builds (#28 @ fb4fc43, #2523 @ 4263715); returns.md stays at rev 2 until they merge (G17), so domain_map_rev is unchanged.",
     "evidence_note": "Promoted cases record a promoting ticket and date, not a run id, so they are cited as {SPEC}; {OBSERVED} comes from kb entries, REG-2026-10-01-2133 and the domain map's live pass."
   },
   "nodes": [
@@ -248,9 +248,17 @@
           "ref": "kb:KB-21F4F161",
           "note": "Cancelled -> [Cancelled] on 2026-10-01",
           "date": "2026-10-01"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: A1, B1, B3 and RET-ORG-042/043/048 PASS (the split below)",
+          "date": "2026-10-12"
         }
       ],
-      "terminal": true
+      "terminal": true,
+      "description": "Terminal. Whether an organization holder sees a Cancelled return depends on whether it was ever submitted (SubmittedDate), not on its status: three kinds, below. The owner sees all three.",
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT."
     },
     {
       "id": "ret.state.processing",
@@ -1087,7 +1095,7 @@
       "technique": "DT",
       "name": "A colleague in the same organization cannot read a buyer's return",
       "maturity": "new",
-      "status": "CONFIRMED",
+      "status": "DRIFT",
       "evidence": [
         {
           "class": "SPEC",
@@ -1104,11 +1112,37 @@
           "ref": "domain-map:ret@rev2 §1 Actors",
           "note": "colleague: order(id) resolves, returnableItems [], return(id) null",
           "date": "2026-10-06"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-657521DF",
+          "note": "unmerged PR build #28@fb4fc43: a colleague without the permission got return(id) null; holders read colleagues' returns read-only",
+          "date": "2026-10-09"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A5",
+          "note": "unmerged PR build #28@fb4fc43: a holder reads a colleague's submitted return read-only (RET-ORG-022 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-009 PASS",
+          "date": "2026-10-12"
         }
       ],
       "requires": [
         "data.ret.buyer.colleague"
-      ]
+      ],
+      "description": "True for a colleague WITHOUT xapi:my_organization:return:view. A holder reads a colleague's submitted return read-only (ret.org.read.holder-readonly); non-holders still get return(id) null.",
+      "drift": {
+        "expected": "A colleague in the same organization cannot read a buyer's return (VCST-5628 RET-GQL-041; VCST-5883 ORD-RET-016; kb:KB-657521DF at 3.1003-3.1004)",
+        "observed": "A holder of xapi:my_organization:return:view reads a colleague's SUBMITTED return, read-only; a non-holder still cannot - unmerged PR build #28@fb4fc43 (kb:KB-657521DF, checklist A5/B9, C1 RET-ORG-009/022 PASS, 2026-10-12)",
+        "route": "VCST-5884"
+      },
+      "last_verified": "2026-10-12",
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT."
     },
     {
       "type": "branch",
@@ -2416,6 +2450,844 @@
         }
       ],
       "notes": "Whether createReturn is refused for such a store is UNVERIFIED on the map (mutation); ret.buyer.eligibility.returns-off covers the switched-off B2B-store path."
+    },
+    {
+      "type": "capability",
+      "id": "ret.org",
+      "description": "A member holding xapi:my_organization:return:view lists and opens, read-only, the returns their colleagues submitted for the organization.",
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT. Chain links O1-O7 of test-model VCST-5884-2026-10-08 have no row in domain map rev 2 (G17 open), so these nodes carry no chain_link.",
+      "name": "Organization returns: a holder reads the organization's returns",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5884",
+          "note": "AC-1..AC-3: view permission, an organization tab, read-only review"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-001..003, -009, -012, -013, -022, -040..-048 PASS (RET-ORG-016/025 BLOCKED; RET-ORG-011 FAIL is a PO question)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.permission",
+      "description": "Permission xapi:my_organization:return:view. The server re-reads roles on every call; the token, so the storefront tab, catches up at the next sign-in.",
+      "interfaces": [
+        "admin-ui",
+        "graphql"
+      ],
+      "notes": "integrates with: b2b-organizations - role placement (global, organization-level, membership roles). UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "An admin lets a role view the organization's returns",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5884",
+          "note": "AC-1 \"a specific permission\""
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "unmerged PR build #28@62f9aae (vcst_qa) and unmerged PR build #28@fb4fc43 (vcptcore_dev): xapi:my_organization:return:view through a global, an organization-level or a membership role answers",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-001..003 PASS (placements and refusals), RET-ORG-040 PASS (permission listed and assignable)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.permission.three-sources",
+      "branch_kind": "happy",
+      "technique": "DT",
+      "name": "Global, organization-level and membership roles each open the list",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "unmerged PR build #28@62f9aae: all three placements answered",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B6",
+          "note": "unmerged PR build #28@fb4fc43: three placements answer (C1 RET-ORG-001..003 PASS)",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "integrates with: b2b-organizations - effective permissions are the union of three role sources. BL-B2B-005 is SUSPECT (docs conflict) and is not cited."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.permission.no-stock-role",
+      "branch_kind": "negative",
+      "technique": "EG",
+      "name": "No stock role holds the permission; a fresh Organization maintainer lacks it",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "scan of every role on vcst found none holding it (unmerged PR build #28@62f9aae)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B11",
+          "note": "unmerged PR build #28@fb4fc43: no stock role holds it (C1 RET-ORG-040 PASS)",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "Who should hold it by default is a PO question (checklist 1.g, NOT-FOUND), not a finding."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.permission.revoke-next-call",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "A revoked grant is refused by the server on the next call; the storefront tab lags until sign-in",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B12",
+          "note": "unmerged PR build #28@fb4fc43: passed via C1 RET-ORG-012 (RET-ORG-025 BLOCKED: admin write refused by session policy)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3 4a",
+          "note": "unmerged PR build #28@62f9aae: server re-reads roles each call, only the token claim lags; a new grant also applies on the next call",
+          "date": "2026-10-08"
+        }
+      ],
+      "notes": "Reverse edge of the grant. BL-B2B-005 (SUSPECT) says next sign-in; that holds for the token claim, not the API."
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.list",
+      "description": "Query.organizationReturns and the storefront organization tab: returns that were ever submitted, everyone's, for one organization the caller is an active member of.",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "integrates with: b2b-organizations - active membership and organization switcher. UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "The organization's list of returns",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5884",
+          "note": "AC-2, AC-3 list"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "organizationReturns(storeId, organizationId): active membership plus the permission in the QUERIED organization (unmerged PR build #28@fb4fc43, vcptcore_dev)",
+          "date": "2026-10-09"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-042..044 PASS, RET-ORG-047 PASS (REST submittedOnly = holder's list)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.forbidden-uniform",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "Non-holder, unknown, empty or another organization's id: the same Forbidden, data null, never an empty list",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "unmerged PR build #28@62f9aae 2026-10-08 and unmerged PR build #28@fb4fc43 2026-10-09 (vcptcore_dev): one uniform Forbidden; anonymous gets Unauthorized",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B6",
+          "note": "unmerged PR build #28@fb4fc43: uniform Forbidden for own, empty and unknown organization (C1 RET-ORG-001..003 PASS)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.blocked-membership",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "name": "A holder whose membership is Invited, Rejected, Deleted or locked is refused at once",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "refused on a token issued before the block (unmerged PR build #28@62f9aae, unmerged PR build #28@fb4fc43)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B6",
+          "note": "unmerged PR build #28@fb4fc43: blocking memberships refused (C1 RET-ORG-001..003 PASS)",
+          "date": "2026-10-12"
+        }
+      ],
+      "oracle_refs": [
+        "BL-B2B-012",
+        "BL-B2B-013"
+      ],
+      "notes": "integrates with: b2b-organizations - membership status resolution. The storefront tab can survive until the token renews."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.queried-org-decides",
+      "branch_kind": "permission",
+      "technique": "PW",
+      "name": "The queried organization decides, not the token's active one: a holder in two organizations",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "a contact whose token was scoped to the organization WITHOUT the permission was answered for the one WITH it (unmerged PR build #28@62f9aae)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A11",
+          "note": "unmerged PR build #28@fb4fc43: tab follows the switcher; an organization X return is absent from organization Y (RET-ORG-018 R7)",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "integrates with: b2b-organizations - organization switcher and org-scoped token (BL-B2B-007 governs the token content, not this server rule)."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.admin-non-member",
+      "branch_kind": "permission",
+      "technique": "EG",
+      "name": "An administrator who is not a member is refused: no bypass",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "a non-member administrator got the uniform Forbidden (unmerged PR build #28@62f9aae)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B7",
+          "note": "unmerged PR build #28@fb4fc43: administrator non-member refused (recorded; RET-ORG-004 R7)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "PR #28 \"no bypass\"",
+          "note": "intent is unratified; real when the PO states it"
+        }
+      ],
+      "notes": "The refusal is observed; whether support staff should see it is a PO question."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.submitted-only",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Only returns that were ever submitted are listed: drafts and cancelled-never-submitted are not",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6226",
+          "note": "Expected: a draft its buyer cancels is not shown to the organization"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B1",
+          "note": "unmerged PR build #28@fb4fc43: three-way set in one organization, RET-ORG-042/044 PASS",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A1",
+          "note": "unmerged PR build #28@fb4fc43: storefront org tab, keyword and deep link, RET-ORG-048 PASS",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "Replaces the round-2 rule \"Status != Draft\": a cancelled-never-submitted draft was listed on 62f9aae (S7) and is hidden on fb4fc43."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.list.storefront-tab",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "The tab shows only for an active organization plus the token permission; ?scope=organization otherwise shows the own list, silently",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A6",
+          "note": "unmerged PR build #28@fb4fc43: tab named after the organization, 5 columns",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A7",
+          "note": "unmerged PR build #28@fb4fc43: non-holder sees no tab and no organizationReturns call (RET-ORG-017 PASS)",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "AC-2 says \"section\"; the build gives a tab (PO question, checklist 2.b)."
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.read",
+      "description": "Query.return and /account/returns/<id> for a return the caller does not own but the organization may see: Requested by shown, availableActions all unavailable.",
+      "interfaces": [
+        "graphql",
+        "storefront"
+      ],
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "A holder opens a colleague's submitted return, read-only",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-5884",
+          "note": "AC-3 read-only review"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25682485",
+          "note": "unmerged PR build #28@62f9aae and unmerged PR build #28@fb4fc43: return(id) of a colleague's submitted return resolves; every action unavailable (the entry carries one DISPUTED on the draft/cancelled part, resolved by the stamp)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-009 and RET-ORG-022 PASS",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.read.holder-readonly",
+      "branch_kind": "permission",
+      "technique": "EP",
+      "name": "A holder reads a colleague's submitted return with the buyer's name; no Cancel or Edit",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A5",
+          "note": "unmerged PR build #28@fb4fc43: colleague's return read-only; the holder's own return keeps Cancel (RET-ORG-022 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-657521DF",
+          "note": "unmerged PR build #28@fb4fc43 (vcptcore_dev): the owner-only rule holds for non-holders only; holders read colleagues' returns read-only",
+          "date": "2026-10-09"
+        }
+      ],
+      "notes": "Counterpart of the DRIFT on ret.buyer.read.org-colleague."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.read.mutations-refused",
+      "branch_kind": "permission",
+      "technique": "DT",
+      "name": "A holder's cancel, update, submit and create-on-order are refused RETURN_NOT_FOUND / ORDER_NOT_FOUND; nothing persists, also with :submit",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B9",
+          "note": "unmerged PR build #28@fb4fc43: nothing persisted, read back as the owner (C1 RET-ORG-009 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-25682485",
+          "note": "unmerged PR build #28@62f9aae: a membership-role holder that also held the unchecked :submit was refused the same way",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.submitted-date",
+      "description": "Return.SubmittedDate, written by ReturnService.RecordSubmit. REST and Admin only: it is not in the xAPI ReturnType.",
+      "interfaces": [
+        "rest",
+        "graphql"
+      ],
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "A return is stamped when it is first submitted, and only a stamped return is visible to the organization",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "SPEC",
+          "ref": "VCST-6226",
+          "note": "Expected: organization visibility follows submission"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-62BF1335",
+          "note": "unmerged PR build #28@fb4fc43: stamped once at the first save outside Draft/Cancelled, never changed by cancel or by a REST body",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-042..047 PASS",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3",
+          "note": "cites the module guide @fb4fc43 \"set once\""
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.submitted-date.stamp-on-submit",
+      "branch_kind": "happy",
+      "technique": "ST",
+      "name": "The buyer submit stamps the time of the submit; a later cancel keeps it; a draft cancelled before submit stays null",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-62BF1335",
+          "note": "unmerged PR build #28@fb4fc43: stamped 6 ms before modifiedDate at submit, kept after cancel",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B1",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-042/044 PASS",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.submitted-date.write-once",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "No REST body sets or clears it; edits back to Draft or Requested, and Cancelled to New, are refused 400",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BFD13716",
+          "note": "unmerged PR build #28@fb4fc43: body submittedDate ignored on create and edit; an edit omitting it keeps it",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B2",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-045/046 PASS",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.submitted-date.admin-new-stamped",
+      "branch_kind": "integration",
+      "technique": "EP",
+      "name": "An admin-created New return is stamped and visible to holders, yet announces nothing",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B2",
+          "note": "unmerged PR build #28@fb4fc43: admin New stamped and visible (RET-ORG-045 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B10",
+          "note": "unmerged PR build #28@fb4fc43: admin-created returns left 0 journal entries",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3 S27",
+          "note": "visible-but-silent is intent only once the PO says so"
+        }
+      ],
+      "notes": "See ret.agent.notify.silent for the silent half."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.submitted-date.admin-cancelled-unstamped",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "An admin-created Cancelled return is never stamped: hidden from holders",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-BFD13716",
+          "note": "unmerged PR build #28@fb4fc43: PUT-create Cancelled leaves it null, return(id) null for the holder",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B2",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-045 PASS",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "The accepted spelling of the status comes from the Return.Status setting of the stand."
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.backfill",
+      "description": "Migration ReturnSubmittedDate (one of the 3 migrations in PR #28). Runs once; no tool re-derives the stamp afterwards.",
+      "interfaces": [
+        "job"
+      ],
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "The upgrade decides which existing returns the organization sees",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-62BF1335",
+          "note": "unmerged PR build #28@fb4fc43: migration ReturnSubmittedDate set submittedDate = createdDate on every non-Draft, non-Cancelled return (31 checked)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-043 PASS (RET261008-00101 visible, -00116/-00117 hidden)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.backfill.dated-rows",
+      "branch_kind": "happy",
+      "technique": "EP",
+      "name": "A pre-upgrade Requested, Approved or New return is dated with its creation date and stays visible",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-62BF1335",
+          "note": "unmerged PR build #28@fb4fc43: Requested, Approved, New backfilled",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B3",
+          "note": "unmerged PR build #28@fb4fc43: pre-upgrade Approved row visible",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.backfill.no-recovery",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Nothing re-derives the stamp for a pre-upgrade Cancelled return: the reverse edge is absent",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-22E486F9",
+          "note": "unmerged PR build #28@fb4fc43: holders lose them for good; the history that told them apart (Registered notification) existed at migration time; described as by design by the developer",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "SPEC",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3",
+          "note": "Part 0 drift: ABSENT IN PRODUCT for pre-upgrade rows, for the PO"
+        }
+      ],
+      "notes": "UNVERIFIED because \"no path exists\" is a claim about absence: the module source was not searched for a reverse operation in this run."
+    },
+    {
+      "type": "branch",
+      "id": "ret.state.cancelled.submitted",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Submitted, then cancelled: SubmittedDate kept, visible to organization holders",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A1",
+          "note": "unmerged PR build #28@fb4fc43: RET261012-00012 listed as Cancelled, opens read-only (RET-ORG-048 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B1",
+          "note": "unmerged PR build #28@fb4fc43: RET261012-00011 stamp kept after cancel (RET-ORG-042/044 PASS)",
+          "date": "2026-10-12"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.state.cancelled.never-submitted",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Cancelled before submit: never stamped, hidden from holders, the owner still sees it",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) A1",
+          "note": "unmerged PR build #28@fb4fc43: RET261012-00009 absent from the organization tab, \"not found\" by deep link (RET-ORG-048 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B1",
+          "note": "unmerged PR build #28@fb4fc43: RET261012-00010 null stamp, absent and null for both holders (RET-ORG-042/044 PASS)",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "Round 2 (62f9aae) listed and opened these (S7); fb4fc43 closes it. VCST-6226 holds the fix."
+    },
+    {
+      "type": "branch",
+      "id": "ret.state.cancelled.pre-upgrade",
+      "branch_kind": "state",
+      "technique": "ST",
+      "name": "Cancelled before 3.1005.0: backfill left it null, hidden from holders, whether it was ever submitted is indeterminate",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B3",
+          "note": "unmerged PR build #28@fb4fc43: RET261008-00116/-00117 hidden for holders, kept for the owner (RET-ORG-043 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-22E486F9",
+          "note": "unmerged PR build #28@fb4fc43: all 68 Cancelled rows with an organization on vcst carry a null stamp",
+          "date": "2026-10-12"
+        }
+      ],
+      "notes": "Whether these should be visible is a PO question (the developer calls it by design). See ret.org.backfill.no-recovery."
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.notify-copy",
+      "description": "Return.NotifyOrganizationEmail (store setting). The copy is a clone of the buyer email, sent inside the buyer's Hangfire job; push never.",
+      "interfaces": [
+        "job",
+        "event"
+      ],
+      "notes": "integrates with: notifications - NotificationMessage journal. NOT re-run on vcst in round 3: the handler diff 62f9aae to fb4fc43 is usings and comments, AC-4 is unratified and every live leg writes a shared setting (RET-ORG-035..039 excluded by run rule 4). UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "The organization's mailbox is told what the buyer was told",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-40BBC91A",
+          "note": "unmerged PR build #28@62f9aae (vcst_qa 2026-10-08): with the setting on each buyer email is copied once to the organization's first email; unmerged PR build #28@fb4fc43 (vcptcore_dev 2026-10-09) the same",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "VCST-5884 comment 110487",
+          "note": "AC-4 is proposed by the assignee and UNRATIFIED"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.notify-copy.setting-off-default",
+      "branch_kind": "negative",
+      "technique": "PW",
+      "name": "Return.NotifyOrganizationEmail exists and is off by default: only the buyer is mailed",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B10",
+          "note": "unmerged PR build #28@fb4fc43: the setting is present and false (read only, never written)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-40BBC91A",
+          "note": "unmerged PR build #28@62f9aae: store-level Boolean, default false; off means one email, to the buyer",
+          "date": "2026-10-08"
+        }
+      ],
+      "notes": "Feature-switch off branch: the pre-feature behaviour an existing customer relies on. The domain map counts 10 settings, the build has 11."
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.notify-copy.copy-on",
+      "branch_kind": "integration",
+      "technique": "DT",
+      "name": "With the setting on, every buyer email is copied once to the organization's first email; push never",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-40BBC91A",
+          "note": "unmerged PR build #28@62f9aae: Registered, Approved, PartiallyApproved, Rejected and Cancelled-after-submit; a draft cancel sends nothing; the value in effect at the status change applies",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "VCST-5884 comment 110487",
+          "note": "AC-4 unratified; real when the PO ratifies it"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.notify-copy.no-duplicate",
+      "branch_kind": "boundary",
+      "technique": "BVA",
+      "name": "An organization address equal to the buyer's, or none at all, gives no second email and no error",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-40BBC91A",
+          "note": "unmerged PR build #28@62f9aae: equal in another letter case gave one email; an organization without email gave the buyer's only",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "VCST-5884 comment 110487",
+          "note": "AC-4 unratified"
+        }
+      ]
+    },
+    {
+      "type": "behavior",
+      "id": "ret.org.account-guard",
+      "description": "A guard on every return query and mutation except returnStatuses, added by PR #28; healthy accounts are unchanged.",
+      "interfaces": [
+        "graphql"
+      ],
+      "notes": "UNMERGED PR builds: vc-module-return PR #28 @ fb4fc43 (Return 3.1005.0-pr-28-fb4f) + vc-frontend PR #2523 @ 4263715 (theme 2.60.0-pr-2523-4263-4263715a), vcst_qa, 2026-10-12. Not released: a post-merge run confirms each node or marks it DRIFT.",
+      "name": "A locked or expired account is refused on every return operation",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "REG-2026-10-12-1119",
+          "note": "unmerged PR build #28@fb4fc43: RET-ORG-013 PASS (locked account, UserLocked; returnStatuses answers)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "kb:KB-9E0ED0F4",
+          "note": "a locked account gets UserLocked on every return operation (unmerged PR build #28@62f9aae)",
+          "date": "2026-10-08"
+        },
+        {
+          "class": "HYPOTHESIS",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3 S22",
+          "note": "no AC: whether the guard belongs to this story is a PO question"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.account-guard.locked",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "A locked account with a valid token gets UserLocked on returns, return, returnableItems, createReturn and cancelReturn; returnStatuses still answers",
+      "maturity": "new",
+      "status": "CONFIRMED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "VCST-5884 testing-checklist (round 3) B11",
+          "note": "unmerged PR build #28@fb4fc43: UserLocked on return ops, returnStatuses answers (RET-ORG-013 PASS)",
+          "date": "2026-10-12"
+        },
+        {
+          "class": "OBSERVED",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3 4a",
+          "note": "unmerged PR build #28@62f9aae: UserLocked on 10 operations",
+          "date": "2026-10-08"
+        }
+      ]
+    },
+    {
+      "type": "branch",
+      "id": "ret.org.account-guard.expired-or-deleted",
+      "branch_kind": "negative",
+      "technique": "EP",
+      "name": "Password-expired and deleted accounts",
+      "maturity": "new",
+      "status": "UNVERIFIED",
+      "evidence": [
+        {
+          "class": "OBSERVED",
+          "ref": "test-model:VCST-5884-2026-10-08 #Round 3 4a",
+          "note": "unmerged PR build #28@62f9aae: password-expired leg inconclusive (the flag set through the API did not trip the guard); deleted not reached",
+          "date": "2026-10-08"
+        }
+      ]
     }
   ],
   "edges": [
@@ -3062,6 +3934,241 @@
     {
       "from": "ret.config.policy",
       "to": "ret.config.policy.disabled-store",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.returns",
+      "to": "ret.org",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.permission",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.permission",
+      "to": "ret.org.permission.three-sources",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.permission",
+      "to": "ret.org.permission.no-stock-role",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.permission",
+      "to": "ret.org.permission.revoke-next-call",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.list",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.permission",
+      "type": "depends_on",
+      "note": "the list is closed without the permission in the queried organization"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.forbidden-uniform",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.blocked-membership",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.queried-org-decides",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.admin-non-member",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.submitted-only",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.list.submitted-only",
+      "to": "ret.org.submitted-date",
+      "type": "depends_on",
+      "note": "visibility is decided by the SubmittedDate stamp, not the status"
+    },
+    {
+      "from": "ret.org.list",
+      "to": "ret.org.list.storefront-tab",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.read",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.read",
+      "to": "ret.org.permission",
+      "type": "depends_on"
+    },
+    {
+      "from": "ret.org.read",
+      "to": "ret.org.read.holder-readonly",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.read",
+      "to": "ret.org.read.mutations-refused",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.submitted-date",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.submitted-date",
+      "to": "ret.buyer.submit",
+      "type": "depends_on",
+      "note": "the buyer submit is the usual first save outside Draft"
+    },
+    {
+      "from": "ret.org.submitted-date",
+      "to": "ret.org.submitted-date.stamp-on-submit",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.submitted-date",
+      "to": "ret.org.submitted-date.write-once",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.submitted-date",
+      "to": "ret.org.submitted-date.admin-new-stamped",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.submitted-date",
+      "to": "ret.org.submitted-date.admin-cancelled-unstamped",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.backfill",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.backfill",
+      "to": "ret.org.backfill.dated-rows",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.backfill",
+      "to": "ret.org.backfill.no-recovery",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.state.cancelled",
+      "to": "ret.state.cancelled.submitted",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.state.cancelled",
+      "to": "ret.state.cancelled.never-submitted",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.state.cancelled",
+      "to": "ret.state.cancelled.pre-upgrade",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.state.cancelled.submitted",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.cancelled.never-submitted",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.cancelled.pre-upgrade",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.cancelled.pre-upgrade",
+      "to": "ret.org.backfill",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.draft",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.requested",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.state.new",
+      "to": "ret.org.submitted-date",
+      "type": "affected_by"
+    },
+    {
+      "from": "ret.buyer.read.org-colleague",
+      "to": "ret.org.read.holder-readonly",
+      "type": "affected_by",
+      "note": "the DRIFT is caused by this branch"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.notify-copy",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.notify-copy",
+      "to": "ret.agent.notify",
+      "type": "depends_on",
+      "note": "the copy rides the buyer email job"
+    },
+    {
+      "from": "ret.org.notify-copy",
+      "to": "ret.org.notify-copy.setting-off-default",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.notify-copy",
+      "to": "ret.org.notify-copy.copy-on",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.notify-copy",
+      "to": "ret.org.notify-copy.no-duplicate",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org",
+      "to": "ret.org.account-guard",
+      "type": "contains"
+    },
+    {
+      "from": "ret.org.account-guard",
+      "to": "ret.org.account-guard.locked",
+      "type": "branches_to"
+    },
+    {
+      "from": "ret.org.account-guard",
+      "to": "ret.org.account-guard.expired-or-deleted",
       "type": "branches_to"
     }
   ]

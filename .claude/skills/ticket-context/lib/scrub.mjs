@@ -14,6 +14,8 @@ export const TOKEN_SHAPES = Object.freeze([
   ["github-pat", /\b(?:gh[pousr]_|github_pat_)[A-Za-z0-9_]{20,}\b/],
   ["jwt", /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/],
   ["bearer", /\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/-]{20,}=*/],
+  // Added here, not in secret-gate.mjs: this skill alone holds a Figma credential (figma.mjs, design §0b).
+  ["figma-pat", /\bfigd_[A-Za-z0-9_-]{20,}/],
 ]);
 const QUERY_VALUE = /([?&][^=&#\s"']+)=([^&#\s"']+)/g;
 
@@ -37,6 +39,9 @@ export function loadSecretValues(root, env = process.env) {
   const files = env.VC_MEASURE_SECRETS ? env.VC_MEASURE_SECRETS.split(";").filter(Boolean) : [join(root, ".env.local"), join(root, ".env.playwright.local")];
   const values = new Set();
   for (const f of files) if (existsSync(f)) for (const v of secretValuesFrom(readFileSync(f, "utf8"))) values.add(v);
+  // FIGMA_TOKEN can come from any env layer or the shell, so it is taken from the env as well; never printed.
+  const figma = String(env.FIGMA_TOKEN ?? "").trim();
+  if (figma) values.add(figma);
   return values;
 }
 
