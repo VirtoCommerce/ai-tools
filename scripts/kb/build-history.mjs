@@ -38,8 +38,7 @@ const gh = (path, { raw = false } = {}) => {
     // A 404 is an answer -- that file is not in that commit. Anything else (no login, rate limit, no
     // network) is NOT "no commits": failing loud beats reconstructing every build as unknown.
     const why = String(err.stderr ?? err.message);
-    if (!/HTTP 404/.test(why)) throw new Error(`gh api ${path} failed: ${why.trim().split('
-')[0]}`);
+    if (!/HTTP 404/.test(why)) throw new Error(`gh api ${path} failed: ${why.trim().split(/\r?\n/)[0]}`);
     out = '';
   }
   // Only a sha-pinned read is immutable; a branch listing is cached for this run's process only.
