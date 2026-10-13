@@ -44,9 +44,8 @@ edges, `{HYPOTHESIS}` oracles, flagged ACs, tc:scope at-risk rows) — the comma
 widens it. The strategy's `EXPLORE` risks reach the session **through** those sources: each one names the
 `{HYPOTHESIS}` oracle or `GAP` cell it rests on (D3 ties `FIRST` to exactly that).
 - **First or alongside** is the strategy's (D3). A `FIRST` session runs in Wave 3, before the checklist.
-  No alongside session follows, so the checklist's `UNVERIFIED → charter` lines go unexplored this
-  round: `verdict.md` lists them under *Not tested, and why* as residual risk, the next round's charter
-  ([`context-wave.md`](context-wave.md) §Wave 4).
+  The mind map's `UNVERIFIED` nodes reach either session the same way — as the model's `{HYPOTHESIS}`
+  oracles ([`context-wave.md`](context-wave.md) §Wave 2), never as a widened charter.
 - **The box** is the strategy's, sized per §5 there: 30-minute floor, 60-minute ceiling, stated in the payload.
 - **Read-only by default.** When a charter item needs its own data, it follows §Data with its own pool
   user.
