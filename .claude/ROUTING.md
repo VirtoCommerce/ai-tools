@@ -165,6 +165,7 @@ Roster detail (model, colour, team framework): [`knowledge/agents/README.md`](kn
 - `ui-ux-expert` — Storybook, WCAG 2.2 AA, design system, the `vs. DESIGN` axis
 - `regression-orchestrator` — Parallel regression, retries, consolidated reports
 - `test-runner-agent` — Parameterized suite runner (spawned by regression-orchestrator)
+- `ticket-context-analyst` — Read-only, no-browser ticket reader for `/ticket-context` (TICKET / MATERIALS / CHANGE modes); never writes to a tracker, a PR or the `kb`
 
 **BA Team (+ shared-instructions):**
 - `ba-system-analyzer` — Repo structure, module inventory, user flows, pain points; **gathers the evidence for both shared oracles** (BL from human sources only; never edits a CSV)
