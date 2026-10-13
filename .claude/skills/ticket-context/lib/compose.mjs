@@ -19,18 +19,22 @@ const prRef = (p) => `${p.repo}#${p.number}`;
 export function compose(prep, outs) {
   const { ticket: t, materials: m, change: c, join: j, deploy: d, known: k } = outs;
 
+  // Script-derived GAPs are ground truth about what was read: a model's output never replaces them.
+  const invRefs = new Set(prep.inventory.map((it) => it.ref));
+  const agentMats = new Map(m.materials.filter((x) => invRefs.has(x.ref)).map((x) => [x.ref, x]));
+  const invented = m.materials.filter((x) => !invRefs.has(x.ref)).map((x) => ({ where: x.ref, reason: "not-found", detail: "the agent reported an input the inventory does not list" }));
   const byRef = new Map();
   for (const it of prep.inventory) {
     if (it.gap) byRef.set(it.ref, { ref: it.ref, kind: it.kind, outcome: "GAP", reason: it.gap.reason, ...(it.gap.detail ? { detail: it.gap.detail } : {}) });
     else if (it.needs_connector && !it.local_path) byRef.set(it.ref, { ref: it.ref, kind: it.kind, outcome: "GAP", reason: "connector-unavailable", detail: "not read by the skill runner (step 1)" });
+    else if (agentMats.has(it.ref)) byRef.set(it.ref, agentMats.get(it.ref));
   }
-  for (const mat of m.materials) byRef.set(mat.ref, mat);
 
   const agentPrs = new Map(c.prs.map((p) => [prRef(p), p]));
   const dep = new Map((d.prs ?? []).map((p) => [p.ref, p]));
   const prs = [];
   for (const p of prep.prs) {
-    const a = agentPrs.get(p.ref);
+    const a = p.gap ? undefined : agentPrs.get(p.ref); // a whole-PR gap from prepare wins over any agent entry
     if (!a && !p.gap) continue; // the agent left it out: gate rule 3 names it
     const base = a ?? { repo: p.repo, number: p.number, state: p.state ?? "unknown", merged: !!p.merged, head_sha: p.head_sha ?? "", layers: {},
       operations: [], endpoints: [], settings: [], tests_changed: [], untested: [], fate: `not analysed (${p.gap.reason})`, ci: "not read", open_threads: 0, gap: p.gap };
@@ -46,7 +50,7 @@ export function compose(prep, outs) {
     materials: [...byRef.values()], design: m.design,
     change: { rung: prep.rung, prs, chain_deployed: d.chain_deployed ?? "NONE", ac_to_diff: j.ac_to_diff, diff_to_ac: j.diff_to_ac, hidden_behaviour: c.hidden_behaviour },
     known: { ...k.known, kb: outs.kb?.kb ?? [] },
-    gaps: [...prep.gaps, ...prep.prs.flatMap((p) => p.gaps ?? []), ...t.gaps, ...m.gaps, ...c.gaps, ...(d.gaps ?? []), ...(k.gaps ?? [])],
+    gaps: [...prep.gaps, ...prep.prs.flatMap((p) => p.gaps ?? []), ...t.gaps, ...m.gaps, ...invented, ...c.gaps, ...(d.gaps ?? []), ...(k.gaps ?? [])],
     questions: [...t.questions, ...m.questions, ...c.questions, ...j.questions],
     embedded_instructions: [...t.embedded_instructions, ...m.embedded_instructions, ...c.embedded_instructions],
     blockers: d.blockers ?? [],

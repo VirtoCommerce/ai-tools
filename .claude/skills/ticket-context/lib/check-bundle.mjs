@@ -28,13 +28,13 @@ export function checkBundle(bundle, prep, { secrets = new Set() } = {}) {
   const counted = bundle.change.prs.filter((p) => !p.context_only && p.gap?.reason !== "over-cap");
   if (!counted.length && bundle.change.chain_deployed !== "NONE") errors.push(`deployment: no PR is counted, so chain_deployed must be NONE, not ${bundle.change.chain_deployed}`);
   if (counted.length && bundle.change.chain_deployed === "NONE") errors.push("deployment: PRs are counted, so chain_deployed cannot be NONE");
-  for (const p of counted) if (p.deployed !== "YES" && !bundle.blockers.some((b) => b.includes(ref(p)))) errors.push(`deployment: ${ref(p)} is ${p.deployed} with no line in blockers[]`);
+  for (const p of counted) if (p.deployed !== "YES" && !bundle.blockers.some((b) => b.startsWith(`NOT DEPLOYED: ${ref(p)} — `) || b.startsWith(`DEPLOYMENT UNKNOWN: ${ref(p)} — `))) errors.push(`deployment: ${ref(p)} is ${p.deployed} with no line in blockers[]`);
 
   // 5 — a HAR/log/trace that was read was read scrubbed
   const inv = new Map(prep.inventory.map((i) => [i.ref, i]));
   for (const m of bundle.materials) {
-    if (!SCRUBBED_KINDS.has(m.kind) || m.outcome !== "finding") continue;
     const it = inv.get(m.ref);
+    if (!SCRUBBED_KINDS.has(it?.kind ?? m.kind) || m.outcome !== "finding") continue; // the inventory's kind, never the agent's label
     if (!it?.scrubbed || !it.local_path || !existsSync(it.local_path) || !hasScrubMarker(it.local_path)) errors.push(`scrub: ${m.ref} was read without a scrubbed-file marker`);
   }
 
