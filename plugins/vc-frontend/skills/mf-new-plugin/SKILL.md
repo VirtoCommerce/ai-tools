@@ -50,9 +50,9 @@ From `$HOST`:
 yarn create:plugin <name> --module "$WEB" [--with-apollo] [--with-tailwind]
 ```
 
-It ends with a list of what is still to do in the module. Keep it: it is step 3's work list. Its note on an
-unreleased facade is always printed; it matters only if `yarn install` in step 4 fails with a 404 on
-`@vc-frontend/core`. Then read S1a ⚠️ 3 to the user and ask how to go on; never commit a yalc or `portal:` pin.
+It ends with a list of what is still to do in the module. Keep it: it is step 3's work list. If it prints
+`!! @vc-frontend/core … is not released yet`, or `yarn install` in step 4 fails with a 404 on `@vc-frontend/core`,
+read S1a ⚠️ 3 to the user and ask how to go on; never commit a yalc or `portal:` pin.
 
 ## 3. Wire the module
 
