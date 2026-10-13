@@ -38,8 +38,8 @@ drift, the suspect list and `mind_map_findings`. Before Wave 2, **wait for C** w
 - **Domain map.** C's result, when it ran, supersedes `known.domain_map` in the run context.
 - **Visual axis.** `visual_surface` + `surface_source[]`, derived from the bundle's `change.prs[].layers`
   and written to the run context, per [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1.
-- **Pass the bundle path** (and the run context's) to `/qa-test-model --context` and to every later brief
-  that needs the ticket.
+- **Pass the run context** (it names the bundle) as `/qa-test-model --context`, and the bundle path to
+  every later brief that needs the ticket.
 
 **Contract refresh (inline).** If the bundle names a GraphQL operation (in
 `change.prs[].operations`), run the two commands of
@@ -48,7 +48,7 @@ touches goes into the run context as a model input.
 
 ## Wave 2 — one message
 
-- **Test model — you, inline.** `/qa-test-model <TICKET> --context <bundle>`. You are the Judge, and
+- **Test model — you, inline.** `/qa-test-model <TICKET> --context <run context>`. You are the Judge, and
   the model's gate runs inside that skill.
 - **Mind map — `ba-system-analyzer`, no browser.**
   - The map exists → `/qa-test-mind-map update <slug> --from <TICKET>`.

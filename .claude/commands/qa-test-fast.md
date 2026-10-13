@@ -73,7 +73,7 @@ Full briefs, merge rules and the context bundle:
    operation, run both contract-refresh commands
    ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Join 1).
 3. **Wave 2 — one message:**
-   - `/qa-test-model <TICKET> --context <bundle>`, run by you
+   - `/qa-test-model <TICKET> --context <run context>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
      **without** build step 10; then copy the map signals into the run context
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
