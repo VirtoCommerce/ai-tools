@@ -33,7 +33,7 @@ known broken before VCST-5884's round 3. So the selected cases are checked first
 4. From round 2 on: the previous round's triage `test-defect` ids.
 
 The stale rows are listed in the strategy's Artifacts row with their reason and handed to
-`/qa-test-lifecycle`; the run executes the rest (`/qa-regression … --ids <rest> --no-promote`).
+`/qa-test-lifecycle`; the run executes the rest (`/qa-regression <their suite ids> --ids <rest> --no-promote`).
 
 ## Depth label (D5) — computed, never chosen
 

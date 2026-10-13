@@ -10,7 +10,7 @@ Execution); the visual lane joins it or follows as soon as one lane returns
 | Admin + API | `qa-backend-expert` | `playwright-edge` | `@td(AGENT_POOL_SLOT_3.*)` | the Admin/REST/GraphQL section |
 | Exploratory | `qa-testing-expert` | `playwright-firefox` | `@td(AGENT_POOL_SLOT_2.*)` | `/qa-exploratory ticket <TICKET>`, when the strategy marks it `RUN` |
 | Visual | `ui-ux-expert` | Chrome DevTools MCP | the auth path the brief names (§Visual) | the `qa-design` skill's axes, when F3/F8 fired |
-| Regression | `regression-orchestrator` | its own slots, counted toward the 3 | the suites' own | `/qa-regression <non-stale ids> --no-promote` (§Regression) |
+| Regression | `regression-orchestrator` | its own slots, counted toward the 3 | the suites' own | `/qa-regression <suite ids> --ids <non-stale ids> --no-promote` (§Regression) |
 
 The pool slots are the ones in [`../../knowledge/execution/live-discovery.md`](../../knowledge/execution/live-discovery.md)
 §Test isolation in parallel runs. A checklist with a cross-layer section gives it to the lane that
@@ -53,7 +53,7 @@ the `UNVERIFIED → charter` lines ([`context-wave.md`](context-wave.md) §Wave 
 - **A same-day SBTM file for this ticket already exists** ⇒ pass the prior session as input. The new
   charter covers what that session marked NOT REACHED; it is never a re-run of the old charter.
 - **The strategy skipped it, or no unresolved item exists anywhere** ⇒ the lane is recorded as
-  `ran: false` with that reason. Those are the only legitimate skips besides `--no-explore`.
+  `ran: false` with that reason. Those are the only legitimate skips besides `--no-explore`, which drops a `FIRST` session too.
 
 ## Visual
 
@@ -70,10 +70,11 @@ credential names), the lane-count rule and the verdict vocabulary are
 
 ## Regression
 
-When the strategy marks it `RUN` (F5, or added by the strategy): `/qa-regression <ids> --no-promote` over
-the non-stale id list from Wave 2 — never the raw `regression:select` output. It promotes nothing and writes
+When the strategy marks it `RUN` (F5, or added by the strategy): `/qa-regression <suite ids> --ids <ids>
+--no-promote` over the non-stale id list from Wave 2 (`--ids` is the exact set; the positional argument
+names the suites those cases live in) — never the raw `regression:select` output. It promotes nothing and writes
 no suite row (D2). Its lanes count toward the 3 browser lanes; more than 3 needed ⇒ sequence by risk level,
-highest first. Its `RUN_ID` goes to Stage 3 triage; its non-passing cases are triaged like checklist rows.
+highest first. Its `RUN_ID` goes to Stage 3 triage as a separate `qa-triage-results <RUN_ID>` call.
 
 ## Data — made during the run
 

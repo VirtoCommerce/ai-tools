@@ -94,8 +94,9 @@ Full briefs, merge rules and the context bundle:
    - the staleness check over F5's selected cases, inline
      ([`floors.md`](../skills/qa-test-strategy/floors.md) §Staleness check): the stale ids go into the
      strategy's Artifacts row and to `/qa-test-lifecycle`; the rest is the regression id list
-5. **Wave 3 — explore first**, only when the strategy says `FIRST` (D3): `/qa-exploratory ticket <TICKET>`
-   → `qa-testing-expert` on `playwright-firefox`, in the strategy's box
+5. **Wave 3 — explore first**, only when the strategy says `FIRST` (D3) and neither `--no-explore` nor
+   `--dry-run` was passed (the first records the skip; the second lists the session in its plan):
+   `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`, in the strategy's box
    ([`execution.md`](../skills/qa-test-fast/execution.md) §Exploratory). What it observed feeds the checklist.
 6. **Wave 4 — the checklist.** Model ran ⇒ `/qa-checklist <TICKET> --from-model --mind-map <slug>`; model
    skipped ⇒ `/qa-checklist <TICKET>` with the strategy's approach table as its conditions. Write it to
@@ -114,8 +115,8 @@ Briefs, the lane split, the data rules and teardown:
 
 1. **Checklist runners** — one per checklist lane section. `qa-frontend-expert` takes
    `playwright-chrome`; `qa-backend-expert` takes `playwright-edge`. `--layer` narrows this to one lane.
-2. **Exploratory** — when the strategy marks it `RUN` **alongside** (a `FIRST` session already ran in
-   Wave 3): `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`, in the
+2. **Exploratory** — when the strategy marks it `RUN` **alongside** (a `FIRST` session ran in Wave 3
+   instead and is not repeated): `/qa-exploratory ticket <TICKET>` → `qa-testing-expert` on `playwright-firefox`, in the
    strategy's box. The charter is the strategy's
    `EXPLORE` risks plus the model's unresolved items. `--no-explore` drops the lane. A skip is recorded,
    never silent.
@@ -125,8 +126,8 @@ Briefs, the lane split, the data rules and teardown:
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes
    `design-report.md` + `summary.json.visual`.
-4. **Regression** — when the strategy marks it `RUN`: `/qa-regression <ids> --no-promote` over the
-   non-stale list from Wave 2, through `regression-orchestrator`. Its lanes count toward the 3; more than 3
+4. **Regression** — when the strategy marks it `RUN`: `/qa-regression <their suite ids> --ids <ids>
+   --no-promote` over the non-stale list from Wave 2, through `regression-orchestrator`. Its lanes count toward the 3; more than 3
    needed ⇒ sequence by risk level, highest first (method rules). Its non-passing cases join the triage below.
 5. **Join.** Pass every bullet of [`execution.md`](../skills/qa-test-fast/execution.md) §Join gate —
    results, ledger, settings, the visual lane's `qa-design skill: loaded`, and every exploratory/visual
@@ -137,8 +138,8 @@ Briefs, the lane split, the data rules and teardown:
 Triage, the verdict rules, the report shapes and the tracker comment:
 [`../skills/qa-test-fast/verdict.md`](../skills/qa-test-fast/verdict.md).
 
-1. **Triage.** Invoke the Skill tool with `skill: "qa-triage-results"`, args `ticket <TICKET> --verify` (and,
-   when regression ran, `<RUN_ID>` for its non-passing cases). It classifies every non-passing row, and Phase 4 sends **every** real-bug candidate through
+1. **Triage.** Invoke the Skill tool with `skill: "qa-triage-results"`, args `ticket <TICKET> --verify`;
+   when regression ran, invoke it a second time with `<RUN_ID> --verify` (one target per call). It classifies every non-passing row, and Phase 4 sends **every** real-bug candidate through
    `vc-fix:qa-investigate`, which returns an evidence package for each one. It returns the confirmed bugs, the
    checklist fixes (you apply them; you are the checklist's only writer) and the dismissed rows. A non-empty
    `unresulted[]` sends you back to the Stage 2 join. Visual findings block or advise per
