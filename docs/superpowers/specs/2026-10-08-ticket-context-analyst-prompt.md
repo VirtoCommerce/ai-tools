@@ -138,8 +138,9 @@ Read `prepare.json` `prs` and `rung`.
    - files grouped by layer token: `storefront` · `admin-spa` · `api` · `module` · `platform` · `test` · `other`;
    - **GraphQL operations and REST endpoints touched, as coordinates only** — they are passed to
      `tc:scope` and asked of the `kb`, so the schema rejects prose. `operations`: the bare operation
-     or field name (`addItem`). `endpoints`: `METHOD /route` with the route template as declared
-     (`POST /api/push-message/preview-recipients`); when the route is not in the files you read, the
+     or field name (`addItem`). `endpoints`: `METHOD /route` with the route template as declared,
+     tokens and all, and a leading `/` (`POST /api/push-message/preview-recipients`,
+     `GET /api/orders/{id?}`); when the route is not in the files you read, the
      controller action name (`PreviewRecipients`) plus a gap `{where: "pr:<ref>:endpoints", reason:
      "not-found", detail: "route of <Action> not in the diff"}`. What changed on a contract goes to
      `hidden_behaviour` (`graphql-schema`, `rest-contract`), never into these strings;

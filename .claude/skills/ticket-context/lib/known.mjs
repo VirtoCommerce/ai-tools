@@ -11,6 +11,19 @@ import { hasScript, runNpmJson } from "./npm.mjs";
 export const DOMAIN_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
 export const OBSERVABLE_RE = /^[A-Za-z0-9_/{][A-Za-z0-9 _./{}:-]{0,119}$/;
 
+const ROUTE = /^(?:GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) (\/\S*)$/;
+
+/** What tc:scope can find in case text, which it matches by substring: cases name an endpoint's path, rarely
+ *  its method, and never its template tokens — so `GET /api/orders/{id}` is searched as `/api/orders`. A path
+ *  with fewer than two literal segments (`/api`) would match every case and is dropped (null). A GraphQL
+ *  operation or an action name is searched as it is. */
+export function searchTerm(o) {
+  const m = typeof o === "string" ? ROUTE.exec(o) : null;
+  if (!m) return o;
+  const literal = m[1].split(/[{(?*[]/)[0].replace(/\/+$/, "");
+  return literal.split("/").filter(Boolean).length >= 2 ? literal : null;
+}
+
 export function domainState(json, slug) {
   if (!slug) return { state: "unresolved", path: null };
   const map = json?.maps?.find((m) => m.slug === slug);
@@ -71,8 +84,11 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
     gaps.push({ where: "known.domain", reason: "unreadable", detail: "the domain slug has unexpected characters — not used" });
     domain = undefined;
   } else if (!domain) gaps.push({ where: "known.domain", reason: "not-found", detail: "no --domain given — maps, BL and tc:scope are not looked up" });
-  const observables = operations.filter((o) => typeof o === "string" && OBSERVABLE_RE.test(o));
-  if (observables.length < operations.length) gaps.push({ where: "known.tc:scope.observables", reason: "unreadable", detail: `${operations.length - observables.length} operation/endpoint name(s) with unexpected characters not passed to tc:scope` });
+  const terms = operations.map(searchTerm);
+  const usable = (t) => typeof t === "string" && OBSERVABLE_RE.test(t);
+  const observables = [...new Set(terms.filter(usable))];
+  const dropped = terms.filter((t) => !usable(t)).length;
+  if (dropped) gaps.push({ where: "known.tc:scope.observables", reason: "unreadable", detail: `${dropped} operation/endpoint name(s) with unexpected characters, or a route with under two literal path segments, not passed to tc:scope` });
   if (domain && need("domain:check")) {
     const r = run(root, ["domain:check", "--", "--json"]);
     if (r.json) {

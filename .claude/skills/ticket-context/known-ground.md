@@ -4,7 +4,7 @@
 
 `node "<skill>/lib/cli.mjs" known --prepare <prepare_path>` → `known.json`. The domain is the one given
 to `prepare --domain`. Run it after CHANGE returned, so its GraphQL operations and endpoints feed
-`tc:scope`; a name with unexpected characters (or a leading `-`) is not passed and is a gap. Each lookup
+`tc:scope`, an endpoint as its literal path (`GET /api/orders/{id}` → `/api/orders`: cases name the path, not the method); a name with unexpected characters (or a leading `-`), or a route under two literal segments, is not passed and is a gap. Each lookup
 runs only when this install declares the script; otherwise it is `GAP: not-available-in-install`.
 
 | What | Script | In the bundle |

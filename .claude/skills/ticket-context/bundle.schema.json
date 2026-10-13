@@ -8,7 +8,7 @@
     "text": { "type": "string", "minLength": 1 },
     "strings": { "type": "array", "items": { "$ref": "#/$defs/text" } },
     "operations": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]{0,79}$" } },
-    "endpoints": { "type": "array", "items": { "type": "string", "pattern": "^((GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /[A-Za-z0-9_./{}:-]{0,110}|[A-Za-z_][A-Za-z0-9_.]{0,79})$" } },
+    "endpoints": { "type": "array", "items": { "type": "string", "pattern": "^((GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) /[A-Za-z0-9_./{}:()?*=,$~\\[\\]-]{0,150}|[A-Za-z_][A-Za-z0-9_.]{0,79})$" } },
     "gap": { "type": "object", "additionalProperties": false, "required": ["where", "reason"],
       "properties": { "where": { "$ref": "#/$defs/text" }, "reason": { "$ref": "#/$defs/gapReason" }, "detail": { "type": "string" } } },
     "gaps": { "type": "array", "items": { "$ref": "#/$defs/gap" } },
