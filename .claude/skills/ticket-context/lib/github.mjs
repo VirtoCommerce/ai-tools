@@ -2,7 +2,7 @@
 // qa-test/technical-change.md §2.1, rungs 1–3, as a script (A4), plus the per-PR files the CHANGE agent reads.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CAPS } from "./fetch.mjs";
+import { CAPS, timedFetch, timeoutGap } from "./fetch.mjs";
 import { GapError, asGap, gap } from "./gap.mjs";
 
 /** Stage-1 rule: deployment-manifest PRs and this repo's PRs are context, not change surface. */
@@ -29,10 +29,10 @@ function cutBytes(text, cap) {
 
 export function ghClient(cred, fetchImpl = fetch) {
   async function req(path, { accept = "application/vnd.github+json", method = "GET", body } = {}) {
-    const res = await fetchImpl(`https://api.github.com${path}`, { method, body, headers: {
-      Authorization: cred.auth, Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "ticket-context",
-      ...(body ? { "Content-Type": "application/json" } : {}) } });
     const where = path.split("?")[0];
+    const res = await timedFetch(fetchImpl, `https://api.github.com${path}`, { method, body, headers: {
+      Authorization: cred.auth, Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "ticket-context",
+      ...(body ? { "Content-Type": "application/json" } : {}) } }, CAPS.fetchTimeoutMs, `GitHub ${where}`);
     // Primary limit (remaining 0) and secondary limit (retry-after) are both "wait", never "denied".
     if ((res.status === 403 || res.status === 429) && (res.headers.get("x-ratelimit-remaining") === "0" || res.headers.get("retry-after") !== null)) throw new GapError("unreadable", `GitHub rate limit reached on ${where} — wait for the reset`);
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `GitHub ${res.status} on ${where} (credential: ${cred.via}; never retried with another)`);
@@ -40,7 +40,8 @@ export function ghClient(cred, fetchImpl = fetch) {
     if (!res.ok) throw new GapError("unreadable", `GitHub ${res.status} on ${where}`);
     return res;
   }
-  const json = async (p, o) => (await req(p, o)).json();
+  const readBody = async (res, as) => { try { return await res[as](); } catch (e) { throw timeoutGap(e, "GitHub response body", CAPS.fetchTimeoutMs); } };
+  const json = async (p, o) => readBody(await req(p, o), "json");
   const q = (s) => encodeURIComponent(s);
   return {
     searchPrs: async (key, orgs) => (await json(`/search/issues?q=${q(`"${key}" is:pr ${orgs.map((o) => `org:${o}`).join(" ")}`)}&per_page=50`)).items ?? [],
@@ -58,7 +59,7 @@ export function ghClient(cred, fetchImpl = fetch) {
       }
       return out.slice(0, cap + 1);
     },
-    diff: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return (await req(`/repos/${o}/${r}/pulls/${n}`, { accept: "application/vnd.github.diff" })).text(); },
+    diff: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return readBody(await req(`/repos/${o}/${r}/pulls/${n}`, { accept: "application/vnd.github.diff" }), "text"); },
     reviewComments: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return json(`/repos/${o}/${r}/pulls/${n}/comments?per_page=100`); },
     unresolvedThreads: async (o, r, n) => {
       checkRepo(o, r); checkNumber(n);

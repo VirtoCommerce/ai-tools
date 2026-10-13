@@ -5,6 +5,7 @@
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { CAPS } from "./fetch.mjs";
 
 export function hasScript(root, name) {
   try { return !!JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts?.[name]; } catch { return false; }
@@ -19,16 +20,17 @@ function findNpmCli(env, execPath) {
     .find((p) => existsSync(p)) ?? null;
 }
 
-/** `ctx` is for tests: { env, execPath }. */
+/** `ctx` is for tests: { env, execPath, timeoutMs }. A run past CAPS.npmTimeoutMs is killed: error "timed-out". */
 export function runNpmJson(root, args, spawn = spawnSync, ctx = {}) {
   if (args.some((a) => /[\0\r\n]/.test(String(a)))) return { status: null, json: null, error: "unsafe-argument" };
   const cli = findNpmCli(ctx.env ?? process.env, ctx.execPath ?? process.execPath);
   if (!cli) return { status: null, json: null, error: "npm-cli-not-found" };
   const r = spawn(ctx.execPath ?? process.execPath, [cli, "run", "--silent", ...args],
-    { cwd: root, encoding: "utf8", shell: false, maxBuffer: 64 * 2 ** 20 });
+    { cwd: root, encoding: "utf8", shell: false, maxBuffer: 64 * 2 ** 20, timeout: ctx.timeoutMs ?? CAPS.npmTimeoutMs });
   const text = r.stdout ?? "";
   const at = text.indexOf("{");
   let json = null;
   if (at >= 0) { try { json = JSON.parse(text.slice(at)); } catch { json = null; } }
-  return r.error ? { status: r.status, json, error: String(r.error.code ?? r.error.message) } : { status: r.status, json };
+  if (r.error) return { status: r.status, json: null, error: r.error.code === "ETIMEDOUT" ? "timed-out" : String(r.error.code ?? r.error.message) };
+  return { status: r.status, json };
 }

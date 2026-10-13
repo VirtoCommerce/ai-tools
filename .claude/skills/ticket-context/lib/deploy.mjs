@@ -18,8 +18,8 @@ export function expectFor(artifact, merged) {
   return { module: artifact.id, version: merged ? baseOf(artifact.version) : artifact.version };
 }
 
-export function deployedFromPreflight(json) {
-  if (!json) return { deployed: "UNKNOWN", reason: "pre-flight could not run" };
+export function deployedFromPreflight(json, error) {
+  if (!json) return { deployed: "UNKNOWN", reason: error ? `pre-flight could not run (${error})` : "pre-flight could not run" };
   const dep = json.facts?.deployed;
   if (dep && typeof dep === "object" && "unknown" in dep) return { deployed: "UNKNOWN", reason: `deployed state unknown: ${dep.unknown}` };
   const row = (json.checks ?? []).find((c) => c.id === "expect");
@@ -89,7 +89,7 @@ export function checkDeployment({ root, key, prs, run = runNpmJson }) {
     if (!asked.has(id)) {
       const pf = run(root, ["preflight", "--", "--for", "ticket-fast", "--ticket", key, "--expect", id, "--json"]);
       if (pf.error === "npm-cli-not-found") noteToolMissing();
-      asked.set(id, deployedFromPreflight(pf.json));
+      asked.set(id, deployedFromPreflight(pf.json, pf.error));
     }
     const ans = asked.get(id);
     const reason = ans.deployed === "NO" && !p.merged ? `${ans.reason}; ${O2_NOTE.replace("<KEY>", key)}` : ans.reason;

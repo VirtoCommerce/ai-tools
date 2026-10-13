@@ -6,7 +6,45 @@ import { GapError, gap } from "./gap.mjs";
 export const CAPS = Object.freeze({
   attachmentBytes: 25 * 2 ** 20, ticketBytes: 100 * 2 ** 20, frames: 12, frameEverySec: 2, docPages: 20,
   prs: 6, diffBytes: 500 * 1024, prFiles: 300, pageTextBytes: 200 * 1024, linkedIssues: 10, redirects: 3,
+  pageBytes: 2 * 2 ** 20, // raw bytes read from a public page before it is turned into text
+  fetchTimeoutMs: 30_000, downloadTimeoutMs: 120_000, npmTimeoutMs: 300_000, ffmpegTimeoutMs: 120_000,
 });
+
+const hostOf = (u) => { try { return new URL(u).hostname; } catch { return "unknown host"; } };
+const isTimeout = (e) => e?.name === "TimeoutError" || e?.name === "AbortError";
+
+/** A timeout becomes a GAP (never a hang, never a raw DOMException); anything else is returned unchanged. */
+export function timeoutGap(e, label, ms) {
+  return isTimeout(e) ? new GapError("unreadable", `timed out after ${Math.round(ms / 1000)} s: ${label}`) : e;
+}
+
+/** fetch with AbortSignal.timeout(ms): the signal also bounds reading the body. */
+export async function timedFetch(fetchImpl, url, init, ms, label) {
+  try { return await fetchImpl(url, { ...init, signal: AbortSignal.timeout(ms) }); } catch (e) { throw timeoutGap(e, label, ms); }
+}
+
+/** Read a body as a stream up to `cap` bytes — never res.text() on a body whose size we do not control.
+ *  Past the cap: `truncate` keeps the first `cap` bytes, else GAP over-cap. */
+export async function readCapped(res, cap, { truncate = false, label = "body", ms = CAPS.fetchTimeoutMs } = {}) {
+  const chunks = [];
+  let total = 0;
+  let truncated = false;
+  try {
+    for await (const chunk of res.body ?? []) {
+      const b = Buffer.from(chunk);
+      if (total + b.length > cap) {
+        if (!truncate) throw new GapError("over-cap", `more than ${cap} bytes: ${label}`);
+        chunks.push(b.subarray(0, cap - total));
+        total = cap;
+        truncated = true;
+        break; // leaving the loop cancels the stream
+      }
+      chunks.push(b);
+      total += b.length;
+    }
+  } catch (e) { throw timeoutGap(e, label, ms); }
+  return { buf: Buffer.concat(chunks), truncated };
+}
 
 // Keys whose value is a location — the same suffix rule as secret-gate.mjs HOST_NAME (M1 copy).
 const HOST_KEY = /(?:^|_)(?:URL|HOST|HOSTNAME|DOMAIN|ENDPOINT)$/i;
@@ -89,8 +127,6 @@ export function planDownloads(items, caps = CAPS) {
   return { toFetch, gaps };
 }
 
-const hostOf = (u) => { try { return new URL(u).hostname; } catch { return "unknown host"; } };
-
 /** One public page as text. Redirects are followed by hand so every hop is re-checked (S5). */
 export async function fetchPublicPage(url, file, { privateHosts = new Set(), fetchImpl = fetch, caps = CAPS } = {}) {
   let current = url;
@@ -98,8 +134,9 @@ export async function fetchPublicPage(url, file, { privateHosts = new Set(), fet
     if (!isPublicUrl(current, privateHosts)) throw new GapError("private-host", `not fetched: ${hostOf(current)} is not a public host`);
     let res;
     try {
-      res = await fetchImpl(current, { redirect: "manual", headers: { Accept: "text/html,text/plain;q=0.9" } });
-    } catch {
+      res = await timedFetch(fetchImpl, current, { redirect: "manual", headers: { Accept: "text/html,text/plain;q=0.9" } }, caps.fetchTimeoutMs, hostOf(current));
+    } catch (e) {
+      if (e instanceof GapError) throw e; // the timeout, host-named
       // DNS / TLS / network: name the host only — the error text can echo the full URL, query string included.
       throw new GapError("unreadable", `could not reach ${hostOf(current)}`);
     }
@@ -113,11 +150,15 @@ export async function fetchPublicPage(url, file, { privateHosts = new Set(), fet
     if (!res.ok) throw new GapError("unreadable", `HTTP ${res.status}`);
     const type = res.headers.get("content-type") ?? "";
     if (!/text\/(html|plain)/.test(type)) throw new GapError("unreadable", `content-type ${type || "unknown"} is not a page`);
-    let raw;
-    try { raw = await res.text(); } catch { throw new GapError("unreadable", `could not read the body from ${hostOf(current)}`); }
+    let body;
+    try { body = await readCapped(res, caps.pageBytes, { truncate: true, label: hostOf(current), ms: caps.fetchTimeoutMs }); } catch (e) {
+      if (e instanceof GapError) throw e;
+      throw new GapError("unreadable", `could not read the body from ${hostOf(current)}`);
+    }
+    const raw = body.buf.toString("utf8");
     const text = /html/.test(type) ? htmlToText(raw) : raw;
     writeFileSync(file, text.slice(0, caps.pageTextBytes));
-    return { path: file, truncated: text.length > caps.pageTextBytes };
+    return { path: file, truncated: body.truncated || text.length > caps.pageTextBytes };
   }
   throw new GapError("depth-limit", `more than ${caps.redirects} redirects`);
 }

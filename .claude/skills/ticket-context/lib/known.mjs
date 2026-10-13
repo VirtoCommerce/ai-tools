@@ -59,7 +59,7 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
     gaps.push({ where: `known.${s}`, reason: "not-available-in-install", detail: `npm script ${s} is not declared in this install` });
     return false;
   };
-  const failed = (s, r) => gaps.push({ where: `known.${s}`, reason: "unreadable", detail: `${s} exit ${r.status}` });
+  const failed = (s, r) => gaps.push({ where: `known.${s}`, reason: "unreadable", detail: r.error ? `${s} could not run (${r.error})` : `${s} exit ${r.status}` });
 
   if (!domain) gaps.push({ where: "known.domain", reason: "not-found", detail: "no --domain given — maps, BL and tc:scope are not looked up" });
   if (domain && need("domain:check")) {
