@@ -95,6 +95,8 @@ export function disputeState(entry) {
     otherStand: open.some((e) => e.deployment && !supportStands.has(lower(e.deployment))),
     confirmedSince: support.filter((e) => after(e.at, firstOpenAt)).length,
     withConditions: items.filter((e) => e.conditions).length,
+    // Soft disputes (VCST-6221): made on another build; the gate's computed difference, for the hint.
+    contested: open.filter((e) => e.contested).map((e) => e.contested),
   };
 }
 
@@ -104,6 +106,7 @@ export function hints(s) {
   if (s.selfDisputed) out.push('one session both confirmed and disputed it: the entry may hold two facts (split?)');
   if (s.splitFrom.length) out.push(`its evidence came through a split of ${s.splitFrom.join(', ')}: a dispute may belong to a sibling`);
   if (s.otherStand) out.push('a dispute was made on a stand no confirmation names: build or configuration difference?');
+  if (s.contested?.length) out.push(`${s.contested.length} soft dispute(s) -- made on another build than every confirmation (${s.contested[0]}): did that difference cause it (version-scoped), or is the claim wrong?`);
   if (s.confirmedSince) out.push(`${s.confirmedSince} confirmation(s) arrived after the first open dispute: dispute wrong, or two conditions?`);
   if (s.withConditions === 0) out.push('no evidence item records its conditions: the investigation must establish them on every stand');
   if (s.invalidResolutions) out.push(`${s.invalidResolutions} item(s) carry an unknown resolution value and count as open`);
@@ -188,7 +191,7 @@ export function dossier(entry, { exp = null, state = null } = {}) {
   const amendments = amendmentsOf(items);
   lines.push('', '| # | side | stand | conditions | builds in note | at | by | resolution |', '|---|---|---|---|---|---|---|---|');
   items.forEach((e, i) => {
-    const side = e.duplicateSession ? 'dup' : e.contradicts ? 'DISPUTE' : isInvestigation(e) ? 'investigation'
+    const side = e.duplicateSession ? 'dup' : e.contradicts ? (e.contested ? 'DISPUTE (soft)' : 'DISPUTE') : isInvestigation(e) ? 'investigation'
       : attestsCurrentClaim(e, amendments) ? 'confirm' : 'confirm (pre-amendment)';
     const cond = e.conditions ? Object.entries(parseConditions(e.conditions)).map(([k, v]) => cell(`${k}=${v}`)).join('<br>') : '—';
     const builds = [e.platformVersion, ...mentionedBuilds(e.note)].filter(Boolean).join(', ') || '—';
