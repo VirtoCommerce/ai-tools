@@ -15,6 +15,17 @@ export function checkAgentOutputs(outs) {
   return errors;
 }
 
+/** One CHANGE dispatch per product PR (SKILL.md Step 2): each part is checked against changeOut on its own, so an
+ *  error names the dispatch to repeat; then the five lists are concatenated, in the parts' order. */
+export const CHANGE_PART_RE = /^change\.(\d+)\.out\.json$/;
+export function mergeChange(parts) {
+  const errors = parts.flatMap(({ name, out }) => validateDef(out, SCHEMA, "changeOut").map((e) => `${name}: ${e}`));
+  if (errors.length) return { errors };
+  const merged = { prs: [], hidden_behaviour: [], gaps: [], questions: [], embedded_instructions: [] };
+  for (const { out } of parts) for (const k of Object.keys(merged)) merged[k].push(...out[k]);
+  return { errors, merged };
+}
+
 // GitHub owner/repo are case-insensitive: an agent entry is matched to prepare's PR on the lower-cased repo#number.
 const prKey = (repo, number) => `${repo}#${number}`.toLowerCase();
 // The only keys taken from the CHANGE agent. Identity (repo, number, state, merged, head_sha), context_only and

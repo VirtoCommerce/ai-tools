@@ -85,7 +85,8 @@ conditions: []}`. Never infer a design from anything else.
 
 ## 3. Mode CHANGE
 
-Read `prepare.json` `prs` and `rung`.
+Read `prepare.json` `prs` and `rung`. A `PRS:` line in the brief limits you to the entries whose `ref`
+it names (another dispatch covers the rest); without it, every entry is yours.
 
 1. **No PRs** (`prs` empty): first look at `prepare.json` `gaps`. If it already holds a `change` or
    `change.*` gap (`no-credential`, `access-denied`, `unreadable`), the search never ran: return

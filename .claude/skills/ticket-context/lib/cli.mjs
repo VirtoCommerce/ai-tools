@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // .claude/skills/ticket-context/lib/cli.mjs — the deterministic half of /ticket-context (design §5).
 // Exit: 0 ok · 1 usage · 2 gate or schema failed · 3 could not run. stdout is one JSON object; no secret is printed.
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertKey, cacheDir, isInside, newRunDir, outputRoot, removeRunDir, sweepStaleRuns } from "./paths.mjs";
@@ -18,7 +18,7 @@ import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghCl
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
-import { OUT_FILES, checkAgentOutputs, compose } from "./compose.mjs";
+import { CHANGE_PART_RE, OUT_FILES, checkAgentOutputs, compose, mergeChange } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
 
 const argv = process.argv.slice(2);
@@ -28,7 +28,7 @@ const has = (n) => argv.includes(`--${n}`);
 const out = (o) => process.stdout.write(`${JSON.stringify(o, null, 2)}\n`);
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
-const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | merge-change --prepare <p> | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -210,6 +210,18 @@ function attach() {
   out({ status: "attached", ref, local_path: it.local_path ?? null, gap: it.gap ?? null });
 }
 
+/** Step 2 with one CHANGE dispatch per product PR: change.<n>.out.json (each saved verbatim) → change.out.json. */
+function mergeChangeCmd() {
+  const prep = readJson(prepPath());
+  const names = readdirSync(prep.run_dir).filter((n) => CHANGE_PART_RE.test(n))
+    .sort((a, b) => Number(CHANGE_PART_RE.exec(a)[1]) - Number(CHANGE_PART_RE.exec(b)[1]));
+  if (!names.length) { console.error("✗ no change.<n>.out.json in the run dir — save each CHANGE output first"); process.exit(3); }
+  const { errors, merged } = mergeChange(names.map((name) => ({ name, out: readJson(join(prep.run_dir, name)) })));
+  if (errors.length) { out({ status: "schema-failed", errors }); process.exit(2); }
+  writeJson(join(prep.run_dir, OUT_FILES.change), merged);
+  out({ status: "merged", parts: names.length, prs: merged.prs.length });
+}
+
 function deploy() {
   const prep = readJson(prepPath());
   const d = checkDeployment({ root, key: prep.ticket, prs: prep.prs });
@@ -304,7 +316,7 @@ function redeploy() {
   out({ status: "redeployed", bundle_path: bp, chain_deployed: d.chain_deployed, blockers: d.blockers });
 }
 
-const commands = { prepare, attach, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
+const commands = { prepare, attach, "merge-change": mergeChangeCmd, deploy, known, compose: composeCmd, check, finish, abort, redeploy };
 if (!commands[cmd]) usage(cmd ? `unknown command "${cmd}"` : "no command");
 try { await commands[cmd](); } catch (e) {
   console.error(`✗ ticket-context ${cmd} could not run: ${String(e?.message ?? e).slice(0, 300)}`);

@@ -10,7 +10,7 @@
 
 | # | Decision | Why |
 |---|---|---|
-| A1 | **One agent, three modes** (`TICKET`, `MATERIALS`, `CHANGE`). The skill dispatches it three times in one message, one mode each. | One definition to keep under BUDGET-004. Three parallel dispatches keep the speed of today's Stage 1 (P1). |
+| A1 | **One agent, three modes** (`TICKET`, `MATERIALS`, `CHANGE`). The skill dispatches it three times in one message, one mode each. *Revised 2026-10-13 (Phase 2, fix wave 2):* with more than one product PR, CHANGE is one dispatch **per product PR** in that same message, each brief carrying `PRS: <ref>`; the skill concatenates their `prs`, `hidden_behaviour`, `gaps`, `questions` and `embedded_instructions` into `change.out.json`. `model: inherit` stays. | One definition to keep under BUDGET-004. Three parallel dispatches keep the speed of today's Stage 1 (P1). Phase 2's replays measured CHANGE as the long pole on multi-PR tickets: one agent read every PR in turn. |
 | A2 | **Revised 2026-10-13. `tools: Read, Grep, Glob` — nothing else.** No `Bash`, no write tool, no `WebFetch`, no MCP. | *Replaces:* an allowlist with exact MCP tool ids and `WebFetch`. MCP ids are per-install and did not match this repo's servers (design D6); a server-level pattern would admit write tools. `WebFetch` let any text the agent read become a request URL — the exfiltration path of a prompt injection. With three file tools, read-only and no-network hold by construction. |
 | A3 | **Everything that touches a remote system or a shell runs before the dispatch**: tracker and code-host REST, downloads, HAR/log scrubbing (S2), `ffmpeg` frames (D4), public pages, and — by the skill runner — the connector-only sources (Loom, Figma). The agent receives **paths** in `prepare.json`. | Deterministic work belongs in scripts. It keeps raw HARs, credentials and the network away from the agent. |
 | A4 | **Revised 2026-10-13. The PR ladder is a script** (rungs 1–3 in `lib/github.mjs`). The agent only reports rung 4: paths the ticket names, as candidates. | *Replaces:* the ladder over GitHub MCP. A script runs the same ladder in every session, with or without MCP. |
@@ -28,11 +28,14 @@ MODE:            TICKET | MATERIALS | CHANGE
 TICKET:          <KEY>
 PREPARE:         <absolute path to prepare.json>     (every other input is a path inside it)
 ITEMS:           <MATERIALS only: the inventory refs to analyse — every item with a local_path and no gap>
+PRS:             <CHANGE only, optional: the PR ref(s) to analyse; absent = every PR in prepare.json>
 OUTPUT_SCHEMA:   <absolute path to bundle.schema.json>, $def: ticketOut | materialsOut | changeOut
 DESIGN_RULES:    <MATERIALS only: absolute path to design-sources.md>
 ```
 
 The tracker, host and org are not in the brief: the agent fetches nothing, so it does not need them.
+*Added 2026-10-13 (Phase 2, fix wave 2):* `PRS:` — with more than one product PR the skill dispatches
+one CHANGE per PR in the same message (A1) and merges the outputs (`cli.mjs merge-change`).
 
 ## 3. The agent file (proposed, verbatim)
 
@@ -124,7 +127,8 @@ conditions: []}`. Never infer a design from anything else.
 
 ## 3. Mode CHANGE
 
-Read `prepare.json` `prs` and `rung`.
+Read `prepare.json` `prs` and `rung`. A `PRS:` line in the brief limits you to the entries whose `ref`
+it names (another dispatch covers the rest); without it, every entry is yours.
 
 1. **No PRs** (`prs` empty): first look at `prepare.json` `gaps`. If it already holds a `change` or
    `change.*` gap (`no-credential`, `access-denied`, `unreadable`), the search never ran: return
