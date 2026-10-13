@@ -206,8 +206,8 @@ regression. Adding a second executor would put two owners on one invariant set w
 whether the lane **runs**. It never re-routes the ticket: a FAST run with `--visual` still authors no
 cases, writes no Test Model and runs no verifier — it gains one agent and the checklist rows in §6.
 
-**On `/qa-test-fast` the lane is ON whenever `visual_surface: true`**, derived per §1 from Wave 1's PR diff
-(source B) and the checklist's lanes; `--no-visual` drops it. Either way the outcome is recorded in
+**On `/qa-test-fast` the lane is ON whenever `visual_surface: true`**, derived per §1 from the bundle's
+`change.prs[].layers` and the checklist's lanes; `--no-visual` drops it. Either way the outcome is recorded in
 `summary.json.visual` with its `surface_source[]` — a dropped or `false` lane is listed in `verdict.md`
 under *Not tested, and why*, never silent. Unlike `/qa-test` FAST, this flow already pays for a model and
 a multi-lane Stage 2, so the one-agent argument above does not apply to it.

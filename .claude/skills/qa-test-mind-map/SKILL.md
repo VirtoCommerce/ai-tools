@@ -131,7 +131,7 @@ cross-domain edges drawn in the source-side map; in `build` step 10, `Behavior:`
 - **`/qa-checklist --from-model`** — Mode 5 selects the in-scope nodes by chain link, citation, descent
   and crossing ([`../qa-checklist/from-model.md`](../qa-checklist/from-model.md)).
 - **`/qa-test-fast`** — Wave 2 runs `update` or `build` without stamps and copies the map signals into the
-  bundle ([`../qa-test-fast/context-wave.md`](../qa-test-fast/context-wave.md) §Wave 2).
+  run context ([`../qa-test-fast/context-wave.md`](../qa-test-fast/context-wave.md) §Wave 2).
 
 ## Failure handling
 
