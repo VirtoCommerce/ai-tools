@@ -1,7 +1,7 @@
 {
   "_meta": {
     "description": "Test data aliases for @td() references in suite CSVs. Syntax: @td(ALIAS.field) or @td(file, filter, column)",
-    "version": "1.5.60",
+    "version": "1.5.61",
     "changelog_1_5_50": "Suite 083d (loyalty missions E2E) fixture set: MSN_E2E_RUN + MSN_E2E_{ORDERVALUE,ORDERCOUNT,PERSKU,PERSKU_PTS} + MSN_E2E_PRODUCT_{UNIT,A,B,PTS} + MSN_E2E_REWARD_USER. Run REG-2026-08-28-1154 returned 2 PASS / 6 BLOCKED because the shared MSN_* missions had been CONSUMED — MSN_ORDERCOUNT at 2 of 2 Completed, MSN_ORDERVALUE at 5,842,446/100% — and a Completed mission stops accruing entirely (proven by a control pair inside one order: MSN_ZEROTARGET 24 -> 25 while MSN_ORDERCOUNT stayed frozen at 2). Mission progress is per-(user,mission), cumulative, monotonic, frozen at completion, with NO reset path in vc-module-loyalty, so repeatability comes from minting a FRESH mission per run (name carries a run handle) rather than from resetting anything. Products are stable and NOT run-scoped (no per-user state), packSize 1 (MSN_PERSKU_PRODUCT_B steps 0->2->0, so \"quantity exactly 1\" was unachievable) and trackInventory=false. MSN_E2E_PRODUCT_PTS is the first PerSku target priced in the loyalty currency, which is what makes the no-currency-filter question (LoyaltyMissionLogicService.cs:~416 vs LoyaltyProgramHandler.cs:199) askable at all. MSN_E2E_REWARD_USER borrows the per-run ephemeral LOYALTY_ZERO_USER because a 500-PTS reward against LOYALTY_VIP_USER (964,189,233 PTS) cannot demonstrate that the points spent were earned from a mission. Seeder scripts/seed-data/loyalty/seed-missions-e2e.mjs, spec module missions-e2e-specs.mjs, guard npm run td:validate:missions-e2e (a VACUITY guard: it fails when a fixture was not pre-completion at seed time or when the reward stops being legible against the balance).",
     "updated": "GENERATED",
     "changelog_1_5_53": "VCST-5024 top-up — ORG_LOY_MISSION_2 (OrderCountGoal 1, reward 619) and ORG_LOY_MISSION_PARTIAL (OrderCountGoal 2, reward 631), both Published and targeted at AGENT-TEST-ORGLOY like ORG_LOY_MISSION. WHY: ORG_LOY_MISSION was CONSUMED before it could answer anything, because the store-mode flip silently did not take effect (the settings-v2 tenant write returns 204 and updates the tenant-settings read, but the module resolves store.Settings from the store entity, which stayed null) — so the first journey ran in Customer mode and ORG_LOY_A and ORG_LOY_B each completed the count-1 mission and were each granted 617. Once-per-MEMBER is correct Customer-mode behaviour, which is why that mission is KEPT rather than swept: it is the cleanest record that the flip had not landed. But OrderCountGoal progress is terminal per owner with no reset path, so a consumed mission cannot be repaired and a NEW one is the only route back to a decidable question. THE PAIR, NOT JUST THE REPLACEMENT: count 1 alone cannot separate pooled PROGRESS from pooled COMPLETION (it is Completed the instant anything accrues, so \"B sees it done\" fits both readings); count 2 splits them, because after ONE order a pooled implementation reads 1/2 for BOTH members and a user-keyed one reads 1/2 and 0/2, with neither Completed. Rewards are mutually DISTINCT (617/619/631) and distinct from the missions-e2e set (501/509) because all three are live at once against the same group and one order can move more than one — identical rewards would make a balance delta and a points-history row name nothing, the same failure the missions-e2e set hit with four 500s. MECHANICS: each mission spec now owns a sweep NAME-SPACE (AGENT-TEST-MSN-ORGLOY[-<KEY>]-<ts>-<rand>; ORG_LOY_MISSION keeps the empty key so its live name is unchanged), and a seed sweeps only its own predecessors — minting one mission can never delete a sibling, which is what let the consumed generation-1 record survive. New seeder flags --missions-only + --only <ALIAS,...> mint missions while touching NO account, no org, no balance read and placing no order: by this point ORG_LOY_A and ORG_LOY_B carry real pre-flip balances (39,533 and 100,033) and LOY_PERSONAL_NOORG its funding floor (38,916), all of which are load-bearing evidence a full re-seed would have overwritten. Guard npm run td:validate:org-loyalty now fails a duplicate sweep key, a duplicate or missions-e2e-colliding reward, a non-count-1 ORG_LOY_MISSION_2, a count < 2 ORG_LOY_MISSION_PARTIAL, and equal counts across the pair.",
@@ -62,7 +62,8 @@
     "changelog_1_5_57": "VCST-2945 barcode scanner search fixtures: BARCODE_STORE (dedicated AGENT-TEST store on the B2B-mixed catalog — tests own its barcode settings, never B2B-store's) + BARCODE_{GTIN_UNIQUE,FULLTEXT_DISCRIM,GTIN_SHARED,CODE_OR,PROP,VARIATION_MPN,CASE,SPECIAL,REINDEX,STALE_FIELD} (seed:barcode, td:validate:barcode, barcode images under test-data/uploads/barcodes/) + BROWSEFILTERS_READ_ONLY / BROWSEFILTERS_NONE back-office accounts (seed:rbac, td:validate:rbac).",
     "changelog_1_5_58": "VCST-6054 UCP stock-refusal fixtures: PROD_MIN_ABOVE_STOCK (test-products.csv PROD-112 / QA-MINQ-001, minQuantity 3 > stock 2 > 0 -> inventory_unavailable) and PROD_STOCK_DROP (PROD-113 / QA-DROP-001, stock 10 / cart_qty 2 / dropped_stock 1 -> insufficient_stock after an accepted cart). New test-products.csv columns min_quantity (seeded as the product minQuantity) and cart_qty / dropped_stock (scenario quantities, not seeded). Ordering guarded by td:validate:standard check [14]. Both aliases expose id = the runtime product GUID from aliases.<env>.json (seed:products writes it for these two rows only), and seed:products now also writes FC_EAST.id - the FFC their stock sits on.",
     "changelog_1_5_59": "/qa-generate-data (push-messages recipients (domain map G3)): added 12 alias(es) [PUSH_ORG_INBOX, PUSH_ORG_API, PUSH_RECIPIENT_READER, PUSH_RECIPIENT_BYSTANDER, PUSH_RECIPIENT_BULK, PUSH_RECIPIENT_API, PUSH_RECIPIENT_EMPTY, PUSH_DATA_READER_INBOX, PUSH_DATA_TARGETING_PAIR, PUSH_DATA_BULK, PUSH_DATA_EMPTY, PUSH_DATA_API] for combinations; gap fixtures seeded=false pending /qa-seed-data.",
-    "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases."
+    "changelog_1_5_60": "Edge-case fixtures (scripts/seed-data/edge-cases): registered ORG_EXACTLY_11, MULTI_ORG_11, ORG_EXACTLY_10, ORG_ADDR22, ORG_ADDR22_ADMIN, DISCONTINUED_ITEM_ORDER, DISCONTINUED_ORDER_BUYER, PERSONAL_NON_ORG_USER — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:edge-cases.",
+    "changelog_1_5_61": "VCST-6017 GA4 markup product lists: registered PROD_GA4_RELATED_ANCHOR, PROD_GA4_VARIATION_PARENT, CART_GA4_SFL_RB (seed:ga4-lists, scripts/seed-data/analytics) and PB_GA4_PRODUCT_LISTS, PB_GA4_HTML_LISTS (seed:cms-pages:ga4) — business keys only, runtime ids from aliases.<env>.json; gated by td:validate:ga4-lists."
   },
   "COMPLETED_ORDER": {
     "json": "orders/completed-order",
@@ -9655,5 +9656,80 @@
     "userId": "",
     "contactId": "",
     "notes": "AGENT-TEST personal (no-org) storefront customer replacing the real external mailbox {{PERSONAL_USER_VIRTO}} used to point at. Re-points {{PERSONAL_USER_VIRTO}} / {{PERSONAL_USER_VIRTO_PASSWORD}}. No org membership by design (B2C-ORG-031 asserts a non-org user sees default price). Owned by scripts/seed-data/edge-cases (npm run seed:edge-cases; guard npm run td:validate:edge-cases). Runtime ids are EMPTY here by design and come from aliases.<env>.json after the seeder runs — an unseeded env resolves them to \"\" (a clear miss)."
+  },
+  "PROD_GA4_RELATED_ANCHOR": {
+    "_inline": true,
+    "seed": "seed:ga4-lists",
+    "_comment": "VCST-6017 PDP \"Related products\" widget (list id related_products). AGENT-TEST anchor product with 10 catalog associations (group Accessories — the storefront reads every group, first 30) to live-discovered real products with DISTINCT prices, disjoint from every other VCST-6017 list. 10 > the carousel's max 7 per view (>= lg is the CAROUSEL, < lg the GRID — related-products.vue `lg = smaller(\"lg\")`). Runtime id/url + related_codes/related_ids in aliases.<env>.json. Spec: scripts/seed-data/analytics/ga4-lists-specs.mjs RELATED. Not the \"Recommended / bought together\" widget (XRecommend semantic model, not associations).",
+    "code": "AGENT-TEST-GA4-REL-ANCHOR",
+    "sku": "AGENT-TEST-GA4-REL-ANCHOR",
+    "name": "AGENT-TEST GA4 Related Anchor",
+    "price": 49.99,
+    "currency": "USD",
+    "related_count": 10,
+    "id": "",
+    "url": "",
+    "slug": "",
+    "related_codes": "",
+    "related_ids": ""
+  },
+  "PROD_GA4_VARIATION_PARENT": {
+    "_inline": true,
+    "seed": "seed:ga4-lists",
+    "_comment": "VCST-6017 PDP \"Variations\" widget (variations-default + variations-table, list id variations). AGENT-TEST parent (default template — no VirtoFrontend_UI_Layout=b2c, so Variations not Options) with 60 priced + stocked variations, prices 11.25..85.00 strictly increasing (distinct). The PDP pages the family search by 50 (product.vue variationsItemsPerPage) and the family search counts the parent too (is:product,variation) → 61 rows, 2 pages. Replaces the STALE PROD_VARIATION_PARENT_SALE for VCST-6017 (that product resolves to null on B2B-store on vcst, 2026-10-13). Runtime id/url in aliases.<env>.json.",
+    "code": "AGENT-TEST-GA4-VAR-PARENT",
+    "sku": "AGENT-TEST-GA4-VAR-PARENT",
+    "name": "AGENT-TEST GA4 Variations Parent",
+    "variations_count": 60,
+    "page_size": 50,
+    "first_variation_price": 11.25,
+    "last_variation_price": 85,
+    "currency": "USD",
+    "id": "",
+    "url": "",
+    "slug": "",
+    "pages": ""
+  },
+  "CART_GA4_SFL_RB": {
+    "_inline": true,
+    "seed": "seed:ga4-lists:cart",
+    "_comment": "VCST-6017 scenario #14 cart state for the run account ({{USER_EMAIL}}). `seed:ga4-lists:cart` CONVERGES it from ANY prior state: cart = exactly 1 seeded line at quantity 1 (every other line removed), saved-for-later = exactly 8 seeded items at quantity 1 (foreign items removed; > the cart block's Show-more step of 6), recently browsed = exactly the 6 seeded products (= the cart page's maxProducts 6), all DISJOINT and distinct-priced. Recently browsed is pushed under the seeder's own sessionId (rb_session_id): xRecommend lists the newest maxProducts EVENT ROWS by ModifiedDate and de-duplicates AFTER the take, and a sessionless push stamps every session's row for a product, so a product the browser also visited fills 2+ of the 6 slots (diagnosed 2026-10-13). FIFTH RULE: pooled, test-mutable state — run the seed as the case's PRECONDITION STEP immediately before the cart is opened; a PDP visit by the account after that step changes recently browsed. Runtime codes/ids in aliases.<env>.json.",
+    "url": "/cart",
+    "sfl_show_more_step": 6,
+    "recently_browsed_max": 6,
+    "cart_line_codes": "",
+    "saved_for_later_codes": "",
+    "recently_browsed_codes": "",
+    "cart_line_ids": "",
+    "saved_for_later_ids": "",
+    "recently_browsed_ids": "",
+    "saved_for_later_count": 8,
+    "rb_session_id": ""
+  },
+  "PB_GA4_PRODUCT_LISTS": {
+    "_inline": true,
+    "seed": "seed:cms-pages:ga4",
+    "_comment": "VCST-6017 dedicated Page Builder page carrying EVERY block type that renders products, each with its OWN disjoint, distinct-priced product set: products + predefined-product-list (both products_block — two blocks sharing one list id), products-carousel titled + untitled (title \"\" → data-list-name=\"\"), favorite-products (favorite_products; a filter search, NOT the account's favourites), demo-product-list and product-info (NOT marked by PR #2543 — expect no events). predefined-product-list and the untitled carousel sit below a 2600px spacer (far below a 1080px fold). Content: test-data/cms/page-content.json PB_GA4_PRODUCT_LISTS (@pool markers); runtime group_id in aliases.<env>.json. carousel_card_name / carousel_card_code / carousel_card_images (runtime, aliases.<env>.json): the product of the FIRST products block (pbProducts) that has >= 2 images, so its card renders an image carousel — GA-040 drives it (POOL_PLAN pbProducts multiImage: 1).",
+    "name": "AGENT-TEST GA4 Product Lists",
+    "permalink": "/agent-test-ga4-product-lists",
+    "url": "/agent-test-ga4-product-lists",
+    "culture": "en-US",
+    "expect_status": "Published",
+    "carousel_card_name": "",
+    "carousel_card_code": "",
+    "carousel_card_images": ""
+  },
+  "PB_GA4_HTML_LISTS": {
+    "_inline": true,
+    "seed": "seed:cms-pages:ga4",
+    "_comment": "VCST-6017 scenarios #18/#19 (+ #17 empty): Page Builder text blocks carrying plain HTML in the PR README grammar — list agent_test_html_full (cards with data-product-id/-sku/-name/-price) and list agent_test_html_partial (cards with name + price ONLY) — rendered through v-html-safe, which keeps data-* attributes (verified: pageDocument content round-trips them). Plus a favorite-products block whose filter matches nothing → an EMPTY favorite_products container. Runtime group_id in aliases.<env>.json.",
+    "name": "AGENT-TEST GA4 HTML Product Lists",
+    "permalink": "/agent-test-ga4-html-product-lists",
+    "url": "/agent-test-ga4-html-product-lists",
+    "culture": "en-US",
+    "expect_status": "Published",
+    "full_list_id": "agent_test_html_full",
+    "partial_list_id": "agent_test_html_partial",
+    "empty_favorites_title": "AGENT-TEST GA4 Favorites No Match"
   }
 }

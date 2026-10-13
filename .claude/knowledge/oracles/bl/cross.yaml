@@ -81,7 +81,8 @@ rules:
       kind: manual
       ref: 'Place order → check inventory (decremented) → check email inbox (confirmation received) → check GA4 dataLayer (purchase event with correct data) → check "My Orders" (order listed) → check cart (empty). Verify in Admin: order exists with correct totals.'
     violation_signal: Inventory not decremented; email not sent; GA4 event missing or wrong revenue; order not in history; cart not cleared; any side effect missing.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[case] GA-031 failed in REG-2026-10-13-1726"
   - id: BL-CROSS-006
     title: Feature flag toggle → immediate behavior change
     rule: Store-level feature flags (e.g., `quotesEnabled`, `anonymousUsersAllowed`, `createAnonymousOrderEnabled`) take effect on the storefront without requiring a restart or redeployment. The storefront reads flags from xAPI on each page load. Module-level flags (e.g., module enable/disable) may require a platform restart. The distinction must be documented per flag.

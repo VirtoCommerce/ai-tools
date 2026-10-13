@@ -88,6 +88,9 @@ const TEARDOWN_STEPS = [
   // VCST-2945 barcode fixtures — its products, properties, dedicated store and pricelist. Before the
   // inventory / catalog sweeps (its products sit in the AGENT-TEST-SEED catalog on the store FFC).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', args: ['--teardown'] },
+  // VCST-6017 GA4 list fixtures (related anchor + associations, 60-variation family, their pricelist) —
+  // before the fulfillment centers their stock sits on. The cart part is a per-case precondition, not seeded here.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--teardown', '--only', 'related,variations'] },
   // Variation family + its per-FFC stock records — before the fulfillment centers they sit on.
   { name: 'variation-stock', script: 'inventory/seed-variation-stock.mjs', args: ['--teardown'] },
   { name: 'inventory', script: 'inventory/seed-inventory.mjs', args: ['--teardown'] },
@@ -198,6 +201,10 @@ const STEPS = [
   // VCST-2945 — barcode scanner search fixtures + a dedicated AGENT-TEST store on the store catalog.
   // After inventory (70): it stocks the store FFC. Never writes STORE_ID (fingerprinted before/after).
   { name: 'barcode', script: 'catalog/seed-barcode-fixtures.mjs', required: false, priority: 74 },
+  // VCST-6017 — PDP related-products anchor (catalog associations) + a variation family longer than one
+  // variations page. After inventory (70): it stocks the store's main FFC. The cart/SFL/recently-browsed
+  // state is pooled per account (FIFTH RULE) — a case runs `seed:ga4-lists:cart` as its own precondition.
+  { name: 'ga4-lists', script: 'analytics/seed-ga4-lists.mjs', args: ['--only', 'related,variations'], required: false, priority: 76 },
   // VCST-5705 / CAT-079 + CAT-080 + WISH-30 — two wishlists in two REAL stores. Runs last: it needs
   // the catalog structure and a fulfillment center, and it creates its own products + customer.
   // `required: false` because it hard-aborts on an env with no genuine second store
