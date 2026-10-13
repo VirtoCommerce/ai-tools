@@ -37,7 +37,7 @@ export function ghClient(cred, fetchImpl = fetch) {
     if ((res.status === 403 || res.status === 429) && (res.headers.get("x-ratelimit-remaining") === "0" || res.headers.get("retry-after") !== null)) throw new GapError("unreadable", `GitHub rate limit reached on ${where} — wait for the reset`);
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `GitHub ${res.status} on ${where} (credential: ${cred.via}; never retried with another)`);
     if (res.status === 404) throw new GapError("deleted", `GitHub 404 on ${where}`);
-    if (!res.ok) throw new GapError("unreadable", `GitHub ${res.status} on ${where}`);
+    if (!res.ok) throw Object.assign(new GapError("unreadable", `GitHub ${res.status} on ${where}`), { status: res.status });
     return res;
   }
   const readBody = async (res, as) => { try { return await res[as](); } catch (e) { throw timeoutGap(e, "GitHub response body", CAPS.fetchTimeoutMs); } };
@@ -99,21 +99,28 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
       sameKey = (await gh.searchPrs(key, orgs)).map((i) => ({ ...refFromSearchItem(i), title: i.title, state: i.state, created_at: i.created_at })).filter((r) => r.ref);
     } catch (e) { gaps.push(asGap("change.search", e)); }
   }
-  const rung1 = explicitRefs.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 1 }));
-  ladder.push({ rung: 1, found: rung1.length });
-  // Rung 1 ends the search only when it found change surface: a ticket linking only its deployment-manifest or
-  // tooling PRs (context-only) still has its product PRs searched for on rungs 2–3.
-  const isProduct = (r) => !CONTEXT_ONLY_REPOS.includes(String(r.repo).toLowerCase());
-  if (rung1.some(isProduct)) return { rung: 1, refs: rung1, sameKey, ladder };
-  const withRung1 = (found) => {
-    const seen = new Set(rung1.map((r) => r.ref.toLowerCase()));
-    return [...rung1, ...found.filter((r) => !seen.has(r.ref.toLowerCase()))];
+  // Rungs 1 and 2 always both run and merge (deduplicated, the lower rung keeps the PR): a comment naming two
+  // PRs is not proof there is no third, and the key search is what finds it (VCST-4933: x-cms#23). Rung 3, the
+  // costliest, runs only when 1–2 found no product PR. `rung` is the highest rung that ADDED a PR.
+  const merged = [];
+  const seen = new Set();
+  let rung = null;
+  const add = (list, n) => {
+    let added = 0;
+    for (const r of list) {
+      const k = r.ref.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      merged.push({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: n });
+      added++;
+    }
+    if (added) rung = n;
+    ladder.push({ rung: n, found: list.length, added });
   };
-  if (sameKey.length) {
-    ladder.push({ rung: 2, found: sameKey.length });
-    return { rung: 2, refs: withRung1(sameKey.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 2 }))), sameKey, ladder };
-  }
-  ladder.push({ rung: 2, found: 0 });
+  add(explicitRefs, 1);
+  add(sameKey, 2);
+  const isProduct = (r) => !CONTEXT_ONLY_REPOS.includes(String(r.repo).toLowerCase());
+  if (merged.some(isProduct)) return { rung, refs: merged, sameKey, ladder };
   const refs = new Map();
   if (orgs.length) {
     try {
@@ -132,8 +139,74 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
       }
     } catch (e) { gaps.push(asGap("change.commits", e)); }
   }
-  ladder.push({ rung: 3, found: refs.size });
-  return { rung: refs.size ? 3 : rung1.length ? 1 : null, refs: withRung1([...refs.values()]), sameKey, ladder };
+  add([...refs.values()], 3);
+  return { rung, refs: merged, sameKey, ladder };
+}
+
+/** The order the PR cap (CAPS.prs) fills in: context-only PRs last; then by rung — 1 (explicitly linked), 2, 3,
+ *  companions (rung null) last — so newer key-search hits never push a linked PR over the cap; then newest
+ *  first. Sorts in place. */
+export function orderPrMeta(prMeta) {
+  const isContext = (p) => CONTEXT_ONLY_REPOS.includes(String(p.repo).toLowerCase());
+  return prMeta.sort((a, b) => (isContext(a) - isContext(b)) || ((a.rung ?? 9) - (b.rung ?? 9))
+    || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
+}
+
+// Named companions (design §5 Block 3). A change can span repos whose PRs carry other keys, so no rung finds
+// them; the body of a PR the ladder found is where its author names them. Three forms: a PR URL,
+// `owner/repo#n`, and a bare `repo#n`, which is read as the naming PR's own owner. The owner must be one of
+// the configured orgs (the allow-list rungs 2–3 search) and owner/repo/number pass the ladder's validation.
+const COMPANION_URL_RE = /https:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/pull\/(\d+)/gi;
+const COMPANION_SHORT_RE = /(?<![\w./#-])(?:([A-Za-z0-9_.-]+)\/)?([A-Za-z0-9_.-]+)#(\d+)\b/g;
+const isContextRepo = (repo) => CONTEXT_ONLY_REPOS.includes(String(repo).toLowerCase());
+
+export function namedCompanions(body, namingOwner, orgs) {
+  const allowed = new Set(orgs.map((o) => o.toLowerCase()));
+  const out = [];
+  const add = (owner, repo, n, url) => {
+    const number = Number(n);
+    if (!owner || !allowed.has(owner.toLowerCase())) return;
+    try { checkRepo(owner, repo); checkNumber(number); } catch { return; }
+    out.push({ ref: `${owner}/${repo}#${number}`, owner, repo, number, url });
+  };
+  const text = String(body ?? "");
+  for (const m of text.matchAll(COMPANION_URL_RE)) add(m[1], m[2], m[3], true);
+  for (const m of text.matchAll(COMPANION_SHORT_RE)) add(m[1] ?? namingOwner, m[2], m[3], false);
+  return out;
+}
+
+/** One hop, never more: only the bodies of the PRs the ladder found are read, never a companion's own body, and
+ *  never a context-only PR's. Each new product PR comes back as a ladder ref with `rung: null` and
+ *  `found_via: <the naming PR>`; the caller appends them AFTER the ladder's PRs, so CAPS.prs fills with ladder
+ *  PRs first and a companion past it is an over-cap gap like any other. The body is the one prepare already
+ *  holds in `meta` (gh.pr); only the companion's own metadata is fetched. */
+export async function followCompanions({ gh, prMeta, orgs, gaps, caps = CAPS }) {
+  const seen = new Set(prMeta.map((p) => p.ref.toLowerCase()));
+  const named = [];
+  for (const p of prMeta) {
+    if (!p.meta || isContextRepo(p.repo)) continue;
+    for (const c of namedCompanions(p.meta.body, p.owner, orgs)) {
+      const k = c.ref.toLowerCase();
+      if (seen.has(k) || isContextRepo(c.repo)) continue;
+      seen.add(k);
+      named.push({ ...c, found_via: p.ref });
+    }
+  }
+  const out = [];
+  for (const [i, c] of named.entries()) {
+    if (i >= caps.companions) {
+      gaps.push(gap("change.companions", "over-cap", `${named.length - i} more named companion PRs not looked up; the first ${caps.companions} were`));
+      break;
+    }
+    const r = { ref: c.ref, owner: c.owner, repo: c.repo, number: c.number, rung: null, found_via: c.found_via };
+    try { out.push({ ...r, meta: await gh.pr(c.owner, c.repo, c.number) }); } catch (e) {
+      // `#n` names issues as well as PRs, and /pulls/<n> is a 404 for an issue: a shorthand that is not a PR is
+      // not a companion. A PR URL that cannot be read is one, and keeps its gap.
+      if (!c.url && e instanceof GapError && e.reason === "deleted") continue;
+      out.push({ ...r, gap: asGap(`pr:${c.ref}`, e) });
+    }
+  }
+  return out;
 }
 
 /** A context-only PR (deployment manifest, tooling): metadata only, same entry shape as collectPr with the change-surface paths null. */
@@ -149,13 +222,30 @@ export function collectContextPr(p, base, runDir, sameKey = []) {
     meta_path, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
 }
 
+/** The files API's per-file `patch` fields as one unified diff, with `diff --git`-style headers, in the shape the
+ *  CHANGE agent already reads. A file without `patch` (binary, or too large for GitHub) keeps its header and a
+ *  note, and is returned in `noPatch`. */
+export function assembleDiff(files) {
+  const parts = [];
+  const noPatch = [];
+  for (const f of files) {
+    const from = f.previous_filename ?? f.filename;
+    const head = [`diff --git a/${from} b/${f.filename}`];
+    if (f.status === "renamed") head.push(`rename from ${from}`, `rename to ${f.filename}`);
+    if (typeof f.patch !== "string") { noPatch.push(f.filename); parts.push([...head, "(no patch from GitHub: binary or too large)"].join("\n")); continue; }
+    head.push(f.status === "added" ? "--- /dev/null" : `--- a/${from}`, f.status === "removed" ? "+++ /dev/null" : `+++ b/${f.filename}`);
+    parts.push([...head, f.patch].join("\n"));
+  }
+  return { text: parts.length ? `${parts.join("\n")}\n` : "", noPatch };
+}
+
 export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {}) {
   const { owner, repo, number, meta } = p;
   checkRepo(owner, repo);
   checkNumber(number);
   const slug = `${owner}-${repo}-${number}`;
   const merged = !!meta.merged_at;
-  const entry = { ref: p.ref, repo: `${owner}/${repo}`, number, rung: p.rung ?? null, state: meta.state, merged, merged_at: meta.merged_at ?? null,
+  const entry = { ref: p.ref, repo: `${owner}/${repo}`, number, rung: p.rung ?? null, ...(p.found_via ? { found_via: p.found_via } : {}), state: meta.state, merged, merged_at: meta.merged_at ?? null,
     created_at: meta.created_at ?? null, head_sha: meta.head?.sha ?? null, context_only: CONTEXT_ONLY_REPOS.includes(repo.toLowerCase()),
     meta_path: null, files_path: null, diff_path: null, reviews_path: null, checks_path: null, gaps: [] };
   const write = (name, data) => {
@@ -166,18 +256,28 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {
   entry.meta_path = write("meta.json", { repo: entry.repo, number, title: meta.title, state: meta.state, merged, merged_at: entry.merged_at,
     created_at: entry.created_at, head_sha: entry.head_sha, base: meta.base?.ref ?? null, body: meta.body ?? "",
     later_prs: laterPrs(sameKey, { ref: p.ref, merged_at: entry.merged_at }) });
+  let files = null; // the files API's entries, `patch` included: the fallback when the whole diff is refused
   try {
     // gh.files may return up to cap+1 entries; the extra one is the over-cap signal.
     const all = await gh.files(owner, repo, number, caps.prFiles);
     if (all.length > caps.prFiles) entry.gaps.push(gap(`pr:${p.ref}:files`, "over-cap", `${all.length}+ files; first ${caps.prFiles} read`));
-    entry.files_path = write("files.json", all.slice(0, caps.prFiles)
-      .map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })));
+    files = all.slice(0, caps.prFiles);
+    entry.files_path = write("files.json", files.map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })));
   } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:files`, e)); }
-  try {
-    const cut = cutBytes(String(await gh.diff(owner, repo, number)), caps.diffBytes);
+  const writeDiff = (text) => {
+    const cut = cutBytes(text, caps.diffBytes);
     if (cut.cut) entry.gaps.push(gap(`pr:${p.ref}:diff`, "over-cap", `diff truncated at ${caps.diffBytes} of ${cut.bytes} bytes`));
     entry.diff_path = write("diff.patch", cut.text);
-  } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:diff`, e)); }
+  };
+  try { writeDiff(String(await gh.diff(owner, repo, number))); } catch (e) {
+    // 406 = GitHub will not render the whole diff (too many lines or files). The same hunks come per file from the
+    // files API read above; the PR's diff is a gap only when that read failed too.
+    if (e?.status === 406 && files) {
+      const { text, noPatch } = assembleDiff(files);
+      writeDiff(text);
+      if (noPatch.length) entry.gaps.push(gap(`pr:${p.ref}:patches`, "unreadable", `whole diff refused (406), read per file; no patch from GitHub (binary or too large) for ${noPatch.length} file(s): ${noPatch.slice(0, 20).join(", ")}${noPatch.length > 20 ? ", …" : ""}`));
+    } else entry.gaps.push(e?.status === 406 ? gap(`pr:${p.ref}:diff`, "unreadable", "GitHub refused the whole diff (406, too large) and the per-file read failed too") : asGap(`pr:${p.ref}:diff`, e));
+  }
   let comments = null;
   try { comments = await gh.reviewComments(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:reviews`, e)); }
   if (comments) {
