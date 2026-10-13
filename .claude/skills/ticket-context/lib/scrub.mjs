@@ -120,7 +120,28 @@ function stripQuery(url, secrets) {
   } catch { return redactText(url, secrets); }
 }
 
-/** A HAR reduced to what a reader needs: no header, cookie or query value survives. */
+/** A name kept for a reader (header or cookie name), redacted and bounded — the value is never read. */
+const nameOf = (n, secrets) => redactText(String(n ?? ""), secrets).slice(0, 64);
+
+/** Sizes and names of what a request carried — "header or cookie too large", a duplicated or missing
+ *  cookie — without one value: a header costs name + ": " + value + CRLF on the wire. */
+function requestFacts(req, secrets) {
+  const headers = Array.isArray(req?.headers) ? req.headers : [];
+  const headerBytes = headers.reduce((n, h) => n + String(h?.name ?? "").length + String(h?.value ?? "").length + 4, 0);
+  const cookieHeader = headers.filter((h) => /^cookie$/i.test(h?.name ?? "")).map((h) => String(h?.value ?? "")).join("; ");
+  const pairs = Array.isArray(req?.cookies) && req.cookies.length
+    ? req.cookies.map((c) => [String(c?.name ?? ""), String(c?.value ?? "")])
+    : cookieHeader.split(/;\s*/).filter(Boolean).map((p) => (p.includes("=") ? [p.slice(0, p.indexOf("=")), p.slice(p.indexOf("=") + 1)] : [p, ""]));
+  return {
+    headerBytes,
+    cookies: { count: pairs.length, bytes: cookieHeader.length || pairs.reduce((n, [k, v]) => n + k.length + v.length + 2, 0) },
+    headerNames: [...new Set(headers.map((h) => nameOf(h?.name, secrets).toLowerCase()))].slice(0, 100),
+    cookieNames: pairs.map(([k]) => nameOf(k, secrets)).slice(0, 100),
+  };
+}
+
+/** A HAR reduced to what a reader needs: no header, cookie or query value survives — only their
+ *  sizes, and on a failing entry their names. */
 export function reduceHar(har, secrets = new Set()) {
   const entries = har?.log?.entries;
   if (!Array.isArray(entries)) throw new Error("not a HAR: no log.entries");
@@ -131,12 +152,16 @@ export function reduceHar(har, secrets = new Set()) {
       const content = e.response?.content ?? {};
       const body = content.encoding === "base64" ? null : String(content.text ?? "");
       const isError = (status ?? 0) >= 400 || (body !== null && /"errors"\s*:/.test(body));
+      const req = requestFacts(e.request, secrets);
       return {
         started: e.startedDateTime ?? null,
         method: e.request?.method ?? null,
         url: e.request?.url ? stripQuery(e.request.url, secrets) : null,
         status,
         operation: operationsOf(e.request?.postData?.text ?? ""),
+        request_header_bytes: req.headerBytes,
+        cookies: isError ? { ...req.cookies, names: req.cookieNames } : req.cookies,
+        ...(isError ? { request_header_names: req.headerNames } : {}),
         error: !isError ? null : body === null ? "[binary body]" : redactText(body, secrets).slice(0, 500),
       };
     }),

@@ -63,7 +63,7 @@ For each ref in `ITEMS`, find its entry in `prepare.json` `inventory` and read i
 | kind | Extract |
 |---|---|
 | `screenshot` / `image` | expected vs actual as **shown**, exact UI text (quoted), screen/route if visible, role/account if visible |
-| `har` / `log` / `trace` | **only if `scrubbed: true`**, else `GAP: not-scrubbed`. Endpoint or GraphQL operation name, status, error message, the layer it points to |
+| `har` / `log` / `trace` | **only if `scrubbed: true`**, else `GAP: not-scrubbed`. Endpoint or GraphQL operation name, status, error message, the layer it points to. A HAR entry also carries request header bytes and cookie count/bytes (names only on a failing entry, never a value): use them when the failure is about size or a missing/duplicated header or cookie |
 | `video` | `local_path` is a folder of frames: read them in name order. Ordered repro steps, one per meaningful change between frames |
 | `document` | requirements absent from the ACs (cite page or section). A PDF: pages 1–20 only; a longer one also gets a gap `{where: <ref>, reason: "over-cap", detail: "pages 21+ not read"}` |
 | `loom` | transcript-derived steps; quote what the speaker says is wrong |
@@ -98,7 +98,13 @@ Read `prepare.json` `prs` and `rung`.
    Neither is an entry with `context_only: true` (a deployment-manifest or tooling PR): it is context, not change surface — leave it out.
    - identity: repo, number, state, merged, head SHA (from `meta_path`);
    - files grouped by layer token: `storefront` · `admin-spa` · `api` · `module` · `platform` · `test` · `other`;
-   - **GraphQL operations and REST endpoints touched, by name**;
+   - **GraphQL operations and REST endpoints touched, as coordinates only** — they are passed to
+     `tc:scope` and asked of the `kb`, so the schema rejects prose. `operations`: the bare operation
+     or field name (`addItem`). `endpoints`: `METHOD /route` with the route template as declared
+     (`POST /api/push-message/preview-recipients`); when the route is not in the files you read, the
+     controller action name (`PreviewRecipients`) plus a gap `{where: "pr:<ref>:endpoints", reason:
+     "not-found", detail: "route of <Action> not in the diff"}`. What changed on a contract goes to
+     `hidden_behaviour` (`graphql-schema`, `rest-contract`), never into these strings;
    - settings, permissions and feature flags added or changed;
    - tests the PR added or changed, and changed code paths with **no** test change next to them;
    - fate: from `meta_path` `later_prs` — reverted, superseded, or followed by a fix PR with the same
@@ -112,7 +118,8 @@ Read `prepare.json` `prs` and `rung`.
 3. **Hidden-behaviour pass.** For every PR's diff, one row per item in `hidden_behaviour`
    (§6 gives the row shape). The items, as the exact `item` strings: `default-values` ·
    `db-migrations` · `feature-flags` · `caching` · `copy-localisation` · `search-indexing` ·
-   `background-jobs` · `graphql-schema` (field added, removed, renamed, nullability changed).
+   `background-jobs` · `graphql-schema` (field added, removed, renamed, nullability changed) ·
+   `rest-contract` (a REST request or response field added, removed or renamed).
    `answer` is `yes` or `no`; `source` (`<repo>:<path>:<line>`) only when `yes`.
 4. **You do not check deployment and you do not trace PRs to ACs.** The skill does both after you
    return. Leave `artifact`, `deployed`, `ac_to_diff` and `diff_to_ac` out.

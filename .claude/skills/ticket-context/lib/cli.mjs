@@ -16,7 +16,7 @@ import { extractFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
-import { freshnessKey, isIgnored, readCached, writeCache } from "./cache.mjs";
+import { freshnessKey, isIgnored, readCached, skillFingerprint, writeCache } from "./cache.mjs";
 import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { OUT_FILES, checkAgentOutputs, compose } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
@@ -112,7 +112,7 @@ async function prepare() {
   const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
   prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
 
-  const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain,
+  const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain, skill: skillFingerprint(),
     prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
     linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`) });
   const cachedFile = join(cacheDir(key, root), "bundle.json");
