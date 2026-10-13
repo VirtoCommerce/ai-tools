@@ -71,7 +71,8 @@ project risk, never a guess.**
    - **Technique** from the closed vocabulary
      ([`../qa-test-design/test-design-techniques.md`](../qa-test-design/test-design-techniques.md) §0,
      chosen by its §1 guide; **FLOW first** for anything that changes state), or `EXPLORE`, `VISUAL`,
-     `CONTRACT`, `REGRESSION`.
+     `CONTRACT`, `REGRESSION`. An `EXPLORE` risk names the `{HYPOTHESIS}` oracle or model `GAP` cell it rests
+     on — that is how it reaches `/qa-exploratory ticket`'s charter.
    - **Oracle with its authority**: `{SPEC}` / `{BL}` / `{DOC}` / `{OBSERVED}` / `{HYPOTHESIS}`
      ([`../../knowledge/agents/qa/shared-instructions.md`](../../knowledge/agents/qa/shared-instructions.md)
      §5). A `{HYPOTHESIS}` oracle never decides PASS/FAIL: the risk goes to the charter, or the row names
