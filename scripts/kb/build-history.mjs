@@ -47,7 +47,12 @@ function commitsOf(coords, since) {
     for (const c of rows) out.push({ sha: c.sha, at: c.commit.committer.date });
     if (rows.length < 100) break;
   }
-  return out.sort((a, b) => a.at.localeCompare(b.at));
+  // THE COMMIT ALREADY ON THE BRANCH when the window opens: `since` returns only commits made after it,
+  // so a stand not redeployed since would have no manifest for any of its evidence (Cursor Bugbot on
+  // ai-tools#429). The last commit before `since` is the build it was running at the window's start.
+  const prior = gh(`repos/${coords.deployOwner}/${coords.deployRepo}/commits?sha=${encodeURIComponent(coords.branch)}&until=${since}&per_page=1`);
+  for (const c of prior ? JSON.parse(prior) : []) out.push({ sha: c.sha, at: c.commit.committer.date });
+  return [...new Map(out.map((c) => [c.sha, c])).values()].sort((a, b) => a.at.localeCompare(b.at));
 }
 
 /** The manifest of S at `sha` as a canonical build, or null when the file is unreadable. */

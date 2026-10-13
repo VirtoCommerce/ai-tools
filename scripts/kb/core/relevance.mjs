@@ -23,7 +23,12 @@ export const stemOf = (id) => String(id).replace(/^virtocommerce\./i, '').replac
 
 const words = (text) => new Set(String(text ?? '').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
 const singular = (w) => w.replace(/(ies)$/, 'y').replace(/s$/, '');
-const template = (p) => p.toLowerCase().replace(/\{[^}]*\}/g, '{}').replace(/\/+$/, '');
+// A concrete id in a route is a parameter too: the door keeps `/orders/3f2a…` as written (only `{id}`,
+// `:id`, `<id>` are folded), and swagger declares `/orders/{id}`, so without this the owning module of an
+// item route is never found (Cursor Bugbot on ai-tools#429).
+const ID_SEGMENT = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{16,}|\d+|[a-z]{2,4}\d{4,}(?:-\d+)?)$/i;
+const template = (p) => p.replace(/\{[^}]*\}/g, '{}').split('/').map((seg) => (ID_SEGMENT.test(seg) ? '{}' : seg)).join('/')
+  .toLowerCase().replace(/\/+$/, '');
 
 /** What an entry's anchors say it depends on: `{ platform, theme, xapi, modules: Set<lowercase id> }`. */
 export function anchorOwners(entry, index) {
@@ -76,7 +81,10 @@ function rule({ narrowXapi = false, withNamed = false, index }) {
       const any = Object.values(builds).some((b) => Object.keys(b.modules ?? {}).some(hit));
       if (any) xapi = hit;
     }
-    return { platform: o.platform, theme: o.theme, modules: (id) => ids.has(id.toLowerCase()) || xapi(id) };
+    // `known`: the entry depends on SOMETHING this rule could name. When it is false, "no relevant
+    // difference" means "nothing to compare", never "same build" (buildLabel, gate.mjs).
+    const known = o.platform || o.theme || o.xapi || ids.size > 0;
+    return { known, platform: o.platform, theme: o.theme, modules: (id) => ids.has(id.toLowerCase()) || xapi(id) };
   };
 }
 

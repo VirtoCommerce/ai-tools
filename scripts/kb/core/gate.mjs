@@ -96,6 +96,9 @@ export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ow
     ? await owners(backUrl, [...differing].filter((id) => mine[id]).map((id) => ({ id, version: mine[id] })))
     : { paths: {}, schemas: {} };
   const relevance = rulesWith(index)[RELEVANCE](entry, builds);
+  // Nothing the entry depends on could be named (an anchor no module's swagger declares, no page, no
+  // GraphQL): there is nothing to compare, which is not the same as "your build".
+  if (relevance.known === false) return { label: 'an unknown build' };
   let nearest = null;
   for (const s of known) {
     const d = buildDiff(asker.snapshot, builds[s.build], relevance);
