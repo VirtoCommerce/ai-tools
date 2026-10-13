@@ -75,7 +75,7 @@ Full briefs, merge rules and the context bundle:
 3. **Wave 2 — one message:**
    - `/qa-test-model <TICKET> --context <bundle>`, run by you
    - `/qa-test-mind-map update|build <slug> --from <TICKET>` — `ba-system-analyzer`, no browser,
-     **without** build step 10; then copy the map signals into the bundle
+     **without** build step 10; then copy the map signals into the run context
      ([`context-wave.md`](../skills/qa-test-fast/context-wave.md) §Wave 2)
 4. **Wave 3.** Run `/qa-checklist <TICKET> --from-model --mind-map <slug>` and write the result to
    `reports/tickets/{SPRINT}/<TICKET>/testing-checklist.md`.
@@ -96,7 +96,7 @@ Briefs, the lane split, the data rules and teardown:
    The charter is the model's unresolved items. `--no-explore` drops the lane. That is recorded, never
    silent.
 3. **Visual** — `ui-ux-expert` on Chrome DevTools MCP, whenever `visual_surface: true` (derived from the
-   Wave-1 diff). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
+   bundle's PR layers, recorded in the run context). **Its brief's first line makes it invoke the Skill tool with `skill: "qa-design"`**; the
    `/qa-design` command is never run. `--no-visual` drops the lane, recorded never silent. Trigger, the
    brief, the lane-count rule (a 4th lane waits for the first to return) and verdict handling:
    [`../skills/qa-test/visual-axis.md`](../skills/qa-test/visual-axis.md) §2, §4, §5. Writes

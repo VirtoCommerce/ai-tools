@@ -27,19 +27,24 @@ the trigger is this section's heading. The state is decided by [`../qa-test/axes
 
 ## Join 1 — the context bundle
 
-The bundle is `/ticket-context`'s file; it is never copied under `reports/` (not a report category).
-Before Wave 2:
+The bundle is `/ticket-context`'s file; it is never copied under `reports/` (not a report category), and
+**no consumer ever writes it**: it is schema-gated and cached, so run-derived state has no field there.
+That state goes to the **run context**, a file in this run's scratchpad that names the bundle path. It
+holds `visual_surface` + `surface_source[]`, C's domain-map result, the map signals, contract-refresh
+drift, the suspect list and `mind_map_findings`. Before Wave 2, **wait for C** when it ran, then:
 - **Deployment.** A `NOT DEPLOYED:` line in `blockers[]` is BLOCKED-on-deploy: stop, never a FAIL. A
   `DEPLOYMENT UNKNOWN:` line lets the run proceed, and `verdict.md` says "deployment unverified" and
   quotes the line.
-- **Domain map.** C's result, when it ran, replaces the bundle's `known.domain_map` state.
+- **Domain map.** C's result, when it ran, supersedes `known.domain_map` in the run context.
 - **Visual axis.** `visual_surface` + `surface_source[]`, derived from the bundle's `change.prs[].layers`
-  per [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1.
-- **Pass the bundle path** to `/qa-test-model --context` and to every later brief that needs the ticket.
+  and written to the run context, per [`../qa-test/visual-axis.md`](../qa-test/visual-axis.md) §1.
+- **Pass the bundle path** (and the run context's) to `/qa-test-model --context` and to every later brief
+  that needs the ticket.
 
-**Contract refresh (inline).** If the bundle names a GraphQL operation (in `change.prs[].operations`), run the two commands of
+**Contract refresh (inline).** If the bundle names a GraphQL operation (in
+`change.prs[].operations`), run the two commands of
 [`../qa-test/contract-refresh.md`](../qa-test/contract-refresh.md) §2. Drift on an operation the diff
-touches goes into the bundle as a model input.
+touches goes into the run context as a model input.
 
 ## Wave 2 — one message
 
@@ -49,10 +54,10 @@ touches goes into the bundle as a model input.
   - The map exists → `/qa-test-mind-map update <slug> --from <TICKET>`.
   - It is absent and the domain map is `PRESENT` → `build`, **with step 10 removed from the brief**,
     because this flow writes no suite CSV.
-  - The domain map is `ABSENT` or `STALE` → skip, and write the reason into the bundle.
+  - The domain map is `ABSENT` or `STALE` → skip, and write the reason into the run context.
   - Either way, `npm run models:check` must be green before the result is used.
   - **Map signals.** From `npm run models:check -- --json`, copy these lists for the slug into the
-    bundle: DRIFT nodes (with `drift.observed`, and whether `TM-018` flags the route as unfiled),
+    run context: DRIFT nodes (with `drift.observed`, and whether `TM-018` flags the route as unfiled),
     UNVERIFIED nodes, nodes no case stamps (`TM-014`), suspect cases (`TM-017`), and integration
     points no case exercises (`TM-032`, the `crossings` array). Wave 3 filters them to the in-scope
     nodes; no later step re-runs the checker.
@@ -78,7 +83,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 | UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item. |
 | No stamped case | An ordinary item. A PASS on it is a `candidate case` in `verdict.md`. |
 | Integration point (cross-domain edge) | One item that exercises both sides, under the other domain's partition. A PASS is a `candidate case` carrying both stamps. |
-| Linked to a suspect case | No change. The suspect list stays in the bundle for the verdict. |
+| Linked to a suspect case | No change. The suspect list stays in the run context for the verdict. |
 
 ## Stage gate — inline, before any browser opens
 
