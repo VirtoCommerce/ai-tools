@@ -336,6 +336,9 @@ function redeploy() {
   try { assertKey(key); } catch (e) { usage(e.message); }
   const bp = flag("bundle") ?? usage("--bundle is required");
   const b = readJson(bp);
+  // A bundle cached before hotspots/claims existed (fix wave 2, 2026-10-13) has no such keys on its PRs. They
+  // default to [] — "none recorded" — so an old bundle still validates; the schema itself is not loosened.
+  for (const p of b.change?.prs ?? []) { p.hotspots ??= []; p.claims ??= []; }
   // Script values only: compose took repo, number, state, merged and gap from prepare, never from an agent.
   const d = checkDeployment({ root, key, prs: b.change.prs.map((p) => ({ ref: `${p.repo}#${p.number}`, number: p.number, state: p.state, merged: p.merged,
     context_only: p.context_only, gap: p.gap })) });
