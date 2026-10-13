@@ -439,7 +439,9 @@ async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild 
       || ((full?.items || []).length > 0 && !(full.items).some(isSyntheticItem));
     // An order seeded before line items carried product images is rebuilt once to gain them —
     // imageUrl is write-once (PUT ignores it), so recreate is the only way in.
-    const imagesOk = products.length === 0 || !(await orderLacksProductImages(api, full));
+    // Only when the replacement would carry an image: a discovery with none (empty, failed, or
+    // without the ItemAssets projection) must not trigger a rebuild that gains nothing.
+    const imagesOk = !products.some((p) => p.imgSrc) || !(await orderLacksProductImages(api, full));
     // FRESHNESS — the extra idempotency term for a rolling-window row (rules: sales-rep-orders-specs).
     // Content-based idempotency alone leaves a correct-but-STALE order in place, which is how
     // SR-CP-057 / SR-HD-048 came to assert against an empty window a week after the seed. Since
