@@ -416,14 +416,14 @@ const EVIDENCE_KEY = ['at', 'by', 'method', 'deployment', 'contradicts'];
 const keyOf = (e, k) => (k === 'deployment' && e?.[k] != null ? standName(e[k]) : e?.[k] ?? null);
 export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === keyOf(b, k));
 
+/** Where a build's snapshot lives in the base. */
+export const buildPath = (pin) => `builds/${pin}.json`;
+
 /**
  * A queued line with its stand named as the base names it (VCST-6189). The door has done this since
  * the map existed; a queue written by an OLDER client -- or before a profile gained its KB_STAND --
  * reaches the base through here, so the rename happens at push too and no old spelling is re-added.
  */
-/** Where a build's snapshot lives in the base. */
-export const buildPath = (pin) => `builds/${pin}.json`;
-
 export function onCanonicalStands(line) {
   const p = line?.payload;
   if (!p) return line;

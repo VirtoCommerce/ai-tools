@@ -28,6 +28,31 @@ export function summarize(diffs) {
 }
 
 /**
+ * What both the dispute gate and the build label compare -- one preparation, so the two cannot drift:
+ * the snapshots (`mine` first), the entry's support whose build the base holds, and the relevance rule
+ * fed with the swagger owners of the modules whose versions differ.
+ */
+async function prepare({ entry, mine, readBuild, backUrl, owners }) {
+  const builds = { [mine.build]: mine.snapshot };
+  const support = supportOf(entry.evidence ?? []).filter((e) => !e.investigation);
+  for (const s of support) {
+    if (s.build && !builds[s.build]) { const snap = await readBuild(s.build); if (snap) builds[s.build] = snap; }
+  }
+  const known = support.filter((s) => s.build && builds[s.build]);
+  // Ownership is only asked of modules both sides run at different versions.
+  const ours = mine.snapshot.modules ?? {};
+  const differing = new Set();
+  for (const s of known) {
+    const theirs = builds[s.build].modules ?? {};
+    for (const id of Object.keys(ours)) if (theirs[id] != null && theirs[id] !== ours[id]) differing.add(id);
+  }
+  const index = backUrl && differing.size
+    ? await owners(backUrl, [...differing].map((id) => ({ id, version: ours[id] })))
+    : { paths: {}, schemas: {} };
+  return { builds, support, known, relevance: rulesWith(index)[RELEVANCE](entry, builds) };
+}
+
+/**
  * `{ contested }` when the disagreement is soft, else null (a hard dispute).
  *  - `entry`: the entry's frontmatter (anchors, subject, evidence);
  *  - `observation`: `{ build, snapshot, conditions }` of the disagreeing observation;
@@ -36,26 +61,9 @@ export function summarize(diffs) {
  */
 export async function softDispute({ entry, observation, readBuild, backUrl, owners = ownersIndex }) {
   if (!observation?.build || !observation.snapshot) return null; // nothing to compare with: hard
-  const builds = { [observation.build]: observation.snapshot };
-  const support = supportOf(entry.evidence ?? []).filter((e) => !e.investigation);
-  for (const s of support) {
-    if (s.build && !builds[s.build]) {
-      const snap = await readBuild(s.build);
-      if (snap) builds[s.build] = snap;
-    }
-  }
-  // Ownership is only asked of modules whose version differs from some supporting build.
-  const mine = observation.snapshot.modules ?? {};
-  const differing = new Set();
-  for (const s of support) {
-    const theirs = builds[s.build]?.modules;
-    if (!theirs) continue;
-    for (const id of new Set([...Object.keys(mine), ...Object.keys(theirs)])) if (mine[id] !== theirs[id]) differing.add(id);
-  }
-  const index = backUrl && differing.size
-    ? await owners(backUrl, [...differing].filter((id) => mine[id]).map((id) => ({ id, version: mine[id] })))
-    : { paths: {}, schemas: {} };
-  const relevance = rulesWith(index)[RELEVANCE](entry, builds);
+  const { builds, support, relevance } = await prepare({ entry, mine: observation, readBuild, backUrl, owners });
+  // Nothing the entry depends on could be named: no difference can be shown, so it is not soft.
+  if (relevance.known === false) return null;
   const r = classifyDisagreement({
     observation: { build: observation.build, conditions: observation.conditions ?? null },
     support: support.map((s) => ({ build: s.build && builds[s.build] ? s.build : null, conditions: s.conditions ?? null })),
@@ -82,20 +90,9 @@ const cmpVersion = (a, b) => {
  */
 export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ownersIndex }) {
   if (!asker?.build || !asker.snapshot) return { label: 'an unknown build' };
-  const builds = { [asker.build]: asker.snapshot };
-  const support = supportOf(entry.evidence ?? []).filter((e) => !e.investigation && e.build);
-  for (const s of support) if (!builds[s.build]) { const snap = await readBuild(s.build); if (snap) builds[s.build] = snap; }
-  const known = support.filter((s) => builds[s.build]);
+  const { builds, known, relevance } = await prepare({ entry, mine: asker, readBuild, backUrl, owners });
   if (!known.length) return { label: 'an unknown build' };
   if (known.some((s) => s.build === asker.build)) return { label: 'your build' };
-  const mine = asker.snapshot.modules ?? {};
-  const differing = new Set();
-  for (const s of known) for (const [id, v] of Object.entries(builds[s.build].modules ?? {})) if (mine[id] !== v) differing.add(id);
-  for (const id of Object.keys(mine)) if (known.some((s) => builds[s.build].modules?.[id] !== mine[id])) differing.add(id);
-  const index = backUrl && differing.size
-    ? await owners(backUrl, [...differing].filter((id) => mine[id]).map((id) => ({ id, version: mine[id] })))
-    : { paths: {}, schemas: {} };
-  const relevance = rulesWith(index)[RELEVANCE](entry, builds);
   // Nothing the entry depends on could be named (an anchor no module's swagger declares, no page, no
   // GraphQL): there is nothing to compare, which is not the same as "your build".
   if (relevance.known === false) return { label: 'an unknown build' };
@@ -105,8 +102,7 @@ export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ow
     if (!d.length) return { label: 'your build' };
     if (!nearest || d.length < nearest.length) nearest = d;
   }
-  const signs = nearest.filter((d) => d.a && d.b).map((d) => Math.sign(cmpVersion(d.a, d.b)));
-  const label = signs.length && signs.every((x) => x > 0) ? 'an older build'
-    : signs.length && signs.every((x) => x < 0) ? 'a newer build' : 'a different build';
+  const signs = nearest.map((d) => Math.sign(cmpVersion(d.a, d.b)));
+  const label = signs.every((x) => x > 0) ? 'an older build' : signs.every((x) => x < 0) ? 'a newer build' : 'a different build';
   return { label, diff: summarize(nearest) };
 }

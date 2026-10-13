@@ -34,7 +34,7 @@ import { isOff, queueDir, sessionId } from './queue.mjs';
 
 export { buildPin };
 
-/** Where a session keeps the builds it has read: once per session per stand. */
+/** Where a session keeps the builds it has read: one file per stand, re-read after BUILD_TTL_MS. */
 const cachePath = (env, stand) => join(queueDir(env), `${sessionId(env)}.build.${stand}.json`);
 
 /** The pre-flight's readers. Dynamic, so a Node without type stripping degrades to "unknown" instead of failing to load. */
@@ -51,13 +51,13 @@ async function readers(root) {
 }
 
 /** The theme a stand's deploy manifest declares, or null. Declared, not observed: the storefront serves no version. */
-async function declaredTheme({ envLib, manifest }, coords) {
+async function declaredTheme({ envLib, manifest }, coords, signal) {
   const local = envLib.readEnvFile(resolve(envLib.REPO_ROOT, '.env.local'));
   const token = local.GIT_TOKEN || local.GITHUB_TOKEN || local.GITHUB_PERSONAL_ACCESS_TOKEN;
   if (!token) return null;
   try {
     const url = `https://api.github.com/repos/${coords.deployOwner}/${coords.deployRepo}/contents/${coords.themePath}?ref=${encodeURIComponent(coords.branch)}`;
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw', 'User-Agent': 'vc-kb' } });
+    const r = await fetch(url, { signal, headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.raw', 'User-Agent': 'vc-kb' } });
     if (!r.ok) return null;
     const zip = manifest.THEME_URL_RE.exec(await r.text())?.[0];
     return zip ? zip.split('/').pop().replace(/\.zip$/i, '') : null;
@@ -76,13 +76,18 @@ export async function liveBuild(stand, { env = process.env, root = REPO_ROOT, pr
   const file = cachePath(env, stand);
   try {
     const cached = JSON.parse(await readFile(file, 'utf8'));
-    if (cached?.pin && cached?.snapshot) return cached;
+    // A build read is good for BUILD_TTL_MS, not the whole session: the MCP server lives for hours and a
+    // stand redeployed meanwhile would keep stamping (and labelling) the build it ran before.
+    if (cached?.pin && cached?.snapshot && now() - new Date(cached.at) < BUILD_TTL_MS) return cached;
     // A failure is retried after UNKNOWN_TTL_MS: a stand that was down a minute ago may be up now, and
     // re-probing it on every write would put its timeout in front of every write.
     if (cached?.unknown && now() - new Date(cached.at) < UNKNOWN_TTL_MS) return cached;
   } catch { /* first read this session */ }
 
-  const result = await withDeadline((probe ?? probeStand)(stand, { env, root }), PROBE_DEADLINE_MS);
+  // The deadline ABORTS the requests, not only the wait: a stand that never answers would otherwise keep
+  // its sockets -- and a CLI process, which ends by `exitCode` -- alive until the platform's own timeout.
+  const abort = new AbortController();
+  const result = await withDeadline((probe ?? probeStand)(stand, { env, root, signal: abort.signal }), PROBE_DEADLINE_MS, abort);
   const out = result.unknown ? { unknown: result.unknown, at: now().toISOString() }
     : { pin: buildPin(result), snapshot: canonicalBuild(result), at: now().toISOString() };
   try { await mkdir(queueDir(env), { recursive: true }); await writeFile(file, JSON.stringify(out)); } catch { /* a cache, not a record */ }
@@ -92,23 +97,27 @@ export async function liveBuild(stand, { env = process.env, root = REPO_ROOT, pr
 /** A write never waits on a slow stand for longer than this; past it the evidence goes unstamped. */
 export const PROBE_DEADLINE_MS = 10_000;
 const UNKNOWN_TTL_MS = 5 * 60_000;
-const withDeadline = (p, ms) => Promise.race([
-  p.catch((err) => ({ unknown: `probe failed: ${err.message}` })),
-  new Promise((r) => { setTimeout(() => r({ unknown: `no answer within ${ms / 1000}s` }), ms).unref?.(); }),
-]);
+export const BUILD_TTL_MS = 30 * 60_000;
+function withDeadline(p, ms, abort) {
+  let timer;
+  return Promise.race([
+    p.catch((err) => ({ unknown: `probe failed: ${err.message}` })),
+    new Promise((r) => { timer = setTimeout(() => { abort?.abort(); r({ unknown: `no answer within ${ms / 1000}s` }); }, ms); timer.unref?.(); }),
+  ]).finally(() => clearTimeout(timer));
+}
 
-async function probeStand(stand, { env, root }) {
+async function probeStand(stand, { env, root, signal }) {
   const profile = profileOf(stand, { map: loadStands(env) });
   if (!profile) return { unknown: `no .env profile declares KB_STAND=${stand}` };
   const r = await readers(root);
   if (r.unknown) return r;
   const coords = r.envLib.resolveEnvCoords(profile.env);
   if (!coords.backUrl) return { unknown: `.env.${profile.env} has no BACK_URL` };
-  const [platform, token] = await Promise.all([r.live.probePlatformVersion(coords), r.live.probeAdminToken(coords)]);
+  const [platform, token] = await Promise.all([r.live.probePlatformVersion(coords, signal), r.live.probeAdminToken(coords, signal)]);
   if (!token.token) return { unknown: `no admin token for ${stand} (${token.status})` };
-  const mods = await r.live.probeLiveModules(coords, token.token);
+  const mods = await r.live.probeLiveModules(coords, token.token, signal);
   if (!mods.ok) return { unknown: `modules of ${stand} unreadable (${mods.status})` };
   const modules = {};
   for (const m of mods.modules) if (m.isInstalled !== false) modules[m.id] = m.version;
-  return { platform: platform.ok ? platform.version : null, theme: await declaredTheme(r, coords), modules };
+  return { platform: platform.ok ? platform.version : null, theme: await declaredTheme(r, coords, signal), modules };
 }

@@ -14,9 +14,9 @@ import '../lib/sync-stdio.mjs';
 //     exist: the two "prose deployments" counted in VCST-6189 were `grep "deployment:"` matching entry
 //     BODIES that say "on one deployment:", not evidence.)
 //   * SOURCE VERSION (6186): an old source item's `module` + `version` become `deployment: <module>@<version>`.
-//   * METHOD (6186): onto the closed vocabulary. A free-text value that names an observation is
-//     `observation`, one that is only a code or bundle reading is `source`; the original wording is kept
-//     in `note` as `how: …`, because it says how the agent looked.
+//   * METHOD (6186): onto the closed vocabulary. A free-text value is `source` only when it names a code
+//     reading and nothing seen on a stand; anything else -- including what it does not recognise -- stays
+//     `observation`. The original wording is kept in `note` as `how: …`, because it says how the agent looked.
 //   * BUILD (6221): from `--history`, `build: <pin>` + `buildFrom: deploy-history` on an item that has no
 //     build, and `builds/<pin>.json` for every pin used.
 // Then `index.json` is rebuilt from every entry with the push's own `buildRow` / `buildIndex`.
@@ -26,6 +26,7 @@ import { join, resolve } from 'node:path';
 import { parseEntry, stringifyFrontmatter } from './core/frontmatter.mjs';
 import { buildIndex, buildRow } from './core/index-build.mjs';
 import { loadStands, resolveStand } from './core/stands.mjs';
+import { codeVersionProblem } from './core/method.mjs';
 
 const NOTE_MAX = 600;
 const appendNote = (note, extra) => {
@@ -39,8 +40,11 @@ export function normalizeMethod(raw) {
   const low = m.toLowerCase();
   if (!m || low === 'observation') return { method: 'observation', how: null };
   if (low === 'source') return { method: 'source', how: null };
-  if (/observ|live read|a\/b/.test(low)) return { method: 'observation', how: m };
-  return { method: 'source', how: m }; // source-analysis, source-read, static analysis of the deployed bundle
+  // SOURCE ONLY WHEN IT SAYS CODE AND NOTHING ELSE. An unrecognised value ("api", "ui", "static analysis
+  // of the deployed bundle" -- a deployed artifact read on a stand) was looked at on the stand: it stays
+  // an observation, so a live fact never loses its trust level to a guess (review of ai-tools#429).
+  if (/^source|^source[-\s]/.test(low) && !/observ|live|deployed|regression-run/.test(low)) return { method: 'source', how: m };
+  return { method: 'observation', how: m };
 }
 
 /** One item, normalised: `{ item, changes: [kind] }`. `build` is the history's pin for it, or null. */
@@ -72,6 +76,13 @@ export function normalizeItem(e, { map, build = null }) {
   if (method === 'source' && e.deployment == null && e.module && e.version) {
     out.deployment = `${e.module}@${e.version}`;
     changes.push('source-version');
+  }
+  // A source item that named a STAND: the door refuses that shape now, so the stand moves to the note --
+  // it says where the agent was, not which code version it read.
+  if (method === 'source' && typeof out.deployment === 'string' && codeVersionProblem(out.deployment)) {
+    out.note = appendNote(out.note, `read on stand: ${out.deployment}`);
+    delete out.deployment;
+    changes.push('source-stand');
   }
   if (build && !e.build && method !== 'source') { out.build = build; out.buildFrom = 'deploy-history'; changes.push('build'); }
   return { item: out, changes };

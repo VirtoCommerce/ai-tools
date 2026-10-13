@@ -282,7 +282,7 @@ function panelEvidence(p) {
     <p class="lede">Where a fact was seen to hold again, and where it did not.
       <strong>${esc(p.confirms)}</strong> confirmation(s), <strong>${esc(p.disputes)}</strong> dispute(s).
       ${p.builds ? `${esc(p.builds.stamped)} of ${esc(p.builds.writes)} write(s) carry a machine-read build; ${esc(p.builds.soft)} dispute(s) were soft (made on another build than every confirmation — judged, not shown as DISPUTED).` : ''}
-      ${p.queue ? `Dispute queue now: <strong${p.queue.openEntries ? ' class="bad"' : ''}>${esc(p.queue.openEntries)}</strong> of ${esc(p.queue.active)} active entries hold ${esc(p.queue.openDisputes)} open dispute(s); ${esc(p.queue.resolvedDisputes)} resolved on ${esc(p.queue.resolvedEntries)} entr(ies) (<code>npm run kb:disputes -- list</code>, <code>/kb-judge</code>).` : ''}
+      ${p.queue ? `Dispute queue now: <strong${p.queue.openEntries ? ' class="bad"' : ''}>${esc(p.queue.openEntries)}</strong> of ${esc(p.queue.active)} active entries hold ${esc(p.queue.openDisputes)} open dispute(s); ${esc(p.queue.resolvedDisputes)} resolved on ${esc(p.queue.resolvedEntries)} entr(ies)${p.queue.softOpen ? `, plus ${esc(p.queue.softOpen)} soft dispute(s) still to judge` : ''} (<code>npm run kb:disputes -- list</code>, <code>/kb-judge</code>).` : ''}
       ${p.contested.length ? `<strong class="bad">${p.contested.length} entry/entries are contested</strong> — confirmed and disputed both. A disputed entry with four confirmations is the single most decision-worthy row in this report.` : ''}</p>
     ${rows.length ? table(['id', 'subject', 'confirms', 'disputes', 'deployments', 'saw instead'], rows)
     : empty('Nobody confirmed or disputed anything in this window. Not "everything holds" — nobody checked.')}

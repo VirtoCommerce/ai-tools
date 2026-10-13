@@ -32,7 +32,16 @@ const gh = (path, { raw = false } = {}) => {
   try { return readFileSync(key, 'utf8'); } catch { /* fetch */ }
   const args = ['api', path, ...(raw ? ['-H', 'Accept: application/vnd.github.raw'] : [])];
   let out;
-  try { out = execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'pipe'] }); } catch { out = ''; }
+  try {
+    out = execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 << 20, stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (err) {
+    // A 404 is an answer -- that file is not in that commit. Anything else (no login, rate limit, no
+    // network) is NOT "no commits": failing loud beats reconstructing every build as unknown.
+    const why = String(err.stderr ?? err.message);
+    if (!/HTTP 404/.test(why)) throw new Error(`gh api ${path} failed: ${why.trim().split('
+')[0]}`);
+    out = '';
+  }
   // Only a sha-pinned read is immutable; a branch listing is cached for this run's process only.
   if (out && /[?&]ref=[0-9a-f]{40}/.test(path)) writeFileSync(key, out);
   return out;

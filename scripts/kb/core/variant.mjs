@@ -23,18 +23,23 @@ const lower = (modules = {}) => Object.fromEntries(Object.entries(modules).map((
 
 /**
  * What differs between two builds over the relevant parts: `[{ part, a, b }]`. `relevant` is
- * `{ platform: boolean, theme: boolean, modules: (id) => boolean }`; a module present in only one
- * build differs (installed vs not is a difference in what runs).
+ * `{ platform: boolean, theme: boolean, modules: (id) => boolean }`.
+ *
+ * ONLY WHAT BOTH SIDES KNOW. A version missing on one side is UNKNOWN, never different: a live stamp
+ * lists every installed module while a snapshot rebuilt from deploy history lists only the modules the
+ * manifest pins, and a platform version the Admin page did not give is null. Counting those as
+ * differences turned a contradiction on the same build into a soft dispute -- the one direction the gate
+ * must not err in (review of ai-tools#429).
  */
 export function buildDiff(a, b, relevant) {
   const out = [];
-  if (relevant.platform && (a.platform ?? null) !== (b.platform ?? null)) out.push({ part: 'platform', a: a.platform ?? null, b: b.platform ?? null });
+  if (relevant.platform && a.platform && b.platform && a.platform !== b.platform) out.push({ part: 'platform', a: a.platform, b: b.platform });
   if (relevant.theme && a.theme && b.theme && a.theme !== b.theme) out.push({ part: 'theme', a: a.theme, b: b.theme });
   const ma = lower(a.modules);
   const mb = lower(b.modules);
-  for (const id of new Set([...Object.keys(ma), ...Object.keys(mb)])) {
-    if (!relevant.modules(id)) continue;
-    if ((ma[id] ?? null) !== (mb[id] ?? null)) out.push({ part: id, a: ma[id] ?? null, b: mb[id] ?? null });
+  for (const id of Object.keys(ma)) {
+    if (!relevant.modules(id) || mb[id] == null) continue;
+    if (ma[id] !== mb[id]) out.push({ part: id, a: ma[id], b: mb[id] });
   }
   return out;
 }
