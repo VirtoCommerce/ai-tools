@@ -98,6 +98,9 @@ Offer both; do them only if the user wants.
   `client-app/config/settings_data.json` in `$HOST`: restore it afterwards and confirm `git status` there is clean.
 - **Package:** if the user has the module's zip (from its CI, or built locally the way CI does), run the check with
   `--artifact <zip>`. ✅ the plugin sits at the zip root, not under `bin/` (S1a ⚠️ 1).
+- **Local platform:** if the user runs one, follow S6 → "On a local platform" with that zip: install, restart, then
+  `--env <platform URL>` and the storefront from S2.2. ✅ the plugin's page renders with no override set. Restore
+  `settings_data.json` and `.env.local` in `$HOST` afterwards, as above.
 
 ## 6. Report
 
