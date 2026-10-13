@@ -173,7 +173,7 @@ async function main(argv) {
     if (r.state === 'answer') {
       out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
       const d = r.disputes;
-      out(`disputed  ${d.disputedEntries} entr(ies) disputed · ${d.settledEntries} settled by a judge`);
+      out(`disputed  ${d.disputedEntries} entr(ies) disputed${d.contestedEntries ? ` · ${d.contestedEntries} contested on another build (soft, still to judge)` : ''} · ${d.settledEntries} settled by a judge`);
     } else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
   }

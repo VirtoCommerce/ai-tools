@@ -22,7 +22,7 @@ import { anchorProblems, anchorShape, isSingleSegmentPath, namespaceRoots, neigh
 import { doorHints } from './door-hints.mjs';
 import { undoMsysRewrite } from './anchors.mjs';
 import { claimKey, findDuplicate, identityKey, refusalMessage, subjectTakenMessage } from './identity.mjs';
-import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, entryPath, supportOf } from './index-build.mjs';
+import { amendmentsOf, attestsCurrentClaim, buildIndex, buildRow, claimHash, countEvidence, distinctDisputes, entryPath, isResolved, supportOf } from './index-build.mjs';
 import { loadIndex, loadManifest, normalizeScope, retrievable } from './index-load.mjs';
 import {
   DISABLED_WHY, hasSessionId, kbDisabled, log, metaAsks, pendingMutations, queueBacklog, queueDir, readLoop, readMeta, readPushStatus,
@@ -115,7 +115,10 @@ export function trustOf(evidence = []) {
           : observed === 1 ? 'single observation'
             : 'unattested';
   // What a soft dispute was about, for the reader: the build difference the gate computed (core/gate.mjs).
-  const contestedOn = (Array.isArray(evidence) ? evidence : []).filter((e) => e?.contradicts && e.contested && !e.resolved).map((e) => e.contested);
+  // The SAME open soft disputes `countEvidence` counts -- one per dispute, copies merged, a resolution
+  // outside RESOLUTIONS still open -- so the reason printed and the number printed cannot disagree.
+  const contestedOn = distinctDisputes((Array.isArray(evidence) ? evidence : []).filter((e) => !e?.duplicateSession))
+    .filter((e) => e.contested && !isResolved(e)).map((e) => e.contested);
   return { label, confirmations, fromSource, disputed, resolved, contested, contestedOn, beforeAmendment, sessions, anonymous, operators, operatorsUnknown };
 }
 
@@ -314,7 +317,6 @@ const door = (via, call) => ({
  * characters is not a stand name. On `ask` it is dropped (a read is never refused for a log field);
  * every write refuses it at the door (`standProblem`), so an evidence item never holds a paragraph.
  */
-export const DEPLOYMENT_MAX = 40;
 const stand = (deployment) => {
   const r = resolveStand(deployment);
   return r.value ? { deployment: r.value } : {};
@@ -1479,7 +1481,10 @@ export function disputeTotals(rows = []) {
   const sum = (k) => rows.reduce((n, r) => n + (Number(r[k]) || 0), 0);
   return {
     disputedEntries: rows.filter((r) => r.disputed > 0).length,
-    settledEntries: rows.filter((r) => !(r.disputed > 0) && r.resolved > 0).length,
+    // Open SOFT disputes (VCST-6221) are still for the judge: counted apart, and an entry holding one is
+    // not "settled" (review of ai-tools#429).
+    contestedEntries: rows.filter((r) => r.contested > 0).length,
+    settledEntries: rows.filter((r) => !(r.disputed > 0) && !(r.contested > 0) && r.resolved > 0).length,
     open: sum('disputed'),
     resolved: sum('resolved'),
   };

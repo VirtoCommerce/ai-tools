@@ -16,7 +16,7 @@
 import { supportOf } from './index-build.mjs';
 import { ownersIndex } from './owners.mjs';
 import { rulesWith } from './relevance.mjs';
-import { buildDiff, classifyDisagreement } from './variant.mjs';
+import { classifyDisagreement, compareBuilds } from './variant.mjs';
 
 export const RELEVANCE = 'anchors+named';
 const SUMMARY_MAX = 300;
@@ -98,10 +98,14 @@ export async function buildLabel({ entry, asker, readBuild, backUrl, owners = ow
   if (relevance.known === false) return { label: 'an unknown build' };
   let nearest = null;
   for (const s of known) {
-    const d = buildDiff(asker.snapshot, builds[s.build], relevance);
-    if (!d.length) return { label: 'your build' };
-    if (!nearest || d.length < nearest.length) nearest = d;
+    const { diffs, compared } = compareBuilds(asker.snapshot, builds[s.build], relevance);
+    // "Your build" needs at least one relevant version that BOTH sides name and that matched; a support
+    // snapshot that lists none of them (deploy history pins only some modules) proves nothing.
+    if (!compared) continue;
+    if (!diffs.length) return { label: 'your build' };
+    if (!nearest || diffs.length < nearest.length) nearest = diffs;
   }
+  if (!nearest) return { label: 'an unknown build' };
   const signs = nearest.map((d) => Math.sign(cmpVersion(d.a, d.b)));
   const label = signs.every((x) => x > 0) ? 'an older build' : signs.every((x) => x < 0) ? 'a newer build' : 'a different build';
   return { label, diff: summarize(nearest) };

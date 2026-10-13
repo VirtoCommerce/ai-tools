@@ -30,6 +30,14 @@ const ID_SEGMENT = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]
 const template = (p) => p.replace(/\{[^}]*\}/g, '{}').split('/').map((seg) => (ID_SEGMENT.test(seg) ? '{}' : seg)).join('/')
   .toLowerCase().replace(/\/+$/, '');
 
+/** The surfaces an entry is scoped to -- `appliesTo` on an entry, `scope` strings on an index row. */
+function surfacesOf(entry) {
+  const out = new Set();
+  for (const a of entry.appliesTo ?? []) if (a?.axis === 'surface' && a.value) out.add(String(a.value));
+  for (const s of entry.scope ?? []) { const m = /^surface=(.+)$/.exec(String(s)); if (m) out.add(m[1]); }
+  return out;
+}
+
 /** What an entry's anchors say it depends on: `{ platform, theme, xapi, modules: Set<lowercase id> }`. */
 export function anchorOwners(entry, index) {
   const out = { platform: false, theme: false, xapi: false, modules: new Set() };
@@ -44,7 +52,17 @@ export function anchorOwners(entry, index) {
       for (const id of owners) out.modules.add(id.toLowerCase());
       continue;
     }
-    if (route) { out.theme = true; out.xapi = true; continue; } // a storefront (or admin) page
+    // Not every non-/api route is a storefront page (review of ai-tools#429): `/graphql` is the xAPI
+    // itself, `/connect/…` the platform's auth, and an Admin route runs no storefront theme. The THEME
+    // is relevant only to an entry scoped to the storefront UI; anything else would let a theme bump
+    // turn a backend contradiction into a soft dispute.
+    if (route) {
+      if (/^\/graphql\b/i.test(route)) { out.xapi = true; continue; }
+      if (/^\/connect\//i.test(route)) { out.platform = true; continue; }
+      const surfaces = surfacesOf(entry);
+      if (surfaces.has('storefront-ui')) { out.theme = true; out.xapi = true; } else if (!surfaces.size) out.xapi = true;
+      continue;
+    }
     const dotted = /^([A-Za-z]+)\.[A-Za-z]/.exec(c);
     if (dotted) {
       const owners = index?.schemas?.[dotted[1]] ?? [];

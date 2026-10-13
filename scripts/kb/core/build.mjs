@@ -109,6 +109,9 @@ function withDeadline(p, ms, abort) {
 async function probeStand(stand, { env, root, signal }) {
   const profile = profileOf(stand, { map: loadStands(env) });
   if (!profile) return { unknown: `no .env profile declares KB_STAND=${stand}` };
+  // A stand whose profile is not committed here is somebody's own -- a client's. Its build is never
+  // read: the snapshot would be published to the public base (review of ai-tools#429).
+  if (!profile.tracked) return { unknown: `.env.${profile.env} is not tracked in this repo: a private stand's build is never read into the public base` };
   const r = await readers(root);
   if (r.unknown) return r;
   const coords = r.envLib.resolveEnvCoords(profile.env);

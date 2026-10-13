@@ -16,8 +16,18 @@ import { join } from 'node:path';
 const CACHE = join(tmpdir(), 'kb-owners');
 const key = (id, version) => join(CACHE, `${String(id).replace(/[^\w.-]/g, '_')}@${String(version).replace(/[^\w.-]/g, '_')}.json`);
 
+// In memory too: `ask`/`show` label every hit, and each would otherwise re-read the same file. A failed
+// read is forgotten, so a long-lived MCP server retries it instead of keeping the miss.
+const memo = new Map();
+
 /** One module's `{ paths: [...], schemas: [...] }`, or null when its document is unreadable. */
-async function ownedBy(backUrl, id, version, { fetchImpl = fetch, deadlineMs = 8_000 } = {}) {
+async function ownedBy(backUrl, id, version, opts = {}) {
+  const k = `${id}@${version}`;
+  if (!memo.has(k)) memo.set(k, fetchOwned(backUrl, id, version, opts).then((r) => { if (!r) memo.delete(k); return r; }));
+  return memo.get(k);
+}
+
+async function fetchOwned(backUrl, id, version, { fetchImpl = fetch, deadlineMs = 8_000 } = {}) {
   const file = key(id, version);
   try { return JSON.parse(await readFile(file, 'utf8')); } catch { /* fetch */ }
   try {

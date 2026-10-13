@@ -57,14 +57,17 @@ export function standsFrom(profiles) {
   const stands = new Map();
   const claims = new Map(); // alias -> Set<canonical>
   const problems = [];
-  for (const { env, text } of profiles) {
+  for (const { env, text, tracked = true } of profiles) {
     const a = readAssignments(text);
     const declared = String(a.KB_STAND ?? '').trim();
     if (!declared) { problems.push(`.env.${env}: no KB_STAND= line -- declare the stand name this profile observes`); continue; }
     const canonical = canonicalStand(declared);
     if (!STAND_SHAPE.test(canonical)) { problems.push(`.env.${env}: KB_STAND="${declared}" is not a stand name`); continue; }
     if (stands.has(canonical)) { problems.push(`.env.${env}: KB_STAND=${canonical} is already declared by .env.${stands.get(canonical).env}`); continue; }
-    stands.set(canonical, { env, backUrl: a.BACK_URL || null, frontUrl: a.FRONT_URL || null });
+    // `tracked`: the profile is committed to this (public) repo. Only such a stand's build may be read
+    // into the public base -- a client's own, untracked profile is mapped for its NAME, never stamped
+    // (review of ai-tools#429; CLAUDE.md: nothing client-specific goes into the base).
+    stands.set(canonical, { env, backUrl: a.BACK_URL || null, frontUrl: a.FRONT_URL || null, tracked });
     for (const raw of [env, declared, hostLabel(a.BACK_URL), hostLabel(a.FRONT_URL)]) {
       if (!raw) continue;
       const alias = canonicalStand(raw);
@@ -82,16 +85,18 @@ export function standsFrom(profiles) {
 
 /** The profiles at `root`: every one present (`tracked: false`, the door) or only git-tracked ones (`--check`). */
 export function readProfiles({ root = REPO_ROOT, tracked = false } = {}) {
-  let names;
+  // Which profiles git tracks. No git, or not a checkout: none counts as tracked, so nothing is stamped
+  // -- the safe side of the leak this guards.
+  let committed;
   try {
-    names = tracked
-      ? execFileSync('git', ['ls-files', '.env.*'], { cwd: root, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean)
-      : readdirSync(root);
-  } catch { return []; }
+    committed = new Set(execFileSync('git', ['ls-files', '.env.*'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).split(/\r?\n/).filter(Boolean));
+  } catch { committed = new Set(); }
+  let names;
+  try { names = tracked ? [...committed] : readdirSync(root); } catch { return []; }
   return names
     .map((n) => [n, PROFILE.exec(n)?.[1]])
     .filter(([, env]) => env && !NOT_A_STAND.has(env.toLowerCase()))
-    .map(([n, env]) => { try { return { env, text: readFileSync(join(root, n), 'utf8') }; } catch { return null; } })
+    .map(([n, env]) => { try { return { env, text: readFileSync(join(root, n), 'utf8'), tracked: committed.has(n) }; } catch { return null; } })
     .filter(Boolean);
 }
 
@@ -104,8 +109,8 @@ export function loadStands(env = process.env) {
 }
 
 /**
- * A stand-shaped name after folding: a token, no prose. The longest the base has held is 33 characters
- * (`local_vcfrontend_pr2522_on_vcst_qa`); two values were whole paragraphs, which is what this refuses.
+ * A stand-shaped name after folding: a token, no prose, at most 40 characters. The longest the base
+ * holds is 33 (`local_vcfrontend_pr2522_on_vcst_qa`).
  */
 export const STAND_SHAPE = /^[a-z0-9][a-z0-9_.]{0,39}$/;
 
@@ -117,8 +122,12 @@ export const STAND_SHAPE = /^[a-z0-9][a-z0-9_.]{0,39}$/;
 const examples = (map) => [...map.stands].filter(([, p]) => !/\/\/(localhost|127\.)/.test(p.backUrl ?? '')).map(([n]) => n).slice(0, 3).join(', ') || 'vcst_qa';
 
 export function resolveStand(raw, { map = loadStands() } = {}) {
-  const typed = typeof raw === 'string' ? raw.trim() : '';
+  let typed = typeof raw === 'string' ? raw.trim() : '';
   if (!typed) return {};
+  // A full URL or host names the stand by its host: `https://vcst-qa.govirto.com/` or `vcst-qa.govirto.com`
+  // -> `vcst-qa`, which the map knows (review of ai-tools#429).
+  const host = /^(?:https?:\/\/)?([a-z0-9-]+)(?:\.[a-z0-9-]+)+(?::\d+)?\/?$/i.exec(typed);
+  if (host && /[a-z]/i.test(host[1]) && !/^\d+$/.test(host[1])) typed = host[1];
   if (/\s/.test(typed)) return { problem: `"${typed.slice(0, 40)}${typed.length > 40 ? '…' : ''}" is prose, not a stand name -- pass the stand you observed it on as one token (e.g. ${examples(map)}); what you saw goes in the claim or note` };
   const folded = canonicalStand(typed);
   if (!STAND_SHAPE.test(folded)) return { problem: `"${typed.slice(0, 40)}" is not a stand name -- letters, digits and _ only, at most 40 characters (e.g. ${examples(map)})` };

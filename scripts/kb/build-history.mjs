@@ -19,7 +19,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseEntry } from './core/frontmatter.mjs';
 import { buildPin, canonicalBuild } from './core/canonical.mjs';
 import { loadStands, profileOf, REPO_ROOT, resolveStand } from './core/stands.mjs';
@@ -113,7 +113,9 @@ export async function history({ base, root = REPO_ROOT }) {
   return { generated: new Date().toISOString(), items: out, builds };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === resolve(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'))) {
+// `fileURLToPath`, not `.pathname`: a checkout under a path with spaces or Cyrillic is percent-encoded in
+// the URL, and the raw comparison made the script exit silently (review of ai-tools#429).
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = (n) => { const i = process.argv.indexOf(n); return i > 0 ? process.argv[i + 1] : null; };
   const base = arg('--base');
   if (!base) { console.error('usage: npm run kb:build-history -- --base <vc-knowledge checkout> [--out <file>]'); process.exit(2); }

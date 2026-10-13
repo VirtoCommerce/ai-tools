@@ -22,7 +22,7 @@ import { parseConditions } from './conditions.mjs';
 const lower = (modules = {}) => Object.fromEntries(Object.entries(modules).map(([k, v]) => [k.toLowerCase(), String(v)]));
 
 /**
- * What differs between two builds over the relevant parts: `[{ part, a, b }]`. `relevant` is
+ * What differs between two builds over the relevant parts -- `{ diffs: [{ part, a, b }], compared }` -- where `relevant` is
  * `{ platform: boolean, theme: boolean, modules: (id) => boolean }`.
  *
  * ONLY WHAT BOTH SIDES KNOW. A version missing on one side is UNKNOWN, never different: a live stamp
@@ -31,17 +31,41 @@ const lower = (modules = {}) => Object.fromEntries(Object.entries(modules).map((
  * differences turned a contradiction on the same build into a soft dispute -- the one direction the gate
  * must not err in (review of ai-tools#429).
  */
-export function buildDiff(a, b, relevant) {
-  const out = [];
-  if (relevant.platform && a.platform && b.platform && a.platform !== b.platform) out.push({ part: 'platform', a: a.platform, b: b.platform });
-  if (relevant.theme && a.theme && b.theme && a.theme !== b.theme) out.push({ part: 'theme', a: a.theme, b: b.theme });
+export function compareBuilds(a, b, relevant) {
+  const diffs = [];
+  let compared = 0;
+  if (relevant.platform && a.platform && b.platform) {
+    compared += 1;
+    if (!samePlatform(a.platform, b.platform)) diffs.push({ part: 'platform', a: a.platform, b: b.platform });
+  }
+  if (relevant.theme && a.theme && b.theme) {
+    compared += 1;
+    if (a.theme !== b.theme) diffs.push({ part: 'theme', a: a.theme, b: b.theme });
+  }
   const ma = lower(a.modules);
   const mb = lower(b.modules);
   for (const id of Object.keys(ma)) {
     if (!relevant.modules(id) || mb[id] == null) continue;
-    if (ma[id] !== mb[id]) out.push({ part: id, a: ma[id], b: mb[id] });
+    compared += 1;
+    if (ma[id] !== mb[id]) diffs.push({ part: id, a: ma[id], b: mb[id] });
   }
-  return out;
+  // `compared`: how many relevant parts BOTH builds named. Zero means there was nothing to compare --
+  // which is "unknown", never "the same build" (review of ai-tools#429).
+  return { diffs, compared };
+}
+
+export const buildDiff = (a, b, relevant) => compareBuilds(a, b, relevant).diffs;
+
+/**
+ * One platform written two ways: a snapshot rebuilt from deploy history carries the image tag
+ * (`3.1073.0-pr-3121-9965-…`), a live stamp the version the Admin page prints. When only ONE side carries
+ * a pre-release suffix the two are compared on the base version; two suffixed tags compare exactly.
+ */
+export function samePlatform(a, b) {
+  const x = String(a); const y = String(b);
+  if (x === y) return true;
+  const sx = x.includes('-'); const sy = y.includes('-');
+  return sx !== sy && x.split('-')[0] === y.split('-')[0];
 }
 
 /** Declared conditions that both sides name and disagree on: `[{ part, a, b }]`. Silence is not disagreement. */
@@ -69,7 +93,8 @@ export function classifyDisagreement({ observation, support, builds, relevance }
     const declared = conditionDiff(observation.conditions, s.conditions);
     const theirs = s.build ? builds[s.build] : null;
     if (!declared.length && (!mine || !theirs)) return { verdict: 'dispute', why: 'a supporting observation has no comparable build' };
-    const built = mine && theirs ? buildDiff(mine, theirs, relevance) : [];
+    const { diffs: built, compared } = mine && theirs ? compareBuilds(mine, theirs, relevance) : { diffs: [], compared: 0 };
+    if (!declared.length && !compared) return { verdict: 'dispute', why: 'no relevant version is named by both builds' };
     if (!declared.length && !built.length) return { verdict: 'dispute', why: 'a supporting observation was made under the same relevant build and conditions' };
     diffs.push([...declared, ...built]);
   }
