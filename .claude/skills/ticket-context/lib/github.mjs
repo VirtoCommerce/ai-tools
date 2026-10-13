@@ -99,14 +99,19 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
       sameKey = (await gh.searchPrs(key, orgs)).map((i) => ({ ...refFromSearchItem(i), title: i.title, state: i.state, created_at: i.created_at })).filter((r) => r.ref);
     } catch (e) { gaps.push(asGap("change.search", e)); }
   }
-  if (explicitRefs.length) {
-    ladder.push({ rung: 1, found: explicitRefs.length });
-    return { rung: 1, refs: explicitRefs.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 1 })), sameKey, ladder };
-  }
-  ladder.push({ rung: 1, found: 0 });
+  const rung1 = explicitRefs.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 1 }));
+  ladder.push({ rung: 1, found: rung1.length });
+  // Rung 1 ends the search only when it found change surface: a ticket linking only its deployment-manifest or
+  // tooling PRs (context-only) still has its product PRs searched for on rungs 2–3.
+  const isProduct = (r) => !CONTEXT_ONLY_REPOS.includes(String(r.repo).toLowerCase());
+  if (rung1.some(isProduct)) return { rung: 1, refs: rung1, sameKey, ladder };
+  const withRung1 = (found) => {
+    const seen = new Set(rung1.map((r) => r.ref.toLowerCase()));
+    return [...rung1, ...found.filter((r) => !seen.has(r.ref.toLowerCase()))];
+  };
   if (sameKey.length) {
     ladder.push({ rung: 2, found: sameKey.length });
-    return { rung: 2, refs: sameKey.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 2 })), sameKey, ladder };
+    return { rung: 2, refs: withRung1(sameKey.map((r) => ({ ref: r.ref, owner: r.owner, repo: r.repo, number: r.number, rung: 2 }))), sameKey, ladder };
   }
   ladder.push({ rung: 2, found: 0 });
   const refs = new Map();
@@ -128,7 +133,7 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
     } catch (e) { gaps.push(asGap("change.commits", e)); }
   }
   ladder.push({ rung: 3, found: refs.size });
-  return { rung: refs.size ? 3 : null, refs: [...refs.values()], sameKey, ladder };
+  return { rung: refs.size ? 3 : rung1.length ? 1 : null, refs: withRung1([...refs.values()]), sameKey, ladder };
 }
 
 /** A context-only PR (deployment manifest, tooling): metadata only, same entry shape as collectPr with the change-surface paths null. */

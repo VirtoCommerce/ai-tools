@@ -139,10 +139,17 @@ export function reduceHar(har, secrets = new Set()) {
   };
 }
 
-/** Write the scrubbed copy beside the raw file and return its path. The caller deletes the raw file. */
+/** A HAR is a HAR whatever its file name: a JSON object with log.entries[]. */
+export function isHarText(raw) {
+  if (!/^s*{/.test(raw)) return false;
+  try { return Array.isArray(JSON.parse(raw)?.log?.entries); } catch { return false; }
+}
+
+/** Write the scrubbed copy beside the raw file and return its path. The caller deletes the raw file.
+ *  A HAR saved under another name (.json, .txt) is REDUCED like a .har, never only redacted. */
 export function scrubFile(path, kind, secrets) {
   const raw = readFileSync(path, "utf8");
-  if (kind === "har") {
+  if (kind === "har" || isHarText(raw)) {
     const out = `${path}.scrubbed.json`;
     writeFileSync(out, JSON.stringify(reduceHar(JSON.parse(raw), secrets), null, 1));
     return out;

@@ -62,7 +62,10 @@ export function compose(prep, outs) {
   for (const row of materials) if (row.outcome === "GAP" && row.reason) addOnce({ where: row.ref, reason: row.reason, ...(row.detail ? { detail: row.detail } : {}) });
   for (const p of prep.prs) if (p.gap) addOnce(p.gap);
   // No PR found is a visible gap even when CHANGE did not run or did not say so (rung 4 is the agent's to add).
-  if (!prs.length && !gaps.some(isChangeGap)) gaps.push({ where: "change", reason: "not-found", detail: "no pull request found on rungs 1–3 of the ladder" });
+  // Context-only PRs (deployment manifest, tooling) are not change surface, so "only those" is "none found" too.
+  if (!prs.some((p) => !p.context_only) && !gaps.some(isChangeGap)) {
+    gaps.push({ where: "change", reason: "not-found", detail: prs.length ? "no product pull request found on rungs 1–3 — only context-only PRs" : "no pull request found on rungs 1–3 of the ladder" });
+  }
 
   return {
     schema: "ticket-context/1", ticket: prep.ticket, tracker: prep.tracker,

@@ -13,7 +13,7 @@ import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
 import { buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
 import { extractFrames } from "./frames.mjs";
-import { loadSecretValues, scrubFile } from "./scrub.mjs";
+import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, writeCache } from "./cache.mjs";
@@ -38,7 +38,11 @@ async function materialize(it, jira, runDir, secrets) {
   const file = join(runDir, `att-${it.id}-${safeName(it.filename)}`);
   try { writeFileSync(file, await jira.download(it.url)); } catch (e) { it.gap = asGap(it.ref, e); return; }
   if (["har", "log", "trace"].includes(it.kind)) {
-    try { it.local_path = scrubFile(file, it.kind, secrets); it.scrubbed = true; }
+    try {
+      if (it.kind !== "har" && isHarText(readFileSync(file, "utf8"))) it.kind = "har"; // classified by content: a HAR saved as .json
+      it.local_path = scrubFile(file, it.kind, secrets);
+      it.scrubbed = true;
+    }
     catch (e) { it.gap = gap(it.ref, "unreadable", `could not scrub: ${String(e.message).slice(0, 150)}`); }
     finally { rmSync(file, { force: true }); } // the raw file never outlives this function (S2)
     return;
@@ -49,11 +53,6 @@ async function materialize(it, jira, runDir, secrets) {
     catch (e) { r = { gap: { reason: "unreadable", detail: `could not extract frames: ${String(e.message).slice(0, 150)}` } }; }
     finally { rmSync(file, { force: true }); } // the raw video never outlives this function (S3)
     if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
-    return;
-  }
-  if (it.kind === "other") {
-    rmSync(file, { force: true });
-    it.gap = gap(it.ref, "unreadable", "not a format the agent can read — ask for a PDF, an image or text");
     return;
   }
   it.local_path = file;
@@ -79,7 +78,7 @@ async function prepare() {
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named like 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)]);
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = await jira.devPrUrls(issue.id).catch(() => []);
+  const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
 
   let epic = null;
@@ -125,6 +124,10 @@ async function prepare() {
     for (const it of linked) if (linkedJson.has(it.key)) { it.local_path = join(runDir, `issue-${it.key}.json`); writeJson(it.local_path, linkedJson.get(it.key)); }
 
     const secrets = loadSecretValues(root);
+    // An attachment the agent cannot read is never downloaded: its outcome is recorded without the bytes.
+    for (const it of inv.items) if (it.ref.startsWith("attachment:") && it.kind === "other" && !it.gap) {
+      it.gap = gap(it.ref, "unreadable", "not a format the agent can read — not downloaded; ask for a PDF, an image or text");
+    }
     const plan = planDownloads(inv.items.filter((i) => i.ref.startsWith("attachment:")), CAPS);
     for (const [ref, g] of plan.gaps) inv.items.find((i) => i.ref === ref).gap = g;
     for (const it of plan.toFetch) await materialize(it, jira, runDir, secrets);
@@ -165,7 +168,7 @@ async function prepare() {
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
-    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, domain, run_dir: runDir, run_dir_in_project: inProject,
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, project_type: profile.projectType, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, ticket_json: ticketJson,
       ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
