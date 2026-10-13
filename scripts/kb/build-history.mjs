@@ -14,6 +14,7 @@
 // READ-ONLY on both sides: it reads the base checkout and GitHub (`gh api`, the operator's own login) and
 // prints JSON. What to do with it -- a backfill PR on the base, a replay -- is the caller's.
 
+import '../lib/sync-stdio.mjs';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
