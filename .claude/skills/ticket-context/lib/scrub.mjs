@@ -58,34 +58,28 @@ export function redactText(text, secrets = new Set()) {
 
   for (const [name, re] of TOKEN_SHAPES) s = s.replace(new RegExp(re.source, "g"), `[REDACTED:${name}]`);
 
-  // Fix 2: Redact headers anywhere, not just at line start, both formats
-  // Line-start format: "Name: value" or "Name: value"
-  s = s.replace(HEADER_LINE, (_m, a, h, b) => `${a}${h}${b}[REDACTED:header]`);
-  // JSON format: "name": "value"
-  s = s.replace(/"(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf|x-xsrf|ocp-apim-subscription-key|session|sid|x-auth-token)"\s*:\s*"[^"]*"/gi,
-    '"$1": "[REDACTED:header]"');
-  // Non-line-start format: Name: value (anywhere in text)
-  s = s.replace(/(?:^|[:\s,])(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf|x-xsrf|ocp-apim-subscription-key|session|sid|x-auth-token)\s*:\s*([^\s,;}\]]+)/gi,
-    (m, h, v) => {
-      const prefix = m[0];
-      return (prefix.match(/[:\s,]/) ? prefix : "") + h + ": [REDACTED:header]";
-    });
-  // Fix 3: Also redact headers matching SECRET_NAME pattern
-  s = s.replace(/([?\s,]|^)([^:\s,="']+)\s*:\s*([^,;\s}\]"']+)/g, (m, prefix, name, value) => {
-    if (SECRET_NAME.test(name) && !name.match(/^(operationName|method|status|started|url|error)$/i)) {
-      return `${prefix}${name}: [REDACTED:header]`;
-    }
-    return m;
-  });
+  // Fixed header list: built-in + x-csrf/xsrf variants + ocp-apim + session names
+  const headerNames = "authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf|x-xsrf|ocp-apim-subscription-key|session|sid|x-auth-token";
 
-  // Fix 5: Redact values of secret-named keys in JSON and form data
-  // JSON format: "keyname": "value" or "keyname": value
-  s = s.replace(/"([^"]+)"\s*:\s*("[^"]*"|[^,}\]]+)/g, (m, k, v) => {
-    if (SECRET_NAME.test(k)) {
+  // ONE unified header rule: not anchored, handles full value (to EOL or close-quote), escape-aware strings
+  // Prefix: start of line or whitespace/punctuation that precedes a header
+  // Value: if quoted, use escape-aware string; otherwise to EOL or quote
+  s = s.replace(new RegExp(`(^|[\\s"'{,;\\[(>])(${headerNames})\\s*:\\s*(?!\\[REDACTED)("(?:[^"\\\\]|\\\\.)*"|[^\\r\\n"]*)`, "gi"),
+    (m, prefix, hname, value) => {
+      return prefix + hname + ": [REDACTED:header]";
+    });
+
+  // JSON secret-key rule: ONLY match keys that are secret-named (password, token, cookie, authorization, session, sid, refresh_token, etc.)
+  // Match: "secret-key-name": followed by escape-aware string or bare value
+  const secretKeyPattern = new RegExp(`"(${headerNames}|[^"]*(?:password|passwd|pwd|token|secret|api[_-]?key|access[_-]?key|refresh[_-]?token)[^"]*)"\s*:\s*(?!\\[REDACTED)("(?:[^"\\\\]|\\\\.)*"|[^,}\\]\\s]+)`, "gi");
+  s = s.replace(secretKeyPattern, (m, k, v) => {
+    // Only replace if k matches SECRET_NAME (avoid over-matching)
+    if (SECRET_NAME.test(k) || k.match(/^(cookie|authorization|session|sid|refresh.token)$/i)) {
       return `"${k}": [REDACTED:secret-key]`;
     }
     return m;
   });
+
   // Form data format: key=value (at start or after &, ?, or whitespace)
   // Skip values that are already redacted (from env-secret or token redaction)
   s = s.replace(/([?&\s=]|^)([^=&\s#\n"']+)=([^&#\s"'\n]+)/g, (m, prefix, k, v) => {
@@ -94,6 +88,9 @@ export function redactText(text, secrets = new Set()) {
     }
     return m;
   });
+
+  // Keep the old line-anchored HEADER_LINE for compatibility with brief tests
+  s = s.replace(HEADER_LINE, (_m, a, h, b) => `${a}${h}${b}[REDACTED:header]`);
 
   return s.replace(QUERY_VALUE, "$1=[REDACTED:query]");
 }
