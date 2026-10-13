@@ -44,7 +44,8 @@ of that again, and do **not** follow a link the inventory does not list.
 
 ## Step 1 — connector-only sources (you)
 
-For each ref in `needs_connector` (Loom, Figma, Claude Design), read it once with its connector and
+For each ref in `needs_connector` (Loom, Claude Design, and Figma when `FIGMA_TOKEN` is not set —
+`prepare` exports Figma frames itself when it is), read it once with its connector and
 attach the result — rules per kind in [`design-sources.md`](design-sources.md). The address to open
 is that inventory item's `url` in `prepare.json`: a link's ref has its query values redacted (a token
 in a link never reaches the bundle), so never open the ref and never copy the `url` into an output.

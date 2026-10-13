@@ -12,6 +12,7 @@ import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
+import { exportFigmaFrame, figmaToken } from "./figma.mjs";
 import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, runLadder } from "./github.mjs";
@@ -154,6 +155,8 @@ async function prepare() {
 
     const privateHosts = new Set([...envHosts(root), new URL(tcred.base).hostname, "github.com", "api.github.com"]);
     let pages = 0;
+    let figmas = 0;
+    const figma = figmaToken(); // FIGMA_TOKEN after the layered loader; never printed
     for (const it of inv.items.filter((i) => i.ref.startsWith("link:") && !i.gap)) {
       if (it.kind === "confluence") {
         const id = /\/pages\/(\d+)/.exec(it.url)?.[1];
@@ -165,7 +168,9 @@ async function prepare() {
         } catch (e) { it.gap = asGap(it.ref, e); }
       } else if (it.kind === "external") {
         try { it.local_path = (await fetchPublicPage(it.url, join(runDir, `page-${++pages}.txt`), { privateHosts })).path; } catch (e) { it.gap = asGap(it.ref, e); }
-      } else it.needs_connector = true; // loom · figma · claude-design — step 1 of SKILL.md
+      } else if (it.kind === "figma" && figma) {
+        try { it.local_path = await exportFigmaFrame({ url: it.url, token: figma, file: join(runDir, `figma-${++figmas}.png`) }); } catch (e) { it.gap = asGap(it.ref, e); }
+      } else it.needs_connector = true; // loom · figma without FIGMA_TOKEN · claude-design — step 1 of SKILL.md
     }
 
     const prs = [];

@@ -11,7 +11,7 @@ site.
 |---|---|---|
 | `claude-design`, `url` `claude.ai/design/p/<uuid>?file=…` | look for the local copy `.design-source/<uuid>/` (gitignored; files a person put on disk, e.g. "Send to Claude Code") | that directory, or `--gap connector-unavailable --detail "no local copy of design project <uuid> — export it to .design-source/<uuid>/"` |
 | `claude-design`, `url` `claude.ai/code/artifact/…` (a "Changes" artifact) | Artifact tool `read` with `path: "index.html"` and `out_dir` set to a directory of its own, `<run_dir>/artifact-<n>/` (`n` counts the artifacts of this run; never the run dir itself, where two reads would overwrite one `index.html`). If the read returns a summary instead of raw HTML (an artifact owned by someone else), do not attach it | `<run_dir>/artifact-<n>/index.html`, or `--gap connector-unavailable --detail "artifact not readable as raw HTML — ask for a local export"` |
-| `figma` (open its `url`) | Figma MCP: `get_screenshot` of the linked node (`get_metadata` for frame names) into the run dir | the PNG; no Figma MCP ⇒ `--gap connector-unavailable --detail "ask for a PNG export of the frame"` |
+| `figma` | nothing when the env names `FIGMA_TOKEN`: `prepare` exported the linked frame as a PNG (the item has a `local_path` and is not in `needs_connector`). Without it, the Figma MCP returns the image to the session, not to a file, so it cannot be attached | `--gap connector-unavailable --detail "set FIGMA_TOKEN, or attach a PNG export of the frame"` |
 | a mockup attachment | nothing — it is already a downloaded image | — |
 
 ## Step 2 — what the MATERIALS agent extracts
