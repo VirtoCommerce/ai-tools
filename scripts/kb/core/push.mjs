@@ -35,7 +35,9 @@ import { writeRefusal } from './base.mjs';
 import { coordinatesOf, githubApi } from './github-api.mjs';
 import { claimKey, findDuplicate } from './identity.mjs';
 import { parseEntry, stringifyFrontmatter } from './frontmatter.mjs';
-import { buildIndex, buildRow, claimHash, entryPath } from './index-build.mjs';
+import { buildIndex, buildPath, buildRow, claimHash, entryPath } from './index-build.mjs';
+
+export { buildPath };
 import { idList, normalizeRow } from './index-load.mjs';
 import { flagDuplicateSessions } from './sync-base.mjs';
 import { gateQueue, loadSecrets } from './secret-gate.mjs';
@@ -47,7 +49,7 @@ import {
   REACH_IDLE_MS, dropReach, idleReaches, lineWork, markSent, ownReachDue, reachLine, reachPath, readReach, sessionKeyOf, unsent,
   workIn,
 } from './reach.mjs';
-import { toLogLine } from './verbs.mjs';
+import { standName, toLogLine } from './verbs.mjs';
 import { cachedWho } from './who.mjs';
 import { stampCallersFromTranscripts } from './caller.mjs';
 
@@ -407,9 +409,28 @@ export function appendEvidence(text, item, where) {
   return { text: `${stringifyFrontmatter(next)}\n${body}`, data: next };
 }
 
-/** Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`. */
+/**
+ * Two evidence items are ONE observation when these agree. Exact on purpose: see `appendEvidence`.
+ * The stand is compared by its ONE name (VCST-6189), so an item queued as `vcst` by an older client
+ * still matches the same observation already on the base as `vcst_qa`, and is not appended twice.
+ */
 const EVIDENCE_KEY = ['at', 'by', 'method', 'deployment', 'contradicts'];
-export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => (a?.[k] ?? null) === (b?.[k] ?? null));
+const keyOf = (e, k) => (k === 'deployment' && e?.[k] != null ? standName(e[k]) : e?.[k] ?? null);
+export const sameEvidence = (a, b) => EVIDENCE_KEY.every((k) => keyOf(a, k) === keyOf(b, k));
+
+/**
+ * A queued line with its stand named as the base names it (VCST-6189). The door has done this since
+ * the map existed; a queue written by an OLDER client -- or before a profile gained its KB_STAND --
+ * reaches the base through here, so the rename happens at push too and no old spelling is re-added.
+ */
+export function onCanonicalStands(line) {
+  const p = line?.payload;
+  if (!p) return line;
+  const fold = (e) => (e && typeof e.deployment === 'string' ? { ...e, deployment: standName(e.deployment) } : e);
+  if (p.item) return { ...line, payload: { ...p, item: fold(p.item) } };
+  if (Array.isArray(p.entry?.evidence)) return { ...line, payload: { ...p, entry: { ...p.entry, evidence: p.entry.evidence.map(fold) } } };
+  return line;
+}
 
 /** A new entry's file. The trailing newline is added if the claim did not carry one. */
 export function entryText(entry, body) {
@@ -494,8 +515,18 @@ export async function applyQueue({ lines, rows, read, at = new Date() }) {
     return true;
   };
 
-  for (const line of lines) {
-    if (!MUTATIONS.includes(line.kind) || !line.payload) continue;
+  for (const queued of lines) {
+    if (!MUTATIONS.includes(queued.kind) || !queued.payload) continue;
+    const line = onCanonicalStands(queued);
+    // THE BUILD BEHIND A STAMP (VCST-6221), written once: `builds/<pin>.json` is content-addressed, so a
+    // second writer of the same build finds the file and writes nothing. Snapshot without a stamped
+    // item (a refused capture below) still lands -- it is a true fact about a build, not a claim.
+    const snap = line.payload.build;
+    const pinned = line.payload.item?.build ?? line.payload.entry?.evidence?.[0]?.build;
+    if (snap && pinned && !files.has(buildPath(pinned)) && (await read(buildPath(pinned))) == null) {
+      files.set(buildPath(pinned), `${JSON.stringify({ pin: pinned, ...snap }, null, 2)}
+`);
+    }
 
     if (line.kind === 'capture') {
       const { entry, body } = line.payload;

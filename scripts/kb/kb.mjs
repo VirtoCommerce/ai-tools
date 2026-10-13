@@ -25,6 +25,7 @@ import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -172,7 +173,7 @@ async function main(argv) {
     if (r.state === 'answer') {
       out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
       const d = r.disputes;
-      out(`disputed  ${d.disputedEntries} entr(ies) disputed · ${d.settledEntries} settled by a judge`);
+      out(`disputed  ${d.disputedEntries} entr(ies) disputed${d.contestedEntries ? ` · ${d.contestedEntries} contested on another build (soft, still to judge)` : ''} · ${d.settledEntries} settled by a judge`);
     } else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
   }
@@ -231,10 +232,10 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
-    // for why this door has no authoritative source to derive it from either.
+    // `--deployment` is OPTIONAL on ask and is never defaulted from this process -- only a name the
+    // caller passes is mapped onto the stand's one name (`stand()` in core/verbs.mjs).
     const r = await ask(question, opened, {
-      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
@@ -246,6 +247,7 @@ async function main(argv) {
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
     const r = await show(id, opened, {
       via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+      deployment: typeof args.flags.deployment === 'string' ? args.flags.deployment : null, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
@@ -267,7 +269,7 @@ async function main(argv) {
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
       deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
     else emit(captureLines(r, { card: true }));
@@ -283,7 +285,7 @@ async function main(argv) {
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
       conditions: args.flags.conditions,
-    }, opened, { via: VIA, topic: args.flags.topic });
+    }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;
