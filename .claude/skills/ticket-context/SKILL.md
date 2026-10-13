@@ -147,7 +147,9 @@ and write `<run_dir>/kb.out.json`.
     compose again.
   - `PR … has no entry` → re-dispatch CHANGE (when split: only for those PRs, with `PRS:`, saved as the
     next `change.<n>.out.json`, then `merge-change` again).
-  - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact.
+  - `secret: …` → re-dispatch the mode whose output carries it, telling it to redact (when CHANGE is
+    split: only the part that carries it, with its `PRS:`, saved over its `change.<n>.out.json`, then
+    `merge-change` again).
   - A second failure ⇒ `abort`, STOP and report the errors verbatim.
 - exit 0 (`done`) → keep `bundle_path`. The run dir is gone.
 
