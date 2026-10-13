@@ -1,7 +1,7 @@
 ---
 name: qa-test-strategy
 description: "[QA Method] Use when a ticket's context is gathered and nothing has been tested yet — the strategy step of /qa-test-fast (the prototype of the single /qa-test), or standalone to plan a run before paying for it — to CHOOSE the test strategy: risks, strategy mix, technique and oracle per risk, lanes, data, which artifacts run, entry/exit criteria, under deterministic floors F1–F9 and a three-round cap. Asks the user once to approve (--yes skips), and reconciles plan against what ran at close-out. Writes reports/tickets/{SPRINT}/<TICKET>/test-strategy.md, one section per round. Not the fault model (/qa-test-model), not a sprint plan (/qa-test-plan), not risk scoring alone (/qa-risk)."
-argument-hint: "<TICKET> [--context <bundle>] [--yes] | reconcile <TICKET>"
+argument-hint: "<TICKET> [--context <run context>] [--yes] | reconcile <TICKET>"
 ---
 
 # /qa-test-strategy — decide how a ticket is tested, before anything is tested
@@ -34,7 +34,7 @@ file up instead of writing a new one.
 
 ## Inputs
 
-The context bundle, the kb hit ids from pre-flight, prior artifacts for the ticket, and — from round 2 on
+The run context and the `/ticket-context` bundle it names, the kb hit ids from pre-flight, prior artifacts for the ticket, and — from round 2 on
 — the previous round's section of this same file ([`rounds.md`](rounds.md)). **A missing input is a
 project risk, never a guess.**
 
@@ -101,7 +101,7 @@ project risk, never a guess.**
    away is created in the case (FIFTH RULE). Name any record that must be created **before** a redeploy.
 10. **Out of scope** — what is not tested, why, and the residual risk. In round 3 this list is the
     ticket's residual risk.
-11. **Criteria.** *Entry*: the build carries the PRs (F6), `npm run env:check` is green, the data is
+11. **Criteria.** *Entry*: the build carries the PRs (F6 — `UNKNOWN` enters as "deployment unverified"), `npm run env:check` is green, the data is
     reachable. *Suspension*: what makes the run `BLOCKED`. *Exit*: every in-scope risk has a result or a
     named deviation, and the exploratory box is spent.
 12. **Depth label** per [`floors.md`](floors.md) §Depth label — computed, never chosen.

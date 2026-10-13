@@ -31,7 +31,9 @@ The mental model, in more detail: [`docs/using-commands-and-skills.md`](../../..
 - **Skill and command frontmatter:** [`../../skills/README.md`](../../skills/README.md)
   §Frontmatter Reference. The `[Category]` tag goes in `description`.
 - **Team framework:** an agent's first lines point at its team's `shared-instructions.md`
-  (`qa/`, `ba/` or `developers/`) instead of copying from it.
+  (`qa/`, `ba/` or `developers/`) instead of copying from it. **Exception:** an agent built to move
+  into a plugin (`ticket-context-analyst`) cites no `.claude/` file, because a plugin cannot reach
+  one (`plugins/CLAUDE.md`); it carries its few rules itself.
 
 ## 3. Size, tiers and the "cite, don't restate" rule
 
