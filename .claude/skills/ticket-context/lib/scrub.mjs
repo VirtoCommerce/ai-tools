@@ -43,9 +43,58 @@ export function loadSecretValues(root, env = process.env) {
 
 export function redactText(text, secrets = new Set()) {
   let s = String(text);
-  for (const v of secrets) if (v && s.includes(v)) s = s.split(v).join("[REDACTED:env-secret]");
+  // Fix 4: Also redact JSON-escaped and URL-encoded variants of env secrets
+  const secretVariants = new Set();
+  for (const v of secrets) {
+    if (v) {
+      secretVariants.add(v);
+      // Add JSON-escaped variant (e.g., pa"ss\word1 -> pa\"ss\\word1)
+      secretVariants.add(JSON.stringify(v).slice(1, -1));
+      // Add URL-encoded variant
+      try { secretVariants.add(encodeURIComponent(v)); } catch {}
+    }
+  }
+  for (const v of secretVariants) if (v && s.includes(v)) s = s.split(v).join("[REDACTED:env-secret]");
+
   for (const [name, re] of TOKEN_SHAPES) s = s.replace(new RegExp(re.source, "g"), `[REDACTED:${name}]`);
+
+  // Fix 2: Redact headers anywhere, not just at line start, both formats
+  // Line-start format: "Name: value" or "Name: value"
   s = s.replace(HEADER_LINE, (_m, a, h, b) => `${a}${h}${b}[REDACTED:header]`);
+  // JSON format: "name": "value"
+  s = s.replace(/"(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf|x-xsrf|ocp-apim-subscription-key|session|sid|x-auth-token)"\s*:\s*"[^"]*"/gi,
+    '"$1": "[REDACTED:header]"');
+  // Non-line-start format: Name: value (anywhere in text)
+  s = s.replace(/(?:^|[:\s,])(authorization|proxy-authorization|cookie|set-cookie|x-api-key|x-csrf|x-xsrf|ocp-apim-subscription-key|session|sid|x-auth-token)\s*:\s*([^\s,;}\]]+)/gi,
+    (m, h, v) => {
+      const prefix = m[0];
+      return (prefix.match(/[:\s,]/) ? prefix : "") + h + ": [REDACTED:header]";
+    });
+  // Fix 3: Also redact headers matching SECRET_NAME pattern
+  s = s.replace(/([?\s,]|^)([^:\s,="']+)\s*:\s*([^,;\s}\]"']+)/g, (m, prefix, name, value) => {
+    if (SECRET_NAME.test(name) && !name.match(/^(operationName|method|status|started|url|error)$/i)) {
+      return `${prefix}${name}: [REDACTED:header]`;
+    }
+    return m;
+  });
+
+  // Fix 5: Redact values of secret-named keys in JSON and form data
+  // JSON format: "keyname": "value" or "keyname": value
+  s = s.replace(/"([^"]+)"\s*:\s*("[^"]*"|[^,}\]]+)/g, (m, k, v) => {
+    if (SECRET_NAME.test(k)) {
+      return `"${k}": [REDACTED:secret-key]`;
+    }
+    return m;
+  });
+  // Form data format: key=value (at start or after &, ?, or whitespace)
+  // Skip values that are already redacted (from env-secret or token redaction)
+  s = s.replace(/([?&\s=]|^)([^=&\s#\n"']+)=([^&#\s"'\n]+)/g, (m, prefix, k, v) => {
+    if (SECRET_NAME.test(k) && !v.startsWith("[REDACTED:")) {
+      return `${prefix}${k}=[REDACTED:secret-key]`;
+    }
+    return m;
+  });
+
   return s.replace(QUERY_VALUE, "$1=[REDACTED:query]");
 }
 
@@ -82,7 +131,7 @@ export function reduceHar(har, secrets = new Set()) {
         url: e.request?.url ? stripQuery(e.request.url, secrets) : null,
         status,
         operation: operationsOf(e.request?.postData?.text ?? ""),
-        error: !isError ? null : body === null ? "[binary body]" : redactText(body.slice(0, 500), secrets),
+        error: !isError ? null : body === null ? "[binary body]" : redactText(body, secrets).slice(0, 500),
       };
     }),
   };
