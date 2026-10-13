@@ -97,13 +97,16 @@ Per dispute (per contradicting evidence item), one of:
 | The entry holds on the conditions the dispute named; the dispute misread its observation | `dispute-wrong` | nothing in the claim; the resolution says what the dispute misread |
 | Not established — a source unreachable, or the reproduction inconclusive | **no verdict** | the dispute stays OPEN; the PR says what is missing |
 
-**A split made by the schema-2 migration copied every evidence item of the parent to every child**,
-disputes included (`splitFrom` on the item). Such a dispute is often about the sibling: resolve it on
-the child it does not concern as `split`, naming the sibling in `--why`, and judge it on the child it
-does concern.
+**A split made before VCST-6221 copied every evidence item of the parent to every child**, disputes
+included (`splitFrom` on the item). Such a dispute is often about the sibling: resolve it on the child
+it does not concern as `split`, naming the sibling in `--why`, and judge it on the child it does
+concern.
 
 To split an entry: write a `split` plan and apply it with `npm run kb:migrate-schema2 -- --stamp …`
-then `--apply` on the base checkout (its header has the plan shape). Each child then carries the
-parent's whole evidence; resolve each dispute on each child as above. Split **before** recording the
+then `--apply` on the base checkout (its header has the plan shape). Each child carries the parent's
+confirmations and settled disputes; each OPEN dispute goes to one child only, named in the plan as
+`"disputes": { "<the dispute's at>": <child number, 1-based> | "judge" }` — a plan that leaves one
+unassigned is refused. `"judge"` (you cannot tell which clause it contradicts) puts it on the first child
+once, flagged `splitUndecided`. Split **before** recording the
 investigation's `observe` items, and record each on the child it concerns — an item written on the
 parent first is copied to every child.
