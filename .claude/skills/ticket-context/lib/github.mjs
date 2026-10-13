@@ -8,13 +8,33 @@ import { GapError, asGap, gap } from "./gap.mjs";
 /** Stage-1 rule: deployment-manifest PRs and this repo's PRs are context, not change surface. */
 export const CONTEXT_ONLY_REPOS = Object.freeze(["vc-deploy-dev", "ai-tools"]);
 
+// owner/repo come from parsed URLs and end up in API paths and run-dir file names: refuse anything else.
+const NAME = /^[A-Za-z0-9_.-]+$/;
+const SHA = /^[0-9a-fA-F]{7,64}$/;
+const invalidRef = () => new GapError("unreadable", "invalid repository reference");
+function checkRepo(owner, repo) {
+  for (const x of [owner, repo]) if (typeof x !== "string" || !NAME.test(x) || x === "." || x === "..") throw invalidRef();
+}
+function checkNumber(n) { if (!Number.isInteger(n) || n <= 0) throw invalidRef(); }
+function checkSha(sha) { if (typeof sha !== "string" || !SHA.test(sha)) throw invalidRef(); }
+
+/** UTF-8-safe byte cut: at or below `cap` bytes, never inside a multi-byte sequence. */
+function cutBytes(text, cap) {
+  const buf = Buffer.from(text, "utf8");
+  if (buf.length <= cap) return { text, bytes: buf.length, cut: false };
+  let end = cap;
+  while (end > 0 && (buf[end] & 0xc0) === 0x80) end--;
+  return { text: buf.subarray(0, end).toString("utf8"), bytes: buf.length, cut: true };
+}
+
 export function ghClient(cred, fetchImpl = fetch) {
   async function req(path, { accept = "application/vnd.github+json", method = "GET", body } = {}) {
     const res = await fetchImpl(`https://api.github.com${path}`, { method, body, headers: {
       Authorization: cred.auth, Accept: accept, "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "ticket-context",
       ...(body ? { "Content-Type": "application/json" } : {}) } });
     const where = path.split("?")[0];
-    if ((res.status === 403 || res.status === 429) && res.headers.get("x-ratelimit-remaining") === "0") throw new GapError("unreadable", `GitHub rate limit reached on ${where} — wait for the reset`);
+    // Primary limit (remaining 0) and secondary limit (retry-after) are both "wait", never "denied".
+    if ((res.status === 403 || res.status === 429) && (res.headers.get("x-ratelimit-remaining") === "0" || res.headers.get("retry-after") !== null)) throw new GapError("unreadable", `GitHub rate limit reached on ${where} — wait for the reset`);
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `GitHub ${res.status} on ${where} (credential: ${cred.via}; never retried with another)`);
     if (res.status === 404) throw new GapError("deleted", `GitHub 404 on ${where}`);
     if (!res.ok) throw new GapError("unreadable", `GitHub ${res.status} on ${where}`);
@@ -25,25 +45,31 @@ export function ghClient(cred, fetchImpl = fetch) {
   return {
     searchPrs: async (key, orgs) => (await json(`/search/issues?q=${q(`"${key}" is:pr ${orgs.map((o) => `org:${o}`).join(" ")}`)}&per_page=50`)).items ?? [],
     searchCommits: async (key, orgs) => (await json(`/search/commits?q=${q(`"${key}" ${orgs.map((o) => `org:${o}`).join(" ")}`)}&per_page=30`)).items ?? [],
-    prsForCommit: (o, r, sha) => json(`/repos/${o}/${r}/commits/${sha}/pulls`),
-    pr: (o, r, n) => json(`/repos/${o}/${r}/pulls/${n}`),
+    prsForCommit: async (o, r, sha) => { checkRepo(o, r); checkSha(sha); return json(`/repos/${o}/${r}/commits/${sha}/pulls`); },
+    pr: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return json(`/repos/${o}/${r}/pulls/${n}`); },
+    // Returns up to cap+1 entries: the extra one is how the caller sees that the PR has more files than the cap.
     files: async (o, r, n, cap) => {
+      checkRepo(o, r); checkNumber(n);
       const out = [];
-      for (let page = 1; out.length < cap; page++) {
+      for (let page = 1; out.length <= cap; page++) {
         const batch = await json(`/repos/${o}/${r}/pulls/${n}/files?per_page=100&page=${page}`);
         out.push(...batch);
         if (batch.length < 100) break;
       }
-      return out.slice(0, cap);
+      return out.slice(0, cap + 1);
     },
-    diff: async (o, r, n) => (await req(`/repos/${o}/${r}/pulls/${n}`, { accept: "application/vnd.github.diff" })).text(),
-    reviewComments: (o, r, n) => json(`/repos/${o}/${r}/pulls/${n}/comments?per_page=100`),
+    diff: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return (await req(`/repos/${o}/${r}/pulls/${n}`, { accept: "application/vnd.github.diff" })).text(); },
+    reviewComments: async (o, r, n) => { checkRepo(o, r); checkNumber(n); return json(`/repos/${o}/${r}/pulls/${n}/comments?per_page=100`); },
     unresolvedThreads: async (o, r, n) => {
+      checkRepo(o, r); checkNumber(n);
       const query = "query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){reviewThreads(first:100){nodes{isResolved}}}}}";
       const j = await json("/graphql", { method: "POST", body: JSON.stringify({ query, variables: { o, r, n } }) });
-      return (j.data?.repository?.pullRequest?.reviewThreads?.nodes ?? []).filter((t) => !t.isResolved).length;
+      // A 200 can still carry {errors, data:null}: that is "not read", never "0 unresolved".
+      const nodes = j?.data?.repository?.pullRequest?.reviewThreads?.nodes;
+      if (j?.errors || !Array.isArray(nodes)) throw new GapError("unreadable", "GitHub GraphQL returned errors or no pull request for the review threads");
+      return nodes.filter((t) => !t.isResolved).length;
     },
-    checkRuns: (o, r, sha) => json(`/repos/${o}/${r}/commits/${sha}/check-runs?per_page=100`),
+    checkRuns: async (o, r, sha) => { checkRepo(o, r); checkSha(sha); return json(`/repos/${o}/${r}/commits/${sha}/check-runs?per_page=100`); },
   };
 }
 
@@ -86,11 +112,17 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
   if (orgs.length) {
     try {
       for (const c of (await gh.searchCommits(key, orgs)).slice(0, 10)) {
-        const [owner, repo] = c.repository.full_name.split("/");
-        for (const pr of await gh.prsForCommit(owner, repo, c.sha)) {
-          const ref = `${owner}/${repo}#${pr.number}`;
-          refs.set(ref, { ref, owner, repo, number: pr.number, rung: 3 });
-        }
+        // One bad commit item (or one failing lookup) costs that commit, never the whole rung.
+        const where = `change.commit:${String(c?.sha ?? "?").slice(0, 7)}`;
+        try {
+          const full = c?.repository?.full_name;
+          if (typeof full !== "string" || !full.includes("/")) throw new GapError("unreadable", "commit search result without a repository");
+          const [owner, repo] = full.split("/");
+          for (const pr of await gh.prsForCommit(owner, repo, c.sha)) {
+            const ref = `${owner}/${repo}#${pr.number}`;
+            refs.set(ref, { ref, owner, repo, number: pr.number, rung: 3 });
+          }
+        } catch (e) { gaps.push(asGap(where, e)); }
       }
     } catch (e) { gaps.push(asGap("change.commits", e)); }
   }
@@ -100,6 +132,8 @@ export async function runLadder({ gh, key, orgs, explicitRefs, gaps }) {
 
 export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {}) {
   const { owner, repo, number, meta } = p;
+  checkRepo(owner, repo);
+  checkNumber(number);
   const slug = `${owner}-${repo}-${number}`;
   const merged = !!meta.merged_at;
   const entry = { ref: p.ref, repo: `${owner}/${repo}`, number, rung: p.rung ?? null, state: meta.state, merged, merged_at: meta.merged_at ?? null,
@@ -114,23 +148,29 @@ export async function collectPr(gh, p, runDir, { caps = CAPS, sameKey = [] } = {
     created_at: entry.created_at, head_sha: entry.head_sha, base: meta.base?.ref ?? null, body: meta.body ?? "",
     later_prs: laterPrs(sameKey, { ref: p.ref, merged_at: entry.merged_at }) });
   try {
-    entry.files_path = write("files.json", (await gh.files(owner, repo, number, caps.prFiles))
+    // gh.files may return up to cap+1 entries; the extra one is the over-cap signal.
+    const all = await gh.files(owner, repo, number, caps.prFiles);
+    if (all.length > caps.prFiles) entry.gaps.push(gap(`pr:${p.ref}:files`, "over-cap", `${all.length}+ files; first ${caps.prFiles} read`));
+    entry.files_path = write("files.json", all.slice(0, caps.prFiles)
       .map((f) => ({ filename: f.filename, status: f.status, additions: f.additions, deletions: f.deletions })));
   } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:files`, e)); }
   try {
-    const diff = await gh.diff(owner, repo, number);
-    if (diff.length > caps.diffBytes) entry.gaps.push(gap(`pr:${p.ref}:diff`, "over-cap", `diff truncated at ${caps.diffBytes} of ${diff.length} bytes`));
-    entry.diff_path = write("diff.patch", diff.slice(0, caps.diffBytes));
+    const cut = cutBytes(String(await gh.diff(owner, repo, number)), caps.diffBytes);
+    if (cut.cut) entry.gaps.push(gap(`pr:${p.ref}:diff`, "over-cap", `diff truncated at ${caps.diffBytes} of ${cut.bytes} bytes`));
+    entry.diff_path = write("diff.patch", cut.text);
   } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:diff`, e)); }
-  try {
-    const comments = await gh.reviewComments(owner, repo, number);
-    const unresolved = await gh.unresolvedThreads(owner, repo, number);
+  let comments = null;
+  try { comments = await gh.reviewComments(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:reviews`, e)); }
+  if (comments) {
+    // A threads failure must not discard the comments already read: null says "not read", never 0.
+    let unresolved = null;
+    try { unresolved = await gh.unresolvedThreads(owner, repo, number); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:threads`, e)); }
     // No author handles: who said it is not what the agent reports.
     entry.reviews_path = write("reviews.json", { unresolved_threads: unresolved,
       comments: comments.map((c) => ({ path: c.path, line: c.line ?? c.original_line ?? null, body: String(c.body ?? "").slice(0, 500), created_at: c.created_at })) });
-  } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:reviews`, e)); }
+  }
   if (entry.head_sha) {
     try { entry.checks_path = write("checks.json", summarizeChecks(await gh.checkRuns(owner, repo, entry.head_sha))); } catch (e) { entry.gaps.push(asGap(`pr:${p.ref}:checks`, e)); }
-  }
+  } else entry.gaps.push(gap(`pr:${p.ref}:checks`, "not-found", "no head SHA"));
   return entry;
 }
