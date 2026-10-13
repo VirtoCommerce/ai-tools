@@ -17,7 +17,8 @@ failed · `3` could not run.
 
 ## Step 0 — prepare (script)
 
-`node "<skill>/lib/cli.mjs" prepare <KEY> [--fresh]`
+`node "<skill>/lib/cli.mjs" prepare <KEY> [--domain <slug>] [--fresh]` — the domain is part of the cache
+key, and Step 5 reads it from `prepare.json`.
 
 - `status: "cached"` → deployment is never cached: run
   `node "<skill>/lib/cli.mjs" redeploy <KEY> --bundle <bundle_path>`, then go to Step 7. `redeploy`
@@ -121,7 +122,7 @@ shown as `UNKNOWN` (`closed without merge`) and is not counted in `chain_deploye
 ## Step 5 — known ground
 
 Follow [`known-ground.md`](known-ground.md): run
-`node "<skill>/lib/cli.mjs" known --prepare <prepare_path> [--domain <slug>]`, then do the `kb` asks
+`node "<skill>/lib/cli.mjs" known --prepare <prepare_path>`, then do the `kb` asks
 and write `<run_dir>/kb.out.json`.
 
 ## Step 6 — compose and gate (script)

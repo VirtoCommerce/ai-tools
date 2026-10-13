@@ -6,9 +6,10 @@ import { dirname, relative } from "node:path";
 
 export const TTL_MS = 24 * 3600 * 1000;
 
-/** D10: ticket `updated` + PR head SHAs + linked issues' `updated`. Confluence/Figma/Loom/pages are not in it (documented). */
-export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [] }) {
-  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort() })).digest("hex").slice(0, 16);
+/** D10: ticket `updated` + each PR's head SHA, state and merge time (a merge invalidates) + linked issues' `updated` +
+ *  the --domain the known-ground lookups used. Confluence/Figma/Loom/pages are not in it (documented). */
+export function freshnessKey({ ticketUpdated, prShas = [], linkedUpdated = [], domain = null }) {
+  return createHash("sha256").update(JSON.stringify({ t: ticketUpdated, p: [...prShas].sort(), l: [...linkedUpdated].sort(), d: domain ?? null })).digest("hex").slice(0, 16);
 }
 
 /**

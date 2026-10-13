@@ -17,7 +17,7 @@ import { loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
 import { freshnessKey, isIgnored, readCached, writeCache } from "./cache.mjs";
-import { knownGround } from "./known.mjs";
+import { DOMAIN_RE, knownGround } from "./known.mjs";
 import { OUT_FILES, checkAgentOutputs, compose } from "./compose.mjs";
 import { checkBundle } from "./check-bundle.mjs";
 
@@ -28,7 +28,7 @@ const has = (n) => argv.includes(`--${n}`);
 const out = (o) => process.stdout.write(`${JSON.stringify(o, null, 2)}\n`);
 const readJson = (p) => JSON.parse(readFileSync(p, "utf8"));
 const writeJson = (p, o) => writeFileSync(p, JSON.stringify(o, null, 2));
-const USAGE = "usage: cli.mjs prepare <KEY> [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> [--domain <slug>] | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
+const USAGE = "usage: cli.mjs prepare <KEY> [--domain <slug>] [--fresh] | attach --prepare <p> --ref <ref> (--file <path> | --gap <reason> [--detail <text>]) | deploy --prepare <p> | known --prepare <p> | compose --prepare <p> | check --prepare <p> | finish --prepare <p> | abort --prepare <p> | redeploy <KEY> --bundle <p>";
 function usage(msg) { console.error(`✗ ${msg}\n${USAGE}`); process.exit(1); }
 const root = outputRoot();
 const ignored = (p) => isIgnored(root, p);
@@ -64,6 +64,8 @@ async function prepare() {
   try { assertKey(key); } catch (e) { usage(e.message); }
   // S3: a run dir a crashed or STOPped run left behind (either shape) goes first, before any cache return.
   try { sweepStaleRuns(key, { root }); } catch { /* a failed sweep never blocks the run; the next prepare retries */ }
+  const domain = flag("domain") ?? null; // part of the freshness key: known ground differs per domain
+  if (domain !== null && !DOMAIN_RE.test(domain)) usage("--domain must be a slug: letters, digits, '-' or '_'");
   loadLayeredEnv(root);
   const profile = resolveProfile(readProfile(root));
   const tcred = trackerCredential(profile);
@@ -110,7 +112,8 @@ async function prepare() {
   const isContext = (p) => CONTEXT_ONLY_REPOS.includes(p.repo.toLowerCase());
   prMeta.sort((a, b) => (isContext(a) - isContext(b)) || String(b.meta?.created_at ?? "").localeCompare(String(a.meta?.created_at ?? "")));
 
-  const fk = freshnessKey({ ticketUpdated: issue.fields.updated, prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}`),
+  const fk = freshnessKey({ ticketUpdated: issue.fields.updated, domain,
+    prShas: prMeta.map((p) => `${p.ref}@${p.meta?.head?.sha ?? "?"}@${p.meta?.state ?? "?"}@${p.meta?.merged_at ?? ""}`),
     linkedUpdated: [...linkedJson.values()].map((j) => `${j.key}@${j.fields?.updated}`) });
   const cachedFile = join(cacheDir(key, root), "bundle.json");
   if (!has("fresh") && readCached(cachedFile, fk)) { out({ status: "cached", bundle_path: cachedFile }); return; }
@@ -162,7 +165,7 @@ async function prepare() {
       try { prs.push(await collectPr(gh, p, runDir, { sameKey: ladder.sameKey })); } catch (e) { prs.push({ ...base, gap: asGap(`pr:${p.ref}`, e) }); }
     }
 
-    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, run_dir: runDir, run_dir_in_project: inProject,
+    const prepared = { schema: "ticket-context-prepare/1", ticket: key, tracker: profile.tracker, domain, run_dir: runDir, run_dir_in_project: inProject,
       fetched_at: new Date().toISOString(), ticket_updated: issue.fields.updated, freshness_key: fk, ticket_json: ticketJson,
       ac_fields: acFields, link_fields: linkFields, epic, siblings, inventory: inv.items, prs, rung: ladder.rung, ladder: ladder.ladder, gaps };
     const prepPathOut = join(runDir, "prepare.json");
@@ -205,10 +208,22 @@ function deploy() {
 }
 
 function known() {
+  if (has("domain")) usage("--domain is given to prepare (it is part of the cache key); known reads it from prepare.json");
   const prep = readJson(prepPath());
   const changeFile = join(prep.run_dir, OUT_FILES.change);
-  const operations = existsSync(changeFile) ? [...new Set(readJson(changeFile).prs.flatMap((x) => [...(x.operations ?? []), ...(x.endpoints ?? [])]))] : [];
-  const k = knownGround({ root, key: prep.ticket, domain: flag("domain"), prs: prep.prs, operations, runDir: prep.run_dir });
+  let operations = [];
+  const extra = [];
+  if (existsSync(changeFile)) {
+    // A malformed CHANGE output means no observables, said as a gap — never a crash of this step.
+    try {
+      const c = readJson(changeFile);
+      if (!Array.isArray(c?.prs)) throw new Error("no prs[]");
+      const list = (v) => (Array.isArray(v) ? v : []);
+      operations = [...new Set(c.prs.flatMap((x) => [...list(x?.operations), ...list(x?.endpoints)]))];
+    } catch { extra.push(gap("known.observables", "unreadable", "change.out.json is not valid CHANGE output — no operations or endpoints passed to tc:scope")); }
+  }
+  const k = knownGround({ root, key: prep.ticket, domain: prep.domain ?? undefined, prs: prep.prs, operations, runDir: prep.run_dir });
+  k.gaps.push(...extra);
   writeJson(join(prep.run_dir, OUT_FILES.known), k);
   out({ status: "known", domain_map: k.known.domain_map.state, bl: k.known.bl.length, cases_at_risk: k.known.cases_at_risk.length, prior_runs: k.known.prior_runs.length, gaps: k.gaps.length });
 }

@@ -5,6 +5,12 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { hasScript, runNpmJson } from "./npm.mjs";
 
+// Values that reach an npm script's argv: an allow-list, as deploy.mjs does for an artifact id and version.
+// A domain is an operator slug; an observable is a GraphQL operation or REST endpoint an AGENT read from a diff,
+// so it can be anything a PR author wrote — including a leading "--" that the script would parse as a flag.
+export const DOMAIN_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+export const OBSERVABLE_RE = /^[A-Za-z0-9_/{][A-Za-z0-9 _./{}:-]{0,119}$/;
+
 export function domainState(json, slug) {
   if (!slug) return { state: "unresolved", path: null };
   const map = json?.maps?.find((m) => m.slug === slug);
@@ -61,7 +67,12 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
   };
   const failed = (s, r) => gaps.push({ where: `known.${s}`, reason: "unreadable", detail: r.error ? `${s} could not run (${r.error})` : `${s} exit ${r.status}` });
 
-  if (!domain) gaps.push({ where: "known.domain", reason: "not-found", detail: "no --domain given — maps, BL and tc:scope are not looked up" });
+  if (domain && !DOMAIN_RE.test(domain)) {
+    gaps.push({ where: "known.domain", reason: "unreadable", detail: "the domain slug has unexpected characters — not used" });
+    domain = undefined;
+  } else if (!domain) gaps.push({ where: "known.domain", reason: "not-found", detail: "no --domain given — maps, BL and tc:scope are not looked up" });
+  const observables = operations.filter((o) => typeof o === "string" && OBSERVABLE_RE.test(o));
+  if (observables.length < operations.length) gaps.push({ where: "known.tc:scope.observables", reason: "unreadable", detail: `${operations.length - observables.length} operation/endpoint name(s) with unexpected characters not passed to tc:scope` });
   if (domain && need("domain:check")) {
     const r = run(root, ["domain:check", "--", "--json"]);
     if (r.json) {
@@ -93,8 +104,8 @@ export function knownGround({ root, key, domain, prs, operations = [], runDir, r
       else failed("regression:select", r);
     }
   }
-  if (domain && operations.length && need("tc:scope")) {
-    const r = run(root, ["tc:scope", "--", "--domain", domain, ...operations.slice(0, 10).flatMap((o) => ["--observable", o]), "--json"]);
+  if (domain && observables.length && need("tc:scope")) {
+    const r = run(root, ["tc:scope", "--", "--domain", domain, ...observables.slice(0, 10).flatMap((o) => ["--observable", o]), "--json"]);
     if (r.json) known.cases_at_risk.push(...(r.json.hits ?? []).map((h) => ({ suite: h.suiteId, case: h.caseId, title: h.title, via: "tc:scope" })));
     else failed("tc:scope", r);
   }
