@@ -180,7 +180,7 @@ export function rowcapShortfalls(orders = ROWCAP_ORDERS) {
 
 /**
  * Build one order's line items from the discovered product list (PURE).
- * `products` = [{ id, sku, name, catalogId }]. Throws when a slot is unsatisfied so the seeder fails
+ * `products` = [{ id, sku, name, catalogId, imgSrc }]. Throws when a slot is unsatisfied so the seeder fails
  * loudly rather than collapsing two slots onto one product (which would silently drop the distinct
  * product count below the Top-sellers cap and make the cap unobservable again).
  */
@@ -190,6 +190,7 @@ export function buildRowcapItems(order, products) {
     if (!p) throw new Error(`rowcap ${order.key}: productSlot ${l.productSlot} unsatisfied — only ${products.length} distinct product(s) discovered`);
     return {
       sku: p.sku, productId: p.id, name: p.name, ...(p.catalogId ? { catalogId: p.catalogId } : {}),
+      ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}),
       quantity: l.quantity, price: l.unitPrice, productType: 'Physical', currency: 'USD',
     };
   });
