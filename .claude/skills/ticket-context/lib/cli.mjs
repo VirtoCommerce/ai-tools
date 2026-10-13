@@ -12,7 +12,7 @@ import { validateDef } from "./schema.mjs";
 import { BASE_FIELDS, LINKED_FIELDS, jiraClient } from "./jira.mjs";
 import { AC_FIELD_NAME_RE, buildInventory, resolveFieldsByName } from "./inventory.mjs";
 import { CAPS, envHosts, fetchPublicPage, htmlToText, planDownloads, safeName } from "./fetch.mjs";
-import { extractFrames } from "./frames.mjs";
+import { extractFrames, extractGifFrames } from "./frames.mjs";
 import { isHarText, loadSecretValues, scrubFile } from "./scrub.mjs";
 import { CONTEXT_ONLY_REPOS, collectContextPr, collectPr, followCompanions, ghClient, runLadder } from "./github.mjs";
 import { checkDeployment } from "./deploy.mjs";
@@ -54,6 +54,19 @@ async function materialize(it, jira, runDir, secrets) {
     finally { rmSync(file, { force: true }); } // the raw video never outlives this function (S3)
     if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
     return;
+  }
+  if (it.kind === "screenshot" || it.kind === "image") {
+    // An animated GIF is a video (D4): its frames, or a tool-missing gap — never a finding from frame 1.
+    let r = null;
+    try { r = extractGifFrames(file, join(runDir, `frames-${it.id}`), CAPS); }
+    catch (e) { r = { gap: { reason: "unreadable", detail: `could not read the GIF's frames: ${String(e.message).slice(0, 150)}` } }; }
+    if (r) {
+      rmSync(file, { force: true });
+      it.kind = "video";
+      it.animated_gif = true;
+      if (r.gap) it.gap = gap(it.ref, r.gap.reason, r.gap.detail); else it.local_path = r.dir;
+      return;
+    }
   }
   it.local_path = file;
 }
