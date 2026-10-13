@@ -27,15 +27,38 @@ export function envHosts(root) {
   return hosts;
 }
 
+// One spelling per host: lower-case, no IPv6 brackets, no trailing dots ("localhost." is localhost).
+const normHost = (h) => String(h).toLowerCase().replace(/^\[|\]$/g, "").replace(/\.+$/, "");
+
+// IPv4 ranges that are not the public internet. Applied only to a dotted quad: `new URL` has already folded
+// decimal / hex / octal / short forms (2130706433, 0x7f.1, 127.1) into one, and a DNS name such as
+// 10.example.com is a name, not an address.
+function isPrivateIpv4(h) {
+  const [a, b, c] = h.split(".").map(Number);
+  return a === 0 || a === 10 || a === 127                    // "this" network, RFC1918, loopback
+    || (a === 100 && b >= 64 && b <= 127)                    // CGNAT 100.64/10
+    || (a === 169 && b === 254)                              // link-local (cloud metadata)
+    || (a === 172 && b >= 16 && b <= 31)                     // RFC1918
+    || (a === 192 && b === 0 && c === 0)                     // IETF protocol assignments 192.0.0/24
+    || (a === 192 && b === 168)                              // RFC1918
+    || (a === 198 && (b === 18 || b === 19))                 // benchmarking 198.18/15
+    || a >= 224;                                             // multicast 224/4, reserved 240/4, broadcast
+}
+
 export function isPublicUrl(url, privateHosts = new Set()) {
   let u;
   try { u = new URL(url); } catch { return false; }
   if (!/^https?:$/.test(u.protocol)) return false;
-  const h = u.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (privateHosts.has(h)) return false;
-  if (h === "localhost" || !h.includes(".") || /\.(local|internal|lan|corp|intranet|home)$/.test(h)) return false;
-  if (/^(0|10|127)\.|^192\.168\.|^169\.254\.|^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
-  if (/^(::1|f[cd][0-9a-f]{2}:|fe80:)/.test(h)) return false;
+  const h = normHost(u.hostname);
+  if (!h) return false;
+  if ([...privateHosts].some((p) => normHost(p) === h)) return false;
+  // IPv6 literals are REFUSED outright: loopback (::1), unspecified (::), link-local (fe80::/10), ULA (fc00::/7)
+  // and IPv4-mapped (::ffff:*) are all private or tunnelling, and a ticket's public page is never legitimately
+  // named by a bare IPv6 address. Refusing the whole class is simpler and safer than enumerating the public part.
+  if (h.includes(":")) return false;
+  if (h === "localhost" || h.endsWith(".localhost") || h === "localhost.localdomain") return false; // RFC 6761
+  if (!h.includes(".") || /\.(local|internal|lan|corp|intranet|home)$/.test(h)) return false;
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(h) && isPrivateIpv4(h)) return false;
   return true;
 }
 
@@ -57,6 +80,7 @@ export function planDownloads(items, caps = CAPS) {
   for (const it of items) {
     if (it.gap) continue;
     const size = Number(it.size ?? 0);
+    if (!Number.isFinite(size) || size < 0) { gaps.set(it.ref, gap(it.ref, "unreadable", "attachment size unknown")); continue; }
     if (size > caps.attachmentBytes) { gaps.set(it.ref, gap(it.ref, "over-cap", `${size} bytes > ${caps.attachmentBytes} per attachment`)); continue; }
     if (total + size > caps.ticketBytes) { gaps.set(it.ref, gap(it.ref, "over-cap", `the ticket's attachments would pass ${caps.ticketBytes} bytes`)); continue; }
     total += size;
@@ -65,24 +89,32 @@ export function planDownloads(items, caps = CAPS) {
   return { toFetch, gaps };
 }
 
+const hostOf = (u) => { try { return new URL(u).hostname; } catch { return "unknown host"; } };
+
 /** One public page as text. Redirects are followed by hand so every hop is re-checked (S5). */
 export async function fetchPublicPage(url, file, { privateHosts = new Set(), fetchImpl = fetch, caps = CAPS } = {}) {
   let current = url;
   for (let hop = 0; hop <= caps.redirects; hop++) {
-    if (!isPublicUrl(current, privateHosts)) {
-      let host = current;
-      try { host = new URL(current).hostname; } catch { /* keep the raw value */ }
-      throw new GapError("private-host", `not fetched: ${host} is not a public host`);
+    if (!isPublicUrl(current, privateHosts)) throw new GapError("private-host", `not fetched: ${hostOf(current)} is not a public host`);
+    let res;
+    try {
+      res = await fetchImpl(current, { redirect: "manual", headers: { Accept: "text/html,text/plain;q=0.9" } });
+    } catch {
+      // DNS / TLS / network: name the host only — the error text can echo the full URL, query string included.
+      throw new GapError("unreadable", `could not reach ${hostOf(current)}`);
     }
-    const res = await fetchImpl(current, { redirect: "manual", headers: { Accept: "text/html,text/plain;q=0.9" } });
     const loc = res.headers.get("location");
-    if (res.status >= 300 && res.status < 400 && loc) { current = new URL(loc, current).href; continue; }
+    if (res.status >= 300 && res.status < 400 && loc) {
+      try { current = new URL(loc, current).href; } catch { throw new GapError("unreadable", `${hostOf(current)} sent an invalid redirect`); }
+      continue;
+    }
     if (res.status === 401 || res.status === 403) throw new GapError("access-denied", `HTTP ${res.status}`);
     if (res.status === 404 || res.status === 410) throw new GapError("deleted", `HTTP ${res.status}`);
     if (!res.ok) throw new GapError("unreadable", `HTTP ${res.status}`);
     const type = res.headers.get("content-type") ?? "";
     if (!/text\/(html|plain)/.test(type)) throw new GapError("unreadable", `content-type ${type || "unknown"} is not a page`);
-    const raw = await res.text();
+    let raw;
+    try { raw = await res.text(); } catch { throw new GapError("unreadable", `could not read the body from ${hostOf(current)}`); }
     const text = /html/.test(type) ? htmlToText(raw) : raw;
     writeFileSync(file, text.slice(0, caps.pageTextBytes));
     return { path: file, truncated: text.length > caps.pageTextBytes };
