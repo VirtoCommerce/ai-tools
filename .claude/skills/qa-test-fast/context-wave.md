@@ -52,7 +52,8 @@ Write it to your scratchpad, never under `reports/`. It is not a report category
 - A's conditions and findings
 - B's change surface
 - the domain map state and path
-- the mind map path, or `null`
+- the mind map path, or `null`; when it exists, its in-scope `UNVERIFIED` node ids, read now — before
+  Wave 2 updates the map — so the model can carry them (§Wave 2)
 - the kb hit ids from Step 0
 - the gaps A and B named
 - `visual_surface` + `surface_source[]`, derived from B's diff per
@@ -114,7 +115,7 @@ item or an omission line; this table says which, for the nodes whose truth is no
 | In-scope node | Its line in the checklist |
 |---|---|
 | DRIFT | An item that re-observes `drift.observed`, with Expected `drift.expected`. The Result is `DRIFT HOLDS` or `DRIFT RESOLVED`, plus evidence. It decides an AC only when that AC names the behaviour. A HOLDS whose route `TM-018` flags as unfiled is written `FAIL — DRIFT HOLDS (TM-018 unfiled)`, so Stage 3 triage collects it; any other HOLDS stays `DRIFT HOLDS`. |
-| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item; it reaches the charter as the model's `{HYPOTHESIS}` oracle (§Wave 2), whether the session runs first or alongside. A node the update added in this wave is not in the model yet: `verdict.md` lists it under *Not tested, and why*. |
+| UNVERIFIED | An omission line `UNVERIFIED → charter`. With no ground truth to assert, it is exploratory work, not a pass/fail item; it reaches the charter as the model's `{HYPOTHESIS}` oracle (§Wave 2), whether the session runs first or alongside. A node the update added in this wave is not in the model yet, and none at all when no map existed before the run: `verdict.md` lists each such node under *Not tested, and why*. |
 | No stamped case | An ordinary item. A PASS on it is a `candidate case` in `verdict.md`. |
 | Integration point (cross-domain edge) | One item that exercises both sides, under the other domain's partition. A PASS is a `candidate case` carrying both stamps. |
 | Linked to a suspect case | No change. The suspect list stays in the bundle for the verdict. |
