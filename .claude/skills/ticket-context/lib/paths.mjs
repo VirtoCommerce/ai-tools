@@ -3,7 +3,7 @@
 // Same rule as plugins/vc-fix/skills/project-init/lib/paths.mjs, copied (M1: no import across the boundary).
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const KEY_RE = /^[A-Z][A-Z0-9]*-\d+$/;
@@ -20,6 +20,7 @@ export function isInside(parent, child) {
 
 /** A fresh run dir under the key's context dir when that path is git-ignored (S3), else under the OS temp dir. */
 export function newRunDir(key, { root = outputRoot(), ignored, now = Date.now() } = {}) {
+  if (typeof ignored !== "function") throw new Error(`newRunDir: missing required option "ignored" (must be a function)`);
   const base = cacheDir(key, root);
   if (ignored(join(base, "run-probe"))) {
     mkdirSync(base, { recursive: true });
@@ -44,8 +45,28 @@ export function sweepRunDirs(base, now = Date.now()) {
 
 /** Remove a run dir — only one this skill made. Anything else is refused, never deleted. */
 export function removeRunDir(dir, root = outputRoot()) {
-  const inContext = isInside(join(root, ".vc-fix", "context"), dir) && /run-\d+$/.test(dir);
-  const inTemp = isInside(tmpdir(), dir) && /ticket-context-/.test(dir);
-  if (!inContext && !inTemp) throw new Error(`refusing to delete ${dir}: not a ticket-context run dir`);
-  rmSync(dir, { recursive: true, force: true });
+  const resolved = resolve(dir);
+  const tmp = resolve(tmpdir());
+
+  // Check if path matches <root>/.vc-fix/context/<KEY>/run-<digits> exactly
+  const contextBase = resolve(join(root, ".vc-fix", "context"));
+  if (resolved.startsWith(contextBase + sep)) {
+    const rel = relative(contextBase, resolved);
+    const m = /^([A-Z][A-Z0-9]*-\d+)[/\\]run-(\d+)$/.exec(rel);
+    if (m) {
+      rmSync(resolved, { recursive: true, force: true });
+      return;
+    }
+  }
+
+  // Check if path matches <tmpdir>/<ticket-context-*> exactly (one level deep)
+  if (resolved.startsWith(tmp + sep)) {
+    const rel = relative(tmp, resolved);
+    if (rel.startsWith("ticket-context-") && !rel.includes(sep)) {
+      rmSync(resolved, { recursive: true, force: true });
+      return;
+    }
+  }
+
+  throw new Error(`refusing to delete ${resolved}: not a ticket-context run dir`);
 }

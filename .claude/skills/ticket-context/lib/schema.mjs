@@ -7,12 +7,50 @@ const SUPPORTED = new Set(["$schema", "$id", "$defs", "$ref", "title", "descript
 const typeOf = (v) => (v === null ? "null" : Array.isArray(v) ? "array" : Number.isInteger(v) ? "integer" : typeof v);
 const typeMatches = (v, t) => t === typeOf(v) || (t === "number" && typeOf(v) === "integer");
 
+const walked = new WeakSet();
+
+function walkSchema(schema, root, path = "$") {
+  if (walked.has(schema)) return;
+  walked.add(schema);
+
+  for (const k of Object.keys(schema)) {
+    if (!SUPPORTED.has(k)) throw new Error(`schema keyword "${k}" at ${path} is not supported by lib/schema.mjs`);
+  }
+
+  if (schema.additionalProperties !== undefined && schema.additionalProperties !== false) {
+    throw new Error(`additionalProperties at ${path} must be false or omitted (object form not supported)`);
+  }
+
+  if (schema.$defs) {
+    for (const [name, def] of Object.entries(schema.$defs)) {
+      walkSchema(def, root, `${path}.$defs.${name}`);
+    }
+  }
+
+  if (schema.properties) {
+    for (const [name, prop] of Object.entries(schema.properties)) {
+      walkSchema(prop, root, `${path}.properties.${name}`);
+    }
+  }
+
+  if (schema.items) {
+    walkSchema(schema.items, root, `${path}.items`);
+  }
+
+  if (schema.allOf) {
+    for (let i = 0; i < schema.allOf.length; i++) {
+      walkSchema(schema.allOf[i], root, `${path}.allOf[${i}]`);
+    }
+  }
+}
+
 export function validate(value, schema, root = schema, path = "$") {
+  walkSchema(root, root);
+
   const errors = [];
-  for (const k of Object.keys(schema)) if (!SUPPORTED.has(k)) throw new Error(`schema keyword "${k}" at ${path} is not supported by lib/schema.mjs`);
   if (schema.$ref) {
     const m = /^#\/\$defs\/(.+)$/.exec(schema.$ref);
-    if (!m || !root.$defs?.[m[1]]) throw new Error(`unresolvable $ref "${schema.$ref}" at ${path}`);
+    if (!m || !Object.hasOwn(root.$defs ?? {}, m[1])) throw new Error(`unresolvable $ref "${schema.$ref}" at ${path}`);
     errors.push(...validate(value, root.$defs[m[1]], root, path));
   }
   for (const sub of schema.allOf ?? []) errors.push(...validate(value, sub, root, path));
@@ -30,7 +68,7 @@ export function validate(value, schema, root = schema, path = "$") {
   if (typeOf(value) === "object") {
     for (const r of schema.required ?? []) if (!(r in value)) errors.push(`${path}: missing "${r}"`);
     for (const [k, v] of Object.entries(value)) {
-      if (schema.properties?.[k]) errors.push(...validate(v, schema.properties[k], root, `${path}.${k}`));
+      if (Object.hasOwn(schema.properties ?? {}, k)) errors.push(...validate(v, schema.properties[k], root, `${path}.${k}`));
       else if (schema.additionalProperties === false) errors.push(`${path}: unexpected property "${k}"`);
     }
   }
@@ -39,6 +77,6 @@ export function validate(value, schema, root = schema, path = "$") {
 }
 
 export function validateDef(value, schema, def) {
-  if (!schema.$defs?.[def]) throw new Error(`no $def "${def}" in the schema`);
+  if (!Object.hasOwn(schema.$defs ?? {}, def)) throw new Error(`no $def "${def}" in the schema`);
   return validate(value, { $ref: `#/$defs/${def}` }, schema);
 }
