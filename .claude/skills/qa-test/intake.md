@@ -127,13 +127,13 @@ append, one `suites:sync`, no verifier beside its own doer, no two suites on one
    fact; what it means here is `/qa-test`'s:** a `breaking:*` row in the component under test **forces
    FULL** and is a third leg for `1d`'s AC↔implementation check; a `not-deployed:*` or `expect` row is
    BLOCKED-on-deploy — never a FAIL, never a filed bug, never `{DOC}`. **PR testing:** `--expect` is the
-   linked PR's module and version (`module@version`); a NOT READY `expect` row carries the `/qa-deploy-pr`
+   linked PR's module and version (`module@version`; a storefront PR is `vc-frontend@<theme zip version>`); a NOT READY `expect` row carries the `/qa-deploy-pr`
    remedy and `/preflight` asks before running it. Store the block as `summary.json.preflight`.
    **`summary.json.build` (the `build` the 2b row reads) keeps its contract:** `build.declared` ← `facts.declared` (the git state; `build.relevant_modules`
    is its module list and is never a version source) · `build.deployed` ← `facts.deployed` (ground truth;
    `UNKNOWN` stays `UNKNOWN`, never filled from `declared`): `build.deployed.platform` = `facts.deployed.platform` (the live version from the Admin page, or `"UNKNOWN (<reason>)"`),
    `build.deployed.relevant_modules` = `{Id: version}` from `facts.deployed.modules` for the run's components (`UNKNOWN`
-   when `deployed` is) · `build.theme` = `facts.declared.theme`, labelled declared · `build.releasedThrough` ← `facts.ledger`
+   when `deployed` is) · `build.theme` = `facts.declared.theme`, labelled declared · `build.deployed.theme` = `facts.deployedTheme` (the live storefront bundle's version, or `"UNKNOWN (<reason>)"`) · `build.releasedThrough` ← `facts.ledger`
    (the Δ vs `deployed`: `.behind[]` ← `facts.ledger.releasedNotDeployed[]`, `.breaking[]` ← `facts.ledger.breaking[]`;
    `build.releasedThrough` is `UNKNOWN` when `facts.ledger` or its `releasedNotDeployed` is — never an empty or full `behind[]`). `{SPRINT}` is the `sprint` fact; if it
    is null, create `reports/tickets/<sprint>/` once the sprint name is known (the `sprint` row's remedy).
