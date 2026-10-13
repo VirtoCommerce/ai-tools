@@ -331,7 +331,8 @@ a consumer must see "there are no ACs" rather than invent them.
    must have its line in `bundle.blockers[]` so the consumer can stop or mark the run `BLOCKED`.
 5. A HAR, log or trace that was read has no scrubbed-file marker (S2).
 6. **Any string in the bundle matches a real secret value from the env layer, or a PAT/JWT/Bearer
-   shape** (S2, S3). The bundle is the one artifact that outlives the run, so it gets the same value scan
+   shape** (S2, S3). *Added 2026-10-13 (fix wave 2 review):* `FIGMA_TOKEN` is in the value set when set, and
+   `figd_…` is a token shape (`figma-pat`). The bundle is the one artifact that outlives the run, so it gets the same value scan
    as the public `kb` queue.
 
 A ticket with no attachments, links or PRs passes in seconds with empty tables marked `none` — an empty

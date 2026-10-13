@@ -304,6 +304,7 @@ function composeCmd() {
 
 function gate(prep) {
   const bundle = readJson(join(prep.run_dir, "bundle.json"));
+  loadLayeredEnv(root); // so an env-layer FIGMA_TOKEN is in the secret set here too, as it was in prepare
   return { bundle, errors: checkBundle(bundle, prep, { secrets: loadSecretValues(root) }) };
 }
 
