@@ -5,10 +5,11 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { loadConfigFromFile, mergeConfig } from "vite";
+import { loadConfigFromFile, mergeConfig, normalizePath } from "vite";
 
-const root = process.cwd();
-const loaded = await loadConfigFromFile({ command: "build", mode: "production" }, path.join(root, "vite.config.ts"), root);
+// Vite module ids use forward slashes on every OS; a Windows cwd has backslashes and would match none.
+const root = normalizePath(process.cwd());
+const loaded = await loadConfigFromFile({ command: "build", mode: "production" }, path.join(process.cwd(), "vite.config.ts"), process.cwd());
 
 const APP = `${root}/client-app/`;
 const parsed = new Map(); // id -> { imports: [{ source, names }], reexports: [{ source, imported, exported }] }
@@ -72,7 +73,7 @@ const graphDump = {
       };
     }
     // Every file the build read, including Sass partials pulled in by @use/@import, which are not modules.
-    const watched = this.getWatchFiles().filter((f) => f.startsWith(APP));
+    const watched = this.getWatchFiles().map(normalizePath).filter((f) => f.startsWith(APP));
     fs.writeFileSync(process.env.GRAPH_OUT, JSON.stringify({ root, modules, watched }));
   },
 };

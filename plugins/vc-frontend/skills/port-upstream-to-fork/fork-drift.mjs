@@ -57,10 +57,12 @@ function buildGraph(sha) {
 
   // Reuse the checkout's node_modules when the commit locks the same dependencies; install otherwise.
   const sameLock = existsSync(path.join(ROOT, "yarn.lock")) && git("show", `${sha}:yarn.lock`) === readFileSync(path.join(ROOT, "yarn.lock"), "utf8").trim();
-  if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"));
+  // "junction": a Windows directory link that needs no admin rights; ignored elsewhere.
+  if (sameLock) symlinkSync(path.join(ROOT, "node_modules"), path.join(wt, "node_modules"), "junction");
   else {
     process.stderr.write(`fork-drift: ${sha.slice(0, 9)} locks different dependencies — running yarn install in its worktree\n`);
-    const install = spawnSync("yarn", ["install", "--immutable"], { cwd: wt, stdio: ["ignore", "inherit", "inherit"] });
+    // Through a shell, so Windows finds yarn.cmd.
+    const install = spawnSync("yarn install --immutable", { cwd: wt, shell: true, stdio: ["ignore", "inherit", "inherit"] });
     if (install.status !== 0) throw new Error(`yarn install failed in ${wt}`);
   }
 
