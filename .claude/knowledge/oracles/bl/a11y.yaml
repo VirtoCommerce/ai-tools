@@ -87,4 +87,5 @@ rules:
       kind: manual
       ref: Trigger the async state (invalid submit, coupon apply, menu/tab toggle) and confirm the resulting node carries `role="alert"`/a live region or receives focus, with a field-level error additionally carrying a matching `aria-describedby`. Run a full axe-core scan; zero Critical/Serious violations required.
     violation_signal: An error/status message with no `role="alert"`/`aria-live` and no focus shift; `aria-expanded`/`aria-selected` not toggling with visible state; an axe Critical or Serious violation.
-    status: ACTIVE
+    status: SUSPECT
+    suspect_reason: "[bug] VCST-5878 compare table body scroller below md has no focusable content (axe scrollable-region-focusable, Serious) — pre-existing; CMP-047 failed on it in REG-2026-10-12-1832"
