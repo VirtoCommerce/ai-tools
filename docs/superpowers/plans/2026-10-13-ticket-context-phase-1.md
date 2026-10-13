@@ -894,6 +894,13 @@ test("inventory: every attachment, inline image and link has an item; PRs and ti
   assert.equal(items.some((i) => i.ref.includes("/secure/attachment/")), false);
   assert.deepEqual(prRefs.map((p) => p.ref), ["VirtoCommerce/vc-module-cart#42"]);
 });
+test("inventory: a no-alt inline image the rendered HTML does not resolve becomes a gap, never dropped", () => {
+  const issue = { ...ISSUE, renderedFields: { description: "<p>x</p>", comment: { comments: [{ body: '<img src="/images/other-shape/13">' }] } } };
+  const { items } = buildInventory({ issue, trackerBase: BASE, linkFieldIds: ["customfield_1"] });
+  const by = Object.fromEntries(items.map((i) => [i.ref, i]));
+  assert.equal(by["inline:m3@comment:100@2026-10-01T10:00:00.000+0000"].gap.reason, "not-found");
+  assert.deepEqual(by["attachment:shot2.png#13"].inline_in, []);
+});
 test("the Jira credential never leaves the tracker's origin", async () => {
   let called = false;
   const j = jiraClient({ base: BASE, auth: "Basic x" }, async () => { called = true; return new Response("{}"); });
@@ -1063,13 +1070,22 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, linkField
   for (const [where, value, html] of sources) {
     if (value == null) continue;
     const { links, media } = typeof value === "string" ? { links: (value.match(URL_RE) ?? []).map(trimUrl), media: [] } : adfRefs(value);
-    const inline = new Set(renderedAttachmentIds(typeof html === "string" ? html : ""));
+    const rendered = renderedAttachmentIds(typeof html === "string" ? html : "");
+    const inline = new Set(rendered);
+    const altIds = new Set();
+    const noAlt = [];
     for (const m of media) {
       const a = m.alt ? byName.get(m.alt) : null;
-      if (a) inline.add(String(a.id));
+      if (a) { inline.add(String(a.id)); altIds.add(String(a.id)); }
       else if (m.alt) items.set(`inline:${m.alt}@${where}`, { ref: `inline:${m.alt}@${where}`, kind: "image", where: [where],
         gap: gap(`inline:${m.alt}@${where}`, "not-found", "inline image with no matching attachment") });
-      // a media node with no alt is matched through the rendered HTML ids above
+      else noAlt.push(m);
+    }
+    // a media node with no alt is matched through the rendered HTML ids; any the HTML does not account for is a gap, never dropped
+    const htmlMatched = rendered.filter((id) => !altIds.has(id) && items.has(`attachment:${id}`)).length;
+    for (const [i, m] of noAlt.slice(htmlMatched).entries()) {
+      const ref = `inline:${m.id ?? `media-${htmlMatched + i}`}@${where}`;
+      items.set(ref, { ref, kind: "image", where: [where], gap: gap(ref, "not-found", "inline image with no alt and no attachment id in the rendered HTML") });
     }
     for (const id of inline) { const it = items.get(`attachment:${id}`); if (it) push(it.inline_in, where); }
     for (const url of links) addLink(url, where);
@@ -1087,7 +1103,7 @@ export function buildInventory({ issue, remoteLinks = [], trackerBase, linkField
 - [ ] **Step 5: Run the test to verify it passes**
 
 Run: `node --test scripts/unit/ticket-context-inventory.test.mjs`
-Expected: PASS, 6 tests.
+Expected: PASS, 7 tests.
 
 - [ ] **Step 6: Delete the temporary test, then commit**
 
@@ -2175,7 +2191,7 @@ export function compose(prep, outs) {
     materials: [...byRef.values()], design: m.design,
     change: { rung: prep.rung, prs, chain_deployed: d.chain_deployed ?? "NONE", ac_to_diff: j.ac_to_diff, diff_to_ac: j.diff_to_ac, hidden_behaviour: c.hidden_behaviour },
     known: { ...k.known, kb: outs.kb?.kb ?? [] },
-    gaps: [...prep.gaps, ...prep.prs.flatMap((p) => p.gaps ?? []), ...t.gaps, ...m.gaps, ...c.gaps, ...(d.gaps ?? []), ...(k.gaps ?? [])],
+    gaps: [...prep.gaps, ...prep.prs.flatMap((p) => [...(p.gap ? [p.gap] : []), ...(p.gaps ?? [])]), ...t.gaps, ...m.gaps, ...c.gaps, ...(d.gaps ?? []), ...(k.gaps ?? [])],
     questions: [...t.questions, ...m.questions, ...c.questions, ...j.questions],
     embedded_instructions: [...t.embedded_instructions, ...m.embedded_instructions, ...c.embedded_instructions],
     blockers: d.blockers ?? [],
@@ -2345,7 +2361,7 @@ async function prepare() {
   if (!acFields.length) gaps.push(gap("ac_fields", "not-found", "no custom field named like 'Acceptance criteria' and no tracker.fieldMap.acceptanceCriteria — ACs are read from description and comments"));
   const issue = await jira.issue(key, [...BASE_FIELDS, ...acFields.map((f) => f.id), ...linkFields.map((f) => f.id)]);
   const remote = await jira.remoteLinks(key).catch((e) => { gaps.push(asGap("remotelinks", e)); return []; });
-  const devPrUrls = await jira.devPrUrls(issue.id).catch(() => []);
+  const devPrUrls = await jira.devPrUrls(issue.id).catch((e) => { gaps.push(asGap("dev-status", e)); return []; });
   const inv = buildInventory({ issue, remoteLinks: remote, trackerBase: tcred.base, linkFieldIds: linkFields.map((f) => f.id), devPrUrls });
 
   let epic = null;
@@ -2724,8 +2740,10 @@ OUTPUT_SCHEMA: <skill>/bundle.schema.json, $def: changeOut
 ```
 
 Skip MATERIALS when `ITEMS` is empty and write `{"materials":[],"design":{"source":"none","conditions":[]},"gaps":[],"questions":[],"embedded_instructions":[]}`
-yourself; skip CHANGE when `prepare.json` `prs` holds no entry without a `gap`, and write
-`{"prs":[],"hidden_behaviour":[],"gaps":[],"questions":[],"embedded_instructions":[]}`.
+yourself; skip CHANGE only when `prepare.json` `prs` is **non-empty** and every entry carries a
+whole-PR `gap`, and write `{"prs":[],"hidden_behaviour":[],"gaps":[],"questions":[],"embedded_instructions":[]}`
+(`compose` lifts those whole-PR gaps into `bundle.gaps`). An **empty** `prs` is never a skip — dispatch
+CHANGE so the analyst reads the ticket for rung 4 and returns the `change`/`not-found` gap.
 
 Save each returned JSON **verbatim** to `<run_dir>/ticket.out.json`, `materials.out.json`,
 `change.out.json`. Never edit an agent's output to make it pass.
