@@ -72,9 +72,10 @@ OUTPUT_SCHEMA: <skill>/bundle.schema.json, $def: changeOut
 ```
 
 Skip MATERIALS when `ITEMS` is empty and write `{"materials":[],"design":{"source":"none","conditions":[]},"gaps":[],"questions":[],"embedded_instructions":[]}`
-yourself; skip CHANGE when `prepare.json` `prs` holds no entry that has neither a `gap` nor
+yourself. Skip CHANGE only when `prepare.json` `prs` is **non-empty** and every entry has a `gap` or
 `context_only: true` (the script composes those itself), and write
-`{"prs":[],"hidden_behaviour":[],"gaps":[],"questions":[],"embedded_instructions":[]}`.
+`{"prs":[],"hidden_behaviour":[],"gaps":[],"questions":[],"embedded_instructions":[]}`. An **empty**
+`prs` is never a skip: CHANGE runs, because rung 4 (paths the ticket names) is its job.
 
 Save each returned JSON **verbatim** to `<run_dir>/ticket.out.json`, `materials.out.json`,
 `change.out.json`. Never edit an agent's output to make it pass.
