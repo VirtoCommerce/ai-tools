@@ -35,7 +35,7 @@
 import {
   assertSafeTarget, auth, api, log, verbose, loadCsv, loadAliases,
   writeEnvAliasOverride, syncEnvAliases, csvBool, DRY_RUN, TEARDOWN, ONLY, STORE_ID, verifyRemoved,
-  discoverCatalogProducts, resetSecurityPassword, idsParam,
+  discoverCatalogProducts, orderLacksProductImages, resetSecurityPassword, idsParam,
 } from '../../lib/seed-common.mjs';
 import {
   parseServedOrgs, isDisposableLayoutRep, isLayoutPreference, LAYOUT_PREF_PREFIX, LAYOUT_SCOPES,
@@ -437,15 +437,20 @@ async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild 
     // but only when we actually have real products to swap in (never thrash on a bare/dry-run catalog).
     const itemsOk = products.length === 0
       || ((full?.items || []).length > 0 && !(full.items).some(isSyntheticItem));
+    // An order seeded before line items carried product images is rebuilt once to gain them —
+    // imageUrl is write-once (PUT ignores it), so recreate is the only way in.
+    // Only when the replacement would carry an image: a discovery with none (empty, failed, or
+    // without the ItemAssets projection) must not trigger a rebuild that gains nothing.
+    const imagesOk = !products.some((p) => p.imgSrc) || !(await orderLacksProductImages(api, full));
     // FRESHNESS — the extra idempotency term for a rolling-window row (rules: sales-rep-orders-specs).
     // Content-based idempotency alone leaves a correct-but-STALE order in place, which is how
     // SR-CP-057 / SR-HD-048 came to assert against an empty window a week after the seed. Since
     // createdDate is server-assigned, the only way to move an order into the window is to recreate it.
     const windowDays = windowDaysFor(row);
     const freshOk = isFresh(full?.createdDate, windowDays);
-    if (!forceRebuild && existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk && freshOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items${windowDays ? ' + fresh' : ''} ok)`); return; }
+    if (!forceRebuild && existing.customerId === wantCustomerId && enriched && totalOk && orgOk && statusOk && itemsOk && imagesOk && freshOk) { verbose(`order ${number} exists (attributed + enriched + total + org + status + items + images${windowDays ? ' + fresh' : ''} ok)`); return; }
     await api('DELETE', `/api/order/customerOrders?ids=${existing.id}`, null, { expectStatus: [200, 204] });
-    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk}${windowDays ? `, freshOk=${freshOk} (${windowDays}d window; createdDate=${full?.createdDate})` : ''}${forceRebuild ? ', forceRebuild=true (no longer the org\'s most recent order)' : ''})`);
+    log(`  order ${number} rebuilding (customerId ${existing.customerId}->${wantCustomerId}, enriched=${!!enriched}, totalOk=${totalOk}, orgOk=${orgOk}, statusOk=${statusOk}, itemsOk=${itemsOk}, imagesOk=${imagesOk}${windowDays ? `, freshOk=${freshOk} (${windowDays}d window; createdDate=${full?.createdDate})` : ''}${forceRebuild ? ', forceRebuild=true (no longer the org\'s most recent order)' : ''})`);
   }
   const n = Math.max(1, parseInt(row.items_count, 10) || 1);
   const total = parseFloat(row.total);
@@ -474,7 +479,7 @@ async function ensureOrder(row, orgs, customerId, products = [], { forceRebuild 
     const slot = productSlot != null ? productSlot + i : i % Math.max(1, products.length);
     const p = products.length ? products[slot] : null;
     return p
-      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, quantity: 1, price, productType: 'Physical', currency: 'USD' }
+      ? { sku: p.sku, productId: p.id, catalogId: p.catalogId, name: p.name, ...(p.imgSrc ? { imageUrl: p.imgSrc } : {}), quantity: 1, price, productType: 'Physical', currency: 'USD' }
       : { sku: `AGENT-TEST-SR-SKU-${i + 1}`, productId: `${SYNTHETIC_PRODUCT_PREFIX}${i + 1}`, catalogId: SYNTHETIC_CATALOG_ID, name: `AGENT-TEST-SR Item ${i + 1}`, quantity: 1, price, productType: 'Physical', currency: 'USD' };
   });
   const shipAddr = orderAddress(org, 'Shipping');
@@ -647,7 +652,7 @@ async function main() {
     // wrapping onto a ranking-asserting product).
     const maxPinnedSlot = Math.max(-1, ...Object.values(AUTHORSHIP_MATRIX).map((m) => m.productSlot));
     const wantProducts = Math.max(maxItems, requiredProductSlots(), maxPinnedSlot + maxItems + 1);
-    const products = await discoverCatalogProducts(api, wantProducts);
+    const products = await discoverCatalogProducts(api, wantProducts, { withImages: true });
     if (products.length) verbose(`line items use ${products.length} real catalog product(s): ${products.map((p) => p.sku).join(', ')}`);
     else if (!DRY_RUN) log('  WARN: no catalog products discovered — line items keep synthetic placeholders (seed catalog first for reorder/PDP-link cases).');
     if (products.length && products.length < maxPinnedSlot + 1) {
