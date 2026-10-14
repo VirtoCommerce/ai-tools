@@ -1,0 +1,331 @@
+{
+ "ticket": "VCST-6017",
+ "ticket_type": "Story",
+ "flow": "feature-test",
+ "tracker": {
+  "system": "jira",
+  "comment_id": "111980",
+  "artifact": "vc-theme-b2b-vue-2.60.0-pr-2543-0127-01276486"
+ },
+ "path": "FULL",
+ "path_route": {
+  "decided_at": "1b",
+  "provisional": false,
+  "narrow_story_tokens": {
+   "priority": "P2 (Medium)",
+   "layer": "storefront (single)",
+   "domains": "analytics + page-builder (2) — fails",
+   "chain_shape": "net-new mechanism (dom-analytics engine) — fails",
+   "surface": "obvious",
+   "reach": "exceeds diff — global document listeners — fails"
+  },
+  "escalated_reason": null,
+  "basis": "ticket-routing.md §4 Story row / §5b; three tokens fail, FULL by default"
+ },
+ "layer": "storefront",
+ "domain_map": {
+  "state": "ABSENT",
+  "path": null,
+  "rev": null,
+  "mind_map": null,
+  "all_layer_chain": false,
+  "all_layer_confirmed_at": "1e-confirmed",
+  "built_in_run": false,
+  "unmapped_surfaces": [
+   "page-builder: products-block / products-carousel / favorite-products as analytics event sources",
+   "home / is a Content-module page (pages/homepage.page), not Page Builder"
+  ],
+  "mind_map_findings": []
+ },
+ "shape_class": {
+  "value": "feature",
+  "sources": [
+   "PR #2543 diff: no client-app/ui-kit/**, token partials, presets or Storybook files"
+  ]
+ },
+ "verdict": "FAIL",
+ "date": "2026-10-13",
+ "timing": {
+  "started_at": "2026-10-13T12:42:00Z",
+  "test_window_start": "2026-10-13T13:39:00Z",
+  "finished_at": "2026-10-13T18:29:45.231Z",
+  "time_to_first_test_minutes": 57,
+  "reachability_minutes": 4,
+  "agent_dispatches": 44,
+  "note": "1r,1c,1d · 3x,3a(+3 top-ups) · B inline · 4a×2,4v,A(+4 fix rounds) · 3-cases verifier ×3 (REJECT, REJECT, operator-approved round, APPROVE) · C1 · triage classifiers ×4 · investigations ×7 · verification runs ×2"
+ },
+ "environment": "https://vcst-qa-storefront.govirto.com",
+ "build": {
+  "declared": {
+   "theme": "vc-theme-b2b-vue-2.60.0-pr-2543-0127-01276486",
+   "platform": "3.1078.0"
+  },
+  "deployed": {
+   "platform": "3.1078.0",
+   "theme": "2.60.0-pr-2543-0127-01276486 (live bundle probe; /preflight expect row is a false negative — CLI cannot read a theme version)"
+  },
+  "releasedThrough": "UNKNOWN (unknown-deployed:vc-frontend)",
+  "pre_pr_baseline": "vcptcore-qa theme 2.60.0-pr-2485 (no data-vc-track)"
+ },
+ "release": null,
+ "documentation": {
+  "status": "pending-operator",
+  "note": "5-docs not yet run — FAIL verdict scopes it to the passing paths (Page Builder tracking); asks before posting"
+ },
+ "status_transitions": [
+  {
+   "at": "1a",
+   "from": "Ready for test",
+   "to": "Testing",
+   "transition": "On QA (id 4)",
+   "by": "qa-lead (inline orchestrator)",
+   "confirmed": false,
+   "result": "done"
+  },
+  {
+   "at": "5-status",
+   "from": "Testing",
+   "to": "Reopen",
+   "transition": "Need fixes (id 7)",
+   "by": "qa-lead (inline orchestrator)",
+   "confirmed": true,
+   "reason": "verdict FAIL — A10 + B6 (in-scope, Medium); steps/actual/expected table in comment 111980",
+   "result": "done"
+  }
+ ],
+ "agents_dispatched": [
+  "qa-frontend-expert",
+  "ba-system-analyzer",
+  "ba-story-writer",
+  "qa-testing-expert",
+  "test-data-engineer",
+  "ui-ux-expert",
+  "test-management-specialist",
+  "qa-lead-orchestrator",
+  "regression-orchestrator",
+  "general-purpose"
+ ],
+ "epic": {
+  "parent": null,
+  "siblings": {
+   "done": [
+    "VCST-3893 (spike, linked)"
+   ],
+   "in_progress": [],
+   "blocked_dependency": []
+  }
+ },
+ "ac_analysis": {
+  "story_acs": 7,
+  "weak_acs": 6,
+  "gap_acs_added": 19,
+  "impl_coverage": {
+   "satisfied": 5,
+   "drift": 2,
+   "contradicts": 0,
+   "not_found": 1
+  },
+  "conditions_total": 36,
+  "conditions_with_evidence": 35,
+  "ac_dod_estimate": {
+   "ac_coverage_pct": 97.2,
+   "dod_total": 0,
+   "dod_met": 0,
+   "dod_pct": null,
+   "note": "no DoD stated; C4 BLOCKED (operator)"
+  }
+ },
+ "total_cases": 36,
+ "passed": 31,
+ "failed": 4,
+ "blocked": 1,
+ "iterations": null,
+ "new_cases_authored": 25,
+ "promotion": {
+  "eligible": [],
+  "held": [],
+  "note": "not promoted — /qa-test-lifecycle 6P"
+ },
+ "regression": {
+  "c1": {
+   "run_id": "REG-2026-10-13-1643",
+   "suites": [
+    "043"
+   ],
+   "ids": 27,
+   "passed": 18,
+   "failed": 8,
+   "blocked": 1,
+   "pass_rate": 0.667,
+   "wall_clock_minutes": 32,
+   "authored_ids": "GA-034..GA-058 (Draft) in regression/suites/Frontend/cross-cutting/043-google-analytics.csv"
+  },
+  "verification_runs": [
+   {
+    "run_id": "REG-2026-10-13-1726",
+    "ids": 10,
+    "passed": 9,
+    "failed": 1
+   },
+   {
+    "run_id": "REG-2026-10-13-1739",
+    "ids": 2,
+    "passed": 2,
+    "failed": 0
+   }
+  ],
+  "feature_release_gate": "NO-GO (FAIL verdict; change-scoped regression not-assessed)"
+ },
+ "regression_triage": {
+  "run_ids": [
+   "REG-2026-10-13-1643",
+   "ticket:VCST-6017"
+  ],
+  "report": "reports/tickets/Sprint26-20/VCST-6017/triage-report.md",
+  "confirmed_bugs": 10,
+  "test_case_fixes": 11,
+  "dismissed": 1
+ },
+ "bugs_filed": [],
+ "bugs_not_filed": [
+  {
+   "severity": "Medium",
+   "provenance": "in-scope",
+   "summary": "A10 — operator chose an in-comment table instead of filing (GA-052) — table in comment 111980",
+   "report": "reports/tickets/Sprint26-20/VCST-6017/triage-report.md"
+  },
+  {
+   "severity": "Medium",
+   "provenance": "in-scope",
+   "summary": "B6 — operator chose an in-comment table instead of filing (GA-056, GA-043) — table in comment 111980",
+   "report": "reports/tickets/Sprint26-20/VCST-6017/triage-report.md"
+  },
+  {
+   "severity": "High",
+   "provenance": "pre-existing",
+   "summary": "F6 carousel/slider arrows not keyboard-operable",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "Medium",
+   "provenance": "pre-existing",
+   "summary": "F3 /cart funnel order + empty-cart events",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "Medium",
+   "provenance": "pre-existing",
+   "summary": "F8 variations expand button unnamed",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "Medium",
+   "provenance": "pre-existing",
+   "summary": "F9 home images no alt (schema has no field)",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "Medium",
+   "provenance": "pre-existing",
+   "summary": "F10 CLS 0.47–0.68 on home/Page Builder pages",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "High",
+   "provenance": "pre-existing",
+   "summary": "F7 contrast 2.11:1 — duplicate of VCST-6304",
+   "report": "triage-report.md"
+  },
+  {
+   "severity": "Low",
+   "provenance": "pre-existing",
+   "summary": "8 below-floor items (F1, F2, F4, F11, F13, D4, E2, docs brand/item_brand)",
+   "report": "triage-report.md"
+  }
+ ],
+ "discovery": {
+  "session": "reports/exploratory/SBTM-VCST-6017-2026-10-13.md",
+  "minutes": 55,
+  "charter_items_covered": "all five sources; #12/#19/#21 NOT REACHED in 3x (later covered by C1 except #21)",
+  "model_amendments": 9,
+  "promoted_scenarios": 3
+ },
+ "visual": {
+  "surface": true,
+  "surface_source": [
+   ".vue files in PR #2543",
+   "layer storefront"
+  ],
+  "ran": true,
+  "report": "reports/tickets/Sprint26-20/VCST-6017/design-report.md",
+  "vs_design": "SKIPPED — no design link",
+  "fails": [
+   "no PR-introduced regression; 7 pre-existing (BL-UI-001, BL-A11Y-001/002/003, BL-UI-006 literal)"
+  ]
+ },
+ "contract": {
+  "surface": false,
+  "surface_source": [
+   "PR #2543: no .graphql / *ExperienceApi* / GraphType files",
+   "no AC names a query or field"
+  ],
+  "ran": false
+ },
+ "coverage_triage": {
+  "surface": true,
+  "surface_source": [
+   "domains cross-cutting,content-cms,catalog",
+   "observables view_item_list/select_item/view_item/dataLayer",
+   "oracle BL-GA4-001"
+  ],
+  "ran": true,
+  "hits": 34,
+  "dispositions": {
+   "CONFIRMED": 31,
+   "REPAIR": 2,
+   "RE-BASE": 1,
+   "SUPERSEDED": 0
+  },
+  "record": "testing-checklist.md §2a dispositions"
+ },
+ "test_data": {
+  "data_surface": true,
+  "surface_source": [
+   "related widget, variations widget, SFL+RB cart, products-carousel/favorites/HTML Page Builder pages not present on vcst"
+  ],
+  "seeded": [
+   "PB_GA4_PRODUCT_LISTS",
+   "PB_GA4_HTML_LISTS",
+   "PROD_GA4_RELATED_ANCHOR",
+   "PROD_GA4_VARIATION_PARENT",
+   "CART_GA4_SFL_RB"
+  ],
+  "stale": [
+   "PROD_VARIATION_PARENT_SALE (404 on vcst)"
+  ],
+  "td_validate": "exit 0"
+ },
+ "business_rules_verified": [
+  "BL-GA4-001 (schema holds; dedup defects A10/B6)",
+  "BL-GA4-004",
+  "BL-GA4-002 (guard)",
+  "BL-GA4-003 (guard)"
+ ],
+ "appinsights": {
+  "checked": false,
+  "layers": [
+   "frontend",
+   "backend"
+  ],
+  "window_minutes": 0,
+  "signals": {
+   "real_bug": 0,
+   "needs_review": 0,
+   "dismissed": 0
+  },
+  "correlated_failures": [],
+  "note": "skipped — no Azure identity / API key"
+ },
+ "screenshots": "reports/regression/REG-2026-10-13-1643/screenshots/ (ticket screenshots/ and investigations/ were removed from the working tree after commit 559aa858)",
+ "report": null
+}
