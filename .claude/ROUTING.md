@@ -46,6 +46,7 @@ live counts; they are never transcribed here — `CLAUDE.md` §Where the rules l
 | **Review an oracle (BL: sync from human sources · ECL: docs+live+source)** | `/qa-review-oracles [bl\|ecl\|all] <scope> [--dry-run]` (alias `/qa-review-bl`) | Command |
 | **Refresh the storefront sitemap knowledge file** | `/qa-sitemap [--check] [--no-browser]` | Command |
 | **Review THIS repo's own code diff** | `/code-review-full [branch \| SHA \| PR \| path]` (or the harness's own `/code-review`, `/security-review`, `/simplify`) | Command |
+| **Review a PR in `vc-platform` or a `vc-module-*` repo** (backward compatibility of the NuGet surface first) | `/review-pr-virto` — asks for repo, PR number and local clone | Skill |
 | **Self-diagnose the plugin from session telemetry** | `/vc-self-check [latest \| <session-id>] \| deliver` | Command |
 | **Review / heal / improve a skill, command or agent prompt** | `/prompt-review <name \| path \| changed \| all> [--fix] [--improve] [--dry-run]` | Skill |
 | **Check the stand is fit before testing or analysing against it** (env health, declared vs deployed build, MCP availability) | `/preflight <ticket \| ticket-fast \| exploratory \| lifecycle \| domain-map \| ba> [--ticket KEY] [--components A,B] [--expect Module.Id@version]` (CLI: `npm run preflight`) | Skill |
