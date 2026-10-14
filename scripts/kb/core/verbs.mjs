@@ -1125,6 +1125,9 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
   if (fixedIn.problem) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable fixedIn: ${fixedIn.problem}` }, input), input, door);
   const marker = markerProblem({ defect: defect.value, fixedIn: fixedIn.value }, null);
   if (marker) return refuseAtDoor(doorHints({ state: 'invalid', why: `unusable fixedIn: ${marker}` }, input), input, door);
+  // A capture refused as a duplicate is told to confirm the incumbent instead: with the marker, or the
+  // agent follows the hint and the defect it established is lost.
+  const markerFlags = defect.value ? ` --defect ${defect.value}${fixedIn.value ? ` --fixed-in ${fixedIn.value}` : ''}` : '';
 
   // Refused at the door, before the base is read -- except a one-segment path (`/cart`), which is
   // a page or a namespace, and only the corpus can say which, so it is judged once the rows are here.
@@ -1164,7 +1167,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       kind: 'capture-refused', dupeOf: dupe.row.id, subject: input.subject,
       why: 'anchors+scope+claim', when: 'call', ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     });
-    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row) };
+    return { state: 'refused', dupeOf: dupe.row, message: refusalMessage(dupe.row, { carry: markerFlags }) };
   }
 
   const id = mintId(input.subject);
@@ -1186,7 +1189,7 @@ async function captureRepaired(input, opened, { env = process.env, via = null, c
       why: sameSubject ? 'same-subject' : 'id-collision-different-subject', when: 'call',
       ...repair, ...(after ? { after } : {}), ...context({ via, call, topic }),
     });
-    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject }) };
+    return { state: 'refused', reason: 'subject-taken', dupeOf: holder, message: subjectTakenMessage(holder, { sameSubject, carry: markerFlags }) };
   }
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, dryRun, builds });
   const entry = {
@@ -1396,10 +1399,14 @@ async function appendEvidence(kind, id, input, opened, { env = process.env, via 
   // ...BUT THE BODY THE AGENT READ WINS (VCST-6221 step 6). Hashed from the base NOW, a confirm whose
   // `kb_show` came before a judge's `claim-amended` merged would attest the corrected wording it never
   // read. The session's journal holds the hash of the body it opened; the current body is the fallback.
-  const readBody = openedHash([...journal, ...(await readQueue({ env })).lines.map(loopRecordOf).filter(Boolean)], row.id);
+  const queued = (await readQueue({ env })).lines;
+  const readBody = openedHash([...journal, ...queued.map(loopRecordOf).filter(Boolean)], row.id);
   if (readBody) bodyHash = readBody;
-  // `fixedIn` alone completes a marker the entry already carries; checked only when the entry was read.
-  const markerWhy = markerProblem({ defect: defect.value, fixedIn: fixedIn.value }, entry ? defectOf(entry.evidence ?? []) : undefined);
+  // `fixedIn` alone completes a marker the entry already carries -- on the base, or set by this session's
+  // own confirm still waiting in the queue. Checked only when the entry was read.
+  const mine = queued.filter((l) => l.kind === 'confirm' && String(l.payload?.id ?? '').toUpperCase() === row.id.toUpperCase() && l.payload.item)
+    .map((l) => l.payload.item);
+  const markerWhy = markerProblem({ defect: defect.value, fixedIn: fixedIn.value }, entry ? defectOf([...(entry.evidence ?? []), ...mine]) : undefined);
   if (markerWhy) return { state: 'invalid', why: `unusable --fixed-in: ${markerWhy}` };
 
   const stamp = how.value === 'source' ? {} : await buildStamp(input.deployment, { env, builds });

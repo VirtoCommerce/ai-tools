@@ -15,7 +15,7 @@
 // is the contract's (`.claude/knowledge/execution/kb-capture-contract.md` §Facts read from source code).
 
 export const METHODS = Object.freeze(['observation', 'source']);
-export const CODE_VERSION = /^[A-Za-z][\w.-]{0,79}@[\w.+-]{1,60}$/;
+const CODE_VERSION = /^[A-Za-z][\w.-]{0,79}@[\w.+-]{1,60}$/;
 
 /** `{ value }` -- the method, `observation` when none was given -- or `{ problem }`. */
 export function resolveMethod(raw) {

@@ -85,6 +85,8 @@ export async function liveBuild(stand, { env = process.env, root = REPO_ROOT, pr
 
 /** A write never waits on a slow stand for longer than this; past it the evidence goes unstamped. */
 export const PROBE_DEADLINE_MS = 10_000;
+/** The storefront gets less than the whole probe: past this the stamp goes out without its theme. */
+const THEME_DEADLINE_MS = 5_000;
 const UNKNOWN_TTL_MS = 5 * 60_000;
 export const BUILD_TTL_MS = 30 * 60_000;
 function withDeadline(p, ms, abort) {
@@ -105,18 +107,23 @@ async function probeStand(stand, { env, root, signal }) {
   if (r.unknown) return r;
   const coords = r.envLib.resolveEnvCoords(profile.env);
   if (!coords.backUrl) return { unknown: `.env.${profile.env} has no BACK_URL` };
-  // The theme is read beside the platform and the token, not after the modules: it is two more GETs on
-  // another host, and in sequence they would eat into the one deadline every write waits on.
+  // The THEME runs beside everything else and never holds it up: it is another host, and a slow storefront
+  // must cost the stamp its theme, not its platform and modules. So it has its own deadline, shorter than
+  // the whole probe's, and is aborted with it.
   const front = String(profile.frontUrl ?? '').replace(/\/+$/, '');
-  const [platform, token, theme] = await Promise.all([
-    r.live.probePlatformVersion(coords, signal),
-    r.live.probeAdminToken(coords, signal),
-    front ? r.live.probeThemeVersion(front, signal) : { ok: false },
-  ]);
-  if (!token.token) return { unknown: `no admin token for ${stand} (${token.status})` };
+  const themeAbort = new AbortController();
+  const stop = () => themeAbort.abort();
+  signal?.addEventListener('abort', stop, { once: true });
+  const timer = setTimeout(stop, THEME_DEADLINE_MS); timer.unref?.();
+  const themeP = (front ? r.live.probeThemeVersion(front, themeAbort.signal) : Promise.resolve({ ok: false }))
+    .catch(() => ({ ok: false }))
+    .finally(() => { clearTimeout(timer); signal?.removeEventListener('abort', stop); });
+  const [platform, token] = await Promise.all([r.live.probePlatformVersion(coords, signal), r.live.probeAdminToken(coords, signal)]);
+  if (!token.token) { stop(); return { unknown: `no admin token for ${stand} (${token.status})` }; }
   const mods = await r.live.probeLiveModules(coords, token.token, signal);
-  if (!mods.ok) return { unknown: `modules of ${stand} unreadable (${mods.status})` };
+  if (!mods.ok) { stop(); return { unknown: `modules of ${stand} unreadable (${mods.status})` }; }
   const modules = {};
   for (const m of mods.modules) if (m.isInstalled !== false) modules[m.id] = m.version;
+  const theme = await themeP;
   return { platform: platform.ok ? platform.version : null, theme: theme.ok ? theme.version : null, modules };
 }

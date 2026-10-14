@@ -26,17 +26,26 @@
 // What may be marked, and the docs check that comes first, is the contract's
 // (`.claude/knowledge/execution/kb-capture-contract.md` §Defects).
 
-import { CODE_VERSION } from './method.mjs';
+import { themeVersion } from './canonical.mjs';
+import { amendmentsOf, attestsCurrentClaim } from './index-build.mjs';
 
 export const DEFECT_WORDS = Object.freeze(['suspected', 'none']);
 const TICKET = /^[A-Z][A-Z0-9]{0,19}-\d{1,9}$/;
+// Ids of this repo's own records share the KEY-<n> shape and are not bug tickets: an oracle (`BL-*`,
+// `ECL-*`) states what SHOULD happen, a kb id names an entry. Shown as a ticket, `ECL-12` would read as
+// a filed bug that does not exist -- the case for `suspected`.
+const NOT_A_TICKET = /^(BL|ECL|KB)-/;
+// The part after `@` must be a VERSION: `fixState` compares it with a build, and a commit or a zip name
+// compares as 0 -- every build would read "fixed".
+const FIXED_IN = /^([A-Za-z][\w.-]{0,79})@(\S{1,80})$/;
+const VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.+-]{1,60})?$/;
 
 /** `{ value }` -- a ticket key, `suspected` or `none`; null when none was given -- or `{ problem }`. */
 export function resolveDefect(raw) {
   const s = typeof raw === 'string' ? raw.trim() : raw == null ? '' : String(raw).trim();
   if (!s) return { value: null };
   if (DEFECT_WORDS.includes(s.toLowerCase())) return { value: s.toLowerCase() };
-  if (TICKET.test(s.toUpperCase())) return { value: s.toUpperCase() };
+  if (TICKET.test(s.toUpperCase()) && !NOT_A_TICKET.test(s.toUpperCase())) return { value: s.toUpperCase() };
   return { problem: `defect "${s.slice(0, 40)}" is not a bug ticket (VCST-1234), \`suspected\` (looks wrong against the docs or a BL-* rule, no ticket yet) or \`none\` (withdraws a marker); what is wrong goes in the claim or note` };
 }
 
@@ -44,8 +53,12 @@ export function resolveDefect(raw) {
 export function resolveFixedIn(raw) {
   const s = typeof raw === 'string' ? raw.trim() : raw == null ? '' : String(raw).trim();
   if (!s) return { value: null };
-  if (CODE_VERSION.test(s)) return { value: s };
-  return { problem: `fixedIn "${s.slice(0, 40)}" is not <module>@<version> -- the first build without the defect: VirtoCommerce.XOrder@3.1001.0, platform@3.1080.0 or theme@2.61.0` };
+  const m = FIXED_IN.exec(s);
+  // A theme may be named as its artifact (`theme@vc-theme-b2b-vue-2.61.0`): reduced to the version, the
+  // spelling every build stamp uses (`themeVersion`).
+  const version = m && (m[1].toLowerCase() === 'theme' ? themeVersion(m[2]) : m[2]);
+  if (m && VERSION.test(version)) return { value: `${m[1]}@${version}` };
+  return { problem: `fixedIn "${s.slice(0, 40)}" is not <module>@<version> -- the first build without the defect, a released version x.y.z: VirtoCommerce.XOrder@3.1001.0, platform@3.1080.0 or theme@2.61.0 (never a commit)` };
 }
 
 /**
@@ -64,10 +77,20 @@ export function markerProblem({ defect, fixedIn }, current) {
  * In the order the markers were SET -- an item's `at`, or `resolvedAt` when a judge wrote it on a dispute
  * (`defect-fixed`) -- the latest `defect` wins, `none` clears it, and a `fixedIn` alone completes the marker
  * standing at the time. A new ticket starts a new marker, so an older `fixedIn` does not carry over to it.
+ *
+ * A marker is about the claim it was set on. After a judge CORRECTS the claim (`claim-amended`), a marker
+ * set before the correction -- or on the corrected body -- no longer applies, as such a confirmation no
+ * longer counts toward trust (`attestsCurrentClaim`): the corrected claim may well be the intended
+ * behaviour. A judge's `defect-fixed` counts from the time it was resolved.
  */
 export function defectOf(evidence = []) {
-  const items = (Array.isArray(evidence) ? evidence : [])
-    .filter((e) => e && !e.duplicateSession && (e.defect || e.fixedIn))
+  const all = Array.isArray(evidence) ? evidence : [];
+  const amendments = amendmentsOf(all);
+  const current = (e) => (e.resolvedAt
+    ? !amendments.some((a) => Number.isFinite(a.at) && Date.parse(String(e.resolvedAt)) <= a.at)
+    : attestsCurrentClaim(e, amendments));
+  const items = all
+    .filter((e) => e && !e.duplicateSession && (e.defect || e.fixedIn) && current(e))
     .map((e, i) => ({ e, i, t: Date.parse(String(e.resolvedAt ?? e.at ?? '')) }))
     .sort((a, b) => ((Number.isFinite(a.t) && Number.isFinite(b.t) && a.t !== b.t) ? a.t - b.t : a.i - b.i));
   let cur = null;
