@@ -22,12 +22,15 @@ The skill stops for the user at least twice: after the preflight (step 1) and be
 
 Find two folders and write them down:
 
-- **The vc-frontend checkout** (`$HOST`), with `yarn install` done. Ask if it is not obvious. The generator, the
+- **The vc-frontend checkout** (`$FRONTEND`), with `yarn install` done. Ask if it is not obvious. The generator, the
   checks and the floors all come from it, and its facade version (`client-app/core-api/package.json`) becomes the
   plugin's floor: it must not be newer than the facade of the storefronts the plugin is for (S1a, before you
   start, 1). Ask which storefronts those are when it is not clear. It must have `"check:plugin-module"` in
   `package.json` and the S1a file; without them the checkout predates this flow — stop.
 - **The module's `*.Web` project** (`$WEB`), the folder holding `module.manifest` and the `.csproj`.
+
+`$FRONTEND` and `$WEB` name the two folders in this file only. In commands, write the absolute paths: every shell
+call starts fresh, so a variable set in one is empty in the next.
 
 Stop and report, changing nothing, when:
 
@@ -49,7 +52,7 @@ Then confirm with the user, in one message:
 
 ## 2. Scaffold
 
-From `$HOST`:
+From `$FRONTEND`:
 
 ```bash
 yarn create:plugin <name> --module "$WEB" --yes [the flags the user picked]
@@ -61,14 +64,14 @@ read S1a ⚠️ 3 to the user and ask how to go on; never commit a yalc or `port
 
 ## 3. Wire the module
 
-Run `yarn check:plugin-module "$WEB"` from `$HOST`. Every ❌ and ⚠️ about a module file is an edit. Plan them all,
+Run `yarn check:plugin-module "$WEB"` from `$FRONTEND`. Every ❌ and ⚠️ about a module file is an edit. Plan them all,
 then **[PAUSE]**: show each planned edit as a unified diff, and for any edit marked *decision* below say what it
 changes for the module's users. Write nothing until the user agrees.
 
 | File | Edit | Rules |
 |---|---|---|
 | `*.Web.csproj` | the `<Import>` line the check prints | Add it once, before `</Project>`, in the file's own indentation. If the `.csproj` already builds a storefront app with inline targets (the check warns about them), replacing them with the Import is a *decision*: list what the old targets did that the new file does not |
-| `module.manifest` | `platformVersion` and each `<dependency>` the check names | Copy the versions from the check's `→` lines (it reads them from `BACKEND_REQUIREMENTS` in `$HOST`); never type one from memory or a doc. Replace a lower version in place; add a missing dependency to `<dependencies>`, creating the element if there is none. A version already higher stays. Every raise is a *decision*: platforms and modules below the floor can no longer install this module |
+| `module.manifest` | `platformVersion` and each `<dependency>` the check names | Copy the versions from the check's `→` lines (it reads them from `BACKEND_REQUIREMENTS` in `$FRONTEND`); never type one from memory or a doc. Replace a lower version in place; add a missing dependency to `<dependencies>`, creating the element if there is none. A version already higher stays. Every raise is a *decision*: platforms and modules below the floor can no longer install this module |
 | `.gitignore` | the line the check prints | The repository's root `.gitignore` |
 | CI (`.github/workflows/`) | none | Report only. A VirtoCommerce module's CI is updated centrally (its commits read "Auto update Github Action workflows"), so a local edit is overwritten. Any other module owns its CI: if it does not set up Node 22 or 24 with corepack, the report shows the step to add (`actions/setup-node`, then corepack), for the user to make |
 
@@ -89,7 +92,7 @@ yarn type-check && yarn lint && yarn test && yarn build
 ```
 
 `yarn install` writes `yarn.lock`; the module build installs with `--immutable`, so it must be committed with the
-rest. Then, from `$HOST`, the full check:
+rest. Then, from `$FRONTEND`, the full check:
 
 ```bash
 yarn check:plugin-module "$WEB"
@@ -103,15 +106,15 @@ the check's lines can change between vc-frontend versions. The plugin is not shi
 
 Offer each; do only what the user wants.
 
-- **Local storefront:** S1a step 5. It needs a backend in `$HOST/.env.local` and `module_federation_enabled: true`,
+- **Local storefront:** S1a step 5. It needs a backend in `$FRONTEND/.env.local` and `module_federation_enabled: true`,
   the default; a fork that turned it off is the user's to change. Before changing `.env.local`, copy it aside: git
-  cannot restore it. Afterwards put it back, and compare `git status` in `$HOST` with what it was before step 5.
+  cannot restore it. Afterwards put it back, and compare `git status` in `$FRONTEND` with what it was before step 5.
 - **Package:** run the check with `--artifact <zip>` on the module's zip, from its CI or built the way CI does
   (📁 module repo `vc-build compress`, which needs the .NET SDK; the zip lands in `artifacts/`). ✅ the plugin sits
   at the zip root, not under `bin/` (S1a ⚠️ 1).
 - **Local platform:** if the user runs one, follow S6 → "On a local platform" with that zip: install, restart, then
   `--env <platform URL>` and the storefront from S2.2. ✅ the plugin's page renders with no override set. Restore
-  `.env.local` in `$HOST` afterwards, as above.
+  `.env.local` in `$FRONTEND` afterwards, as above.
 
 ## 6. Report
 
@@ -126,9 +129,9 @@ Offer each; do only what the user wants.
 ## Never
 
 1. Commit, push, or edit a file outside the module's `.csproj`, `module.manifest` and `.gitignore`, except
-   `$HOST/.env.local` in step 5, restored afterwards.
+   `$FRONTEND/.env.local` in step 5, restored afterwards.
 2. Lower a version, or write one the check did not print.
-3. Hand-edit `@vc-frontend/core` files, or anything else under `$HOST`. Never `git checkout` or `git restore` a file
+3. Hand-edit `@vc-frontend/core` files, or anything else under `$FRONTEND`. Never `git checkout` or `git restore` a file
    there: it may hold the user's own work.
 4. Re-run `create:plugin` over an existing `StorefrontApp/`, or delete one without the user's yes. Only an
    untracked one left by an earlier run may go (step 1).
