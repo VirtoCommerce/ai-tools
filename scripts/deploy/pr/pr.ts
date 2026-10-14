@@ -62,6 +62,7 @@
  *   --fork-owner=<login>        Fork account to push --apply to (default: the token owner from `gh api user`).
  *   --message=<text>            Commit / PR title (default "VCST-XXXX: <ticket title>", else
  *                               "VCST-XXXX: deploy N artifacts to <env>" when no summary resolved).
+ *                               --apply REFUSES with neither a ticket key nor --message.
  *   --password=<pw>             Admin password for the /api/platform/modules verify (else env / Password1).
  *   --json                      Machine-readable output.
  *
@@ -384,7 +385,12 @@ export async function runPr(args: string[]): Promise<void> {
     || (key && titleText
       ? `${key}: ${titleText.length > 120 ? titleText.slice(0, 119).trimEnd() + '…' : titleText}`
       : `${key ? key + ': ' : ''}deploy ${bundle.length} artifact${bundle.length > 1 ? 's' : ''} to ${env}`);
+  // A keyless title ("deploy 1 artifact to <env>") says nothing on the shared deploy branch — the
+  // team rejected it (#6903, #6908, #6919). Writes need the ticket key or an explicit --message.
+  const keyless = !key && !flag('message');
+  if (keyless && apply) fail('No ticket key — the deploy commit/PR title would be "' + title + '". Pass the ticket key first (vc-deploy.ts pr VCST-XXXX --pr ...) or --message="VCST-XXXX: ...".');
   if (!apply) {
+    if (keyless && !asJson) console.error('[deploy-pr] ⚠ no ticket key — --apply will refuse until you pass one (or --message).');
     if (asJson) { console.log(JSON.stringify({ env, branch: c.branch, key, summary, title, bundle, rows, webEditPkg: pkgTouched ? webEditPkg : null, webEditTheme: newThemeText ? webEditTheme : null, apply: false }, null, 2)); throw new Exit(0); }
     console.log('\nDry-run — nothing was written.');
     console.log(`  PR title would be: ${title}`);
