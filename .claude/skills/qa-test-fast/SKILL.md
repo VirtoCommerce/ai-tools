@@ -17,7 +17,7 @@ execution instead of before it.
 
 ```
 Step 0  route · env · prior artifacts · slug · kb ask
-Stage 1 Wave 1  A ticket ‖ B PRs ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
+Stage 1 Wave 1  /ticket-context (ticket · materials · PRs · deploy) ‖ C domain map (only if ABSENT)   ── join → bundle (+ schema:refresh)
         Wave 2  /qa-test-model ‖ /qa-test-mind-map (update|build, no stamps)
         Wave 3  /qa-checklist --from-model  ──  stage gate   [--dry-run stops here]
 Stage 2         runner(chrome) ‖ runner(edge) ‖ exploratory(firefox), data on the fly ── settings restored

@@ -62,5 +62,115 @@
   },
   "BUYABLE_NO_MIN_QTY": {
     "id": "dfb650ed3741432f9af054c3436d6e06"
+  },
+  "VIRTUAL_CATALOG_B2B": {
+    "_inline": true,
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_MIXED": {
+    "id": "fc596540864a41bf8ab78734ee7353a3"
+  },
+  "CATALOG_ELECTRONICS": {
+    "id": "d04ed9df-7f94-4707-9d57-462c04d291e8"
+  },
+  "PROCESSING_ORDER": {
+    "id": "039bd09f-3fe4-4ca0-9345-a39bddba3a99",
+    "number": "AGENT-TEST-ORD-PROCESSING"
+  },
+  "PROD_MIN_ABOVE_STOCK": {
+    "id": "70b7aecf-c3c3-42a9-bef7-cc262f13a6bf"
+  },
+  "PROD_STOCK_DROP": {
+    "id": "eeb95f21-3f59-4e87-a0b5-35fe3cfd9198"
+  },
+  "LOY_SKU_PTS_UNIT": {
+    "id": "3eba8db6-f3e6-48e9-a32a-22a25e6e05b3",
+    "pricelistId": "70b2f76c-57f7-4bcd-8fb1-ba59dce65c24",
+    "slug": "loyalty-pts-unit-divisor",
+    "url": "/loyalty-catalog/seed-loyalty-fixtures/loyalty-pts-unit-divisor"
+  },
+  "ORG_LOY_A": {
+    "userId": "e0c43cb0-a291-479e-8c6c-a8140edebbf4",
+    "contactId": "eac1c45f-4556-4183-a2c6-4ce3eeca18ef",
+    "org_id": "25e69297-f8fa-4186-a22e-e3500c69c617",
+    "sibling_org_id": "23525b44-f0d0-43a4-b45e-b162080a4d29",
+    "earn_points_expected": "30000",
+    "balance_at_seed": "0"
+  },
+  "ORG_LOY_B": {
+    "userId": "54488508-5b94-4aef-a048-83feb0b3f2f2",
+    "contactId": "c8a2ffe1-740a-440e-9663-6addcc1fbd72",
+    "org_id": "25e69297-f8fa-4186-a22e-e3500c69c617",
+    "earn_points_expected": "90000",
+    "balance_at_seed": "0"
+  },
+  "ORG_LOY_LOCKED": {
+    "userId": "4fc72bf3-ada3-4cd4-97b6-86469fc73afd",
+    "contactId": "24712df7-cc89-4a1e-91a7-b5544bf1e17a",
+    "org_id": "25e69297-f8fa-4186-a22e-e3500c69c617",
+    "membershipId": "ed072a63-c7fe-495a-be0f-e2271776a3e8",
+    "balance_at_seed": "0"
+  },
+  "LOY_PERSONAL_NOORG": {
+    "userId": "dbb1360c-579d-4686-ba0e-a813b76febe7",
+    "contactId": "22666b30-6c41-4d94-8645-398a551bf2ae",
+    "balance_at_seed": "30000",
+    "cheapest_pts_sku": "AGENT-TEST-PTS-UNIT-001",
+    "cheapest_pts_price": "1",
+    "dearest_pts_sku": "AGENT-TEST-PTS-UNIT-001",
+    "dearest_pts_price": "1"
+  },
+  "ORG_LOY_MISSION": {
+    "id": "48fee594-670b-4c9f-bee8-dfc4875b298c",
+    "name": "AGENT-TEST-MSN-ORGLOY-20261013131942-a292",
+    "run_id": "20261013131942-a292",
+    "seeded_at": "2026-10-13T13:19:44.431Z"
+  },
+  "ORG_LOY_MISSION_2": {
+    "id": "e13a70bb-5577-4a92-bba3-46ee110c47be",
+    "name": "AGENT-TEST-MSN-ORGLOY-M2-20261013131943-a00e",
+    "run_id": "20261013131943-a00e",
+    "seeded_at": "2026-10-13T13:19:44.431Z"
+  },
+  "ORG_LOY_MISSION_PARTIAL": {
+    "id": "d6794968-2f23-4305-bd82-31f0856b5f13",
+    "name": "AGENT-TEST-MSN-ORGLOY-P2-20261013131943-3f90",
+    "run_id": "20261013131943-3f90",
+    "seeded_at": "2026-10-13T13:19:44.431Z"
+  },
+  "UCP_ORG_ONLY_PRODUCT": {
+    "id": "6435f0b3-5f46-404d-9703-276be717c33d",
+    "catalog_id": "d04ed9df-7f94-4707-9d57-462c04d291e8",
+    "tagged_item_id": "2ca158fd-2c87-412d-9d1c-07f61553e1e4",
+    "pricelist_id": "2b526885-993d-48a9-97e1-95925a8d28d8",
+    "anonymous_visible_at_seed": "false",
+    "contract_visible_at_seed": "true"
+  },
+  "UCP_ORG_CONTRACT": {
+    "id": "4fc7efdb-651a-4f53-a2ac-a356307502e0",
+    "org_platform_id": "105c2c4e-23be-4258-8691-568a0ff190be",
+    "pricelist_id": "7d7b6c79-35f6-4a22-bc4e-d104f5961c5d",
+    "priority_pricelist_id": "6b451efe-96fc-49c5-9d5c-fb54d882a5e6",
+    "base_assignment_id": "47728197-f9a2-430c-8823-4d49d625a294",
+    "priority_assignment_id": "567d1c6b-6352-481a-b4f0-def095a7f2e6"
+  },
+  "UCP_CONTRACT_PRODUCT": {
+    "id": "7b57909a-9e05-49ab-9bda-966241291b65",
+    "catalog_id": "d04ed9df-7f94-4707-9d57-462c04d291e8",
+    "b2c_consumer_price_at_seed": "29.99",
+    "anonymous_price_at_seed": "29.99",
+    "contract_price_at_seed": "11.11"
+  },
+  "UCP_CONTRACT_CONTROL_PRODUCT": {
+    "id": "1fb9176f-f25d-40d8-8684-28a797fd3085",
+    "catalog_id": "d04ed9df-7f94-4707-9d57-462c04d291e8",
+    "price_at_seed": "3.49"
+  },
+  "UCP_CONTRACT_BUYER": {
+    "id": "6219707f-7abf-47a8-b156-66e55d010112",
+    "contact_id": "17df6a62-891c-4471-8273-e6579705ee54"
+  },
+  "FC_EAST": {
+    "id": "ffc-chile-andes-supply-node"
   }
 }

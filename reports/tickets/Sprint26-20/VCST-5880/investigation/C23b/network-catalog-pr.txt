@@ -1,0 +1,48 @@
+2. [POST] https://dc.services.visualstudio.com/v2/track
+12. [POST] http://localhost/graphql => [200] OK
+16. [GET] https://js.monitor.azure.com/scripts/b/ai.config.1.cfg.json => [200] 
+29. [GET] http://localhost/assets/chevron-down-WU-JWKmV.svg => [200] OK
+44. [GET] http://localhost/assets/map-pin-DWoFflcU.svg => [200] OK
+45. [GET] http://localhost/assets/monitor-DMc5Oyq8.svg => [200] OK
+46. [GET] http://localhost/assets/phone-1OADQDB6.svg => [200] OK
+48. [GET] http://localhost/assets/barcode-KNOlvMXH.svg => [200] OK
+49. [GET] http://localhost/assets/search-C09YzzJ5.svg => [200] OK
+50. [GET] http://localhost/assets/boxes-r6nc93_f.svg => [200] OK
+52. [GET] http://localhost/assets/heart-BbOcHgeA.svg => [200] OK
+53. [GET] http://localhost/assets/file-text-BElPjXpk.svg => [200] OK
+55. [GET] http://localhost/assets/grip-BdSweN20.svg => [200] OK
+64. [POST] http://localhost/graphql => [200] OK
+65. [POST] http://localhost/graphql => [200] OK
+66. [POST] http://localhost/graphql => [200] OK
+67. [POST] http://localhost/graphql => [200] OK
+68. [GET] http://localhost/assets/git-compare-arrows-0PSOVfmc.svg => [200] OK
+69. [GET] http://localhost/assets/shopping-cart-B4asdHBp.svg => [200] OK
+70. [GET] https://cdn.builder.io/api/v3/content/page?apiKey=c8dc948ea13f4f92bdb7bbb6ebf0c4b8&limit=1&noTraverse=false&includeRefs=true&locale=en-US&omit=meta.componentsUsed&userAttributes=%7B%22locale%22%3A%22en-US%22%2C%22urlPath%22%3A%22%2Fseed-compare-fixtures%2Fseed-compare-fixtures-group-a%22%2C%22isAuthenticated%22%3Afalse%2C%22storeId%22%3A%22B2B-store%22%2C%22groupName%22%3A%5B%5D%7D => [200] 
+84. [GET] https://cdn.builder.io/api/v3/content/page?apiKey=c8dc948ea13f4f92bdb7bbb6ebf0c4b8&limit=1&noTraverse=false&includeRefs=true&locale=en-US&omit=meta.componentsUsed&userAttributes=%7B%22locale%22%3A%22en-US%22%2C%22urlPath%22%3A%22%2Fseed-compare-fixtures%2Fseed-compare-fixtures-group-a%22%2C%22isAuthenticated%22%3Afalse%2C%22storeId%22%3A%22B2B-store%22%2C%22groupName%22%3A%5B%5D%7D => [200] 
+85. [GET] http://localhost/assets/filter-NjPheX-i.svg => [200] OK
+86. [GET] http://localhost/assets/layout-grid-yMn90gCC.svg => [200] OK
+87. [GET] http://localhost/assets/list-mvwZnsn9.svg => [200] OK
+88. [GET] http://localhost/assets/x-DuBWOozZ.svg => [200] OK
+89. [GET] http://localhost/assets/rotate-ccw-koWwlpX1.svg => [200] OK
+90. [POST] http://localhost/graphql => [200] OK
+91. [POST] http://localhost/graphql => [200] OK
+92. [POST] http://localhost/graphql => [200] OK
+93. [GET] http://localhost/assets/chevron-right-DZMPCiXb.svg => [200] OK
+94. [GET] http://localhost/assets/chevron-left-VTiPf0Ih.svg => [200] OK
+95. [GET] http://localhost/assets/chevron-up-DGFSMKDe.svg => [200] OK
+96. [GET] http://localhost/assets/minus-CblfoqQm.svg => [200] OK
+97. [GET] http://localhost/assets/plus-DHGUwU-6.svg => [200] OK
+98. [GET] http://localhost/assets/cube-C3rxCK4T.svg => [200] OK
+99. [GET] http://localhost/assets/external-link-EpZycWD6.svg => [200] OK
+100. [GET] http://localhost/assets/badge-check-CLnszXrT.svg => [200] OK
+102. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6a80v897983143za208zb9234390392zd9234390392xf1&_p=1791825677253&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&cid=1504953795.1791825609&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x900&uaa=x86&uab=64&uafvl=Microsoft%2520Edge%3B155.0.4283.45%7CChromium%3B155.0.8059.40%7CNot(A%253ABrand%3B24.0.0.0&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=1&tag_exp=115938465~115938468~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&cu=USD&sid=1791825608&sct=1&seg=1&dl=http%3A%2F%2Flocalhost%2Fseed-compare-fixtures%2Fseed-compare-fixtures-group-a&dt=Virto%20Commerce&en=page_view&_ee=1&ep.debugMode=true&tfd=1108 => [204] 
+103. [POST] https://region1.google-analytics.com/g/collect?v=2&tid=G-S2KXT3KTJZ&gtm=45je6a80v897983143za200zb9234390392zd9234390392xf1&_p=1791825677253&gcd=13l3l3l2l1l1&npa=1&dma_cps=a&dma=1&_eu=AAAAAAQ&cid=1504953795.1791825609&frm=0&ngs=1&pscdl=noapi&rcb=1&sr=1280x900&uaa=x86&uab=64&uafvl=Microsoft%2520Edge%3B155.0.4283.45%7CChromium%3B155.0.8059.40%7CNot(A%253ABrand%3B24.0.0.0&uam=&uamb=0&uap=Windows&uapv=19.0.0&uaw=0&ul=en-US&_s=2&tag_exp=115938465~115938468~118897920~118897930~120213116~120385422~120469145~120469153~121046263~121046271~121246026~121246034&cu=USD&sid=1791825608&sct=1&seg=1&dl=http%3A%2F%2Flocalhost%2Fseed-compare-fixtures%2Fseed-compare-fixtures-group-a&dt=Virto%20Commerce&tfd=1108 => [204] 
+104. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-PROPNAME/AGENT-TEST-CMP-PROPNAME-main_md.png => [404] 
+105. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-VARPARENT/AGENT-TEST-CMP-VARPARENT-main_md.png => [404] 
+106. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-ALPHA/AGENT-TEST-CMP-ALPHA-main_md.png => [404] 
+107. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-BETA/AGENT-TEST-CMP-BETA-main_md.png => [404] 
+108. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-LONGNAME/AGENT-TEST-CMP-LONGNAME-main_md.png => [404] 
+109. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-1/AGENT-TEST-CMP-FILL-1-main_md.png => [404] 
+110. [GET] https://vcst-qa.govirto.com/cms-content/assets/catalog/AGENT-TEST-CMP-FILL-2/AGENT-TEST-CMP-FILL-2-main_md.png => [404] 
+
+Note: 72 static requests not shown, run with "static" option to see them.

@@ -25,6 +25,7 @@ import { writeToken } from './core/token.mjs';
 import { askLines, captureLines, evidenceLines, noneLines, showLines } from './core/render.mjs';
 import { CONTRACT } from './core/contract.mjs';
 import { TOPIC_MAX, ask, capture, confirm, dispute, none, reindex, show, stat } from './core/verbs.mjs';
+import { liveBuild } from './core/build.mjs';
 
 // ── argument parsing ──────────────────────────────────────────────────────────────────────────
 
@@ -70,11 +71,16 @@ const USAGE = `kb — the knowledge base (PLAN v1)
   npm run kb -- capture --subject "<one line>" --question "<the question it answers>"
                         --claim "<the claim, in prose>" --deployment <stand, e.g. vcst_qa>
                         --anchor /company/members [--anchor ...] --scope surface=storefront-ui [--scope ...]
+                        [--conditions "platform=<v>; setting:<Name>=<v>"]
+                        [--defect <VCST-1234 | suspected> [--fixed-in <Module>@<version>]]
                         [--topic "<...>"] [--dry-run]   --dry-run: check the payload, log and queue nothing
                         an anchor is a route, endpoint or GraphQL op, never a label or menu path;
                         contract: ${CONTRACT}
-  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--topic "<...>"]
-  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--topic "<...>"]
+  npm run kb -- confirm KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> [--note "<what you saw>"] [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        [--defect <VCST-1234 | suspected | none>] [--fixed-in <Module>@<version>]
+                        defect: the behaviour should NOT happen (docs / BL-* checked first); the claim is unchanged
+  npm run kb -- dispute KB-XXXXXXXX --deployment <stand, e.g. vcst_qa> --saw "<what you saw instead>" [--conditions "<k=v; k=v>"] [--topic "<...>"]
+                        conditions: optional, expected on a dispute -- the build and settings the behaviour may depend on
   npm run kb -- stat [--base <dir>]
   npm run kb -- reindex --base <dir> [--dry-run]     repair: rebuild index.json from every entry
   npm run kb -- calibrate --base <dir> [--set <labelled-set.json>] [--out <ranker.json>]
@@ -167,8 +173,11 @@ async function main(argv) {
     out(`last push ${p.last ? `${p.last.state} at ${p.last.at}${p.last.commit ? ` ${p.last.commit.slice(0, 7)}` : ''}${p.last.why ? ` — ${p.last.why}` : ''}` : 'none recorded on this machine'}`);
     // Sticky until a push LANDS: a later "nothing to do" must not hide that the queue never drained.
     if (p.lastFailure && p.lastFailure.at !== p.last?.at) out(`  FAILED  ${p.lastFailure.state} at ${p.lastFailure.at}${p.lastFailure.why ? ` — ${p.lastFailure.why}` : ''}`);
-    if (r.state === 'answer') out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
-    else out(`index     ${r.state} — ${r.why}`);
+    if (r.state === 'answer') {
+      out(`index     ${r.entries} entr(ies), ${r.active} active, from ${r.indexes.join(', ')}`);
+      const d = r.disputes;
+      out(`disputed  ${d.disputedEntries} entr(ies) disputed${d.contestedEntries ? ` · ${d.contestedEntries} contested on another build (soft, still to judge)` : ''} · ${d.settledEntries} settled by a judge`);
+    } else out(`index     ${r.state} — ${r.why}`);
     return exitFor(r.state);
   }
 
@@ -226,10 +235,10 @@ async function main(argv) {
   if (verb === 'ask') {
     const question = args._.slice(1).join(' ').trim();
     if (!question) { out('ask needs a question'); return EXIT.NO_COVERAGE; }
-    // `--deployment` is OPTIONAL on ask and is never derived -- see `stand()` in core/verbs.mjs
-    // for why this door has no authoritative source to derive it from either.
+    // `--deployment` is OPTIONAL on ask and is never defaulted from this process -- only a name the
+    // caller passes is mapped onto the stand's one name (`stand()` in core/verbs.mjs).
     const r = await ask(question, opened, {
-      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic,
+      top: Number(args.flags.top) || 3, via: VIA, deployment: args.flags.deployment, topic: args.flags.topic, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(askLines(r));
@@ -241,6 +250,7 @@ async function main(argv) {
     if (!id) { out('show needs an id'); return EXIT.NO_COVERAGE; }
     const r = await show(id, opened, {
       via: VIA, topic: args.flags.topic, ask: typeof args.flags.ask === 'string' ? args.flags.ask : null, verify: Boolean(args.flags.verify),
+      deployment: typeof args.flags.deployment === 'string' ? args.flags.deployment : null, builds: liveBuild,
     });
     if (json) { out(JSON.stringify(r, null, 2)); return exitFor(r.state); }
     emit(showLines(r));
@@ -260,9 +270,10 @@ async function main(argv) {
   if (verb === 'capture') {
     const r = await capture({
       subject: args.flags.subject, question: args.flags.question, claim: args.flags.claim,
-      deployment: args.flags.deployment, method: args.flags.method,
+      deployment: args.flags.deployment, method: args.flags.method, conditions: args.flags.conditions,
+      defect: args.flags.defect, fixedIn: args.flags['fixed-in'],
       anchors: args.repeated.anchor, scope: args.repeated.scope,
-    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']) });
+    }, opened, { via: VIA, topic: args.flags.topic, dryRun: Boolean(args.flags['dry-run']), builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     // The CLI has no input schema, so a refusal here also prints the contract card (VCST-6156).
     else emit(captureLines(r, { card: true }));
@@ -277,7 +288,8 @@ async function main(argv) {
     const fn = verb === 'confirm' ? confirm : dispute;
     const r = await fn(args._[1], {
       deployment: args.flags.deployment, note: args.flags.note, saw: args.flags.saw, method: args.flags.method,
-    }, opened, { via: VIA, topic: args.flags.topic });
+      conditions: args.flags.conditions, defect: args.flags.defect, fixedIn: args.flags['fixed-in'],
+    }, opened, { via: VIA, topic: args.flags.topic, builds: liveBuild });
     if (json) out(JSON.stringify(r, null, 2));
     else emit(evidenceLines(verb, r));
     if (r.state === 'invalid') return EXIT.NO_COVERAGE;
