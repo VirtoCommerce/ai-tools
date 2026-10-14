@@ -1,6 +1,6 @@
 # `/qa-test-model` after the test-strategy step — design
 
-> **Status: phase A implemented 2026-10-14; §7 validation not yet run.** §3–§5a record the phase-A decisions
+> **Status: phase A implemented 2026-10-14; §7 validation run on VCST-5884, pending on VCST-5883 and VCST-5628.** §3–§5a record the phase-A decisions
 > taken in the 2026-10-09 brainstorm, amended 2026-10-14 after review (M8–M10, the phase-A gate in §4, and
 > the corrected facts in §1, §5, §7). Every row of §6 is built. Work is tracked in VCST-6250.
 > This spec depends on the `/qa-test` redesign (#417, D1–D12) and its prototype (#416, VCST-6249). The strategy
@@ -220,6 +220,27 @@ model**, so its baseline is the coverage report it shares with 5883,
   risk and accepts one with an F10 risk and an F11 risk.
 - **M8:** a `/qa-test` FULL run on one of the three tickets still produces today's model and passes today's gate.
 - **Cost:** wall time and tokens versus the old model, measured on a real run.
+
+### 7.1 Results
+
+**VCST-5884 (2026-10-14) — desk run.** D6 refuses a new round on this ticket: four builds have already been
+tested. So the strategy and the model were built from that day's context bundle and not executed.
+
+| Check | Result |
+|---|---|
+| Size | 134 lines (cap 160) vs 263 in the old model; 10 scenarios vs 32 |
+| Coverage | All 32 old scenarios traced: 19 to the new model, 11 to strategy risks the model does not expand, S19 waived as before. The draft missed four: three were fixed in the model, and S32 (list dated by created date) was added to the strategy as amendment R13 |
+| F10 | Fires on `xapi:my_organization`. All six rows are present; sales rep is WAIVED with a reason. Login on behalf is a scenario the old model never had. FIXTURE-GAP: no operator account among the org-returns aliases |
+| F11 | Fires on `Return.NotifyOrganizationEmail` (stand `false`, default `false`), so the "on" branch is visible before the run |
+| M9 / M10 | The model runs because four risks are `MODEL`. On the real bundle the gate rejects a missing `floor:F11` (6), one risk carrying both tokens (6f), and `Test model` `SKIP` beside `MODEL` risks (6e) |
+| Cost | About 13 min wall, dominated by `/ticket-context` (four analysts, about 690k subagent tokens); the strategy and model were inline |
+| M8 | Not run (needs a `/qa-test` FULL run) |
+
+The run found two defects, fixed in PR #448:
+- `store:caps` prints public settings only, so F11 now reads the rest through the admin REST API.
+- Clause 13 now binds to the settings the diff reads, not every setting Inputs mention.
+
+**VCST-5883, VCST-5628:** pending. Their PR reads hit the GitHub API rate limit on 2026-10-14.
 
 ## 8. Open
 
