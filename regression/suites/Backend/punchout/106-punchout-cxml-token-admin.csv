@@ -216,26 +216,13 @@ Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-pay
 [DATA label=cfg1] body matches /<StartPage><URL>[^<]+\/punchout\/[A-Za-z0-9_-]{43}<\/URL>/ {SPEC}
 [DATA label=cfg1_none] body matches /Status[^>]*code=""200""/ {SPEC}
 [DATA label=cfg0_same] body matches /Status[^>]*code=""401""/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"cXML Status 401 or 400 for configuration 1, cXML Status 200 for the same request on configuration 0 (the control)",none — the issued tokens expire unredeemed,VCST-5886 · Archetype:CONFIG · Technique:DT,Draft
-PNCH-012,Punchout setup — a configuration naming a missing store or no StoreId answers cXML 500 with no stack trace,Punchout > cXML setup,Medium,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret2=@td(PUNCHOUT_CONFIG_2.sharedSecret), secret3=@td(PUNCHOUT_CONFIG_3.sharedSecret)","[REST-OP cfg2]
+PNCH-012,Punchout setup — a configuration naming a store that does not exist answers cXML 500 with no stack trace,Punchout > cXML setup,Medium,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), secret2=@td(PUNCHOUT_CONFIG_2.sharedSecret)","[REST-OP cfg2]
 POST {{BACK_URL}}/api/punchout/cxml
 Content-Type: text/xml
 Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret2}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
-[REST-EXEC cfg2]
-[REST-OP cfg3]
-POST {{BACK_URL}}/api/punchout/cxml
-Content-Type: text/xml
-Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>{{ident}}</Identity><SharedSecret>{{secret3}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
-[REST-EXEC cfg3]
-[REST-OP cfg3_unmapped]
-POST {{BACK_URL}}/api/punchout/cxml
-Content-Type: text/xml
-Body: <?xml version=""1.0"" encoding=""UTF-8""?><cXML payloadID=""agent-test-payload"" timestamp=""2026-10-08T00:00:00Z"" version=""1.2.041""><Header><From><Credential domain=""NetworkId""><Identity>buyer-co</Identity></Credential></From><To><Credential domain=""DUNS""><Identity>supplier</Identity></Credential></To><Sender><Credential><Identity>AGENT-TEST-PO-UNMAPPED</Identity><SharedSecret>{{secret3}}</SharedSecret></Credential><UserAgent>agent-test</UserAgent></Sender></Header><Request><PunchOutSetupRequest operation=""create""><BuyerCookie>agent-test-cookie</BuyerCookie></PunchOutSetupRequest></Request></cXML>
-[REST-EXEC cfg3_unmapped]","[DATA label=cfg2] body matches /Status[^>]*code=""500""/ {SPEC}
-[DATA label=cfg3] body matches /Status[^>]*code=""500""/ {SPEC}
-[DATA label=cfg3_unmapped] body matches /Status[^>]*code=""500""/ {SPEC}
+[REST-EXEC cfg2]","[DATA label=cfg2] body matches /Status[^>]*code=""500""/ {SPEC}
 [DATA label=cfg2] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}
-[DATA label=cfg3] body matches /^(?![\s\S]*(StackTrace|System\.))/ {BL}
-[DATA label=cfg2] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage for configuration 2 or 3, HTTP 500, cXML Status 401 for configuration 3 with an unmapped identity (the check order moved)",none,VCST-5886 · Archetype:SILENT · Technique:DT,Draft
+[DATA label=cfg2] body matches /^(?![\s\S]*StartPage)/ {SPEC}",[NETWORK] no unexpected 4xx/5xx on the endpoint under test,"StartPage for configuration 2, HTTP 500, a stack trace in the body",none,VCST-5886 · Archetype:SILENT · Technique:DT · Repaired:VCST-5887 config-3 half dropped (retired by vc-deploy-dev#6926; the platform refuses it at start),Draft
 PNCH-013,"Punchout token — a start link redeems exactly once, also under two parallel redemptions",Punchout > cXML setup,Critical,,,Mapping @td(PUNCHOUT_MAPPING_DEFAULT.externalId) active; a fresh setup is minted for each token inside the case,"secret0=@td(PUNCHOUT_CONFIG_0.sharedSecret), domain0=@td(PUNCHOUT_CONFIG_0.senderDomain), retUrl=@td(PUNCHOUT_CONFIG_0.allowedReturnUrl), ident=@td(PUNCHOUT_MAPPING_DEFAULT.externalId), store0=@td(PUNCHOUT_CONFIG_0.storeId)","[SETUP] POST {{BACK_URL}}/api/punchout/cxml (Content-Type text/xml) with a configuration-0 PunchOutSetupRequest for {{ident}}; [CAPTURE] the 43-character tail of the StartPage URL → TOKEN_A
 [HTTP] POST {{BACK_URL}}/connect/token (application/x-www-form-urlencoded) grant_type=punchout&session_token={{TOKEN_A}}&storeId={{store0}}
 [HTTP] repeat the identical request

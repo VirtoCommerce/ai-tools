@@ -3786,6 +3786,33 @@
       "notes": "VCST-5886 (Epic VCST-5154). Storefront half of Punchout (API/admin half: 106). PNCF-001 is the [JOURNEY] case. Each case mints its own start link by POSTing a cXML setup (single-use token). PNCF-007 flips the store-wide Punchout.Enabled of the configuration-0 store and PNCF-005 runs ~11 minutes (config-1 session lifetime, beyond the machine runner's 300 s wait cap) — exclusiveGroup keeps 106/107 from running together; run PNCF-005 outside a batch. Env-scoped by requiresModules (effective only when MODULES_ENABLED is set) — select with `punchout`. Cases stay Draft until a run promotes them.",
       "exclusiveGroup": "store-setting:Punchout.Enabled",
       "clickDriven": true
+    },
+    {
+      "id": "108",
+      "name": "Punchout — Create requisition (PunchOutOrderMessage)",
+      "file": "regression/suites/Frontend/punchout/108-punchout-requisition.csv",
+      "domain": "auth-security",
+      "layer": "frontend",
+      "concern": "functional",
+      "priority": "P1",
+      "testCount": 27,
+      "estimatedMinutes": 150,
+      "agent": "qa-frontend-expert",
+      "tags": [
+        "punchout",
+        "cxml",
+        "requisition",
+        "storefront",
+        "journey"
+      ],
+      "requiresModules": [
+        "VirtoCommerce.Punchout"
+      ],
+      "envRiskGate": "staging",
+      "customerApplicability": "reference",
+      "notes": "VCST-5887 (Epic VCST-5154). Create requisition at checkout: the storefront builds a cXML PunchOutOrderMessage and posts it to the session's return URL. PNCR-001 is the [JOURNEY] case. Every cart-content case uses the dedicated buyer PUNCHOUT_MAPPING_REQUISITION (AGENT-TEST-PO-300) and resets its carts in Setup and Cleanup (npm run seed:punchout:reset-carts), so run the suite on one lane and never beside another suite that uses that buyer. PNCR-019 flips the store-wide Punchout.Enabled of the configuration-0 store (exclusiveGroup). PNCR-018 waits out a 10-minute session; PNCR-018 and PNCR-021 need a configuration-1 store on its own storefront host and are BLOCKED (environment) on vcptcore_qa1, where New-super shares the B2B-store host. PNCR-002 and PNCR-003 keep the spec expectation for a known defect (named cart versus default cart). Env-scoped by requiresModules, so it is meant for vcptcore_qa1 only — select with `punchout`. Cases stay Draft until a run promotes them.",
+      "exclusiveGroup": "store-setting:Punchout.Enabled",
+      "clickDriven": true
     }
   ],
   "selections": {
@@ -3920,7 +3947,8 @@
         "089",
         "090",
         "091",
-        "107"
+        "107",
+        "108"
       ]
     },
     "backend": {
@@ -4101,7 +4129,8 @@
     "punchout": {
       "include": [
         "106",
-        "107"
+        "107",
+        "108"
       ]
     }
   }
