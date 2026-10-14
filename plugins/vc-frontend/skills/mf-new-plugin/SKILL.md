@@ -40,6 +40,8 @@ Stop and report, changing nothing, when:
 | `$WEB/StorefrontApp/` exists but is untracked (`git status --porcelain` shows `?? …StorefrontApp/`) | an earlier run stopped. Offer to go on from step 3, or to delete that folder and start over; nothing in it was committed. Delete only on the user's yes |
 | the module repo has other uncommitted changes | the diffs in step 3 must show only this skill's edits. On a resumed run, its own earlier edits to the three module files may stay; show them in step 3 |
 | the module repo is on its default branch | ask for a branch first |
+| `node --version` in `$FRONTEND` is not 22, or `corepack --version` fails | the checkout asks for Node 22 (its `engines`), and the plugin builds through corepack (S1a, before you start, 2). Say what to install |
+| the facade is not released: `curl -sfIL -o /dev/null https://github.com/VirtoCommerce/vc-frontend/releases/download/core-v<version>/vc-frontend-core-<version>.tgz` fails, `<version>` being `$FRONTEND/client-app/core-api/package.json`'s | the plugin's install would 404 in step 4. Read S1a ⚠️ 3 to the user and ask how to go on |
 
 Then confirm with the user, in one message:
 
@@ -87,12 +89,13 @@ generator bug to report.
 In `$WEB/StorefrontApp`:
 
 ```bash
-yarn install
-yarn type-check && yarn lint && yarn test && yarn build
+corepack yarn install
+corepack yarn type-check && corepack yarn lint && corepack yarn test && corepack yarn build
 ```
 
-`yarn install` writes `yarn.lock`; the module build installs with `--immutable`, so it must be committed with the
-rest. Then, from `$FRONTEND`, the full check:
+Through `corepack`, because a global `yarn` is often 1.x and the plugin pins Yarn 4. The install writes
+`yarn.lock`; the module build installs with `--immutable`, so it must be committed with the rest. Then, from
+`$FRONTEND`, the full check:
 
 ```bash
 yarn check:plugin-module "$WEB"
